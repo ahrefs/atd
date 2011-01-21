@@ -1,0 +1,48 @@
+USE_OCAMLFIND = true
+BYTE_ENABLED = true
+
+FILES[] = atdj
+
+OCAMLFLAGS = -dtypes -g
+OCAMLPACKS = str unix atd atdgen
+
+CLASSPATH = '.:json.jar:junit-4.8.2.jar'
+
+.SUBDIRS: doc
+
+.DEFAULT: atdj.opt atdj
+
+.PHONY: clean
+
+.PHONY: doc
+doc: README
+README: doc/readme.txt
+	cp doc/readme.txt README
+
+#.PHONY: example
+#example: atdj psapi_response.atd
+#	./atdj -graph psapi_response.atd -package com.mylife.psapi.response
+#	dot -Tpdf psapi_response.dot >psapi_response.pdf
+#	javac -classpath $(CLASSPATH) com/mylife/psapi/response/*.java
+#	javac -classpath $(CLASSPATH) PsapiResponseExample.java
+#	javadoc -classpath $(CLASSPATH) -d doc/example -public com.mylife.psapi.response
+#	java  -classpath $(CLASSPATH) PsapiResponseExample \
+#		>psapi_response_example.out
+
+.PHONY: test
+test: atdj test.atd
+	./atdj -graph test.atd -package com.mylife.test
+	dot -Tpdf test.dot >test.pdf
+	javac -classpath $(CLASSPATH) com/mylife/test/*.java
+        javac -classpath $(CLASSPATH) AtdjTest.java
+	javadoc -classpath $(CLASSPATH) -d doc/test -public com.mylife.test
+        java  -classpath $(CLASSPATH) AtdjTest
+
+clean:
+        rm -f *.o *.a *.cm* *~ *.annot atdj atdj.opt TAGS
+	rm -f AtdjTest*.class test.dot test.pdf
+        rm -f PsapiResponseExample*.class psapi_response.dot \
+		psapi_response.pdf psapi_response_example.out
+	rm -rf com doc/example doc/test
+
+OCamlProgram(atdj, $(FILES))

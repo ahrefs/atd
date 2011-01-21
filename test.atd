@@ -1,0 +1,30 @@
+(* Sum *)
+type t =
+  [ U       
+  | V of v
+  | W of w
+  | X of x
+  ]
+
+(* Record *)
+type v = 
+  { b <doc text="foo bar baz"> : bool
+  ; i : int
+  ; s : string
+  ; o : bool option
+  ; l : bool list
+  }
+
+<doc text="wibble">
+
+(* Record with default fields *)
+type w =
+  { ~b : bool
+  ; ~i : int
+  ; ~s : string
+  ; ~o : bool option
+  ; ~l : bool list
+  }
+
+(* Record with optional field *)
+type x = { ?o : bool option }

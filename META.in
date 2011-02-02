@@ -1,0 +1,4 @@
+description = "Adjustable Type Definitions"
+requires = "easy-format"
+archive(byte) = "atd.cma"
+archive(native) = "atd.cmxa"

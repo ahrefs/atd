@@ -1,0 +1,4 @@
+description = "Code generators using ATD as specification language"
+requires = "str atd biniou yojson"
+archive(byte) = "atdgen.cma"
+archive(native) = "atdgen.cmxa"

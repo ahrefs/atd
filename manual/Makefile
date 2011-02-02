@@ -1,0 +1,42 @@
+# $Id: Makefile 48153 2010-09-09 07:57:39Z martin $
+
+# `make pdf' requires pdflatex and builds readme.pdf
+# `make txt' requires hevea and builds readme.txt
+# `make html' requires hevea and builds readme.html
+
+TEXFILES = atd-annot.tex atdgen-manual.tex atdgen-body.tex
+
+.PHONY: all pdf txt html clean
+
+all: pdf txt html
+pdf: atdgen-manual.pdf
+txt: atdgen-manual.txt
+html: atdgen-manual.html
+
+atdgen-manual.tex: ../ag_version.ml atdgen-manual.mlx
+	OCAMLPATH=../..:$$OCAMLPATH \
+		camlmix atdgen-manual.mlx -o atdgen-manual.tex
+
+atdgen-body.tex: ../ag_version.ml macros.ml atdgen-body.mlx
+	OCAMLPATH=../..:$$OCAMLPATH \
+		camlmix atdgen-body.mlx -o atdgen-body.tex
+
+atdgen-manual.txt: $(TEXFILES)
+	rm -f *.aux
+	hevea -fix -text atdgen-manual
+	cp atdgen-manual.txt ../README
+
+atdgen-manual.html: $(TEXFILES)
+	rm -f *.aux
+	hevea -fix atdgen-manual
+
+atdgen-manual.pdf: $(TEXFILES)
+	pdflatex atdgen-manual
+	pdflatex atdgen-manual
+	pdflatex atdgen-manual
+
+clean:
+	rm -f *.aux *.toc *.log *.out *.haux *.htoc *.fls \
+		atdgen-body.tex atdgen-manual.tex atdgen-manual.pdf \
+		atdgen-manual.txt atdgen-manual.html \
+		*.mlx.ml

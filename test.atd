@@ -1,0 +1,131 @@
+(* $Id: test.atd 53195 2011-01-28 23:38:12Z martin $ *)
+
+<doc text="This is just a test.">
+
+type def <ocaml_biniou module="Test_lib.Biniou">
+         <ocaml_json module="Test_lib.Json"> = abstract
+  <doc text="
+         }}}abc{{def}}ghi
+{{{
+j  *  j
+ k * k
+  l*l
+}}}{{{mno}}}
+
+
+
+{{pqr}}{stu}vwx
+
+         yz
+
+{{} [ ] {v }}
+{{{
+} [x] v} {v [ @ \
+}}}
+      ">
+
+type r = {
+  a : int;
+  b <ocaml mutable> : bool;
+  c : p;
+}
+
+type p = [ A | B of r ]
+
+type p'' = int p'
+
+type 'a p' = [ A | Bb of 'a p' | Ccccc of 'a ] <ocaml repr="classic">
+
+type hello = [ Hello of string | World ] <ocaml repr="poly">
+
+type tup = (int * test)
+
+
+type test_variant = 
+    [ Case1 | Case2 of int | Case3 of string | Case4 of test_variant list ]
+
+type mixed_record = {
+  ?field0 : int option;
+  ?field1 : float option;
+  field2 : string option;
+  field3 : int <ocaml repr="int64"> <biniou repr="int64">;
+  field4 : float list <ocaml repr="array">;
+  ?field5 : bool option;
+  ?field6 : string option;
+  field7 : test_variant;
+  field8 : string list <ocaml repr="array">;
+  field9 : (
+    int <biniou repr="uvint">
+    * int <biniou repr="int8">
+    * int <ocaml repr="char"> <biniou repr="int8">
+    * int <biniou repr="int16">
+
+    * int <ocaml repr="int32"> <biniou repr="int32">
+    * int <ocaml repr="int64"> <biniou repr="int64">
+  );
+  field10 : bool;
+  ~field11 : bool;
+  field12 : unit list;
+  field13 : string option list;
+}
+
+type mixed = 
+    (mixed_record list <ocaml repr="array"> <biniou repr="table">
+    * mixed_record list <ocaml repr="array">) list
+
+type test = {
+  ?x0 : int option;
+  ?x1 : float option;
+  x2 : mixed;
+  x3 : mixed_record list;
+  x4 : int <ocaml repr="int64"> <biniou repr="int64">;
+}
+
+type base = {
+  b0 : int;
+  b1 : bool;
+}
+
+type extended = {
+  b0 <ocaml name="b0x"> : int;
+  b1 <ocaml name="b1x"> : bool;
+  b2 <ocaml name="b2x"> : string;
+  ?b3 <ocaml name="b3x"> : string option;
+  b4 <ocaml name="b4x"> : string option;
+  ~b5 <ocaml name="b5x" default="0.5"> : float;
+}
+
+type base_tuple = (int * float)
+type extended_tuple =
+    (int 
+     * float
+     * <ocaml default="true"> : bool
+     * <ocaml default="None"> : int option
+     * string
+     * <ocaml default="[]"> : string list)
+
+
+type ('x, 'y) poly = {
+  fst : 'x list;
+  snd : ('x, 'y) poly option;
+}
+
+
+(*
+type field_hash_clash = {
+  workshop1 : bool;
+  examples3 : bool;
+}
+
+type variant_hash_clash = [ X_workshop1 | X_examples3 ]
+*)
+
+type int_assoc_list =
+    (string * int) list <json repr="object">
+
+type int_assoc_array =
+    (string * int) list <ocaml repr="array"> <json repr="object">
+
+type 'a abs1 = 'a list
+type 'a abs2 = 'a list
+type 'a abs3 = 'a list

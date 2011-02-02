@@ -1,0 +1,14 @@
+(* $Id: test3b.atd 51992 2010-11-18 07:40:37Z martin $ *)
+
+type a = string shared <ocaml repr="ref"> list <ocaml repr="array">
+type b = string shared <ocaml repr="ref">
+
+
+type node_data = {
+  value : string;
+  neighbors <ocaml mutable> : node list
+}
+
+type node = node_data shared
+
+type graph = node list

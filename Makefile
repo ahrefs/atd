@@ -1,6 +1,6 @@
 # $Id: Makefile 52901 2010-12-10 18:47:39Z martin $
 
-VERSION = 1.0.0
+VERSION = 1.0.1
 
 SOURCES = \
   atd_version.ml \
@@ -58,9 +58,9 @@ endif
 
 default: all opt
 
-all: META atd.cma
+all: VERSION META atd.cma
 
-opt: META atd.cmxa atdcat
+opt: VERSION META atd.cmxa atdcat
 
 install: META
 	test ! -f atdcat || cp atdcat $(BINDIR)/
@@ -79,6 +79,9 @@ atd_version.ml: Makefile
 META: META.in Makefile
 	echo 'version = "$(VERSION)"' > META
 	cat META.in >> META
+
+VERSION: Makefile
+	echo $(VERSION) > VERSION
 
 %.cmi: %.mli
 	ocamlfind ocamlc $(OCAMLFLAGS) -c -package "$(OCAMLPACKS)" $<
@@ -149,17 +152,4 @@ clean:
 
 .PHONY: release
 release:
-	svn up
-	$(MAKE) doc
-	test -z "$$(svn status -q)" || exit 1
-	rm -rf release/atd-$(VERSION)
-	mkdir -p release/atd-$(VERSION)
-	mkdir -p release/atd-$(VERSION)/odoc
-	mkdir -p release/atd-$(VERSION)/manual
-	find `svn ls | grep -v manual` | cpio -pvd release/atd-$(VERSION)
-	cd manual; find `svn ls` | cpio -pvd ../release/atd-$(VERSION)/manual
-	cp manual/atd-manual.pdf release/atd-$(VERSION)/manual
-	cp manual/atd-manual.txt release/atd-$(VERSION)/manual
-	cp manual/atd-manual.html release/atd-$(VERSION)/manual
-	find odoc/* | cpio -pvd release/atd-$(VERSION)
-	cd release && tar czf atd-$(VERSION).tar.gz atd-$(VERSION)
+	./release.sh

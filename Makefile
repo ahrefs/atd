@@ -162,6 +162,7 @@ test: opt
 	./atdgen -std-json -extend Test test.atd -o testjstd
 	./atdgen -json -extend Test2 test2.atd -o test2j
 	./atdgen test3b.atd
+	./atdgen -json test3j.atd
 	./atdgen test4.atd
 	./atdgen -json test4.atd -o test4j
 	ocamlfind ocamlopt -c -g test_lib.ml
@@ -171,6 +172,8 @@ test: opt
 	ocamlfind ocamlopt -c -g test2.ml -package atdgen
 	ocamlfind ocamlc -c -g test3b.mli -package atdgen
 	ocamlfind ocamlopt -c -g test3b.ml -package atdgen
+	ocamlfind ocamlc -c -g test3j.mli -package atdgen
+	ocamlfind ocamlopt -c -g test3j.ml -package atdgen
 	ocamlfind ocamlc -c -g test4.mli -package atdgen
 	ocamlfind ocamlopt -c -g test4.ml -package atdgen
 	ocamlfind ocamlc -c -g testj.mli -package atdgen
@@ -184,11 +187,11 @@ test: opt
 	ocamlfind ocamlopt -c -g test_atdgen_main.ml -package atdgen
 	ocamlfind ocamlopt -o test_atdgen -g -linkpkg -package atdgen \
 		test_lib.cmx test.cmx test2.cmx testj.cmx testjstd.cmx \
-		test2j.cmx test3b.cmx test_atdgen_main.cmx
+		test2j.cmx test3b.cmx test3j.cmx test_atdgen_main.cmx
 	mkdir -p testdoc
 	ocamlfind ocamldoc -html -d testdoc -package atdgen \
 		test.mli test2.mli testj.mli test2j.mli test3b.mli \
-		test4.mli test4j.mli
+		test3j.mli test4.mli test4j.mli
 	./test_atdgen
 
 
@@ -231,7 +234,9 @@ clean:
 		test.bin test-2.bin test.json test-2.json \
 		test.ml test.mli testj.ml testj.mli \
 		test2.ml test2.mli test2j.ml test2j.mli \
-                test3b.mli test3b.ml test4.mli test4.ml test4j.mli test4j.ml \
+                test3b.mli test3b.ml \
+		test3j.mli test3j.ml \
+		test4.mli test4.ml test4j.mli test4j.ml \
 		ag_doc_lexer.ml
 	rm -rf odoc testdoc
 

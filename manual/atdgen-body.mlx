@@ -609,6 +609,46 @@ in \texttt{-json} mode for the following fields:
 \item \texttt{module} (see \ref{ocaml.module})
 \end{itemize}
 
+\annotexample
+
+This example shows how to parse a field into a generic tree
+of type \texttt{Yojson.Safe.json} rather than a value of a specialized
+OCaml type.
+## atdgen () ##
+type json <ocaml_json module="Yojson.Safe"> = abstract
+
+type t = { foo: int; bar: json }
+## () ##
+
+translates to the following OCaml type definition:
+
+## ocaml () ##
+type json = Yojson.Safe.json
+
+type t = { foo: int; bar: json }
+## () ##
+
+Sample OCaml value of type \texttt{t}:
+## ocaml () ##
+{
+  foo = 12345;
+  bar =
+    `List [
+      `Int 12;
+      `String "abc";
+      `Assoc [
+        "x", `Float 3.14;
+        "y", `Float 0.0;
+        "color", `List [ `Float 0.3; `Float 0.0; `Float 1.0 ]
+      ]
+    ]
+}
+## () ##
+
+Corresponding JSON data as obtained with \texttt{string\_of\_t}:
+\begin{verbatim}
+{"foo":12345,"bar":[12,"abc",{"x":3.14,"y":0.0,"color":[0.3,0.0,1.0]}]}
+\end{verbatim}
 
 
 ## annot_section "doc" ##

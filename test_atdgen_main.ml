@@ -222,8 +222,16 @@ let test_json_correctness () =
       print_endline "2nd and 3rd generation data differ";
     fail ()
   );
+  check (std_x' = std_x'');
   assert (x = std_x')
 
+let test_raw_json () =
+  section "raw json";
+  let x = { Test3j.foo = 12345; bar = `List [ `Int 12; `String "abc" ] } in
+  let s = Test3j.string_of_t x in
+  let x' = Test3j.t_of_string s in
+  check (x = x')
+  
 let test_biniou_sharing_graph () =
   section "biniou sharing - graph";
   let a = { Test3b.value = "a"; neighbors = [] } in
@@ -260,7 +268,6 @@ let test_biniou_sharing_strings () =
   check (a'.(0) == a'.(1));
   check (a'.(0) != b')
 
-
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -271,6 +278,7 @@ let all_tests = [
   test_json_assoc_array;
   test_biniou_correctness;
   test_json_correctness;
+  test_raw_json;
   test_biniou_sharing_graph;
   test_biniou_sharing_strings;
 ]

@@ -1,6 +1,6 @@
 # $Id: Makefile 53195 2011-01-28 23:38:12Z martin $
 
-VERSION = 1.1.0
+VERSION = 1.1.1
 
 # Shared stuff
 SOURCES_SHARED = \
@@ -71,7 +71,7 @@ endif
 default: all opt
 
 .PHONY: pp
-pp: META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
+pp: VERSION META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
 	$(MAKE) dep
 
 .PHONY: all opt
@@ -104,6 +104,8 @@ META: META.in Makefile
 	echo 'version = "$(VERSION)"' > META
 	cat META.in >> META
 
+VERSION: Makefile
+	echo $(VERSION) > VERSION
 
 %.cmi: %.mli
 	ocamlfind ocamlc $(OCAMLFLAGS) -c -package "$(OCAMLPACKS)" $<
@@ -243,22 +245,4 @@ clean:
 
 .PHONY: release
 release:
-	svn up
-	$(MAKE) doc
-	test -z "$$(svn status -q)" || exit 1
-	rm -rf release/atdgen-$(VERSION)
-	mkdir -p release/atdgen-$(VERSION)
-	mkdir -p release/atdgen-$(VERSION)/odoc
-	mkdir -p release/atdgen-$(VERSION)/manual
-	mkdir -p release/atdgen-$(VERSION)/example
-	find `svn ls | grep -v 'manual\|example'` \
-		| cpio -pvd release/atdgen-$(VERSION)
-	cd manual; find `svn ls` \
-		| cpio -pvd ../release/atdgen-$(VERSION)/manual
-	cp manual/atdgen-manual.pdf release/atdgen-$(VERSION)/manual
-	cp manual/atdgen-manual.txt release/atdgen-$(VERSION)/manual
-	cp manual/atdgen-manual.html release/atdgen-$(VERSION)/manual
-	find odoc/* | cpio -pvd release/atdgen-$(VERSION)
-	cd example; find `svn ls` \
-		| cpio -pvd ../release/atdgen-$(VERSION)/example
-	cd release && tar czf atdgen-$(VERSION).tar.gz atdgen-$(VERSION)
+	./release.sh

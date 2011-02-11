@@ -24,7 +24,7 @@ atdgen-body.tex: ../ag_version.ml macros.ml atdgen-body.mlx
 atdgen-manual.txt: $(TEXFILES)
 	rm -f *.aux
 	hevea -fix -text atdgen-manual
-	cp atdgen-manual.txt ../README
+	iconv -f ISO_8859-1 -t UTF-8 < atdgen-manual.txt > ../README
 
 atdgen-manual.html: $(TEXFILES)
 	rm -f *.aux

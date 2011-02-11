@@ -244,6 +244,7 @@ clean:
 		test4.mli test4.ml test4j.mli test4j.ml \
 		ag_doc_lexer.ml
 	rm -rf odoc testdoc
+	cd manual && $(MAKE) clean
 
 
 .PHONY: release

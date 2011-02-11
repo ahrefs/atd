@@ -4,7 +4,7 @@
                                  ******
                 Biniou and JSON serialization for OCaml
                 ***************************************
-                             release 1.1.0
+                             release 1.1.1
                              *************
                              Martin Jambon
                              =============
@@ -1421,7 +1421,7 @@ enough
   A library named atdgen is installed by the standard installation
 process. Only a fraction of it is officially supported and documented.
 The documentation is available online at 
-http://oss.wink.com/atdgen/atdgen-1.1.0/odoc/index.html.  
+http://oss.wink.com/atdgen/atdgen-1.1.1/odoc/index.html.  
 -----------------------------------------------------------------------
   
    This document was translated from LaTeX by HeVeA (5).

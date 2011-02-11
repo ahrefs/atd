@@ -110,6 +110,9 @@ VERSION: Makefile
 %.cmi: %.mli
 	ocamlfind ocamlc $(OCAMLFLAGS) -c -package "$(OCAMLPACKS)" $<
 
+%.cmi: %.ml
+	ocamlfind ocamlc $(OCAMLFLAGS) -c -package "$(OCAMLPACKS)" $<
+
 %.cmo: %.ml
 	ocamlfind ocamlc $(OCAMLFLAGS) -c -package "$(OCAMLPACKS)" $<
 
@@ -119,25 +122,25 @@ VERSION: Makefile
 ag_doc_lexer.ml: ag_doc_lexer.mll
 	ocamllex $<
 
-dep: $(MLI) $(ML) Makefile
+dep: $(SOURCES) Makefile
 	ocamlfind ocamldep -package "$(OCAMLPACKS)" $(MLI) $(ML) > dep
 
 ifneq ($(MAKECMDGOALS),clean)
 -include dep
 endif
 
-atdgen.cma: $(CMO)
+atdgen.cma: dep $(CMI) $(CMO)
 	ocamlfind ocamlc $(OCAMLFLAGS) -o atdgen.cma -a $(CMO)
 
-atdgen.cmxa: $(CMX)
+atdgen.cmxa: dep $(CMI) $(CMX)
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdgen.cmxa -a $(CMX)
 
-atdgen.run: $(CMO) ag_main.ml
+atdgen.run: dep $(CMI) $(CMO) ag_main.ml
 	ocamlfind ocamlc $(OCAMLFLAGS) -o atdgen.run \
 		-package "$(OCAMLPACKS)" -linkpkg \
 		$(CMO) ag_main.ml
 
-atdgen: $(CMX) ag_main.ml
+atdgen: dep $(CMI) $(CMX) ag_main.ml
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdgen \
 		-package "$(OCAMLPACKS)" -linkpkg \
 		$(CMX) ag_main.ml

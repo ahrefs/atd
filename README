@@ -940,6 +940,7 @@ mode for the following fields:
   
    - predef (see 4.3.1) 
    - module (see 4.3.4) 
+   - t (see 4.3.5) 
   
   
 
@@ -951,6 +952,7 @@ for the following fields:
   
    - predef (see 4.3.1) 
    - module (see 4.3.4) 
+   - t (see 4.3.5) 
   
   Example: 
   This example shows how to parse a field into a generic tree of type

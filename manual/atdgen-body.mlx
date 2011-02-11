@@ -629,6 +629,7 @@ in \texttt{-biniou} mode for the following fields:
 \begin{itemize}
 \item \texttt{predef} (see \ref{ocaml.predef})
 \item \texttt{module} (see \ref{ocaml.module})
+\item \texttt{t} (see \ref{ocaml.t})
 \end{itemize}
 
 ## annot_section ~label:"ocaml-json" "ocaml\\_json" ##
@@ -638,6 +639,7 @@ in \texttt{-json} mode for the following fields:
 \begin{itemize}
 \item \texttt{predef} (see \ref{ocaml.predef})
 \item \texttt{module} (see \ref{ocaml.module})
+\item \texttt{t} (see \ref{ocaml.t})
 \end{itemize}
 
 \annotexample

@@ -54,7 +54,7 @@ type atd_ocaml_repr =
     | `Option
     | `Shared of atd_ocaml_shared
     | `Name of string
-    | `External of string (* module *)
+    | `External of (string * string) (* module and type name *)
 
     | `Cell of atd_ocaml_field
     | `Field of atd_ocaml_field
@@ -171,6 +171,17 @@ let get_ocaml_module target an =
   let path = path_of_target target in
   Atd_annot.get_field (fun s -> Some (Some s)) None path "module" an
 
+let get_ocaml_t target default an =
+  let path = path_of_target target in
+  Atd_annot.get_field (fun s -> Some s) default path "t" an
+
+let get_ocaml_module_and_t target default_name an =
+  match get_ocaml_module target an with
+      None -> None
+    | Some module_path ->
+        Some (module_path, get_ocaml_t target default_name an)
+
+
 (*
   OCaml syntax tree
 *)
@@ -269,9 +280,9 @@ let map_def
   let is_abstract = Ag_mapping.is_abstract x in
   let define_alias =
     if is_predef || is_abstract || type_aliases <> None then
-      match get_ocaml_module target an1, type_aliases with
-          Some s, _
-        | None, Some s -> Some s
+      match get_ocaml_module_and_t target s an1, type_aliases with
+          Some x, _ -> Some x
+        | None, Some module_path -> Some (module_path, s)
 
         | None, None -> None
     else
@@ -288,8 +299,8 @@ let map_def
           None ->
             if is_abstract then (None, None)
             else (None, Some (map_expr x))
-        | Some module_path ->
-            let alias = Some (module_path ^ "." ^ s, param) in
+        | Some (module_path, ext_name) ->
+            let alias = Some (module_path ^ "." ^ ext_name, param) in
             let x =
               match map_expr x with
                   `Sum (`Classic, _)

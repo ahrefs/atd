@@ -167,12 +167,14 @@ let def_of_atd (loc, (name, param, an), x) =
   let o =
     match as_abstract x with
         Some (loc2, an2) ->
-          (match Ag_ocaml.get_ocaml_module `Biniou an with
+          (match Ag_ocaml.get_ocaml_module_and_t `Biniou name an with
                None -> None
-             | Some module_path ->
+             | Some (module_path, ext_name) ->
                  let args = List.map (fun s -> `Tvar (loc, s)) param in
-                 Some (`External (loc, name, args, 
-                                  `External module_path, `External))
+                 Some (`External
+                         (loc, name, args, 
+                          `External (module_path, ext_name), `External)
+                      )
           )
       | None -> Some (mapping_of_expr x)
   in

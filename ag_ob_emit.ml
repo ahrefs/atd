@@ -159,8 +159,8 @@ let get_biniou_tag (x : ob_mapping) =
     | `Option (loc, x, `Option, `Option) -> "Bi_io.num_variant_tag"
     | `Shared (loc, id, x, `Shared _, `Shared) -> "Bi_io.shared_tag"
     | `Name (loc, s, args) -> sprintf "%s_tag" s
-    | `External (loc, s, args, `External module_path, `External) ->
-        sprintf "%s.%s_tag" module_path s
+    | `External (loc, s, args, `External (module_path, ext_name), `External) ->
+        sprintf "%s.%s_tag" module_path ext_name
     | `Tvar (loc, s) -> sprintf "%s_tag" (name_of_var s)
     | _ -> assert false
 
@@ -261,8 +261,8 @@ let rec get_writer_name
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args, `External module_path, `External) ->
-        let f = module_path ^ "." ^ name_f s in
+    | `External (loc, s, args, `External (module_path, ext_name), `External) ->
+        let f = module_path ^ "." ^ name_f ext_name in
         let l = List.map get_writer_names args in
         let s = String.concat " " (f :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
@@ -361,8 +361,8 @@ let rec get_reader_name
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args, `External module_path, `External) ->
-        let f = module_path ^ "." ^ name_f s in
+    | `External (loc, s, args, `External (module_path, ext_name), `External) ->
+        let f = module_path ^ "." ^ name_f ext_name in
         let l = List.map get_reader_names args in
         let s = String.concat " " (f :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"

@@ -227,7 +227,10 @@ let test_json_correctness () =
 
 let test_raw_json () =
   section "raw json";
-  let x = { Test3j.foo = 12345; bar = `List [ `Int 12; `String "abc" ] } in
+  let x = { Test3j.foo = 12345;
+            bar = `List [ `Int 12; `String "abc" ];
+            baz = `Bool false }
+  in
   let s = Test3j.string_of_t x in
   let x' = Test3j.t_of_string s in
   check (x = x')

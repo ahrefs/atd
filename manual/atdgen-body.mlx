@@ -443,6 +443,37 @@ Now for instance \texttt{Example.Black} and \texttt{Color.Black}
 can be used interchangeably in other modules.
 
 
+## annot_field "t" ##
+
+\annotposition left-hand side of a type definition, after the type
+name. Must be used in conjunction with a \texttt{module} field.
+
+\annotvalues OCaml type name as found in an external module.
+
+\annotsemantics This option allows to specify the name of an
+OCaml type defined in an external module.
+
+It is useful when the type needs to be renamed because its original
+name is already in use or not enough informative.
+Typically we may want to give the name \texttt{foo} to a type
+originally defined in OCaml as \texttt{Foo.t}.
+
+\annotexample
+## atdgen () ##
+type foo <ocaml_biniou module="Foo" t="t"> = abstract
+type bar <ocaml_biniou module="Bar" t="t"> = abstract
+type t <ocaml_biniou module="Baz"> = abstract
+## () ##
+allows local type names to be unique
+and gives the following OCaml type definitions:
+## ocaml () ##
+type foo = Foo.t
+type bar = Bar.t
+type t = Baz.t
+## () ##
+
+
+
 ## annot_field ~label:"field-prefix" "field\\_prefix" ##
 
 \annotposition record type expression
@@ -615,17 +646,17 @@ This example shows how to parse a field into a generic tree
 of type \texttt{Yojson.Safe.json} rather than a value of a specialized
 OCaml type.
 ## atdgen () ##
-type json <ocaml_json module="Yojson.Safe"> = abstract
+type dyn <ocaml_json module="Yojson.Safe" t="json"> = abstract
 
-type t = { foo: int; bar: json }
+type t = { foo: int; bar: dyn }
 ## () ##
 
-translates to the following OCaml type definition:
+translates to the following OCaml type definitions:
 
 ## ocaml () ##
-type json = Yojson.Safe.json
+type dyn = Yojson.Safe.json
 
-type t = { foo: int; bar: json }
+type t = { foo : int; bar : dyn }
 ## () ##
 
 Sample OCaml value of type \texttt{t}:

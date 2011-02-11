@@ -42,9 +42,10 @@ Contents
          - 4.3.2  Field ocaml.mutable 
          - 4.3.3  Field ocaml.default 
          - 4.3.4  Field ocaml.module 
-         - 4.3.5  Field ocaml.field_prefix 
-         - 4.3.6  Field ocaml.name 
-         - 4.3.7  Field ocaml.repr 
+         - 4.3.5  Field ocaml.t 
+         - 4.3.6  Field ocaml.field_prefix 
+         - 4.3.7  Field ocaml.name 
+         - 4.3.8  Field ocaml.repr 
      
       - 4.4  Section ocaml_biniou 
       - 4.5  Section ocaml_json 
@@ -772,7 +773,34 @@ items.
 interchangeably in other modules.
   
 
-4.3.5  Field ocaml.field_prefix
+4.3.5  Field ocaml.t
+--------------------
+  
+  Position: left-hand side of a type definition, after the type name.
+Must be used in conjunction with a module field.
+  Values: OCaml type name as found in an external module.
+  Semantics: This option allows to specify the name of an OCaml type
+defined in an external module.
+  It is useful when the type needs to be renamed because its original
+name is already in use or not enough informative. Typically we may want
+to give the name foo to a type originally defined in OCaml as Foo.t.
+  Example: 
+<<
+  type foo <ocaml_biniou module="Foo" t="t"> = abstract
+  type bar <ocaml_biniou module="Bar" t="t"> = abstract
+  type t <ocaml_biniou module="Baz"> = abstract
+>>
+   allows local type names to be unique and gives the following OCaml
+type definitions: 
+<<
+  type foo = Foo.t
+  type bar = Bar.t
+  type t = Baz.t
+>>
+  
+  
+
+4.3.6  Field ocaml.field_prefix
 -------------------------------
   
   Position: record type expression
@@ -797,7 +825,7 @@ defined on a per-field basis.
   
   
 
-4.3.6  Field ocaml.name
+4.3.7  Field ocaml.name
 -----------------------
   
   Position: after record field name or variant name
@@ -834,7 +862,7 @@ to be used in OCaml.
   
   
 
-4.3.7  Field ocaml.repr
+4.3.8  Field ocaml.repr
 -----------------------
   
 Integers
@@ -928,16 +956,16 @@ for the following fields:
   This example shows how to parse a field into a generic tree of type
 Yojson.Safe.json rather than a value of a specialized OCaml type. 
 <<
-  type json <ocaml_json module="Yojson.Safe"> = abstract
+  type dyn <ocaml_json module="Yojson.Safe" t="json"> = abstract
   
-  type t = { foo: int; bar: json }
+  type t = { foo: int; bar: dyn }
 >>
   
-  translates to the following OCaml type definition:
+  translates to the following OCaml type definitions:
 <<
-  type json = Yojson.Safe.json
+  type dyn = Yojson.Safe.json
   
-  type t = { foo: int; bar: json }
+  type t = { foo : int; bar : dyn }
 >>
   
   Sample OCaml value of type t: 

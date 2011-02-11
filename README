@@ -4,11 +4,11 @@
                                   ***
                       Adjustable Type Definitions
                       ***************************
-                             release 1.0.0
+                             release 1.0.1
                              *************
                              Martin Jambon
                              =============
-                             © 2010 MyLife
+                             Â© 2010 MyLife
                              =============
   
 
@@ -503,7 +503,7 @@ can be rewritten correctly as:
 
   
   The documentation for the atd library is available in HTML form at
-http://oss.wink.com/atd/atd-1.0.0/odoc/index.html.  
+http://oss.wink.com/atd/atd-1.0.1/odoc/index.html.  
 -----------------------------------------------------------------------
   
    This document was translated from LaTeX by HeVeA (1).

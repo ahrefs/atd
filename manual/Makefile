@@ -22,7 +22,7 @@ atd-body.tex: ../atd_version.ml macros.ml atd-body.mlx
 atd-manual.txt: $(addsuffix .tex, $(TEXFILES))
 	rm -f *.aux
 	hevea -fix -text atd-manual
-	cp atd-manual.txt ../README
+	iconv -f ISO_8859-1 -t UTF-8 < atd-manual.txt > ../README
 
 atd-manual.html: $(addsuffix .tex, $(TEXFILES))
 	rm -f *.aux

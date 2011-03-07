@@ -31,12 +31,13 @@ SOURCES_OCAML = \
 # Runtime library
 SOURCES_RUNTIME = \
   ag_ob_run.ml \
-  ag_oj_run.ml
+  ag_oj_run.ml \
+  ag_util.mli ag_util.ml
 
 SOURCES = \
   $(SOURCES_SHARED) $(SOURCES_BINIOU) $(SOURCES_OCAML) $(SOURCES_RUNTIME) 
 
-DOCFILES = ag_doc
+DOCFILES = ag_doc ag_util
 DOCSOURCES = $(addsuffix .mli, $(DOCFILES))
 
 

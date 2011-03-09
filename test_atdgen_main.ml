@@ -225,6 +225,30 @@ let test_json_correctness () =
   check (std_x' = std_x'');
   assert (x = std_x')
 
+let test_json_files () =
+  section "json files";
+  let x = Some 123 in
+  let s = Ag_util.Json.to_string Testj.write_intopt x in
+  print_endline s;
+  let x' = Ag_util.Json.from_string Testj.read_intopt s in
+  check (x = x');
+  Ag_util.Json.to_file Testj.write_intopt "test-json-files.json" x;
+  let x'' = Ag_util.Json.from_file Testj.read_intopt "test-json-files.json" in
+  check (x = x'')
+
+let test_json_streams () =
+  section "json streams";
+  let l = [ Some 1; None; Some 2; Some 3 ] in
+  let s = Ag_util.Json.list_to_string Testj.write_intopt l in
+  print_endline s;
+  let l' = Ag_util.Json.list_from_string Testj.read_intopt s in
+  check (l = l');
+  Ag_util.Json.list_to_file Testj.write_intopt "test-json-streams.json" l;
+  let l'' =
+    Ag_util.Json.list_from_file Testj.read_intopt "test-json-streams.json"
+  in
+  check (l = l'')
+
 let test_raw_json () =
   section "raw json";
   let x = { Test3j.foo = 12345;
@@ -281,6 +305,8 @@ let all_tests = [
   test_json_assoc_array;
   test_biniou_correctness;
   test_json_correctness;
+  test_json_files;
+  test_json_streams;
   test_raw_json;
   test_biniou_sharing_graph;
   test_biniou_sharing_strings;

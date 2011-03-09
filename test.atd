@@ -129,3 +129,5 @@ type int_assoc_array =
 type 'a abs1 = 'a list
 type 'a abs2 = 'a list
 type 'a abs3 = 'a list
+
+type intopt = int option

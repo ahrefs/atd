@@ -190,8 +190,8 @@ sig
                        during the lexing phase.
         @param fin     finalization function executed once when the end of the
                        stream is reached either because there is no more
-                       input or because of an exception. This is typically
-                       used to close the input channel, e.g.
+                       input or because of an exception. This can be used
+                       to remove the input file if it was temporary, e.g.
                        [fun () -> Sys.remove fname].
         @param fname   input file name to be used in error messages.
                        It is intended to represent the source file

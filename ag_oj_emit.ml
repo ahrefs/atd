@@ -706,7 +706,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	);
 	[
 	  `Annot ("fun", `Line "fun p lb ->");
-	  `Block (make_record_reader p a o)
+	  `Block (make_record_reader p loc a o)
 	]
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
@@ -828,7 +828,7 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
   (json_cons, expr)
 
 
-and make_record_reader p a record_kind =
+and make_record_reader p loc a record_kind =
   let fields = get_fields p a in  
   let init_val, init_bits, set_bit, check_bits = study_record p.deref fields in
 
@@ -873,7 +873,9 @@ and make_record_reader p a record_kind =
       let error_expr1 =
         match p.unknown_field_handler with
             None -> [ `Line "-1" ]
-          | Some f -> [ `Line (sprintf "(%s) (String.sub s pos len); -1" f) ]
+          | Some f ->
+              [ `Line (sprintf "(%s) %S (String.sub s pos len); -1"
+                         f (Atd_ast.string_of_loc loc)) ]
       in
       Ag_string_match.make_ocaml_int_mapping
         ~exit_with: `Expr

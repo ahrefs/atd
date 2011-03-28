@@ -1,3 +1,4 @@
+
 type 'a ocaml_array = 'a array
 
 let input_file fname read =
@@ -169,6 +170,13 @@ struct
   let list_to_file ?len ?lf write fname  l =
     stream_to_file ?len ?lf write fname (Stream.of_list l)
 
-  let unknown_field_handler =
-    ref (fun s -> failwith ("Unknown JSON field " ^ s))
+  let preset_unknown_field_handler loc name =
+    let msg =
+      Printf.sprintf
+        "Found unknown JSON field %s while expecting type defined at: %s"
+        name loc
+    in
+    failwith msg
+
+  let unknown_field_handler = ref preset_unknown_field_handler
 end

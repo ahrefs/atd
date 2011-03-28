@@ -96,7 +96,7 @@ let read_int ib =
 
 let get_char_reader tag =
   if tag = Bi_io.int8_tag then
-    Bi_io.read_untagged_int8
+    Bi_io.read_untagged_char
   else
     tag_error tag "char"
 

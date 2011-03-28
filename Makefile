@@ -28,7 +28,7 @@ SOURCES_OCAML = \
   ag_oj_mapping.ml \
   ag_oj_emit.ml
 
-# Runtime library
+# OCaml runtime library
 SOURCES_RUNTIME = \
   ag_ob_run.ml \
   ag_oj_run.ml \
@@ -160,8 +160,11 @@ odoc/index.html: $(CMI)
 
 # Some testing
 
-.PHONY: test
+.PHONY: test really-test
 test: opt
+	OCAMLPATH=..:$$OCAMLPATH $(MAKE) really-test
+
+really-test:
 	./atdgen test.atd
 	./atdgen test2.atd
 	./atdgen -json -extend Test test.atd -o testj

@@ -76,9 +76,9 @@ let ocaml_int_of_string s : atd_ocaml_int option =
 let string_of_ocaml_int (x : atd_ocaml_int) =
   match x with
       `Int -> "int"
-    | `Char -> "char"
-    | `Int32 -> "int32"
-    | `Int64 -> "int64"
+    | `Char -> "Char.t"
+    | `Int32 -> "Int32.t"
+    | `Int64 -> "Int64.t"
 
 let ocaml_sum_of_string s : atd_ocaml_sum option =
   match s with
@@ -101,7 +101,7 @@ let ocaml_list_of_string s : atd_ocaml_list option =
 let string_of_ocaml_list (x : atd_ocaml_list) =
   match x with
       `List -> "list"
-    | `Array -> "array"
+    | `Array -> "Ag_util.ocaml_array"
 
 let ocaml_shared_of_string s : atd_ocaml_shared option =
   match s with
@@ -112,7 +112,7 @@ let ocaml_shared_of_string s : atd_ocaml_shared option =
 let get_ocaml_int an =
   Atd_annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
 
-let get_ocaml_name atd_name an =
+let get_ocaml_type_path atd_name an =
   let x =
     match atd_name with
 	"unit" -> `Unit
@@ -233,21 +233,17 @@ let rec map_expr (x : type_expr) : ocaml_expr =
     | `Tuple (loc, l, an) ->
 	`Tuple (List.map (fun (_, x, _) -> map_expr x) l)
     | `List (loc, x, an) ->
-	let s =
-	  match get_ocaml_list an with
-	      `List -> "list"
-	    | `Array -> "array"
-	in
+	let s = string_of_ocaml_list (get_ocaml_list an) in
 	`Name (s, [map_expr x])
     | `Option (loc, x, an) ->
 	`Name ("option", [map_expr x])
     | `Shared (loc, x, a) ->
         (match get_ocaml_shared a with
              `Flat -> map_expr x
-           | `Ref -> `Name ("ref", [map_expr x])
+           | `Ref -> `Name ("Pervasives.ref", [map_expr x])
         )
     | `Name (loc, (loc2, s, l), an) ->
-	let s = get_ocaml_name s an in
+	let s = get_ocaml_type_path s an in
 	`Name (s, List.map map_expr l)
     | `Tvar (loc, s) ->
 	`Tvar s

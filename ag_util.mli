@@ -1,4 +1,8 @@
-(** Various convenience functions (file/channel IOs) *)
+(** Various convenience types and functions *)
+
+type 'a ocaml_array = 'a array
+    (** An alias for OCaml's standard array type,
+        used in generated code. *)
 
 module Biniou :
 sig

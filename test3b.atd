@@ -12,3 +12,5 @@ type node_data = {
 type node = node_data shared
 
 type graph = node list
+
+type ref = int shared <ocaml repr="ref">

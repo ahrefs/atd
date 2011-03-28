@@ -1,3 +1,5 @@
+type 'a ocaml_array = 'a array
+
 let input_file fname read =
   let ic = open_in_bin fname in
   try

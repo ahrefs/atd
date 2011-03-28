@@ -131,3 +131,9 @@ type 'a abs2 = 'a list
 type 'a abs3 = 'a list
 
 type intopt = int option
+
+type int8 = int <biniou repr="int8">
+type char = int <ocaml repr="char"> <biniou repr="int8">
+type int32 = int <ocaml repr="int32"> <biniou repr="int32">
+type int64 = int <ocaml repr="int64"> <biniou repr="int64">
+type 'a array = 'a list <ocaml repr="array">

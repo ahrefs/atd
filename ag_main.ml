@@ -26,6 +26,7 @@ let main () =
   let out_prefix = ref None in
   let serialization_format = ref None in
   let std_json = ref false in
+  let unknown_field_handler = ref None in
   let type_aliases = ref None in
   let set_opens s =
     let l = Str.split (Str.regexp " *, *\\| +") s in
@@ -97,6 +98,30 @@ let main () =
           Convert tuples and variants into standard JSON and
           refuse to print NaN and infinities (implying -json).";
 
+    "-json-strict-fields",
+    Arg.Unit (
+      fun () ->
+        std_json := true;
+        set_once "unknown field handler" unknown_field_handler
+          "!Ag_util.Json.unknown_field_handler"
+    ),
+    "
+          Call !Ag_util.Json.unknown_field_handler for every unknown JSON field
+          found in the input instead of simply skipping them.
+          The initial behavior is to raise an exception.";
+
+    "-json-custom-fields",
+    Arg.String (
+      fun s ->
+        std_json := true;
+        set_once "unknown field handler" unknown_field_handler s
+    ),
+    "FUNCTION
+          Call the given function of type (string -> unit) 
+          for every unknown JSON field found in the input
+          instead of simply skipping them.
+          See also -json-strict_fields.";
+
     "-version",
     Arg.Unit (fun () ->
                 print_endline Ag_version.version;
@@ -140,7 +165,10 @@ Usage: %s FILE.atd" Sys.argv.(0) in
   let make_ocaml_files =
     match format with
         `Biniou -> Ag_ob_emit.make_ocaml_files
-      | `Json -> Ag_oj_emit.make_ocaml_files ~std: !std_json
+      | `Json ->
+          Ag_oj_emit.make_ocaml_files
+            ~std: !std_json
+            ~unknown_field_handler: !unknown_field_handler
   in
   make_ocaml_files
     ~opens

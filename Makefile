@@ -167,7 +167,10 @@ test: opt
 really-test:
 	./atdgen test.atd
 	./atdgen test2.atd
-	./atdgen -json -extend Test test.atd -o testj
+	./atdgen -json -extend Test \
+		-json-custom-fields \
+		'fun s -> Printf.printf "Warning: ignored JSON field %S\n" s' \
+		test.atd -o testj
 	./atdgen -std-json -extend Test test.atd -o testjstd
 	./atdgen -json -extend Test2 test2.atd -o test2j
 	./atdgen test3b.atd

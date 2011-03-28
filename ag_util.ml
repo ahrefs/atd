@@ -168,4 +168,7 @@ struct
 
   let list_to_file ?len ?lf write fname  l =
     stream_to_file ?len ?lf write fname (Stream.of_list l)
+
+  let unknown_field_handler =
+    ref (fun s -> failwith ("Unknown JSON field " ^ s))
 end

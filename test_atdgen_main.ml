@@ -38,6 +38,15 @@ let test_missing_record = {
   b1 = true
 }
 
+let test_extended_record = {
+  Test.b0x = 55;
+  b1x = false;
+  b2x = "abc";
+  b3x = Some "def";
+  b4x = Some "ghi";
+  b5x = 1.1;
+}
+
 let test_missing_tuple = (123, 4.56)
 
 
@@ -74,6 +83,10 @@ let test_json_missing_cell () =
   expect_error 
     Testj.extended_tuple_of_string
     (Testj.string_of_base_tuple test_missing_tuple)
+
+let test_json_extra_field_warning () =
+  section "json extra field warning";
+  ignore (Testj.base_of_string (Testj.string_of_extended test_extended_record))
 
 let test_json_assoc_list () =
   section "json association list";
@@ -301,6 +314,7 @@ let all_tests = [
   test_biniou_missing_cell;
   test_json_missing_field;
   test_json_missing_cell;
+  test_json_extra_field_warning;
   test_json_assoc_list;
   test_json_assoc_array;
   test_biniou_correctness;

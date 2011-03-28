@@ -22,6 +22,9 @@ type param = {
   deref : (Ag_ocaml.atd_ocaml_repr, Ag_json.json_repr) Ag_mapping.mapping ->
 	       (Ag_ocaml.atd_ocaml_repr, Ag_json.json_repr) Ag_mapping.mapping;
   std : bool;
+  unknown_field_handler : string option;
+    (* Optional handler that takes a field name as argument
+       and does something with it such as displaying a warning message. *)
 }
 
 
@@ -867,9 +870,14 @@ and make_record_reader p a record_kind =
       ) a
     in
     let int_mapping_function, int_matching =
+      let error_expr1 =
+        match p.unknown_field_handler with
+            None -> [ `Line "-1" ]
+          | Some f -> [ `Line (sprintf "(%s) (String.sub s pos len); -1" f) ]
+      in
       Ag_string_match.make_ocaml_int_mapping
         ~exit_with: `Expr
-        ~error_expr1: [ `Line "-1" ]
+        ~error_expr1
 	~error_expr2: [ `Line "Yojson.Safe.skip_json p lb" ]
 	(Array.to_list cases)
     in
@@ -1152,10 +1160,11 @@ let get_let ~is_rec ~is_first =
     else "let", "let"
   else "and", "and"
 
-let make_ocaml_json_impl ~std buf deref defs =
+let make_ocaml_json_impl ~std ~unknown_field_handler buf deref defs =
   let p = {
     deref = deref;
     std = std;
+    unknown_field_handler = unknown_field_handler;
   } in
   let ll =
     List.map (
@@ -1218,7 +1227,8 @@ let make_mli
   Buffer.contents buf
 
 let make_ml
-    ~header ~opens ~with_typedefs ~with_fundefs ~std 
+    ~header ~opens ~with_typedefs ~with_fundefs
+    ~std ~unknown_field_handler
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1228,7 +1238,7 @@ let make_ml
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_json_impl ~std buf deref defs;
+    make_ocaml_json_impl ~std ~unknown_field_handler buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1237,6 +1247,7 @@ let make_ocaml_files
     ~with_fundefs
     ~all_rec
     ~std
+    ~unknown_field_handler
     ~pos_fname
     ~pos_lnum
     ~type_aliases
@@ -1282,7 +1293,8 @@ let make_ocaml_files
       ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
   in
   let ml =
-    make_ml ~header ~opens ~with_typedefs ~with_fundefs ~std
+    make_ml ~header ~opens ~with_typedefs ~with_fundefs
+      ~std ~unknown_field_handler
       ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

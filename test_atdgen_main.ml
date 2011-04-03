@@ -238,6 +238,34 @@ let test_json_correctness () =
   check (std_x' = std_x'');
   assert (x = std_x')
 
+let test_validators () =
+  section "validators";
+  let valid = (0, 1.) in
+  let invalid = (1, 0.) in
+  check (Testv.validate_base_tuple valid);
+  check (not (Testv.validate_base_tuple invalid));
+
+  let x1 = {
+    Test.b0x = 1;
+    b1x = true;
+    b2x = "abc";
+    b3x = Some "def";
+    b4x = Some "ghi";
+    b5x = 1.1;
+  }
+  in
+  check (not (Testv.validate_extended x1));
+  let x2 = { x1 with Test.b1x = false } in
+  check (Testv.validate_extended x2);
+  let x3 = { x2 with Test.b0x = -1 } in
+  check (not (Testv.validate_extended x3));
+
+  let v1 = `A in
+  check (not (Testv.validate_p v1));
+  let v2 = `B { Test.a = 0; b = true; c = `C } in
+  check (Testv.validate_p v2)
+
+
 let test_json_files () =
   section "json files";
   let x = Some 123 in
@@ -319,6 +347,7 @@ let all_tests = [
   test_json_assoc_array;
   test_biniou_correctness;
   test_json_correctness;
+  test_validators;
   test_json_files;
   test_json_streams;
   test_raw_json;

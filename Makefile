@@ -11,31 +11,39 @@ SOURCES_SHARED = \
   ag_doc.mli ag_doc.ml \
   ag_ocaml.ml \
   ag_indent.ml \
-  ag_ox_emit.ml \
-  ag_biniou.ml \
-  ag_xb_emit.ml
+  ag_ox_emit.ml
 
 # Biniou/OCaml
 SOURCES_BINIOU = \
+  ag_biniou.ml \
+  ag_xb_emit.ml \
   ag_ob_mapping.ml \
   ag_ob_spe.ml \
   ag_ob_emit.ml
 
 # JSON/OCaml
-SOURCES_OCAML = \
+SOURCES_JSON = \
   ag_string_match.mli ag_string_match.ml \
   ag_json.ml \
   ag_oj_mapping.ml \
   ag_oj_emit.ml
 
+# OCaml validators
+SOURCES_VALIDATE = \
+  ag_validate.ml \
+  ag_ov_mapping.ml \
+  ag_ov_emit.ml
+
 # OCaml runtime library
 SOURCES_RUNTIME = \
   ag_ob_run.ml \
   ag_oj_run.ml \
+  ag_ov_run.ml \
   ag_util.mli ag_util.ml
 
 SOURCES = \
-  $(SOURCES_SHARED) $(SOURCES_BINIOU) $(SOURCES_OCAML) $(SOURCES_RUNTIME) 
+  $(SOURCES_SHARED) $(SOURCES_BINIOU) $(SOURCES_JSON) $(SOURCES_VALIDATE) \
+  $(SOURCES_RUNTIME) 
 
 DOCFILES = ag_doc ag_util
 DOCSOURCES = $(addsuffix .mli, $(DOCFILES))
@@ -177,6 +185,7 @@ really-test:
 	./atdgen -json test3j.atd
 	./atdgen test4.atd
 	./atdgen -json test4.atd -o test4j
+	./atdgen -validate -extend Test test.atd -o testv
 	ocamlfind ocamlopt -c -g test_lib.ml
 	ocamlfind ocamlc -c -g test.mli -package atdgen
 	ocamlfind ocamlopt -c -g test.ml -package atdgen
@@ -196,14 +205,16 @@ really-test:
 	ocamlfind ocamlopt -c -g test2j.ml -package atdgen
 	ocamlfind ocamlc -c -g test4j.mli -package atdgen
 	ocamlfind ocamlopt -c -g test4j.ml -package atdgen
+	ocamlfind ocamlc -c -g testv.mli -package atdgen
+	ocamlfind ocamlopt -c -g testv.ml -package atdgen
 	ocamlfind ocamlopt -c -g test_atdgen_main.ml -package atdgen
 	ocamlfind ocamlopt -o test_atdgen -g -linkpkg -package atdgen \
 		test_lib.cmx test.cmx test2.cmx testj.cmx testjstd.cmx \
-		test2j.cmx test3b.cmx test3j.cmx test_atdgen_main.cmx
+		test2j.cmx test3b.cmx test3j.cmx testv.cmx test_atdgen_main.cmx
 	mkdir -p testdoc
 	ocamlfind ocamldoc -html -d testdoc -package atdgen \
 		test.mli test2.mli testj.mli test2j.mli test3b.mli \
-		test3j.mli test4.mli test4j.mli
+		test3j.mli test4.mli test4j.mli testv.mli
 	./test_atdgen
 
 

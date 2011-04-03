@@ -33,33 +33,6 @@ let main () =
     opens := List.rev_append l !opens
   in
   let options = [
-    "-biniou",
-    Arg.Unit (fun () ->
-                set_once "serialization format" serialization_format `Biniou),
-    "
-          Write serializers and deserializers for Biniou (default).";
-
-    "-extend", Arg.String (fun s -> type_aliases := Some s),
-    "MODULE
-          Assume that all type definitions are provided by the specified
-          module unless otherwise annotated.  Type aliases are created
-          for each type, e.g.
-            type t = Module.t";
-
-    "-json",
-    Arg.Unit (fun () ->
-                set_once "serialization format" serialization_format `Json),
-    "
-          Write serializers and deserializers for JSON.";
-
-    "-nfd", Arg.Clear with_fundefs,
-    "
-          Do not dump OCaml function definitions";
-    
-    "-ntd", Arg.Clear with_typedefs,
-    "
-          Do not dump OCaml type definitions";
-
     "-o", Arg.String (fun s ->
                         let out =
                           match s with
@@ -73,22 +46,17 @@ let main () =
           `-' designates stdout and produces code of the form
             struct ... end : sig ... end";
 
-    "-open", Arg.String set_opens,
-    "MODULE1,MODULE2,...
-          List of modules to open (comma-separated or space-separated)";
-
-    "-pos-fname", Arg.String (set_once "pos-fname" pos_fname),
-    "FILENAME
-          Source file name to use for error messages
-          (default: input file name)";
-
-    "-pos-lnum", Arg.Int (set_once "pos-lnum" pos_lnum),
-    "LINENUM
-          Source line number of the first line of the input (default: 1)";
-
-    "-rec", Arg.Set all_rec,
+    "-biniou",
+    Arg.Unit (fun () ->
+                set_once "output type" serialization_format `Biniou),
     "
-          Keep OCaml type definitions mutually recursive";
+          Write serializers and deserializers for Biniou (default).";
+
+    "-json",
+    Arg.Unit (fun () ->
+                set_once "output type" serialization_format `Json),
+    "
+          Write serializers and deserializers for JSON.";
 
     "-std-json",
     Arg.Unit (fun () ->
@@ -121,6 +89,48 @@ let main () =
           for every unknown JSON field found in the input
           instead of simply skipping them.
           See also -json-strict_fields.";
+
+    "-validate",
+    Arg.Unit (fun () ->
+                set_once "output type" serialization_format `Validate),
+    "
+          Produce data validators from <ocaml validator=\"x\"> annotations
+          where x is a user-written validator to be applied on a specific
+          node.
+          This is typically used in conjunction with -extend because
+          user-written validators depend on the type definitions.";
+
+    "-extend", Arg.String (fun s -> type_aliases := Some s),
+    "MODULE
+          Assume that all type definitions are provided by the specified
+          module unless otherwise annotated. Type aliases are created
+          for each type, e.g.
+            type t = Module.t";
+
+    "-open", Arg.String set_opens,
+    "MODULE1,MODULE2,...
+          List of modules to open (comma-separated or space-separated)";
+
+    "-nfd", Arg.Clear with_fundefs,
+    "
+          Do not dump OCaml function definitions";
+    
+    "-ntd", Arg.Clear with_typedefs,
+    "
+          Do not dump OCaml type definitions";
+
+    "-pos-fname", Arg.String (set_once "pos-fname" pos_fname),
+    "FILENAME
+          Source file name to use for error messages
+          (default: input file name)";
+
+    "-pos-lnum", Arg.Int (set_once "pos-lnum" pos_lnum),
+    "LINENUM
+          Source line number of the first line of the input (default: 1)";
+
+    "-rec", Arg.Set all_rec,
+    "
+          Keep OCaml type definitions mutually recursive";
 
     "-version",
     Arg.Unit (fun () ->
@@ -164,11 +174,14 @@ Usage: %s FILE.atd" Sys.argv.(0) in
   let opens = List.rev !opens in
   let make_ocaml_files =
     match format with
-        `Biniou -> Ag_ob_emit.make_ocaml_files
+        `Biniou ->
+          Ag_ob_emit.make_ocaml_files
       | `Json ->
           Ag_oj_emit.make_ocaml_files
             ~std: !std_json
             ~unknown_field_handler: !unknown_field_handler
+      | `Validate ->
+          Ag_ov_emit.make_ocaml_files
   in
   make_ocaml_files
     ~opens

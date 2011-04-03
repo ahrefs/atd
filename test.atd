@@ -25,12 +25,14 @@ j  *  j
       ">
 
 type r = {
-  a : int;
+  a : int <ocaml validator="fun _ -> print_endline \"field a\"; true">;
   b <ocaml mutable> : bool;
   c : p;
 }
 
-type p = [ A | B of r ]
+type p =
+    [ A | B of r | C ]
+    <ocaml validator="function `A -> false | _ -> true">
 
 type p'' = int p'
 
@@ -88,14 +90,14 @@ type base = {
 
 type extended = {
   b0 <ocaml name="b0x"> : int;
-  b1 <ocaml name="b1x"> : bool;
+  b1 <ocaml name="b1x"> : bool <ocaml validator="not">;
   b2 <ocaml name="b2x"> : string;
   ?b3 <ocaml name="b3x"> : string option;
   b4 <ocaml name="b4x"> : string option;
   ~b5 <ocaml name="b5x" default="0.5"> : float;
-}
+} <ocaml validator="fun x -> print_endline \"validating record\"; x.b0x >= 0">
 
-type base_tuple = (int * float)
+type base_tuple = (int * float) <ocaml validator="fun (i, f) -> float i < f">
 type extended_tuple =
     (int 
      * float

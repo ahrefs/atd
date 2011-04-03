@@ -4,7 +4,7 @@ open Ag_error
 open Ag_mapping
 
 type o = Ag_ocaml.atd_ocaml_repr
-type v = Ag_biniou.validate_repr
+type v = Ag_validate.validate_repr
 
 type ov_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.mapping
@@ -13,10 +13,10 @@ type ob_def =
     (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.def
 
 (*
-  Translation of the types into the ocaml/biniou mapping.
+  Translation of the types into the ocaml/validate mapping.
 *)
 
-let rec mapping_of_expr (x : type_expr) : ob_mapping =
+let rec mapping_of_expr (x : type_expr) : ov_mapping =
   let v = Ag_validate.get_validator in
   match x with
       `Sum (loc, l, an) -> 
@@ -101,7 +101,6 @@ and mapping_of_variant = function
           ocaml_vdoc = doc;
 	}
       in
-      let biniou_t = `Variant in
       let arg =
 	match o with
 	    None -> None
@@ -163,7 +162,7 @@ let def_of_atd (loc, (name, param, an), x) =
                  let args = List.map (fun s -> `Tvar (loc, s)) param in
                  Some (`External
                          (loc, name, args, 
-                          `External (module_path, ext_name), `External)
+                          `External (module_path, ext_name), None)
                       )
           )
       | None -> Some (mapping_of_expr x)

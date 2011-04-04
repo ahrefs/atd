@@ -33,5 +33,5 @@ atd-manual.pdf: $(addsuffix .tex, $(TEXFILES))
 	pdflatex atd-manual
 
 clean:
-	rm -f *.aux *.toc *.log *.out *.haux *.htoc *.fls \
+	rm -f *.aux *.toc *.log *.out *.haux *.htoc *.fls *.mlx.ml \
 		atd-manual.pdf atd-manual.txt atd-manual.html

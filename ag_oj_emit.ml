@@ -206,7 +206,7 @@ let rec get_writer_name
 
     | `Tvar (loc, s) -> "write_" ^ name_of_var s
 
-    | `Name (loc, s, args) ->
+    | `Name (loc, s, args, None, None) ->
         let l = List.map (get_writer_name ~paren:true p) args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
@@ -224,12 +224,12 @@ let rec get_writer_name
 
 let get_left_writer_name p name param =
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_writer_name p (`Name (dummy_loc, name, args))
+  get_writer_name p (`Name (dummy_loc, name, args, None, None))
 
 let get_left_to_string_name p name param =
   let name_f s = "string_of_" ^ s in
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_writer_name ~name_f p (`Name (dummy_loc, name, args))
+  get_writer_name ~name_f p (`Name (dummy_loc, name, args, None, None))
 
 
 let rec get_reader_name
@@ -254,7 +254,7 @@ let rec get_reader_name
 
     | `Tvar (loc, s) -> "read_" ^ name_of_var s
 
-    | `Name (loc, s, args) ->
+    | `Name (loc, s, args, None, None) ->
         let l = List.map (get_reader_name ~paren:true p) args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
@@ -272,12 +272,12 @@ let rec get_reader_name
 
 let get_left_reader_name p name param =
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_reader_name p (`Name (dummy_loc, name, args))
+  get_reader_name p (`Name (dummy_loc, name, args, None, None))
 
 let get_left_of_string_name p name param =
   let name_f s = s ^ "_of_string" in
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_reader_name ~name_f p (`Name (dummy_loc, name, args))
+  get_reader_name ~name_f p (`Name (dummy_loc, name, args, None, None))
 
 
 let rec make_writer p (x : oj_mapping) : Ag_indent.t list =

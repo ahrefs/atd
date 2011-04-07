@@ -69,7 +69,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
 	   | "string" -> 
 	       `String (loc, `String, `String)
 	   | s ->
-	       `Name (loc, s, List.map mapping_of_expr l)
+	       `Name (loc, s, List.map mapping_of_expr l, None, None)
 	)
     | `Tvar (loc, s) ->
 	`Tvar (loc, s)

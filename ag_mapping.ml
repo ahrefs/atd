@@ -26,7 +26,7 @@ type ('a, 'b) mapping =
     | `List of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Option of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Shared of (loc * loc_id * ('a, 'b) mapping * 'a * 'b)
-    | `Name of (loc * string * ('a, 'b) mapping list)
+    | `Name of (loc * string * ('a, 'b) mapping list * 'a option * 'b option)
     | `External of (loc * string * ('a, 'b) mapping list * 'a * 'b)
     | `Tvar of (loc * string) ]
 
@@ -88,7 +88,7 @@ let loc_of_mapping x =
     | `List (loc, _, _, _)
     | `Option (loc, _, _, _)
     | `Shared (loc, _, _, _, _)
-    | `Name (loc, _, _)
+    | `Name (loc, _, _, _, _)
     | `External (loc, _, _, _, _)
     | `Tvar (loc, _) -> loc
 
@@ -114,8 +114,8 @@ let rec subst env (x : (_, _) mapping) =
         `Option (loc, subst env x, a, b)
     | `Shared (loc, id, x, a, b) ->
         `Shared (loc, id, subst env x, a, b)
-    | `Name (loc, name, args) ->
-        `Name (loc, name, List.map (subst env) args)
+    | `Name (loc, name, args, a, b) ->
+        `Name (loc, name, List.map (subst env) args, a, b)
     | `External (loc, name, args, a, b) ->
         `External (loc, name, List.map (subst env) args, a, b)
     | `Tvar (loc, s) ->
@@ -157,7 +157,7 @@ let rec find_name loc env visited name =
 
 and deref_expr env visited x =
   match x with
-      `Name (loc, name, args) ->
+      `Name (loc, name, args, None, None) ->
 	(try 
            let param, x = find_name loc env visited name in
            apply param x args

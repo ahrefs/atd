@@ -47,7 +47,7 @@ let rec extract_names_from_expr acc (x : 'a expr) =
     | `Shared (loc, _, x, _, _) ->
         extract_names_from_expr acc x
 
-    | `Name (loc, _, l) ->
+    | `Name (loc, _, l, _, _) ->
         List.fold_left extract_names_from_expr acc l
 
     | `External (loc, _, l, _, _) ->

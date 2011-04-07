@@ -356,7 +356,7 @@ let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
         `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
     | `Option (loc, x, `Option, _) ->
         `Name ("option", [ocaml_of_expr_mapping x])
-    | `Name (loc, s, l) ->
+    | `Name (loc, s, l, _, _) ->
         `Name (s, List.map ocaml_of_expr_mapping l)
     | `Tvar (loc, s) ->
         `Tvar s

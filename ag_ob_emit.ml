@@ -158,7 +158,7 @@ let get_biniou_tag (x : ob_mapping) =
 	)
     | `Option (loc, x, `Option, `Option) -> "Bi_io.num_variant_tag"
     | `Shared (loc, id, x, `Shared _, `Shared) -> "Bi_io.shared_tag"
-    | `Name (loc, s, args) -> sprintf "%s_tag" s
+    | `Name (loc, s, args, None, None) -> sprintf "%s_tag" s
     | `External (loc, s, args, `External (module_path, ext_name), `External) ->
         sprintf "%s.%s_tag" module_path ext_name
     | `Tvar (loc, s) -> sprintf "%s_tag" (name_of_var s)
@@ -255,7 +255,7 @@ let rec get_writer_name
     | `Tvar (loc, s) ->
         sprintf "write_%s%s" un (name_of_var s)
 
-    | `Name (loc, s, args) ->
+    | `Name (loc, s, args, None, None) ->
         let l = List.map get_writer_names args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
@@ -279,12 +279,14 @@ and get_writer_names x =
 
 let get_left_writer_name ~tagged name param =
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_writer_name ~tagged (`Name (dummy_loc, name, args))
+  get_writer_name ~tagged
+    (`Name (dummy_loc, name, args, None, None))
 
 let get_left_to_string_name name param =
   let name_f s = "string_of_" ^ s in
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_writer_name ~tagged:true ~name_f (`Name (dummy_loc, name, args))
+  get_writer_name ~tagged:true ~name_f
+    (`Name (dummy_loc, name, args, None, None))
 
 (*
 let make_writer_name tagged loc name args =
@@ -355,7 +357,7 @@ let rec get_reader_name
         else
           sprintf "get_%s_reader" name
 
-    | `Name (loc, s, args) ->
+    | `Name (loc, s, args, None, None) ->
         let l = List.map get_reader_names args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
@@ -378,12 +380,13 @@ and get_reader_names x =
 
 let get_left_reader_name ~tagged name param =
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_reader_name ~tagged (`Name (dummy_loc, name, args))
+  get_reader_name ~tagged (`Name (dummy_loc, name, args, None, None))
 
 let get_left_of_string_name name param =
   let name_f s = s ^ "_of_string" in
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_reader_name ~name_f ~tagged:true (`Name (dummy_loc, name, args))
+  get_reader_name ~name_f ~tagged:true
+    (`Name (dummy_loc, name, args, None, None))
 
 (*
 let make_reader_name loc name args =

@@ -6,10 +6,10 @@
 
 type t = 
     [
-    | `Line of string   (* single line (not indented) *)
-    | `Block of t list  (* indented sequence *)
-    | `Inline of t list (* in-line sequence (not indented) *)
-    | `Annot of (string * t)
+    | `Line of string        (* single line (not indented) *)
+    | `Block of t list       (* indented sequence *)
+    | `Inline of t list      (* in-line sequence (not indented) *)
+    | `Annot of (string * t) (* arbitrary annotation *)
     ]
 
 let rec strip : t -> Atd_indent.t = function

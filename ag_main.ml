@@ -204,9 +204,14 @@ let main () =
   ]
   in
   let msg = sprintf "\
-Generate OCaml serializers and deserializers.
-Default serialization format is biniou.
-Usage: %s FILE.atd" Sys.argv.(0) in
+Generate OCaml code offering:
+  * OCaml type definitions translated from ATD file (-t)
+  * serializers and deserializers for Biniou (-b)
+  * serializers and deserializers for JSON (-j)
+  * record-creating functions supporting default fields (-v)
+  * user-specified data validators (-v)
+
+Recommended usage: %s (-t|-b|-j|-v) example.atd" Sys.argv.(0) in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
   if (!std_json || !unknown_field_handler <> None) && !mode = None then

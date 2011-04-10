@@ -2,6 +2,21 @@
 
 open Printf
 
+let append l1 l2 =
+  List.flatten (List.map (fun s1 -> List.map (fun s2 -> s1 ^ s2) l2) l1)
+
+let get_file_list base =
+  append (append [base] ["_t";"_b";"_j";"_v"]) [".mli";".ml"]
+
+let print_file_list base =
+  let l = get_file_list base in
+  print_endline (String.concat " " l)
+
+let print_deps base =
+  let l = get_file_list base in
+  List.iter (fun out -> printf "%s: %s.atd\n" out base) l;
+  flush stdout
+
 let set_once varname var x =
   match !var with
       Some y ->
@@ -13,18 +28,31 @@ to incompatible values."
         
     | None ->
         var := Some x
-          
+
+type mode =
+    [ `T (* -t (type defs and create_* functions) *)
+    | `B (* -b (biniou serialization) *)
+    | `J (* -j (json serialization) *)
+    | `V (* -v (validators) *)
+    | `Dep (* -dep (print all file dependencies produced by -t -b -j -v) *)
+    | `List (* -list (list all files produced by -t -b -j -v) *)
+
+    | `Biniou (* -biniou (deprecated) *)
+    | `Json (* -json (deprecated) *)
+    | `Validate (* -validate (deprecated) *)
+    ]
 
 let main () =
   let pos_fname = ref None in
   let pos_lnum = ref None in
   let files = ref [] in
   let opens = ref [] in
-  let with_typedefs = ref true in
-  let with_fundefs = ref true in
+  let with_typedefs = ref None in
+  let with_create = ref None in
+  let with_fundefs = ref None in
   let all_rec = ref false in
   let out_prefix = ref None in
-  let serialization_format = ref None in
+  let mode = ref (None : mode option) in
   let std_json = ref false in
   let unknown_field_handler = ref None in
   let type_aliases = ref None in
@@ -33,6 +61,39 @@ let main () =
     opens := List.rev_append l !opens
   in
   let options = [
+    "-t", Arg.Unit (fun () ->
+                      set_once "output type" mode `T;
+                      set_once "no function definitions" with_fundefs false),
+    "
+          Produce files example_t.mli and example_t.ml
+          containing OCaml type definitions derived from example.atd.";
+
+    "-b", Arg.Unit (fun () -> set_once "output type" mode `B),
+    "
+          Produce files example_b.mli and example_b.ml
+          containing OCaml serializers and deserializers for the Biniou
+          data format from the specifications in example.atd.";
+
+    "-j", Arg.Unit (fun () -> set_once "output type" mode `J),
+    "
+          Produce files example_j.mli and example_j.ml
+          containing OCaml serializers and deserializers for the JSON
+          data format from the specifications in example.atd.";
+
+    "-v", Arg.Unit (fun () -> set_once "output type" mode `V),
+    "
+          Produce files example_v.mli and example_v.ml
+          containing OCaml functions for creating records and
+          validators from the specifications in example.atd.";
+
+    "-dep", Arg.Unit (fun () -> set_once "output type" mode `Dep),
+    "
+          ";
+
+    "-list", Arg.Unit (fun () -> set_once "output type" mode `List),
+    "
+          ";
+
     "-o", Arg.String (fun s ->
                         let out =
                           match s with
@@ -48,28 +109,29 @@ let main () =
 
     "-biniou",
     Arg.Unit (fun () ->
-                set_once "output type" serialization_format `Biniou),
+                set_once "output type" mode `Biniou),
     "
-          Write serializers and deserializers for Biniou (default).";
+          Produce serializers and deserializers for Biniou
+          including OCaml type definitions (default).";
 
     "-json",
     Arg.Unit (fun () ->
-                set_once "output type" serialization_format `Json),
+                set_once "output type" mode `Json),
     "
-          Write serializers and deserializers for JSON.";
+          Produce serializers and deserializers for JSON
+          including OCaml type definitions.";
 
     "-std-json",
     Arg.Unit (fun () ->
-                std_json := true;
-                set_once "serialization format" serialization_format `Json),
+                std_json := true),
     "
           Convert tuples and variants into standard JSON and
-          refuse to print NaN and infinities (implying -json).";
+          refuse to print NaN and infinities (implying -json
+          unless another mode is specified).";
 
     "-json-strict-fields",
     Arg.Unit (
       fun () ->
-        std_json := true;
         set_once "unknown field handler" unknown_field_handler
           "!Ag_util.Json.unknown_field_handler"
     ),
@@ -81,7 +143,6 @@ let main () =
     "-json-custom-fields",
     Arg.String (
       fun s ->
-        std_json := true;
         set_once "unknown field handler" unknown_field_handler s
     ),
     "FUNCTION
@@ -92,7 +153,7 @@ let main () =
 
     "-validate",
     Arg.Unit (fun () ->
-                set_once "output type" serialization_format `Validate),
+                set_once "output type" mode `Validate),
     "
           Produce data validators from <ocaml validator=\"x\"> annotations
           where x is a user-written validator to be applied on a specific
@@ -111,11 +172,13 @@ let main () =
     "MODULE1,MODULE2,...
           List of modules to open (comma-separated or space-separated)";
 
-    "-nfd", Arg.Clear with_fundefs,
+    "-nfd", Arg.Unit (fun () ->
+                        set_once "no function definitions" with_fundefs false),
     "
           Do not dump OCaml function definitions";
     
-    "-ntd", Arg.Clear with_typedefs,
+    "-ntd", Arg.Unit (fun () ->
+                        set_once "no type definitions" with_typedefs false),
     "
           Do not dump OCaml type definitions";
 
@@ -146,11 +209,26 @@ Default serialization format is biniou.
 Usage: %s FILE.atd" Sys.argv.(0) in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
-  let format =
-    match !serialization_format with
+  if (!std_json || !unknown_field_handler <> None) && !mode = None then
+    set_once "output mode" mode `Json;
+
+  let mode = 
+    match !mode with
         None -> `Biniou
       | Some x -> x
   in
+  
+  let with_create =
+    match !with_create with
+        Some x -> x
+      | None ->
+          match mode with
+              `T | `B | `J -> false
+            | `V -> true
+            | `Biniou | `Json | `Validate -> true
+            | `Dep | `List -> true (* don't care *)
+  in
+
   let atd_file =
     match !files with
 	[s] -> Some s
@@ -159,39 +237,84 @@ Usage: %s FILE.atd" Sys.argv.(0) in
 	  Arg.usage options msg;
 	  exit 1
   in
-  let ocaml_prefix =
+  let base_ocaml_prefix =
     match !out_prefix, atd_file with
 	Some x, _ -> x
       | None, Some file ->
 	  `Files (
-            if Filename.check_suffix file ".atd" then
-	      Filename.chop_extension file
-	    else
-	      file
+              if Filename.check_suffix file ".atd" then
+	        Filename.chop_extension file
+	      else
+	        file
           )
       | None, None -> `Stdout
   in
-  let opens = List.rev !opens in
-  let make_ocaml_files =
-    match format with
-        `Biniou ->
-          Ag_ob_emit.make_ocaml_files
-      | `Json ->
-          Ag_oj_emit.make_ocaml_files
-            ~std: !std_json
-            ~unknown_field_handler: !unknown_field_handler
-      | `Validate ->
-          Ag_ov_emit.make_ocaml_files
+  let base_prefix, ocaml_prefix =
+    match base_ocaml_prefix with
+        `Stdout -> None, `Stdout
+      | `Files base ->
+          Some base, `Files
+            (match mode with
+                 `T -> base ^ "_t"
+               | `B -> base ^ "_b"
+               | `J -> base ^ "_j"
+               | `V -> base ^ "_v"
+               | _ -> base
+            )
   in
-  make_ocaml_files
-    ~opens
-    ~with_typedefs: !with_typedefs
-    ~with_fundefs: !with_fundefs
-    ~all_rec: !all_rec
-    ~pos_fname: !pos_fname
-    ~pos_lnum: !pos_lnum
-    ~type_aliases: !type_aliases
-    atd_file ocaml_prefix
+  let type_aliases = 
+    match base_prefix with
+        None ->
+          (match mode with
+               `B | `J | `V -> Some "T"
+             | _ -> None
+          )
+      | Some base ->
+          match !type_aliases with
+              Some _ as x -> x
+            | None ->
+                (match mode with
+                     `B | `J | `V -> Some (String.capitalize base ^ "_t")
+                   | _ -> None
+          )
+  in
+  let get_base_prefix () =
+    match base_prefix with
+        None -> failwith "Undefined output file names"
+      | Some s -> s
+  in
+  match mode with
+      `Dep -> print_deps (get_base_prefix ())
+    | `List -> print_file_list (get_base_prefix ())
+    | `T | `B | `J | `V | `Biniou | `Json | `Validate ->
+        
+        let opens = List.rev !opens in
+        let make_ocaml_files =
+          match mode with
+              `T ->
+                Ag_ob_emit.make_ocaml_files
+            | `B | `Biniou ->
+                Ag_ob_emit.make_ocaml_files
+            | `J | `Json ->
+                Ag_oj_emit.make_ocaml_files
+                  ~std: !std_json
+                  ~unknown_field_handler: !unknown_field_handler
+            | `V | `Validate ->
+                Ag_ov_emit.make_ocaml_files
+            | _ -> assert false
+        in
+        let with_default default = function None -> default | Some x -> x in
+        
+        make_ocaml_files
+          ~opens
+          ~with_typedefs: (with_default true !with_typedefs)
+          ~with_create
+          ~with_fundefs: (with_default true !with_fundefs)
+          ~all_rec: !all_rec
+          ~pos_fname: !pos_fname
+          ~pos_lnum: !pos_lnum
+          ~type_aliases
+          atd_file ocaml_prefix
     
 let () =
   try main ()

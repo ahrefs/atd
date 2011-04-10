@@ -11,11 +11,18 @@ open Ag_ov_mapping
 
 let name_of_var s = "_" ^ s
 
-let make_ocaml_validate_intf buf defs =
+let make_ocaml_validate_intf ~with_create buf deref defs =
   List.iter (
     fun x ->
       let s = x.def_name in
       if s <> "" && s.[0] <> '_' && x.def_value <> None then (
+        if with_create then (
+          let create_record_intf, create_record_impl =
+            Ag_ocaml.make_record_creator deref x
+          in
+          bprintf buf "%s" create_record_intf;
+        );
+
         let full_name = Ag_ocaml.get_full_type_name x in
         let validator_params =
           String.concat "" (
@@ -32,7 +39,7 @@ val validate_%s :%s
 "
           s validator_params
           full_name
-          s;
+          s
       )
   ) (flatten defs)
 
@@ -363,7 +370,7 @@ let get_let ~is_rec ~is_first =
     else "let", "let"
   else "and", "and"
 
-let make_ocaml_validate_impl buf defs =
+let make_ocaml_validate_impl ~with_create buf deref defs =
   let ll =
     List.map (
       fun (is_rec, l) ->
@@ -378,7 +385,17 @@ let make_ocaml_validate_impl buf defs =
 	List.flatten validators
   ) defs
   in
-  Atd_indent.to_buffer buf (List.flatten ll)
+  Atd_indent.to_buffer buf (List.flatten ll);
+
+  if with_create then
+    List.iter (
+      fun (is_rec, l) ->
+        List.iter (
+          fun x ->
+            let intf, impl = Ag_ocaml.make_record_creator deref x in
+            Buffer.add_string buf impl
+        ) l
+    ) defs
 
 
 (*
@@ -393,8 +410,8 @@ let write_opens buf l =
   bprintf buf "\n"
 
 let make_mli
-    ~header ~opens ~with_typedefs ~with_fundefs
-    ocaml_typedefs defs =
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+    ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   write_opens buf opens;
@@ -403,12 +420,12 @@ let make_mli
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_validate_intf buf defs;
+    make_ocaml_validate_intf ~with_create buf deref defs;
   Buffer.contents buf
 
 let make_ml
-    ~header ~opens ~with_typedefs ~with_fundefs
-    ocaml_typedefs defs =
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+    ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   write_opens buf opens;
@@ -417,12 +434,13 @@ let make_ml
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_validate_impl buf defs;
+    make_ocaml_validate_impl ~with_create buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
     ~opens
     ~with_typedefs 
+    ~with_create
     ~with_fundefs
     ~all_rec
     ~pos_fname
@@ -466,11 +484,11 @@ let make_ocaml_files
     sprintf "(* Auto-generated from %s *)\n" src
   in
   let mli = 
-    make_mli ~header ~opens ~with_typedefs ~with_fundefs
-      ocaml_typedefs defs1
+    make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+      ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
   in
   let ml =
-    make_ml ~header ~opens ~with_typedefs ~with_fundefs
-      ocaml_typedefs defs
+    make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+      ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

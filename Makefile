@@ -255,6 +255,7 @@ clean:
 		benchmark test_atdgen \
 		gmon.out ocamlprof.dump \
 		test.bin test-2.bin test.json test-2.json \
+		test-std.json test-json-files.json test-json-streams.json \
 		test.ml test.mli testj.ml testj.mli \
 		test2.ml test2.mli test2j.ml test2j.mli \
                 test3b.mli test3b.ml \

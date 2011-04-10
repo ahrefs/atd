@@ -20,7 +20,7 @@ open Ag_ob_spe
 let name_of_var s = "_" ^ s
 
 
-let make_ocaml_biniou_intf buf deref defs =
+let make_ocaml_biniou_intf ~with_create buf deref defs =
   List.iter (
     fun x ->
       let s = x.def_name in
@@ -124,11 +124,12 @@ val %s_of_string :%s
           full_name
           s;
 
-        let create_record_intf, create_record_impl =
-          Ag_ocaml.make_record_creator deref x
-        in
-        bprintf buf "%s" create_record_intf;
-        bprintf buf "\n";
+        if with_create then
+          let create_record_intf, create_record_impl =
+            Ag_ocaml.make_record_creator deref x
+          in
+          bprintf buf "%s" create_record_intf;
+          bprintf buf "\n";
       )
   ) (flatten defs)
 
@@ -1442,7 +1443,7 @@ let make_shared_id_defs atd_module =
     l;
   Buffer.contents buf
 
-let make_ocaml_biniou_impl buf deref defs =
+let make_ocaml_biniou_impl ~with_create buf deref defs =
   (*bprintf buf "%s\n" (make_shared_id_defs ());*)
 
   let ll =
@@ -1468,14 +1469,15 @@ let make_ocaml_biniou_impl buf deref defs =
   in
   Atd_indent.to_buffer buf (List.flatten ll);
 
-  List.iter (
-    fun (is_rec, l) ->
-      List.iter (
-        fun x ->
-          let intf, impl = Ag_ocaml.make_record_creator deref x in
-          Buffer.add_string buf impl
-      ) l
-  ) defs
+  if with_create then
+    List.iter (
+      fun (is_rec, l) ->
+        List.iter (
+          fun x ->
+            let intf, impl = Ag_ocaml.make_record_creator deref x in
+            Buffer.add_string buf impl
+        ) l
+    ) defs
 
 
 
@@ -1491,7 +1493,7 @@ let write_opens buf l =
   bprintf buf "\n"
 
 let make_mli
-    ~header ~opens ~with_typedefs ~with_fundefs
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1501,11 +1503,11 @@ let make_mli
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_biniou_intf buf deref defs;
+    make_ocaml_biniou_intf ~with_create buf deref defs;
   Buffer.contents buf
 
 let make_ml
-    ~header ~opens ~with_typedefs ~with_fundefs
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ocaml_typedefs ocaml_impl_misc deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1516,13 +1518,14 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then (
     bprintf buf "%s\n" ocaml_impl_misc;
-    make_ocaml_biniou_impl buf deref defs
+    make_ocaml_biniou_impl ~with_create buf deref defs
   );
   Buffer.contents buf
 
 let make_ocaml_files
     ~opens
     ~with_typedefs 
+    ~with_create
     ~with_fundefs
     ~all_rec
     ~pos_fname
@@ -1568,11 +1571,11 @@ let make_ocaml_files
     sprintf "(* Auto-generated from %s *)\n" src
   in
   let mli = 
-    make_mli ~header ~opens ~with_typedefs ~with_fundefs
+    make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
   in
   let ml =
-    make_ml ~header ~opens ~with_typedefs ~with_fundefs
+    make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ocaml_typedefs ocaml_impl_misc (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

@@ -253,7 +253,10 @@ let rec map_expr (x : type_expr) : ocaml_expr =
     | `Record (loc, l, an) ->
 	let kind = get_ocaml_record an in
 	let field_prefix = get_ocaml_field_prefix an in
-	`Record (kind, List.map (map_field field_prefix) l)
+        if l = [] then
+          Ag_error.error loc "Empty record (not valid in OCaml)"
+        else
+	  `Record (kind, List.map (map_field field_prefix) l)
     | `Tuple (loc, l, an) ->
 	`Tuple (List.map (fun (_, x, _) -> map_expr x) l)
     | `List (loc, x, an) ->

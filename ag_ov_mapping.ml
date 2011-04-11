@@ -281,18 +281,18 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
 
 
 let def_of_atd is_shallow (loc, (name, param, an), x) =
-  let ocaml_predef = Ag_ocaml.get_ocaml_predef `Default an in
+  let ocaml_predef = Ag_ocaml.get_ocaml_predef `Validate an in
   let doc = Ag_doc.get_doc loc an in
   let o =
     match as_abstract x with
         Some (loc2, an2) ->
-          (match Ag_ocaml.get_ocaml_module_and_t `Default name an with
+          (match Ag_ocaml.get_ocaml_module_and_t `Validate name an with
                None -> None
-             | Some (module_path, ext_name) ->
+             | Some (types_module, main_module, ext_name) ->
                  let args = List.map (fun s -> `Tvar (loc, s)) param in
                  Some (`External
                          (loc, name, args, 
-                          `External (module_path, ext_name),
+                          `External (types_module, main_module, ext_name),
                           (Ag_validate.get_validator an2, false))
                       )
           )

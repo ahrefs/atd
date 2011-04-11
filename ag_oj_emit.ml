@@ -213,8 +213,10 @@ let rec get_writer_name
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args, `External (module_path, ext_name), `External) ->
-        let f = module_path ^ "." ^ name_f ext_name in
+    | `External (loc, s, args,
+                 `External (types_module, main_module, ext_name),
+                 `External) ->
+        let f = main_module ^ "." ^ name_f ext_name in
         let l = List.map (get_writer_name ~paren:true p) args in
         let s = String.concat " " (f :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
@@ -261,8 +263,10 @@ let rec get_reader_name
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args, `External (module_path, ext_name), `External) ->
-        let f = module_path ^ "." ^ name_f ext_name in
+    | `External (loc, s, args,
+                 `External (types_module, main_module, ext_name),
+                 `External) ->
+        let f = main_module ^ "." ^ name_f ext_name in
         let l = List.map (get_reader_name ~paren:true p) args in
         let s = String.concat " " (f :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"

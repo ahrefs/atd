@@ -54,7 +54,12 @@ type atd_ocaml_repr =
     | `Option
     | `Shared of atd_ocaml_shared
     | `Name of string
-    | `External of (string * string) (* module and type name *)
+    | `External of (string * string * string)
+        (*
+          (module providing the type,
+           module providing everything else,
+           type name)
+        *)
 
     | `Cell of atd_ocaml_field
     | `Field of atd_ocaml_field
@@ -62,7 +67,7 @@ type atd_ocaml_repr =
     | `Def of atd_ocaml_def
     ]
 
-type target = [ `Default | `Biniou | `Json ]
+type target = [ `Default | `Biniou | `Json | `Validate ]
 
 
 let ocaml_int_of_string s : atd_ocaml_int option =
@@ -135,6 +140,7 @@ let path_of_target (target : target) =
       `Default -> [ "ocaml" ]
     | `Biniou -> [ "ocaml_biniou"; "ocaml" ]
     | `Json -> [ "ocaml_json"; "ocaml" ]
+    | `Validate -> [ "ocaml_validate"; "ocaml" ]
 
 let get_ocaml_sum an =
   Atd_annot.get_field ocaml_sum_of_string `Poly ["ocaml"] "repr" an
@@ -169,7 +175,25 @@ let get_ocaml_predef target an =
 
 let get_ocaml_module target an =
   let path = path_of_target target in
-  Atd_annot.get_field (fun s -> Some (Some s)) None path "module" an
+  let o = Atd_annot.get_field (fun s -> Some (Some s)) None path "module" an in
+  match o with
+      Some s -> Some (s, s)
+    | None ->
+        let o =
+          Atd_annot.get_field (fun s -> Some (Some s)) None path "from" an
+        in
+        match o with
+            None -> None
+          | Some s ->
+              let type_module = s ^ "_t" in
+              let main_module =
+                match target with
+                    `Default -> type_module
+                  | `Biniou -> s ^ "_b"
+                  | `Json -> s ^ "_j"
+                  | `Validate -> s ^ "_v"
+              in
+              Some (type_module, main_module)
 
 let get_ocaml_t target default an =
   let path = path_of_target target in
@@ -178,8 +202,8 @@ let get_ocaml_t target default an =
 let get_ocaml_module_and_t target default_name an =
   match get_ocaml_module target an with
       None -> None
-    | Some module_path ->
-        Some (module_path, get_ocaml_t target default_name an)
+    | Some (type_module, main_module) ->
+        Some (type_module, main_module, get_ocaml_t target default_name an)
 
 
 (*
@@ -277,8 +301,8 @@ let map_def
   let define_alias =
     if is_predef || is_abstract || type_aliases <> None then
       match get_ocaml_module_and_t target s an1, type_aliases with
-          Some x, _ -> Some x
-        | None, Some module_path -> Some (module_path, s)
+          Some (types_module, main_module, s), _ -> Some (types_module, s)
+        | None, Some types_module -> Some (types_module, s)
 
         | None, None -> None
     else

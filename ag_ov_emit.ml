@@ -151,11 +151,13 @@ let rec get_validator_name
            | Some (o, true) -> assert false
         )
 
-    | `External (loc, s, args, `External (module_path, ext_name), v) ->
+    | `External (loc, s, args,
+                 `External (types_module, main_module, ext_name),
+                 v) ->
         (match v with
              (o, false) ->
                prepend_validator_s o (
-                 let f = module_path ^ "." ^ name_f ext_name in
+                 let f = main_module ^ "." ^ name_f ext_name in
                  let l = List.map (get_validator_name ~paren:true) args in
                  let s = String.concat " " (f :: l) in
                  if paren && l <> [] then "(" ^ s ^ ")"
@@ -473,7 +475,7 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ag_ocaml.ocaml_of_atd ~target:`Default ~type_aliases (head, m1) in
+    Ag_ocaml.ocaml_of_atd ~target:`Validate ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
   let header = 
     let src =

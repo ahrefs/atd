@@ -280,8 +280,12 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
 	    `Line ")";
 	  ]
 
-    | `Shared (loc, _, _, _, _) ->
-        error loc "Sharing is not supported by the validator generator"
+    | `Shared (loc, _, _, _, (v, shallow)) ->
+        if shallow then
+          opt_validator v
+        else
+          error loc "Shared values requiring validation of their children \
+                     nodes are not supported"
 
     | _ -> assert false
 

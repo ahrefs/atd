@@ -159,11 +159,11 @@ let rec mapping_of_expr
 	
     | `List (loc, x, an) ->
 	let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
-	`List (loc, mapping_of_expr is_shallow x, ocaml_t, (v an, true))
+	`List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Option (loc, x, an) ->
 	let ocaml_t = `Option in
-	`Option (loc, mapping_of_expr is_shallow x, ocaml_t, (v an, true))
+	`Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Shared (loc, x, an) ->
         let ocaml_t = `Shared (Ag_ocaml.get_ocaml_shared an) in
@@ -171,7 +171,7 @@ let rec mapping_of_expr
         if id = "" then
           error loc "bug: missing or empty share.id annotation";
         `Shared (loc, id, 
-                 mapping_of_expr is_shallow x, ocaml_t, (v an, true))
+                 mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Name (loc, (loc2, s, l), an) ->
 	(match s with

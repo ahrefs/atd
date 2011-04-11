@@ -106,6 +106,7 @@ type extended_tuple =
      * string
      * <ocaml default="[]"> : string list)
 
+type option_validation = int <ocaml validator="fun _ -> false"> option
 
 type ('x, 'y) poly = {
   fst : 'x list;

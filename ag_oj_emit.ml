@@ -25,6 +25,8 @@ type param = {
   unknown_field_handler : string option;
     (* Optional handler that takes a field name as argument
        and does something with it such as displaying a warning message. *)
+
+  force_defaults : bool;
 }
 
 
@@ -488,7 +490,7 @@ and make_record_writer p a record_kind =
               `Block (app "x");
               `Line ");"
 	    ]
-	  else if optional then
+	  else if optional && not p.force_defaults then
 	    [
               `Line (sprintf "if %s != %s then (" v (unopt ocaml_default));
               `Block (app v);
@@ -1168,12 +1170,13 @@ let get_let ~is_rec ~is_first =
   else "and", "and"
 
 let make_ocaml_json_impl
-    ~std ~unknown_field_handler ~with_create
+    ~std ~unknown_field_handler ~with_create ~force_defaults
     buf deref defs =
   let p = {
     deref = deref;
     std = std;
     unknown_field_handler = unknown_field_handler;
+    force_defaults = force_defaults;
   } in
   let ll =
     List.map (
@@ -1238,7 +1241,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ~std ~unknown_field_handler
+    ~std ~unknown_field_handler ~force_defaults
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1249,7 +1252,7 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then
     make_ocaml_json_impl
-      ~std ~unknown_field_handler ~with_create buf deref defs;
+      ~std ~unknown_field_handler ~with_create ~force_defaults buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1263,6 +1266,7 @@ let make_ocaml_files
     ~pos_fname
     ~pos_lnum
     ~type_aliases
+    ~force_defaults
     atd_file out =
   let head, m0 =
     match atd_file with
@@ -1306,7 +1310,7 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~std ~unknown_field_handler
+      ~std ~unknown_field_handler ~force_defaults
       ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

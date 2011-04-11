@@ -1537,6 +1537,7 @@ let make_ocaml_files
     ~pos_fname
     ~pos_lnum
     ~type_aliases 
+    ~force_defaults
     atd_file out =
   let head, m0 =
     match atd_file with

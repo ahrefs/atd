@@ -54,6 +54,7 @@ let main () =
   let out_prefix = ref None in
   let mode = ref (None : mode option) in
   let std_json = ref false in
+  let j_defaults = ref false in
   let unknown_field_handler = ref None in
   let type_aliases = ref None in
   let set_opens s =
@@ -121,15 +122,27 @@ let main () =
           Produce serializers and deserializers for JSON
           including OCaml type definitions.";
 
-    "-std-json",
+    "-j-std",
     Arg.Unit (fun () ->
                 std_json := true),
     "
           Convert tuples and variants into standard JSON and
-          refuse to print NaN and infinities (implying -json
+          refuse to print NaN and infinities (implying -json mode
           unless another mode is specified).";
 
-    "-json-strict-fields",
+    "-std-json",
+    Arg.Unit (fun () ->
+                std_json := true),
+    "
+          Same as -j-std.";
+
+    "-j-defaults",
+    Arg.Set j_defaults,
+    "
+          Output JSON record fields even if their value is known
+          to be the default.";
+
+    "-j-strict-fields",
     Arg.Unit (
       fun () ->
         set_once "unknown field handler" unknown_field_handler
@@ -140,7 +153,7 @@ let main () =
           found in the input instead of simply skipping them.
           The initial behavior is to raise an exception.";
 
-    "-json-custom-fields",
+    "-j-custom-fields",
     Arg.String (
       fun s ->
         set_once "unknown field handler" unknown_field_handler s
@@ -234,6 +247,15 @@ Recommended usage: %s (-t|-b|-j|-v) example.atd" Sys.argv.(0) in
             | `Dep | `List -> true (* don't care *)
   in
 
+  let force_defaults =
+    match mode with
+        `J | `Json -> !j_defaults
+      | `T 
+      | `B | `Biniou
+      | `V | `Validate 
+      | `Dep | `List -> false (* don't care *)
+  in
+
   let atd_file =
     match !files with
 	[s] -> Some s
@@ -319,6 +341,7 @@ Recommended usage: %s (-t|-b|-j|-v) example.atd" Sys.argv.(0) in
           ~pos_fname: !pos_fname
           ~pos_lnum: !pos_lnum
           ~type_aliases
+          ~force_defaults
           atd_file ocaml_prefix
     
 let () =

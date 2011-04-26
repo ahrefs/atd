@@ -177,7 +177,7 @@ really-test:
 	./atdgen test.atd
 	./atdgen test2.atd
 	./atdgen -json -extend Test \
-	  -json-custom-fields \
+	  -j-custom-fields \
  'fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)\n" s loc' \
 	  test.atd -o testj
 	./atdgen -std-json -extend Test test.atd -o testjstd

@@ -150,6 +150,10 @@ let array_of_rev_list l =
 let read_assoc_array read_item p lb =
   array_of_rev_list (read_assoc_list_rev read_item p lb)
 
+let read_until_field_value p lb =
+  Yojson.Safe.read_space p lb;
+  Yojson.Safe.read_colon p lb;
+  Yojson.Safe.read_space p lb
 
 let missing_tuple_fields len req_fields =
   let missing = 

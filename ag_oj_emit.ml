@@ -818,9 +818,7 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
             ]
           else
 	    [
-	      `Line "Yojson.Safe.read_space p lb;";
-	      `Line "Yojson.Safe.read_colon p lb;";
-	      `Line "Yojson.Safe.read_space p lb;";
+	      `Line "Ag_oj_run.read_until_field_value p lb;";
 	      `Line "let x = (";
 	      `Block [
 	        `Block (make_reader p v);
@@ -873,7 +871,17 @@ and make_record_reader p loc a record_kind =
 	      `Inline (set_bit i);
             ]
           in
-          (json_fname, expr)
+          let opt_expr =
+            if opt then
+              [
+                `Line "if not (Yojson.Safe.read_null_if_possible p lb) then (";
+                `Block expr;
+                `Line ")"
+              ]
+            else
+              expr
+          in
+          (json_fname, opt_expr)
       ) a
     in
     let int_mapping_function, int_matching =
@@ -896,9 +904,7 @@ and make_record_reader p loc a record_kind =
       `Block int_mapping_function;
       `Line "in";
       `Line "let i = Yojson.Safe.map_ident p f lb in";
-      `Line "Yojson.Safe.read_space p lb;";
-      `Line "Yojson.Safe.read_colon p lb;";
-      `Line "Yojson.Safe.read_space p lb;";
+      `Line "Ag_oj_run.read_until_field_value p lb;";
       `Line "(";
       `Block int_matching;
       `Line ");";

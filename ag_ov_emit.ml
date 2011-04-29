@@ -60,7 +60,7 @@ let get_fields a =
   in
   List.filter (
     function
-        { f_brepr = (None, shallow) }, _ -> not shallow
+        { f_brepr = (None, shallow) }, name -> not shallow
       | _ -> assert false
   ) all
 
@@ -86,6 +86,10 @@ let opt_validator_name = function
 let opt_validator = function
     None -> [ `Line "fun _ -> true" ]
   | Some s -> [ `Line s ]
+
+let opt_validator_s = function
+    None -> "(fun _ -> true)"
+  | Some s -> sprintf "( %s )" s
 
 
 let prepend_validator = function
@@ -148,7 +152,7 @@ let rec get_validator_name
         (match opt with
              None -> v1
            | Some (o, false) -> prepend_validator_s o v1
-           | Some (o, true) -> assert false
+           | Some (o, true) -> opt_validator_s o
         )
 
     | `External (loc, s, args,

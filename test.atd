@@ -97,6 +97,9 @@ type extended = {
   ~b5 <ocaml name="b5x" default="0.5"> : float;
 } <ocaml validator="fun x -> print_endline \"validating record\"; x.b0x >= 0">
 
+type val1 = { val1_x : int <ocaml validator="fun _ -> false"> }
+type val2 = { val2_x : val1 }
+
 type base_tuple = (int * float) <ocaml validator="fun (i, f) -> float i < f">
 type extended_tuple =
     (int 

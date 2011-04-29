@@ -272,6 +272,11 @@ let test_validators3 () =
   let o = Some 0 in
   check (not (Testv.validate_option_validation o))
 
+let test_validators4 () =
+  section "validators4";
+  let x = { Test.val2_x = { Test.val1_x = 0 } } in
+  check (not (Testv.validate_val2 x))
+
 let test_json_files () =
   section "json files";
   let x = Some 123 in
@@ -356,6 +361,7 @@ let all_tests = [
   test_validators1;
   test_validators2;
   test_validators3;
+  test_validators4;
   test_json_files;
   test_json_streams;
   test_raw_json;

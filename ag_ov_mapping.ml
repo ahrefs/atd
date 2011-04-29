@@ -63,6 +63,23 @@ let for_all_children f x0 =
   with Exit ->
     false
 
+(*
+  Return if an expression is shallow, i.e. it does not require to call
+  a validation function other than the one possibly given 
+  by an annotation <ocaml validator="..."> on this node.
+
+  Shallow:
+    int
+    int <ocaml validator="foo">
+    { x : int } <ocaml validator="foo">
+    t   (* where t is defined as: type t = int *)
+
+  Not shallow:
+    t   (* where t is defined as: type t = int <ocaml validator="foo"> *)
+    { x : int <ocaml validator="foo"> }
+    'a t
+    t   (* where t is defined as: type t = abstract *)
+*)
 let rec scan_expr
     (defs : (string, type_expr) Hashtbl.t)
     (visited : unit H.t)
@@ -73,32 +90,36 @@ let rec scan_expr
     H.add visited x ();
     try H.find results x
     with Not_found ->
-      for_all_children (
+      name_is_shallow defs visited results x
+      && for_all_children (
         fun x ->
           noval x
           && scan_expr defs visited results x
-          &&
-            match x with
-                `Name (loc, (loc2, name, _), _) ->
-                  (match get_def defs name with
-                       None ->
-                         (match name with
-                              "unit"
-                            | "bool"
-                            | "int"
-                            | "float"
-                            | "string" -> true
-                            | _ -> false
-                         )
-                     | Some x -> scan_expr defs visited results x
-                  )
-              | `Tvar (loc, _) -> false
-              | _ -> (* already verified in the call to scan_expr above *) true
       ) x
   )
   else
     (* neutral for the && operator *)
     true
+
+and name_is_shallow defs visited results x =
+  match x with
+      `Name (loc, (loc2, name, _), _) ->
+        (match get_def defs name with
+             None ->
+               (match name with
+                    "unit"
+                  | "bool"
+                  | "int"
+                  | "float"
+                  | "string" -> true
+                  | _ -> false
+               )
+           | Some x -> noval x && scan_expr defs visited results x
+        )
+          
+    | `Tvar (loc, _) -> false
+    | _ -> (* already verified in the call to scan_expr above *) true
+
 
 let iter f x =
   Atd_ast.fold (fun x () -> f x) x ()
@@ -113,6 +134,10 @@ let scan_top_expr
     fun x ->
       if not (H.mem results x) then (
         let b = scan_expr defs (H.create 10) results x in
+        (try
+           let b0 = H.find results x in
+           assert (b0 = b);
+         with Not_found -> ());
         H.replace results x b
       )
   ) x

@@ -759,8 +759,11 @@ let get_full_type_name x =
 let unwrap_option deref x =
   match deref x with
       `Option (_, x, _, _) -> x
-    | _ ->
-	Ag_error.error (loc_of_mapping x) "Not an option type"
+    | `Name (loc, s, _, _, _) ->
+	Ag_error.error loc ("Not an option type: " ^ s)
+    | x ->
+        Ag_error.error (loc_of_mapping x) "Not an option type"
+
 
 
 let get_implicit_ocaml_default deref x =

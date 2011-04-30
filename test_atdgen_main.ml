@@ -274,7 +274,8 @@ let test_validators3 () =
 
 let test_validators4 () =
   section "validators4";
-  let x = { Test.val2_x = { Test.val1_x = 0 } } in
+  let x = { Test.val2_x = { Test.val1_x = 0 };
+            val2_y = Some { Test.val1_x = 1 } } in
   check (not (Testv.validate_val2 x))
 
 let test_json_files () =

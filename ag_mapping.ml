@@ -157,7 +157,7 @@ let rec find_name loc env visited name =
 
 and deref_expr env visited x =
   match x with
-      `Name (loc, name, args, None, None) ->
+      `Name (loc, name, args, _, _) ->
 	(try 
            let param, x = find_name loc env visited name in
            apply param x args

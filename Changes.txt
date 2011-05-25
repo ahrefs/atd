@@ -8,6 +8,34 @@ bug = bug or security fix
 doc = major changes in the documentation
 pkg = changes in the structure of the package or in the installation procedure
 
+2011-05-xx 1.2.0: [+ui] new modes -t -b -j -v -dep -list standardizing
+                        file name and structure and simplifying the
+                        command-line
+                  [+ui] new "from" annotation for abstract types
+                        defined in modules following the _t/(_b|_j|_v)
+                        module suffix convention:
+                        type foo <ocaml from="Bar"> = abstract
+                  [+ui] all json-specific options now start with -j-
+                        and are ignored in non-json modes (old names are
+                        preserved for backward compatibility)
+                  [+ui] new validator mode (-v, -validate)
+                  [+ui] new options -j-strict-fields and
+                        -j-custom-fields for handling unknown JSON
+                        fields instead of skipping them.
+                  [+ui] new -j-defaults option that forces output of 
+                        JSON fields with default values
+                  [!!!] optional record fields now skipped if
+                        their value is null
+                  [+ui] convenience module Ag_util reading/writing
+                        channels and files
+                  [+ui] redefinition of OCaml types that are not
+                        predefined ATD types is now possible (char,
+                        int32, int64, ref, array).
+                  [bug] biniou int8 can now be read as OCaml chars.
+                        The following now works, as documented in the manual:
+                        int <ocaml repr="char"> <biniou repr="int8">
+                  [bug] empty OCaml record types now cause an error
+
 2011-02-11 1.1.1: [+ui] added renaming option for OCaml types taken
                         from other modules:
                           type foo <ocaml_biniou module="Foo" t="t"> = abstract

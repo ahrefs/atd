@@ -1,11 +1,11 @@
- 
+   
                                      
                                  atdgen
                                  ******
                 Biniou and JSON serialization for OCaml
                 ***************************************
-                             release 1.1.1
-                             *************
+                           release 1.2.0+dev
+                           *****************
                              Martin Jambon
                              =============
                              © 2010 MyLife
@@ -92,30 +92,84 @@ may reuse part of atdgen's source code.
    
 <<$ atdgen -help
 >>
-<<Generate OCaml serializers and deserializers.
-  Default serialization format is biniou.
-  Usage: ./atdgen FILE.atd
-    -biniou 
-            Write serializers and deserializers for Biniou (default).
-    -extend MODULE
-            Assume that all type definitions are provided by the
-specified
-            module unless otherwise annotated.  Type aliases are created
-            for each type, e.g.
-              type t = Module.t
-    -json 
-            Write serializers and deserializers for JSON.
-    -nfd 
-            Do not dump OCaml function definitions
-    -ntd 
-            Do not dump OCaml type definitions
+<<Generate OCaml code offering:
+    * OCaml type definitions translated from ATD file (-t)
+    * serializers and deserializers for Biniou (-b)
+    * serializers and deserializers for JSON (-j)
+    * record-creating functions supporting default fields (-v)
+    * user-specified data validators (-v)
+  
+  Recommended usage: ./atdgen (-t|-b|-j|-v) example.atd
+    -t 
+            Produce files example_t.mli and example_t.ml
+            containing OCaml type definitions derived from example.atd.
+    -b 
+            Produce files example_b.mli and example_b.ml
+            containing OCaml serializers and deserializers for the
+Biniou
+            data format from the specifications in example.atd.
+    -j 
+            Produce files example_j.mli and example_j.ml
+            containing OCaml serializers and deserializers for the JSON
+            data format from the specifications in example.atd.
+    -v 
+            Produce files example_v.mli and example_v.ml
+            containing OCaml functions for creating records and
+            validators from the specifications in example.atd.
+    -dep 
+            
+    -list 
+            
     -o [ PREFIX | - ]
             Use this prefix for the generated files, e.g. 'foo/bar' for
             foo/bar.ml and foo/bar.mli.
             `-' designates stdout and produces code of the form
               struct ... end : sig ... end
+    -biniou 
+            Produce serializers and deserializers for Biniou
+            including OCaml type definitions (default).
+    -json 
+            Produce serializers and deserializers for JSON
+            including OCaml type definitions.
+    -j-std 
+            Convert tuples and variants into standard JSON and
+            refuse to print NaN and infinities (implying -json mode
+            unless another mode is specified).
+    -std-json 
+            Same as -j-std.
+    -j-defaults 
+            Output JSON record fields even if their value is known
+            to be the default.
+    -j-strict-fields 
+            Call !Ag_util.Json.unknown_field_handler for every unknown
+JSON field
+            found in the input instead of simply skipping them.
+            The initial behavior is to raise an exception.
+    -j-custom-fields FUNCTION
+            Call the given function of type (string -> unit) 
+            for every unknown JSON field found in the input
+            instead of simply skipping them.
+            See also -json-strict_fields.
+    -validate 
+            Produce data validators from <ocaml validator="x">
+annotations
+            where x is a user-written validator to be applied on a
+specific
+            node.
+            This is typically used in conjunction with -extend because
+            user-written validators depend on the type definitions.
+    -extend MODULE
+            Assume that all type definitions are provided by the
+specified
+            module unless otherwise annotated. Type aliases are created
+            for each type, e.g.
+              type t = Module.t
     -open MODULE1,MODULE2,...
             List of modules to open (comma-separated or space-separated)
+    -nfd 
+            Do not dump OCaml function definitions
+    -ntd 
+            Do not dump OCaml type definitions
     -pos-fname FILENAME
             Source file name to use for error messages
             (default: input file name)
@@ -124,9 +178,6 @@ specified
 1)
     -rec 
             Keep OCaml type definitions mutually recursive
-    -std-json 
-            Convert tuples and variants into standard JSON and
-            refuse to print NaN and infinities (implying -json).
     -version 
             Print the version identifier of atdgen and exit.
     -help  Display this list of options
@@ -1421,7 +1472,7 @@ enough
   A library named atdgen is installed by the standard installation
 process. Only a fraction of it is officially supported and documented.
 The documentation is available online at 
-http://oss.wink.com/atdgen/atdgen-1.1.1/odoc/index.html.  
+http://oss.wink.com/atdgen/atdgen-1.2.0+dev/odoc/index.html.  
 -----------------------------------------------------------------------
   
    This document was translated from LaTeX by HeVeA (5).

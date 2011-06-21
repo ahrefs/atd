@@ -1,9 +1,7 @@
-   
+ 
                                      
-                                 atdgen
-                                 ******
-                Biniou and JSON serialization for OCaml
-                ***************************************
+                        Atdgen reference manual
+                        ***********************
                            release 1.2.0+dev
                            *****************
                              Martin Jambon
@@ -189,7 +187,8 @@ specified
 2.2  Atdgen-biniou example
 ==========================
   
-<<$ atdgen -biniou example.atd
+<<$ atdgen -t example.atd
+  $ atdgen -b example.atd
 >>
   
   Input file example.atd:
@@ -213,16 +212,16 @@ specified
     day : int;
   }
 >>
-  produces the interface file example.mli and the implementation file
-example.ml. This is example.mli:
+  is used to produce files example_t.mli, example_t.ml, example_b.mli
+and example_b.ml. This is example_b.mli:
 <<(* Auto-generated from "example.atd" *)
   
   
-  type date = { year: int; month: int; day: int }
+  type date = Example_t.date = { year: int; month: int; day: int }
   
-  type gender = [ `Female | `Male ]
+  type gender = Example_t.gender
   
-  type profile = {
+  type profile = Example_t.profile = {
     id: string;
     email: string;
     email_validated: bool;
@@ -269,14 +268,6 @@ example.ml. This is example.mli:
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
   
-  val create_date :
-    year: int ->
-    month: int ->
-    day: int ->
-    unit -> date
-    (** Create a record of type {!date}. *)
-  
-  
   (* Writers for type gender *)
   
   val gender_tag : Bi_io.node_tag
@@ -312,7 +303,6 @@ example.ml. This is example.mli:
     (** Deserialize a biniou value of type {!gender}.
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
-  
   
   (* Writers for type profile *)
   
@@ -350,27 +340,23 @@ example.ml. This is example.mli:
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
   
-  val create_profile :
-    id: string ->
-    email: string ->
-    ?email_validated: bool ->
-    name: string ->
-    ?real_name: string ->
-    ?about_me: string list ->
-    ?gender: gender ->
-    ?date_of_birth: date ->
-    unit -> profile
-    (** Create a record of type {!profile}. *)
-  
-  
 >>
   
+  Module Example_t (files example_t.mli and example_t.ml) contains all
+OCaml type definitions that can be used independently from Biniou or
+JSON.
+  For convenience, these definitions are also made available from the 
+Example_b module whose interface is shown above. Any type name, record
+field name or variant constructor can be referred to using either
+module. For example, the OCaml expressions ((x : Example_t.date) :
+Example_b.date) and x.Example_t.year = x.Example_b.year are both valid.
   
 
 2.3  Atdgen-json example
 ========================
   
-<<$ atdgen -json example.atd
+<<$ atdgen -t example.atd
+  $ atdgen -j example.atd
 >>
   
   Input file example.atd:
@@ -394,16 +380,16 @@ example.ml. This is example.mli:
     day : int;
   }
 >>
-  produces the interface file example.mli and the implementation file
-example.ml. This is example.mli:
+  is used to produce files example_t.mli, example_t.ml, example_j.mli
+and example_j.ml. This is example_j.mli:
 <<(* Auto-generated from "example.atd" *)
   
   
-  type date = { year: int; month: int; day: int }
+  type date = Example_t.date = { year: int; month: int; day: int }
   
-  type gender = [ `Female | `Male ]
+  type gender = Example_t.gender
   
-  type profile = {
+  type profile = Example_t.profile = {
     id: string;
     email: string;
     email_validated: bool;
@@ -414,26 +400,6 @@ example.ml. This is example.mli:
     date_of_birth: date option
   }
   
-  val write_date :
-    Bi_outbuf.t -> date -> unit
-    (** Output a JSON value of type {!date}. *)
-  
-  val string_of_date :
-    ?len:int -> date -> string
-    (** Serialize a value of type {!date}
-        into a JSON string.
-        @param len specifies the initial length 
-                   of the buffer used internally.
-                   Default: 1024. *)
-  
-  val read_date :
-    Yojson.Safe.lexer_state -> Lexing.lexbuf -> date
-    (** Input JSON data of type {!date}. *)
-  
-  val date_of_string :
-    string -> date
-    (** Deserialize JSON data of type {!date}. *)
-  
   val create_date :
     year: int ->
     month: int ->
@@ -441,47 +407,13 @@ example.ml. This is example.mli:
     unit -> date
     (** Create a record of type {!date}. *)
   
+  val validate_date :
+    date -> bool
+    (** Validate a value of type {!date}. *)
   
-  val write_gender :
-    Bi_outbuf.t -> gender -> unit
-    (** Output a JSON value of type {!gender}. *)
-  
-  val string_of_gender :
-    ?len:int -> gender -> string
-    (** Serialize a value of type {!gender}
-        into a JSON string.
-        @param len specifies the initial length 
-                   of the buffer used internally.
-                   Default: 1024. *)
-  
-  val read_gender :
-    Yojson.Safe.lexer_state -> Lexing.lexbuf -> gender
-    (** Input JSON data of type {!gender}. *)
-  
-  val gender_of_string :
-    string -> gender
-    (** Deserialize JSON data of type {!gender}. *)
-  
-  
-  val write_profile :
-    Bi_outbuf.t -> profile -> unit
-    (** Output a JSON value of type {!profile}. *)
-  
-  val string_of_profile :
-    ?len:int -> profile -> string
-    (** Serialize a value of type {!profile}
-        into a JSON string.
-        @param len specifies the initial length 
-                   of the buffer used internally.
-                   Default: 1024. *)
-  
-  val read_profile :
-    Yojson.Safe.lexer_state -> Lexing.lexbuf -> profile
-    (** Input JSON data of type {!profile}. *)
-  
-  val profile_of_string :
-    string -> profile
-    (** Deserialize JSON data of type {!profile}. *)
+  val validate_gender :
+    gender -> bool
+    (** Validate a value of type {!gender}. *)
   
   val create_profile :
     id: string ->
@@ -495,9 +427,20 @@ example.ml. This is example.mli:
     unit -> profile
     (** Create a record of type {!profile}. *)
   
+  val validate_profile :
+    profile -> bool
+    (** Validate a value of type {!profile}. *)
   
 >>
   
+  Module Example_t (files example_t.mli and example_t.ml) contains all
+OCaml type definitions that can be used independently from Biniou or
+JSON.
+  For convenience, these definitions are also made available from the 
+Example_j module whose interface is shown above. Any type name, record
+field name or variant constructor can be referred to using either
+module. For example, the OCaml expressions ((x : Example_t.date) :
+Example_j.date) and x.Example_t.year = x.Example_j.year are both valid.
   
 
 3  Default mapping
@@ -552,19 +495,17 @@ variants
    - The optional values of record fields denoted in ATD by a question
    mark are unwrapped or omitted in both biniou and JSON. 
    - JSON option values and JSON variants are represented in standard
-   JSON (atdgen -json -std-json) by a single string e.g. "None" or a
-   pair in which the  first element is the name (constructor) e.g.
-   ["Some", 1234]. Yojson also provides a specific syntax for variants
-   using edgy brackets: <"None">, <"Some": 1234>. 
+   JSON (atdgen -j -j-std) by a single string e.g. "None" or a pair in
+   which the  first element is the name (constructor) e.g. ["Some",
+   1234]. Yojson also provides a specific syntax for variants using edgy
+   brackets: <"None">, <"Some": 1234>. 
    - Biniou field names and variant names other than the option types 
    use the hash of the ATD field or variant name and cannot currently be
    overridden by annotations. 
-   - JSON tuples in standard JSON (atdgen -json -std-json) use the array
+   - JSON tuples in standard JSON (atdgen -j -j-std) use the array
    notation e.g.  ["ABC", 123]. Yojson also provides a specific syntax
    for tuples using parentheses, e.g. ("ABC", 123). 
-   - Types defined as abstract must be actually defined in another
-   module. Reader and writer functions must be provided by opening one
-   or several modules (atdgen -json -open Foo,Bar). 
+   - Types defined as abstract are defined in another module. 
   
   
 
@@ -1081,7 +1022,7 @@ take advantage of documentation generators such as javadoc or ocamldoc.
   Example: The following is a full example demonstrating the use of doc
 annotations but also shows the full interface file genealogy.mli
 generated using:
-<<$ atdgen -biniou genealogy.atd
+<<$ atdgen -b genealogy.atd
 >>
   
   Input file genealogy.atd:
@@ -1147,8 +1088,8 @@ child">
     ]
       <doc text="Gender, definition depending on the context">
 >>
-  translates using atdgen -biniou genealogy.atd into the following OCaml
-interface file genealogy.mli with ocamldoc-compliant comments:
+  translates using atdgen -b genealogy.atd into the following OCaml
+interface file genealogy_b.mli with ocamldoc-compliant comments:
 <<(* Auto-generated from "genealogy.atd" *)
   
   
@@ -1170,7 +1111,7 @@ the
   \}
   v}
   *)
-  type filiation_type = {
+  type filiation_type = Genealogy_t.filiation_type = {
     genetic: bool option;
     pregnancy: bool option;
     raised_from_birth: bool option;
@@ -1186,19 +1127,19 @@ persons
 enough
     evidence to support it.
   *)
-  type person_id = int
+  type person_id = Genealogy_t.person_id
   
   (** Connection between parent or primary caretaker and child *)
-  type filiation = {
+  type filiation = Genealogy_t.filiation = {
     parent: person_id;
     child: person_id;
     filiation_type: filiation_type
   }
   
   (** Gender, definition depending on the context *)
-  type gender = [ `F (** female *) | `M (** male *) ]
+  type gender = Genealogy_t.gender
   
-  type person = {
+  type person = Genealogy_t.person = {
     person_id: person_id;
     name: string;
     gender: gender list;
@@ -1206,7 +1147,10 @@ enough
       (** Biological gender actually used for procreating *)
   }
   
-  type tree = { members: person list; filiations: filiation list }
+  type tree = Genealogy_t.tree = {
+    members: person list;
+    filiations: filiation list
+  }
   
   (* Writers for type filiation_type *)
   
@@ -1244,17 +1188,6 @@ enough
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
   
-  val create_filiation_type :
-    ?genetic: bool ->
-    ?pregnancy: bool ->
-    ?raised_from_birth: bool ->
-    ?raised: bool ->
-    ?stepchild: bool ->
-    ?adopted: bool ->
-    unit -> filiation_type
-    (** Create a record of type {!filiation_type}. *)
-  
-  
   (* Writers for type person_id *)
   
   val person_id_tag : Bi_io.node_tag
@@ -1290,7 +1223,6 @@ enough
     (** Deserialize a biniou value of type {!person_id}.
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
-  
   
   (* Writers for type filiation *)
   
@@ -1328,14 +1260,6 @@ enough
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
   
-  val create_filiation :
-    parent: person_id ->
-    child: person_id ->
-    filiation_type: filiation_type ->
-    unit -> filiation
-    (** Create a record of type {!filiation}. *)
-  
-  
   (* Writers for type gender *)
   
   val gender_tag : Bi_io.node_tag
@@ -1371,7 +1295,6 @@ enough
     (** Deserialize a biniou value of type {!gender}.
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
-  
   
   (* Writers for type person *)
   
@@ -1409,15 +1332,6 @@ enough
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
   
-  val create_person :
-    person_id: person_id ->
-    name: string ->
-    ?gender: gender list ->
-    ?biological_gender: gender ->
-    unit -> person
-    (** Create a record of type {!person}. *)
-  
-  
   (* Writers for type tree *)
   
   val tree_tag : Bi_io.node_tag
@@ -1453,13 +1367,6 @@ enough
     (** Deserialize a biniou value of type {!tree}.
         @param pos specifies the position where 
                    reading starts. Default: 0. *)
-  
-  val create_tree :
-    members: person list ->
-    filiations: filiation list ->
-    unit -> tree
-    (** Create a record of type {!tree}. *)
-  
   
 >>
   

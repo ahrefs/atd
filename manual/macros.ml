@@ -69,6 +69,11 @@ let shell s =
   print (Buffer.contents buf); (* no escaping! *)
   print "\\end{verbatim}"
 
+let suffix_of_output_type = function
+    `Types -> "_t"
+  | `Biniou -> "_b"
+  | `Json -> "_j"
+  | `Validators -> "_v"
 
 let check_atdgen ?prefix output_type s =
   let fn =
@@ -77,8 +82,9 @@ let check_atdgen ?prefix output_type s =
       | Some s -> s ^ ".atd"
   in
   let prefix = Filename.chop_extension fn in
-  let mli = prefix ^ ".mli" in
-  let ml = prefix ^ ".ml" in
+  let suffix = suffix_of_output_type output_type in
+  let mli = prefix ^ suffix ^ ".mli" in
+  let ml = prefix ^ suffix ^ ".ml" in
   let oc = open_out fn in
   let finally () =
     close_out_noerr oc;
@@ -92,8 +98,10 @@ let check_atdgen ?prefix output_type s =
     let cmd =
       sprintf "../atdgen %s %s"
         (match output_type with
-             `Biniou -> "-biniou"
-           | `Json -> "-json")
+             `Types -> "-t"
+           | `Biniou -> "-b"
+           | `Json -> "-j"
+           | `Validators -> "-v")
         fn
     in
     match Sys.command cmd with
@@ -145,11 +153,17 @@ let print_atdgen_mli ?prefix ot msg s =
   print_ocaml mli
 
 
+let atdgen_types_mli ?prefix msg =
+  Camlmix.print_with (print_atdgen_mli ?prefix `Types msg)
+
 let atdgen_biniou_mli ?prefix msg =
   Camlmix.print_with (print_atdgen_mli ?prefix `Biniou msg)
 
 let atdgen_json_mli ?prefix msg =
   Camlmix.print_with (print_atdgen_mli ?prefix `Json msg)
+
+let atdgen_json_mli ?prefix msg =
+  Camlmix.print_with (print_atdgen_mli ?prefix `Validators msg)
 
 
 let current_annot_section = ref ""

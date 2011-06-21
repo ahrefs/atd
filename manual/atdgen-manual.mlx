@@ -17,8 +17,7 @@
 
 \usepackage{booktabs}
 
-\title{\texttt{atdgen}\\
-\textsc{Biniou and JSON serialization for OCaml}\\
+\title{Atdgen reference manual\\
 release ##= version ##}
 \author{Martin Jambon\\
 $\copyright$ 2010 MyLife}

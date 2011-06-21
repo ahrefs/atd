@@ -46,16 +46,19 @@ $ atdgen -help
 \subsection{Atdgen-biniou example}
 
 \begin{verbatim}
-$ atdgen -biniou example.atd
+$ atdgen -t example.atd
+$ atdgen -b example.atd
 \end{verbatim}
 %$
 
 Input file \texttt{example.atd}:
 
-## atdgen_biniou_mli ~prefix:"example" "produces
- the interface file \\texttt{example.mli} and
- the implementation file \\texttt{example.ml}.
- This is \\texttt{example.mli}:" ##
+## atdgen_biniou_mli ~prefix:"example" "is used to produce
+ files \\texttt{example\\_t.mli},
+ \\texttt{example\\_t.ml},
+ \\texttt{example\\_b.mli} and
+ \\texttt{example\\_b.ml}.
+ This is \\texttt{example\\_b.mli}:" ##
 type profile = {
   id : string;
   email : string;
@@ -75,20 +78,35 @@ type date = {
   day : int;
 }
 ## () ##
+
+Module \texttt{Example\_t} (files \texttt{example\_t.mli} and
+\texttt{example\_t.ml}) contains all OCaml type definitions that
+can be used independently from Biniou or JSON.
+
+For convenience, these definitions are also made available from the 
+\texttt{Example\_b} module whose interface is shown above.
+Any type name, record field name or variant constructor can be
+referred to using either module. For example, the OCaml
+expressions \texttt{((x : Example\_t.date) : Example\_b.date)}
+and \texttt{x.Example\_t.year = x.Example\_b.year} are both valid.
+
 
 \subsection{Atdgen-json example}
 
 \begin{verbatim}
-$ atdgen -json example.atd
+$ atdgen -t example.atd
+$ atdgen -j example.atd
 \end{verbatim}
 %$
 
 Input file \texttt{example.atd}:
 
-## atdgen_json_mli ~prefix:"example" "produces
- the interface file \\texttt{example.mli} and
- the implementation file \\texttt{example.ml}.
- This is \\texttt{example.mli}:" ##
+## atdgen_json_mli ~prefix:"example" "is used to produce
+ files \\texttt{example\\_t.mli},
+ \\texttt{example\\_t.ml},
+ \\texttt{example\\_j.mli} and
+ \\texttt{example\\_j.ml}.
+ This is \\texttt{example\\_j.mli}:" ##
 type profile = {
   id : string;
   email : string;
@@ -108,6 +126,17 @@ type date = {
   day : int;
 }
 ## () ##
+
+Module \texttt{Example\_t} (files \texttt{example\_t.mli} and
+\texttt{example\_t.ml}) contains all OCaml type definitions that
+can be used independently from Biniou or JSON.
+
+For convenience, these definitions are also made available from the 
+\texttt{Example\_j} module whose interface is shown above.
+Any type name, record field name or variant constructor can be
+referred to using either module. For example, the OCaml
+expressions \texttt{((x : Example\_t.date) : Example\_j.date)}
+and \texttt{x.Example\_t.year = x.Example\_j.year} are both valid.
 
 
 \section{Default mapping}
@@ -150,7 +179,7 @@ Notes:
 \item The optional values of record fields denoted in ATD by a
   question mark are unwrapped or omitted in both biniou and JSON.
 \item JSON option values and JSON variants are represented in standard
-  JSON ({\tt atdgen -json -std-json}) by a single string e.g. {\tt "None"}
+  JSON ({\tt atdgen -j -j-std}) by a single string e.g. {\tt "None"}
   or a pair in which the 
   first element is the name (constructor) e.g. {\tt ["Some", 1234]}.
   Yojson also provides a specific syntax for variants using edgy
@@ -158,14 +187,13 @@ Notes:
 \item Biniou field names and variant names other than the option types 
   use the hash of the ATD field or variant name and cannot currently
   be overridden by annotations.
-\item JSON tuples in standard JSON ({\tt atdgen -json -std-json}) use the
+\item JSON tuples in standard JSON ({\tt atdgen -j -j-std}) use the
   array notation e.g. 
   {\tt ["ABC", 123]}.
   Yojson also provides a specific syntax for tuples using parentheses,
   e.g. {\tt ("ABC", 123)}.
-\item Types defined as {\tt abstract} must be actually defined in
-  another module. Reader and writer functions must be provided
-  by opening one or several modules ({\tt atdgen -json -open Foo,Bar}).
+\item Types defined as {\tt abstract} are defined in
+  another module.
 \end{itemize}
 
 
@@ -728,16 +756,16 @@ ocamldoc.
 file \texttt{genealogy.mli} generated using:
 
 \begin{verbatim}
-$ atdgen -biniou genealogy.atd
+$ atdgen -b genealogy.atd
 \end{verbatim}
 %$
 
 Input file \texttt{genealogy.atd}:
 
 ## atdgen_biniou_mli ~prefix:"genealogy"
-     "translates using \\texttt{atdgen -biniou genealogy.atd}
+     "translates using \\texttt{atdgen -b genealogy.atd}
       into the following OCaml interface
-      file \\texttt{genealogy.mli} with ocamldoc-compliant comments:" ##
+      file \\texttt{genealogy\_b.mli} with ocamldoc-compliant comments:" ##
 <doc text="Type definitions for family trees">
 
 type tree = {

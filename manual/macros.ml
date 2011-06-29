@@ -107,8 +107,9 @@ let check_atdgen ?prefix output_type s =
     match Sys.command cmd with
         0 ->
           let mli_data = file_contents mli in
+          let ml_data = file_contents ml in
           finally ();
-          mli_data
+          mli_data, ml_data
       | n ->
           eprintf  "\
 -- File %s --
@@ -147,10 +148,16 @@ let atdgen = atdgen_biniou
 
 
 let print_atdgen_mli ?prefix ot msg s =
-  let mli = check_atdgen ?prefix ot s in
+  let mli, ml = check_atdgen ?prefix ot s in
   print_atd s;
   print msg;
   print_ocaml mli
+
+let print_atdgen_ml ?prefix ot msg s =
+  let mli, ml = check_atdgen ?prefix ot s in
+  print_atd s;
+  print msg;
+  print_ocaml ml
 
 
 let atdgen_types_mli ?prefix msg =
@@ -162,8 +169,11 @@ let atdgen_biniou_mli ?prefix msg =
 let atdgen_json_mli ?prefix msg =
   Camlmix.print_with (print_atdgen_mli ?prefix `Json msg)
 
-let atdgen_json_mli ?prefix msg =
+let atdgen_validate_mli ?prefix msg =
   Camlmix.print_with (print_atdgen_mli ?prefix `Validators msg)
+
+let atdgen_validate_ml ?prefix msg =
+  Camlmix.print_with (print_atdgen_ml ?prefix `Validators msg)
 
 
 let current_annot_section = ref ""

@@ -138,6 +138,34 @@ referred to using either module. For example, the OCaml
 expressions \texttt{((x : Example\_t.date) : Example\_j.date)}
 and \texttt{x.Example\_t.year = x.Example\_j.year} are both valid.
 
+\subsection{Validator example}
+
+\begin{verbatim}
+$ atdgen -t example.atd
+$ atdgen -v example.atd
+\end{verbatim}
+
+Input file \texttt{example.atd}:
+
+## atdgen_validate_ml ~prefix:"example" "is used to produce
+ files \\texttt{example\\_t.mli},
+ \\texttt{example\\_t.ml},
+ \\texttt{example\\_v.mli} and
+ \\texttt{example\\_v.ml}.
+ This is \\texttt{example\\_v.ml}, showing how the user-specified
+ validators are used:" ##
+type month = int <ocaml validator="fun x -> x >= 1 && x <= 12">
+type day = int <ocaml validator="fun x -> x >= 1 && x <= 31">
+
+type date = {
+  year : int;
+  month : month;
+  day : day;
+}
+  <ocaml validator="Date_util.validate_date">
+## () ##
+
+
 
 \section{Default mapping}
 

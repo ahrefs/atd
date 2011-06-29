@@ -21,6 +21,7 @@ Contents
       - 2.1  Command-line help 
       - 2.2  Atdgen-biniou example 
       - 2.3  Atdgen-json example 
+      - 2.4  Validator example 
   
    - 3  Default mapping 
    - 4  ATD Annotations 
@@ -401,36 +402,65 @@ and example_j.ml. This is example_j.mli:
     date_of_birth: date option
   }
   
-  val create_date :
-    year: int ->
-    month: int ->
-    day: int ->
-    unit -> date
-    (** Create a record of type {!date}. *)
+  val write_date :
+    Bi_outbuf.t -> date -> unit
+    (** Output a JSON value of type {!date}. *)
   
-  val validate_date :
-    date -> bool
-    (** Validate a value of type {!date}. *)
+  val string_of_date :
+    ?len:int -> date -> string
+    (** Serialize a value of type {!date}
+        into a JSON string.
+        @param len specifies the initial length 
+                   of the buffer used internally.
+                   Default: 1024. *)
   
-  val validate_gender :
-    gender -> bool
-    (** Validate a value of type {!gender}. *)
+  val read_date :
+    Yojson.Safe.lexer_state -> Lexing.lexbuf -> date
+    (** Input JSON data of type {!date}. *)
   
-  val create_profile :
-    id: string ->
-    email: string ->
-    ?email_validated: bool ->
-    name: string ->
-    ?real_name: string ->
-    ?about_me: string list ->
-    ?gender: gender ->
-    ?date_of_birth: date ->
-    unit -> profile
-    (** Create a record of type {!profile}. *)
+  val date_of_string :
+    string -> date
+    (** Deserialize JSON data of type {!date}. *)
   
-  val validate_profile :
-    profile -> bool
-    (** Validate a value of type {!profile}. *)
+  val write_gender :
+    Bi_outbuf.t -> gender -> unit
+    (** Output a JSON value of type {!gender}. *)
+  
+  val string_of_gender :
+    ?len:int -> gender -> string
+    (** Serialize a value of type {!gender}
+        into a JSON string.
+        @param len specifies the initial length 
+                   of the buffer used internally.
+                   Default: 1024. *)
+  
+  val read_gender :
+    Yojson.Safe.lexer_state -> Lexing.lexbuf -> gender
+    (** Input JSON data of type {!gender}. *)
+  
+  val gender_of_string :
+    string -> gender
+    (** Deserialize JSON data of type {!gender}. *)
+  
+  val write_profile :
+    Bi_outbuf.t -> profile -> unit
+    (** Output a JSON value of type {!profile}. *)
+  
+  val string_of_profile :
+    ?len:int -> profile -> string
+    (** Serialize a value of type {!profile}
+        into a JSON string.
+        @param len specifies the initial length 
+                   of the buffer used internally.
+                   Default: 1024. *)
+  
+  val read_profile :
+    Yojson.Safe.lexer_state -> Lexing.lexbuf -> profile
+    (** Input JSON data of type {!profile}. *)
+  
+  val profile_of_string :
+    string -> profile
+    (** Deserialize JSON data of type {!profile}. *)
   
 >>
   
@@ -442,6 +472,68 @@ Example_j module whose interface is shown above. Any type name, record
 field name or variant constructor can be referred to using either
 module. For example, the OCaml expressions ((x : Example_t.date) :
 Example_j.date) and x.Example_t.year = x.Example_j.year are both valid.
+  
+
+2.4  Validator example
+======================
+  
+<<$ atdgen -t example.atd
+  $ atdgen -v example.atd
+>>
+  
+  Input file example.atd:
+<<
+  type month = int <ocaml validator="fun x -> x >= 1 && x <= 12">
+  type day = int <ocaml validator="fun x -> x >= 1 && x <= 31">
+  
+  type date = {
+    year : int;
+    month : month;
+    day : day;
+  }
+    <ocaml validator="Date_util.validate_date">
+>>
+  is used to produce files example_t.mli, example_t.ml, example_v.mli
+and example_v.ml. This is example_v.ml, showing how the user-specified
+validators are used:
+<<(* Auto-generated from "example.atd" *)
+  
+  
+  type month = Example_t.month
+  
+  type day = Example_t.day
+  
+  type date = Example_t.date = { year: int; month: month; day: day }
+  
+  let validate_month = (
+    fun x -> x >= 1 && x <= 12
+  )
+  let validate_day = (
+    fun x -> x >= 1 && x <= 31
+  )
+  let validate_date = (
+    fun x ->
+      ( Date_util.validate_date ) x &&
+      (
+        validate_month
+      ) x.month
+      &&
+      (
+        validate_day
+      ) x.day
+  )
+  let create_date 
+    ~year
+    ~month
+    ~day
+    () =
+    {
+      year = year;
+      month = month;
+      day = day;
+    }
+>>
+  
   
 
 3  Default mapping

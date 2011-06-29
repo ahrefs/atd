@@ -425,7 +425,45 @@ type point = (int * int * <ocaml default="0"> : int)
 ## () ##
 
 
+## annot_field "from" ##
+
+\annotposition left-hand side of a type definition, after the type name
+
+\annotvalues OCaml module name without the \texttt{\_t}, \texttt{\_b},
+\texttt{\_j} or \texttt{\_v} 
+suffix. This can be also seen as the name of the original ATD file,
+without the \texttt{.atd} extension and capitalized like an OCaml
+module name.
+
+\annotsemantics specifies the base name of the OCaml modules
+where the type and values coming with that type are defined.
+
+It is useful for ATD types defined as 
+\texttt{abstract} and for types annotated as predefined using 
+the annotation \texttt{<ocaml predef>}.
+In both cases, the missing definitions must be provided by
+modules composed of the base name and the standard suffix assumed by
+atdgen which is
+\texttt{\_t}, \texttt{\_b},
+\texttt{\_j} or \texttt{\_v}.
+
+\annotexample
+First input file \texttt{part1.atd}:
+## atdgen () ##
+type point = { x : int; y : int }
+## () ##
+Second input file \texttt{part2.atd} depending on the first one:
+## atdgen () ##
+type point <ocaml from="Part1"> = abstract
+type points = point list
+## () ##
+
+
 ## annot_field "module" ##
+
+In most cases since atdgen 1.2.0
+\texttt{module} annotations are deprecated in favor of \texttt{from}
+annotations previously described.
 
 \annotposition left-hand side of a type definition, after the type name
 
@@ -765,7 +803,7 @@ Input file \texttt{genealogy.atd}:
 ## atdgen_biniou_mli ~prefix:"genealogy"
      "translates using \\texttt{atdgen -b genealogy.atd}
       into the following OCaml interface
-      file \\texttt{genealogy\_b.mli} with ocamldoc-compliant comments:" ##
+      file \\texttt{genealogy\\_b.mli} with ocamldoc-compliant comments:" ##
 <doc text="Type definitions for family trees">
 
 type tree = {

@@ -39,11 +39,12 @@ Contents
          - 4.3.1  Field ocaml.predef 
          - 4.3.2  Field ocaml.mutable 
          - 4.3.3  Field ocaml.default 
-         - 4.3.4  Field ocaml.module 
-         - 4.3.5  Field ocaml.t 
-         - 4.3.6  Field ocaml.field_prefix 
-         - 4.3.7  Field ocaml.name 
-         - 4.3.8  Field ocaml.repr 
+         - 4.3.4  Field ocaml.from 
+         - 4.3.5  Field ocaml.module 
+         - 4.3.6  Field ocaml.t 
+         - 4.3.7  Field ocaml.field_prefix 
+         - 4.3.8  Field ocaml.name 
+         - 4.3.9  Field ocaml.repr 
      
       - 4.4  Section ocaml_biniou 
       - 4.5  Section ocaml_json 
@@ -725,9 +726,37 @@ record or tuple, allowing that field to be omitted.
   
   
 
-4.3.4  Field ocaml.module
+4.3.4  Field ocaml.from
+-----------------------
+  
+  Position: left-hand side of a type definition, after the type name
+  Values: OCaml module name without the _t, _b, _j or _v  suffix. This
+can be also seen as the name of the original ATD file, without the .atd
+extension and capitalized like an OCaml module name.
+  Semantics: specifies the base name of the OCaml modules where the type
+and values coming with that type are defined.
+  It is useful for ATD types defined as  abstract and for types
+annotated as predefined using  the annotation <ocaml predef>. In both
+cases, the missing definitions must be provided by modules composed of
+the base name and the standard suffix assumed by atdgen which is _t, _b,
+_j or _v.
+  Example: First input file part1.atd: 
+<<
+  type point = { x : int; y : int }
+>>
+   Second input file part2.atd depending on the first one: 
+<<
+  type point <ocaml from="Part1"> = abstract
+  type points = point list
+>>
+  
+  
+
+4.3.5  Field ocaml.module
 -------------------------
   
+  In most cases since atdgen 1.2.0 module annotations are deprecated in
+favor of from annotations previously described.
   Position: left-hand side of a type definition, after the type name
   Values: OCaml module name
   Semantics: specifies the OCaml module where the type and values coming
@@ -765,7 +794,7 @@ items.
 interchangeably in other modules.
   
 
-4.3.5  Field ocaml.t
+4.3.6  Field ocaml.t
 --------------------
   
   Position: left-hand side of a type definition, after the type name.
@@ -792,7 +821,7 @@ type definitions:
   
   
 
-4.3.6  Field ocaml.field_prefix
+4.3.7  Field ocaml.field_prefix
 -------------------------------
   
   Position: record type expression
@@ -817,7 +846,7 @@ defined on a per-field basis.
   
   
 
-4.3.7  Field ocaml.name
+4.3.8  Field ocaml.name
 -----------------------
   
   Position: after record field name or variant name
@@ -854,7 +883,7 @@ to be used in OCaml.
   
   
 
-4.3.8  Field ocaml.repr
+4.3.9  Field ocaml.repr
 -----------------------
   
 Integers
@@ -931,8 +960,8 @@ atdgen 1.1.0  the only way of sharing values other than records.
 mode for the following fields: 
   
    - predef (see 4.3.1) 
-   - module (see 4.3.4) 
-   - t (see 4.3.5) 
+   - module (see 4.3.5) 
+   - t (see 4.3.6) 
   
   
 
@@ -943,8 +972,8 @@ mode for the following fields:
 for the following fields: 
   
    - predef (see 4.3.1) 
-   - module (see 4.3.4) 
-   - t (see 4.3.5) 
+   - module (see 4.3.5) 
+   - t (see 4.3.6) 
   
   Example: 
   This example shows how to parse a field into a generic tree of type

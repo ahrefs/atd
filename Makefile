@@ -1,6 +1,6 @@
 # $Id: Makefile 53195 2011-01-28 23:38:12Z martin $
 
-VERSION = 1.2.0+dev
+VERSION = 1.2.0
   # "+dev" suffix means "still under development"
 
 # Shared stuff

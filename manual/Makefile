@@ -1,5 +1,3 @@
-# $Id: Makefile 48153 2010-09-09 07:57:39Z martin $
-
 # `make pdf' requires pdflatex and builds readme.pdf
 # `make txt' requires hevea and builds readme.txt
 # `make html' requires hevea and builds readme.html
@@ -29,6 +27,11 @@ atdgen-manual.txt: $(TEXFILES)
 atdgen-manual.html: $(TEXFILES)
 	rm -f *.aux
 	hevea -fix atdgen-manual
+	sed -i '/<\/STYLE>/ r hevea-insert1.html' atdgen-manual.html
+	sed -i '/<BODY *>/ r hevea-insert2.html' atdgen-manual.html
+	sed -i 's/<\/BLOCKQUOTE><\/BODY>/<\/BLOCKQUOTE><!--END-->\n<\/BODY>/' \
+		atdgen-manual.html
+	sed -i '/<!--END-->/ r hevea-insert3.html' atdgen-manual.html
 
 atdgen-manual.pdf: $(TEXFILES)
 	pdflatex atdgen-manual

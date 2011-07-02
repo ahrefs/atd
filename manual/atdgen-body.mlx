@@ -167,7 +167,7 @@ type date = {
 
 
 
-\section{Default mapping}
+\section{Default type mapping}
 
 The following table summarizes the default mapping between ATD types and
 OCaml, biniou and JSON data types. For each language more
@@ -713,6 +713,46 @@ translates to the following OCaml type definition:
 
 ## ocaml () ##
 type shared_string = string ref
+## () ##
+
+
+## annot_field "validator" ##
+
+\annotposition after any type expression except type variables
+
+\annotvalues OCaml function that takes one argument of the given type
+and returns a bool
+
+\annotsemantics \texttt{atdgen -v} produces for each type named
+\textit{t} a function \texttt{validate\_}\textit{t}:
+## ocaml () ##
+val validate_t : t -> bool
+## () ##
+Such a function returns true if and only if the value and all of its
+subnodes pass all the validators specified by annotations of the form
+\texttt{<ocaml validator="...">}.
+
+\annotexample
+## atdgen () ##
+type positive = int <ocaml validator="fun x -> x > 0">
+
+type point = {
+  x : positive;
+  y : positive;
+  z : int;
+}
+  <ocaml validator="Point.validate">
+  (* Some validating function from a user-defined module Point *) 
+## () ##
+
+The generated \texttt{validate\_point} function is equivalent to the
+following:
+
+## ocaml () ##
+let validate_point p =
+  Point.validate p
+  && (fun x -> x > 0) p.x
+  && (fun x -> x > 0) p.y
 ## () ##
 
 

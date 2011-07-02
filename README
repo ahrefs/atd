@@ -1,4 +1,4 @@
- 
+   
                                      
                         Atdgen reference manual
                         ***********************
@@ -23,7 +23,7 @@ Contents
       - 2.3  Atdgen-json example 
       - 2.4  Validator example 
   
-   - 3  Default mapping 
+   - 3  Default type mapping 
    - 4  ATD Annotations 
      
       - 4.1  Section biniou 
@@ -46,6 +46,7 @@ Contents
          - 4.3.7  Field ocaml.field_prefix 
          - 4.3.8  Field ocaml.name 
          - 4.3.9  Field ocaml.repr 
+         - 4.3.10  Field ocaml.validator 
      
       - 4.4  Section ocaml_biniou 
       - 4.5  Section ocaml_json 
@@ -536,8 +537,8 @@ validators are used:
   
   
 
-3  Default mapping
-*=*=*=*=*=*=*=*=*=
+3  Default type mapping
+*=*=*=*=*=*=*=*=*=*=*=*
 
   
   The following table summarizes the default mapping between ATD types
@@ -1041,6 +1042,43 @@ atdgen 1.1.0  the only way of sharing values other than records.
   translates to the following OCaml type definition:
 <<
   type shared_string = string ref
+>>
+  
+  
+
+4.3.10  Field ocaml.validator
+-----------------------------
+  
+  Position: after any type expression except type variables
+  Values: OCaml function that takes one argument of the given type and
+returns a bool
+  Semantics: atdgen -v produces for each type named t a function
+validate_t: 
+<<
+  val validate_t : t -> bool
+>>
+   Such a function returns true if and only if the value and all of its
+subnodes pass all the validators specified by annotations of the form
+<ocaml validator="...">.
+  Example: 
+<<
+  type positive = int <ocaml validator="fun x -> x > 0">
+  
+  type point = {
+    x : positive;
+    y : positive;
+    z : int;
+  }
+    <ocaml validator="Point.validate">
+    (* Some validating function from a user-defined module Point *) 
+>>
+  
+  The generated validate_point function is equivalent to the following:
+<<
+  let validate_point p =
+    Point.validate p
+    && (fun x -> x > 0) p.x
+    && (fun x -> x > 0) p.y
 >>
   
   

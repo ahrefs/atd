@@ -8,7 +8,7 @@ bug = bug or security fix
 doc = major changes in the documentation
 pkg = changes in the structure of the package or in the installation procedure
 
-2011-06-xx 1.2.0: [+ui] new modes -t -b -j -v -dep -list standardizing
+2011-07-02 1.2.0: [+ui] new modes -t -b -j -v -dep -list standardizing
                         file name and structure and simplifying the
                         command-line
                   [+ui] new "from" annotation for abstract types

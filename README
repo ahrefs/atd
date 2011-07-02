@@ -1,4 +1,4 @@
-   
+ 
                                      
                         Atdgen reference manual
                         ***********************
@@ -67,12 +67,13 @@ Contents
 in the ATD (1) syntax and produces OCaml code suitable for data
 serialization and deserialization.
   Two data formats are currently supported, these are biniou (2)  and
-JSON (3). Atdgen-biniou and atdgen-json will refer to atdgen used in one
+JSON (3). Atdgen-biniou and Atdgen-json will refer to Atdgen used in one
 context or the other.
   Atdgen was designed with efficiency and durability in mind. Software
-authors are encouraged to use atdgen directly and to write tools that
-may reuse part of atdgen's source code.
-  Atdgen depends heavily on the following packages: 
+authors are encouraged to use Atdgen directly and to write tools that
+may reuse part of Atdgen's source code.
+  Atdgen uses the following packages that were developed in conjunction
+with Atdgen: 
   
    - atd: parser for the syntax of type definitions 
    - biniou: parser and printer for biniou, a binary extensible data
@@ -80,6 +81,7 @@ may reuse part of atdgen's source code.
    - yojson (4): parser and printer for JSON, a widespread text-based
    data format 
   
+  Atdgen does not use Camlp4.
   
 
 2  Command-line usage
@@ -623,7 +625,7 @@ Integers
   Values: svint (default), uvint, int8, int16, int32, int64
   Semantics: specifies an alternate type for representing integers. The
 default type is svint. The other integers types provided by biniou are
-supported by atdgen-biniou. They have to map to the corresponding OCaml
+supported by Atdgen-biniou. They have to map to the corresponding OCaml
 types in accordance with the following table:
 ------------------------------------------------------------------
  Biniou type Supported OCaml type OCaml value range               
@@ -831,7 +833,7 @@ and values coming with that type are defined.
   It is useful for ATD types defined as  abstract and for types
 annotated as predefined using  the annotation <ocaml predef>. In both
 cases, the missing definitions must be provided by modules composed of
-the base name and the standard suffix assumed by atdgen which is _t, _b,
+the base name and the standard suffix assumed by Atdgen which is _t, _b,
 _j or _v.
   Example: First input file part1.atd: 
 <<
@@ -848,7 +850,7 @@ _j or _v.
 4.3.5  Field ocaml.module
 -------------------------
   
-  In most cases since atdgen 1.2.0 module annotations are deprecated in
+  In most cases since Atdgen 1.2.0 module annotations are deprecated in
 favor of from annotations previously described.
   Position: left-hand side of a type definition, after the type name
   Values: OCaml module name
@@ -985,8 +987,8 @@ Integers
   Values: char, int32, int64
   Semantics: specifies an alternate type for representing integers. The
 default type is int, but char, int32 and int64 can be used instead.
-These three types are supported by both atdgen-biniou and atdgen-json
-but atdgen-biniou currently requires that they map to the corresponding
+These three types are supported by both Atdgen-biniou and Atdgen-json
+but Atdgen-biniou currently requires that they map to the corresponding
 fixed-width types provided by the biniou format.
   Example: 
 <<
@@ -1033,7 +1035,7 @@ Shared values
   Position: after a shared type
   Values: ref
   Semantics: wraps the value using OCaml's ref type, which is as of
-atdgen 1.1.0  the only way of sharing values other than records.
+Atdgen 1.1.0  the only way of sharing values other than records.
   Example: 
 <<
   type shared_string = string shared <ocaml repr="ref">

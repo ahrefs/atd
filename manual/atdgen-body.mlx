@@ -17,14 +17,15 @@ code suitable for data serialization and deserialization.
 
 Two data formats are currently supported, these are
 \href{http://martin.jambon.free.fr/biniou.html}{biniou} 
-and \href{http://json.org/}{JSON}. Atdgen-biniou and atdgen-json will
-refer to atdgen used in one context or the other.
+and \href{http://json.org/}{JSON}. Atdgen-biniou and Atdgen-json will
+refer to Atdgen used in one context or the other.
 
 Atdgen was designed with efficiency and durability in mind. Software
-authors are encouraged to use atdgen directly and to write
-tools that may reuse part of atdgen's source code.
+authors are encouraged to use Atdgen directly and to write
+tools that may reuse part of Atdgen's source code.
 
-Atdgen depends heavily on the following packages:
+Atdgen uses the following packages that were developed in conjunction
+with Atdgen:
 \begin{itemize}
 \item \texttt{atd}: parser for the syntax of type definitions
 \item \texttt{biniou}: parser and printer for biniou, a binary
@@ -33,6 +34,7 @@ Atdgen depends heavily on the following packages:
   parser and printer for JSON, a widespread text-based data format
 \end{itemize}
 
+Atdgen does not use Camlp4.
 
 \section{Command-line usage}
 
@@ -242,7 +244,7 @@ Notes:
 \annotsemantics specifies an alternate type for representing integers.
 The default type is \texttt{svint}.
 The other integers types provided by biniou are
-supported by atdgen-biniou.
+supported by Atdgen-biniou.
 They have to map to the corresponding OCaml types
 in accordance with the following table:
 
@@ -471,7 +473,7 @@ It is useful for ATD types defined as
 the annotation \texttt{<ocaml predef>}.
 In both cases, the missing definitions must be provided by
 modules composed of the base name and the standard suffix assumed by
-atdgen which is
+Atdgen which is
 \texttt{\_t}, \texttt{\_b},
 \texttt{\_j} or \texttt{\_v}.
 
@@ -489,7 +491,7 @@ type points = point list
 
 ## annot_field "module" ##
 
-In most cases since atdgen 1.2.0
+In most cases since Atdgen 1.2.0
 \texttt{module} annotations are deprecated in favor of \texttt{from}
 annotations previously described.
 
@@ -642,7 +644,7 @@ type profile = {
 \annotsemantics specifies an alternate type for representing integers.
 The default type is \texttt{int}, but \texttt{char}, \texttt{int32}
 and \texttt{int64} can be used instead. These three types are
-supported by both atdgen-biniou and atdgen-json but atdgen-biniou
+supported by both Atdgen-biniou and Atdgen-json but Atdgen-biniou
 currently requires that they map to the corresponding fixed-width
 types provided by the biniou format.
 
@@ -701,7 +703,7 @@ type fruit = Apple | Orange
 \annotvalues \texttt{ref}
 
 \annotsemantics wraps the value using OCaml's \texttt{ref} type,
-which is as of atdgen 1.1.0 
+which is as of Atdgen 1.1.0 
 the only way of sharing values other than records.
 
 \annotexample

@@ -1,4 +1,4 @@
- 
+   
                                      
                         Atdgen reference manual
                         ***********************
@@ -102,7 +102,7 @@ with Atdgen:
     * record-creating functions supporting default fields (-v)
     * user-specified data validators (-v)
   
-  Recommended usage: ./atdgen (-t|-b|-j|-v) example.atd
+  Recommended usage: ./atdgen (-t|-b|-j|-v|-dep|-list) example.atd
     -t 
             Produce files example_t.mli and example_t.ml
             containing OCaml type definitions derived from example.atd.
@@ -120,18 +120,22 @@ Biniou
             containing OCaml functions for creating records and
             validators from the specifications in example.atd.
     -dep 
-            
+            Output Make-compatible dependencies for all possible
+            products of atdgen -t, -b, -j and -v, and exit.
     -list 
-            
+            Output a space-separated list of all possible products of
+            atdgen -t, -b, -j and -v, and exit.
     -o [ PREFIX | - ]
             Use this prefix for the generated files, e.g. 'foo/bar' for
             foo/bar.ml and foo/bar.mli.
             `-' designates stdout and produces code of the form
               struct ... end : sig ... end
     -biniou 
+            [deprecated in favor of -t and -b]
             Produce serializers and deserializers for Biniou
             including OCaml type definitions (default).
     -json 
+            [deprecated in favor of -t and -j]
             Produce serializers and deserializers for JSON
             including OCaml type definitions.
     -j-std 
@@ -139,6 +143,7 @@ Biniou
             refuse to print NaN and infinities (implying -json mode
             unless another mode is specified).
     -std-json 
+            [deprecated in favor of -j-std]
             Same as -j-std.
     -j-defaults 
             Output JSON record fields even if their value is known
@@ -154,6 +159,7 @@ JSON field
             instead of simply skipping them.
             See also -json-strict_fields.
     -validate 
+            [deprecated in favor of -t and -v]
             Produce data validators from <ocaml validator="x">
 annotations
             where x is a user-written validator to be applied on a
@@ -1088,8 +1094,8 @@ subnodes pass all the validators specified by annotations of the form
 4.4  Section ocaml_biniou
 =========================
   
-  Section ocaml_biniou takes precedence over section ocaml  in -biniou
-mode for the following fields: 
+  Section ocaml_biniou takes precedence over section ocaml  in Biniou
+mode (-b) for the following fields: 
   
    - predef (see 4.3.1) 
    - module (see 4.3.5) 
@@ -1100,8 +1106,8 @@ mode for the following fields:
 4.5  Section ocaml_json
 =======================
   
-  Section ocaml_json takes precedence over section ocaml in -json mode
-for the following fields: 
+  Section ocaml_json takes precedence over section ocaml in JSON mode
+(-j) for the following fields: 
   
    - predef (see 4.3.1) 
    - module (see 4.3.5) 

@@ -89,11 +89,13 @@ let main () =
 
     "-dep", Arg.Unit (fun () -> set_once "output type" mode `Dep),
     "
-          ";
+          Output Make-compatible dependencies for all possible
+          products of atdgen -t, -b, -j and -v, and exit.";
 
     "-list", Arg.Unit (fun () -> set_once "output type" mode `List),
     "
-          ";
+          Output a space-separated list of all possible products of
+          atdgen -t, -b, -j and -v, and exit.";
 
     "-o", Arg.String (fun s ->
                         let out =
@@ -112,6 +114,7 @@ let main () =
     Arg.Unit (fun () ->
                 set_once "output type" mode `Biniou),
     "
+          [deprecated in favor of -t and -b]
           Produce serializers and deserializers for Biniou
           including OCaml type definitions (default).";
 
@@ -119,6 +122,7 @@ let main () =
     Arg.Unit (fun () ->
                 set_once "output type" mode `Json),
     "
+          [deprecated in favor of -t and -j]
           Produce serializers and deserializers for JSON
           including OCaml type definitions.";
 
@@ -134,6 +138,7 @@ let main () =
     Arg.Unit (fun () ->
                 std_json := true),
     "
+          [deprecated in favor of -j-std]
           Same as -j-std.";
 
     "-j-defaults",
@@ -168,6 +173,7 @@ let main () =
     Arg.Unit (fun () ->
                 set_once "output type" mode `Validate),
     "
+          [deprecated in favor of -t and -v]
           Produce data validators from <ocaml validator=\"x\"> annotations
           where x is a user-written validator to be applied on a specific
           node.
@@ -224,7 +230,7 @@ Generate OCaml code offering:
   * record-creating functions supporting default fields (-v)
   * user-specified data validators (-v)
 
-Recommended usage: %s (-t|-b|-j|-v) example.atd" Sys.argv.(0) in
+Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
   if (!std_json || !unknown_field_handler <> None) && !mode = None then

@@ -761,7 +761,7 @@ let validate_point p =
 ## annot_section ~label:"ocaml-biniou" "ocaml\\_biniou" ##
 
 Section \texttt{ocaml\_biniou} takes precedence over section \texttt{ocaml} 
-in \texttt{-biniou} mode for the following fields:
+in Biniou mode (\texttt{-b}) for the following fields:
 \begin{itemize}
 \item \texttt{predef} (see \ref{ocaml.predef})
 \item \texttt{module} (see \ref{ocaml.module})
@@ -771,7 +771,7 @@ in \texttt{-biniou} mode for the following fields:
 ## annot_section ~label:"ocaml-json" "ocaml\\_json" ##
 
 Section \texttt{ocaml\_json} takes precedence over section \texttt{ocaml}
-in \texttt{-json} mode for the following fields:
+in JSON mode (\texttt{-j}) for the following fields:
 \begin{itemize}
 \item \texttt{predef} (see \ref{ocaml.predef})
 \item \texttt{module} (see \ref{ocaml.module})

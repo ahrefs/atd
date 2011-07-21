@@ -3,7 +3,7 @@
 self="$0"
 usage () {
     echo "\
-Usage: $0 [t] [b] [j] [v]
+Usage: $self [t] [b] [j] [v]
 
 atdgen-cppo allows to use atdgen to derive code from ATD type definitions
 embedded in OCaml source files rather than in separate .atd files.
@@ -24,7 +24,7 @@ Typical usage:
   let () = print_endline (J.string_of_mytype data)
 
   \$ ocamlfind opt -o example \\
-    -pp 'cppo -x \"json:$0 t j\"' \\
+    -pp 'cppo -x \"json:$self t j\"' \\
     -package atdgen -linkpkg example.ml
 
   \$ ./example

@@ -1,5 +1,3 @@
-(* $Id: ag_oj_emit.ml 53195 2011-01-28 23:38:12Z martin $ *)
-
 (*
   OCaml code generator for the json format.
 *)
@@ -658,6 +656,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
         in
 	let read_tag =
 	  [
+            `Line "Yojson.Safe.read_space p lb;";
 	    `Line "match Yojson.Safe.start_any_variant p lb with";
             `Block [
               `Line "| `Edgy_bracket -> (";

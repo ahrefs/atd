@@ -73,6 +73,10 @@ let test_biniou_missing_cell () =
     Test.extended_tuple_of_string
     (Test.string_of_base_tuple test_missing_tuple)
   
+let test_json_variants () =
+  section "json variants with leading space";
+  ignore (Testj.p_of_string " \"A\"")
+
 let test_json_missing_field () =
   section "json missing record fields";
   expect_error
@@ -352,6 +356,7 @@ let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
   test_biniou_missing_cell;
+  test_json_variants;
   test_json_missing_field;
   test_json_missing_cell;
   test_json_extra_field_warning;

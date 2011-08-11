@@ -1,5 +1,3 @@
-(* $Id: ag_ocaml.ml 52381 2010-11-24 22:40:21Z martin $ *)
-
 (*
   Translation from ATD types into OCaml types and pretty-printing.
 
@@ -841,7 +839,7 @@ val create_%s :%s
 "
             s (String.concat "" intf_params)
             full_name
-            full_name
+            s
         in
         let impl_params = List.map (fun (_, x, _) -> x) l in
         let impl_fields = List.map (fun (_, _, x) -> x) l in

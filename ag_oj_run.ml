@@ -133,6 +133,7 @@ let read_array read_item p lb =
   Yojson.Safe.read_array read_item p lb
 
 let read_assoc_list_rev read_item p lb =
+  Yojson.Safe.read_space p lb;
   let read acc k p lb = (k, read_item p lb) :: acc in
   Yojson.Safe.read_fields read [] p lb
 

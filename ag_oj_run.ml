@@ -1,5 +1,3 @@
-(* $Id: ag_oj_run.ml 53195 2011-01-28 23:38:12Z martin $ *)
-
 (*
   Runtime library for JSON
 *)
@@ -126,6 +124,13 @@ let read_string p lb =
   Yojson.Safe.read_space p lb;
   Yojson.Safe.read_string p lb
 
+let read_list read_item p lb =
+  Yojson.Safe.read_space p lb;
+  Yojson.Safe.read_list read_item p lb
+
+let read_array read_item p lb =
+  Yojson.Safe.read_space p lb;
+  Yojson.Safe.read_array read_item p lb
 
 let read_assoc_list_rev read_item p lb =
   let read acc k p lb = (k, read_item p lb) :: acc in

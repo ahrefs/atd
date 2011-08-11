@@ -657,7 +657,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	let read_tag =
 	  [
             `Line "Yojson.Safe.read_space p lb;";
-	    `Line "match Yojson.Safe.start_any_variant p lb with";
+            `Line "match Yojson.Safe.start_any_variant p lb with";
             `Block [
               `Line "| `Edgy_bracket -> (";
               `Block [
@@ -726,8 +726,8 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
              `Array ->
                let read =
 	         match o with
-                     `List -> "Yojson.Safe.read_list ("
-                   | `Array -> "Yojson.Safe.read_array ("
+                     `List -> "Ag_oj_run.read_list ("
+                   | `Array -> "Ag_oj_run.read_array ("
                in
 	       [
 		 `Line read;

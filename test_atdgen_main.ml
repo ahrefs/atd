@@ -72,10 +72,6 @@ let test_biniou_missing_cell () =
   expect_error 
     Test.extended_tuple_of_string
     (Test.string_of_base_tuple test_missing_tuple)
-  
-let test_json_variants () =
-  section "json variants with leading space";
-  ignore (Testj.p_of_string " \"A\"")
 
 let test_json_missing_field () =
   section "json missing record fields";
@@ -242,6 +238,13 @@ let test_json_correctness () =
   check (std_x' = std_x'');
   assert (x = std_x')
 
+let test_json_space () =
+  section "json space";
+  let s = Testj.string_of_test test_correctness_data in
+  let pp = Yojson.Safe.prettify s in
+  ignore (Testj.test_of_string pp)
+
+
 let test_validators1 () =
   section "validators1";
   let valid = (0, 1.) in
@@ -356,7 +359,6 @@ let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
   test_biniou_missing_cell;
-  test_json_variants;
   test_json_missing_field;
   test_json_missing_cell;
   test_json_extra_field_warning;
@@ -364,6 +366,7 @@ let all_tests = [
   test_json_assoc_array;
   test_biniou_correctness;
   test_json_correctness;
+  test_json_space;
   test_validators1;
   test_validators2;
   test_validators3;

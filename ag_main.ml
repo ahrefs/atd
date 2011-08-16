@@ -167,7 +167,7 @@ let main () =
           Call the given function of type (string -> unit) 
           for every unknown JSON field found in the input
           instead of simply skipping them.
-          See also -json-strict_fields.";
+          See also -j-strict-fields.";
 
     "-validate",
     Arg.Unit (fun () ->

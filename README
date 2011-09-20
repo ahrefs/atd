@@ -2,7 +2,7 @@
                                      
                         Atdgen reference manual
                         ***********************
-                             release 1.2.0
+                             release 1.2.1
                              *************
                              Martin Jambon
                              =============
@@ -157,7 +157,7 @@ JSON field
             Call the given function of type (string -> unit) 
             for every unknown JSON field found in the input
             instead of simply skipping them.
-            See also -json-strict_fields.
+            See also -j-strict-fields.
     -validate 
             [deprecated in favor of -t and -v]
             Produce data validators from <ocaml validator="x">
@@ -1546,7 +1546,7 @@ enough
   A library named atdgen is installed by the standard installation
 process. Only a fraction of it is officially supported and documented.
 The documentation is available online at 
-http://oss.wink.com/atdgen/atdgen-1.2.0/odoc/index.html.  
+http://oss.wink.com/atdgen/atdgen-1.2.1/odoc/index.html.  
 -----------------------------------------------------------------------
   
    This document was translated from LaTeX by HeVeA (5).

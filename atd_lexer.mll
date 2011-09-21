@@ -1,4 +1,4 @@
-(* $Id: atd_lexer.mll 51425 2010-11-08 06:30:55Z martin $ *)
+
 {
   open Printf
   open Lexing

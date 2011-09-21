@@ -1,4 +1,4 @@
-(* $Id: atd_expand.ml 53131 2011-01-19 19:33:49Z martin $ *)
+
 
 (*
   Monomorphization of type expressions.

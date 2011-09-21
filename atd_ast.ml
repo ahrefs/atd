@@ -1,5 +1,3 @@
-(* $Id: atd_ast.ml 52974 2010-12-21 00:48:22Z martin $ *)
-
 open Lexing
 
 

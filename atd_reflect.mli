@@ -1,4 +1,4 @@
-(* $Id: atd_reflect.mli 46594 2010-08-11 09:04:42Z martin $ *)
+
 
 (**
   Conversion of an AST value into OCaml source code that creates this value

@@ -1,4 +1,4 @@
-(* $Id: atd_print.mli 46617 2010-08-11 18:13:30Z martin $ *)
+
 
 (** Pretty-printing of ATD data *)
 

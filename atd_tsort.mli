@@ -1,4 +1,4 @@
-(* $Id: atd_tsort.mli 38554 2010-03-18 23:54:35Z martin $ *)
+
 
 (*
   Generic topological sorting and cycle detection.

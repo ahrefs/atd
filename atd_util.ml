@@ -1,4 +1,4 @@
-(* $Id: atd_util.ml 51425 2010-11-08 06:30:55Z martin $ *)
+
 
 let read_lexbuf
     ?(expand = false) ?keep_poly ?(xdebug = false)

@@ -1,4 +1,4 @@
-(* $Id: atd_annot.ml 51874 2010-11-16 05:28:46Z martin $ *)
+
 
 open Printf
 

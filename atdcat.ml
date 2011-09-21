@@ -1,4 +1,4 @@
-(* $Id: atdcat.ml 47040 2010-08-19 07:33:46Z martin $ *)
+
 
 open Printf
 

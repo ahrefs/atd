@@ -1,4 +1,4 @@
-(* $Id: atd_annot.mli 51874 2010-11-16 05:28:46Z martin $ *)
+
 
 (**
   Utilities for interpreting annotations of type {!Atd_ast.annot}

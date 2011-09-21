@@ -1,4 +1,4 @@
-(* $Id: atd_expand.mli 46524 2010-08-10 00:46:47Z martin $ *)
+
 
 (** Monomorphization of type definitions *)
 

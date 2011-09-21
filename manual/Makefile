@@ -1,4 +1,4 @@
-# $Id: Makefile 52901 2010-12-10 18:47:39Z martin $
+
 
 # `make pdf' requires pdflatex and builds readme.pdf
 # `make txt' requires hevea and builds readme.txt

@@ -1,4 +1,4 @@
-(* $Id: atd_ast.mli 52974 2010-12-21 00:48:22Z martin $ *)
+
 
 (** Abstract syntax tree (AST) representing ATD data *)
 

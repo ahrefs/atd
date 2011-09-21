@@ -1,4 +1,4 @@
-(* $Id: atd_indent.ml 40281 2010-04-21 20:49:07Z martin $ *)
+
 
 type t = 
     [

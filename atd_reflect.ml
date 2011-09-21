@@ -1,5 +1,3 @@
-(* $Id: atd_reflect.ml 51874 2010-11-16 05:28:46Z martin $ *)
-
 (*
   Conversion of an ATD tree to OCaml source code for that value.
 *)
@@ -138,11 +136,28 @@ let print_module_body buf l =
 
 let print_module_body_def buf name l =
   bprintf buf "\
-let %s : Atd_ast.module_body =
+let %s_body : Atd_ast.module_body =
   let loc = Atd_ast.dummy_loc in
 %a
-" name print_module_body l
+
+let %s = %s_body (* for backward compatibility with atd <= 1.0.1 *)
+"
+    name print_module_body l
+    name name
+
+let print_module_head_def buf name an =
+  bprintf buf "\
+let %s_head : Atd_ast.module_head =
+  let loc = Atd_ast.dummy_loc in
+  (loc, %a)
+"
+    name print_annot_list an
 
 let print_full_module_def buf name ((loc, an), l) =
-  print_annot_list buf an;
-  print_module_body_def buf name l
+  print_module_head_def buf name an;
+  print_module_body_def buf name l;
+  bprintf buf "\
+let %s_full : Atd_ast.full_module =
+  (%s_head, %s_body)
+"
+    name name name

@@ -1,4 +1,4 @@
-# $Id: Makefile 52901 2010-12-10 18:47:39Z martin $
+
 
 VERSION = 1.0.1
 

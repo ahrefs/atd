@@ -64,7 +64,8 @@ and mixed_record = predefined {
   );
   field10 : bool;
   ?field11 : bool = false;
-  field12 : unit list
+  field12 : unit list;
+  field13 : string option list
 }
 
 and mixed = (mixed_record array * mixed_record array) list
@@ -97,7 +98,8 @@ let make_mixed_record_array n =
 	);
 	field10 = true;
 	field11 = false;
-        field12 = [ (); () ]
+        field12 = [ (); () ];
+        field13 = [ Some "abcdefgh"; None; Some "qwerty" ]
       }
   )
 

@@ -1081,7 +1081,7 @@ and make_record_reader ?shared_id deref ~tagged a record_kind =
       `Block body;
       `Line "done;";
       `Inline check_bits;
-      `Line "x"
+      `Line "Ag_ob_run.identity x"
     ]
   in
   

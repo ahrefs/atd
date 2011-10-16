@@ -186,3 +186,35 @@ let missing_fields bit_fields field_names =
 
 let invalid_variant_tag s =
   error (sprintf "Unsupported variant %S" s)
+
+
+(* We want an identity function that is not inlined *)
+type identity_t = { mutable _identity : 'a. 'a -> 'a }
+let identity_ref = { _identity = (fun x -> x) }
+let identity x = identity_ref._identity x
+
+(*
+  Checking at runtime that our assumptions on unspecified compiler behavior
+  still hold.
+*)
+
+type t = {
+  _a : int option;
+  _b : int;
+}
+
+let create () =
+  { { _a = None; _b = 42 } with _a = None }
+
+let test () =
+  let r = create () in
+  let v = Some 17 in
+  Obj.set_field (Obj.repr r) 0 (Obj.repr v);
+  let safe_r = identity r in
+  (* r._a is inlined by ocamlopt and equals None
+     because the field is supposed to be immutable. *)
+  assert (safe_r._a = v)
+
+let () = test ()
+
+(************************************)

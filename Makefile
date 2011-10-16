@@ -220,6 +220,7 @@ really-test:
 
 .PHONY: bench
 bench: opt
+	ocamlfind ocamlopt -c -g test_lib.ml -package atdgen
 # biniou
 	./atdgen test.atd
 	./atdgen -open Test test2.atd

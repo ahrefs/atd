@@ -935,7 +935,7 @@ and make_record_reader p loc a record_kind =
     `Block [
       `Block [
         `Inline check_bits;
-        `Line "x";
+        `Line "Ag_oj_run.identity x";
       ];
       `Line ")";
     ];

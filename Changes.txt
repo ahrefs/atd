@@ -8,6 +8,11 @@ bug = bug or security fix
 doc = major changes in the documentation
 pkg = changes in the structure of the package or in the installation procedure
 
+2011-10-18 1.2.2: [bug] Fix of problem affecting some generated biniou
+                        readers of records with immutable fields.
+                        ocamlopt was optimizing access to immutable
+                        fields and it had to be prevented.
+
 2011-09-20 1.2.1: [bug] Fixed JSON whitespace bugs (reported by Rob Moss)
                   [bug] Fixed broken ocamldoc links for polymorphic
                         create_* functions (reported by Rob Moss)

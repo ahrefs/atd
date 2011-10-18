@@ -2,7 +2,7 @@
                                      
                         Atdgen reference manual
                         ***********************
-                             release 1.2.1
+                             release 1.2.2
                              *************
                              Martin Jambon
                              =============
@@ -1546,7 +1546,7 @@ enough
   A library named atdgen is installed by the standard installation
 process. Only a fraction of it is officially supported and documented.
 The documentation is available online at 
-http://oss.wink.com/atdgen/atdgen-1.2.1/odoc/index.html.  
+http://oss.wink.com/atdgen/atdgen-1.2.2/odoc/index.html.  
 -----------------------------------------------------------------------
   
    This document was translated from LaTeX by HeVeA (5).

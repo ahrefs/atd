@@ -30,7 +30,7 @@ CMX = $(patsubst %.ml,%.cmx, $(ML))
 O = $(patsubst %.ml,%.o, $(ML))
 
 OCAMLFLAGS = -dtypes -g
-OCAMLPACKS = easy-format unix
+OCAMLPACKS = easy-format unix str
 
 DOCFILES = \
   atd_ast \

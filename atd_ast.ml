@@ -113,6 +113,50 @@ let map_annot f = function
   | `Name (loc, (loc2, name, args), a) ->
       `Name (loc, (loc2, name, args), f a)
 
+let rec amap_type_expr f (x : type_expr) =
+  match x with
+      `Sum (loc, vl, a) ->  `Sum (loc, List.map (amap_variant f) vl, f a)
+    | `Record (loc, fl, a) -> `Record (loc, List.map (amap_field f) fl, f a)
+    | `Tuple (loc, tl, a) -> `Tuple (loc, List.map (amap_cell f) tl, f a)
+    | `List (loc, t, a) -> `List (loc, amap_type_expr f t, f a)
+    | `Option (loc, t, a) -> `Option (loc, amap_type_expr f t, f a)
+    | `Shared (loc, t, a) -> `Shared (loc, amap_type_expr f t, f a)
+    | `Tvar _ as x -> x
+    | `Name (loc, (loc2, name, args), a) ->
+        `Name (loc, (loc2, name, List.map (amap_type_expr f) args), f a)
+          
+and amap_variant f = function
+    `Variant (loc, (name, a), o) ->
+      let o =
+        match o with
+            None -> None
+          | Some x -> Some (amap_type_expr f x)
+      in
+      `Variant (loc, (name, f a), o)
+  | `Inherit (loc, x) ->
+      `Inherit (loc, amap_type_expr f x)
+
+and amap_field f = function
+    `Field (loc, (name, kind, a), x) ->
+      `Field (loc, (name, kind, f a), amap_type_expr f x)
+  | `Inherit (loc, x) ->
+      `Inherit (loc, amap_type_expr f x)
+
+and amap_cell f (loc, x, a) =
+  (loc, amap_type_expr f x, f a)
+
+let amap_module_item f (`Type (loc, (name, param, a), x)) =
+  `Type (loc, (name, param, f a), amap_type_expr f x)
+
+let amap_head f (loc, a) = (loc, f a)
+
+let amap_body f l =
+  List.map (amap_module_item f) l
+
+let map_all_annot f ((head, body) : full_module) =
+  (amap_head f head, amap_body f body)
+
+
 let rec fold (f : type_expr -> 'a -> 'a) (x : type_expr) acc =
   let acc = f x acc in
   match x with

@@ -189,7 +189,12 @@ val map_annot : (annot -> annot) -> type_expr -> type_expr
   (**
      Replacement of the annotations associated with a type
      expression.
-     This is a shallow transformation as sub-expressions are not affected.
+     This is a shallow transformation. Sub-expressions are not affected.
+  *)
+
+val map_all_annot : (annot -> annot) -> full_module -> full_module
+  (**
+     Replacement of all annotations occurring in an ATD module.
   *)
 
 val fold : (type_expr -> 'a -> 'a) -> type_expr -> 'a -> 'a

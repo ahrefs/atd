@@ -13,7 +13,18 @@ let print_ml ~name ast =
   print_string (Buffer.contents buf);
   print_newline ()
 
-let parse ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants files =
+let strip all sections x =
+  let filter =
+    if all then
+      fun l -> []
+    else
+      List.filter (fun (name, fields) -> not (List.mem name sections))
+  in
+  Atd_ast.map_all_annot filter x
+
+let parse
+    ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
+    ~strip_all ~strip_sections files =
   let l =
     List.map (
       fun file ->
@@ -28,7 +39,8 @@ let parse ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants files =
         x :: l -> x
       | [] -> (Atd_ast.dummy_loc, [])
   in
-  first_head, List.flatten bodies
+  let m = first_head, List.flatten bodies in
+  strip strip_all strip_sections m
 
 let print ~out_format ast =
   let f =
@@ -38,6 +50,8 @@ let print ~out_format ast =
   in
   f ast
 	
+let split_on_comma =
+  Str.split_delim (Str.regexp ",")
 
 let () =
   let expand = ref false in
@@ -45,6 +59,8 @@ let () =
   let xdebug = ref false in
   let inherit_fields = ref false in
   let inherit_variants = ref false in
+  let strip_sections = ref [] in
+  let strip_all = ref false in
   let files = ref [] in
   let out_format = ref `Atd in
 
@@ -80,6 +96,16 @@ let () =
     "<name>
           output the ocaml code of the ATD abstract syntax tree";
 
+    "-strip",
+    Arg.String (fun s -> strip_sections := split_on_comma s @ !strip_sections),
+    "NAME1[,NAME2,...]
+          remove all annotations of the form <NAME1 ...>,
+          <NAME2 ...>, etc.";
+
+    "-strip-all", Arg.Set strip_all,
+    "
+          remove all annotations";
+
     "-version",
     Arg.Unit (fun () ->
                 print_endline Atd_version.version;
@@ -98,6 +124,8 @@ let () =
           ~xdebug: !xdebug
           ~inherit_fields: !inherit_fields
           ~inherit_variants: !inherit_variants
+          ~strip_all: !strip_all
+          ~strip_sections: !strip_sections
           !files
     in
     print ~out_format: !out_format ast

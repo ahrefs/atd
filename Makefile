@@ -8,6 +8,7 @@ SOURCES = \
   atd_annot.mli atd_annot.ml \
   atd_parser.mli atd_parser.mly \
   atd_lexer.mll \
+  atd_doc_lexer.mll atd_doc.mli atd_doc.ml \
   atd_print.mli atd_print.ml \
   atd_predef.ml \
   atd_check.ml \
@@ -35,6 +36,7 @@ OCAMLPACKS = easy-format unix str
 DOCFILES = \
   atd_ast \
   atd_annot \
+  atd_doc \
   atd_print \
   atd_expand \
   atd_inherit \
@@ -104,6 +106,9 @@ atd_parser.ml: atd_parser.mly
 atd_lexer.ml: atd_lexer.mll
 	ocamllex $<
 
+atd_doc_lexer.ml: atd_doc_lexer.mll
+	ocamllex $<
+
 dep: $(SOURCES) Makefile
 	ocamlfind ocamldep -package "$(OCAMLPACKS)" $(MLI) $(ML) > dep
 
@@ -138,6 +143,29 @@ test: atdcat test.atd test2.atd
 	./atdcat test.out > test.out.out
 	cmp test.out test.out.out
 	./atdcat -x test2.atd > test2.out
+
+.PHONY: docdemo
+docdemo: atdcat test.atd
+	./atdcat test.atd -html-doc -strip ocaml > test-out.atd
+	caml2html -ext html:cat test-out.atd -nf
+	sed -i -e 's!</style>!\
+div.atd-doc { \
+  border-left: solid #ccc 6px; \
+  margin-bottom: 50px; \
+  margin-left: 30px; \
+  padding: 5px; \
+} \
+div.atd-doc p { \
+  margin: 0px; \
+  padding: 0px; \
+} \
+div.atd-doc pre { \
+  margin-left: 40px; \
+  margin-right: 0px; \
+  margin-top: 10px; \
+  margin-bottom: 10px; \
+} \
+</style>!' test-out.atd.html
 
 .PHONY: clean
 clean:

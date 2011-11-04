@@ -2,8 +2,24 @@
 
 open Printf
 
-let print_atd ast =
-  let pp = Atd_print.format ast in
+let html_of_doc loc s =
+  let doc = Atd_doc.parse_text loc s in
+  Atd_doc.html_of_doc doc
+
+let format_html_comments ((section, (loc, l)) as x) =
+  match section, l with
+      "doc", ["text", (loc, Some s) ] ->
+        let comment = "(*html " ^ html_of_doc loc s ^ "*)" in
+        Easy_format.Atom (comment, Easy_format.atom)
+    | _ ->
+        Atd_print.default_annot x
+
+let print_atd ~html_doc ast =
+  let annot =
+    if html_doc then Some format_html_comments
+    else None
+  in
+  let pp = Atd_print.format ?annot ast in
   Easy_format.Pretty.to_channel stdout pp;
   print_newline ()
 
@@ -42,10 +58,10 @@ let parse
   let m = first_head, List.flatten bodies in
   strip strip_all strip_sections m
 
-let print ~out_format ast =
+let print ~html_doc ~out_format ast =
   let f =
     match out_format with
-	`Atd -> print_atd
+	`Atd -> print_atd ~html_doc
       | `Ocaml name -> print_ml ~name
   in
   f ast
@@ -61,8 +77,9 @@ let () =
   let inherit_variants = ref false in
   let strip_sections = ref [] in
   let strip_all = ref false in
-  let files = ref [] in
   let out_format = ref `Atd in
+  let html_doc = ref false in
+  let files = ref [] in
 
   let options = [
     "-x", Arg.Set expand,
@@ -96,6 +113,14 @@ let () =
     "<name>
           output the ocaml code of the ATD abstract syntax tree";
 
+    "-html-doc", Arg.Set html_doc,
+    "
+          replace <doc text=\"...\"> by (*html ... *)
+          where the contents are formatted as HTML
+          using <p>, <code> and <pre>.
+          This is suitable input for \"caml2html -ext html:cat\"
+          which allows to convert ATD files into HTML.";
+
     "-strip",
     Arg.String (fun s -> strip_sections := split_on_comma s @ !strip_sections),
     "NAME1[,NAME2,...]
@@ -128,7 +153,7 @@ let () =
           ~strip_sections: !strip_sections
           !files
     in
-    print ~out_format: !out_format ast
+    print ~html_doc: !html_doc ~out_format: !out_format ast
   with
       Atd_ast.Atd_error s ->
 	flush stdout;

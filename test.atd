@@ -23,6 +23,15 @@ type ('a, 'b, 'c) tiptoptiptop <json phew> =
     | Fioo <json foooooooooooooooooooooooooooooooooooooooooo xyz="aaaa"> of int
     | Bar <json bar> of z
     | Aaaaaaaaaaaaa ]
+      <doc text="\
+First paragraph.
+First paragraph continued.
+
+Second paragraph, with {{some code}}. And then some preformatted code:
+{{{
+1 2  3   4    5     6
+}}}
+">
 
 type kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk = int option
 

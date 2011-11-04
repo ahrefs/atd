@@ -281,6 +281,17 @@ inheritance. Here is the output of atdcat -help:
             expand `inherit' statements in sum types
     -ml <name>
             output the ocaml code of the ATD abstract syntax tree
+    -html-doc 
+            replace <doc text="..."> by (*html ... *)
+            where the contents are formatted as HTML
+            using <p>, <code> and <pre>.
+            This is suitable input for "caml2html -ext html:cat"
+            which allows to convert ATD files into HTML.
+    -strip NAME1[,NAME2,...]
+            remove all annotations of the form <NAME1 ...>,
+            <NAME2 ...>, etc.
+    -strip-all 
+            remove all annotations
     -version 
             print the version of atd and exit
     -help  Display this list of options

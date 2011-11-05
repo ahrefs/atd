@@ -7,10 +7,22 @@ let html_of_doc loc s =
   Atd_doc.html_of_doc doc
 
 let format_html_comments ((section, (loc, l)) as x) =
-  match section, l with
-      "doc", ["text", (loc, Some s) ] ->
-        let comment = "(*html " ^ html_of_doc loc s ^ "*)" in
-        Easy_format.Atom (comment, Easy_format.atom)
+  match section with
+      "doc" ->
+        (try
+           match List.assoc "html" l with
+               (loc, Some s) ->
+                 let comment = "(*html " ^ s ^ "*)" in
+                 Easy_format.Atom (comment, Easy_format.atom)
+             | _ -> raise Not_found
+         with Not_found ->
+           match List.assoc "text" l with
+               (loc, Some s) ->
+                 let comment = "(*html " ^ html_of_doc loc s ^ "*)" in
+                 Easy_format.Atom (comment, Easy_format.atom)
+             | _ ->
+                 Atd_print.default_annot x
+        )
     | _ ->
         Atd_print.default_annot x
 
@@ -115,7 +127,8 @@ let () =
 
     "-html-doc", Arg.Set html_doc,
     "
-          replace <doc text=\"...\"> by (*html ... *)
+          replace directly <doc html=\"...\"> by (*html ... *)
+          or replace <doc text=\"...\"> by (*html ... *)
           where the contents are formatted as HTML
           using <p>, <code> and <pre>.
           This is suitable input for \"caml2html -ext html:cat\"

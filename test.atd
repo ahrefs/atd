@@ -1,6 +1,7 @@
 (* -*- tuareg -*- *)
 
-<doc text="This is a test.">
+<doc html="<p>This <b>is</b> a test.</p>"
+     text="This is a test.">
 
 type x <a b> = y <a c>
 type y <a b> = x <a c>  (* conflict or inheritance or anything: unspecified. *)

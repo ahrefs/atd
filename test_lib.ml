@@ -1,4 +1,3 @@
-(* $Id: test_lib.ml 52382 2010-11-24 22:40:51Z martin $ *)
 
 type t = Foo of int
 

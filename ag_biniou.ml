@@ -1,4 +1,3 @@
-(* $Id: ag_biniou.ml 52210 2010-11-22 09:50:55Z martin $ *)
 
 (*
   Mapping from ATD to biniou

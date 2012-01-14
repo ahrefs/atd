@@ -1,4 +1,3 @@
-(* $Id: ag_doc.mli 48186 2010-09-09 22:24:27Z martin $ *)
 
 (**
   Support for <doc text="..."> annotations:

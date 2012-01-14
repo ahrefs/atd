@@ -1,4 +1,3 @@
-(* $Id: benchmark.ml 52049 2010-11-19 07:22:11Z martin $ *)
 
 open Printf
 

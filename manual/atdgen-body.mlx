@@ -1,5 +1,4 @@
 % -*- latex -*-
-% $Id: atdgen-body.mlx 52959 2010-12-19 09:28:20Z martin $
 ##
 #use "topfind";;
 #require "caml2html";;

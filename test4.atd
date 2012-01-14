@@ -1,4 +1,3 @@
-(* $Id: test4.atd 52381 2010-11-24 22:40:21Z martin $ *)
 
 type 'x abs1 = abstract
 

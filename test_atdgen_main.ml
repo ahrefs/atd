@@ -1,4 +1,3 @@
-(* $Id: test_atdgen_main.ml 53195 2011-01-28 23:38:12Z martin $ *)
 
 open Printf
 

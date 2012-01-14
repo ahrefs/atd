@@ -1,4 +1,3 @@
-(* $Id: ag_ob_mapping.ml 52381 2010-11-24 22:40:21Z martin $ *)
 
 open Printf
 open Atd_ast

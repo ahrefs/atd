@@ -1,4 +1,3 @@
-(* $Id: ag_ox_emit.ml 52210 2010-11-22 09:50:55Z martin $ *)
 
 (*
   Tools shared between OCaml code generators.

@@ -1,4 +1,3 @@
-(* $Id: ag_error.ml 45868 2010-07-29 21:45:28Z martin $ *)
 
 open Printf
 

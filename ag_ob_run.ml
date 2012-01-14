@@ -1,4 +1,3 @@
-(* $Id: ag_ob_run.ml 51992 2010-11-18 07:40:37Z martin $ *)
 
 (*
   Runtime library

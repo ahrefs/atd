@@ -1,4 +1,3 @@
-(* $Id: ag_string_match.ml 45633 2010-07-26 18:26:02Z martin $ *)
 
 open Printf
 

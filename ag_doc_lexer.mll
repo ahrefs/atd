@@ -1,4 +1,3 @@
-(* $Id: ag_doc_lexer.mll 48186 2010-09-09 22:24:27Z martin $ *)
 {
   let close_paragraph a1 a2 a3 =
     let a2 =

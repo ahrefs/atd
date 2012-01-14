@@ -1,4 +1,3 @@
-(* $Id: ag_string_match.mli 45633 2010-07-26 18:26:02Z martin $ *)
 
 (*
   Compilation of string pattern matching into something

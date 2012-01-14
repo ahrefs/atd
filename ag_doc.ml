@@ -1,4 +1,3 @@
-(* $Id: ag_doc.ml 46594 2010-08-11 09:04:42Z martin $ *)
 
 type inline = 
     [ `Text of string

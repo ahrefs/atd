@@ -1,4 +1,3 @@
-(* $Id: ag_ob_emit.ml 52975 2010-12-21 00:48:38Z martin $ *)
 
 (*
   OCaml code generator for the biniou format.

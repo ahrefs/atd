@@ -1,4 +1,5 @@
 #! /bin/sh -e
+version=1.0.0
 
 self="$0"
 usage () {

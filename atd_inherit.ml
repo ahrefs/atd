@@ -78,6 +78,10 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
       | `Name (loc, (_, "option", [t]), a) -> 
 	  `Option (loc, subst false param t, a)
 	    
+      | `Nullable (loc, t, a)
+      | `Name (loc, (_, "nullable", [t]), a) -> 
+	  `Nullable (loc, subst false param t, a)
+	    
       | `Shared (loc, t, a)
       | `Name (loc, (_, "shared", [t]), a) -> 
           `Shared (loc, subst false param t, a)

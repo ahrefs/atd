@@ -74,6 +74,8 @@ type i3 = [ inherit i | I1 of float | Y ]
 type r1 = { x1 : int }
 type r2 = { inherit r1; x2 : int }
 
+type nullable_string = string nullable
+
 type pair = 
     (<ocaml default="1"> <foo bar> : int * <ocaml default="true"> : bool)
 

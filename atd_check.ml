@@ -48,6 +48,7 @@ let check_inheritance tbl (t0 : type_expr) =
       | `Tuple _
       | `List _
       | `Option _
+      | `Nullable _
       | `Shared _ as x -> not_a kind x
 	  
       | `Name (_, (loc, k, tal), _) ->
@@ -84,13 +85,15 @@ let check_type_expr tbl tvars (t : type_expr) =
     | `Tuple (_, tl, _) -> List.iter (fun (_, x, _) -> check x) tl
     | `List (_, t, _) -> check t
     | `Option (_, t, _) -> check t
+    | `Nullable (_, t, _) -> check t
     | `Shared (loc, t, _) ->
         if Atd_ast.is_parametrized t then
           error_at loc "Shared type cannot be polymorphic";
         check t
 
     | `Name (_, (loc, k, tal), _) ->
-        assert (k <> "list" && k <> "option" && k <> "shared");
+        assert (k <> "list" && k <> "option" 
+                && k <> "nullable" && k <> "shared");
 	let (arity, opt_def) =
 	  try Hashtbl.find tbl k
 	  with Not_found -> error_at loc ("Undefined type " ^ k)

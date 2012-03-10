@@ -184,6 +184,9 @@ let make_closures format_annot =
       | `Option (loc, t, a) ->
 	  format_type_name "option" [t] a
             
+      | `Nullable (loc, t, a) ->
+	  format_type_name "nullable" [t] a
+            
       | `Shared (loc, t, a) ->
           format_type_name "shared" [t] a
           

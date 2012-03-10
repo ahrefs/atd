@@ -105,6 +105,7 @@ type_expr:
        match name, args with
            "list", [x] -> `List (loc, x, a)
          | "option", [x] -> `Option (loc, x, a)
+         | "nullable", [x] -> `Nullable (loc, x, a)
          | "shared", [x] ->
              let a =
                if Atd_annot.has_field ["share"] "id" a then
@@ -116,7 +117,7 @@ type_expr:
              in
              `Shared (loc, x, a)
 
-         | ("list"|"option"|"shared"), _ ->
+         | ("list"|"option"|"nullable"|"shared"), _ ->
              syntax_error (sprintf "%s expects one argument" name) pos1 pos2
                
          | _ -> (`Name (loc, x, a) : type_expr) }

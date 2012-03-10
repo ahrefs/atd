@@ -57,6 +57,7 @@ and type_expr =
     | `Tuple of (loc * cell list * annot)
     | `List of (loc * type_expr * annot)
     | `Option of (loc * type_expr * annot)
+    | `Nullable of (loc * type_expr * annot)
     | `Shared of (loc * type_expr * annot)
     | `Name of (loc * type_inst * annot)
     | `Tvar of (loc * string)
@@ -70,6 +71,9 @@ and type_expr =
          e.g. [int list]
          - [`Option]: an option type written [option] with its parameter 
          e.g. [string option]
+         - [`Nullable]: adds a null value to a type.
+         [`Option] should be preferred over [`Nullable] since
+         it makes it possible to distinguish [Some None] from [None].
          - [`Shared]: values for which sharing must be preserved. Such
          type expressions may not be parametrized. Values may only
          be shared if the source location of the type expression is the same.

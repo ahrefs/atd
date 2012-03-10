@@ -109,6 +109,11 @@ let rec mapvar_expr
     | `Name (loc, (loc2, "option", [t]), a) ->
         `Name (loc, (loc2, "option", [mapvar_expr f t]), a)
         
+    | `Nullable (loc, t, a) ->
+        `Nullable (loc, mapvar_expr f t, a)
+    | `Name (loc, (loc2, "nullable", [t]), a) ->
+        `Name (loc, (loc2, "nullable", [mapvar_expr f t]), a)
+        
     | `Shared (loc, t, a) ->
         `Shared (loc, mapvar_expr f t, a)
     | `Name (loc, (loc2, "shared", [t]), a) ->
@@ -241,6 +246,11 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
       | `Name (loc, (loc2, "option", [t]), a) ->
           let t' = subst env t in
           subst_type_name loc loc2 "option" [t'] a
+
+      | `Nullable (loc as loc2, t, a)
+      | `Name (loc, (loc2, "nullable", [t]), a) ->
+          let t' = subst env t in
+          subst_type_name loc loc2 "nullable" [t'] a
 
       | `Shared (loc as loc2, t, a)
       | `Name (loc, (loc2, "shared", [t]), a) ->
@@ -408,6 +418,10 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
     | `Name (loc, (_, "option", [t]), a) ->
         `Option (loc, subst env t, a)
 
+    | `Nullable (loc, t, a)
+    | `Name (loc, (_, "nullable", [t]), a) ->
+        `Nullable (loc, subst env t, a)
+
     | `Shared (loc, t, a)
     | `Name (loc, (_, "shared", [t]), a) ->
         `Shared (loc, subst env t, a)
@@ -466,6 +480,7 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
           `Tuple (loc, List.map (fun (loc, x, a) -> loc, replace x, a) tl, a)
       | `List (loc, t, a) -> `List (loc, replace t, a)
       | `Option (loc, t, a) -> `Option (loc, replace t, a)
+      | `Nullable (loc, t, a) -> `Nullable (loc, replace t, a)
       | `Shared (loc, t, a) -> `Shared (loc, replace t, a)
       | `Tvar (loc, s) as t -> t
       | `Name (loc, (loc2, k, l), a) ->

@@ -32,11 +32,13 @@ and type_expr =
     | `Tuple of (loc * cell list * annot)
     | `List of (loc * type_expr * annot)
     | `Option of (loc * type_expr * annot)
+    | `Nullable of (loc * type_expr * annot)
     | `Shared of (loc * type_expr * annot)
     | `Name of (loc * type_inst * annot)
     | `Tvar of (loc * string)
     ]
-      (* `List, `Option and `Shared are the 3 only predefined types with a type
+      (* `List, `Option, `Nullable, and `Shared are
+         the only predefined types with a type
 	 parameter (and no special syntax). *)
 
 and type_inst = loc * string * type_expr list
@@ -64,6 +66,7 @@ let loc_of_type_expr = function
   | `Tuple (loc, _, _)
   | `List (loc, _, _)
   | `Option (loc, _, _)
+  | `Nullable (loc, _, _)
   | `Shared (loc, _, _)
   | `Name (loc, _, _)
   | `Tvar (loc, _) -> loc
@@ -74,6 +77,7 @@ let set_type_expr_loc loc = function
   | `Tuple (_, a, b) -> `Tuple (loc, a, b)
   | `List (_, a, b) -> `List (loc, a, b)
   | `Option (_, a, b) -> `Option (loc, a, b)
+  | `Nullable (_, a, b) -> `Nullable (loc, a, b)
   | `Shared (_, a, b) -> `Shared (loc, a, b)
   | `Name (_, a, b) -> `Name (loc, a, b)
   | `Tvar (_, a) -> `Tvar (loc, a)
@@ -96,6 +100,7 @@ let annot_of_type_expr = function
   | `Tuple (_, _, an)
   | `List (_, _, an)
   | `Option (_, _, an)
+  | `Nullable (_, _, an)
   | `Shared (_, _, an)
   | `Name (_, _, an) -> an
   | `Tvar (_, _) -> []
@@ -108,6 +113,7 @@ let map_annot f = function
   | `Tuple (loc, tl, a) -> `Tuple (loc, tl, f a)
   | `List (loc, t, a) -> `List (loc, t, f a)
   | `Option (loc, t, a) -> `Option (loc, t, f a)
+  | `Nullable (loc, t, a) -> `Nullable (loc, t, f a)
   | `Shared (loc, t, a) -> `Shared (loc, t, f a)
   | `Tvar _ as x -> x
   | `Name (loc, (loc2, name, args), a) ->
@@ -120,6 +126,7 @@ let rec amap_type_expr f (x : type_expr) =
     | `Tuple (loc, tl, a) -> `Tuple (loc, List.map (amap_cell f) tl, f a)
     | `List (loc, t, a) -> `List (loc, amap_type_expr f t, f a)
     | `Option (loc, t, a) -> `Option (loc, amap_type_expr f t, f a)
+    | `Nullable (loc, t, a) -> `Nullable (loc, amap_type_expr f t, f a)
     | `Shared (loc, t, a) -> `Shared (loc, amap_type_expr f t, f a)
     | `Tvar _ as x -> x
     | `Name (loc, (loc2, name, args), a) ->
@@ -173,6 +180,9 @@ let rec fold (f : type_expr -> 'a -> 'a) (x : type_expr) acc =
 	fold f type_expr acc
 	    
     | `Option (loc, type_expr, annot) ->
+	fold f type_expr acc
+	    
+    | `Nullable (loc, type_expr, annot) ->
 	fold f type_expr acc
 	    
     | `Shared (loc, type_expr, annot) ->

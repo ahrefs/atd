@@ -22,6 +22,14 @@ let option_def : type_def =
     `Option (loc, `Tvar (loc, "a"), [])
   )
 
+let nullable_def : type_def = 
+  let loc = dummy_loc in
+  (
+    loc, 
+    ("nullable", ["a"], []),
+    `Nullable (loc, `Tvar (loc, "a"), [])
+  )
+
 let shared_def : type_def = 
   let loc = dummy_loc in
   (
@@ -40,6 +48,7 @@ let list = [
     "abstract", 0, None;
     "list", 1, Some list_def;
     "option", 1, Some option_def;
+    "nullable", 1, Some nullable_def;
     "shared", 1, Some shared_def;
   ]
 

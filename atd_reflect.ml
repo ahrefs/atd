@@ -61,6 +61,11 @@ let rec print_type_expr buf (x : Atd_ast.type_expr) =
 	  print_loc loc
 	  print_type_expr type_expr
 	  print_annot_list annot_list
+    | `Nullable (loc, type_expr, annot_list) ->
+	bprintf buf "`Nullable (%a, %a, %a)"
+	  print_loc loc
+	  print_type_expr type_expr
+	  print_annot_list annot_list
     | `Shared (loc, type_expr, annot_list) ->
         bprintf buf "`Shared (%a, %a, %a)"
 	  print_loc loc

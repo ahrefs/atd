@@ -51,6 +51,11 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
 	let json_t = `Option in
 	`Option (loc, mapping_of_expr x, ocaml_t, json_t)
 
+    | `Nullable (loc, x, an) ->
+	let ocaml_t = `Nullable in
+	let json_t = `Nullable in
+	`Nullable (loc, mapping_of_expr x, ocaml_t, json_t)
+
     | `Shared (loc, x, an) ->
         error loc "Sharing is not supported by the JSON interface"
 

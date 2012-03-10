@@ -391,6 +391,13 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
 	  `Line ")";
 	]
 
+    | `Nullable (loc, x, `Nullable, `Nullable) ->
+	[ 
+	  `Line "Ag_oj_run.write_nullable (";
+	  `Block (make_writer p x);
+	  `Line ")";
+	]
+
     | `Shared (loc, _, _, _, _) ->
         error loc "Sharing is not supported by the JSON interface"
 
@@ -771,6 +778,18 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	|]
 	in
 	make_reader p (`Sum (loc, a, `Sum `Classic, `Sum))
+
+    | `Nullable (loc, x, `Nullable, `Nullable) ->
+        [
+          `Line "fun p lb ->";
+          `Block [
+            `Line "Yojson.Safe.read_space p lb;";
+            `Line "if Yojson.Safe.read_null_if_possible p lb then None";
+            `Line "else Some ((";
+            `Block (make_reader p x);
+            `Line ") p lb)"
+          ]
+        ]
 
     | `Shared (loc, _, _, _, _) ->
         error loc "Sharing is not supported by the JSON interface"

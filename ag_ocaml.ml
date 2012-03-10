@@ -50,6 +50,7 @@ type atd_ocaml_repr =
     | `Tuple
     | `List of atd_ocaml_list
     | `Option
+    | `Nullable
     | `Shared of atd_ocaml_shared
     | `Name of string
     | `External of (string * string * string)
@@ -262,6 +263,8 @@ let rec map_expr (x : type_expr) : ocaml_expr =
 	`Name (s, [map_expr x])
     | `Option (loc, x, an) ->
 	`Name ("option", [map_expr x])
+    | `Nullable (loc, x, an) ->
+	`Name ("option", [map_expr x])
     | `Shared (loc, x, a) ->
         (match get_ocaml_shared a with
              `Flat -> map_expr x
@@ -380,6 +383,8 @@ let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
     | `List (loc, x, `List kind, _) ->
         `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
     | `Option (loc, x, `Option, _) ->
+        `Name ("option", [ocaml_of_expr_mapping x])
+    | `Nullable (loc, x, `Nullable, _) ->
         `Name ("option", [ocaml_of_expr_mapping x])
     | `Name (loc, s, l, _, _) ->
         `Name (s, List.map ocaml_of_expr_mapping l)
@@ -756,7 +761,8 @@ let get_full_type_name x =
 
 let unwrap_option deref x =
   match deref x with
-      `Option (_, x, _, _) -> x
+      `Option (_, x, _, _)
+    | `Nullable (_, x, _, _) -> x
     | `Name (loc, s, _, _, _) ->
 	Ag_error.error loc ("Not an option type: " ^ s)
     | x ->
@@ -779,6 +785,7 @@ let get_implicit_ocaml_default deref x =
     | `List (loc, x, `List `List, _) -> Some "[]"
     | `List (loc, x, `List `Array, _) -> Some "[||]"
     | `Option (loc, x, `Option, _) -> Some "None"
+    | `Nullable (loc, x, `Nullable, _) -> Some "None"
     | _ -> None
 
 

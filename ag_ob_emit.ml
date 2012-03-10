@@ -156,7 +156,8 @@ let get_biniou_tag (x : ob_mapping) =
 	     `Array -> "Bi_io.array_tag"
 	   | `Table -> "Bi_io.table_tag"
 	)
-    | `Option (loc, x, `Option, `Option) -> "Bi_io.num_variant_tag"
+    | `Option (loc, x, `Option, `Option)
+    | `Nullable (loc, x, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
     | `Shared (loc, id, x, `Shared _, `Shared) -> "Bi_io.shared_tag"
     | `Name (loc, s, args, None, None) -> sprintf "%s_tag" s
     | `External (loc, s, args,
@@ -522,7 +523,8 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
                ]
 	)
 
-    | `Option (loc, x, `Option, `Option) ->
+    | `Option (loc, x, `Option, `Option)
+    | `Nullable (loc, x, `Nullable, `Nullable) ->
 	[
           `Line (sprintf "Ag_ob_run.write_%soption (" un);
 	  `Block (make_writer ~tagged:true deref x);
@@ -987,7 +989,8 @@ let rec make_reader deref ~tagged (x : ob_mapping) : Ag_indent.t list =
 				     Bi_io.array_tag, body2 ]
 	)
 
-    | `Option (loc, x, `Option, `Option) ->
+    | `Option (loc, x, `Option, `Option)
+    | `Nullable (loc, x, `Nullable, `Nullable) ->
 	let body = [
 	  `Line "match Char.code (Bi_inbuf.read_char ib) with";
 	  `Block [

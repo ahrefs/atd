@@ -83,6 +83,10 @@ let write_std_option write_item ob = function
       write_item ob x;
       Bi_outbuf.add_string ob "]"
 
+let write_nullable write_item ob = function
+    None -> Bi_outbuf.add_string ob "null"
+  | Some x -> write_item ob x
+
 let write_int8 ob x =
   Yojson.Safe.write_int ob (int_of_char x)
 

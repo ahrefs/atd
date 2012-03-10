@@ -44,6 +44,8 @@ type tup = (int * test)
 type test_variant = 
     [ Case1 | Case2 of int | Case3 of string | Case4 of test_variant list ]
 
+type date = (int * int nullable * int nullable)
+
 type mixed_record = {
   ?field0 : int option;
   ?field1 : float option;
@@ -67,6 +69,7 @@ type mixed_record = {
   ~field11 : bool;
   field12 : unit list;
   field13 : string option list;
+  field14 : date;
 }
 
 type mixed = 

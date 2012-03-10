@@ -51,6 +51,11 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
 	let biniou_t = `Option in
 	`Option (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
+    | `Nullable (loc, x, an) ->
+	let ocaml_t = `Nullable in
+	let biniou_t = `Nullable in
+	`Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
+
     | `Shared (loc, x, a) ->
         let ocaml_t = `Shared (Ag_ocaml.get_ocaml_shared a) in
         let biniou_t = `Shared in

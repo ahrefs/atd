@@ -23,6 +23,7 @@ type biniou_repr =
     | `Tuple
     | `List of biniou_list
     | `Option
+    | `Nullable
     | `Shared
     | `External
 

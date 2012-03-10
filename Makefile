@@ -81,7 +81,7 @@ default: all opt
 pp: VERSION META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
 	$(MAKE) dep
 
-.PHONY: all opt
+.PHONY: all opt install uninstall reinstall
 all: pp
 	$(MAKE) atdgen.cma atdgen.run
 opt: pp
@@ -103,6 +103,9 @@ uninstall:
 	test ! -f $(BINDIR)/atdgen.exe || rm $(BINDIR)/atdgen.exe 
 	ocamlfind remove atdgen
 
+reinstall:
+	$(MAKE) uninstall || :
+	$(MAKE) install
 
 ag_version.ml: Makefile
 	echo 'let version = "$(VERSION)"' > ag_version.ml

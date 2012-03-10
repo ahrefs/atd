@@ -190,6 +190,10 @@ let rec mapping_of_expr
 	let ocaml_t = `Option in
 	`Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
+    | `Nullable (loc, x, an) ->
+	let ocaml_t = `Nullable in
+	`Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+
     | `Shared (loc, x, an) ->
         let ocaml_t = `Shared (Ag_ocaml.get_ocaml_shared an) in
         let id = Atd_annot.get_field (fun s -> Some s) "" ["share"] "id" an in

@@ -274,7 +274,8 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
 	    `Line ")";
 	  ]
 
-    | `Option (loc, x, `Option, (v, shallow)) ->
+    | `Option (loc, x, `Option, (v, shallow))
+    | `Nullable (loc, x, `Nullable, (v, shallow)) ->
         if shallow then
           opt_validator v
         else

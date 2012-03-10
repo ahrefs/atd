@@ -135,7 +135,8 @@ let make_mixed_record_array n =
 	field10 = true;
 	field11 = false;
         field12 = [ (); () ];
-        field13 = [ Some "abc"; None ]
+        field13 = [ Some "abc"; None ];
+        field14 = (2012, Some 3, None);
       }
   )
 
@@ -174,7 +175,8 @@ let test_correctness_data = {
       field10 = true;
       field11 = false;
       field12 = [ (); () ];
-      field13 = [ Some "abc"; None ]
+      field13 = [ Some "abc"; None ];
+      field14 = (2012, Some 3, None);
     }
   ];
   x4 = 0x0807060504030201L;
@@ -243,6 +245,10 @@ let test_json_space () =
   let pp = Yojson.Safe.prettify s in
   ignore (Testj.test_of_string pp)
 
+
+let test_validators0 () =
+  section "validators0";
+  check (Testv.validate_test test_correctness_data)
 
 let test_validators1 () =
   section "validators1";
@@ -366,6 +372,7 @@ let all_tests = [
   test_biniou_correctness;
   test_json_correctness;
   test_json_space;
+  test_validators0;
   test_validators1;
   test_validators2;
   test_validators3;

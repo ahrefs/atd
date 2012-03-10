@@ -25,6 +25,7 @@ type json_repr =
     | `Tuple
     | `List of json_list
     | `Option
+    | `Nullable
     | `Shared
     | `External
 

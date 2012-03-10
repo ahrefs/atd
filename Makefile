@@ -54,7 +54,7 @@ ifndef BINDIR
   export BINDIR
 endif
 
-.PHONY: default all opt install uninstall
+.PHONY: default all opt install uninstall reinstall
 
 default: all opt
 
@@ -72,6 +72,10 @@ uninstall:
 	test ! -f $(BINDIR)/atdcat || rm $(BINDIR)/atdcat
 	test ! -f $(BINDIR)/atdcat.exe || rm $(BINDIR)/atdcat.exe 
 	ocamlfind remove atd
+
+reinstall:
+	$(MAKE) uninstall || :
+	$(MAKE) install
 
 atd_version.ml: Makefile
 	echo 'let version = "$(VERSION)"' > atd_version.ml

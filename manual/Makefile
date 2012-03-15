@@ -1,5 +1,3 @@
-
-
 # `make pdf' requires pdflatex and builds readme.pdf
 # `make txt' requires hevea and builds readme.txt
 # `make html' requires hevea and builds readme.html
@@ -22,7 +20,7 @@ atd-body.tex: ../atd_version.ml macros.ml atd-body.mlx
 atd-manual.txt: $(addsuffix .tex, $(TEXFILES))
 	rm -f *.aux
 	hevea -fix -text atd-manual
-	iconv -f ISO_8859-1 -t UTF-8 < atd-manual.txt > ../README
+	iconv -f ISO_8859-1 -t UTF-8 < atd-manual.txt > ../atd-manual.txt
 
 atd-manual.html: $(addsuffix .tex, $(TEXFILES))
 	rm -f *.aux

@@ -266,8 +266,3 @@ clean:
 		ag_doc_lexer.ml
 	rm -rf odoc testdoc
 	cd manual && $(MAKE) clean
-
-
-.PHONY: release
-release:
-	./release.sh

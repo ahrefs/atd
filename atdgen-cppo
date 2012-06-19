@@ -6,8 +6,10 @@ usage () {
     echo "\
 Usage: $self [t] [b] [j] [v]
 
-atdgen-cppo allows to use atdgen to derive code from ATD type definitions
-embedded in OCaml source files rather than in separate .atd files.
+atdgen-cppo makes it possible to use atdgen to derive code from ATD 
+type definitions embedded in OCaml source files rather than in
+separate .atd files. This is similar to how json-static is used,
+except that the preprocessor is not camlp4 but the simpler program cppo.
 
 Modes:
   t  produce a module T containing OCaml type definitions translated from ATD
@@ -38,7 +40,7 @@ case "$1" in
     *) ;;
 esac
 
-tmp="/tmp/atdgen-cppo-$(head -c 8 /dev/random | xxd -p)"
+tmp=$(tempfile -p ml- -s -atdgen-cppo.ml)
 cat > $tmp
 
 fail () {
@@ -63,6 +65,7 @@ while [ $# != 0 ]; do
         b) gen B b ;;
         j) gen J j ;;
         v) gen V v ;;
+        --help|-help) usage; exit 0 ;;
         *) usage; exit 2
     esac
     shift

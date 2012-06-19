@@ -4,8 +4,8 @@ serialization/deserialization code.
 
 `atdgen-cppo` is the script that reads type definitions from stdin and
 generates OCaml code. It takes options allowing users to pick what
-kind of code needs to be generated (type definitions, JSON, Biniou,
-validators).
+kind of code needs to be generated (type definitions, JSON
+serialization, Biniou serialization, validators).
 
 Example
 -------
@@ -39,10 +39,11 @@ $ ocamlfind opt -o example \
 cppo-json ships with atdgen-cppo and is shorthand for the following command:
 
 ```
-cppo -x "json:atdgen-cppo t j"
+cppo -x "json:atdgen-cppo t j v"
 ```
 
-where `t` stands for "type definitions", and `j` stands for "JSON".
+where `t` stands for "type definitions", `j` stands for "JSON", and
+`v` stands for "validators".
 
 See also:
 ```
@@ -70,7 +71,7 @@ It's just two shell scripts. You can copy them by hand to the
 directory of your choice or run:
 
 ```
-$ make install
+$ make install   # installs into $HOME/bin
 ```
 
 or

@@ -30,9 +30,10 @@ How to compile an OCaml program:
 
 cppo-json ships with atdgen-cppo and is shorthand for the following command:
 
-  cppo -x \"json:atdgen-cppo t j\"
+  cppo -x \"json:atdgen-cppo t j v\"
 
-where 't' stands for 'type definitions', and 'j' stands for 'JSON'.
+where 't' stands for 'type definitions', 'j' stands for 'JSON', and
+'v' stands for \"validators\".
 
 See also:
   atdgen-cppo --help
@@ -45,7 +46,7 @@ case "$1" in
     *)
 esac
 
-cppo -x "json:atdgen-cppo t j" "$@"
+cppo -x "json:atdgen-cppo t j v" "$@"
 
 case $? in
     0) ;;

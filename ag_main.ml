@@ -306,7 +306,8 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
               Some _ as x -> x
             | None ->
                 (match mode with
-                     `B | `J | `V -> Some (String.capitalize base ^ "_t")
+                     `B | `J | `V ->
+                       Some (String.capitalize (Filename.basename base) ^ "_t")
                    | _ -> None
           )
   in

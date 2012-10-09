@@ -75,7 +75,7 @@ and mixed = (mixed_record array * mixed_record array) list
 
 let make_mixed_record_array n =
   Array.init n (
-    fun i -> 
+    fun i ->
       {
 	field0 = Some i;
 	field1 = Some 0.555;

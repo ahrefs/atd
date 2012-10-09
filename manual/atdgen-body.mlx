@@ -15,7 +15,7 @@ in the \href{http://oss.wink.com/atd/}{ATD} syntax and produces OCaml
 code suitable for data serialization and deserialization.
 
 Two data formats are currently supported, these are
-\href{http://martin.jambon.free.fr/biniou.html}{biniou} 
+\href{http://martin.jambon.free.fr/biniou.html}{biniou}
 and \href{http://json.org/}{JSON}. Atdgen-biniou and Atdgen-json will
 refer to Atdgen used in one context or the other.
 
@@ -84,7 +84,7 @@ Module \texttt{Example\_t} (files \texttt{example\_t.mli} and
 \texttt{example\_t.ml}) contains all OCaml type definitions that
 can be used independently from Biniou or JSON.
 
-For convenience, these definitions are also made available from the 
+For convenience, these definitions are also made available from the
 \texttt{Example\_b} module whose interface is shown above.
 Any type name, record field name or variant constructor can be
 referred to using either module. For example, the OCaml
@@ -132,7 +132,7 @@ Module \texttt{Example\_t} (files \texttt{example\_t.mli} and
 \texttt{example\_t.ml}) contains all OCaml type definitions that
 can be used independently from Biniou or JSON.
 
-For convenience, these definitions are also made available from the 
+For convenience, these definitions are also made available from the
 \texttt{Example\_j} module whose interface is shown above.
 Any type name, record field name or variant constructor can be
 referred to using either module. For example, the OCaml
@@ -209,15 +209,15 @@ Notes:
   question mark are unwrapped or omitted in both biniou and JSON.
 \item JSON option values and JSON variants are represented in standard
   JSON ({\tt atdgen -j -j-std}) by a single string e.g. {\tt "None"}
-  or a pair in which the 
+  or a pair in which the
   first element is the name (constructor) e.g. {\tt ["Some", 1234]}.
   Yojson also provides a specific syntax for variants using edgy
   brackets: {\tt <"None">}, {\tt <"Some": 1234>}.
-\item Biniou field names and variant names other than the option types 
+\item Biniou field names and variant names other than the option types
   use the hash of the ATD field or variant name and cannot currently
   be overridden by annotations.
 \item JSON tuples in standard JSON ({\tt atdgen -j -j-std}) use the
-  array notation e.g. 
+  array notation e.g.
   {\tt ["ABC", 123]}.
   Yojson also provides a specific syntax for tuples using parentheses,
   e.g. {\tt ("ABC", 123)}.
@@ -459,7 +459,7 @@ type point = (int * int * <ocaml default="0"> : int)
 \annotposition left-hand side of a type definition, after the type name
 
 \annotvalues OCaml module name without the \texttt{\_t}, \texttt{\_b},
-\texttt{\_j} or \texttt{\_v} 
+\texttt{\_j} or \texttt{\_v}
 suffix. This can be also seen as the name of the original ATD file,
 without the \texttt{.atd} extension and capitalized like an OCaml
 module name.
@@ -467,8 +467,8 @@ module name.
 \annotsemantics specifies the base name of the OCaml modules
 where the type and values coming with that type are defined.
 
-It is useful for ATD types defined as 
-\texttt{abstract} and for types annotated as predefined using 
+It is useful for ATD types defined as
+\texttt{abstract} and for types annotated as predefined using
 the annotation \texttt{<ocaml predef>}.
 In both cases, the missing definitions must be provided by
 modules composed of the base name and the standard suffix assumed by
@@ -499,8 +499,8 @@ annotations previously described.
 \annotvalues OCaml module name
 
 \annotsemantics specifies the OCaml module where the type and values
-coming with that type are defined. It is useful for ATD types defined as 
-\texttt{abstract} and for types annotated as predefined using 
+coming with that type are defined. It is useful for ATD types defined as
+\texttt{abstract} and for types annotated as predefined using
 the annotation \texttt{<ocaml predef>}.
 In both cases, the missing definitions can be provided either by
 globally opening an OCaml module with an OCaml directive or by specifying
@@ -524,12 +524,12 @@ type point <ocaml predef module="Point"> = {
   y : float;
 }
 ## () ##
-gives the following OCaml type definitions 
+gives the following OCaml type definitions
 (file \texttt{example.mli}):
 ## ocaml () ##
 type document = Doc.document
 
-type color = Color.color =  Black | White 
+type color = Color.color =  Black | White
 
 type point = Point.point = { x: float; y: float }
 ## () ##
@@ -702,7 +702,7 @@ type fruit = Apple | Orange
 \annotvalues \texttt{ref}
 
 \annotsemantics wraps the value using OCaml's \texttt{ref} type,
-which is as of Atdgen 1.1.0 
+which is as of Atdgen 1.1.0
 the only way of sharing values other than records.
 
 \annotexample
@@ -743,7 +743,7 @@ type point = {
   z : int;
 }
   <ocaml validator="Point.validate">
-  (* Some validating function from a user-defined module Point *) 
+  (* Some validating function from a user-defined module Point *)
 ## () ##
 
 The generated \texttt{validate\_point} function is equivalent to the
@@ -759,7 +759,7 @@ let validate_point p =
 
 ## annot_section ~label:"ocaml-biniou" "ocaml\\_biniou" ##
 
-Section \texttt{ocaml\_biniou} takes precedence over section \texttt{ocaml} 
+Section \texttt{ocaml\_biniou} takes precedence over section \texttt{ocaml}
 in Biniou mode (\texttt{-b}) for the following fields:
 \begin{itemize}
 \item \texttt{predef} (see \ref{ocaml.predef})
@@ -851,7 +851,7 @@ ocamldoc.
 \item Blank lines separate paragraphs.
 \item \verb!{{ }}! can be used to enclose inline verbatim text.
 \item \verb!{{{ }}}! can be used to enclose verbatim text where
-  whitespace is preserved. 
+  whitespace is preserved.
 \item The backslash character is used to escape special character sequences.
     In regular paragraph mode the special sequences are [\bs], [{{] and [{{{].
     In inline verbatim text, special sequences are [\bs] and [}}].
@@ -940,5 +940,5 @@ type gender =
 
 A library named \texttt{atdgen} is installed by the standard
 installation process. Only a fraction of it is officially supported
-and documented. The documentation is available online at 
+and documented. The documentation is available online at
 \url{##= odoc_url ##}.

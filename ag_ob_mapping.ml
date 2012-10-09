@@ -10,7 +10,7 @@ type b = Ag_biniou.biniou_repr
 type ob_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_biniou.biniou_repr) Ag_mapping.mapping
 
-type ob_def = 
+type ob_def =
     (Ag_ocaml.atd_ocaml_repr, Ag_biniou.biniou_repr) Ag_mapping.def
 
 
@@ -20,7 +20,7 @@ type ob_def =
 
 let rec mapping_of_expr (x : type_expr) : ob_mapping =
   match x with
-      `Sum (loc, l, an) -> 
+      `Sum (loc, l, an) ->
 	let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
 	let biniou_t = `Sum in
 	`Sum (loc, Array.of_list (List.map mapping_of_variant l),
@@ -62,7 +62,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
         let id = Atd_annot.get_field (fun s -> Some s) "" ["share"] "id" a in
         if id = "" then
           error loc "bug: missing or empty share.id annotation";
-        `Shared (loc, id, 
+        `Shared (loc, id,
                  mapping_of_expr x, ocaml_t, biniou_t)
 
     | `Name (loc, (loc2, s, l), an) ->
@@ -77,7 +77,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
 	       `Int (loc, `Int o, `Int b)
 	   | "float" ->
 	       `Float (loc, `Float, `Float)
-	   | "string" -> 
+	   | "string" ->
 	       `String (loc, `String, `String)
 	   | s ->
 	       `Name (loc, s, List.map mapping_of_expr l, None, None)
@@ -128,8 +128,8 @@ and mapping_of_variant = function
 	var_brepr = biniou_t
       }
 
-  | `Inherit _ -> assert false 
-      
+  | `Inherit _ -> assert false
+
 and mapping_of_field ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr x in
@@ -176,7 +176,7 @@ let def_of_atd (loc, (name, param, an), x) =
              | Some (types_module, main_module, ext_name) ->
                  let args = List.map (fun s -> `Tvar (loc, s)) param in
                  Some (`External
-                         (loc, name, args, 
+                         (loc, name, args,
                           `External (types_module, main_module, ext_name),
                           `External)
                       )
@@ -192,7 +192,7 @@ let def_of_atd (loc, (name, param, an), x) =
                        ocaml_ddoc = doc; };
     def_brepr = `Def;
   }
-    
+
 let defs_of_atd_module l =
   List.map (function `Type def -> def_of_atd def) l
 

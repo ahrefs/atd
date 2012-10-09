@@ -9,7 +9,7 @@ sig
   type 'a reader = Bi_inbuf.t -> 'a
     (** Type of a [read_] function as produced by [atdgen -biniou]. *)
 
-  type 'a writer = Bi_outbuf.t -> 'a -> unit  
+  type 'a writer = Bi_outbuf.t -> 'a -> unit
     (** Type of a [write_] function as produced by [atdgen -biniou]. *)
 
   val from_channel :
@@ -32,7 +32,7 @@ sig
 
   val to_channel :
     ?len:int ->
-    ?shrlen:int -> 
+    ?shrlen:int ->
     'a writer -> out_channel -> 'a -> unit
     (** Write a biniou value to a channel.
         @param len     output buffer length.
@@ -41,7 +41,7 @@ sig
 
   val to_file :
     ?len:int ->
-    ?shrlen:int -> 
+    ?shrlen:int ->
     'a writer -> string -> 'a -> unit
     (** Write a biniou value to a file.
         @param len     output buffer length.
@@ -270,7 +270,7 @@ sig
                        line of input will be reported as an error on line 10.
                        Default: 1.
     *)
-   
+
   val to_string :
     ?len:int ->
     'a writer -> 'a -> string
@@ -348,7 +348,7 @@ sig
 
 
   val preset_unknown_field_handler : string -> string -> unit
-    (** 
+    (**
         [preset_unknown_field_handler src_loc field_name]
         raises a [Failure] exception with a message containing
         the location of the type definition in the source ATD file

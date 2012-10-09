@@ -13,7 +13,7 @@ type loc_id = string
 (*
   Generic mapping, based on the core ATD types
 *)
-type ('a, 'b) mapping = 
+type ('a, 'b) mapping =
     [ `Unit of (loc * 'a * 'b)
     | `Bool of (loc * 'a * 'b)
     | `Int of (loc * 'a * 'b)
@@ -146,7 +146,7 @@ let apply param x args =
   let env =
     List.fold_left2
       (fun env var value -> Env.add var value env)
-      Env.empty param args 
+      Env.empty param args
   in
   subst env x
 
@@ -161,7 +161,7 @@ let rec find_name loc env visited name =
 and deref_expr env visited x =
   match x with
       `Name (loc, name, args, _, _) ->
-	(try 
+	(try
            let param, x = find_name loc env visited name in
            apply param x args
 	 with Not_found -> x)
@@ -169,7 +169,7 @@ and deref_expr env visited x =
 
 let flatten l = List.flatten (List.map snd l)
 
-let make_deref 
+let make_deref
     (l : (bool * ('a, 'b) def list) list) :
     (('a, 'b) mapping -> ('a, 'b) mapping) =
 
@@ -180,5 +180,5 @@ let make_deref
 	     None -> env
 	   | Some v -> Env.add d.def_name (d.def_param, v) env)
       Env.empty (flatten l) in
-  
+
   fun x -> deref_expr defs [] x

@@ -24,7 +24,7 @@ let set_once varname var x =
 Command-line parameter %S is set multiple times
 to incompatible values."
                       varname)
-        
+
     | None ->
         var := Some x
 
@@ -163,7 +163,7 @@ let main () =
         set_once "unknown field handler" unknown_field_handler s
     ),
     "FUNCTION
-          Call the given function of type (string -> unit) 
+          Call the given function of type (string -> unit)
           for every unknown JSON field found in the input
           instead of simply skipping them.
           See also -j-strict-fields.";
@@ -194,7 +194,7 @@ let main () =
                         set_once "no function definitions" with_fundefs false),
     "
           Do not dump OCaml function definitions";
-    
+
     "-ntd", Arg.Unit (fun () ->
                         set_once "no type definitions" with_typedefs false),
     "
@@ -235,12 +235,12 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
   if (!std_json || !unknown_field_handler <> None) && !mode = None then
     set_once "output mode" mode `Json;
 
-  let mode = 
+  let mode =
     match !mode with
         None -> `Biniou
       | Some x -> x
   in
-  
+
   let with_create =
     match !with_create with
         Some x -> x
@@ -255,9 +255,9 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
   let force_defaults =
     match mode with
         `J | `Json -> !j_defaults
-      | `T 
+      | `T
       | `B | `Biniou
-      | `V | `Validate 
+      | `V | `Validate
       | `Dep | `List -> false (* don't care *)
   in
 
@@ -294,7 +294,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
                | _ -> base
             )
   in
-  let type_aliases = 
+  let type_aliases =
     match base_prefix with
         None ->
           (match mode with
@@ -320,7 +320,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
       `Dep -> print_deps (get_base_prefix ())
     | `List -> print_file_list (get_base_prefix ())
     | `T | `B | `J | `V | `Biniou | `Json | `Validate ->
-        
+
         let opens = List.rev !opens in
         let make_ocaml_files =
           match mode with
@@ -337,7 +337,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
             | _ -> assert false
         in
         let with_default default = function None -> default | Some x -> x in
-        
+
         make_ocaml_files
           ~opens
           ~with_typedefs: (with_default true !with_typedefs)
@@ -349,7 +349,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
           ~type_aliases
           ~force_defaults
           atd_file ocaml_prefix
-    
+
 let () =
   try main ()
   with

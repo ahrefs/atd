@@ -41,7 +41,7 @@ SOURCES_RUNTIME = \
 
 SOURCES = \
   $(SOURCES_SHARED) $(SOURCES_BINIOU) $(SOURCES_JSON) $(SOURCES_VALIDATE) \
-  $(SOURCES_RUNTIME) 
+  $(SOURCES_RUNTIME)
 
 DOCFILES = ag_doc ag_util
 DOCSOURCES = $(addsuffix .mli, $(DOCFILES))
@@ -98,9 +98,9 @@ install: META
 
 uninstall:
 	test ! -f $(BINDIR)/atdgen.run || rm $(BINDIR)/atdgen.run
-	test ! -f $(BINDIR)/atdgen.run.exe || rm $(BINDIR)/atdgen.run.exe 
+	test ! -f $(BINDIR)/atdgen.run.exe || rm $(BINDIR)/atdgen.run.exe
 	test ! -f $(BINDIR)/atdgen || rm $(BINDIR)/atdgen
-	test ! -f $(BINDIR)/atdgen.exe || rm $(BINDIR)/atdgen.exe 
+	test ! -f $(BINDIR)/atdgen.exe || rm $(BINDIR)/atdgen.exe
 	ocamlfind remove atdgen
 
 reinstall:

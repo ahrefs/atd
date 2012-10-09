@@ -23,12 +23,12 @@ let check b =
   if not b then fail ()
 
 let expect_error f x =
-  try 
+  try
     ignore (f x);
     printf "Did not get expected error\n%!";
     fail ()
   with
-      Ag_ob_run.Error s 
+      Ag_ob_run.Error s
     | Ag_oj_run.Error s ->
         printf "Got expected error:\n%s\n%!" s
 
@@ -68,7 +68,7 @@ let test_biniou_missing_field () =
 
 let test_biniou_missing_cell () =
   section "biniou missing tuple fields";
-  expect_error 
+  expect_error
     Test.extended_tuple_of_string
     (Test.string_of_base_tuple test_missing_tuple)
 
@@ -79,7 +79,7 @@ let test_json_missing_field () =
 
 let test_json_missing_cell () =
   section "json missing tuple fields";
-  expect_error 
+  expect_error
     Testj.extended_tuple_of_string
     (Testj.string_of_base_tuple test_missing_tuple)
 
@@ -112,7 +112,7 @@ let test_json_assoc_array () =
 
 let make_mixed_record_array n =
   Array.init n (
-    fun i -> 
+    fun i ->
       {
 	Test.field0 = Some i;
 	field1 = Some 0.555;
@@ -323,7 +323,7 @@ let test_raw_json () =
   let s = Test3j.string_of_t x in
   let x' = Test3j.t_of_string s in
   check (x = x')
-  
+
 let test_biniou_sharing_graph () =
   section "biniou sharing - graph";
   let a = { Test3b.value = "a"; neighbors = [] } in
@@ -346,7 +346,7 @@ let test_biniou_sharing_graph () =
   in
   check (a' == a'');
   check (b' == b'')
-  
+
 let test_biniou_sharing_strings () =
   section "biniou sharing - strings";
   let x = ref "abc" in

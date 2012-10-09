@@ -3,7 +3,7 @@
   Atd_indent extended with annnotations allowing some postprocessing.
 *)
 
-type t = 
+type t =
     [
     | `Line of string        (* single line (not indented) *)
     | `Block of t list       (* indented sequence *)

@@ -99,7 +99,7 @@ let check_duplicate_hashes kind l =
             sprintf "\
 Definition of %s %s.
 
-Both %s and %s have the same hash %i which 
+Both %s and %s have the same hash %i which
 makes them indistinguishable once in the Biniou format.
 Use different names."
               kind s
@@ -152,7 +152,7 @@ let find_clashes () =
     ) tbl []
   in
   let clashes = List.sort compare clashes in
-  List.iter (fun l -> print_endline (String.concat " " l)) clashes  
+  List.iter (fun l -> print_endline (String.concat " " l)) clashes
 *)
 
 (*

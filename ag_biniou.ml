@@ -3,7 +3,7 @@
   Mapping from ATD to biniou
 *)
 
-type biniou_int = 
+type biniou_int =
     [ `Svint | `Uvint | `Int8 | `Int16 | `Int32 | `Int64 ]
 
 type biniou_list = [ `Array | `Table ]

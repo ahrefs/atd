@@ -51,7 +51,7 @@ let make_end_branch s pos x =
 let rec make_branches (x : 'a tree) : 'a tree =
   match x with
       `Leaf _ -> x
-    | `Branch (l, x) -> 
+    | `Branch (l, x) ->
 	(match make_branches x with
 	     `Branch (l2, x2) -> `Branch ((l @ l2), x2)
 	   | x -> `Branch (l, x))
@@ -72,7 +72,7 @@ let make_initial_tree l : 'a tree =
 	  else `End
 	in
 	make_end_branch s pos x
-	  
+	
     | ((s, _) :: _) as l ->
 	if i < String.length s then
 	  let groups = group_by (fun (s, _) -> `Char s.[i]) l in
@@ -163,7 +163,7 @@ let rec map_to_ocaml string_id pos_id e = function
             `Line ")";
           ];
 	]
-      ] 
+      ]
 
 and make_case string_id pos_id e (value, tree) =
   `Inline [
@@ -220,7 +220,7 @@ let test () =
   ]
   in
   let cases =
-    List.map 
+    List.map
       (fun s -> (s, [ `Line (sprintf "Some `Case_%s" s) ]))
       l
   in
@@ -231,7 +231,7 @@ let test () =
   in
   Atd_indent.to_stdout (List.map Ag_indent.strip expr)
 
-      
+
 let make_ocaml_expr_naive
     ?(string_id = "s")
     ?(pos_id = "pos")
@@ -255,7 +255,7 @@ let make_ocaml_expr_naive
 
 
 let make_ocaml_expr
-    ~optimized 
+    ~optimized
     ?string_id
     ?pos_id
     ?len_id
@@ -302,7 +302,7 @@ let make_ocaml_int_mapping
           sprintf "if %s < 0 || %s < 0 || %s + %s > String.length %s then"
             pos_id len_id pos_id len_id string_id
         );
-        `Block [ 
+        `Block [
           `Line "invalid_arg \"out-of-bounds substring position or length\";";
         ];
         `Inline int_mapping_body;

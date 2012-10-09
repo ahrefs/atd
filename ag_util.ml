@@ -23,7 +23,7 @@ let output_file fname write =
 module Biniou =
 struct
   type 'a reader = Bi_inbuf.t -> 'a
-  type 'a writer = Bi_outbuf.t -> 'a -> unit  
+  type 'a writer = Bi_outbuf.t -> 'a -> unit
 
   let from_channel ?len ?shrlen read ic =
     let ib = Bi_inbuf.from_channel ?len ?shrlen ic in

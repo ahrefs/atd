@@ -31,7 +31,7 @@ pkg = changes in the structure of the package or in the installation procedure
                   [+ui] new options -j-strict-fields and
                         -j-custom-fields for handling unknown JSON
                         fields instead of skipping them.
-                  [+ui] new -j-defaults option that forces output of 
+                  [+ui] new -j-defaults option that forces output of
                         JSON fields with default values
                   [!!!] optional record fields now skipped if
                         their value is null

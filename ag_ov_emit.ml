@@ -49,7 +49,7 @@ let nth name i len =
   String.concat ", " l
 
 let get_fields a =
-  let all = 
+  let all =
     List.map (
       fun x ->
 	match x.f_arepr with
@@ -99,14 +99,14 @@ let prepend_validator = function
 let prepend_validator_s v s2 =
   match v with
     None -> s2
-  | Some s1 -> 
+  | Some s1 ->
       sprintf "(fun x -> ( %s ) x && (%s) x)" s1 s2
 
 let prepend_validator_f v l =
   match v with
     None -> l
-  | Some s -> 
-      [ 
+  | Some s ->
+      [
         `Line "(fun x ->";
         `Block [
           `Line (sprintf "( %s ) x && (" s);
@@ -140,7 +140,7 @@ let rec get_validator_name
            | (_, false) -> assert false
         )
     | `Tvar (loc, s) -> "validate_" ^ name_of_var s
-        
+
     | `Name (loc, s, args, None, opt) ->
         let v1 =
           let l =
@@ -169,7 +169,7 @@ let rec get_validator_name
                )
            | (_, true) -> assert false
         )
-          
+
     | _ -> assert false
 
 
@@ -248,10 +248,10 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
 	        ]
 	    ) l
 	  in
-	  let l = 
+	  let l =
 	    insert (`Line "&&") l
 	  in
-          [ 
+          [
 	    `Annot ("fun", `Line "fun x ->");
 	    `Block [
               `Inline (prepend_validator v);
@@ -296,7 +296,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
 
 
 
-and make_variant_validator tick x : 
+and make_variant_validator tick x :
     Ag_indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
@@ -450,7 +450,7 @@ let make_ml
 
 let make_ocaml_files
     ~opens
-    ~with_typedefs 
+    ~with_typedefs
     ~with_create
     ~with_fundefs
     ~all_rec
@@ -487,7 +487,7 @@ let make_ocaml_files
   let ocaml_typedefs =
     Ag_ocaml.ocaml_of_atd ~target:`Validate ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
-  let header = 
+  let header =
     let src =
       match atd_file with
           None -> "stdin"
@@ -495,7 +495,7 @@ let make_ocaml_files
     in
     sprintf "(* Auto-generated from %s *)\n" src
   in
-  let mli = 
+  let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
   in

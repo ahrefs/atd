@@ -26,7 +26,7 @@ let unsupported_variant h has_arg =
 
 
 let missing_tuple_fields len req_fields =
-  let missing = 
+  let missing =
     List.fold_right (
       fun i acc -> if i >= len then i :: acc else acc
     ) req_fields []
@@ -212,7 +212,7 @@ let write_tagged tag write buf x =
 let write_untagged_option write buf x =
   match x with
       None -> Bi_io.write_numtag buf 0 false
-    | Some x -> 
+    | Some x ->
 	Bi_io.write_numtag buf 0 true;
 	write buf x
 

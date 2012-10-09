@@ -141,7 +141,7 @@ after the field name or variant name in the ATD type definition.
         in
         if loc <> orig_loc then
           error3
-            root_loc msg1 
+            root_loc msg1
             orig_loc msg2
             loc msg3
         else

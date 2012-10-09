@@ -32,7 +32,7 @@
   Character encoding: UTF-8 is strongly recommended, if not plain ASCII.
 *)
 
-type inline = 
+type inline =
     [ `Text of string
     | `Code of string ]
       (** [`Text] is regular text. [`Code] is text that was enclosed

@@ -9,7 +9,7 @@ type v = Ag_validate.validate_repr
 type ov_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.mapping
 
-type ob_def = 
+type ob_def =
     (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.def
 
 (*
@@ -20,7 +20,7 @@ type ob_def =
      of all type expressions on which it depends.
 
   2. Read annotations.
-     If any of the type expressions has a validator annotation or if 
+     If any of the type expressions has a validator annotation or if
      on the type expressions is abstract, then the result is false.
 *)
 
@@ -65,7 +65,7 @@ let for_all_children f x0 =
 
 (*
   Return if an expression is shallow, i.e. it does not require to call
-  a validation function other than the one possibly given 
+  a validation function other than the one possibly given
   by an annotation <ocaml validator="..."> on this node.
 
   Shallow:
@@ -116,7 +116,7 @@ and name_is_shallow defs visited results x =
                )
            | Some x -> noval x && scan_expr defs visited results x
         )
-          
+
     | `Tvar (loc, _) -> false
     | _ -> (* already verified in the call to scan_expr above *) true
 
@@ -163,7 +163,7 @@ let rec mapping_of_expr
   let v an = Ag_validate.get_validator an in
   let v2 an x = (Ag_validate.get_validator an, is_shallow x) in
   match x0 with
-      `Sum (loc, l, an) -> 
+      `Sum (loc, l, an) ->
 	let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
 	`Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
 	      ocaml_t, v2 an x0)
@@ -199,7 +199,7 @@ let rec mapping_of_expr
         let id = Atd_annot.get_field (fun s -> Some s) "" ["share"] "id" an in
         if id = "" then
           error loc "bug: missing or empty share.id annotation";
-        `Shared (loc, id, 
+        `Shared (loc, id,
                  mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Name (loc, (loc2, s, l), an) ->
@@ -213,7 +213,7 @@ let rec mapping_of_expr
 	       `Int (loc, `Int o, (v an, true))
 	   | "float" ->
 	       `Float (loc, `Float, (v an, true))
-	   | "string" -> 
+	   | "string" ->
 	       `String (loc, `String, (v an, true))
 	   | s ->
                let validator =
@@ -272,8 +272,8 @@ and mapping_of_variant is_shallow = function
 	var_brepr = validate_t;
       }
 
-  | `Inherit _ -> assert false 
-      
+  | `Inherit _ -> assert false
+
 and mapping_of_field is_shallow ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr is_shallow x in
@@ -320,7 +320,7 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
              | Some (types_module, main_module, ext_name) ->
                  let args = List.map (fun s -> `Tvar (loc, s)) param in
                  Some (`External
-                         (loc, name, args, 
+                         (loc, name, args,
                           `External (types_module, main_module, ext_name),
                           (Ag_validate.get_validator an2, false))
                       )
@@ -341,7 +341,7 @@ let fill_def_tbl defs l =
   List.iter (
     function `Type (loc, (name, param, an), x) -> Hashtbl.add defs name x
   ) l
-  
+
 let init_def_tbl () =
   Hashtbl.create 100
 

@@ -28,7 +28,7 @@ let make_ocaml_biniou_intf ~with_create buf deref defs =
         let writer_params =
           String.concat "" (
             List.map
-              (fun s -> 
+              (fun s ->
                  sprintf "\n  Bi_io.node_tag ->\
                           \n  (Bi_outbuf.t -> '%s -> unit) ->\
                           \n  (Bi_outbuf.t -> '%s -> unit) ->" s s)
@@ -39,7 +39,7 @@ let make_ocaml_biniou_intf ~with_create buf deref defs =
           String.concat "" (
             List.map (
               fun s ->
-                sprintf 
+                sprintf
                   "\n  (Bi_io.node_tag -> (Bi_inbuf.t -> '%s)) ->\
                    \n  (Bi_inbuf.t -> '%s) ->" s s
             )
@@ -80,7 +80,7 @@ val write_%s :%s
 	bprintf buf "\
 val string_of_%s :%s
   ?len:int -> %s -> string
-  (** Serialize a value of type {!%s} into 
+  (** Serialize a value of type {!%s} into
       a biniou string. *)
 
 "
@@ -115,7 +115,7 @@ val read_%s :%s
 val %s_of_string :%s
   ?pos:int -> string -> %s
   (** Deserialize a biniou value of type {!%s}.
-      @param pos specifies the position where 
+      @param pos specifies the position where
                  reading starts. Default: 0. *)
 
 "
@@ -137,7 +137,7 @@ let get_biniou_tag (x : ob_mapping) =
   match x with
       `Unit (loc, `Unit, `Unit) -> "Bi_io.unit_tag"
     | `Bool (loc, `Bool, `Bool) -> "Bi_io.bool_tag"
-    | `Int (loc, `Int o, `Int b) -> 
+    | `Int (loc, `Int o, `Int b) ->
 	(match b with
 	     `Uvint -> "Bi_io.uvint_tag"
 	   | `Svint -> "Bi_io.svint_tag"
@@ -184,7 +184,7 @@ let get_fields deref a =
 		    `With_default ->
 		      (match o.Ag_ocaml.ocaml_default with
 			   None ->
-			     let d = 
+			     let d =
 			       Ag_ocaml.get_implicit_ocaml_default
                                  deref x.f_value in
 			     if d = None then
@@ -475,7 +475,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
 		]
 	    ) a
 	  in
-	  [ 
+	  [
             `Line (sprintf "Bi_vint.write_uvint ob %i;" len);
 	    `Inline (List.flatten (Array.to_list a))
           ]
@@ -584,13 +584,13 @@ and make_record_writer deref tagged a record_kind =
     (* count the number of defined optional fields in order
        to determine the length of the record *)
     let min_len =
-      List.fold_left 
+      List.fold_left
 	(fun n (_, _, _, opt, _) -> if opt then n else n + 1) 0 fields
     in
     let max_len = List.length fields in
     if min_len = max_len then
       [ `Line (sprintf "Bi_vint.write_uvint ob %i;" max_len) ]
-    else 
+    else
       [
         (* Using a ref because many "let len = ... len + 1 in"
            cause ocamlopt to take a very long time to finish *)
@@ -612,7 +612,7 @@ and make_record_writer deref tagged a record_kind =
 	`Line "Bi_vint.write_uvint ob !len;"
       ]
   in
-  
+
   let write_fields =
     List.map (
       fun (x, ocaml_fname, ocaml_default, optional, unwrapped) ->
@@ -669,7 +669,7 @@ and make_table_writer deref tagged list_kind x =
   let a, record_kind =
     match deref x with
 	`Record (_, a, `Record record_kind, `Record) -> a, record_kind
-      | _ -> 
+      | _ ->
 	  error (loc_of_mapping x) "Not a record type"
   in
   let dot =
@@ -735,7 +735,7 @@ let study_record deref fields =
   let maybe_constant =
     List.for_all (function (_, _, Some _, _, _) -> true | _ -> false) fields
   in
-  let _, init_fields = 
+  let _, init_fields =
     List.fold_right (
       fun (x, name, default, opt, unwrap) (maybe_constant, l) ->
 	let maybe_constant, v =
@@ -743,7 +743,7 @@ let study_record deref fields =
 	      None ->
 		assert (not opt);
 		(*
-		  The initial value is a float because the record may be 
+		  The initial value is a float because the record may be
 		  represented as a double_array (unboxed floats).
 		  Float values work in all cases.
 		*)
@@ -770,7 +770,7 @@ let study_record deref fields =
   let init_val = [ `Line "{"; `Block init_fields; `Line "}" ] in
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
-  let init_bits = 
+  let init_bits =
     Array.to_list (
       Array.init k (
 	fun i -> `Line (sprintf "let bits%i = ref 0 in" i)
@@ -789,7 +789,7 @@ let study_record deref fields =
   let set_bit z0 =
     match mapping.(z0) with
 	None -> []
-      | Some z ->    
+      | Some z ->
 	  let i = z / 31 in
 	  let j = z mod 31 in
 	  [ `Line (sprintf "bits%i := !bits%i lor 0x%x;" i i (1 lsl j)) ]
@@ -858,7 +858,7 @@ let wrap_bodies ~tagged l =
     let cases =
       List.map (
 	fun (expected_tag, body) ->
-	  `Inline [ 
+	  `Inline [
 	    `Line (sprintf "| %i -> " expected_tag);
 	    `Block body;
 	  ]
@@ -878,9 +878,9 @@ let wrap_bodies ~tagged l =
     let cases =
       List.map (
 	fun (expected_tag, body) ->
-	  `Inline [ 
+	  `Inline [
 	    `Line (sprintf "| %i -> " expected_tag);
-	    `Block [ 
+	    `Block [
 	      `Line "(fun ib ->";
 	      `Block body;
 	      `Line ")";
@@ -895,7 +895,7 @@ let wrap_bodies ~tagged l =
 	`Line "| _ -> Ag_ob_run.read_error ()"
       ]
     ]
-      
+
 
 let rec make_reader deref ~tagged (x : ob_mapping) : Ag_indent.t list =
   match x with
@@ -1068,7 +1068,7 @@ and make_variant_reader deref tick x : Ag_indent.t list =
         ]
 
 and make_record_reader ?shared_id deref ~tagged a record_kind =
-  let fields = get_fields deref a in  
+  let fields = get_fields deref a in
   let init_val, init_bits, set_bit, check_bits = study_record deref fields in
 
   let build share body =
@@ -1086,7 +1086,7 @@ and make_record_reader ?shared_id deref ~tagged a record_kind =
       `Line "Ag_ob_run.identity x"
     ]
   in
-  
+
   let loop body =
     match shared_id with
         None -> build [] body
@@ -1121,7 +1121,7 @@ and make_record_reader ?shared_id deref ~tagged a record_kind =
 	    else x.f_value
 	  in
 	  let wrap l =
-	    if unwrapped then 
+	    if unwrapped then
 	      [
 		`Line "Some (";
 		`Block l;
@@ -1156,7 +1156,7 @@ and make_record_reader ?shared_id deref ~tagged a record_kind =
       ]
     ]
   in
-      
+
   loop body
 
 and make_tuple_reader deref ~tagged a =
@@ -1190,7 +1190,7 @@ and make_tuple_reader deref ~tagged a =
 	  fun i (x, default) ->
 	    let read_value = make_reader deref ~tagged:true x.cel_value in
 	    let get_value =
-	      if i < min_length then 
+	      if i < min_length then
                 [
                   `Line "(";
                   `Block read_value;
@@ -1216,7 +1216,7 @@ and make_tuple_reader deref ~tagged a =
 	) cells
       )
     )
-  in  
+  in
 
   let make_tuple =
     sprintf "(%s)"
@@ -1280,7 +1280,7 @@ and make_table_reader deref loc list_kind x =
 	      `Line "in";
 	      `Line "(fun x ib ->";
 	      `Block [
-		`Line (sprintf 
+		`Line (sprintf
 			 "Obj.set_field (Obj.repr x) %i \
                             (Obj.repr (read ib)))" i
 		      )
@@ -1532,13 +1532,13 @@ let make_ml
 
 let make_ocaml_files
     ~opens
-    ~with_typedefs 
+    ~with_typedefs
     ~with_create
     ~with_fundefs
     ~all_rec
     ~pos_fname
     ~pos_lnum
-    ~type_aliases 
+    ~type_aliases
     ~force_defaults
     atd_file out =
   let head, m0 =
@@ -1571,7 +1571,7 @@ let make_ocaml_files
     Ag_ocaml.ocaml_of_atd ~target:`Biniou ~type_aliases (head, m1) in
   let ocaml_impl_misc = make_shared_id_defs m0 in
   let defs = translate_mapping m2 in
-  let header = 
+  let header =
     let src =
       match atd_file with
           None -> "stdin"
@@ -1579,7 +1579,7 @@ let make_ocaml_files
     in
     sprintf "(* Auto-generated from %s *)\n" src
   in
-  let mli = 
+  let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
   in

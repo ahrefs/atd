@@ -13,7 +13,7 @@ type json_field = {
 }
 
 type json_repr =
-    [ 
+    [
     | `Unit
     | `Bool
     | `Int

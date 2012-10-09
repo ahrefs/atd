@@ -8,7 +8,7 @@ type validate_repr = (string option * bool)
        The first value opt_v is the optional local validator
        coming from an ATD annotation (see `Local).
        The second value b is true iff the data doesn't need scanning.
-       
+
        There are four cases:
        opt_v = None && b = true => no validation is needed at all
        opt_v = None && b = false => validators must be called on some
@@ -23,4 +23,4 @@ type validate_repr = (string option * bool)
 let get_validator an =
   Atd_annot.get_field (fun s -> Some (Some s)) None
     ["ocaml"] "validator" an
-  
+

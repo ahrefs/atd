@@ -41,7 +41,7 @@ type hello = [ Hello of string | World ] <ocaml repr="poly">
 type tup = (int * test)
 
 
-type test_variant = 
+type test_variant =
     [ Case1 | Case2 of int | Case3 of string | Case4 of test_variant list ]
 
 type date = (int * int nullable * int nullable)
@@ -72,7 +72,7 @@ type mixed_record = {
   field14 : date;
 }
 
-type mixed = 
+type mixed =
     (mixed_record list <ocaml repr="array"> <biniou repr="table">
     * mixed_record list <ocaml repr="array">) list
 
@@ -106,7 +106,7 @@ type val2 = {
 
 type base_tuple = (int * float) <ocaml validator="fun (i, f) -> float i < f">
 type extended_tuple =
-    (int 
+    (int
      * float
      * <ocaml default="true"> : bool
      * <ocaml default="None"> : int option

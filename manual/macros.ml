@@ -13,7 +13,7 @@ let print_ocaml s =
 
 (* Validate ATD syntax before printing *)
 let print_atd s =
-  try 
+  try
     ignore (Atd_util.load_string
               ~expand:true ~keep_poly:true
               ~inherit_fields:true ~inherit_variants:true s);
@@ -124,7 +124,7 @@ Command failed: %s
   with e ->
     finally ();
     raise e
-    
+
 
 let print_atdgen ot s =
   ignore (check_atdgen ot s);
@@ -140,7 +140,7 @@ let atd () =
 
 let atdgen_biniou () =
   Camlmix.print_with (print_atdgen `Biniou)
-  
+
 let atdgen_json () =
   Camlmix.print_with (print_atdgen `Json)
 
@@ -200,5 +200,5 @@ let annot_field ?label field =
   print (sprintf "\\subsubsection{Field \\texttt{%s}\\label{%s}}"
            s label)
 
-let odoc_url = 
+let odoc_url =
   "http://oss.wink.com/atdgen/atdgen-" ^ version ^ "/odoc/index.html"

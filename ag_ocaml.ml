@@ -335,7 +335,7 @@ let map_def
     in
     if x = None && alias = None then
       None
-    else 
+    else
       Some {
         o_def_name = (s, param);
         o_def_alias = alias;
@@ -430,13 +430,13 @@ let plist = { list with
 		space_before_closing = false }
 
 let hlist = { list with wrap_body = `No_breaks }
-let shlist = { hlist with 
+let shlist = { hlist with
 		 stick_to_label = false;
 		 space_after_opening = false;
 		 space_before_closing = false }
 let shlist0 = { shlist with space_after_separator = false }
 
-let llist = { 
+let llist = {
   list with
     separators_stick_left = false;
     space_before_separator = true;
@@ -450,7 +450,7 @@ let lplist = {
 }
 
 let vseq = {
-  list with 
+  list with
     indent_body = 0;
     wrap_body = `Force_breaks;
 }
@@ -474,11 +474,11 @@ let horizontal_sequence0 l = List (("", "", "", shlist0), l)
 let rec insert sep = function
     [] | [_] as l -> l
   | x :: l -> x :: sep @ insert sep l
-      
+
 let rec insert2 f = function
     [] | [_] as l -> l
   | x :: (y :: _ as l) -> x :: f x y @ insert2 f l
-      
+
 
 let vertical_sequence ?(skip_lines = 0) l =
   let l =
@@ -543,8 +543,8 @@ let make_ocamldoc_blocks (l : Ag_doc.block list) =
     ) (l :> [ Ag_doc.block | `Before_paragraph ] list)
   in
   List.map make_ocamldoc_block l
-  
-  
+
+
 let make_ocamldoc_comment (`Text l) =
   let blocks = make_ocamldoc_blocks l in
   let xlist =
@@ -553,14 +553,14 @@ let make_ocamldoc_comment (`Text l) =
       | _ -> vlist
   in
   List (("(**", "", "*)", xlist), blocks)
-       
+
 let prepend_ocamldoc_comment doc x =
   match doc with
       None -> x
     | Some y ->
         let comment = make_ocamldoc_comment y in
         List (("", "", "", rlist), [comment;x])
-          
+
 let append_ocamldoc_comment x doc =
   match doc with
       None -> x
@@ -579,7 +579,7 @@ let rec format_module_item
     if b then s1 ^ s2
     else s1
   in
-  let part1 = 
+  let part1 =
     horizontal_sequence (
       make_atom type_ ::
         prepend_type_param param
@@ -604,7 +604,7 @@ let rec format_module_item
   let part123 =
     match expr with
         None -> part12
-            
+
       | Some t ->
 	  Label (
 	    (part12, label),
@@ -612,14 +612,14 @@ let rec format_module_item
 	  )
   in
   prepend_ocamldoc_comment doc part123
-    
-	  
+
+	
 and prepend_type_param l tl =
   match l with
       [] -> tl
     | _ ->
 	let make_var s = make_atom ("'" ^ s) in
-	let x = 
+	let x =
 	  match l with
 	      [s] -> make_var s
 	    | l -> List (("(", ",", ")", plist), List.map make_var l)
@@ -630,7 +630,7 @@ and prepend_type_args l tl =
   match l with
       [] -> tl
     | _ ->
-	let x = 
+	let x =
 	  match l with
 	      [t] -> format_type_expr t
 	    | l -> List (("(", ",", ")", plist), List.map format_type_expr l)
@@ -672,7 +672,7 @@ and format_type_expr x =
 
 and format_type_name name args =
   horizontal_sequence (prepend_type_args args [ make_atom name ])
-	  
+	
 and format_field ((s, is_mutable), t, doc) =
   let l =
     let l = [make_atom (s ^ ":")] in
@@ -712,7 +712,7 @@ and format_variant kind (s, o, doc) =
 let format_module_items is_rec (l : ocaml_module_body) =
   match l with
       x :: l ->
-	format_module_item true x :: 
+	format_module_item true x ::
 	  List.map (fun x -> format_module_item false x) l
     | [] -> []
 
@@ -757,7 +757,7 @@ let get_full_type_name x =
     | l ->
         let l = List.map (fun s -> "'" ^ s) l in
         sprintf "(%s) %s" (String.concat ", " l) s
-        
+
 
 let unwrap_option deref x =
   match deref x with
@@ -811,7 +811,7 @@ let map_record_creator_field deref x =
         let impl1 = sprintf "\n  ?%s" fname in
         intf, impl1, impl2
 
-    | `With_default -> 
+    | `With_default ->
         let t = ocaml_of_expr (ocaml_of_expr_mapping x.f_value) in
         let intf = sprintf "\n  ?%s: %s ->" fname t in
         let impl1 =

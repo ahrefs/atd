@@ -65,7 +65,7 @@ val string_of_%s :%s
   ?len:int -> %s -> string
   (** Serialize a value of type {!%s}
       into a JSON string.
-      @param len specifies the initial length 
+      @param len specifies the initial length
                  of the buffer used internally.
                  Default: 1024. *)
 
@@ -132,7 +132,7 @@ let get_fields p a =
                     `With_default ->
                       (match o.Ag_ocaml.ocaml_default with
                            None ->
-                             let d = 
+                             let d =
                                Ag_ocaml.get_implicit_ocaml_default
                                  p.deref x.f_value in
                              if d = None then
@@ -339,14 +339,14 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
 	      ]
 	  ) a
 	in
-	let l = 
+	let l =
 	  insert (`Line "Bi_outbuf.add_char ob ',';") (Array.to_list a)
 	in
         let op, cl =
           if p.std then '[', ']'
           else '(', ')'
         in
-	[ 
+	[
 	  `Annot ("fun", `Line "fun ob x ->");
 	  `Block [
 	    `Line (sprintf "Bi_outbuf.add_char ob %C;" op);
@@ -384,7 +384,7 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
 	)
 
     | `Option (loc, x, `Option, `Option) ->
-	[ 
+	[
 	  `Line (sprintf "Ag_oj_run.write_%soption ("
                    (if p.std then "std_" else ""));
 	  `Block (make_writer p x);
@@ -392,7 +392,7 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
 	]
 
     | `Nullable (loc, x, `Nullable, `Nullable) ->
-	[ 
+	[
 	  `Line "Ag_oj_run.write_nullable (";
 	  `Block (make_writer p x);
 	  `Line ")";
@@ -405,7 +405,7 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
 
 
 
-and make_variant_writer p tick x : 
+and make_variant_writer p tick x :
     Ag_indent.t list =
   let o, j =
     match x.var_arepr, x.var_brepr with
@@ -511,7 +511,7 @@ and make_record_writer p a record_kind =
     `Line "Bi_outbuf.add_char ob '{';";
     `Line "let is_first = ref true in";
     `Inline write_fields;
-    `Line "Bi_outbuf.add_char ob '}';";    
+    `Line "Bi_outbuf.add_char ob '}';";
   ]
 
 
@@ -520,7 +520,7 @@ let study_record deref fields =
   let maybe_constant =
     List.for_all (function (_, _, Some _, _, _, _) -> true | _ -> false) fields
   in
-  let _, init_fields = 
+  let _, init_fields =
     List.fold_right (
       fun (x, oname, default, jname, opt, unwrap) (maybe_constant, l) ->
 	let maybe_constant, v =
@@ -528,7 +528,7 @@ let study_record deref fields =
 	      None ->
 		assert (not opt);
 		(*
-                  The initial value is a float because the record may be 
+                  The initial value is a float because the record may be
                   represented as a double_array (unboxed floats).
                   Float values work in all cases.
 		*)
@@ -555,7 +555,7 @@ let study_record deref fields =
   let init_val = [ `Line "{"; `Block init_fields; `Line "}" ] in
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
-  let init_bits = 
+  let init_bits =
     Array.to_list (
       Array.init k (
 	fun i -> `Line (sprintf "let bits%i = ref 0 in" i)
@@ -574,7 +574,7 @@ let study_record deref fields =
   let set_bit z0 =
     match mapping.(z0) with
 	None -> []
-      | Some z ->    
+      | Some z ->
 	  let i = z / 31 in
 	  let j = z mod 31 in
 	  [ `Line (sprintf "bits%i := !bits%i lor 0x%x;" i i (1 lsl j)) ]
@@ -852,7 +852,7 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 
 
 and make_record_reader p loc a record_kind =
-  let fields = get_fields p a in  
+  let fields = get_fields p a in
   let init_val, init_bits, set_bit, check_bits = study_record p.deref fields in
 
   let read_field =
@@ -865,7 +865,7 @@ and make_record_reader p loc a record_kind =
 	    else x.f_value
 	  in
 	  let wrap l =
-            if unwrapped then 
+            if unwrapped then
               [
 		`Line "Some (";
 		`Block l;
@@ -1057,7 +1057,7 @@ and make_tuple_reader deref a =
 	) cells
       )
     )
-  in  
+  in
 
   let make_tuple =
     sprintf "(%s)"
@@ -1073,7 +1073,7 @@ and make_tuple_reader deref a =
     done;
     sprintf "[ %s ]" (String.concat "; " !acc)
   in
-  
+
   let finish_empty_tuple =
     if min_length = 0 then
       [
@@ -1320,7 +1320,7 @@ let make_ocaml_files
   let ocaml_typedefs =
     Ag_ocaml.ocaml_of_atd ~target:`Json ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
-  let header = 
+  let header =
     let src =
       match atd_file with
           None -> "stdin"
@@ -1328,7 +1328,7 @@ let make_ocaml_files
     in
     sprintf "(* Auto-generated from %s *)\n" src
   in
-  let mli = 
+  let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
   in

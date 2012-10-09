@@ -51,34 +51,34 @@ let write_array write_item ob a =
 let write_assoc_list write_item ob l =
   Bi_outbuf.add_char ob '{';
   list_iter (
-    fun ob (k, v) -> 
+    fun ob (k, v) ->
       Yojson.Safe.write_string ob k;
       Bi_outbuf.add_char ob ':';
       write_item ob v
   ) write_comma ob l;
   Bi_outbuf.add_char ob '}'
-      
+
 let write_assoc_array write_item ob l =
   Bi_outbuf.add_char ob '{';
   array_iter (
-    fun ob (k, v) -> 
+    fun ob (k, v) ->
       Yojson.Safe.write_string ob k;
       Bi_outbuf.add_char ob ':';
       write_item ob v
   ) write_comma ob l;
   Bi_outbuf.add_char ob '}'
-      
+
 
 let write_option write_item ob = function
     None -> Bi_outbuf.add_string ob "<\"None\">"
-  | Some x -> 
+  | Some x ->
       Bi_outbuf.add_string ob "<\"Some\":";
       write_item ob x;
       Bi_outbuf.add_string ob ">"
 
 let write_std_option write_item ob = function
     None -> Bi_outbuf.add_string ob "\"None\""
-  | Some x -> 
+  | Some x ->
       Bi_outbuf.add_string ob "[\"Some\",";
       write_item ob x;
       Bi_outbuf.add_string ob "]"
@@ -166,7 +166,7 @@ let read_until_field_value p lb =
   Yojson.Safe.read_space p lb
 
 let missing_tuple_fields len req_fields =
-  let missing = 
+  let missing =
     List.fold_right (
       fun i acc -> if i >= len then i :: acc else acc
     ) req_fields []

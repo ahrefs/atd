@@ -1,4 +1,3 @@
-
 open Printf
 
 let current_section = ref ""
@@ -21,6 +20,18 @@ let fail () =
 
 let check b =
   if not b then fail ()
+
+let check_valid = function
+  | None -> ()
+  | Some error ->
+      printf "%s\n%!" (Ag_util.Validation.string_of_error error);
+      fail ()
+
+let check_invalid = function
+  | None -> fail ()
+  | Some error ->
+      printf "%s\n%!" (Ag_util.Validation.string_of_error error)
+
 
 let expect_error f x =
   try
@@ -248,14 +259,14 @@ let test_json_space () =
 
 let test_validators0 () =
   section "validators0";
-  check (Testv.validate_test test_correctness_data)
+  check_valid (Testv.validate_test [] test_correctness_data)
 
 let test_validators1 () =
   section "validators1";
   let valid = (0, 1.) in
   let invalid = (1, 0.) in
-  check (Testv.validate_base_tuple valid);
-  check (not (Testv.validate_base_tuple invalid));
+  check_valid (Testv.validate_base_tuple [] valid);
+  check_invalid (Testv.validate_base_tuple [] invalid);
 
   let x1 = {
     Test.b0x = 1;
@@ -266,29 +277,29 @@ let test_validators1 () =
     b5x = 1.1;
   }
   in
-  check (not (Testv.validate_extended x1));
+  check_invalid (Testv.validate_extended [] x1);
   let x2 = { x1 with Test.b1x = false } in
-  check (Testv.validate_extended x2);
+  check_valid (Testv.validate_extended [] x2);
   let x3 = { x2 with Test.b0x = -1 } in
-  check (not (Testv.validate_extended x3))
+  check_invalid (Testv.validate_extended [] x3)
 
 let test_validators2 () =
   section "validators2";
   let v1 = `A in
-  check (not (Testv.validate_p v1));
+  check_invalid (Testv.validate_p [] v1);
   let v2 = `B { Test.a = 0; b = true; c = `C } in
-  check (Testv.validate_p v2)
+  check_valid (Testv.validate_p [] v2)
 
 let test_validators3 () =
   section "validators3";
   let o = Some 0 in
-  check (not (Testv.validate_option_validation o))
+  check_invalid (Testv.validate_option_validation [] o)
 
 let test_validators4 () =
   section "validators4";
   let x = { Test.val2_x = { Test.val1_x = 0 };
             val2_y = Some { Test.val1_x = 1 } } in
-  check (not (Testv.validate_val2 x))
+  check_invalid (Testv.validate_val2 [] x)
 
 let test_json_files () =
   section "json files";

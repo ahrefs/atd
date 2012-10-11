@@ -27,13 +27,15 @@ let make_ocaml_validate_intf ~with_create buf deref defs =
         let validator_params =
           String.concat "" (
             List.map
-              (fun s -> sprintf "\n  ('%s -> bool) ->" s)
+              (fun s ->
+                sprintf "\n  (Ag_util.Validation.path -> '%s -> \
+                             Ag_util.Validation.error option) ->" s)
               x.def_param
           )
         in
 	bprintf buf "\
 val validate_%s :%s
-  %s -> bool
+  Ag_util.Validation.path -> %s -> Ag_util.Validation.error option
   (** Validate a value of type {!%s}. *)
 
 "
@@ -64,56 +66,80 @@ let get_fields a =
       | _ -> assert false
   ) all
 
-let insert sep l =
-  let rec ins sep = function
-      [] -> []
-    | x :: l -> sep :: x :: ins sep l
-  in
-  match l with
-      [] -> []
-    | x :: l -> x :: ins sep l
-
+let rec forall : Ag_indent.t list -> Ag_indent.t list = function
+  | [] -> []
+  | [x] -> [x]
+  | x :: l ->
+      [
+        `Line "match";
+        `Block [x];
+        `Line "with";
+        `Block [
+          `Line "| Some _ as err -> err";
+          `Line "| None ->";
+          `Block (forall l);
+        ]
+      ]
 
 let unopt = function None -> assert false | Some x -> x
 
-let return_true = "fun _ -> true"
-let return_true_paren = "(fun _ -> true)"
+let return_true = "fun _ _ -> None"
+let return_true_paren = "(fun _ _ -> None)"
 
 let opt_validator_name = function
     None -> return_true_paren
   | Some s -> sprintf "( %s )" s
 
 let opt_validator = function
-    None -> [ `Line "fun _ -> true" ]
+    None -> [ `Line "fun _ _ -> None" ]
   | Some s -> [ `Line s ]
 
 let opt_validator_s = function
-    None -> "(fun _ -> true)"
+    None -> "(fun _ _ -> None)"
   | Some s -> sprintf "( %s )" s
 
 
-let prepend_validator = function
-    None -> []
-  | Some s -> [ `Line (sprintf "( %s ) x &&" s) ]
+let prepend_validator opt l =
+  match opt with
+      None -> l
+    | Some s ->
+        [
+          `Line (sprintf "match ( %s ) path x with" s);
+          `Block [
+            `Line "| Some _ as err -> err";
+            `Line "| None ->";
+            `Block l;
+          ]
+        ]
 
 let prepend_validator_s v s2 =
   match v with
-    None -> s2
-  | Some s1 ->
-      sprintf "(fun x -> ( %s ) x && (%s) x)" s1 s2
+      None -> s2
+    | Some s1 ->
+        sprintf "(fun path x -> \
+                    match ( %s ) path x with \
+                      | Some _ as err -> err \
+                      | None -> (%s) path x)" s1 s2
 
 let prepend_validator_f v l =
   match v with
-    None -> l
-  | Some s ->
-      [
-        `Line "(fun x ->";
-        `Block [
-          `Line (sprintf "( %s ) x && (" s);
-          `Block l;
-          `Line ") x)";
+      None -> l
+    | Some s ->
+        [
+          `Line "(fun path x ->";
+          `Block [
+            `Line (sprintf "(match ( %s ) path x with" s);
+            `Block [
+              `Line "| Some _ as err -> err";
+              `Line "| None -> (";
+              `Block [
+                `Block l;
+                `Line ") path x";
+              ]
+            ];
+            `Line ")";
+          ]
         ]
-      ]
 
 (*
   ('a, 'b) t ->
@@ -210,11 +236,8 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
 	    ]
 	  in
 	  [
-	    `Annot ("fun", `Line "fun x ->");
-	    `Block [
-              `Inline (prepend_validator v);
-              `Inline body;
-            ]
+	    `Annot ("fun", `Line "fun path x ->");
+	    `Block (prepend_validator v body);
 	  ]
 
     | `Record (loc, a, `Record o, (v, shallow)) ->
@@ -222,11 +245,8 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
           opt_validator v
         else
 	  [
-	    `Annot ("fun", `Line "fun x ->");
-	    `Block [
-              `Inline (prepend_validator v);
-              `Inline (make_record_validator a o);
-            ]
+            `Annot ("fun", `Line "fun path x ->");
+            `Block (prepend_validator v (make_record_validator a o));
 	  ]
 
     | `Tuple (loc, a, `Tuple, (v, shallow)) ->
@@ -243,20 +263,16 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
 		  `Line (sprintf "(let %s = x in" (nth "x" i len));
 		  `Line "(";
 		  `Block (make_validator x.cel_value);
-		  `Line ") x";
+		  `Line (sprintf ") (`Index %i :: path) x" i);
 		  `Line ")"
 	        ]
 	    ) l
 	  in
-	  let l =
-	    insert (`Line "&&") l
+	  let l = forall l
 	  in
           [
-	    `Annot ("fun", `Line "fun x ->");
-	    `Block [
-              `Inline (prepend_validator v);
-              `Inline l
-            ]
+	    `Annot ("fun", `Line "fun path x ->");
+	    `Block (prepend_validator v l);
 	  ]
 
     | `List (loc, x, `List o, (v, shallow)) ->
@@ -265,7 +281,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
         else
           let validate =
 	    match o with
-                `List -> "List.for_all ("
+                `List -> "Ag_ov_run.validate_list ("
               | `Array -> "Ag_ov_run.validate_array ("
           in
 	  prepend_validator_f v [
@@ -307,7 +323,7 @@ and make_variant_validator tick x :
   match x.var_arg with
       None ->
         [
-	  `Line (sprintf "| %s%s -> true" tick ocaml_cons)
+	  `Line (sprintf "| %s%s -> None" tick ocaml_cons)
 	]
     | Some v ->
         [
@@ -315,7 +331,7 @@ and make_variant_validator tick x :
 	  `Block [
 	    `Line "(";
 	    `Block (make_validator v);
-	    `Line ") x"
+	    `Line ") path x"
 	  ]
 	]
 
@@ -327,18 +343,18 @@ and make_record_validator a record_kind =
   in
   let fields = get_fields a in
   assert (fields <> []);
-  let sep = `Line "&&" in
   let validate_fields : Ag_indent.t list =
     List.map (
       fun (x, ocaml_fname) ->
 	`Inline [
           `Line "(";
 	  `Block (make_validator x.Ag_mapping.f_value);
-	  `Line (sprintf ") x%s%s" dot ocaml_fname);
+	  `Line (sprintf
+                   ") (`Field %S :: path) x%s%s" ocaml_fname dot ocaml_fname);
 	]
     ) fields
   in
-  insert sep validate_fields
+  forall validate_fields
 
 let rec is_function (l : Ag_indent.t list) =
   match l with
@@ -359,7 +375,7 @@ let make_ocaml_validator is_rec let1 let2 def =
   let validator_expr = make_validator x in
   let extra_param, extra_args =
     if is_function validator_expr || not is_rec then "", ""
-    else " x", " x"
+    else " path x", " path x"
   in
   [
     `Line (sprintf "%s %s%s = (" let1 validate extra_param);

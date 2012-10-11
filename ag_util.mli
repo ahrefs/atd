@@ -367,3 +367,22 @@ sig
         JSON field name.
     *)
 end
+
+module Validation :
+sig
+  type path_elem = [ `Field of string | `Index of int ]
+  type path = path_elem list
+    (** Path within a value, used to report validation errors. *)
+
+  val string_of_path : path -> string
+    (** Reverse and concatenate a path into a string
+        such as [".settings.ports[0]"] *)
+
+  type error = {
+    error_path : path;
+    error_msg : string option;
+  }
+
+  val error : ?msg: string -> path -> error
+  val string_of_error : error -> string
+end

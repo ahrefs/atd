@@ -180,3 +180,34 @@ struct
 
   let unknown_field_handler = ref preset_unknown_field_handler
 end
+
+module Validation =
+struct
+  type path_elem = [ `Field of string | `Index of int ]
+  type path = path_elem list
+
+  let string_of_path l =
+    String.concat "" (
+      List.rev_map (
+        function
+          | `Field s -> "." ^ s
+          | `Index n -> "[" ^ string_of_int n ^ "]"
+      ) l
+    )
+
+  type error = {
+    error_path : path;
+    error_msg : string option;
+  }
+
+  let error ?msg path = {
+    error_path = path;
+    error_msg = msg;
+  }
+
+  let string_of_error x =
+    let path = string_of_path x.error_path in
+    match x.error_msg with
+        None -> "Validation error; path = " ^ path
+      | Some msg -> Printf.sprintf "Validation error: %s; path = %s" msg path
+end

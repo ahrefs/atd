@@ -208,6 +208,8 @@ struct
   let string_of_error x =
     let path = string_of_path x.error_path in
     match x.error_msg with
-        None -> "Validation error; path = " ^ path
-      | Some msg -> Printf.sprintf "Validation error: %s; path = %s" msg path
+        None ->
+          "Validation error; path = <root>" ^ path
+      | Some msg ->
+          Printf.sprintf "Validation error: %s; path = <root>%s" msg path
 end

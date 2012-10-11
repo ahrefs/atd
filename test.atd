@@ -105,7 +105,7 @@ type extended = {
   ~b5 <ocaml name="b5x" default="0.5"> : float;
 } <ocaml validator="\
     fun path x ->
-      print_endline \"validating record\";
+      print_endline \"Validating record of type 'extended'\";
       if x.b0x >= 0 then None
       else Some (Ag_util.Validation.error path)">
 

@@ -1,4 +1,3 @@
-
 /*
    ATD Parser
 
@@ -116,8 +115,9 @@ type_expr:
                    "share" "id" (Some (Atd_annot.create_id ())) a
              in
              `Shared (loc, x, a)
+         | "wrap", [x] -> `Wrap (loc, x, a)
 
-         | ("list"|"option"|"nullable"|"shared"), _ ->
+         | ("list"|"option"|"nullable"|"shared"|"wrap"), _ ->
              syntax_error (sprintf "%s expects one argument" name) pos1 pos2
 
          | _ -> (`Name (loc, x, a) : type_expr) }

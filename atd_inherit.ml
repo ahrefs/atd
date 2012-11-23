@@ -1,5 +1,3 @@
-
-
 (*
   Perform inheritance.
 *)
@@ -85,6 +83,10 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
       | `Shared (loc, t, a)
       | `Name (loc, (_, "shared", [t]), a) ->
           `Shared (loc, subst false param t, a)
+
+      | `Wrap (loc, t, a)
+      | `Name (loc, (_, "wrap", [t]), a) ->
+          `Wrap (loc, subst false param t, a)
 
       | `Tvar (loc, s) ->
           (try List.assoc s param

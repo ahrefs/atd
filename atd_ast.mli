@@ -59,6 +59,7 @@ and type_expr =
     | `Option of (loc * type_expr * annot)
     | `Nullable of (loc * type_expr * annot)
     | `Shared of (loc * type_expr * annot)
+    | `Wrap of (loc * type_expr * annot)
     | `Name of (loc * type_inst * annot)
     | `Tvar of (loc * string)
     ]
@@ -77,6 +78,11 @@ and type_expr =
          - [`Shared]: values for which sharing must be preserved. Such
          type expressions may not be parametrized. Values may only
          be shared if the source location of the type expression is the same.
+         - [`Wrap]: optional wrapping of a type. For example, a timestamp
+         represented as a string can be wrapped within a proper time type.
+         In that case, the wrapper would parse the timestamp and convert
+         it into the internal representation of its choice. Unwrapping
+         would consist in converting it back to a string.
          - [`Name]: a type name other than [list] or [option], including
          the predefined types [unit], [bool], [int], [float], [string]
          and [abstract].

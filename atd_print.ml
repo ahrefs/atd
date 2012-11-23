@@ -1,5 +1,3 @@
-
-
 open Easy_format
 open Atd_ast
 
@@ -189,6 +187,9 @@ let make_closures format_annot =
 
       | `Shared (loc, t, a) ->
           format_type_name "shared" [t] a
+
+      | `Wrap (loc, t, a) ->
+          format_type_name "wrap" [t] a
 
       | `Name (_, (_, name, args), a) ->
           format_type_name name args a

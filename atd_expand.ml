@@ -1,5 +1,3 @@
-
-
 (*
   Monomorphization of type expressions.
 
@@ -118,6 +116,11 @@ let rec mapvar_expr
         `Shared (loc, mapvar_expr f t, a)
     | `Name (loc, (loc2, "shared", [t]), a) ->
         `Name (loc, (loc2, "shared", [mapvar_expr f t]), a)
+
+    | `Wrap (loc, t, a) ->
+        `Wrap (loc, mapvar_expr f t, a)
+    | `Name (loc, (loc2, "wrap", [t]), a) ->
+        `Name (loc, (loc2, "wrap", [mapvar_expr f t]), a)
 
     | `Tvar (loc, s) -> `Tvar (loc, f s)
 
@@ -256,6 +259,11 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
       | `Name (loc, (loc2, "shared", [t]), a) ->
           let t' = subst env t in
           subst_type_name loc loc2 "shared" [t'] a
+
+      | `Wrap (loc as loc2, t, a)
+      | `Name (loc, (loc2, "wrap", [t]), a) ->
+          let t' = subst env t in
+          subst_type_name loc loc2 "wrap" [t'] a
 
       | `Tvar (loc, s) as x ->
           (try List.assoc s env
@@ -426,6 +434,10 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
     | `Name (loc, (_, "shared", [t]), a) ->
         `Shared (loc, subst env t, a)
 
+    | `Wrap (loc, t, a)
+    | `Name (loc, (_, "wrap", [t]), a) ->
+        `Wrap (loc, subst env t, a)
+
     | `Name (loc, (loc2, name, args), an) ->
         `Name (loc, (loc2, name, List.map (subst env) args), an)
 
@@ -482,6 +494,7 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
       | `Option (loc, t, a) -> `Option (loc, replace t, a)
       | `Nullable (loc, t, a) -> `Nullable (loc, replace t, a)
       | `Shared (loc, t, a) -> `Shared (loc, replace t, a)
+      | `Wrap (loc, t, a) -> `Wrap (loc, replace t, a)
       | `Tvar (loc, s) as t -> t
       | `Name (loc, (loc2, k, l), a) ->
           `Name (loc, (loc2, subst k, List.map replace l), a)

@@ -71,6 +71,11 @@ let rec print_type_expr buf (x : Atd_ast.type_expr) =
           print_loc loc
           print_type_expr type_expr
           print_annot_list annot_list
+    | `Wrap (loc, type_expr, annot_list) ->
+        bprintf buf "`Wrap (%a, %a, %a)"
+          print_loc loc
+          print_type_expr type_expr
+          print_annot_list annot_list
     | `Name (loc, type_inst, annot_list) ->
         bprintf buf "`Name (%a, %a, %a)"
           print_loc loc

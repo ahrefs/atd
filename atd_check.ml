@@ -1,5 +1,3 @@
-
-
 (* Semantic verification *)
 
 open Printf
@@ -49,7 +47,8 @@ let check_inheritance tbl (t0 : type_expr) =
       | `List _
       | `Option _
       | `Nullable _
-      | `Shared _ as x -> not_a kind x
+      | `Shared _
+      | `Wrap _ as x -> not_a kind x
 
       | `Name (_, (loc, k, tal), _) ->
           if List.mem k inherited then
@@ -90,10 +89,11 @@ let check_type_expr tbl tvars (t : type_expr) =
         if Atd_ast.is_parametrized t then
           error_at loc "Shared type cannot be polymorphic";
         check t
+    | `Wrap (_, t, _) -> check t
 
     | `Name (_, (loc, k, tal), _) ->
         assert (k <> "list" && k <> "option"
-                && k <> "nullable" && k <> "shared");
+                && k <> "nullable" && k <> "shared" && k <> "wrap");
         let (arity, opt_def) =
           try Hashtbl.find tbl k
           with Not_found -> error_at loc ("Undefined type " ^ k)

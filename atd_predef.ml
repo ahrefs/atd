@@ -1,5 +1,3 @@
-
-
 (*
   Table of predefined types.
 *)
@@ -38,6 +36,14 @@ let shared_def : type_def =
     `Shared (loc, `Tvar (loc, "a"), [])
   )
 
+let wrap_def : type_def =
+  let loc = dummy_loc in
+  (
+    loc,
+    ("wrap", ["a"], []),
+    `Wrap (loc, `Tvar (loc, "a"), [])
+  )
+
 
 let list = [
     "unit", 0, None;
@@ -50,6 +56,7 @@ let list = [
     "option", 1, Some option_def;
     "nullable", 1, Some nullable_def;
     "shared", 1, Some shared_def;
+    "wrap", 1, Some wrap_def;
   ]
 
 let make_table () =

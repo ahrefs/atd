@@ -34,10 +34,11 @@ and type_expr =
     | `Option of (loc * type_expr * annot)
     | `Nullable of (loc * type_expr * annot)
     | `Shared of (loc * type_expr * annot)
+    | `Wrap of (loc * type_expr * annot)
     | `Name of (loc * type_inst * annot)
     | `Tvar of (loc * string)
     ]
-      (* `List, `Option, `Nullable, and `Shared are
+      (* `List, `Option, `Nullable, `Shared and `Wrap are
          the only predefined types with a type
          parameter (and no special syntax). *)
 
@@ -68,6 +69,7 @@ let loc_of_type_expr = function
   | `Option (loc, _, _)
   | `Nullable (loc, _, _)
   | `Shared (loc, _, _)
+  | `Wrap (loc, _, _)
   | `Name (loc, _, _)
   | `Tvar (loc, _) -> loc
 
@@ -79,6 +81,7 @@ let set_type_expr_loc loc = function
   | `Option (_, a, b) -> `Option (loc, a, b)
   | `Nullable (_, a, b) -> `Nullable (loc, a, b)
   | `Shared (_, a, b) -> `Shared (loc, a, b)
+  | `Wrap (_, a, b) -> `Wrap (loc, a, b)
   | `Name (_, a, b) -> `Name (loc, a, b)
   | `Tvar (_, a) -> `Tvar (loc, a)
 
@@ -102,6 +105,7 @@ let annot_of_type_expr = function
   | `Option (_, _, an)
   | `Nullable (_, _, an)
   | `Shared (_, _, an)
+  | `Wrap (_, _, an)
   | `Name (_, _, an) -> an
   | `Tvar (_, _) -> []
 
@@ -115,6 +119,7 @@ let map_annot f = function
   | `Option (loc, t, a) -> `Option (loc, t, f a)
   | `Nullable (loc, t, a) -> `Nullable (loc, t, f a)
   | `Shared (loc, t, a) -> `Shared (loc, t, f a)
+  | `Wrap (loc, t, a) -> `Wrap (loc, t, f a)
   | `Tvar _ as x -> x
   | `Name (loc, (loc2, name, args), a) ->
       `Name (loc, (loc2, name, args), f a)
@@ -128,6 +133,7 @@ let rec amap_type_expr f (x : type_expr) =
     | `Option (loc, t, a) -> `Option (loc, amap_type_expr f t, f a)
     | `Nullable (loc, t, a) -> `Nullable (loc, amap_type_expr f t, f a)
     | `Shared (loc, t, a) -> `Shared (loc, amap_type_expr f t, f a)
+    | `Wrap (loc, t, a) -> `Wrap (loc, amap_type_expr f t, f a)
     | `Tvar _ as x -> x
     | `Name (loc, (loc2, name, args), a) ->
         `Name (loc, (loc2, name, List.map (amap_type_expr f) args), f a)
@@ -186,6 +192,9 @@ let rec fold (f : type_expr -> 'a -> 'a) (x : type_expr) acc =
         fold f type_expr acc
 
     | `Shared (loc, type_expr, annot) ->
+        fold f type_expr acc
+
+    | `Wrap (loc, type_expr, annot) ->
         fold f type_expr acc
 
     | `Name (loc, (loc2, name, type_expr_list), annot) ->

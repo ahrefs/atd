@@ -65,7 +65,7 @@ definition languages if needed.
 It is however much harder to imagine that a single transport protocol and
 a single serialization format would ever become the only ones used.
 A reader from the future might wonder why we are even considering
-defining a transport protocol and a serialization format together. 
+defining a transport protocol and a serialization format together.
 This has been a widespread practice at least until the beginning of
 the 21st century (ONC RPC, ICE, Thrift, etc.). For mysterious reasons,
 people somehow became convinced that calls to remote services should
@@ -158,7 +158,7 @@ type shape = [
 ## () ##
 
 A notable example of sum types is the predefined option type.
-An object of an option type contains either one value of a given type 
+An object of an option type contains either one value of a given type
 or nothing. We could define our own {\tt int\_option} type as follows:
 
 ## atd () ##
@@ -302,7 +302,7 @@ An ATD lexer splits its input into a stream of \rval{token}s,
 discarding white\rval{space} and \rval{comment}s.
 
 \begin{tabular}{rcll}
-\lval{token} & ::= & \rval{keyword} 
+\lval{token} & ::= & \rval{keyword}
                    | \rval{lident}
                    | \rval{uident}
                    | \rval{tident}
@@ -375,7 +375,7 @@ discarding white\rval{space} and \rval{comment}s.
 
 \lval{expr} & ::= & \rval{expr-body} \rval{annot}* & \com{type expression} \\
             &  |  & \rval{tident} & \\
-            
+
 \lval{expr-body} & ::= & \rval{args}? \rval{lident} & \\
                  &  |  & \str{(}
                            \rval{cell} (\str{*} \rval{cell})*
@@ -440,7 +440,7 @@ type node = {
 }
 ## () ##
 
-Two shared values that are physically identical must remain physically 
+Two shared values that are physically identical must remain physically
 identical after any translation from one data format to another.
 
 Each occurrence of a \texttt{shared} type expression in the ATD

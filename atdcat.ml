@@ -56,7 +56,7 @@ let parse
   let l =
     List.map (
       fun file ->
-	Atd_util.load_file ~expand ~keep_poly ~xdebug
+        Atd_util.load_file ~expand ~keep_poly ~xdebug
           ~inherit_fields ~inherit_variants file
     ) files
   in
@@ -73,11 +73,11 @@ let parse
 let print ~html_doc ~out_format ast =
   let f =
     match out_format with
-	`Atd -> print_atd ~html_doc
+        `Atd -> print_atd ~html_doc
       | `Ocaml name -> print_ml ~name
   in
   f ast
-	
+
 let split_on_comma =
   Str.split_delim (Str.regexp ",")
 
@@ -158,7 +158,7 @@ let () =
     let ast =
       parse
           ~expand: !expand
-          ~keep_poly: !keep_poly 
+          ~keep_poly: !keep_poly
           ~xdebug: !xdebug
           ~inherit_fields: !inherit_fields
           ~inherit_variants: !inherit_variants
@@ -169,6 +169,6 @@ let () =
     print ~html_doc: !html_doc ~out_format: !out_format ast
   with
       Atd_ast.Atd_error s ->
-	flush stdout;
-	eprintf "%s\n%!" s
+        flush stdout;
+        eprintf "%s\n%!" s
     | e -> raise e

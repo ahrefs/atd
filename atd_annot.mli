@@ -102,7 +102,7 @@ val set_field : Atd_ast.loc -> string -> string -> string option -> t -> t
 
 val merge : t -> t
   (** Merge sections of the same name together,
-      and keeps only the first occurrence of each 
+      and keeps only the first occurrence of each
       field.
 
 {v

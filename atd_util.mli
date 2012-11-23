@@ -13,9 +13,9 @@ val read_lexbuf :
   Lexing.lexbuf -> Atd_ast.full_module
   (** Read an ATD file from a lexbuf. See also [read_channel], [load_file]
       and [load_string].
-  
+
       @param expand
-             Perform monomorphization by creating specialized 
+             Perform monomorphization by creating specialized
              type definitions starting with an underscore.
              Default is false. See also {!Atd_expand}.
              This corresponds to the [-x] option of [atdcat].

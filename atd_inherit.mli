@@ -2,7 +2,7 @@
 
 (** Expansion of [inherit] statements *)
 
-val expand_module_body : 
+val expand_module_body :
   ?inherit_fields : bool ->
   ?inherit_variants : bool ->
   Atd_ast.module_body -> Atd_ast.module_body

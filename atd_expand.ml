@@ -29,7 +29,7 @@
 
 
   By default, only parameterless type definitions are returned.
-  The [keep_poly] option allows to return parametrized type definitions as 
+  The [keep_poly] option allows to return parametrized type definitions as
   well.
 
   Input:
@@ -50,8 +50,8 @@
 
   type "int tree" = [ Leaf of int | Node of ("int tree" * "int tree") ]
   type t = "int tree"
-  type "[ Foo | Bar ] tree" = 
-    [ Leaf of [ Foo | Bar ] 
+  type "[ Foo | Bar ] tree" =
+    [ Leaf of [ Foo | Bar ]
     | Node of ("[ Foo | Bar ] tree" * "[ Foo | Bar ] tree") ]
   type x = "[ Foo | Bar ] tree"
 
@@ -88,12 +88,12 @@ let init_table () =
   seqnum, tbl
 
 
-let rec mapvar_expr 
+let rec mapvar_expr
     (f : string -> string) (x : Atd_ast.type_expr) : Atd_ast.type_expr =
   match x with
-      `Sum (loc, vl, a) -> 
+      `Sum (loc, vl, a) ->
         `Sum (loc, List.map (mapvar_variant f) vl, a)
-    | `Record (loc, fl, a) -> 
+    | `Record (loc, fl, a) ->
         `Record (loc, List.map (mapvar_field f) fl, a)
     | `Tuple (loc, tl, a) ->
         `Tuple (loc,
@@ -103,27 +103,27 @@ let rec mapvar_expr
         `List (loc, mapvar_expr f t, a)
     | `Name (loc, (loc2, "list", [t]), a) ->
         `Name (loc, (loc2, "list", [mapvar_expr f t]), a)
-          
+
     | `Option (loc, t, a) ->
         `Option (loc, mapvar_expr f t, a)
     | `Name (loc, (loc2, "option", [t]), a) ->
         `Name (loc, (loc2, "option", [mapvar_expr f t]), a)
-        
+
     | `Nullable (loc, t, a) ->
         `Nullable (loc, mapvar_expr f t, a)
     | `Name (loc, (loc2, "nullable", [t]), a) ->
         `Name (loc, (loc2, "nullable", [mapvar_expr f t]), a)
-        
+
     | `Shared (loc, t, a) ->
         `Shared (loc, mapvar_expr f t, a)
     | `Name (loc, (loc2, "shared", [t]), a) ->
         `Name (loc, (loc2, "shared", [mapvar_expr f t]), a)
 
     | `Tvar (loc, s) -> `Tvar (loc, f s)
-        
+
     | `Name (loc, (loc2, k, args), a) ->
         `Name (loc, (loc2, k, List.map (mapvar_expr f) args), a)
-          
+
 and mapvar_field f = function
     `Field (loc, k, t) -> `Field (loc, k, mapvar_expr f t)
   | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
@@ -131,14 +131,14 @@ and mapvar_field f = function
 and mapvar_variant f = function
     `Variant (loc, k, opt_t) ->
       `Variant (
-        loc, k, 
+        loc, k,
         (match opt_t with
              None -> None
            | Some t -> Some (mapvar_expr f t)
         )
       )
   | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
-      
+
 
 let var_of_int i =
   let letter = i mod 26 in
@@ -224,14 +224,14 @@ let add_annot (x : type_expr) a : type_expr =
 
 
 let expand ?(keep_poly = false) (l : type_def list) : type_def list =
-  
+
   let seqnum, tbl = init_table () in
 
   let rec subst env (t : type_expr) : type_expr =
     match t with
-        `Sum (loc, vl, a) -> 
+        `Sum (loc, vl, a) ->
           `Sum (loc, List.map (subst_variant env) vl, a)
-      | `Record (loc, fl, a) -> 
+      | `Record (loc, fl, a) ->
           `Record (loc, List.map (subst_field env) fl, a)
       | `Tuple (loc, tl, a) ->
           `Tuple (loc,
@@ -322,12 +322,12 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
 
     (* Create entry in the table, indicating that we are working on it *)
     Hashtbl.add tbl name (i, n_param, None, None);
-    
+
     (* Get the original type definition *)
     let (_, n, orig_opt_td, new_opt_td) =
       try Hashtbl.find tbl orig_name
       with Not_found ->
-        assert false (* All original type definitions must 
+        assert false (* All original type definitions must
                         have been put in the table initially *)
     in
     let ((_, _, t') as td') =
@@ -341,7 +341,7 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
             let t = add_annot t an0 in
             let t = set_type_expr_loc loc t in
 
-            (* 
+            (*
                First replace the type expression being specialized
                (orig_name, orig_args) by the equivalent expression
                in the new environment (variables 'a, 'b, ...)
@@ -396,7 +396,7 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
             (loc, (name, new_params, def_an), t')
     in
     Hashtbl.replace tbl name (i, n_param, None, Some td')
-      
+
   and subst_field env = function
       `Field (loc, k, t) -> `Field (loc, k, subst env t)
     | `Inherit (loc, t) -> `Inherit (loc, subst env t)
@@ -412,7 +412,7 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
   and subst_only_args env = function
       `List (loc, t, a)
     | `Name (loc, (_, "list", [t]), a) ->
-        `List (loc, subst env t, a) 
+        `List (loc, subst env t, a)
 
     | `Option (loc, t, a)
     | `Name (loc, (_, "option", [t]), a) ->
@@ -440,12 +440,12 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
       let n = List.length pl in
       Hashtbl.add tbl k (i, n, Some td, None)
   ) l;
-  
+
   (* second pass: perform substitutions and insert new definitions *)
   List.iter (
     fun ((loc, (k, pl, a), t) as td) ->
       if pl = [] || keep_poly then (
-        let (i, n, _, _) = 
+        let (i, n, _, _) =
           try Hashtbl.find tbl k
           with Not_found -> assert false
         in
@@ -456,7 +456,7 @@ let expand ?(keep_poly = false) (l : type_def list) : type_def list =
   ) l;
 
   (* third pass: collect all parameterless definitions *)
-  let l = 
+  let l =
     Hashtbl.fold (
       fun k (i, n, opt_td, opt_td') l ->
         match opt_td' with
@@ -489,7 +489,7 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
   and replace_field = function
       `Field (loc, k, t) -> `Field (loc, k, replace t)
     | `Inherit (loc, t) -> `Inherit (loc, replace t)
- 
+
   and replace_variant = function
       `Variant (loc, k, opt_t) as x ->
         (match opt_t with
@@ -501,7 +501,7 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
   replace t
 
 
-let standardize_type_names 
+let standardize_type_names
     ~prefix (l : type_def list) : type_def list =
 
   let new_id =
@@ -518,7 +518,7 @@ let standardize_type_names
   let tbl = Hashtbl.create 50 in
   List.iter (fun (k, _, _) -> Hashtbl.add tbl k k) Atd_predef.list;
   List.iter (
-    fun (_, (k, _, _), _) -> 
+    fun (_, (k, _, _), _) ->
       if not (is_special k) then (
         Hashtbl.add tbl k k
       )
@@ -533,7 +533,7 @@ let standardize_type_names
   in
   let l =
     List.map (
-      fun (loc, (k, pl, a), t) -> 
+      fun (loc, (k, pl, a), t) ->
         let k' = replace_name k in
         (loc, (k', pl, a), t)
     ) l

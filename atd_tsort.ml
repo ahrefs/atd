@@ -31,52 +31,52 @@ struct
     try !(M.find key states)
     with Not_found ->
       invalid_arg (sprintf "Atd_tsort: undefined child node %s"
-		     (Param.to_string key))
+                     (Param.to_string key))
 
   let set_state key state states =
     try M.find key states := state
     with Not_found ->
       invalid_arg (sprintf "Atd_tsort: undefined child node %s"
-		     (Param.to_string key))
+                     (Param.to_string key))
 
   let merge (s1, l1, ll1) (s2, l2, ll2) =
     (S.union s1 s2, l1 @ l2, ll1 @ ll2)
 
-  let map_of_list l = 
+  let map_of_list l =
     List.fold_left (fun m x -> M.add (fst3 x) x m) M.empty l
 
   let get_node key graph =
     try M.find key graph
     with Not_found ->
       invalid_arg
-	(sprintf "Atd_tsort: undefined child node %s" (Param.to_string key))
+        (sprintf "Atd_tsort: undefined child node %s" (Param.to_string key))
 
   let rec sort_root graph states (x : (_, _) node) =
     let key, children, value = x in
     match get_state key states with
-	Black -> (S.empty, [], [])
+        Black -> (S.empty, [], [])
       | Grey -> (S.singleton key, [], [])
       | White ->
-	  set_state key Grey states;
-	  let closing_nodes, cycle_nodes, sorted =
-	    sort_list graph states children in
-	  set_state key Black states;
-	  if S.is_empty closing_nodes then
-	    (closing_nodes, [], (false, [value]) :: sorted)
-	  else
-	    let closing_nodes = S.remove key closing_nodes in
-	    let cycle_nodes = value :: cycle_nodes in
-	    if S.is_empty closing_nodes then
-	      (closing_nodes, [], (true, cycle_nodes) :: sorted)
-	    else
-	      (closing_nodes, cycle_nodes, sorted)
-	
+          set_state key Grey states;
+          let closing_nodes, cycle_nodes, sorted =
+            sort_list graph states children in
+          set_state key Black states;
+          if S.is_empty closing_nodes then
+            (closing_nodes, [], (false, [value]) :: sorted)
+          else
+            let closing_nodes = S.remove key closing_nodes in
+            let cycle_nodes = value :: cycle_nodes in
+            if S.is_empty closing_nodes then
+              (closing_nodes, [], (true, cycle_nodes) :: sorted)
+            else
+              (closing_nodes, cycle_nodes, sorted)
+
   and sort_list graph states l =
     List.fold_left (
       fun accu key ->
-	merge (sort_root graph states (get_node key graph)) accu
+        merge (sort_root graph states (get_node key graph)) accu
     ) (S.empty, [], []) l
-    
+
   and sort (l : (Param.t, 'a) node list) =
     let graph = map_of_list l in
     let states = init_states l in

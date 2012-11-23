@@ -26,7 +26,7 @@ and module_item =
 
 and type_param = string list
 
-and type_expr = 
+and type_expr =
     [ `Sum of (loc * variant list * annot)
     | `Record of (loc * field list * annot)
     | `Tuple of (loc * cell list * annot)
@@ -39,7 +39,7 @@ and type_expr =
     ]
       (* `List, `Option, `Nullable, and `Shared are
          the only predefined types with a type
-	 parameter (and no special syntax). *)
+         parameter (and no special syntax). *)
 
 and type_inst = loc * string * type_expr list
 
@@ -105,7 +105,7 @@ let annot_of_type_expr = function
   | `Name (_, _, an) -> an
   | `Tvar (_, _) -> []
 
- 
+
 
 let map_annot f = function
     `Sum (loc, vl, a) ->  `Sum (loc, vl, f a)
@@ -131,7 +131,7 @@ let rec amap_type_expr f (x : type_expr) =
     | `Tvar _ as x -> x
     | `Name (loc, (loc2, name, args), a) ->
         `Name (loc, (loc2, name, List.map (amap_type_expr f) args), f a)
-          
+
 and amap_variant f = function
     `Variant (loc, (name, a), o) ->
       let o =
@@ -167,39 +167,39 @@ let map_all_annot f ((head, body) : full_module) =
 let rec fold (f : type_expr -> 'a -> 'a) (x : type_expr) acc =
   let acc = f x acc in
   match x with
-      `Sum (loc, variant_list, annot) -> 
-	List.fold_right (fold_variant f) variant_list acc
-	    
+      `Sum (loc, variant_list, annot) ->
+        List.fold_right (fold_variant f) variant_list acc
+
     | `Record (loc, field_list, annot) ->
-	List.fold_right (fold_field f) field_list acc
-	    
+        List.fold_right (fold_field f) field_list acc
+
     | `Tuple (loc, l, annot) ->
-	List.fold_right (fun (loc, x, _) acc -> fold f x acc) l acc
-	    
+        List.fold_right (fun (loc, x, _) acc -> fold f x acc) l acc
+
     | `List (loc, type_expr, annot) ->
-	fold f type_expr acc
-	    
+        fold f type_expr acc
+
     | `Option (loc, type_expr, annot) ->
-	fold f type_expr acc
-	    
+        fold f type_expr acc
+
     | `Nullable (loc, type_expr, annot) ->
-	fold f type_expr acc
-	    
+        fold f type_expr acc
+
     | `Shared (loc, type_expr, annot) ->
         fold f type_expr acc
 
     | `Name (loc, (loc2, name, type_expr_list), annot) ->
-	List.fold_right (fold f) type_expr_list acc
-	    
+        List.fold_right (fold f) type_expr_list acc
+
     | `Tvar (loc, string) ->
-	acc
-	    
+        acc
+
 and fold_variant f x acc =
   match x with
       `Variant (loc, _, Some type_expr) -> fold f type_expr acc
     | `Variant _ -> acc
     | `Inherit (loc, type_expr) -> fold f type_expr acc
-	
+
 and fold_field f x acc =
   match x with
       `Field (loc, _, type_expr) -> fold f type_expr acc
@@ -225,7 +225,7 @@ let extract_type_names ?(ignorable = []) x =
         match x with
             `Name (loc, (loc2, name, l), a) -> add name acc
           | _ -> acc
-    ) 
+    )
       x Type_names.empty
   in
   Type_names.elements acc

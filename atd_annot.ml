@@ -38,11 +38,11 @@ let get_flag k k2 l =
           let loc, l2 = List.assoc k1 l in
           let loc, o = List.assoc k2 l2 in
           match o with
-	      None -> Some true
+              None -> Some true
             | Some "true" -> Some true
             | Some "false" -> Some false
             | Some s ->
-	        error_at loc
+                error_at loc
                   (sprintf "Invalid value %S for flag %s.%s" s k1 k2)
         with Not_found -> None
     ) k
@@ -60,15 +60,15 @@ let get_field parse default k k2 l =
           let loc, l2 = List.assoc k1 l in
           let loc, o = List.assoc k2 l2 in
           match o with
-	      Some s ->
-	        (match parse s with
-	             Some x as y -> y
-	           | None ->
-		       error_at loc
-		         (sprintf "Invalid annotation <%s %s=%S>" k1 k2 s)
-	        )
+              Some s ->
+                (match parse s with
+                     Some x as y -> y
+                   | None ->
+                       error_at loc
+                         (sprintf "Invalid annotation <%s %s=%S>" k1 k2 s)
+                )
             | None ->
-	        error_at loc
+                error_at loc
                   (sprintf "Missing value for annotation %s.%s" k1 k2)
         with Not_found ->
           None
@@ -126,7 +126,7 @@ let override_values x1 x2 = x1
 
 let override_fields (loc1, l1) (loc2, l2) =
   (loc1, collapse override_values (l1 @ l2))
-  
+
 let merge l =
   collapse override_fields l
 

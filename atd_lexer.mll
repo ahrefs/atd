@@ -9,22 +9,22 @@
     Atd_ast.error (Atd_ast.string_of_loc loc ^ "\n" ^ msg)
 
   type accu = { mutable depth : int;
-		buf : Buffer.t }
-      
+                buf : Buffer.t }
+
   let newline lexbuf =
     let pos = lexbuf.lex_curr_p in
     lexbuf.lex_curr_p <- { pos with
-			     pos_lnum = pos.pos_lnum + 1;
-			     pos_bol = pos.pos_cnum }
+                             pos_lnum = pos.pos_lnum + 1;
+                             pos_bol = pos.pos_cnum }
 
   let int_of_dec c =
     match c with
-	'0'..'9' -> Char.code c - 48
+        '0'..'9' -> Char.code c - 48
       | _ -> invalid_arg "int_of_dec"
 
   let int_of_hex c =
     match c with
-	'0'..'9' -> Char.code c - 48
+        '0'..'9' -> Char.code c - 48
       | 'a'..'f' -> Char.code c - 87
       | 'A'..'F' -> Char.code c - 55
       | _ -> invalid_arg "int_of_hex"
@@ -113,27 +113,27 @@ rule token = parse
   | eof      { EOF }
   | '"'      { STRING (string (Buffer.create 200) lexbuf) }
   | "(*"     { comment 1 lexbuf; token lexbuf }
-  | _ as c   { lexing_error lexbuf 
-		 (sprintf "Illegal character %S" (String.make 1 c)) }
+  | _ as c   { lexing_error lexbuf
+                 (sprintf "Illegal character %S" (String.make 1 c)) }
 
 and string buf = parse
   | '"'       { Buffer.contents buf }
   | '\\' (['\\' '"'] as c)
               { Buffer.add_char buf c;
-		string buf lexbuf }
+                string buf lexbuf }
   | "\\x" (hex as a) (hex as b)
               { Buffer.add_char buf (byte_of_hex a b);
-		string buf lexbuf }
+                string buf lexbuf }
   | '\\' (digit as a) (digit as b) (digit as c)
               { Buffer.add_char buf (byte_of_dec a b c);
-		string buf lexbuf }
+                string buf lexbuf }
   | "\\n"     { Buffer.add_char buf '\n'; string buf lexbuf }
   | "\\r"     { Buffer.add_char buf '\r'; string buf lexbuf }
   | "\\t"     { Buffer.add_char buf '\t'; string buf lexbuf }
   | "\\b"     { Buffer.add_char buf '\b'; string buf lexbuf }
-  | '\n'      { newline lexbuf; 
-		Buffer.add_char buf '\n';
-		string buf lexbuf }
+  | '\n'      { newline lexbuf;
+                Buffer.add_char buf '\n';
+                string buf lexbuf }
   | '\\' newline blank*
               { newline lexbuf; string buf lexbuf }
   | '\\'      { lexing_error lexbuf "Invalid escape sequence" }
@@ -142,11 +142,11 @@ and string buf = parse
 
 and comment depth = parse
   | "*)"      { if depth > 1 then
-		  comment (depth - 1) lexbuf
-	      }
+                  comment (depth - 1) lexbuf
+              }
   | "(*"      { comment (depth + 1) lexbuf }
   | '"'       { ignore (string (Buffer.create 200) lexbuf);
-		comment depth lexbuf }
+                comment depth lexbuf }
   | newline   { newline lexbuf; comment depth lexbuf }
   | _         { comment depth lexbuf }
   | eof       { lexing_error lexbuf "Unterminated comment" }

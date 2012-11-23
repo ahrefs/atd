@@ -34,7 +34,7 @@ let read_channel
     else
       pos_fname
   in
-  read_lexbuf ?expand ?keep_poly ?xdebug 
+  read_lexbuf ?expand ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
 
 let load_file
@@ -59,7 +59,7 @@ let load_file
     finally ();
     raise e
 
-let load_string 
+let load_string
     ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants
     ?pos_fname ?pos_lnum
     s =
@@ -80,9 +80,9 @@ let tsort l0 =
   let l =
     List.map (
       fun def ->
-	let `Type (loc, (name, _, _), x) = def in
-	let deps = Atd_ast.extract_type_names ~ignorable x in
-	(name, deps, def)
+        let `Type (loc, (name, _, _), x) = def in
+        let deps = Atd_ast.extract_type_names ~ignorable x in
+        (name, deps, def)
     ) l0
   in
   List.rev (Tsort.sort l)

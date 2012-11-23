@@ -39,12 +39,12 @@ annot:
 
 asection:
 | LT x = LIDENT l = afield_list GT  { (x, (($startpos, $endpos), l)) }
-| LT LIDENT afield_list _e=error    { syntax_error 
-				        "Expecting '>'"
-				        $startpos(_e) $endpos(_e) }
+| LT LIDENT afield_list _e=error    { syntax_error
+                                        "Expecting '>'"
+                                        $startpos(_e) $endpos(_e) }
 | LT _e=error                       { syntax_error
-				        "Expecting lowercase identifier"
-				        $startpos(_e) $endpos(_e) }
+                                        "Expecting lowercase identifier"
+                                        $startpos(_e) $endpos(_e) }
 ;
 
 afield_list:
@@ -74,7 +74,7 @@ type_param:
 | TIDENT                            { [ $1 ] }
 | OP_PAREN type_var_list CL_PAREN   { $2 }
 |                                   { [] }
-| OP_PAREN type_var_list _e=error    
+| OP_PAREN type_var_list _e=error
     { syntax_error "Expecting ')'" $startpos(_e) $endpos(_e) }
 ;
 
@@ -112,14 +112,14 @@ type_expr:
                  (* may cause ID clashes if not used properly *)
                  a
                else
-                 Atd_annot.set_field loc 
+                 Atd_annot.set_field loc
                    "share" "id" (Some (Atd_annot.create_id ())) a
              in
              `Shared (loc, x, a)
 
          | ("list"|"option"|"nullable"|"shared"), _ ->
              syntax_error (sprintf "%s expects one argument" name) pos1 pos2
-               
+
          | _ -> (`Name (loc, x, a) : type_expr) }
 
 | x = TIDENT
@@ -150,7 +150,7 @@ type_args:
 | type_expr                         { [ $1 ] }
 | OP_PAREN type_arg_list CL_PAREN   { $2 }
 |                                   { [] }
-| OP_PAREN type_arg_list _e=error 
+| OP_PAREN type_arg_list _e=error
      { syntax_error "Expecting ')'" $startpos(_e) $endpos(_e) }
 ;
 
@@ -172,13 +172,13 @@ variant_list0:
 variant:
 | x = UIDENT a = annot OF t = type_expr
      { `Variant (($startpos, $endpos), (x, a), Some t) }
-| x = UIDENT a = annot  
+| x = UIDENT a = annot
      { `Variant (($startpos, $endpos), (x, a), None) }
 | INHERIT t = type_expr
      { `Inherit (($startpos, $endpos), t) }
 | UIDENT annot OF _e=error
-     { syntax_error "Expecting type expression after 'of'" 
-	 $startpos(_e) $endpos(_e) }
+     { syntax_error "Expecting type expression after 'of'"
+         $startpos(_e) $endpos(_e) }
 ;
 
 field_list:
@@ -195,7 +195,7 @@ field:
     { `Inherit (($startpos, $endpos), t) }
 | field_name annot COLON _e=error
     { syntax_error "Expecting type expression after ':'"
-	$startpos(_e) $endpos(_e) }
+        $startpos(_e) $endpos(_e) }
 | field_name annot _e=error
     { syntax_error "Expecting ':'" $startpos(_e) $endpos(_e) }
 ;

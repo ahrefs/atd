@@ -9,7 +9,7 @@ val expand_module_body :
   Atd_ast.module_body -> Atd_ast.module_body
 (**
    Monomorphization of type expressions.
-   
+
    @param prefix prefix to use for new type names. Default is ["_"].
 
    @param keep_poly return definitions for the parametrized types.
@@ -51,7 +51,7 @@ v}
 v}
 
   By default, only parameterless type definitions are returned.
-  The [keep_poly] option allows to return parametrized type definitions as 
+  The [keep_poly] option allows to return parametrized type definitions as
   well.
 
   Input:
@@ -75,8 +75,8 @@ v}
 
   type "int tree" = [ Leaf of int | Node of ("int tree" * "int tree") ]
   type t = "int tree"
-  type "[ Foo | Bar ] tree" = 
-    [ Leaf of [ Foo | Bar ] 
+  type "[ Foo | Bar ] tree" =
+    [ Leaf of [ Foo | Bar ]
     | Node of ("[ Foo | Bar ] tree" * "[ Foo | Bar ] tree") ]
   type x = "[ Foo | Bar ] tree"
 v}

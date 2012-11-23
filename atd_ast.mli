@@ -23,7 +23,7 @@ v}
     *)
 
 and annot_field = string * (loc * string option)
-    (** An annotation field, 
+    (** An annotation field,
         i.e. a key with an optional value within an annotation. *)
 
 
@@ -51,7 +51,7 @@ and type_def = loc * (string * type_param * annot) * type_expr
 and type_param = string list
     (** List of type variables without the tick. *)
 
-and type_expr = 
+and type_expr =
     [ `Sum of (loc * variant list * annot)
     | `Record of (loc * field list * annot)
     | `Tuple of (loc * cell list * annot)
@@ -69,7 +69,7 @@ and type_expr =
          - [`Tuple]: a tuple (within parentheses)
          - [`List]: a list type written [list] with its parameter
          e.g. [int list]
-         - [`Option]: an option type written [option] with its parameter 
+         - [`Option]: an option type written [option] with its parameter
          e.g. [string option]
          - [`Nullable]: adds a null value to a type.
          [`Option] should be preferred over [`Nullable] since
@@ -91,7 +91,7 @@ and variant =
     | `Inherit of (loc * type_expr) ]
       (**
          A single variant or an [inherit] statement.
-         [`Inherit] statements can be expanded into variants 
+         [`Inherit] statements can be expanded into variants
          using {!Atd_inherit}
          or at loading time using the [inherit_variant] option
          offered by the {!Atd_util} functions.
@@ -109,7 +109,7 @@ and field_kind =
     | `With_default
     ]
       (**
-         Different kinds of record fields based on the 
+         Different kinds of record fields based on the
          - [`Required]: required field, e.g. [id : string]
          - [`Optional]: optional field without a default value, e.g.
          [?name : string option].  The ATD type of the field
@@ -128,13 +128,13 @@ type user = \{
   id : string;
 
   ?name : string option;
-    (* Field may be omitted when no value is set, if permitted 
+    (* Field may be omitted when no value is set, if permitted
        by the target language. *)
 
   ~websites : string list;
     (* Implicit default: empty list.
        Field may be omitted if the field value is
-       equal to the default value and the 
+       equal to the default value and the
        target language permits it. *)
 
   ~level <ocaml default="`Beginner"> : level;
@@ -211,7 +211,7 @@ val extract_type_names :
   ?ignorable : string list ->
   type_expr -> string list
   (**
-     Extract all the type names occurring in a type expression 
+     Extract all the type names occurring in a type expression
      under [`Name], without duplicates.
      @param ignorable specifies a list of type names to exclude from the result
   *)

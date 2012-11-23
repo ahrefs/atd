@@ -70,7 +70,7 @@ install: META
 
 uninstall:
 	test ! -f $(BINDIR)/atdcat || rm $(BINDIR)/atdcat
-	test ! -f $(BINDIR)/atdcat.exe || rm $(BINDIR)/atdcat.exe 
+	test ! -f $(BINDIR)/atdcat.exe || rm $(BINDIR)/atdcat.exe
 	ocamlfind remove atd
 
 reinstall:

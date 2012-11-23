@@ -6,34 +6,34 @@
 
 open Atd_ast
 
-let list_def : type_def = 
+let list_def : type_def =
   let loc = dummy_loc in
   (
-    loc, 
+    loc,
     ("list", ["a"], []),
     `List (loc, `Tvar (loc, "a"), [])
   )
 
-let option_def : type_def = 
+let option_def : type_def =
   let loc = dummy_loc in
   (
-    loc, 
+    loc,
     ("option", ["a"], []),
     `Option (loc, `Tvar (loc, "a"), [])
   )
 
-let nullable_def : type_def = 
+let nullable_def : type_def =
   let loc = dummy_loc in
   (
-    loc, 
+    loc,
     ("nullable", ["a"], []),
     `Nullable (loc, `Tvar (loc, "a"), [])
   )
 
-let shared_def : type_def = 
+let shared_def : type_def =
   let loc = dummy_loc in
   (
-    loc, 
+    loc,
     ("shared", ["a"], []),
     `Shared (loc, `Tvar (loc, "a"), [])
   )

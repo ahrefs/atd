@@ -4,7 +4,7 @@
   Simple indentation utility for code generators
 *)
 
-type t = 
+type t =
     [
     | `Line of string
     | `Block of t list
@@ -20,7 +20,7 @@ type t =
   Example:
 
 {v
-let l = 
+let l =
   [
     `Line "d";
     `Line "e";
@@ -52,11 +52,11 @@ v}
 
 val to_buffer : ?offset:int -> ?indent:int -> Buffer.t -> t list -> unit
   (** Write to a buffer.
-      
+
       @param offset defines the number of space characters
       to use for the left margin. Default: 0.
 
-      @param indent defines the number of space characters to use for 
+      @param indent defines the number of space characters to use for
       indenting blocks. Default: 2.
   *)
 

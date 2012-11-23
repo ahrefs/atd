@@ -51,7 +51,7 @@ type ('a, 'b, 'ccccccccccccccccccccc) r = {
 }
 
 type tuple = (z * z * tuple option * kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-	      * z * z * tuple option * kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk)
+              * z * z * tuple option * kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk)
 <a b>
 
 type tuple2 = (int * float)

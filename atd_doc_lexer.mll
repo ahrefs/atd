@@ -25,7 +25,7 @@ let verb_not_special = [^ '\\' ' ' '\t' '\r' '\n' '}']
 rule paragraph a1 a2 a3 = parse
     '\\' ('\\' | "{{" | "{{{" as s)
                         { paragraph a1 a2 (s :: a3) lexbuf }
-  | "{{"               
+  | "{{"
                         { let code = inline_verbatim [] lexbuf in
                           let a2 =
                             match String.concat "" (List.rev a3) with

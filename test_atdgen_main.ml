@@ -371,6 +371,39 @@ let test_biniou_sharing_strings () =
   check (a'.(0) == a'.(1));
   check (a'.(0) != b')
 
+let test_wrapping_ints () =
+  section "ocaml wrapping - ints";
+  let x = Test_lib.Natural.wrap 7 in
+  let json = Testj.string_of_natural x in
+  let x' = Testj.natural_of_string json in
+  check (x = x');
+
+  let biniou = Test.string_of_natural x in
+  let x'' = Test.natural_of_string biniou in
+  check (x = x'');
+
+  try ignore (Testj.natural_of_string "-1"); check false
+  with Failure _ -> ()
+
+let test_double_wrapping () =
+  section "ocaml wrapping - double wrapping";
+  let x = Test_lib.Even_natural.wrap (Test_lib.Natural.wrap 10) in
+  let json = Testj.string_of_even_natural x in
+  let x' = Testj.even_natural_of_string json in
+  check (x = x')
+
+let test_wrapping_with_validation () =
+  section "ocaml wrapping - with validation";
+  let x = `Id "" in
+  try ignore (Testv.validate_id [] x); check false
+  with Failure "empty" -> ()
+
+let test_ignored_wrap () =
+  section "ocaml wrapping - wrap constructor without wrapper";
+  let x = { Test.some_field = 0 } in
+  try ignore (Testv.validate_no_real_wrap [] x); check false
+  with Failure "passed" -> ()
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -393,6 +426,10 @@ let all_tests = [
   test_raw_json;
   test_biniou_sharing_graph;
   test_biniou_sharing_strings;
+  test_wrapping_ints;
+  test_double_wrapping;
+  test_wrapping_with_validation;
+  test_ignored_wrap;
 ]
 
 let quality_test () =

@@ -1,4 +1,3 @@
-
 open Printf
 open Atd_ast
 open Ag_error
@@ -64,6 +63,11 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
           error loc "bug: missing or empty share.id annotation";
         `Shared (loc, id,
                  mapping_of_expr x, ocaml_t, biniou_t)
+
+    | `Wrap (loc, x, a) ->
+        let ocaml_t = `Wrap (Ag_ocaml.get_ocaml_wrap loc a) in
+        let json_t = `Wrap in
+        `Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
     | `Name (loc, (loc2, s, l), an) ->
 	(match s with

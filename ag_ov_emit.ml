@@ -308,6 +308,12 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
           error loc "Shared values requiring validation of their children \
                      nodes are not supported"
 
+    | `Wrap (loc, x, `Wrap o, (v, shallow)) ->
+        if shallow then
+          opt_validator v
+        else
+          prepend_validator_f v (make_validator x)
+
     | _ -> assert false
 
 

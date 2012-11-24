@@ -27,6 +27,7 @@ type json_repr =
     | `Option
     | `Nullable
     | `Shared
+    | `Wrap (* should we add support for Base64 encoding of binary data? *)
     | `External
 
     | `Cell

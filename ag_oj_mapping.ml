@@ -1,4 +1,3 @@
-
 open Printf
 open Atd_ast
 open Ag_error
@@ -40,7 +39,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
 	let json_t = `Tuple in
 	`Tuple (loc, Array.of_list (List.map mapping_of_cell l),
 		ocaml_t, json_t)
-	
+
     | `List (loc, x, an) ->
 	let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
 	let json_t = `List (Ag_json.get_json_list an) in
@@ -58,6 +57,11 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
 
     | `Shared (loc, x, an) ->
         error loc "Sharing is not supported by the JSON interface"
+
+    | `Wrap (loc, x, an) ->
+        let ocaml_t = `Wrap (Ag_ocaml.get_ocaml_wrap loc an) in
+        let json_t = `Wrap in
+        `Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
     | `Name (loc, (loc2, s, l), an) ->
 	(match s with

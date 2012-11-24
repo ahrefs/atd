@@ -19,7 +19,13 @@ type atd_ocaml_record = [ `Record | `Object ]
 type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 ]
 type atd_ocaml_list = [ `List | `Array ]
 
-type atd_ocaml_shared  = [ `Flat | `Ref ]
+type atd_ocaml_shared = [ `Flat | `Ref ]
+
+type atd_ocaml_wrap = {
+  ocaml_wrap_t : string;
+  ocaml_wrap : string;
+  ocaml_unwrap : string;
+}
 
 type atd_ocaml_field = {
   ocaml_default : string option;
@@ -52,6 +58,7 @@ type atd_ocaml_repr =
     | `Option
     | `Nullable
     | `Shared of atd_ocaml_shared
+    | `Wrap of atd_ocaml_wrap option
     | `Name of string
     | `External of (string * string * string)
         (*
@@ -155,6 +162,33 @@ let get_ocaml_list an =
 
 let get_ocaml_shared an =
   Atd_annot.get_field ocaml_shared_of_string `Flat ["ocaml"] "repr" an
+
+let get_ocaml_wrap loc an =
+  let module_ =
+    Atd_annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "module" an in
+  let default field =
+    match module_ with
+        None -> None
+      | Some s -> Some (sprintf "%s.%s" s field)
+  in
+  let t =
+    Atd_annot.get_field (fun s -> Some (Some s))
+      (default "t") ["ocaml"] "t" an
+  in
+  let wrap =
+    Atd_annot.get_field (fun s -> Some (Some s))
+      (default "wrap") ["ocaml"] "wrap" an
+  in
+  let unwrap =
+    Atd_annot.get_field (fun s -> Some (Some s))
+      (default "unwrap") ["ocaml"] "unwrap" an
+  in
+  match t, wrap, unwrap with
+      None, None, None -> None
+    | Some t, Some wrap, Some unwrap ->
+        Some { ocaml_wrap_t = t; ocaml_wrap = wrap; ocaml_unwrap = unwrap }
+    | _ ->
+        Ag_error.error loc "Incomplete annotation. Missing t, wrap or unwrap"
 
 let get_ocaml_cons default an =
   Atd_annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
@@ -269,6 +303,11 @@ let rec map_expr (x : type_expr) : ocaml_expr =
         (match get_ocaml_shared a with
              `Flat -> map_expr x
            | `Ref -> `Name ("Pervasives.ref", [map_expr x])
+        )
+    | `Wrap (loc, x, a) ->
+        (match get_ocaml_wrap loc a with
+            None -> map_expr x
+          | Some { ocaml_wrap_t } -> `Name (ocaml_wrap_t, [])
         )
     | `Name (loc, (loc2, s, l), an) ->
 	let s = get_ocaml_type_path s an in

@@ -1,4 +1,3 @@
-
 (*
   Mapping from ATD to biniou
 *)
@@ -25,6 +24,7 @@ type biniou_repr =
     | `Option
     | `Nullable
     | `Shared
+    | `Wrap
     | `External
 
     | `Cell

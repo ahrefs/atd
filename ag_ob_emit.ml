@@ -1,4 +1,3 @@
-
 (*
   OCaml code generator for the biniou format.
 *)
@@ -133,7 +132,7 @@ val %s_of_string :%s
   ) (flatten defs)
 
 
-let get_biniou_tag (x : ob_mapping) =
+let rec get_biniou_tag (x : ob_mapping) =
   match x with
       `Unit (loc, `Unit, `Unit) -> "Bi_io.unit_tag"
     | `Bool (loc, `Bool, `Bool) -> "Bi_io.bool_tag"
@@ -159,6 +158,8 @@ let get_biniou_tag (x : ob_mapping) =
     | `Option (loc, x, `Option, `Option)
     | `Nullable (loc, x, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
     | `Shared (loc, id, x, `Shared _, `Shared) -> "Bi_io.shared_tag"
+    | `Wrap (loc, x, `Wrap _, `Wrap) -> get_biniou_tag x
+
     | `Name (loc, s, args, None, None) -> sprintf "%s_tag" s
     | `External (loc, s, args,
                  `External (types_module, main_module, ext_name),
@@ -542,6 +543,21 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
 	  `Block (make_writer ~tagged:true deref x);
           `Line ")";
         ]
+
+    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+        let simple_writer = make_writer ~tagged deref x in
+        (match o with
+            None -> simple_writer
+          | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
+              [
+                `Line "fun ob x -> (";
+                `Block [
+                  `Line (sprintf "let x = ( %s ) x in (" ocaml_unwrap);
+                  `Block simple_writer;
+                  `Line ") ob x)";
+                ]
+              ]
+        )
 
     | _ -> assert false
 
@@ -1039,6 +1055,30 @@ let rec make_reader deref ~tagged (x : ob_mapping) : Ag_indent.t list =
         in
         wrap_body ~tagged Bi_io.shared_tag body
 
+    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+        let simple_reader = make_reader deref ~tagged x in
+        (match o with
+            None -> simple_reader
+          | Some { Ag_ocaml.ocaml_wrap } ->
+              if tagged then
+                [
+                  `Line "fun ib ->";
+                  `Block [
+                    `Line (sprintf "( %s ) ((" ocaml_wrap);
+                    `Block simple_reader;
+                    `Line ") ib)";
+                  ]
+                ]
+              else
+                [
+                  `Line "fun tag ib ->";
+                  `Block [
+                    `Line (sprintf "( %s ) ((" ocaml_wrap);
+                    `Block simple_reader;
+                    `Line ") tag ib)";
+                  ]
+                ]
+        )
     | _ -> assert false
 
 

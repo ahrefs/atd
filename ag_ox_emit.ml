@@ -63,7 +63,8 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
     | `List (loc, x, _, _)
     | `Option (loc, x, _, _)
     | `Nullable (loc, x, _, _)
-    | `Shared (loc, _, x, _, _) ->
+    | `Shared (loc, _, x, _, _)
+    | `Wrap (loc, x, _, _) ->
         extract_names_from_expr root_loc acc x
 
     | `Name (loc, _, l, _, _) ->

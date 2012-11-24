@@ -401,6 +401,20 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
     | `Shared (loc, _, _, _, _) ->
         error loc "Sharing is not supported by the JSON interface"
 
+    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+        (match o with
+            None -> make_writer p x
+          | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
+              [
+                `Line "fun ob x -> (";
+                `Block [
+                  `Line (sprintf "let x = ( %s ) x in (" ocaml_unwrap);
+                  `Block (make_writer p x);
+                  `Line ") ob x)";
+                ]
+              ]
+        )
+
     | _ -> assert false
 
 
@@ -793,6 +807,21 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 
     | `Shared (loc, _, _, _, _) ->
         error loc "Sharing is not supported by the JSON interface"
+
+    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+        (match o with
+            None -> make_reader p x
+          | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
+              [
+                `Line "fun p lb ->";
+                `Block [
+                  `Line "let x = (";
+                  `Block (make_reader p x);
+                  `Line ") p lb in";
+                  `Line (sprintf "( %s ) x" ocaml_wrap);
+                ]
+              ]
+        )
 
     | _ -> assert false
 

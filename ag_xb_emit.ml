@@ -43,7 +43,8 @@ let rec extract_names_from_expr acc (x : 'a expr) =
     | `List (loc, x, _, _)
     | `Option (loc, x, _, _)
     | `Nullable (loc, x, _, _)
-    | `Shared (loc, _, x, _, _) ->
+    | `Shared (loc, _, x, _, _)
+    | `Wrap (loc, x, _, _) ->
         extract_names_from_expr acc x
 
     | `Name (loc, _, l, _, _) ->

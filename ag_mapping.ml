@@ -1,4 +1,3 @@
-
 open Printf
 
 open Ag_error
@@ -26,6 +25,7 @@ type ('a, 'b) mapping =
     | `Option of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Nullable of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Shared of (loc * loc_id * ('a, 'b) mapping * 'a * 'b)
+    | `Wrap of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Name of (loc * string * ('a, 'b) mapping list * 'a option * 'b option)
     | `External of (loc * string * ('a, 'b) mapping list * 'a * 'b)
     | `Tvar of (loc * string) ]
@@ -89,6 +89,7 @@ let loc_of_mapping x =
     | `Option (loc, _, _, _)
     | `Nullable (loc, _, _, _)
     | `Shared (loc, _, _, _, _)
+    | `Wrap (loc, _, _, _)
     | `Name (loc, _, _, _, _)
     | `External (loc, _, _, _, _)
     | `Tvar (loc, _) -> loc
@@ -117,6 +118,8 @@ let rec subst env (x : (_, _) mapping) =
         `Nullable (loc, subst env x, a, b)
     | `Shared (loc, id, x, a, b) ->
         `Shared (loc, id, subst env x, a, b)
+    | `Wrap (loc, x, a, b) ->
+        `Wrap (loc, subst env x, a, b)
     | `Name (loc, name, args, a, b) ->
         `Name (loc, name, List.map (subst env) args, a, b)
     | `External (loc, name, args, a, b) ->

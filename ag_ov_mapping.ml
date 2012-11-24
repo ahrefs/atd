@@ -181,7 +181,7 @@ let rec mapping_of_expr
 	let ocaml_t = `Tuple in
 	`Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
 		ocaml_t, v2 an x0)
-	
+
     | `List (loc, x, an) ->
 	let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
 	`List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
@@ -201,6 +201,16 @@ let rec mapping_of_expr
           error loc "bug: missing or empty share.id annotation";
         `Shared (loc, id,
                  mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+
+    | `Wrap (loc, x, an) ->
+        let w = Ag_ocaml.get_ocaml_wrap loc an in
+        let ocaml_t = `Wrap w in
+        let validator =
+          match w with
+              None -> v2 an x0
+            | Some _ -> v an, true
+        in
+        `Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
 
     | `Name (loc, (loc2, s, l), an) ->
 	(match s with

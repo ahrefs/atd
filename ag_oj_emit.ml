@@ -25,6 +25,9 @@ type param = {
        and does something with it such as displaying a warning message. *)
 
   force_defaults : bool;
+
+  preprocess_input : string option;
+    (* intended for UTF-8 validation *)
 }
 
 
@@ -1197,12 +1200,18 @@ let make_ocaml_json_reader p is_rec let1 let2 def =
     if is_function reader_expr || not is_rec then "", ""
     else " p lb", " p lb"
   in
+  let pp =
+    match p.preprocess_input with
+        None -> []
+      | Some f -> [ `Line (sprintf "let s = ( %s ) s in" f) ]
+  in
   [
     `Line (sprintf "%s %s%s = (" let1 read extra_param);
     `Block (List.map Ag_indent.strip reader_expr);
     `Line (sprintf ")%s" extra_args);
     `Line (sprintf "%s %s s =" let2 of_string);
     `Block [
+      `Inline pp;
       `Line (
         sprintf "%s (Yojson.Safe.init_lexer ()) \
                        (Lexing.from_string s)" read);
@@ -1224,12 +1233,14 @@ let get_let ~is_rec ~is_first =
 
 let make_ocaml_json_impl
     ~std ~unknown_field_handler ~with_create ~force_defaults
+    ~preprocess_input
     buf deref defs =
   let p = {
     deref = deref;
     std = std;
     unknown_field_handler = unknown_field_handler;
     force_defaults = force_defaults;
+    preprocess_input;
   } in
   let ll =
     List.map (
@@ -1294,7 +1305,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ~std ~unknown_field_handler ~force_defaults
+    ~std ~unknown_field_handler ~force_defaults ~preprocess_input
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1305,7 +1316,8 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then
     make_ocaml_json_impl
-      ~std ~unknown_field_handler ~with_create ~force_defaults buf deref defs;
+      ~std ~unknown_field_handler ~with_create ~force_defaults
+      ~preprocess_input buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1320,6 +1332,7 @@ let make_ocaml_files
     ~pos_lnum
     ~type_aliases
     ~force_defaults
+    ~preprocess_input
     atd_file out =
   let head, m0 =
     match atd_file with
@@ -1363,7 +1376,7 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~std ~unknown_field_handler ~force_defaults
+      ~std ~unknown_field_handler ~force_defaults ~preprocess_input
       ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

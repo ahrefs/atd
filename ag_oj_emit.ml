@@ -199,6 +199,7 @@ let rec get_writer_name
 	   | `Char -> "Ag_oj_run.write_int8"
 	   | `Int32 -> "Ag_oj_run.write_int32"
 	   | `Int64 -> "Ag_oj_run.write_int64"
+           | `Float -> "Ag_oj_run.write_float_as_int"
 	)
 
     | `Float (loc, `Float, `Float) ->
@@ -252,6 +253,7 @@ let rec get_reader_name
 	   | `Char -> "Ag_oj_run.read_int8"
 	   | `Int32 -> "Ag_oj_run.read_int32"
 	   | `Int64 -> "Ag_oj_run.read_int64"
+           | `Float -> "Ag_oj_run.read_number"
 	)
 
     | `Float (loc, `Float, `Float) -> "Ag_oj_run.read_number"

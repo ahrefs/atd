@@ -1,3 +1,4 @@
+(* Biniou support only *)
 
 type a = string shared <ocaml repr="ref"> list <ocaml repr="array">
 type b = string shared <ocaml repr="ref">

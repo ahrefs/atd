@@ -120,6 +120,20 @@ let test_json_assoc_array () =
   f [| ("a", 0) |];
   f [| ("a", 0); ("b", 1) |]
 
+let test_json_int_ocaml_float () =
+  section "json ints derived from ocaml floats";
+  let of_json = Test3j.unixtime_list_of_string in
+  let to_json = Test3j.string_of_unixtime_list in
+  let l1 = [0.; 0.1; -0.1; 0.6; -0.6] in
+  check (of_json (to_json l1) = [0.; 0.; 0.; 1.; -1.]);
+
+  let l2 = [ 12345678901234567890.; -12345678901234567890. ] in
+  let l2' = of_json (to_json l2) in
+  List.map2 (fun x x' -> abs_float (1. -. x /. x') < 1e-15) l2 l2';
+
+  expect_error to_json [infinity];
+  expect_error to_json [neg_infinity];
+  expect_error to_json [nan]
 
 let make_mixed_record_array n =
   Array.init n (
@@ -413,6 +427,7 @@ let all_tests = [
   test_json_extra_field_warning;
   test_json_assoc_list;
   test_json_assoc_array;
+  test_json_int_ocaml_float;
   test_biniou_correctness;
   test_json_correctness;
   test_json_space;

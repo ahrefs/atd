@@ -638,14 +638,21 @@ type profile = {
 
 \annotposition after \texttt{int} type
 
-\annotvalues \texttt{char}, \texttt{int32}, \texttt{int64}
+\annotvalues \texttt{char}, \texttt{int32}, \texttt{int64}, \texttt{float}
 
 \annotsemantics specifies an alternate type for representing integers.
-The default type is \texttt{int}, but \texttt{char}, \texttt{int32}
-and \texttt{int64} can be used instead. These three types are
+The default type is \texttt{int}, but \texttt{char}, \texttt{int32},
+\texttt{int64} or \texttt{float} can be used instead.
+
+The three types \texttt{char}, \texttt{int32} and \texttt{int64} are
 supported by both Atdgen-biniou and Atdgen-json but Atdgen-biniou
 currently requires that they map to the corresponding fixed-width
 types provided by the biniou format.
+
+The type \texttt{float} is only supported in conjunction with JSON and
+is useful when an OCaml float is used to represent an integral value,
+such as a time in seconds returned by \texttt{Unix.time()}. When
+converted into JSON, floats are rounded to the nearest integer.
 
 \annotexample
 ## atdgen () ##

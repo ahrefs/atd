@@ -16,7 +16,7 @@ open Ag_mapping
 type atd_ocaml_sum = [ `Classic | `Poly ]
 type atd_ocaml_record = [ `Record | `Object ]
 
-type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 ]
+type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
 type atd_ocaml_list = [ `List | `Array ]
 
 type atd_ocaml_shared = [ `Flat | `Ref ]
@@ -82,6 +82,7 @@ let ocaml_int_of_string s : atd_ocaml_int option =
     | "char" -> Some `Char
     | "int32" -> Some `Int32
     | "int64" -> Some `Int64
+    | "float" -> Some `Float
     | _ -> None
 
 let string_of_ocaml_int (x : atd_ocaml_int) =
@@ -90,6 +91,7 @@ let string_of_ocaml_int (x : atd_ocaml_int) =
     | `Char -> "Char.t"
     | `Int32 -> "Int32.t"
     | `Int64 -> "Int64.t"
+    | `Float -> "float"
 
 let ocaml_sum_of_string s : atd_ocaml_sum option =
   match s with
@@ -818,7 +820,8 @@ let get_implicit_ocaml_default deref x =
 		  `Int -> "0"
 		| `Char -> "'\000'"
 		| `Int32 -> "0l"
-		| `Int64 -> "0L")
+		| `Int64 -> "0L"
+                | `Float -> "0.")
     | `Float (loc, `Float, _) -> Some "0.0"
     | `String (loc, `String, _) -> Some "\"\""
     | `List (loc, x, `List `List, _) -> Some "[]"

@@ -1,4 +1,3 @@
-
 type ('aa, 'bb) poly <ocaml_biniou module="Test">
                      <ocaml_json module="Testj"> = abstract
 

@@ -96,6 +96,21 @@ let write_int32 ob x =
 let write_int64 ob x =
   Bi_outbuf.add_string ob (Int64.to_string x)
 
+let min_float = float min_int
+let max_float = float max_int
+
+let write_float_as_int ob x =
+  if x >= min_float && x <= max_float then
+    Yojson.Safe.write_int ob
+      (int_of_float (if x < 0. then x -. 0.5 else x +. 0.5))
+  else
+    match classify_float x with
+        FP_normal
+      | FP_subnormal
+      | FP_zero -> Bi_outbuf.add_string ob (Printf.sprintf "%.0f" x)
+      | FP_infinite -> error "Cannot convert inf or -inf into a JSON int"
+      | FP_nan -> error "Cannot convert NaN into a JSON int"
+
 let read_null p lb =
   Yojson.Safe.read_space p lb;
   Yojson.Safe.read_null p lb

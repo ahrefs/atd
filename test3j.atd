@@ -1,3 +1,5 @@
+(* JSON support only *)
+
 type json <ocaml_json module="Yojson.Safe"> = abstract
 type dyn <ocaml_json module="Yojson.Safe" t="json"> = abstract
 
@@ -6,3 +8,5 @@ type t = {
   bar: json;
   baz: dyn
 }
+
+type unixtime_list = int <ocaml repr="float"> list

@@ -3,6 +3,8 @@
   Mapping from ATD to JSON
 *)
 
+type json_float = [ `Float | `Int ]
+
 type json_list = [ `Array | `Object ]
 
 type json_variant = { json_cons : string }
@@ -17,7 +19,7 @@ type json_repr =
     | `Unit
     | `Bool
     | `Int
-    | `Float
+    | `Float of json_float
 
     | `String
     | `Sum
@@ -35,6 +37,15 @@ type json_repr =
     | `Variant of json_variant
     | `Def
     ]
+
+let json_float_of_string s : json_float option =
+  match s with
+      "float" -> Some `Float
+    | "int" -> Some `Int
+    | _ -> None
+
+let get_json_float an =
+  Atd_annot.get_field json_float_of_string `Float ["json"] "repr" an
 
 let json_list_of_string s : json_list option =
   match s with

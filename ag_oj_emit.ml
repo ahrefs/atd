@@ -202,9 +202,14 @@ let rec get_writer_name
            | `Float -> "Ag_oj_run.write_float_as_int"
 	)
 
-    | `Float (loc, `Float, `Float) ->
-        if p.std then "Yojson.Safe.write_std_float"
-        else "Yojson.Safe.write_float"
+    | `Float (loc, `Float, `Float j) ->
+        (match j with
+            `Float ->
+              if p.std then "Yojson.Safe.write_std_float"
+              else "Yojson.Safe.write_float"
+          | `Int ->
+              "Ag_oj_run.write_float_as_int"
+        )
 
     | `String (loc, `String, `String) ->
 	"Yojson.Safe.write_string"
@@ -256,7 +261,7 @@ let rec get_reader_name
            | `Float -> "Ag_oj_run.read_number"
 	)
 
-    | `Float (loc, `Float, `Float) -> "Ag_oj_run.read_number"
+    | `Float (loc, `Float, `Float j) -> "Ag_oj_run.read_number"
 
     | `String (loc, `String, `String) -> "Ag_oj_run.read_string"
 

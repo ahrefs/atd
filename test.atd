@@ -183,3 +183,5 @@ type some_record = {
   some_field : int <ocaml validator="fun path x -> failwith \"passed\"">
 }
 type no_real_wrap = some_record wrap
+
+type unixtime_list = float <json repr="int"> list

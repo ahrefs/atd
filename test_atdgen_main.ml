@@ -120,10 +120,8 @@ let test_json_assoc_array () =
   f [| ("a", 0) |];
   f [| ("a", 0); ("b", 1) |]
 
-let test_json_int_ocaml_float () =
-  section "json ints derived from ocaml floats";
-  let of_json = Test3j.unixtime_list_of_string in
-  let to_json = Test3j.string_of_unixtime_list in
+let test_json_int_ocaml_float_gen of_json to_json kind () =
+  section ("json ints derived from ocaml floats: " ^ kind);
   let l1 = [0.; 0.1; -0.1; 0.6; -0.6] in
   check (of_json (to_json l1) = [0.; 0.; 0.; 1.; -1.]);
 
@@ -134,6 +132,18 @@ let test_json_int_ocaml_float () =
   expect_error to_json [infinity];
   expect_error to_json [neg_infinity];
   expect_error to_json [nan]
+
+let test_json_int_ocaml_float () =
+  test_json_int_ocaml_float_gen
+    Test3j.unixtime_list_of_string
+    Test3j.string_of_unixtime_list
+    "int <ocaml repr=\"float\">" ();
+  test_json_int_ocaml_float_gen
+    Testj.unixtime_list_of_string
+    Testj.string_of_unixtime_list
+    "float <json repr=\"int\">" ()
+
+
 
 let make_mixed_record_array n =
   Array.init n (

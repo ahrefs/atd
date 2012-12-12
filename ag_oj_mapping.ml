@@ -73,7 +73,8 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
 	       let o = Ag_ocaml.get_ocaml_int an in
 	       `Int (loc, `Int o, `Int)
 	   | "float" ->
-	       `Float (loc, `Float, `Float)
+               let j = Ag_json.get_json_float an in
+	       `Float (loc, `Float, `Float j)
 	   | "string" ->
 	       `String (loc, `String, `String)
 	   | s ->

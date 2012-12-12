@@ -335,6 +335,8 @@ A valid JSON object of the \texttt{profile} type above is:
 
 ## annot_field "repr" ##
 
+\annotpar{Association lists}
+
 \annotposition after \texttt{(string * \_) list} type
 
 \annotvalues \texttt{object}
@@ -366,6 +368,20 @@ would be represented as:
 ]
 \end{verbatim}
 
+\annotpar{Floats}
+
+\annotposition after \texttt{float} type
+
+\annotvalues \texttt{int}
+
+\annotsemantics specifies a float value that must be rounded to the
+nearest integer and represented in JSON without
+a decimal point nor an exponent.
+
+\annotexample
+## atdgen () ##
+type unixtime = float <json repr="int">
+## () ##
 
 
 ## annot_section "ocaml" ##
@@ -663,6 +679,7 @@ type t = {
   data : string list;
 }
 ## () ##
+
 
 \annotpar{Lists and arrays}
 

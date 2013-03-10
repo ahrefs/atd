@@ -1,4 +1,9 @@
 VERSION = 1.2.3
+ifeq "$(shell ocamlc -config |grep os_type)" "os_type: Win32"
+EXE=.exe
+else
+EXE=
+endif
 
 # Shared stuff
 SOURCES_SHARED = \
@@ -93,8 +98,8 @@ install: META
 	test ! -f atdgen || cp atdgen $(BINDIR)/
 	test ! -f atdgen.exe || cp atdgen.exe $(BINDIR)/
 	ocamlfind install atdgen META \
-		$$(find $(MLI) $(CMI) $(CMO) $(CMX) $(O) \
-			atdgen.cma atdgen.a atdgen.cmxa)
+		 $(MLI) $(CMI) $(CMO) $(CMX) $(O) \
+			atdgen.cma atdgen.a atdgen.cmxa
 
 uninstall:
 	test ! -f $(BINDIR)/atdgen.run || rm $(BINDIR)/atdgen.run
@@ -150,15 +155,15 @@ atdgen.run: dep $(CMI) $(CMO) ag_main.ml
 		-package "$(OCAMLPACKS)" -linkpkg \
 		$(CMO) ag_main.ml
 
-atdgen: dep $(CMI) $(CMX) ag_main.ml
-	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdgen \
+atdgen$(EXE): dep $(CMI) $(CMX) ag_main.ml
+	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdgen$(EXE) \
 		-package "$(OCAMLPACKS)" -linkpkg \
 		$(CMX) ag_main.ml
 
 
 
 .PHONY: doc
-doc: odoc/index.html atdgen
+doc: odoc/index.html atdgen$(EXE)
 	cd manual; $(MAKE)
 
 odoc/index.html: $(CMI)
@@ -209,7 +214,7 @@ really-test:
 	ocamlfind ocamlc -c -g testv.mli -package atdgen
 	ocamlfind ocamlopt -c -g testv.ml -package atdgen
 	ocamlfind ocamlopt -c -g test_atdgen_main.ml -package atdgen
-	ocamlfind ocamlopt -o test_atdgen -g -linkpkg -package atdgen \
+	ocamlfind ocamlopt -o test_atdgen$(EXE) -g -linkpkg -package atdgen \
 		test_lib.cmx test.cmx test2.cmx testj.cmx testjstd.cmx \
 		test2j.cmx test3b.cmx test3j.cmx testv.cmx test_atdgen_main.cmx
 	mkdir -p testdoc
@@ -253,7 +258,7 @@ bench: opt
 .PHONY: clean
 clean:
 	rm -f *.o *.a *.cm* *~ *.annot \
-		dep atdgen atdgen.run \
+		dep atdgen$(EXE) atdgen.run \
 		benchmark test_atdgen \
 		gmon.out ocamlprof.dump \
 		test.bin test-2.bin test.json test-2.json \

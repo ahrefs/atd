@@ -1,0 +1,17 @@
+* Website and documentation refresh: move pages to mjambon.com/atdgen,
+  fix broken links pointing to the defunct oss.wink.com, create single
+  sub-site for everything atdgen-related (biniou, yojson, atd, atdgen,
+  atdgen-omake, atdgen-make, documentation)
+
+* JSON object syntax for variants, e.g.:
+  type t = A | B of int
+  Currently supported: "A"
+                       ["B", 123]
+                       <"A">
+                       <"B":123>
+  To do: {"A": null}
+         {"B": 123}
+
+* Do not encode variants with the non-standard angle bracket syntax by default
+
+* Support 32-bit floats in Biniou, for more compact storage

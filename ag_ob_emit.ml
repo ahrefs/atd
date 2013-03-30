@@ -145,7 +145,11 @@ let rec get_biniou_tag (x : ob_mapping) =
 	   | `Int32 -> "Bi_io.int32_tag"
 	   | `Int64 -> "Bi_io.int64_tag"
 	)
-    | `Float (loc, `Float, `Float) -> "Bi_io.float64_tag"
+    | `Float (loc, `Float, `Float b) ->
+        (match b with
+            `Float32 -> "Bi_io.float32_tag"
+          | `Float64 -> "Bi_io.float64_tag"
+        )
     | `String (loc, `String, `String) -> "Bi_io.string_tag"
     | `Sum (loc, a, `Sum x, `Sum) -> "Bi_io.variant_tag"
     | `Record (loc, a, `Record o, `Record) -> "Bi_io.record_tag"
@@ -250,9 +254,11 @@ let rec get_writer_name
 	       error loc "Unsupported combination of OCaml/Biniou int types"
 	)
 
-    | `Float (loc, `Float, `Float) ->
-	sprintf "Bi_io.write_%sfloat64" un
-
+    | `Float (loc, `Float, `Float b) ->
+        (match b with
+            `Float32 -> sprintf "Bi_io.write_%sfloat32" un
+          | `Float64 -> sprintf "Bi_io.write_%sfloat64" un
+        )
     | `String (loc, `String, `String) ->
 	sprintf "Bi_io.write_%sstring" un
 
@@ -352,7 +358,11 @@ let rec get_reader_name
 	       error loc "Unsupported combination of OCaml/Biniou int types"
 	)
 
-    | `Float (loc, `Float, `Float) -> xreader "float"
+    | `Float (loc, `Float, `Float b) ->
+        (match b with
+            `Float32 -> xreader "float32"
+          | `Float64 -> xreader "float64"
+        )
 
     | `String (loc, `String, `String) -> xreader "string"
 

@@ -428,6 +428,14 @@ let test_ignored_wrap () =
   try ignore (Testv.validate_no_real_wrap [] x); check false
   with Failure "passed" -> ()
 
+let test_float32 () =
+  section "check length of floats serialized as float32";
+  let x = { Test.f32 = 1.23456789; Test.f64 = 1.98765432 } in
+  let s = Test.string_of_floats x in
+  let x' = Test.floats_of_string s in
+  check Test.(abs_float (x.f32 -. x'.f32) < 1e-6);
+  check (String.length s = 24)
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -455,6 +463,7 @@ let all_tests = [
   test_double_wrapping;
   test_wrapping_with_validation;
   test_ignored_wrap;
+  test_float32;
 ]
 
 let quality_test () =

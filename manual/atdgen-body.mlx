@@ -274,6 +274,24 @@ type t = {
 }
 ## () ##
 
+\annotpar{Floating-point numbers}
+
+\annotposition after \texttt{float} type
+
+\annotvalues \texttt{float64} (default), \texttt{float32}
+
+\annotsemantics \texttt{float32} allows for a shorter serialized representation
+of floats, using 4 bytes instead of 8, with reduced precision.
+OCaml floats always use 8 bytes, though.
+
+\annotexample
+## atdgen () ##
+type t = {
+  lat : float <biniou repr="float32">;
+  lon : float <biniou repr="float32">;
+}
+## () ##
+
 
 \annotpar{Arrays and tables}
 

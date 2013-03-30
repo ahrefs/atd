@@ -50,6 +50,11 @@ type test_variant =
 
 type date = (int * int nullable * int nullable)
 
+type floats = {
+  f32 : float <biniou repr="float32">;
+  f64 : float;
+}
+
 type mixed_record = {
   ?field0 : int option;
   ?field1 : float option;

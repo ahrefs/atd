@@ -80,7 +80,8 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
 	       let b = Ag_biniou.get_biniou_int an in
 	       `Int (loc, `Int o, `Int b)
 	   | "float" ->
-	       `Float (loc, `Float, `Float)
+               let b = Ag_biniou.get_biniou_float an in
+	       `Float (loc, `Float, `Float b)
 	   | "string" ->
 	       `String (loc, `String, `String)
 	   | s ->

@@ -141,17 +141,33 @@ let read_int64 ib =
   else
     read_error_at ib
 
-let get_float_reader tag =
+let get_float32_reader tag =
+  if tag = Bi_io.float32_tag then
+    Bi_io.read_untagged_float32
+  else
+    tag_error tag "float32"
+
+let get_float64_reader tag =
   if tag = Bi_io.float64_tag then
     Bi_io.read_untagged_float64
   else
-    tag_error tag "float"
+    tag_error tag "float64"
 
-let read_float ib =
+let get_float_reader = get_float64_reader
+
+let read_float32 ib =
+  if Bi_io.read_tag ib = Bi_io.float32_tag then
+    Bi_io.read_untagged_float32 ib
+  else
+    read_error_at ib
+
+let read_float64 ib =
   if Bi_io.read_tag ib = Bi_io.float64_tag then
     Bi_io.read_untagged_float64 ib
   else
     read_error_at ib
+
+let read_float = read_float64
 
 let get_string_reader tag =
   if tag = Bi_io.string_tag then

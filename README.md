@@ -1,6 +1,6 @@
 ATD stands for Adaptable Type Definitions. It is a syntax for defining
-cross-language data types and it is used by 
-[atdgen](https://github.com/MyLifeLabs/atdgen) for defining the
+cross-language data types and it is used by
+[atdgen](https://github.com/mjambon/atdgen) for defining the
 type of [JSON](http://json.org) data and generating efficient
 serializers, deserializers and validators.
 

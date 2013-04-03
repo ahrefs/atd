@@ -65,7 +65,7 @@ default: all opt
 
 all: VERSION META atd.cma
 
-opt: VERSION META atd.cmxa atdcat
+opt: VERSION META atd.cmxa atdcat$(EXE)
 
 install: META
 	test ! -f atdcat || cp atdcat $(BINDIR)/
@@ -75,7 +75,7 @@ install: META
 
 uninstall:
 	test ! -f $(BINDIR)/atdcat || rm $(BINDIR)/atdcat
-	test ! -f $(BINDIR)/atdcat.exe || rm $(BINDIR)/atdcat.exe 
+	test ! -f $(BINDIR)/atdcat.exe || rm $(BINDIR)/atdcat.exe
 	ocamlfind remove atd
 
 reinstall:

@@ -1,4 +1,9 @@
 VERSION = 1.0.3
+ifeq "$(shell ocamlc -config |grep os_type)" "os_type: Win32"
+EXE=.exe
+else
+EXE=
+endif
 
 SOURCES = \
   atd_version.ml \
@@ -60,13 +65,13 @@ default: all opt
 
 all: VERSION META atd.cma
 
-opt: VERSION META atd.cmxa atdcat
+opt: VERSION META atd.cmxa atdcat$(EXE)
 
 install: META
 	test ! -f atdcat || cp atdcat $(BINDIR)/
 	test ! -f atdcat.exe || cp atdcat.exe $(BINDIR)/
 	ocamlfind install atd META \
-		`find $(MLI) $(CMI) $(CMO) $(CMX) $(O) atd.cma atd.a atd.cmxa`
+	 $(MLI) $(CMI) $(CMO) $(CMX) $(O) atd.cma atd.a atd.cmxa
 
 uninstall:
 	test ! -f $(BINDIR)/atdcat || rm $(BINDIR)/atdcat
@@ -124,13 +129,13 @@ atd.cma: dep $(CMI) $(CMO)
 atd.cmxa: dep $(CMI) $(CMX)
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o atd.cmxa -a $(CMX)
 
-atdcat: dep $(CMI) $(CMX) atdcat.ml
-	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdcat \
+atdcat$(EXE): dep $(CMI) $(CMX) atdcat.ml
+	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdcat$(EXE) \
 		-package "$(OCAMLPACKS)" -linkpkg \
 		$(CMX) atdcat.ml
 
 .PHONY: doc
-doc: odoc/index.html atdcat
+doc: odoc/index.html atdcat$(EXE)
 	cd manual; $(MAKE)
 
 odoc/index.html: $(CMI)
@@ -140,14 +145,14 @@ odoc/index.html: $(CMI)
 		-package "$(OCAMLPACKS)" $(DOCSOURCES)
 
 .PHONY: test
-test: atdcat test.atd test2.atd
+test: atdcat$(EXE) test.atd test2.atd
 	./atdcat test.atd > test.out
 	./atdcat test.out > test.out.out
 	cmp test.out test.out.out
 	./atdcat -x test2.atd > test2.out
 
 .PHONY: docdemo
-docdemo: atdcat test.atd
+docdemo: atdcat$(EXE) test.atd
 	./atdcat test.atd -html-doc -strip ocaml > test-out.atd
 	caml2html -ext html:cat test-out.atd -nf
 	sed -i -e 's!</style>!\
@@ -172,11 +177,12 @@ div.atd-doc pre { \
 .PHONY: clean
 clean:
 	rm -f dep
-	rm -f $(CMI) $(CMO) $(CMX) $(O)
+	rm atd_version.ml
+	rm -f $(CMI) $(CMO) $(CMX) $(O) *.annot *.cma *.cmxa *.a
 	rm -f $(patsubst %.mly,%.mli, $(MLY))
 	rm -f $(patsubst %.mly,%.ml, $(MLY))
 	rm -f $(patsubst %.mll,%.ml, $(MLL))
-	rm -f atdcat.cm[ioxa] atdcat.o atdcat.cma atdcat.cmxa
+	rm -f atdcat.cm[ioxa] atdcat.o atdcat.cma atdcat.cmxa atdcat$(EXE)
 	rm -rf odoc
 	cd manual; $(MAKE) clean
 

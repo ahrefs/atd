@@ -1,9 +1,9 @@
-
 (*
   Mapping from ATD to JSON
 *)
 
-type json_float = [ `Float | `Int ]
+type json_float = [ `Float of int option (* max decimal places *)
+                  | `Int ]
 
 type json_list = [ `Array | `Object ]
 
@@ -38,14 +38,26 @@ type json_repr =
     | `Def
     ]
 
-let json_float_of_string s : json_float option =
+let json_float_of_string s : [ `Float | `Int ] option =
   match s with
       "float" -> Some `Float
     | "int" -> Some `Int
     | _ -> None
 
-let get_json_float an =
-  Atd_annot.get_field json_float_of_string `Float ["json"] "repr" an
+let json_precision_of_string s =
+  try Some (Some (int_of_string s))
+  with _ -> None
+
+let get_json_precision an =
+  Atd_annot.get_field
+    json_precision_of_string None ["json"] "precision" an
+
+let get_json_float an : json_float =
+  match
+    Atd_annot.get_field json_float_of_string `Float ["json"] "repr" an
+  with
+      `Float -> `Float (get_json_precision an)
+    | `Int -> `Int
 
 let json_list_of_string s : json_list option =
   match s with

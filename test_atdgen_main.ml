@@ -428,13 +428,24 @@ let test_ignored_wrap () =
   try ignore (Testv.validate_no_real_wrap [] x); check false
   with Failure "passed" -> ()
 
-let test_float32 () =
+let test_biniou_float32 () =
   section "check length of floats serialized as float32";
   let x = { Test.f32 = 1.23456789; Test.f64 = 1.98765432 } in
   let s = Test.string_of_floats x in
   let x' = Test.floats_of_string s in
   check Test.(abs_float (x.f32 -. x'.f32) < 1e-6);
   check (String.length s = 24)
+
+let test_json_float_decimals () =
+  section "print JSON floats with maximum number of decimal places";
+  let x = {
+    Testj.sqrt2_5 = sqrt 2.;
+    small_2 = 0.000123456789;
+    large_2 = 1234567890123.;
+  } in
+  let s = Testj.string_of_precision x in
+  print_endline s;
+  check (s = "{\"sqrt2_5\":1.4142,\"small_2\":0.00012,\"large_2\":1.2e+12}")
 
 let all_tests = [
   test_ocaml_internals;
@@ -463,7 +474,8 @@ let all_tests = [
   test_double_wrapping;
   test_wrapping_with_validation;
   test_ignored_wrap;
-  test_float32;
+  test_biniou_float32;
+  test_json_float_decimals;
 ]
 
 let quality_test () =

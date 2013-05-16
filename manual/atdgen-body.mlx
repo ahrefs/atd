@@ -11,11 +11,11 @@
 \section{Introduction}
 
 Atdgen is a command-line program that takes as input type definitions
-in the \href{http://oss.wink.com/atd/}{ATD} syntax and produces OCaml
+in the \href{http://mjambon.com/atd}{ATD} syntax and produces OCaml
 code suitable for data serialization and deserialization.
 
 Two data formats are currently supported, these are
-\href{http://martin.jambon.free.fr/biniou.html}{biniou}
+\href{http://mjambon.com/biniou.html}{biniou}
 and \href{http://json.org/}{JSON}. Atdgen-biniou and Atdgen-json will
 refer to Atdgen used in one context or the other.
 
@@ -29,7 +29,7 @@ with Atdgen:
 \item \texttt{atd}: parser for the syntax of type definitions
 \item \texttt{biniou}: parser and printer for biniou, a binary
   extensible data format
-\item \href{http://martin.jambon.free.fr/yojson.html}{\texttt{yojson}}:
+\item \href{http://mjambon.com/yojson.html}{\texttt{yojson}}:
   parser and printer for JSON, a widespread text-based data format
 \end{itemize}
 

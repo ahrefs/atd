@@ -204,9 +204,14 @@ let rec get_writer_name
 
     | `Float (loc, `Float, `Float j) ->
         (match j with
-            `Float ->
+            `Float None ->
               if p.std then "Yojson.Safe.write_std_float"
               else "Yojson.Safe.write_float"
+          | `Float (Some precision) ->
+              if p.std then
+                sprintf "Yojson.Safe.write_std_float_prec %i" precision
+              else
+                sprintf "Yojson.Safe.write_float_prec %i" precision
           | `Int ->
               "Ag_oj_run.write_float_as_int"
         )

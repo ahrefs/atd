@@ -3,7 +3,9 @@
 ##
 #use "topfind";;
 #require "caml2html";;
-#require "atd";;
+#require "easy-format";;
+#directory "..";;
+#load "atd.cma";;
 #require "unix";;
 #use "../atd_version.ml";;
 #use "macros.ml";;

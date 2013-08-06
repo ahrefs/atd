@@ -32,6 +32,8 @@ CMI = $(patsubst %.ml,%.cmi, $(ML))
 CMO = $(patsubst %.ml,%.cmo, $(ML))
 CMX = $(patsubst %.ml,%.cmx, $(ML))
 O = $(patsubst %.ml,%.o, $(ML))
+INSTALL_EXTRAS = atd_check.ml atd_doc_lexer.mll atd_doc_lexer.ml \
+		 atd_lexer.mll atd_lexer.ml atd_predef.ml atd_version.ml
 
 OCAMLFLAGS = -dtypes -g
 OCAMLPACKS = easy-format unix str
@@ -71,7 +73,8 @@ install: META
 	test ! -f atdcat || cp atdcat $(BINDIR)/
 	test ! -f atdcat.exe || cp atdcat.exe $(BINDIR)/
 	ocamlfind install atd META \
-	 $(MLI) $(CMI) $(CMO) $(CMX) $(O) atd.cma atd.a atd.cmxa
+	 $(MLI) $(CMI) $(CMO) $(CMX) $(O) atd.cma atd.a atd.cmxa \
+         $(INSTALL_EXTRAS)
 
 uninstall:
 	test ! -f $(BINDIR)/atdcat || rm $(BINDIR)/atdcat

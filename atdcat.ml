@@ -132,7 +132,7 @@ let () =
           where the contents are formatted as HTML
           using <p>, <code> and <pre>.
           This is suitable input for \"caml2html -ext html:cat\"
-          which allows to convert ATD files into HTML.";
+          which converts ATD files into HTML.";
 
     "-strip",
     Arg.String (fun s -> strip_sections := split_on_comma s @ !strip_sections),

@@ -1182,7 +1182,7 @@ let rec is_function (l : Ag_indent.t list) =
           | `Annot ("fun", _) -> true
           | `Annot _ -> false
 
-let make_ocaml_json_writer p is_rec name_overlap let1 let2 def =
+let make_ocaml_json_writer p is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
   let param = def.def_param in
@@ -1251,7 +1251,7 @@ let get_let ~is_rec ~is_first =
 
 let make_ocaml_json_impl
     ~std ~unknown_field_handler ~with_create ~force_defaults
-    ~preprocess_input ~name_overlap
+    ~preprocess_input
     buf deref defs =
   let p = {
     deref = deref;
@@ -1269,7 +1269,7 @@ let make_ocaml_json_impl
 	  map (
 	    fun is_first def ->
 	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_json_writer p is_rec name_overlap let1 let2 def
+	      make_ocaml_json_writer p is_rec let1 let2 def
 	  ) l
 	in
 	let readers =
@@ -1325,7 +1325,6 @@ let make_mli
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~std ~unknown_field_handler ~force_defaults ~preprocess_input
-    ~name_overlap
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1337,7 +1336,7 @@ let make_ml
   if with_fundefs then
     make_ocaml_json_impl
       ~std ~unknown_field_handler ~with_create ~force_defaults
-      ~preprocess_input ~name_overlap buf deref defs;
+      ~preprocess_input buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1398,7 +1397,6 @@ let make_ocaml_files
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~std ~unknown_field_handler ~force_defaults ~preprocess_input
-      ~name_overlap
       ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

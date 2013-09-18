@@ -57,6 +57,7 @@ let main () =
   let j_defaults = ref false in
   let unknown_field_handler = ref None in
   let type_aliases = ref None in
+  let name_overlap = ref false in
   let set_opens s =
     let l = Str.split (Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
@@ -222,6 +223,15 @@ let main () =
     "
           Keep OCaml type definitions mutually recursive";
 
+    "-allow-name-overlap", Arg.Set name_overlap,
+    "
+          Accept records and variants with identical field or constructor
+          names in the same module. Overlapping names are supported in OCaml
+          since version 4.01.
+
+          Duplicate name checking will be skipped, and type annotations will
+          be included in the implementation to disambiguate names.";
+
     "-version",
     Arg.Unit (fun () ->
                 print_endline Ag_version.version;
@@ -358,6 +368,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
           ~pos_lnum: !pos_lnum
           ~type_aliases
           ~force_defaults
+          ~name_overlap: !name_overlap
           atd_file ocaml_prefix
 
 let () =

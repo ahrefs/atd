@@ -480,6 +480,7 @@ let make_ocaml_files
     ~pos_lnum
     ~type_aliases
     ~force_defaults
+    ~name_overlap
     atd_file out =
   let head, m0 =
     match atd_file with
@@ -501,7 +502,7 @@ let make_ocaml_files
       Atd_util.tsort m0
   in
   let defs1 = translate_mapping m1 in
-  Ag_ox_emit.check defs1;
+  if not name_overlap then Ag_ox_emit.check defs1;
   let m2 = Atd_util.tsort (Atd_expand.expand_module_body ~keep_poly:true m0) in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis

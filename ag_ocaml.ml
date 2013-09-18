@@ -895,11 +895,11 @@ val create_%s :%s
         let impl =
           sprintf "\
 let create_%s %s
-  () =
+  () : %s =
   {%s
   }
 "
-            s (String.concat "" impl_params)
+            s (String.concat "" impl_params) s
             (String.concat "" impl_fields)
         in
         intf, impl

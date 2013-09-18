@@ -28,6 +28,10 @@ type param = {
 
   preprocess_input : string option;
     (* intended for UTF-8 validation *)
+
+  type_annot : string;
+    (* Annotation to support command line option -allow-name-overlap *)
+
 }
 
 
@@ -976,7 +980,7 @@ and make_record_reader p loc a record_kind =
   [
     `Line "Yojson.Safe.read_space p lb;";
     `Line "Yojson.Safe.read_lcurl p lb;";
-    `Line "let x =";
+    `Line (sprintf "let x%s =" p.type_annot);
     `Block init_val;
     `Line "in";
     `Inline init_bits;
@@ -1178,7 +1182,7 @@ let rec is_function (l : Ag_indent.t list) =
           | `Annot ("fun", _) -> true
           | `Annot _ -> false
 
-let make_ocaml_json_writer p is_rec let1 let2 def =
+let make_ocaml_json_writer p is_rec name_overlap let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
   let param = def.def_param in
@@ -1189,8 +1193,9 @@ let make_ocaml_json_writer p is_rec let1 let2 def =
     if is_function writer_expr || not is_rec then "", ""
     else " ob x", " ob x"
   in
+  let type_annot = sprintf " : Bi_outbuf.t -> %s -> unit" name in
   [
-    `Line (sprintf "%s %s%s = (" let1 write extra_param);
+    `Line (sprintf "%s %s%s%s = (" let1 write extra_param type_annot);
     `Block (List.map Ag_indent.strip writer_expr);
     `Line (sprintf ")%s" extra_args);
     `Line (sprintf "%s %s ?(len = 1024) x =" let2 to_string);
@@ -1207,7 +1212,8 @@ let make_ocaml_json_reader p is_rec let1 let2 def =
   let param = def.def_param in
   let read = get_left_reader_name p name param in
   let of_string = get_left_of_string_name p name param in
-  let reader_expr = make_reader p x in
+  let type_annot = " : " ^ name in
+  let reader_expr = make_reader { p with type_annot } x in
   let extra_param, extra_args =
     if is_function reader_expr || not is_rec then "", ""
     else " p lb", " p lb"
@@ -1245,7 +1251,7 @@ let get_let ~is_rec ~is_first =
 
 let make_ocaml_json_impl
     ~std ~unknown_field_handler ~with_create ~force_defaults
-    ~preprocess_input
+    ~preprocess_input ~name_overlap
     buf deref defs =
   let p = {
     deref = deref;
@@ -1253,6 +1259,7 @@ let make_ocaml_json_impl
     unknown_field_handler = unknown_field_handler;
     force_defaults = force_defaults;
     preprocess_input;
+    type_annot = "";
   } in
   let ll =
     List.map (
@@ -1262,7 +1269,7 @@ let make_ocaml_json_impl
 	  map (
 	    fun is_first def ->
 	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_json_writer p is_rec let1 let2 def
+	      make_ocaml_json_writer p is_rec name_overlap let1 let2 def
 	  ) l
 	in
 	let readers =
@@ -1318,6 +1325,7 @@ let make_mli
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~std ~unknown_field_handler ~force_defaults ~preprocess_input
+    ~name_overlap
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1329,7 +1337,7 @@ let make_ml
   if with_fundefs then
     make_ocaml_json_impl
       ~std ~unknown_field_handler ~with_create ~force_defaults
-      ~preprocess_input buf deref defs;
+      ~preprocess_input ~name_overlap buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1345,6 +1353,7 @@ let make_ocaml_files
     ~type_aliases
     ~force_defaults
     ~preprocess_input
+    ~name_overlap
     atd_file out =
   let head, m0 =
     match atd_file with
@@ -1366,7 +1375,7 @@ let make_ocaml_files
       Atd_util.tsort m0
   in
   let defs1 = translate_mapping m1 in
-  Ag_ox_emit.check defs1;
+  if not name_overlap then Ag_ox_emit.check defs1;
   let m2 = Atd_util.tsort (Atd_expand.expand_module_body ~keep_poly:true m0) in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis
@@ -1389,6 +1398,7 @@ let make_ocaml_files
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~std ~unknown_field_handler ~force_defaults ~preprocess_input
+      ~name_overlap
       ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

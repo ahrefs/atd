@@ -225,12 +225,7 @@ let main () =
 
     "-allow-name-overlap", Arg.Set name_overlap,
     "
-          Accept records and variants with identical field or constructor
-          names in the same module. Overlapping names are supported in OCaml
-          since version 4.01.
-
-          Duplicate name checking will be skipped, and type annotations will
-          be included in the implementation to disambiguate names.";
+          Accept records with identical field names in the same module";
 
     "-version",
     Arg.Unit (fun () ->

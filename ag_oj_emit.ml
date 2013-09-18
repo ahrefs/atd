@@ -1193,7 +1193,11 @@ let make_ocaml_json_writer p is_rec let1 let2 def =
     if is_function writer_expr || not is_rec then "", ""
     else " ob x", " ob x"
   in
-  let type_annot = sprintf " : Bi_outbuf.t -> %s -> unit" name in
+  let type_annot =
+    match x with
+      | `Record _ -> sprintf " : Bi_outbuf.t -> %s -> unit" name
+      | _ -> ""
+  in
   [
     `Line (sprintf "%s %s%s%s = (" let1 write extra_param type_annot);
     `Block (List.map Ag_indent.strip writer_expr);

@@ -923,7 +923,9 @@ let wrap_bodies ~tagged l =
     ]
 
 
-let rec make_reader deref ~tagged (x : ob_mapping) : Ag_indent.t list =
+let rec make_reader
+    deref ~tagged ?type_annot (x : ob_mapping)
+    : Ag_indent.t list =
   match x with
       `Unit _
     | `Bool _
@@ -967,7 +969,7 @@ let rec make_reader deref ~tagged (x : ob_mapping) : Ag_indent.t list =
 	   | `Object ->
 	       error loc "Sorry, OCaml objects are not supported"
 	);
-	let body = make_record_reader deref ~tagged a o in
+	let body = make_record_reader deref ~tagged ?type_annot a o in
 	wrap_body ~tagged Bi_io.record_tag body
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
@@ -1049,7 +1051,8 @@ let rec make_reader deref ~tagged (x : ob_mapping) : Ag_indent.t list =
 	                  | `Object ->
 	                      error loc "OCaml objects are not supported"
 	               );
-	               make_record_reader ~shared_id:id deref ~tagged a o
+	               make_record_reader
+                         ~shared_id:id deref ~tagged ?type_annot a o
 
                    | _ ->
                        error loc "Only record types can use sharing \
@@ -1117,13 +1120,15 @@ and make_variant_reader deref tick x : Ag_indent.t list =
 	  ];
         ]
 
-and make_record_reader ?shared_id deref ~tagged a record_kind =
+and make_record_reader
+    ?shared_id deref ~tagged ?(type_annot = "")
+    a record_kind =
   let fields = get_fields deref a in
   let init_val, init_bits, set_bit, check_bits = study_record deref fields in
 
   let build share body =
     [
-      `Line "let x =";
+      `Line (sprintf "let x%s =" type_annot);
       `Block init_val;
       `Line "in";
       `Inline share;
@@ -1405,9 +1410,10 @@ let make_ocaml_biniou_writer deref is_rec let1 let2 def =
     if is_function write_untagged_expr || not is_rec then "", ""
     else " ob x", " ob x"
   in
+  let type_annot = sprintf " : Bi_outbuf.t -> %s -> unit" name in
   [
     `Line (sprintf "%s %s_tag = %s" let1 name tag);
-    `Line (sprintf "%s %s%s = (" let2 write_untagged extra_param);
+    `Line (sprintf "%s %s%s%s = (" let2 write_untagged extra_param type_annot);
     `Block (List.map Ag_indent.strip write_untagged_expr);
     `Line (sprintf ")%s" extra_args);
     `Line (sprintf "%s %s ob x =" let2 write);
@@ -1430,8 +1436,9 @@ let make_ocaml_biniou_reader deref is_rec let1 let2 def =
   let get_reader = get_left_reader_name ~tagged:false name param in
   let read = get_left_reader_name ~tagged:true name param in
   let of_string = get_left_of_string_name name param in
-  let get_reader_expr = make_reader deref ~tagged:false x in
-  let read_expr = make_reader deref ~tagged:true x in
+  let type_annot = " : " ^ name in
+  let get_reader_expr = make_reader deref ~tagged:false ~type_annot x in
+  let read_expr = make_reader deref ~tagged:true ~type_annot x in
   let extra_param1, extra_args1 =
     if is_function get_reader_expr || not is_rec then "", ""
     else " tag", " tag"

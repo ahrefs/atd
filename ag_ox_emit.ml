@@ -221,7 +221,7 @@ let opt_annot_def type_annot fun_param =
 
 
 let write_file file s =
-  let oc = open_out file in
+  let oc = open_out_bin file in
   output_string oc s;
   close_out oc
 

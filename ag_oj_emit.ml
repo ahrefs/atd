@@ -858,13 +858,13 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 	None ->
           if std then
 	    [
-	      `Line (sprintf "%s%s" tick ocaml_cons);
+	      `Line (sprintf "(%s%s%s)" tick ocaml_cons p.type_annot);
 	    ]
           else
 	    [
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_gt p lb;";
-	      `Line (sprintf "%s%s" tick ocaml_cons);
+	      `Line (sprintf "(%s%s%s)" tick ocaml_cons p.type_annot);
 	    ]
       | Some v ->
           if std then
@@ -880,7 +880,7 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 	      `Line "in";
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_rbr p lb;";
-	      `Line (sprintf "%s%s x" tick ocaml_cons);
+	      `Line (sprintf "(%s%s x%s)" tick ocaml_cons p.type_annot);
             ]
           else
 	    [
@@ -893,7 +893,7 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 	      `Line "in";
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_gt p lb;";
-	      `Line (sprintf "%s%s x" tick ocaml_cons);
+	      `Line (sprintf "(%s%s x%s)" tick ocaml_cons p.type_annot);
 	    ]
   in
   (json_cons, expr)
@@ -1195,7 +1195,8 @@ let make_ocaml_json_writer p is_rec let1 let2 def =
   in
   let type_annot =
     match x with
-      | `Record _ -> sprintf " : Bi_outbuf.t -> %s -> unit" name
+        `Record _ | `Sum (_, _, `Sum `Classic, _) ->
+            sprintf " : Bi_outbuf.t -> %s -> unit" name
       | _ -> ""
   in
   [
@@ -1216,7 +1217,11 @@ let make_ocaml_json_reader p is_rec let1 let2 def =
   let param = def.def_param in
   let read = get_left_reader_name p name param in
   let of_string = get_left_of_string_name p name param in
-  let type_annot = " : " ^ name in
+  let type_annot =
+    match x with
+        `Record _ | `Sum (_, _, `Sum `Classic, _) -> " : " ^ name
+      | _ -> ""
+  in
   let reader_expr = make_reader { p with type_annot } x in
   let extra_param, extra_args =
     if is_function reader_expr || not is_rec then "", ""

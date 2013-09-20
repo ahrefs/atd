@@ -951,7 +951,9 @@ let rec make_reader
 		`Inline (
                   Array.to_list (
 		    Array.map
-		      (fun x -> `Inline (make_variant_reader deref tick x))
+		      (fun x ->
+                        `Inline (make_variant_reader deref tick ?type_annot x)
+                      )
 		      a
                   )
 		);
@@ -1095,7 +1097,7 @@ let rec make_reader
     | _ -> assert false
 
 
-and make_variant_reader deref tick x : Ag_indent.t list =
+and make_variant_reader deref tick ?(type_annot = "") x : Ag_indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
 	`Variant o, `Variant -> o
@@ -1105,18 +1107,19 @@ and make_variant_reader deref tick x : Ag_indent.t list =
   match x.var_arg with
       None ->
 	let h = Bi_io.hash_name x.var_cons in
-	[ `Line (sprintf "| %i, false -> %s%s" h tick ocaml_cons) ]
+        let typed_cons = sprintf "(%s%s%s)" tick ocaml_cons type_annot in
+	[ `Line (sprintf "| %i, false -> %s" h typed_cons) ]
     | Some v ->
 	let h = Bi_io.hash_name x.var_cons in
 	[
-          `Line (sprintf "| %i, true -> %s%s (" h tick ocaml_cons);
+          `Line (sprintf "| %i, true -> (%s%s (" h tick ocaml_cons);
           `Block [
             `Block [
               `Line "(";
 	      `Block (make_reader deref ~tagged:true v);
 	      `Line ") ib";
 	    ];
-            `Line ")";
+            `Line (sprintf ")%s)" type_annot);
 	  ];
         ]
 
@@ -1410,7 +1413,12 @@ let make_ocaml_biniou_writer deref is_rec let1 let2 def =
     if is_function write_untagged_expr || not is_rec then "", ""
     else " ob x", " ob x"
   in
-  let type_annot = sprintf " : Bi_outbuf.t -> %s -> unit" name in
+  let type_annot =
+    match x with
+        `Record _ | `Sum (_, _, `Sum `Classic, _) ->
+            sprintf " : Bi_outbuf.t -> %s -> unit" name
+      | _ -> ""
+  in
   [
     `Line (sprintf "%s %s_tag = %s" let1 name tag);
     `Line (sprintf "%s %s%s%s = (" let2 write_untagged extra_param type_annot);
@@ -1436,7 +1444,11 @@ let make_ocaml_biniou_reader deref is_rec let1 let2 def =
   let get_reader = get_left_reader_name ~tagged:false name param in
   let read = get_left_reader_name ~tagged:true name param in
   let of_string = get_left_of_string_name name param in
-  let type_annot = " : " ^ name in
+  let type_annot =
+    match x with
+        `Record _ | `Sum (_, _, `Sum `Classic, _) -> " : " ^ name
+      | _ -> ""
+  in
   let get_reader_expr = make_reader deref ~tagged:false ~type_annot x in
   let read_expr = make_reader deref ~tagged:true ~type_annot x in
   let extra_param1, extra_args1 =

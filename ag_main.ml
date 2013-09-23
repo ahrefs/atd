@@ -223,7 +223,7 @@ let main () =
     "
           Keep OCaml type definitions mutually recursive";
 
-    "-allow-name-overlap", Arg.Set name_overlap,
+    "-o-name-overlap", Arg.Set name_overlap,
     "
           Accept records and classic (non-polymorphic) variants with identical
           field or constructor names in the same module. Overlapping names are

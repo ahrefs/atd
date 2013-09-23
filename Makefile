@@ -192,6 +192,13 @@ really-test:
 	./atdgen test4.atd
 	./atdgen -json test4.atd -o test4j
 	./atdgen -validate -extend Test test.atd -o testv
+	./atdgen -o-name-overlap -t test5.atd
+	./atdgen -o-name-overlap -j test5.atd
+	./atdgen -o-name-overlap -b test5.atd
+	ocamlfind ocamlc -c -package atdgen \
+		test5_t.mli test5_t.ml test5_j.mli test5_j.ml
+	ocamlfind ocamlc -c -package atdgen \
+		test5_t.mli test5_t.ml test5_b.mli test5_b.ml
 	ocamlfind ocamlopt -c -g test_lib.ml
 	ocamlfind ocamlc -c -g test.mli -package atdgen
 	ocamlfind ocamlopt -c -g test.ml -package atdgen

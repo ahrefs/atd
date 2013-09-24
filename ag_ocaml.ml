@@ -899,7 +899,7 @@ let create_%s %s
   {%s
   }
 "
-            s (String.concat "" impl_params) s
+            s (String.concat "" impl_params) full_name
             (String.concat "" impl_fields)
         in
         intf, impl

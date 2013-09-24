@@ -1403,6 +1403,7 @@ let rec is_function (l : Ag_indent.t list) =
 let make_ocaml_biniou_writer deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
+  let full_name = Ag_ocaml.get_full_type_name def in
   let param = def.def_param in
   let tag = get_biniou_tag (deref x) in
   let write_untagged = get_left_writer_name ~tagged:false name param in
@@ -1416,7 +1417,7 @@ let make_ocaml_biniou_writer deref is_rec let1 let2 def =
   let type_annot =
     match x with
         `Record _ | `Sum (_, _, `Sum `Classic, _) ->
-            sprintf " : Bi_outbuf.t -> %s -> unit" name
+            sprintf " : Bi_outbuf.t -> %s -> unit" full_name
       | _ -> ""
   in
   [
@@ -1440,13 +1441,14 @@ let make_ocaml_biniou_writer deref is_rec let1 let2 def =
 let make_ocaml_biniou_reader deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
+  let full_name = Ag_ocaml.get_full_type_name def in
   let param = def.def_param in
   let get_reader = get_left_reader_name ~tagged:false name param in
   let read = get_left_reader_name ~tagged:true name param in
   let of_string = get_left_of_string_name name param in
   let type_annot =
     match x with
-        `Record _ | `Sum (_, _, `Sum `Classic, _) -> " : " ^ name
+        `Record _ | `Sum (_, _, `Sum `Classic, _) -> " : " ^ full_name
       | _ -> ""
   in
   let get_reader_expr = make_reader deref ~tagged:false ~type_annot x in

@@ -1637,8 +1637,13 @@ let make_ocaml_files
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
-  let ocaml_typedefs =
+  let sorted_typedefs =
     Ag_ocaml.ocaml_of_atd ~target:`Biniou ~type_aliases (head, m1) in
+  let expanded_typedefs =
+    Ag_ocaml.ocaml_of_atd ~target:`Biniou ~type_aliases:None
+      ((Atd_ast.dummy_loc, []), Ag_ocaml.find_missing_typedefs m1 m2)
+  in
+  let all_typedefs = sorted_typedefs ^ "\n\n" ^ expanded_typedefs in
   let ocaml_impl_misc = make_shared_id_defs m0 in
   let defs = translate_mapping m2 in
   let header =
@@ -1651,10 +1656,10 @@ let make_ocaml_files
   in
   let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
+      sorted_typedefs (Ag_mapping.make_deref defs1) defs1
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ocaml_typedefs ocaml_impl_misc (Ag_mapping.make_deref defs) defs
+      all_typedefs ocaml_impl_misc (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

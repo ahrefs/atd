@@ -1400,10 +1400,16 @@ let rec is_function (l : Ag_indent.t list) =
           | `Annot ("fun", _) -> true
           | `Annot _ -> false
 
-let make_ocaml_biniou_writer deref is_rec let1 let2 def =
+let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let full_name = Ag_ocaml.get_full_type_name def in
+  let full_name =
+    try
+      let (poly_name, n_params) = Hashtbl.find original_types name in
+      Ag_ocaml.anon_param_type_name poly_name n_params
+    with Not_found ->
+      Ag_ocaml.get_full_type_name def
+  in
   let param = def.def_param in
   let tag = get_biniou_tag (deref x) in
   let write_untagged = get_left_writer_name ~tagged:false name param in
@@ -1438,10 +1444,16 @@ let make_ocaml_biniou_writer deref is_rec let1 let2 def =
     ]
   ]
 
-let make_ocaml_biniou_reader deref is_rec let1 let2 def =
+let make_ocaml_biniou_reader ~original_types deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let full_name = Ag_ocaml.get_full_type_name def in
+  let full_name =
+    try
+      let (poly_name, n_params) = Hashtbl.find original_types name in
+      Ag_ocaml.anon_param_type_name poly_name n_params
+    with Not_found ->
+      Ag_ocaml.get_full_type_name def
+  in
   let param = def.def_param in
   let get_reader = get_left_reader_name ~tagged:false name param in
   let read = get_left_reader_name ~tagged:true name param in
@@ -1522,7 +1534,7 @@ let make_shared_id_defs atd_module =
     l;
   Buffer.contents buf
 
-let make_ocaml_biniou_impl ~with_create buf deref defs =
+let make_ocaml_biniou_impl ~with_create ~original_types buf deref defs =
   (*bprintf buf "%s\n" (make_shared_id_defs ());*)
 
   let ll =
@@ -1533,14 +1545,16 @@ let make_ocaml_biniou_impl ~with_create buf deref defs =
 	  map (
 	    fun is_first def ->
 	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_biniou_writer deref is_rec let1 let2 def
+	      make_ocaml_biniou_writer
+                ~original_types deref is_rec let1 let2 def
 	  ) l
 	in
 	let readers =
 	  map (
 	    fun is_first def ->
 	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_biniou_reader deref is_rec let1 let2 def
+	      make_ocaml_biniou_reader
+                ~original_types deref is_rec let1 let2 def
 	  ) l
 	in
 	List.flatten (writers @ readers)
@@ -1586,7 +1600,7 @@ let make_mli
   Buffer.contents buf
 
 let make_ml
-    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs ~original_types
     ocaml_typedefs ocaml_impl_misc deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1597,7 +1611,7 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then (
     bprintf buf "%s\n" ocaml_impl_misc;
-    make_ocaml_biniou_impl ~with_create buf deref defs
+    make_ocaml_biniou_impl ~with_create ~original_types buf deref defs
   );
   Buffer.contents buf
 
@@ -1613,7 +1627,7 @@ let make_ocaml_files
     ~force_defaults
     ~name_overlap
     atd_file out =
-  let head, m0 =
+  let ((head, m0), _) =
     match atd_file with
         Some file ->
           Atd_util.load_file
@@ -1635,17 +1649,15 @@ let make_ocaml_files
   let defs1 = translate_mapping m1 in
   if not name_overlap then Ag_ox_emit.check defs1;
   Ag_xb_emit.check defs1;
-  let m2 = Atd_util.tsort (Atd_expand.expand_module_body ~keep_poly:true m0) in
+  let (m1', original_types) =
+    Atd_expand.expand_module_body ~keep_poly:true m0
+  in
+  let m2 = Atd_util.tsort m1' in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
-  let sorted_typedefs =
+  let ocaml_typedefs =
     Ag_ocaml.ocaml_of_atd ~target:`Biniou ~type_aliases (head, m1) in
-  let expanded_typedefs =
-    Ag_ocaml.ocaml_of_atd ~target:`Biniou ~type_aliases:None
-      ((Atd_ast.dummy_loc, []), Ag_ocaml.find_missing_typedefs m1 m2)
-  in
-  let all_typedefs = sorted_typedefs ^ "\n\n" ^ expanded_typedefs in
   let ocaml_impl_misc = make_shared_id_defs m0 in
   let defs = translate_mapping m2 in
   let header =
@@ -1658,10 +1670,11 @@ let make_ocaml_files
   in
   let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      sorted_typedefs (Ag_mapping.make_deref defs1) defs1
+      ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      all_typedefs ocaml_impl_misc (Ag_mapping.make_deref defs) defs
+      ~original_types ocaml_typedefs ocaml_impl_misc
+      (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

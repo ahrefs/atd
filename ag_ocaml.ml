@@ -800,6 +800,12 @@ let get_full_type_name x =
         sprintf "(%s) %s" (String.concat ", " l) s
 
 
+let anon_param_type_name s i =
+  let underscores = Array.make i "_" in
+  let params = String.concat ", " (Array.to_list underscores) in
+  "(" ^ params ^ ") " ^ s
+
+
 let unwrap_option deref x =
   match deref x with
       `Option (_, x, _, _)
@@ -905,28 +911,3 @@ let create_%s %s
         intf, impl
 
     | _ -> "", ""
-
-
-(* For type annotations to work,
-   we need type definitions for all generated types (_1 _2 etc.) *)
-let find_missing_typedefs intf impl =
-  let exists_in_interface type_name =
-    try
-      List.iter (fun (_, intf_part) ->
-        if
-          List.exists (fun (`Type (_, (name, _, _), _)) ->
-            name = type_name
-          ) intf_part
-        then raise Exit
-      ) intf;
-      false
-    with Exit -> true
-  in
-  let missing_typedefs tds =
-    List.fold_left (fun accu (`Type (_, (name, _, _), _) as td) ->
-      if exists_in_interface name then accu else td :: accu
-    ) [] tds
-  in
-  List.map (fun (is_rec, impl_part) ->
-    (is_rec, missing_typedefs impl_part)
-  ) impl

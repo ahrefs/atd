@@ -56,8 +56,10 @@ let parse
   let l =
     List.map (
       fun file ->
-        Atd_util.load_file ~expand ~keep_poly ~xdebug
-          ~inherit_fields ~inherit_variants file
+        fst (
+          Atd_util.load_file ~expand ~keep_poly ~xdebug
+            ~inherit_fields ~inherit_variants file
+        )
     ) files
   in
   let heads, bodies = List.split l in

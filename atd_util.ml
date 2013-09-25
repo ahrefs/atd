@@ -17,11 +17,11 @@ let read_lexbuf
     else
       body
   in
-  let body =
+  let (body, original_types) =
     if expand then Atd_expand.expand_module_body ?keep_poly ~debug: xdebug body
-    else body
+    else (body, Hashtbl.create 0)
   in
-  head, body
+  ((head, body), original_types)
 
 let read_channel
     ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants

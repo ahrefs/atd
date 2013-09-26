@@ -64,6 +64,7 @@ ML = $(filter %.ml, $(MLSOURCES))
 CMI = $(patsubst %.ml,%.cmi, $(ML))
 CMO = $(patsubst %.ml,%.cmo, $(ML))
 CMX = $(patsubst %.ml,%.cmx, $(ML))
+CMXS = $(patsubst %.ml,%.cmxs, $(ML))
 O = $(patsubst %.ml,%.o, $(ML))
 
 OCAMLFLAGS = -dtypes -g
@@ -90,7 +91,7 @@ pp: VERSION META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
 all: pp
 	$(MAKE) atdgen.cma atdgen.run
 opt: pp
-	$(MAKE) atdgen.cmxa atdgen
+	$(MAKE) atdgen.cmxa atdgen.cmxs atdgen
 
 install: META
 	test ! -f atdgen.run || cp atdgen.run $(BINDIR)/
@@ -98,7 +99,7 @@ install: META
 	test ! -f atdgen || cp atdgen $(BINDIR)/
 	test ! -f atdgen.exe || cp atdgen.exe $(BINDIR)/
 	ocamlfind install atdgen META \
-		 $(MLI) $(CMI) $(CMO) $(CMX) $(O) \
+		 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) \
 			atdgen.cma atdgen.a atdgen.cmxa
 
 uninstall:
@@ -149,6 +150,9 @@ atdgen.cma: dep $(CMI) $(CMO)
 
 atdgen.cmxa: dep $(CMI) $(CMX)
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdgen.cmxa -a $(CMX)
+
+atdgen.cmxs: dep $(CMI) $(CMX)
+	ocamlfind ocamlopt $(OCAMLFLAGS) -shared -o atdgen.cmxs $(CMX)
 
 atdgen.run: dep $(CMI) $(CMO) ag_main.ml
 	ocamlfind ocamlc $(OCAMLFLAGS) -o atdgen.run \

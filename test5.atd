@@ -38,3 +38,9 @@ type all = {
   c : bca list;
   d : cde list;
 }
+
+(* Not passing as of 2013-09-30 *)
+type contains_variant = {
+  foo : string;
+  bar : [ One | Two | Three of int ]
+}

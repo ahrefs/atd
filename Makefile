@@ -5,6 +5,12 @@ else
 EXE=
 endif
 
+NATDYNLINK := $(shell if [ -f `ocamlc -where`/dynlink.cmxa ]; then echo YES; else echo NO; fi)
+
+ifeq "${NATDYNLINK}" "YES"
+CMXS=atdgen.cmxs
+endif
+
 # Shared stuff
 SOURCES_SHARED = \
   ag_version.ml \
@@ -90,7 +96,7 @@ pp: VERSION META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
 all: pp
 	$(MAKE) atdgen.cma atdgen.run
 opt: pp
-	$(MAKE) atdgen.cmxa atdgen
+	$(MAKE) atdgen.cmxa $(CMXS) atdgen
 
 install: META
 	test ! -f atdgen.run || cp atdgen.run $(BINDIR)/
@@ -98,7 +104,7 @@ install: META
 	test ! -f atdgen || cp atdgen $(BINDIR)/
 	test ! -f atdgen.exe || cp atdgen.exe $(BINDIR)/
 	ocamlfind install atdgen META \
-		 $(MLI) $(CMI) $(CMO) $(CMX) $(O) \
+		 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) \
 			atdgen.cma atdgen.a atdgen.cmxa
 
 uninstall:
@@ -149,6 +155,9 @@ atdgen.cma: dep $(CMI) $(CMO)
 
 atdgen.cmxa: dep $(CMI) $(CMX)
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdgen.cmxa -a $(CMX)
+
+atdgen.cmxs: dep $(CMI) $(CMX)
+	ocamlfind ocamlopt $(OCAMLFLAGS) -shared -o $(CMXS) $(CMX)
 
 atdgen.run: dep $(CMI) $(CMO) ag_main.ml
 	ocamlfind ocamlc $(OCAMLFLAGS) -o atdgen.run \

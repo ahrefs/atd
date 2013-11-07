@@ -26,12 +26,20 @@ let format_html_comments ((section, (loc, l)) as x) =
     | _ ->
         Atd_print.default_annot x
 
-let print_atd ~html_doc ast =
+let print_atd ~html_doc ~exclude_names ast =
   let annot =
     if html_doc then Some format_html_comments
     else None
   in
-  let pp = Atd_print.format ?annot ast in
+  let filter_names =
+    match exclude_names with
+      None -> None
+    | Some str ->
+      let re = Str.regexp str
+      in
+      Some (fun s -> not (Str.string_match re s 0))
+  in
+  let pp = Atd_print.format ?annot ?filter_names ast in
   Easy_format.Pretty.to_channel stdout pp;
   print_newline ()
 
@@ -70,10 +78,10 @@ let parse
   let m = first_head, List.flatten bodies in
   strip strip_all strip_sections m
 
-let print ~html_doc ~out_format ast =
+let print ~html_doc ~out_format ~exclude_names ast =
   let f =
     match out_format with
-        `Atd -> print_atd ~html_doc
+        `Atd -> print_atd ~html_doc ~exclude_names
       | `Ocaml name -> print_ml ~name
   in
   f ast
@@ -87,6 +95,7 @@ let () =
   let xdebug = ref false in
   let inherit_fields = ref false in
   let inherit_variants = ref false in
+  let exclude_names = ref None in
   let strip_sections = ref [] in
   let strip_all = ref false in
   let out_format = ref `Atd in
@@ -124,6 +133,10 @@ let () =
     "-ml", Arg.String (fun s -> out_format := `Ocaml s),
     "<name>
           output the ocaml code of the ATD abstract syntax tree";
+
+    "-exclude-names", Arg.String (fun s -> exclude_names := Some(s)),
+    "<regexp>
+          definitions of type names matching the regexp will not be pretty-printed (ATD mode only)";
 
     "-html-doc", Arg.Set html_doc,
     "
@@ -166,7 +179,7 @@ let () =
           ~strip_sections: !strip_sections
           !files
     in
-    print ~html_doc: !html_doc ~out_format: !out_format ast
+    print ~html_doc: !html_doc ~out_format: !out_format ~exclude_names: !exclude_names ast
   with
       Atd_ast.Atd_error s ->
         flush stdout;

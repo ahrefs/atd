@@ -637,7 +637,7 @@ let study_record deref fields =
     in
     if k = 0 then []
     else
-      [ `Line (sprintf "if %s then Ag_oj_run.missing_fields %s %s;"
+      [ `Line (sprintf "if %s then Ag_oj_run.missing_fields p %s %s;"
 		 bool_expr bit_fields field_names) ]
   in
   init_val, init_bits, set_bit, check_bits
@@ -673,7 +673,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
         let cases1 = List.map (make_variant_reader p type_annot tick true) l1 in
 
         let error_expr1 =
-          [ `Line "Ag_oj_run.invalid_variant_tag (String.sub s pos len)" ]
+          [ `Line "Ag_oj_run.invalid_variant_tag p (String.sub s pos len)" ]
         in
         let int_mapping_function, int_matching =
           Ag_string_match.make_ocaml_int_mapping
@@ -1165,7 +1165,7 @@ and make_tuple_reader p a =
     `Line "with Yojson.End_of_tuple ->";
     `Block [
       `Line (sprintf
-	       "Ag_oj_run.missing_tuple_fields !len %s);"
+	       "Ag_oj_run.missing_tuple_fields p !len %s);"
 	       req_fields);
     ];
   ]

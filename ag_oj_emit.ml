@@ -29,9 +29,6 @@ type param = {
   preprocess_input : string option;
     (* intended for UTF-8 validation *)
 
-  type_annot : string;
-    (* Annotation to support command line option -allow-name-overlap *)
-
 }
 
 
@@ -645,8 +642,12 @@ let study_record deref fields =
   in
   init_val, init_bits, set_bit, check_bits
 
+let opt_annot type_annot expr =
+  match type_annot with
+  | None -> expr
+  | Some t -> sprintf "(%s : %s)" expr t
 
-let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
+let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
   match x with
       `Unit _
     | `Bool _
@@ -666,15 +667,15 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	let cases =
 	  Array.to_list (
 	    Array.map
-	      (make_variant_reader p tick false)
+	      (make_variant_reader p type_annot tick false)
 	      a
 	  )
 	in
         let l0, l1 =
           List.partition (fun x -> x.var_arg = None) (Array.to_list a)
         in
-	let cases0 = List.map (make_variant_reader p tick true) l0 in
-        let cases1 = List.map (make_variant_reader p tick true) l1 in
+	let cases0 = List.map (make_variant_reader p type_annot tick true) l0 in
+        let cases1 = List.map (make_variant_reader p type_annot tick true) l1 in
 
         let error_expr1 =
           [ `Line "Ag_oj_run.invalid_variant_tag (String.sub s pos len)" ]
@@ -752,7 +753,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	);
 	[
 	  `Annot ("fun", `Line "fun p lb ->");
-	  `Block (make_record_reader p loc a o)
+	  `Block (make_record_reader p type_annot loc a o)
 	]
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
@@ -771,7 +772,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
                in
 	       [
 		 `Line read;
-		 `Block (make_reader p x);
+		 `Block (make_reader p None x);
 		 `Line ")";
 	       ]
 
@@ -784,7 +785,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
                in
                [
                  `Line read;
-                 `Block (make_reader p x);
+                 `Block (make_reader p None x);
                  `Line ")";
                ]
 	)
@@ -810,17 +811,17 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	  };
 	|]
 	in
-	make_reader p (`Sum (loc, a, `Sum `Classic, `Sum))
+	make_reader p (Some "_ option") (`Sum (loc, a, `Sum `Classic, `Sum))
 
     | `Nullable (loc, x, `Nullable, `Nullable) ->
         [
           `Line "fun p lb ->";
           `Block [
             `Line "Yojson.Safe.read_space p lb;";
-            `Line "if Yojson.Safe.read_null_if_possible p lb then None";
+            `Line "(if Yojson.Safe.read_null_if_possible p lb then None";
             `Line "else Some ((";
-            `Block (make_reader p x);
-            `Line ") p lb)"
+            `Block (make_reader p None x);
+            `Line ") p lb) : _ option)"
           ]
         ]
 
@@ -829,13 +830,13 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 
     | `Wrap (loc, x, `Wrap o, `Wrap) ->
         (match o with
-            None -> make_reader p x
+            None -> make_reader p type_annot x
           | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
               [
                 `Line "fun p lb ->";
                 `Block [
                   `Line "let x = (";
-                  `Block (make_reader p x);
+                  `Block (make_reader p type_annot x);
                   `Line ") p lb in";
                   `Line (sprintf "( %s ) x" ocaml_wrap);
                 ]
@@ -845,7 +846,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
     | _ -> assert false
 
 
-and make_variant_reader p tick std x : (string * Ag_indent.t list) =
+and make_variant_reader p type_annot tick std x : (string * Ag_indent.t list) =
   let o, j =
     match x.var_arepr, x.var_brepr with
 	`Variant o, `Variant j -> o, j
@@ -858,13 +859,13 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 	None ->
           if std then
 	    [
-	      `Line (sprintf "(%s%s%s)" tick ocaml_cons p.type_annot);
+	      `Line (opt_annot type_annot (sprintf "%s%s" tick ocaml_cons));
 	    ]
           else
 	    [
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_gt p lb;";
-	      `Line (sprintf "(%s%s%s)" tick ocaml_cons p.type_annot);
+	      `Line (opt_annot type_annot (sprintf "%s%s" tick ocaml_cons));
 	    ]
       | Some v ->
           if std then
@@ -874,32 +875,32 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "let x = (";
 	      `Block [
-	        `Block (make_reader p v);
+	        `Block (make_reader p None v);
 	        `Line ") p lb";
 	      ];
 	      `Line "in";
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_rbr p lb;";
-	      `Line (sprintf "(%s%s x%s)" tick ocaml_cons p.type_annot);
+	      `Line (opt_annot type_annot (sprintf "%s%s x" tick ocaml_cons));
             ]
           else
 	    [
 	      `Line "Ag_oj_run.read_until_field_value p lb;";
 	      `Line "let x = (";
 	      `Block [
-	        `Block (make_reader p v);
+	        `Block (make_reader p None v);
 	        `Line ") p lb";
 	      ];
 	      `Line "in";
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_gt p lb;";
-	      `Line (sprintf "(%s%s x%s)" tick ocaml_cons p.type_annot);
+	      `Line (opt_annot type_annot (sprintf "%s%s x" tick ocaml_cons));
 	    ]
   in
   (json_cons, expr)
 
 
-and make_record_reader p loc a record_kind =
+and make_record_reader p type_annot loc a record_kind =
   let fields = get_fields p a in
   let init_val, init_bits, set_bit, check_bits = study_record p.deref fields in
 
@@ -924,7 +925,7 @@ and make_record_reader p loc a record_kind =
 	  let read_value =
             [
               `Line "(";
-              `Block (make_reader p f_value);
+              `Block (make_reader p None f_value);
               `Line ") p lb";
             ]
 	  in
@@ -980,7 +981,7 @@ and make_record_reader p loc a record_kind =
   [
     `Line "Yojson.Safe.read_space p lb;";
     `Line "Yojson.Safe.read_lcurl p lb;";
-    `Line (sprintf "let x%s =" p.type_annot);
+    `Line (sprintf "let %s =" (opt_annot type_annot "x"));
     `Block init_val;
     `Line "in";
     `Inline init_bits;
@@ -1009,7 +1010,7 @@ and make_record_reader p loc a record_kind =
   ]
 
 
-and make_tuple_reader deref a =
+and make_tuple_reader p a =
   let cells =
     Array.map (
       fun x ->
@@ -1040,7 +1041,7 @@ and make_tuple_reader deref a =
 	    let read_value =
 	      [
                 `Line "(";
-                `Block (make_reader deref x.cel_value);
+                `Block (make_reader p None x.cel_value);
 		`Line ") p lb";
               ]
 	    in
@@ -1233,10 +1234,11 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
   let of_string = get_left_of_string_name p name param in
   let type_annot =
     match x with
-        `Record _ | `Sum (_, _, `Sum `Classic, _) -> " : " ^ full_name
-      | _ -> ""
+    | `Record (_, _, `Record `Record, _)
+    | `Sum (_, _, `Sum `Classic, _) -> Some full_name
+    | _ -> None
   in
-  let reader_expr = make_reader { p with type_annot } x in
+  let reader_expr = make_reader p type_annot x in
   let extra_param, extra_args =
     if is_function reader_expr || not is_rec then "", ""
     else " p lb", " p lb"
@@ -1282,7 +1284,6 @@ let make_ocaml_json_impl
     unknown_field_handler = unknown_field_handler;
     force_defaults = force_defaults;
     preprocess_input;
-    type_annot = "";
   } in
   let ll =
     List.map (
@@ -1401,6 +1402,9 @@ let make_ocaml_files
   let (m1', original_types) =
     Atd_expand.expand_module_body ~keep_poly:true m0
   in
+  Hashtbl.iter (fun k (k0, n) ->
+    printf "original type %s -> %s %i\n%!" k k0 n
+  ) original_types;
   let m2 = Atd_util.tsort m1' in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis

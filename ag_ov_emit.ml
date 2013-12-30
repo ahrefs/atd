@@ -18,12 +18,12 @@ let make_ocaml_validate_intf ~with_create buf deref defs =
       if s <> "" && s.[0] <> '_' && x.def_value <> None then (
         if with_create then (
           let create_record_intf, create_record_impl =
-            Ag_ocaml.make_record_creator deref x
+            Ag_ox_emit.make_record_creator deref x
           in
           bprintf buf "%s" create_record_intf;
         );
 
-        let full_name = Ag_ocaml.get_full_type_name x in
+        let full_name = Ag_ox_emit.get_full_type_name x in
         let validator_params =
           String.concat "" (
             List.map
@@ -376,13 +376,7 @@ let rec is_function (l : Ag_indent.t list) =
 let make_ocaml_validator ~original_types is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let full_name =
-    try
-      let (poly_name, n_params) = Hashtbl.find original_types name in
-      Ag_ocaml.anon_param_type_name poly_name n_params
-    with Not_found ->
-      Ag_ocaml.get_full_type_name def
-  in
+  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let validate = get_left_validator_name name param in
   let validator_expr = make_validator x in
@@ -391,16 +385,17 @@ let make_ocaml_validator ~original_types is_rec let1 let2 def =
     else " path x", " path x"
   in
   let type_annot =
-    match x with
-        `Record _ | `Sum (_, _, `Sum `Classic, _) ->
-            sprintf
-              " : Ag_util.Validation.path -> %s -> \
-                  Ag_util.Validation.error option"
-              full_name
-      | _ -> ""
+    match Ag_ox_emit.needs_type_annot x with
+    | true -> Some (sprintf
+                      "Ag_util.Validation.path -> %s -> \
+                       Ag_util.Validation.error option"
+                    type_constraint)
+    | false -> None
   in
   [
-    `Line (sprintf "%s %s%s%s = (" let1 validate extra_param type_annot);
+    `Line (sprintf "%s %s = ("
+             let1
+             (Ag_ox_emit.opt_annot_def type_annot (validate ^ extra_param)));
     `Block (List.map Ag_indent.strip validator_expr);
     `Line (sprintf ")%s" extra_args);
   ]
@@ -441,7 +436,7 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
       fun (is_rec, l) ->
         List.iter (
           fun x ->
-            let intf, impl = Ag_ocaml.make_record_creator deref x in
+            let intf, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs

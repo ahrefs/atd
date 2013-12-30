@@ -654,7 +654,7 @@ let rec format_module_item
   in
   prepend_ocamldoc_comment doc part123
 
-	
+
 and prepend_type_param l tl =
   match l with
       [] -> tl
@@ -713,7 +713,7 @@ and format_type_expr x =
 
 and format_type_name name args =
   horizontal_sequence (prepend_type_args args [ make_atom name ])
-	
+
 and format_field ((s, is_mutable), t, doc) =
   let l =
     let l = [make_atom (s ^ ":")] in
@@ -789,23 +789,6 @@ let ocaml_of_atd ~target ~type_aliases
   let x = format_all (head @ body) in
   Easy_format.Pretty.to_string x
 
-
-let get_full_type_name x =
-  let s = x.def_name in
-  match x.def_param with
-      [] -> s
-    | [x] -> sprintf "'%s %s" x s
-    | l ->
-        let l = List.map (fun s -> "'" ^ s) l in
-        sprintf "(%s) %s" (String.concat ", " l) s
-
-
-let anon_param_type_name s i =
-  let underscores = Array.make i "_" in
-  let params = String.concat ", " (Array.to_list underscores) in
-  "(" ^ params ^ ") " ^ s
-
-
 let unwrap_option deref x =
   match deref x with
       `Option (_, x, _, _)
@@ -876,38 +859,3 @@ let map_record_creator_field deref x =
           sprintf "\n  ?(%s = %s)" fname default
         in
         intf, impl1, impl2
-
-
-let make_record_creator deref x =
-  match x.def_value with
-      Some (`Record (loc, a, `Record `Record, _)) ->
-        let s = x.def_name in
-        let full_name = get_full_type_name x in
-        let l = Array.to_list (Array.map (map_record_creator_field deref) a) in
-        let intf_params = List.map (fun (x, _, _) -> x) l in
-        let intf =
-          sprintf "\
-val create_%s :%s
-  unit -> %s
-  (** Create a record of type {!%s}. *)
-
-"
-            s (String.concat "" intf_params)
-            full_name
-            s
-        in
-        let impl_params = List.map (fun (_, x, _) -> x) l in
-        let impl_fields = List.map (fun (_, _, x) -> x) l in
-        let impl =
-          sprintf "\
-let create_%s %s
-  () : %s =
-  {%s
-  }
-"
-            s (String.concat "" impl_params) full_name
-            (String.concat "" impl_fields)
-        in
-        intf, impl
-
-    | _ -> "", ""

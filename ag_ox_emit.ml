@@ -165,6 +165,61 @@ let check grouped_defs =
   let x = extract_ocaml_names_from_defs (flatten_defs grouped_defs) in
   check_names x
 
+
+let get_full_type_name x =
+  let s = x.def_name in
+  match x.def_param with
+      [] -> s
+    | [x] -> sprintf "'%s %s" x s
+    | l ->
+        let l = List.map (fun s -> "'" ^ s) l in
+        sprintf "(%s) %s" (String.concat ", " l) s
+
+let anon_param_type_name s n_param =
+  match n_param with
+  | 0 -> s
+  | 1 -> "_ " ^ s
+  | n ->
+      let underscores = Array.make n "_" in
+      let params = String.concat ", " (Array.to_list underscores) in
+      "(" ^ params ^ ") " ^ s
+
+(* Get a type expression that uses the original user-given name (e.g. not _1) *)
+let get_type_constraint ~original_types def =
+  try
+    let (poly_name, n_params) = Hashtbl.find original_types def.def_name in
+    anon_param_type_name poly_name n_params
+  with Not_found ->
+    get_full_type_name def
+
+
+(* Classic variants and records need type annotations in order to allow
+   constructor/field name disambiguation *)
+let needs_type_annot (x : _ expr) =
+  match x with
+  | `Record (_, _, `Record `Record, _)
+  | `Sum (_, _, `Sum `Classic, _) -> true
+  | _ -> false
+
+let insert_annot type_annot =
+  match type_annot with
+  | None -> ""
+  | Some t -> sprintf " : %s" t
+
+(* Add an optional type annotation on an OCaml expression or pattern *)
+let opt_annot type_annot expr =
+  match type_annot with
+  | None -> expr
+  | Some t -> sprintf "(%s : %s)" expr t
+
+(* Add an optional type annotation after all function parameters
+   in a let binding (last thing before the equal sign) *)
+let opt_annot_def type_annot fun_param =
+  match type_annot with
+  | None -> fun_param
+  | Some t -> sprintf "%s : %s" fun_param t
+
+
 let write_file file s =
   let oc = open_out file in
   output_string oc s;
@@ -187,3 +242,39 @@ end
     | `Files prefix ->
         write_file (prefix ^ ".mli") mli;
         write_file (prefix ^ ".ml") ml
+
+let make_record_creator deref x =
+  match x.def_value with
+      Some (`Record (loc, a, `Record `Record, _)) ->
+        let s = x.def_name in
+        let full_name = get_full_type_name x in
+        let l =
+          Array.to_list
+            (Array.map (Ag_ocaml.map_record_creator_field deref) a) in
+        let intf_params = List.map (fun (x, _, _) -> x) l in
+        let intf =
+          sprintf "\
+val create_%s :%s
+  unit -> %s
+  (** Create a record of type {!%s}. *)
+
+"
+            s (String.concat "" intf_params)
+            full_name
+            s
+        in
+        let impl_params = List.map (fun (_, x, _) -> x) l in
+        let impl_fields = List.map (fun (_, _, x) -> x) l in
+        let impl =
+          sprintf "\
+let create_%s %s
+  () : %s =
+  {%s
+  }
+"
+            s (String.concat "" impl_params) full_name
+            (String.concat "" impl_fields)
+        in
+        intf, impl
+
+    | _ -> "", ""

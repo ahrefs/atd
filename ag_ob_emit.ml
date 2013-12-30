@@ -23,7 +23,7 @@ let make_ocaml_biniou_intf ~with_create buf deref defs =
     fun x ->
       let s = x.def_name in
       if s <> "" && s.[0] <> '_' && x.def_value <> None then (
-        let full_name = Ag_ocaml.get_full_type_name x in
+        let full_name = Ag_ox_emit.get_full_type_name x in
         let writer_params =
           String.concat "" (
             List.map
@@ -124,7 +124,7 @@ val %s_of_string :%s
 
         if with_create then
           let create_record_intf, create_record_impl =
-            Ag_ocaml.make_record_creator deref x
+            Ag_ox_emit.make_record_creator deref x
           in
           bprintf buf "%s" create_record_intf;
           bprintf buf "\n";
@@ -405,20 +405,6 @@ let get_left_of_string_name name param =
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
   get_reader_name ~name_f ~tagged:true
     (`Name (dummy_loc, name, args, None, None))
-
-(*
-let make_reader_name loc name args =
-  let f = sprintf "read_%s" name in
-  let l =
-    List.map (
-      function
-          `Tvar (loc, s) -> sprintf "read_%s" (name_of_var s)
-        | _ -> assert false
-    ) args
-  in
-  String.concat " " (f :: l)
-*)
-
 
 
 let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
@@ -952,7 +938,7 @@ let rec make_reader
                   Array.to_list (
 		    Array.map
 		      (fun x ->
-                        `Inline (make_variant_reader deref tick ?type_annot x)
+                        `Inline (make_variant_reader deref type_annot tick x)
                       )
 		      a
                   )
@@ -971,7 +957,7 @@ let rec make_reader
 	   | `Object ->
 	       error loc "Sorry, OCaml objects are not supported"
 	);
-	let body = make_record_reader deref ~tagged ?type_annot a o in
+	let body = make_record_reader deref ~tagged type_annot a o in
 	wrap_body ~tagged Bi_io.record_tag body
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
@@ -1054,7 +1040,7 @@ let rec make_reader
 	                      error loc "OCaml objects are not supported"
 	               );
 	               make_record_reader
-                         ~shared_id:id deref ~tagged ?type_annot a o
+                         ~shared_id:id deref ~tagged type_annot a o
 
                    | _ ->
                        error loc "Only record types can use sharing \
@@ -1097,7 +1083,7 @@ let rec make_reader
     | _ -> assert false
 
 
-and make_variant_reader deref tick ?(type_annot = "") x : Ag_indent.t list =
+and make_variant_reader deref type_annot tick x : Ag_indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
 	`Variant o, `Variant -> o
@@ -1107,7 +1093,7 @@ and make_variant_reader deref tick ?(type_annot = "") x : Ag_indent.t list =
   match x.var_arg with
       None ->
 	let h = Bi_io.hash_name x.var_cons in
-        let typed_cons = sprintf "(%s%s%s)" tick ocaml_cons type_annot in
+        let typed_cons = Ag_ox_emit.opt_annot type_annot (tick ^ ocaml_cons) in
 	[ `Line (sprintf "| %i, false -> %s" h typed_cons) ]
     | Some v ->
 	let h = Bi_io.hash_name x.var_cons in
@@ -1119,19 +1105,19 @@ and make_variant_reader deref tick ?(type_annot = "") x : Ag_indent.t list =
 	      `Block (make_reader deref ~tagged:true v);
 	      `Line ") ib";
 	    ];
-            `Line (sprintf ")%s)" type_annot);
+            `Line (sprintf ")%s)" (Ag_ox_emit.insert_annot type_annot));
 	  ];
         ]
 
 and make_record_reader
-    ?shared_id deref ~tagged ?(type_annot = "")
+    ?shared_id deref ~tagged type_annot
     a record_kind =
   let fields = get_fields deref a in
   let init_val, init_bits, set_bit, check_bits = study_record deref fields in
 
   let build share body =
     [
-      `Line (sprintf "let x%s =" type_annot);
+      `Line (sprintf "let %s =" (Ag_ox_emit.opt_annot_def type_annot "x"));
       `Block init_val;
       `Line "in";
       `Inline share;
@@ -1403,13 +1389,7 @@ let rec is_function (l : Ag_indent.t list) =
 let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let full_name =
-    try
-      let (poly_name, n_params) = Hashtbl.find original_types name in
-      Ag_ocaml.anon_param_type_name poly_name n_params
-    with Not_found ->
-      Ag_ocaml.get_full_type_name def
-  in
+  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let tag = get_biniou_tag (deref x) in
   let write_untagged = get_left_writer_name ~tagged:false name param in
@@ -1421,14 +1401,16 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
     else " ob x", " ob x"
   in
   let type_annot =
-    match x with
-        `Record _ | `Sum (_, _, `Sum `Classic, _) ->
-            sprintf " : Bi_outbuf.t -> %s -> unit" full_name
-      | _ -> ""
+    match Ag_ox_emit.needs_type_annot x with
+    | true -> Some (sprintf "Bi_outbuf.t -> %s -> unit" type_constraint)
+    | false -> None
   in
   [
     `Line (sprintf "%s %s_tag = %s" let1 name tag);
-    `Line (sprintf "%s %s%s%s = (" let2 write_untagged extra_param type_annot);
+    `Line (sprintf "%s %s = ("
+             let2
+             (Ag_ox_emit.opt_annot_def type_annot
+                (write_untagged ^ extra_param)));
     `Block (List.map Ag_indent.strip write_untagged_expr);
     `Line (sprintf ")%s" extra_args);
     `Line (sprintf "%s %s ob x =" let2 write);
@@ -1447,24 +1429,18 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
 let make_ocaml_biniou_reader ~original_types deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let full_name =
-    try
-      let (poly_name, n_params) = Hashtbl.find original_types name in
-      Ag_ocaml.anon_param_type_name poly_name n_params
-    with Not_found ->
-      Ag_ocaml.get_full_type_name def
-  in
+  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let get_reader = get_left_reader_name ~tagged:false name param in
   let read = get_left_reader_name ~tagged:true name param in
   let of_string = get_left_of_string_name name param in
   let type_annot =
-    match x with
-        `Record _ | `Sum (_, _, `Sum `Classic, _) -> " : " ^ full_name
-      | _ -> ""
+    match Ag_ox_emit.needs_type_annot x with
+    | true -> Some type_constraint
+    | false -> None
   in
-  let get_reader_expr = make_reader deref ~tagged:false ~type_annot x in
-  let read_expr = make_reader deref ~tagged:true ~type_annot x in
+  let get_reader_expr = make_reader deref ~tagged:false ?type_annot x in
+  let read_expr = make_reader deref ~tagged:true ?type_annot x in
   let extra_param1, extra_args1 =
     if is_function get_reader_expr || not is_rec then "", ""
     else " tag", " tag"
@@ -1567,7 +1543,7 @@ let make_ocaml_biniou_impl ~with_create ~original_types buf deref defs =
       fun (is_rec, l) ->
         List.iter (
           fun x ->
-            let intf, impl = Ag_ocaml.make_record_creator deref x in
+            let intf, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs

@@ -278,3 +278,14 @@ let create_%s %s
         intf, impl
 
     | _ -> "", ""
+
+let rec is_function (l : Ag_indent.t list) =
+  match l with
+      [] -> false
+    | x :: _ ->
+        match x with
+            `Line _ -> false
+          | `Block l -> is_function l
+          | `Inline l -> is_function l
+          | `Annot ("fun", _) -> true
+          | `Annot (_, x) -> is_function [x]

@@ -1170,18 +1170,6 @@ and make_tuple_reader p a =
     ];
   ]
 
-
-let rec is_function (l : Ag_indent.t list) =
-  match l with
-      [] -> false
-    | x :: _ ->
-        match x with
-            `Line _ -> false
-          | `Block l -> is_function l
-          | `Inline l -> is_function l
-          | `Annot ("fun", _) -> true
-          | `Annot _ -> false
-
 let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
@@ -1190,9 +1178,10 @@ let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
   let write = get_left_writer_name p name param in
   let to_string = get_left_to_string_name p name param in
   let writer_expr = make_writer p x in
+  let eta_expand = is_rec && not (Ag_ox_emit.is_function writer_expr) in
   let extra_param, extra_args =
-    if is_function writer_expr || not is_rec then "", ""
-    else " ob x", " ob x"
+    if eta_expand then " ob x", " ob x"
+    else "", ""
   in
   let type_annot =
     match Ag_ox_emit.needs_type_annot x with
@@ -1225,9 +1214,10 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
     | false -> None
   in
   let reader_expr = make_reader p type_annot x in
+  let eta_expand = is_rec && not (Ag_ox_emit.is_function reader_expr) in
   let extra_param, extra_args =
-    if is_function reader_expr || not is_rec then "", ""
-    else " p lb", " p lb"
+    if eta_expand then " p lb", " p lb"
+    else "", ""
   in
   let pp =
     match p.preprocess_input with

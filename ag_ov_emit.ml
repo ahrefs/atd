@@ -362,17 +362,6 @@ and make_record_validator a record_kind =
   in
   forall validate_fields
 
-let rec is_function (l : Ag_indent.t list) =
-  match l with
-      [] -> false
-    | x :: _ ->
-        match x with
-            `Line _ -> false
-          | `Block l -> is_function l
-          | `Inline l -> is_function l
-          | `Annot ("fun", _) -> true
-          | `Annot (_, x) -> is_function [x]
-
 let make_ocaml_validator ~original_types is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
@@ -380,17 +369,17 @@ let make_ocaml_validator ~original_types is_rec let1 let2 def =
   let param = def.def_param in
   let validate = get_left_validator_name name param in
   let validator_expr = make_validator x in
-  let extra_param, extra_args =
-    if is_function validator_expr || not is_rec then "", ""
-    else " path x", " path x"
-  in
-  let type_annot =
-    match Ag_ox_emit.needs_type_annot x with
-    | true -> Some (sprintf
-                      "Ag_util.Validation.path -> %s -> \
-                       Ag_util.Validation.error option"
-                    type_constraint)
-    | false -> None
+  let eta_expand = is_rec && not (Ag_ox_emit.is_function validator_expr) in
+  let needs_annot = Ag_ox_emit.needs_type_annot x in
+  let extra_param, extra_args, type_annot =
+    match eta_expand, needs_annot with
+    | true, false -> " path x", " path x", None
+    | true, true -> sprintf " path (x : %s)" type_constraint, " path x", None
+    | false, false -> "", "", None
+    | false, true -> "", "", Some (sprintf
+                                     "Ag_util.Validation.path -> %s -> \
+                                      Ag_util.Validation.error option"
+                                     type_constraint)
   in
   [
     `Line (sprintf "%s %s = ("

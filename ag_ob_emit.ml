@@ -1374,18 +1374,6 @@ and make_table_reader deref loc list_kind x =
      ]
   ]
 
-
-let rec is_function (l : Ag_indent.t list) =
-  match l with
-      [] -> false
-    | x :: _ ->
-        match x with
-            `Line _ -> false
-          | `Block l -> is_function l
-          | `Inline l -> is_function l
-          | `Annot ("fun", _) -> true
-          | `Annot _ -> false
-
 let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
@@ -1396,9 +1384,10 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let write = get_left_writer_name ~tagged:true name param in
   let to_string = get_left_to_string_name name param in
   let write_untagged_expr = make_writer deref ~tagged:false x in
+  let eta_expand = is_rec && not (Ag_ox_emit.is_function write_untagged_expr) in
   let extra_param, extra_args =
-    if is_function write_untagged_expr || not is_rec then "", ""
-    else " ob x", " ob x"
+    if eta_expand then " ob x", " ob x"
+    else "", ""
   in
   let type_annot =
     match Ag_ox_emit.needs_type_annot x with
@@ -1441,13 +1430,15 @@ let make_ocaml_biniou_reader ~original_types deref is_rec let1 let2 def =
   in
   let get_reader_expr = make_reader deref ~tagged:false ?type_annot x in
   let read_expr = make_reader deref ~tagged:true ?type_annot x in
+  let eta_expand1 = is_rec && not (Ag_ox_emit.is_function get_reader_expr) in
+  let eta_expand2 = is_rec && not (Ag_ox_emit.is_function read_expr) in
   let extra_param1, extra_args1 =
-    if is_function get_reader_expr || not is_rec then "", ""
-    else " tag", " tag"
+    if eta_expand1 then " tag", " tag"
+    else "", ""
   in
   let extra_param2, extra_args2 =
-    if is_function read_expr || not is_rec then "", ""
-    else " ib", " ib"
+    if eta_expand2 then " ib", " ib"
+    else "", ""
   in
   [
     `Line (sprintf "%s %s%s = (" let1 get_reader extra_param1);

@@ -1385,9 +1385,13 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let to_string = get_left_to_string_name name param in
   let write_untagged_expr = make_writer deref ~tagged:false x in
   let eta_expand = is_rec && not (Ag_ox_emit.is_function write_untagged_expr) in
-  let extra_param, extra_args =
-    if eta_expand then " ob x", " ob x"
-    else "", ""
+  let needs_annot = Ag_ox_emit.needs_type_annot x in
+  let extra_param, extra_args, type_annot =
+    match eta_expand, needs_annot with
+    | true, false -> " ob x", " ob x", None
+    | true, true -> sprintf " ob (x : %s)" type_constraint, " ob x", None
+    | false, false -> "", "", None
+    | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
   in
   let type_annot =
     match Ag_ox_emit.needs_type_annot x with

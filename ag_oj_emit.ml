@@ -1179,14 +1179,13 @@ let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
   let to_string = get_left_to_string_name p name param in
   let writer_expr = make_writer p x in
   let eta_expand = is_rec && not (Ag_ox_emit.is_function writer_expr) in
-  let extra_param, extra_args =
-    if eta_expand then " ob x", " ob x"
-    else "", ""
-  in
-  let type_annot =
-    match Ag_ox_emit.needs_type_annot x with
-    | true -> Some (sprintf "Bi_outbuf.t -> %s -> unit" type_constraint)
-    | false -> None
+  let needs_annot = Ag_ox_emit.needs_type_annot x in
+  let extra_param, extra_args, type_annot =
+    match eta_expand, needs_annot with
+    | true, false -> " ob x", " ob x", None
+    | true, true -> sprintf " ob (x : %s)" type_constraint, " ob x", None
+    | false, false -> "", "", None
+    | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
   in
   [
     `Line (sprintf "%s %s = ("

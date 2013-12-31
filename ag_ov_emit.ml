@@ -376,10 +376,7 @@ let make_ocaml_validator ~original_types is_rec let1 let2 def =
     | true, false -> " path x", " path x", None
     | true, true -> sprintf " path (x : %s)" type_constraint, " path x", None
     | false, false -> "", "", None
-    | false, true -> "", "", Some (sprintf
-                                     "Ag_util.Validation.path -> %s -> \
-                                      Ag_util.Validation.error option"
-                                     type_constraint)
+    | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
   in
   [
     `Line (sprintf "%s %s = ("

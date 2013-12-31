@@ -18,12 +18,12 @@ let make_ocaml_validate_intf ~with_create buf deref defs =
       if s <> "" && s.[0] <> '_' && x.def_value <> None then (
         if with_create then (
           let create_record_intf, create_record_impl =
-            Ag_ocaml.make_record_creator deref x
+            Ag_ox_emit.make_record_creator deref x
           in
           bprintf buf "%s" create_record_intf;
         );
 
-        let full_name = Ag_ocaml.get_full_type_name x in
+        let full_name = Ag_ox_emit.get_full_type_name x in
         let validator_params =
           String.concat "" (
             List.map
@@ -362,29 +362,26 @@ and make_record_validator a record_kind =
   in
   forall validate_fields
 
-let rec is_function (l : Ag_indent.t list) =
-  match l with
-      [] -> false
-    | x :: _ ->
-        match x with
-            `Line _ -> false
-          | `Block l -> is_function l
-          | `Inline l -> is_function l
-          | `Annot ("fun", _) -> true
-          | `Annot (_, x) -> is_function [x]
-
-let make_ocaml_validator is_rec let1 let2 def =
+let make_ocaml_validator ~original_types is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
+  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let validate = get_left_validator_name name param in
   let validator_expr = make_validator x in
-  let extra_param, extra_args =
-    if is_function validator_expr || not is_rec then "", ""
-    else " path x", " path x"
+  let eta_expand = is_rec && not (Ag_ox_emit.is_function validator_expr) in
+  let needs_annot = Ag_ox_emit.needs_type_annot x in
+  let extra_param, extra_args, type_annot =
+    match eta_expand, needs_annot with
+    | true, false -> " path x", " path x", None
+    | true, true -> sprintf " path (x : %s)" type_constraint, " path x", None
+    | false, false -> "", "", None
+    | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
   in
   [
-    `Line (sprintf "%s %s%s = (" let1 validate extra_param);
+    `Line (sprintf "%s %s = ("
+             let1
+             (Ag_ox_emit.opt_annot_def type_annot (validate ^ extra_param)));
     `Block (List.map Ag_indent.strip validator_expr);
     `Line (sprintf ")%s" extra_args);
   ]
@@ -403,7 +400,7 @@ let get_let ~is_rec ~is_first =
     else "let", "let"
   else "and", "and"
 
-let make_ocaml_validate_impl ~with_create buf deref defs =
+let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
   let ll =
     List.map (
       fun (is_rec, l) ->
@@ -412,7 +409,7 @@ let make_ocaml_validate_impl ~with_create buf deref defs =
 	  map (
 	    fun is_first def ->
 	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_validator is_rec let1 let2 def
+	      make_ocaml_validator ~original_types is_rec let1 let2 def
 	  ) l
 	in
 	List.flatten validators
@@ -425,7 +422,7 @@ let make_ocaml_validate_impl ~with_create buf deref defs =
       fun (is_rec, l) ->
         List.iter (
           fun x ->
-            let intf, impl = Ag_ocaml.make_record_creator deref x in
+            let intf, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs
@@ -458,7 +455,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ocaml_typedefs deref defs =
+    ~original_types ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   write_opens buf opens;
@@ -467,7 +464,7 @@ let make_ml
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_validate_impl ~with_create buf deref defs;
+    make_ocaml_validate_impl ~with_create ~original_types buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -480,8 +477,9 @@ let make_ocaml_files
     ~pos_lnum
     ~type_aliases
     ~force_defaults
+    ~name_overlap
     atd_file out =
-  let head, m0 =
+  let ((head, m0), _) =
     match atd_file with
         Some file ->
           Atd_util.load_file
@@ -501,8 +499,11 @@ let make_ocaml_files
       Atd_util.tsort m0
   in
   let defs1 = translate_mapping m1 in
-  Ag_ox_emit.check defs1;
-  let m2 = Atd_util.tsort (Atd_expand.expand_module_body ~keep_poly:true m0) in
+  if not name_overlap then Ag_ox_emit.check defs1;
+  let (m1', original_types) =
+    Atd_expand.expand_module_body ~keep_poly:true m0
+  in
+  let m2 = Atd_util.tsort m1' in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
@@ -523,6 +524,6 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ocaml_typedefs (Ag_mapping.make_deref defs) defs
+      ~original_types ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

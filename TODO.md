@@ -15,9 +15,6 @@
 * Find a good way to support variants represented as records whose type is
   given by one of their fields.
 
-* Support records/variants with identical field/constructor name in
-  the same module (ocaml >= 4.01)
-
 * Plans for atdgen 2:
   - imply -std-json, i.e. do not produce code that produces JSON
     in the extended syntax for variants (<"A">, <"B":123>)

@@ -28,6 +28,7 @@ type param = {
 
   preprocess_input : string option;
     (* intended for UTF-8 validation *)
+
 }
 
 
@@ -36,7 +37,7 @@ let make_ocaml_json_intf ~with_create buf deref defs =
     fun x ->
       let s = x.def_name in
       if s <> "" && s.[0] <> '_' && x.def_value <> None then (
-        let full_name = Ag_ocaml.get_full_type_name x in
+        let full_name = Ag_ox_emit.get_full_type_name x in
         let writer_params =
           String.concat "" (
             List.map
@@ -99,7 +100,7 @@ val %s_of_string :%s
 
         if with_create then
           let create_record_intf, create_record_impl =
-            Ag_ocaml.make_record_creator deref x
+            Ag_ox_emit.make_record_creator deref x
           in
           bprintf buf "%s" create_record_intf;
           bprintf buf "\n";
@@ -641,8 +642,7 @@ let study_record deref fields =
   in
   init_val, init_bits, set_bit, check_bits
 
-
-let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
+let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
   match x with
       `Unit _
     | `Bool _
@@ -662,15 +662,15 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	let cases =
 	  Array.to_list (
 	    Array.map
-	      (make_variant_reader p tick false)
+	      (make_variant_reader p type_annot tick false)
 	      a
 	  )
 	in
         let l0, l1 =
           List.partition (fun x -> x.var_arg = None) (Array.to_list a)
         in
-	let cases0 = List.map (make_variant_reader p tick true) l0 in
-        let cases1 = List.map (make_variant_reader p tick true) l1 in
+	let cases0 = List.map (make_variant_reader p type_annot tick true) l0 in
+        let cases1 = List.map (make_variant_reader p type_annot tick true) l1 in
 
         let error_expr1 =
           [ `Line "Ag_oj_run.invalid_variant_tag (String.sub s pos len)" ]
@@ -748,7 +748,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	);
 	[
 	  `Annot ("fun", `Line "fun p lb ->");
-	  `Block (make_record_reader p loc a o)
+	  `Block (make_record_reader p type_annot loc a o)
 	]
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
@@ -767,7 +767,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
                in
 	       [
 		 `Line read;
-		 `Block (make_reader p x);
+		 `Block (make_reader p None x);
 		 `Line ")";
 	       ]
 
@@ -780,7 +780,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
                in
                [
                  `Line read;
-                 `Block (make_reader p x);
+                 `Block (make_reader p None x);
                  `Line ")";
                ]
 	)
@@ -806,17 +806,17 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 	  };
 	|]
 	in
-	make_reader p (`Sum (loc, a, `Sum `Classic, `Sum))
+	make_reader p (Some "_ option") (`Sum (loc, a, `Sum `Classic, `Sum))
 
     | `Nullable (loc, x, `Nullable, `Nullable) ->
         [
           `Line "fun p lb ->";
           `Block [
             `Line "Yojson.Safe.read_space p lb;";
-            `Line "if Yojson.Safe.read_null_if_possible p lb then None";
+            `Line "(if Yojson.Safe.read_null_if_possible p lb then None";
             `Line "else Some ((";
-            `Block (make_reader p x);
-            `Line ") p lb)"
+            `Block (make_reader p None x);
+            `Line ") p lb) : _ option)"
           ]
         ]
 
@@ -825,13 +825,13 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
 
     | `Wrap (loc, x, `Wrap o, `Wrap) ->
         (match o with
-            None -> make_reader p x
+            None -> make_reader p type_annot x
           | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
               [
                 `Line "fun p lb ->";
                 `Block [
                   `Line "let x = (";
-                  `Block (make_reader p x);
+                  `Block (make_reader p type_annot x);
                   `Line ") p lb in";
                   `Line (sprintf "( %s ) x" ocaml_wrap);
                 ]
@@ -841,7 +841,7 @@ let rec make_reader p (x : oj_mapping) : Ag_indent.t list =
     | _ -> assert false
 
 
-and make_variant_reader p tick std x : (string * Ag_indent.t list) =
+and make_variant_reader p type_annot tick std x : (string * Ag_indent.t list) =
   let o, j =
     match x.var_arepr, x.var_brepr with
 	`Variant o, `Variant j -> o, j
@@ -854,13 +854,15 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 	None ->
           if std then
 	    [
-	      `Line (sprintf "%s%s" tick ocaml_cons);
+	      `Line (Ag_ox_emit.opt_annot
+                type_annot (sprintf "%s%s" tick ocaml_cons));
 	    ]
           else
 	    [
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_gt p lb;";
-	      `Line (sprintf "%s%s" tick ocaml_cons);
+	      `Line (Ag_ox_emit.opt_annot
+                type_annot (sprintf "%s%s" tick ocaml_cons));
 	    ]
       | Some v ->
           if std then
@@ -870,32 +872,34 @@ and make_variant_reader p tick std x : (string * Ag_indent.t list) =
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "let x = (";
 	      `Block [
-	        `Block (make_reader p v);
+	        `Block (make_reader p None v);
 	        `Line ") p lb";
 	      ];
 	      `Line "in";
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_rbr p lb;";
-	      `Line (sprintf "%s%s x" tick ocaml_cons);
+	      `Line (Ag_ox_emit.opt_annot
+                type_annot (sprintf "%s%s x" tick ocaml_cons));
             ]
           else
 	    [
 	      `Line "Ag_oj_run.read_until_field_value p lb;";
 	      `Line "let x = (";
 	      `Block [
-	        `Block (make_reader p v);
+	        `Block (make_reader p None v);
 	        `Line ") p lb";
 	      ];
 	      `Line "in";
 	      `Line "Yojson.Safe.read_space p lb;";
 	      `Line "Yojson.Safe.read_gt p lb;";
-	      `Line (sprintf "%s%s x" tick ocaml_cons);
+	      `Line (Ag_ox_emit.opt_annot
+                type_annot (sprintf "%s%s x" tick ocaml_cons));
 	    ]
   in
   (json_cons, expr)
 
 
-and make_record_reader p loc a record_kind =
+and make_record_reader p type_annot loc a record_kind =
   let fields = get_fields p a in
   let init_val, init_bits, set_bit, check_bits = study_record p.deref fields in
 
@@ -920,7 +924,7 @@ and make_record_reader p loc a record_kind =
 	  let read_value =
             [
               `Line "(";
-              `Block (make_reader p f_value);
+              `Block (make_reader p None f_value);
               `Line ") p lb";
             ]
 	  in
@@ -976,7 +980,7 @@ and make_record_reader p loc a record_kind =
   [
     `Line "Yojson.Safe.read_space p lb;";
     `Line "Yojson.Safe.read_lcurl p lb;";
-    `Line "let x =";
+    `Line (sprintf "let %s =" (Ag_ox_emit.opt_annot type_annot "x"));
     `Block init_val;
     `Line "in";
     `Inline init_bits;
@@ -1005,7 +1009,7 @@ and make_record_reader p loc a record_kind =
   ]
 
 
-and make_tuple_reader deref a =
+and make_tuple_reader p a =
   let cells =
     Array.map (
       fun x ->
@@ -1036,7 +1040,7 @@ and make_tuple_reader deref a =
 	    let read_value =
 	      [
                 `Line "(";
-                `Block (make_reader deref x.cel_value);
+                `Block (make_reader p None x.cel_value);
 		`Line ") p lb";
               ]
 	    in
@@ -1166,31 +1170,26 @@ and make_tuple_reader deref a =
     ];
   ]
 
-
-let rec is_function (l : Ag_indent.t list) =
-  match l with
-      [] -> false
-    | x :: _ ->
-        match x with
-            `Line _ -> false
-          | `Block l -> is_function l
-          | `Inline l -> is_function l
-          | `Annot ("fun", _) -> true
-          | `Annot _ -> false
-
-let make_ocaml_json_writer p is_rec let1 let2 def =
+let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
+  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let write = get_left_writer_name p name param in
   let to_string = get_left_to_string_name p name param in
   let writer_expr = make_writer p x in
-  let extra_param, extra_args =
-    if is_function writer_expr || not is_rec then "", ""
-    else " ob x", " ob x"
+  let eta_expand = is_rec && not (Ag_ox_emit.is_function writer_expr) in
+  let needs_annot = Ag_ox_emit.needs_type_annot x in
+  let extra_param, extra_args, type_annot =
+    match eta_expand, needs_annot with
+    | true, false -> " ob x", " ob x", None
+    | true, true -> sprintf " ob (x : %s)" type_constraint, " ob x", None
+    | false, false -> "", "", None
+    | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
   in
   [
-    `Line (sprintf "%s %s%s = (" let1 write extra_param);
+    `Line (sprintf "%s %s = ("
+             let1 (Ag_ox_emit.opt_annot_def type_annot (write ^ extra_param)));
     `Block (List.map Ag_indent.strip writer_expr);
     `Line (sprintf ")%s" extra_args);
     `Line (sprintf "%s %s ?(len = 1024) x =" let2 to_string);
@@ -1201,16 +1200,23 @@ let make_ocaml_json_writer p is_rec let1 let2 def =
     ]
   ]
 
-let make_ocaml_json_reader p is_rec let1 let2 def =
+let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
+  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let read = get_left_reader_name p name param in
   let of_string = get_left_of_string_name p name param in
-  let reader_expr = make_reader p x in
+  let type_annot =
+    match Ag_ox_emit.needs_type_annot x with
+    | true -> Some type_constraint
+    | false -> None
+  in
+  let reader_expr = make_reader p type_annot x in
+  let eta_expand = is_rec && not (Ag_ox_emit.is_function reader_expr) in
   let extra_param, extra_args =
-    if is_function reader_expr || not is_rec then "", ""
-    else " p lb", " p lb"
+    if eta_expand then " p lb", " p lb"
+    else "", ""
   in
   let pp =
     match p.preprocess_input with
@@ -1245,7 +1251,7 @@ let get_let ~is_rec ~is_first =
 
 let make_ocaml_json_impl
     ~std ~unknown_field_handler ~with_create ~force_defaults
-    ~preprocess_input
+    ~preprocess_input ~original_types
     buf deref defs =
   let p = {
     deref = deref;
@@ -1262,14 +1268,14 @@ let make_ocaml_json_impl
 	  map (
 	    fun is_first def ->
 	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_json_writer p is_rec let1 let2 def
+	      make_ocaml_json_writer p ~original_types is_rec let1 let2 def
 	  ) l
 	in
 	let readers =
 	  map (
 	    fun is_first def ->
 	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_json_reader p is_rec let1 let2 def
+	      make_ocaml_json_reader p ~original_types is_rec let1 let2 def
 	  ) l
 	in
 	List.flatten (writers @ readers)
@@ -1282,7 +1288,7 @@ let make_ocaml_json_impl
       fun (is_rec, l) ->
         List.iter (
           fun x ->
-            let intf, impl = Ag_ocaml.make_record_creator deref x in
+            let intf, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs
@@ -1318,7 +1324,7 @@ let make_mli
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~std ~unknown_field_handler ~force_defaults ~preprocess_input
-    ocaml_typedefs deref defs =
+    ~original_types ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   write_opens buf opens;
@@ -1329,7 +1335,7 @@ let make_ml
   if with_fundefs then
     make_ocaml_json_impl
       ~std ~unknown_field_handler ~with_create ~force_defaults
-      ~preprocess_input buf deref defs;
+      ~preprocess_input ~original_types buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1345,8 +1351,9 @@ let make_ocaml_files
     ~type_aliases
     ~force_defaults
     ~preprocess_input
+    ~name_overlap
     atd_file out =
-  let head, m0 =
+  let ((head, m0), _) =
     match atd_file with
         Some file ->
           Atd_util.load_file
@@ -1366,8 +1373,14 @@ let make_ocaml_files
       Atd_util.tsort m0
   in
   let defs1 = translate_mapping m1 in
-  Ag_ox_emit.check defs1;
-  let m2 = Atd_util.tsort (Atd_expand.expand_module_body ~keep_poly:true m0) in
+  if not name_overlap then Ag_ox_emit.check defs1;
+  let (m1', original_types) =
+    Atd_expand.expand_module_body ~keep_poly:true m0
+  in
+  Hashtbl.iter (fun k (k0, n) ->
+    printf "original type %s -> %s %i\n%!" k k0 n
+  ) original_types;
+  let m2 = Atd_util.tsort m1' in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
@@ -1389,6 +1402,6 @@ let make_ocaml_files
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~std ~unknown_field_handler ~force_defaults ~preprocess_input
-      ocaml_typedefs (Ag_mapping.make_deref defs) defs
+      ~original_types ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

@@ -41,6 +41,21 @@ type mode =
     | `Validate (* -validate (deprecated) *)
     ]
 
+let parse_ocaml_version () =
+  let re = Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
+  if Str.string_match re Sys.ocaml_version 0 then
+    let major = Str.matched_group 1 Sys.ocaml_version in
+    let minor = Str.matched_group 2 Sys.ocaml_version in
+    Some (int_of_string major, int_of_string minor)
+  else
+    None
+
+let get_default_name_overlap () =
+  match parse_ocaml_version () with
+  | Some (major, minor) when major < 4 -> false
+  | Some (4, 0) -> false
+  | _ -> true
+
 let main () =
   let pos_fname = ref None in
   let pos_lnum = ref None in
@@ -57,7 +72,7 @@ let main () =
   let j_defaults = ref false in
   let unknown_field_handler = ref None in
   let type_aliases = ref None in
-  let name_overlap = ref false in
+  let name_overlap = ref (get_default_name_overlap ()) in
   let set_opens s =
     let l = Str.split (Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
@@ -230,7 +245,14 @@ let main () =
           supported in OCaml since version 4.01.
 
           Duplicate name checking will be skipped, and type annotations will
-          be included in the implementation to disambiguate names.";
+          be included in the implementation to disambiguate names.
+          This is the default if atdgen was compiled for OCaml >= 4.01.0";
+
+    "-o-no-name-overlap", Arg.Clear name_overlap,
+    "
+          Disallow records and classic (non-polymorphic) variants
+          with identical field or constructor names in the same module.
+          This is the default if atdgen was compiled for OCaml < 4.01.0";
 
     "-version",
     Arg.Unit (fun () ->

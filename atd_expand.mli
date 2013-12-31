@@ -2,11 +2,22 @@
 
 (** Monomorphization of type definitions *)
 
+type original_types = (string, string * int) Hashtbl.t
+(** To support the generation of annotations for types that are created
+    during the monomorphization process, a mapping must be kept connecting
+    the monomorphic type name to the original polymorphic one, including its
+    original number of parameters.
+
+    This table is only used in producing those annotations to support the
+    Atdgen command line option -o-name-overlap. It can probably be ignored
+    for most uses of expand_module_body.
+*)
+
 val expand_module_body :
   ?prefix:string ->
   ?keep_poly:bool ->
   ?debug:bool ->
-  Atd_ast.module_body -> Atd_ast.module_body
+  Atd_ast.module_body -> Atd_ast.module_body * original_types
 (**
    Monomorphization of type expressions.
 

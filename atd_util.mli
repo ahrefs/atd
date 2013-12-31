@@ -10,9 +10,15 @@ val read_lexbuf :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  Lexing.lexbuf -> Atd_ast.full_module
+  Lexing.lexbuf -> Atd_ast.full_module * Atd_expand.original_types
   (** Read an ATD file from a lexbuf. See also [read_channel], [load_file]
       and [load_string].
+
+      If expand is true, the second part of the return value will contain
+      a hash table mapping the types generated during monomorphization back
+      to their original polymorphic types. See {!Atd_expand.original_types}
+      for more information about this table. If expand is false, the value
+      will be the empty hash table.
 
       @param expand
              Perform monomorphization by creating specialized
@@ -56,7 +62,7 @@ val read_channel :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  in_channel -> Atd_ast.full_module
+  in_channel -> Atd_ast.full_module * Atd_expand.original_types
   (** Read an ATD file from an [in_channel]. Options: see [read_lexbuf].
       The default [pos_fname] is set to ["<stdin>"] when appropriate. *)
 
@@ -68,7 +74,7 @@ val load_file :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  string -> Atd_ast.full_module
+  string -> Atd_ast.full_module * Atd_expand.original_types
   (** Read an ATD file. Options: see [read_lexbuf].
       The default [pos_fname] is the given input file name. *)
 
@@ -80,7 +86,7 @@ val load_string :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  string -> Atd_ast.full_module
+  string -> Atd_ast.full_module * Atd_expand.original_types
   (** Read ATD data from a string. Options: see [read_lexbuf]. *)
 
 val tsort :

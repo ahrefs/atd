@@ -1377,9 +1377,6 @@ let make_ocaml_files
   let (m1', original_types) =
     Atd_expand.expand_module_body ~keep_poly:true m0
   in
-  Hashtbl.iter (fun k (k0, n) ->
-    printf "original type %s -> %s %i\n%!" k k0 n
-  ) original_types;
   let m2 = Atd_util.tsort m1' in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis

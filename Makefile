@@ -180,7 +180,7 @@ div.atd-doc pre { \
 .PHONY: clean
 clean:
 	rm -f dep
-	rm atd_version.ml
+	rm -f atd_version.ml
 	rm -f $(CMI) $(CMO) $(CMX) $(O) *.annot *.cma *.cmxa *.a
 	rm -f $(patsubst %.mly,%.mli, $(MLY))
 	rm -f $(patsubst %.mly,%.ml, $(MLY))

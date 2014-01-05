@@ -135,6 +135,7 @@ type_expr:
 cartesian_product:
 | x = annot_expr STAR l = cartesian_product   { x :: l }
 | x = annot_expr STAR y = annot_expr          { [ x; y ] }
+| x = annot_expr                              { [ x ] }
 ;
 
 annot_expr:

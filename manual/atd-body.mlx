@@ -380,7 +380,7 @@ discarding white\rval{space} and \rval{comment}s.
 
 \lval{expr-body} & ::= & \rval{args}? \rval{lident} & \\
                  &  |  & \str{(}
-                           \rval{cell} (\str{*} \rval{cell})*
+                           (\rval{cell} (\str{*} \rval{cell})*)?
                          \str{)} & \com{tuple type} \\
                  &  |  & \str{\{}
                            ((\rval{field} (\str{;} \rval{field})*) \str{;}?)?

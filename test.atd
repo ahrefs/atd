@@ -56,6 +56,9 @@ type tuple = (z * z * tuple option * kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
 
 type tuple2 = (int * float)
 
+type singleton = (int)
+type zero_tuple = ()
+
 type 'a i1 =
     [ inherit 'a j2
     | I1 ]

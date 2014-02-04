@@ -6,6 +6,7 @@ val default_annot : Atd_ast.annot_section -> Easy_format.t
 
 val format :
   ?annot: (Atd_ast.annot_section -> Easy_format.t) ->
+  ?filter_names : (string -> bool) ->
   Atd_ast.full_module -> Easy_format.t
   (** Pretty-printing. Use the functions of the [Easy_format.Pretty]
       module to convert an [Easy_format.t] into a string

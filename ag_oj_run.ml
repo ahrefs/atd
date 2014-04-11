@@ -11,6 +11,15 @@ exception Error of string
 *)
 let error s = raise (Error s)
 
+let error_with_line p s =
+  let s2 =
+    match p.Yojson.Lexer_state.fname with
+      Some f -> sprintf "File %s, line %i:\n%s" f p.Yojson.Lexer_state.lnum s
+    | None -> sprintf "Line %i:\n%s" p.Yojson.Lexer_state.lnum s
+  in
+  raise (Error s2)
+
+
 let list_iter f sep x l =
   let rec aux f sep x = function
       [] -> ()
@@ -180,18 +189,18 @@ let read_until_field_value p lb =
   Yojson.Safe.read_colon p lb;
   Yojson.Safe.read_space p lb
 
-let missing_tuple_fields len req_fields =
+let missing_tuple_fields p len req_fields =
   let missing =
     List.fold_right (
       fun i acc -> if i >= len then i :: acc else acc
     ) req_fields []
   in
-  error (sprintf "Missing tuple field%s %s"
+  error_with_line p (sprintf "Missing tuple field%s %s"
 	   (if List.length missing > 1 then "s" else "")
 	   (String.concat ", " (List.map string_of_int missing)))
 
 
-let missing_fields bit_fields field_names =
+let missing_fields p bit_fields field_names =
   let acc = ref [] in
   for z = Array.length field_names - 1 downto 0 do
     let i = z / 31 in
@@ -199,12 +208,12 @@ let missing_fields bit_fields field_names =
     if bit_fields.(i) land (1 lsl j) = 0 then
       acc := field_names.(z) :: !acc
   done;
-  error (sprintf "Missing record field%s %s"
+  error_with_line p (sprintf "Missing record field%s %s"
 	   (if List.length !acc > 1 then "s" else "")
 	   (String.concat ", " !acc))
 
-let invalid_variant_tag s =
-  error (sprintf "Unsupported variant %S" s)
+let invalid_variant_tag p s =
+  error_with_line p (sprintf "Unsupported variant %S" s)
 
 
 (* We want an identity function that is not inlined *)

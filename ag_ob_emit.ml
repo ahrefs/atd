@@ -1611,11 +1611,13 @@ let make_ocaml_files
             ?pos_fname ?pos_lnum
             stdin
   in
-  let m1 =
+  let tsort =
     if all_rec then
-      [ (true, m0) ]
+      function m -> [ (true, m) ]
     else
-      Atd_util.tsort m0
+      Atd_util.tsort
+  in
+  let m1 = tsort m0
   in
   let defs1 = translate_mapping m1 in
   if not name_overlap then Ag_ox_emit.check defs1;
@@ -1623,7 +1625,7 @@ let make_ocaml_files
   let (m1', original_types) =
     Atd_expand.expand_module_body ~keep_poly:true m0
   in
-  let m2 = Atd_util.tsort m1' in
+  let m2 = tsort m1' in
   (* m0 = original type definitions
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)

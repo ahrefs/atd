@@ -1427,7 +1427,7 @@ let () =
   );
 
   (* Parse ATD file *)
-  let head, atd_module =
+  let (atd_head, atd_module), original_types =
     Atd_util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in
@@ -1468,7 +1468,7 @@ let () =
   output_util env;
   output_atdj env;
 
-  output_package_javadoc env head;
+  output_package_javadoc env atd_head;
 
   (* Output graph in dot format *)
   if env.graph then

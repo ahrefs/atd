@@ -4,6 +4,7 @@
 *.cmx
 *.cma
 *.cmxa
+*.cmxs
 *.a
 *.o
 *.annot

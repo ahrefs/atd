@@ -5,6 +5,12 @@ else
 EXE=
 endif
 
+NATDYNLINK := $(shell if [ -f `ocamlc -where`/dynlink.cmxa ]; then echo YES; else echo NO; fi)
+
+ifeq "${NATDYNLINK}" "YES"
+CMXS=atd.cmxs
+endif
+
 SOURCES = \
   atd_version.ml \
   atd_ast.mli atd_ast.ml \
@@ -67,13 +73,13 @@ default: all opt
 
 all: VERSION META atd.cma
 
-opt: VERSION META atd.cmxa atdcat$(EXE)
+opt: VERSION META atd.cmxa $(CMXS) atdcat$(EXE)
 
 install: META
 	test ! -f atdcat || cp atdcat $(BINDIR)/
 	test ! -f atdcat.exe || cp atdcat.exe $(BINDIR)/
 	ocamlfind install atd META \
-	 $(MLI) $(CMI) $(CMO) $(CMX) $(O) atd.cma atd.a atd.cmxa \
+	 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) atd.cma atd.a atd.cmxa \
          $(INSTALL_EXTRAS)
 
 uninstall:
@@ -131,6 +137,9 @@ atd.cma: dep $(CMI) $(CMO)
 
 atd.cmxa: dep $(CMI) $(CMX)
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o atd.cmxa -a $(CMX)
+
+atd.cmxs: dep $(CMI) $(CMX)
+	ocamlfind ocamlopt $(OCAMLFLAGS) -shared -o $(CMXS) $(CMX)
 
 atdcat$(EXE): dep $(CMI) $(CMX) atdcat.ml
 	ocamlfind ocamlopt $(OCAMLFLAGS) -o atdcat$(EXE) \

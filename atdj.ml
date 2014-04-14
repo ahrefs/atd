@@ -1,28 +1,29 @@
-(* Copyright (c) 2011, MyLife.com, Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *    - Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *    - Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
- *    - Neither the name of the <organization> nor the
- *      names of its contributors may be used to endorse or promote products
- *      derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *)
+(*
+Copyright (c) 2011, MyLife.com, Inc.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+   - Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+   - Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+   - Neither the name of the <organization> nor the
+     names of its contributors may be used to endorse or promote products
+     derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*)
 
 (* TODO
  * - Clean up constructors for option types
@@ -35,7 +36,7 @@ open Printf
 open Atd_ast
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Translation environment *)
 
 type id = string
@@ -43,8 +44,10 @@ type ty_name = string
 
 (* Java types *)
 type ty =
-  [ `Class of ty_name * (id * ty_name) list  (* Class name and constructor parameters *)
-  | `Interface of ty_name                    (* Interface name *)
+  [ `Class of ty_name * (id * ty_name) list
+      (* Class name and constructor parameters *)
+  | `Interface of ty_name
+      (* Interface name *)
   ]
 
 module Names = Map.Make(
@@ -77,7 +80,7 @@ let default_env =
   }
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Names *)
 
 (* Translate type names into idiomatic Java class names.  We special case
@@ -126,7 +129,7 @@ let freshen env str =
     (env, str)
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Utilies *)
 
 (* Normalise an ATD type by expanding `top-level' type aliases *)
@@ -194,12 +197,15 @@ let rec assign env dst src java_ty atd_ty indent =
         sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
     | `List (_, ty, _) ->  (* FIXME This is a bodge *)
           sprintf "%s%s = new %s;\n" indent dst
-            (Str.global_replace (Str.regexp "\\[\\]") ("[" ^ src ^ ".length()]") java_ty)
+            (Str.global_replace
+               (Str.regexp "\\[\\]")
+               ("[" ^ src ^ ".length()]") java_ty)
         ^ sprintf "%sfor (int i = 0; i < %s.length(); ++i) {\n" indent src
         ^ sprintf "%s  %s tmp = %s.%s(i);\n" indent
           (json_of_atd env ty) src (get env ty false)
         ^ assign env (dst ^ "[i]") "tmp"
-          (Str.global_replace (Str.regexp "\\[\\]") "" java_ty) ty (indent ^  "  ")
+          (Str.global_replace
+             (Str.regexp "\\[\\]") "" java_ty) ty (indent ^  "  ")
         ^ sprintf "%s}\n" indent
     | `Name (_, (_, ty, _), _) ->
         (match ty with
@@ -224,8 +230,9 @@ let rec assign env dst src java_ty atd_ty indent =
  * support default values for these types).
  *
  * Fields of the `Optional kind extend this behaviour by automatically lifting
- * values of type t to option t by wrapping within a `Some'.  Hence `Optional may
- * only be applied to fields of type option t. Note that absent fields are still
+ * values of type t to option t by wrapping within a `Some'.
+ * Hence `Optional may only be applied to fields of type option t.
+ * Note that absent fields are still
  * assigned `None', as before.
  *
  * For `With_default fields, of types bool, int, float, string and list, we use
@@ -246,10 +253,10 @@ let assign_field env (`Field (_, (name, kind, annots), atd_ty)) java_ty =
   if is_opt then
     match norm_ty env atd_ty with
       | `Name _ -> f ()  (* Primitive types, such as bool, int etc. *)
-      | `List _ -> 
+      | `List _ ->
           let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) name in
             sprintf "    if (jo.has(\"%s\")) {\n" name
-          ^ assign env name src java_ty atd_ty "      " 
+          ^ assign env name src java_ty atd_ty "      "
           ^ sprintf "    } else {\n"
           ^ sprintf "      %s = new %s;\n" name
               (Str.global_replace (Str.regexp "\\[\\]") "[0]" java_ty)
@@ -261,8 +268,10 @@ let assign_field env (`Field (_, (name, kind, annots), atd_ty)) java_ty =
                  sprintf "    if (jo.has(\"%s\")) {\n" name
                  ^ sprintf "      Object[] a = new Object[2];\n"
                  ^ sprintf "      a[0] = new String(\"Some\");\n"
-                 ^ sprintf "      a[1] = jo.%s(\"%s\");\n" (get env sub_atd_ty false) name
-                 ^ sprintf "      %s = new %s(new JSONArray(a));\n" name java_ty
+                 ^ sprintf "      a[1] = jo.%s(\"%s\");\n"
+                     (get env sub_atd_ty false) name
+                 ^ sprintf "      %s = new %s(new JSONArray(a));\n"
+                     name java_ty
                  ^ sprintf "    } else {\n"
                  ^ sprintf "      %s = new %s();\n" name java_ty
                  ^ sprintf "    }\n"
@@ -298,7 +307,8 @@ let accept env var java_ty atd_ty visitor indent =
     let atd_ty = norm_ty env atd_ty in
     match atd_ty with
       | `List _ ->
-          let java_sub_ty = (Str.global_replace (Str.regexp "\\[\\]") "" java_ty) in
+          let java_sub_ty =
+            Str.global_replace (Str.regexp "\\[\\]") "" java_ty in
             sprintf "%sfor (%s elt : %s)\n" indent java_sub_ty var
           ^ sprintf "%s  elt.accept(%s);\n" indent visitor
       | _ ->
@@ -326,8 +336,11 @@ let rec to_string env id atd_ty lift_opt indent =
         ^ sprintf "%sstr += Util.indent(indent) + \"]\";\n" indent
     | `Option _ ->
         sprintf "%sstr += %s.toString(indent, %b);\n" indent id lift_opt
-    | `Name (_, (_, "string", _), _) ->  (* TODO Check that this is the correct behaviour *)
-        sprintf "%sstr += \"\\\"\" + Util.escape(String.valueOf(%s)) + \"\\\"\";\n" indent id
+    | `Name (_, (_, "string", _), _) ->
+        (* TODO Check that this is the correct behaviour *)
+        sprintf
+          "%sstr += \"\\\"\" + Util.escape(String.valueOf(%s)) + \"\\\"\";\n"
+          indent id
     | `Name _ ->
         sprintf "%sstr += String.valueOf(%s);\n" indent id
     | _ ->
@@ -373,7 +386,8 @@ let to_string_field env = function
           | Some p ->  (sprintf "    if (%s) {\n" p, "    }\n", "      ")
           | None   ->  ("", "", "    ") in
         prefix
-      ^ sprintf "%sstr += Util.indent(indent + 2) + \"\\\"%s\\\": \";\n" indent name
+      ^ sprintf "%sstr += Util.indent(indent + 2) + \"\\\"%s\\\": \";\n"
+        indent name
       ^ sprintf "%sindent += 4;\n" indent
       ^ (match atd_ty with
            | `Name _ -> ""
@@ -405,13 +419,15 @@ let hash_code env atd_ty java_ty id res indent =
         let sub_atd_ty = norm_ty env sub_atd_ty in
         (match sub_atd_ty with
            | `Name _ ->
-               let java_sub_ty = Str.global_replace (Str.regexp "\\[\\]$") "" java_ty in
+               let java_sub_ty =
+                 Str.global_replace (Str.regexp "\\[\\]$") "" java_ty in
                let class_name =
                  match java_sub_ty with
                    | "int" -> "Integer"
                    | _     -> String.capitalize java_sub_ty in
                  sprintf "%sfor (int i = 0; i < %s.length; ++i)\n" indent id
-               ^ sprintf "%s  %s *= 31 + new %s(%s[i]).hashCode();\n" indent res class_name id
+               ^ sprintf "%s  %s *= 31 + new %s(%s[i]).hashCode();\n"
+                 indent res class_name id
            | _ ->
                  sprintf "%sfor (int i = 0; i < %s.length; ++i)\n" indent id
                ^ sprintf "%s  %s *= 31 + %s[i].hashCode();\n" indent res id
@@ -427,26 +443,32 @@ let compare_to env atd_ty java_ty this that res indent =
           match java_ty with
             | "int" -> "Integer"
             | _     -> String.capitalize java_ty in
-        sprintf "%s%s = new %s(%s).compareTo(%s);\n" indent res class_name this that
+        sprintf "%s%s = new %s(%s).compareTo(%s);\n"
+          indent res class_name this that
     | `List (_, sub_atd_ty, _) ->
         let sub_atd_ty = norm_ty env sub_atd_ty in
         (match sub_atd_ty with
            | `Name _ ->
-               sprintf "%s%s = Util.compareTo(%s, %s);\n" indent res this that
+               sprintf "%s%s = Util.compareTo(%s, %s);\n"
+                 indent res this that
            | _ ->
                  sprintf "%s{\n" indent
                ^ sprintf "%s  int i = 0;\n" indent
-               ^ sprintf "%s  int minLen = Math.min(%s.length, %s.length);\n" indent this that
+               ^ sprintf "%s  int minLen = Math.min(%s.length, %s.length);\n"
+                 indent this that
                ^ sprintf "%s  for (; i < minLen; ++i) {\n" indent
-               ^ sprintf "%s    int mycmp = %s[i].compareTo(%s[i]);\n" indent this that
+               ^ sprintf "%s    int mycmp = %s[i].compareTo(%s[i]);\n"
+                 indent this that
                ^ sprintf "%s    if (mycmp != 0) {\n" indent
-               ^ sprintf "%s      // Found differing elements; we are done\n" indent
+               ^ sprintf "%s      // Found differing elements; we are done\n"
+                 indent
                ^ sprintf "%s      %s = mycmp;\n" indent res
                ^ sprintf "%s      break;\n" indent
                ^ sprintf "%s    }\n" indent
                ^ sprintf "%s  }\n" indent
                ^ sprintf "%s  if (i == minLen) {\n" indent
-               ^ sprintf "%s    // Identical prefixes; find shorter list\n" indent
+               ^ sprintf "%s    // Identical prefixes; find shorter list\n"
+                 indent
                ^ sprintf "%s    if (%s.length == minLen)\n" indent this
                ^ sprintf "%s      %s = -1;\n" indent res
                ^ sprintf "%s    else if (%s.length == minLen)\n" indent that
@@ -461,7 +483,8 @@ let compare_to env atd_ty java_ty this that res indent =
 (* Generate a javadoc comment *)
 let javadoc loc annots indent =
   let from_inline_text text = indent ^ " * " ^ text ^ "\n" in
-  (* Assume that code is the name of a field that is defined in the same class *)
+  (* Assume that code is the name of a field that is defined
+     in the same class *)
   let from_inline_code code = indent ^ " * {@link #" ^ code ^ "}\n" in
   let from_doc_para acc para =
     List.fold_left
@@ -491,7 +514,7 @@ let javadoc loc annots indent =
   )
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Translation of ATD types into Java types *)
 
 (* For option, sum and record types, we generate a Java class.  Each such class
@@ -550,8 +573,9 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
  * 1. An marker interface
  * 2. A class for each constructor (i.e. Foo and Bar), implementing the marker
  *    interface.
- * 3. A factory class with a static `make' method.  This method accepts a JSON parameter
- *    corresponding to a t, and instantiates the appropriate class from (2) .
+ * 3. A factory class with a static `make' method.
+ *    This method accepts a JSON parameter
+ *    corresponding to a t, and instantiates the appropriate class from (2).
  *)
 and trans_sum my_name env (`Sum (loc, vars, annots)) =
   (* Interface *)
@@ -560,14 +584,16 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
   output_string ifc_out (javadoc loc annots "");
   fprintf ifc_out "public interface %s extends Atdj {\n" ifc_name;
   fprintf ifc_out "  /**\n";
-  fprintf ifc_out "   * Get the the constructor index.  For example, given an ATD type\n";
+  fprintf ifc_out "   * Get the the constructor index.  \
+                        For example, given an ATD type\n";
   fprintf ifc_out "   * <pre>\n";
   fprintf ifc_out "   *   type t =\n";
   fprintf ifc_out "   *     [ Foo of ...\n";
   fprintf ifc_out "   *     | Bar of ...\n";
   fprintf ifc_out "   *     ],\n";
   fprintf ifc_out "   * </pre>\n";
-  fprintf ifc_out "   * {@code Foo} values have index {@code 0} and {@code Bar} values have index {@code 1}.\n";
+  fprintf ifc_out "   * {@code Foo} values have index {@code 0} \
+                        and {@code Bar} values have index {@code 1}.\n";
   fprintf ifc_out "   * @return The constructor index.\n";
   fprintf ifc_out "   */\n";
   fprintf ifc_out "  int getIndex();\n";
@@ -587,7 +613,8 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
        | `Variant (_, (var_name, _), atd_type_expr_opt) ->
            let (env, var_class_name) = freshen env (to_class_name var_name) in
            let out = open_class env var_class_name in
-           fprintf out "public class %s implements %s {\n"  var_class_name ifc_name;
+           fprintf out "public class %s implements %s {\n"
+             var_class_name ifc_name;
            let env =
              (match atd_type_expr_opt with
                 | None ->
@@ -616,7 +643,8 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "\n";
                     fprintf out "  /**\n";
                     fprintf out "   * Test for equality.\n";
-                    fprintf out "   * @return Whether the two objects are equal.\n";
+                    fprintf out "   * @return Whether the \
+                                      two objects are equal.\n";
                     fprintf out "   */\n";
                     fprintf out "  public boolean equals(%s that) {\n" ifc_name;
                     fprintf out "    return this.compareTo(that) == 0;\n";
@@ -633,12 +661,14 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     let (java_ty, env) = trans_inner env atd_ty in
                     fprintf out "  %s(%s value) throws JSONException {\n"
                       var_class_name (json_of_atd env atd_ty);
-                    fprintf out "%s\n" (assign env "this.value" "value" java_ty atd_ty "    ");
+                    fprintf out "%s\n"
+                      (assign env "this.value" "value" java_ty atd_ty "    ");
                     fprintf out "  }\n";
                     fprintf out "\n";
                     fprintf out "  public Visitor accept(Visitor v) {\n";
                     fprintf out "    v.visit(this);\n";
-                    output_string out (accept env "value" java_ty atd_ty "v" "    ");
+                    output_string out
+                      (accept env "value" java_ty atd_ty "v" "    ");
                     fprintf out "    return v;\n";
                     fprintf out "  }\n";
                     fprintf out "\n";
@@ -648,18 +678,22 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "\n";
                     fprintf out "  public String toString(int indent) {\n";
                     fprintf out "    String str = \"\";\n";
-                    fprintf out "    str += Util.indent(indent)";  (* Line continued below *)
-                    fprintf out "+ \"[\\n\" + Util.indent(indent + 2) + \"\\\"%s\\\",\\n\";" var_name;
+                    fprintf out "    str += Util.indent(indent) \
+                                 + \"[\\n\" + Util.indent(indent + 2) \
+                                 + \"\\\"%s\\\",\\n\";" var_name;
                     fprintf out "    indent += 2;\n";
-                    fprintf out "    %s" (to_string env "value" atd_ty false "");
+                    fprintf out "    %s"
+                      (to_string env "value" atd_ty false "");
                     fprintf out "    indent -= 2;\n";
-                    fprintf out "    str += \"\\n\" + Util.indent(indent) + \"]\";\n";
+                    fprintf out "    str += \"\\n\" \
+                                         + Util.indent(indent) + \"]\";\n";
                     fprintf out "    return str;\n";
                     fprintf out "  }\n";
                     fprintf out "\n";
                     fprintf out "  public int hashCode() {\n";
                     fprintf out "    int h = 31 * %d;\n" count;
-                    output_string out (hash_code env atd_ty java_ty "value" "h" "    ");
+                    output_string out
+                      (hash_code env atd_ty java_ty "value" "h" "    ");
                     fprintf out "    return h;\n";
                     fprintf out "  }\n";
                     fprintf out "\n";
@@ -681,7 +715,8 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "\n";
                     fprintf out "  /**\n";
                     fprintf out "   * Test for equality.\n";
-                    fprintf out "   * @return Whether the two objects are equal.\n";
+                    fprintf out "   * @return Whether the \
+                                      two objects are equal.\n";
                     fprintf out "   */\n";
                     fprintf out "  public boolean equals(%s that) {\n" ifc_name;
                     fprintf out "    return this.compareTo(that) == 0;\n";
@@ -693,8 +728,10 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "\n";
                     fprintf out "  public final %s value;\n" java_ty;
                     { env with
-                        types = `Class (var_class_name, ["value", java_ty]) :: env.types;
-                        sub_types = (var_class_name, ifc_name) :: env.sub_types
+                        types = `Class (var_class_name, ["value", java_ty])
+                                :: env.types;
+                        sub_types = (var_class_name, ifc_name)
+                                    :: env.sub_types
                     }
              ) in
            fprintf out "  private final int index = %d;\n" count;
@@ -711,16 +748,19 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
   fprintf fact_out " * Construct objects of type %s.\n" my_name;
   fprintf fact_out " */\n";
   fprintf fact_out "public class %s {\n" fact_name;
-  fprintf fact_out "  public static %s make(String s) throws JSONException {\n" ifc_name;
+  fprintf fact_out "  public static %s make(String s) throws JSONException {\n"
+    ifc_name;
   fprintf fact_out "    try {\n";
   fprintf fact_out "      return make(new JSONArray(s));\n";
   fprintf fact_out "    } catch (Exception e) {\n";
   fprintf fact_out "      // Could not parse as JSONArray, so try as string\n";
-  fprintf fact_out "      return make((Object)Util.unescapeString(Util.parseJSONString(s)));\n";
+  fprintf fact_out "      return make((Object)Util.unescapeString\
+                                                (Util.parseJSONString(s)));\n";
   fprintf fact_out "    }\n";
   fprintf fact_out "  }\n";
   fprintf fact_out "\n";
-  fprintf fact_out "  static %s make(Object o) throws JSONException {\n" ifc_name;
+  fprintf fact_out "  static %s make(Object o) throws JSONException {\n"
+    ifc_name;
   fprintf fact_out "    String tag = Util.tag(o);\n";
   List.iter
     (function
@@ -728,7 +768,8 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
            (match type_expr_opt with
               | None ->
                   fprintf fact_out "    if (tag.equals(\"%s\"))\n" var_name;
-                  fprintf fact_out "      return new %s();\n" (List.assoc var_name names)
+                  fprintf fact_out "      return new %s();\n"
+                    (List.assoc var_name names)
               | Some t ->
                   fprintf fact_out "    if (tag.equals(\"%s\"))\n" var_name;
                   fprintf fact_out "      return new %s(((JSONArray)o).%s(1));\n"
@@ -792,7 +833,8 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   List.iter
     (fun (`Field (_, (field_name, _, _), atd_ty)) ->
        output_string out
-         (accept env field_name (List.assoc field_name java_tys) atd_ty "v" "    ");
+         (accept env field_name
+            (List.assoc field_name java_tys) atd_ty "v" "    ");
     )
     fields;
   fprintf out "  return v;\n";
@@ -833,7 +875,8 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
     (function `Field (_, (field_name, _, _), atd_ty) ->
        let java_ty = List.assoc field_name java_tys in
        output_string out
-         (compare_to env atd_ty java_ty ("this." ^ field_name) ("that." ^ field_name) "cmp" "    ");
+         (compare_to env atd_ty java_ty
+            ("this." ^ field_name) ("that." ^ field_name) "cmp" "    ");
        fprintf out "    if (cmp != 0)\n";
        fprintf out "      return cmp;\n";
     )
@@ -918,7 +961,8 @@ and trans_option env (`Option (_, atd_ty, _)) =
   fprintf out "\n";
   fprintf out "  public Visitor accept(Visitor v) {\n";
   (* Don't visit optional primitive types *)
-  if not (List.mem class_name ["BoolOpt"; "IntOpt"; "FloatOpt"; "StringOpt"]) then (
+  if not (List.mem class_name ["BoolOpt"; "IntOpt"; "FloatOpt"; "StringOpt"])
+  then (
     fprintf out "    v.visit(this);\n";
     if (can_accept env atd_ty) then (
       fprintf out "    if (is_set)\n";
@@ -1010,7 +1054,7 @@ and trans_option env (`Option (_, atd_ty, _)) =
    { env with types = `Class (class_name, ["value", java_ty]) :: env.types } )
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Visitors *)
 
 (* Remove duplicate elements from a list *)
@@ -1060,7 +1104,7 @@ let output_visitor env =
   fprintf out "}\n"
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Graphical ouput *)
 
 (* Ouput a dot graph of the class hierarchy *)
@@ -1084,24 +1128,32 @@ let output_graph env =
                   let args' = String.concat "|"
                     (List.map
                        (fun (x, t) ->
-                          let is_array = Str.string_match (Str.regexp ".*\\[\\]$") t 0 in
-                          let t' = Str.global_replace (Str.regexp "\\[\\]$") "" t in
-                          (* For primitive types, append the type name to the field name *)
+                          let is_array =
+                            Str.string_match (Str.regexp ".*\\[\\]$") t 0 in
+                          let t' =
+                            Str.global_replace (Str.regexp "\\[\\]$") "" t in
+                          (* For primitive types, append the type name
+                             to the field name *)
                           if List.mem t' ["int"; "IntOpt";
                                           "boolean"; "BooleanOpt";
                                           "String"; "StringOpt";
                                           "double"; "DoubleOpt"] then
                             sprintf "%s:%s" x t
                           else (
-                            (* For the rest, place an arc from the type to the field name,
-                             * reversing the apparent direction to give the expected view *)
-                            fprintf out "  \"%s\" -> \"%s\":%s [style=dashed,dir=back]\n" t' c x;
+                            (* For the rest, place an arc from the type
+                               to the field name, reversing the apparent
+                               direction to give the expected view *)
+                            fprintf out
+                              "  \"%s\" -> \"%s\":%s [style=dashed,dir=back]\n"
+                              t' c x;
                             (* The <> notation labels a node *)
-                            sprintf "<%s>%s%s" x x (if is_array then ":[]" else "")
+                            sprintf "<%s>%s%s" x x
+                              (if is_array then ":[]" else "")
                           )
                        )
                        args) in
-                  fprintf out "  %s [shape=record, label=\"{\\N|{%s}}\"]\n" c args'
+                  fprintf out "  %s [shape=record, label=\"{\\N|{%s}}\"]\n"
+                    c args'
            )
        | `Interface i -> fprintf out "  %s [shape=oval]\n" i
     )
@@ -1113,171 +1165,173 @@ let output_graph env =
   close_out out
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Helper classes *)
 
 let output_atdj env =
   let out = open_class env "Atdj" in
-  fprintf out "/**\n";
-  fprintf out " * Common utility interface.\n";
-  fprintf out " */\n";
-  fprintf out "public interface Atdj {\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Get the JSON string representation.\n";
-  fprintf out "   * @return The JSON string.\n";
-  fprintf out "   */\n";
-  fprintf out "  String toString();\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Get the JSON string representation, with each line indented.\n";
-  fprintf out "   * @param indent The number of spaces to indent by.\n";
-  fprintf out "   * @return The indented JSON string.\n";
-  fprintf out "   */\n";
-  fprintf out "  String toString(int indent);\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Get the hash code.\n";
-  fprintf out "   * @return The hash code.\n";
-  fprintf out "   */\n";
-  fprintf out "  int hashCode();\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Accept a visitor.\n";
-  fprintf out "   * @param visitor The visitor.\n";
-  fprintf out "   * @return The same visitor, for covenience.\n";
-  fprintf out "   */\n";
-  fprintf out "  Visitor accept(Visitor visitor);\n";
-  fprintf out "}\n";
+  fprintf out "\
+/**
+ * Common utility interface.
+ */
+public interface Atdj {
+  /**
+   * Get the JSON string representation.
+   * @return The JSON string.
+   */
+  String toString();
+  /**
+   * Get the JSON string representation, with each line indented.
+   * @param indent The number of spaces to indent by.
+   * @return The indented JSON string.
+   */
+  String toString(int indent);
+  /**
+   * Get the hash code.
+   * @return The hash code.
+   */
+  int hashCode();
+  /**
+   * Accept a visitor.
+   * @param visitor The visitor.
+   * @return The same visitor, for convenience.
+   */
+  Visitor accept(Visitor visitor);
+}";
   close_out out
 
 let output_util env =
   let out = open_class env "Util" in
-  fprintf out "class Util {\n";
-  fprintf out "  static String indent(int n) {\n";
-  fprintf out "    String str = \"\";\n";
-  fprintf out "    for (int i = 0; i < n; ++i)\n";
-  fprintf out "       str += \" \";\n";
-  fprintf out "    return str;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  static int compareTo(boolean[] xs, boolean[] ys) {\n";
-  fprintf out "    int minLen = Math.min(xs.length, ys.length);\n";
-  fprintf out "    for (int i = 0; i < minLen; ++i) {\n";
-  fprintf out "      int cmp = new Boolean(xs[i]).compareTo(new Boolean(ys[i]));\n";
-  fprintf out "      if (cmp != 0)\n";
-  fprintf out "        return cmp;\n";
-  fprintf out "    }\n";
-  fprintf out "    if (xs.length < ys.length)\n";
-  fprintf out "      return -1;\n";
-  fprintf out "    else if (xs.length > ys.length)\n";
-  fprintf out "      return 1;\n";
-  fprintf out "    else\n";
-  fprintf out "      return 0;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  static int compareTo(int[] xs, int[] ys) {\n";
-  fprintf out "    int minLen = Math.min(xs.length, ys.length);\n";
-  fprintf out "    for (int i = 0; i < minLen; ++i) {\n";
-  fprintf out "      int cmp = new Integer(xs[i]).compareTo(new Integer(ys[i]));\n";
-  fprintf out "      if (cmp != 0)\n";
-  fprintf out "        return cmp;\n";
-  fprintf out "    }\n";
-  fprintf out "    if (xs.length < ys.length)\n";
-  fprintf out "      return -1;\n";
-  fprintf out "    else if (xs.length > ys.length)\n";
-  fprintf out "      return 1;\n";
-  fprintf out "    else\n";
-  fprintf out "      return 0;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  static int compareTo(double[] xs, double[] ys) {\n";
-  fprintf out "    int minLen = Math.min(xs.length, ys.length);\n";
-  fprintf out "    for (int i = 0; i < minLen; ++i) {\n";
-  fprintf out "      int cmp = new Double(xs[i]).compareTo(new Double(ys[i]));\n";
-  fprintf out "      if (cmp != 0)\n";
-  fprintf out "        return cmp;\n";
-  fprintf out "    }\n";
-  fprintf out "    if (xs.length < ys.length)\n";
-  fprintf out "      return -1;\n";
-  fprintf out "    else if (xs.length > ys.length)\n";
-  fprintf out "      return 1;\n";
-  fprintf out "    else\n";
-  fprintf out "      return 0;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  static int compareTo(String[] xs, String[] ys) {\n";
-  fprintf out "    int minLen = Math.min(xs.length, ys.length);\n";
-  fprintf out "    for (int i = 0; i < minLen; ++i) {\n";
-  fprintf out "      int cmp = xs[i].compareTo(ys[i]);\n";
-  fprintf out "      if (cmp != 0)\n";
-  fprintf out "        return cmp;\n";
-  fprintf out "    }\n";
-  fprintf out "    if (xs.length < ys.length)\n";
-  fprintf out "      return -1;\n";
-  fprintf out "    else if (xs.length > ys.length)\n";
-  fprintf out "      return 1;\n";
-  fprintf out "    else\n";
-  fprintf out "      return 0;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  // Extract the tag of sum-typed value\n";
-  fprintf out "  static String tag(Object value) throws JSONException {\n";
-  fprintf out "    if (value instanceof String)\n";
-  fprintf out "      return (String)value;\n";
-  fprintf out "    else if (value instanceof JSONArray)\n";
-  fprintf out "      return ((JSONArray)value).getString(0);\n";
-  fprintf out "    else throw new JSONException(\"Cannot extract type\");\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  // Is an option value a none?\n";
-  fprintf out "  static boolean isNone(Object value) throws JSONException {\n";
-  fprintf out "    return (value instanceof String) && (((String)value).equals(\"None\"));\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  // Is an option value a Some?\n";
-  fprintf out "  static boolean isSome(Object value) throws JSONException {\n";
-  fprintf out "    return (value instanceof JSONArray)\n";
-  fprintf out "      && ((JSONArray)value).getString(0).equals(\"Some\");\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  // Escape double quotes and backslashes\n";
-  fprintf out "  static String escape(String str) {\n";
-  fprintf out "    return str.replace(\"\\\\\", \"\\\\\\\\\").replace(\"\\\"\", \"\\\\\\\"\");\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  // Parse a JSON string, strictly\n";
-  fprintf out "  static String parseJSONString(String str) throws JSONException {\n";
-  fprintf out "    if (str.length() < 1 || str.charAt(0) != '\"')\n";
-  fprintf out "      // throw new JSONException(\"Expected '\\\"', line 0, column 0\");\n";
-  fprintf out "      throw new JSONException(\"Expected '\\\"'\");\n";
-  fprintf out "    for (int i = 1; i < str.length(); ++i)\n";
-  fprintf out "      if (str.charAt(i) == '\"' && str.charAt(i - 1) != '\\\\' && i < str.length() - 1)\n";
-  fprintf out "        // throw new JSONException(\"Trailing characters, line 0, column \" + (i + 1));\n";
-  fprintf out "        throw new JSONException(\"Trailing characters\");\n";
-  fprintf out "    if (str.length() < 2 || str.charAt(str.length() - 1) != '\"')\n";
-  fprintf out "      // throw new JSONException(\"Unterminated string '\\\"', line 0, column \" + (str.length() - 1));\n";
-  fprintf out "      throw new JSONException(\"Unterminated string '\\\"'\");\n";
-  fprintf out "    return str.substring(1, str.length() - 1);\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  // Unescape escaped backslashes and double quotations.\n";
-  fprintf out "  // All other escape sequences are considered invalid (this is probably too strict).\n";
-  fprintf out "  static String unescapeString(String str) throws JSONException {\n";
-  fprintf out "    StringBuffer buf = new StringBuffer();\n";
-  fprintf out "    for (int i = 0; i < str.length(); ++i) {\n";
-  fprintf out "      if (str.charAt(i) == '\\\\') {\n";
-  fprintf out "        if (i == str.length() - 1 ||\n";
-  fprintf out "            (str.charAt(i + 1) != '\\\\' && str.charAt(i + 1) != '\"'))\n";
-  fprintf out "          // throw new JSONException(\"Invalid escape, line 0, column \" + (i + 1));\n";
-  fprintf out "          throw new JSONException(\"Invalid escape\");\n";
-  fprintf out "        else {\n";
-  fprintf out "          buf.append(str.charAt(i + 1));\n";
-  fprintf out "          ++i;\n";
-  fprintf out "        }\n";
-  fprintf out "      } else {\n";
-  fprintf out "        buf.append(str.charAt(i));\n";
-  fprintf out "      }\n";
-  fprintf out "    }\n";
-  fprintf out "    return buf.toString();\n";
-  fprintf out "  }\n";
-  fprintf out "}\n";
+  fprintf out "\
+class Util {
+  static String indent(int n) {
+    String str = \"\";
+    for (int i = 0; i < n; ++i)
+       str += \" \";
+    return str;
+  }
+
+  static int compareTo(boolean[] xs, boolean[] ys) {
+    int minLen = Math.min(xs.length, ys.length);
+    for (int i = 0; i < minLen; ++i) {
+      int cmp = new Boolean(xs[i]).compareTo(new Boolean(ys[i]));
+      if (cmp != 0)
+        return cmp;
+    }
+    if (xs.length < ys.length)
+      return -1;
+    else if (xs.length > ys.length)
+      return 1;
+    else
+      return 0;
+  }
+
+  static int compareTo(int[] xs, int[] ys) {
+    int minLen = Math.min(xs.length, ys.length);
+    for (int i = 0; i < minLen; ++i) {
+      int cmp = new Integer(xs[i]).compareTo(new Integer(ys[i]));
+      if (cmp != 0)
+        return cmp;
+    }
+    if (xs.length < ys.length)
+      return -1;
+    else if (xs.length > ys.length)
+      return 1;
+    else
+      return 0;
+  }
+
+  static int compareTo(double[] xs, double[] ys) {
+    int minLen = Math.min(xs.length, ys.length);
+    for (int i = 0; i < minLen; ++i) {
+      int cmp = new Double(xs[i]).compareTo(new Double(ys[i]));
+      if (cmp != 0)
+        return cmp;
+    }
+    if (xs.length < ys.length)
+      return -1;
+    else if (xs.length > ys.length)
+      return 1;
+    else
+      return 0;
+  }
+
+  static int compareTo(String[] xs, String[] ys) {
+    int minLen = Math.min(xs.length, ys.length);
+    for (int i = 0; i < minLen; ++i) {
+      int cmp = xs[i].compareTo(ys[i]);
+      if (cmp != 0)
+        return cmp;
+    }
+    if (xs.length < ys.length)
+      return -1;
+    else if (xs.length > ys.length)
+      return 1;
+    else
+      return 0;
+  }
+
+  // Extract the tag of sum-typed value
+  static String tag(Object value) throws JSONException {
+    if (value instanceof String)
+      return (String)value;
+    else if (value instanceof JSONArray)
+      return ((JSONArray)value).getString(0);
+    else throw new JSONException(\"Cannot extract type\");
+  }
+
+  // Is an option value a none?
+  static boolean isNone(Object value) throws JSONException {
+    return (value instanceof String) && (((String)value).equals(\"None\"));
+  }
+
+  // Is an option value a Some?
+  static boolean isSome(Object value) throws JSONException {
+    return (value instanceof JSONArray)
+      && ((JSONArray)value).getString(0).equals(\"Some\");
+  }
+
+  // Escape double quotes and backslashes
+  static String escape(String str) {
+    return str.replace(\"\\\\\", \"\\\\\\\\\").replace(\"\\\"\", \"\\\\\\\"\");
+  }
+
+  // Parse a JSON string, strictly
+  static String parseJSONString(String str) throws JSONException {
+    if (str.length() < 1 || str.charAt(0) != '\"')
+      throw new JSONException(\"Expected '\\\"'\");
+    for (int i = 1; i < str.length(); ++i)
+      if (str.charAt(i) == '\"'
+          && str.charAt(i - 1) != '\\\\'
+          && i < str.length() - 1)
+        throw new JSONException(\"Trailing characters\");
+    if (str.length() < 2 || str.charAt(str.length() - 1) != '\"')
+      throw new JSONException(\"Unterminated string '\\\"'\");
+    return str.substring(1, str.length() - 1);
+  }
+
+  // Unescape escaped backslashes and double quotations.
+  // All other escape sequences are considered invalid
+  // (this is probably too strict).
+  static String unescapeString(String str) throws JSONException {
+    StringBuffer buf = new StringBuffer();
+    for (int i = 0; i < str.length(); ++i) {
+      if (str.charAt(i) == '\\\\') {
+        if (i == str.length() - 1 ||
+            (str.charAt(i + 1) != '\\\\' && str.charAt(i + 1) != '\"'))
+          throw new JSONException(\"Invalid escape\");
+        else {
+          buf.append(str.charAt(i + 1));
+          ++i;
+        }
+      } else {
+        buf.append(str.charAt(i));
+      }
+    }
+    return buf.toString();
+  }
+}
+";
   close_out out
 
 let output_package_javadoc env (loc, annots) =
@@ -1310,7 +1364,7 @@ let output_package_javadoc env (loc, annots) =
   close_out out
 
 
-(* --------------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
 (* Main *)
 
 let args_spec env = Arg.align

@@ -30,6 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * - Change naming for variant constructors
  * - Add support for lists of lists
  * - Add location information to exceptions (need own parser)
+ * - Print full type expression instead of "not yet implemented"; requires
+ *   string_of_type_expr function provided by the atd library.
  *)
 
 open Printf
@@ -132,15 +134,34 @@ let freshen env str =
 (* ------------------------------------------------------------------------- *)
 (* Utilies *)
 
+(* Get rid of `wrap' constructors that we don't support on the Java side yet.
+   They could be useful for timestamps, though. *)
+let rec unwrap atd_ty =
+  match atd_ty with
+  | `Wrap (_, x, _) -> unwrap x
+  | x -> x
+
 (* Normalise an ATD type by expanding `top-level' type aliases *)
 let rec norm_ty env atd_ty =
+  let atd_ty = unwrap atd_ty in
   match atd_ty with
     | `Name (_, (_, name, _), _) ->
         (match name with
-           | "bool" | "int" | "float" | "string" -> atd_ty
-           | _ -> norm_ty env (List.assoc name env.module_items)
+           | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
+           | _ ->
+               (try
+                  let x = List.assoc name env.module_items in
+                  norm_ty env x
+                with Not_found ->
+                  eprintf "Warning: unknown type %s\n%!" name;
+                  atd_ty
+               )
         )
     | _ -> atd_ty
+
+let not_supported x =
+  let loc = Atd_ast.loc_of_type_expr x in
+  Atd_ast.error_at loc "Construct not yet supported by atdj."
 
 (* Calculate the JSON representation of an ATD type.
  *
@@ -169,7 +190,7 @@ let json_of_atd env atd_ty =
            | "string" -> "String"
            | _        -> assert false
         )
-    | _ -> failwith "Not yet implemented"
+    | x -> not_supported x
 
 (* Calculate the method name required to extract the JSON representation of an
  * ATD value from either a JSONObject or a JSONArray.
@@ -213,7 +234,7 @@ let rec assign env dst src java_ty atd_ty indent =
                sprintf "%s%s = %s;\n" indent dst src
            | _  -> assert false
         )
-    | _ -> failwith "Not yet implemented"
+    | x -> not_supported x
 
 (* Assign from an object field, with support for optional fields.  The are two
  * kinds of optional fields: `With_default (~) and `Optional (?).  For both
@@ -250,7 +271,7 @@ let assign_field env (`Field (_, (name, kind, annots), atd_ty)) java_ty =
   let f () =
     let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) name in
     assign env name src java_ty atd_ty "    " in
-  if is_opt then
+  if is_opt then (
     match norm_ty env atd_ty with
       | `Name _ -> f ()  (* Primitive types, such as bool, int etc. *)
       | `List _ ->
@@ -283,9 +304,11 @@ let assign_field env (`Field (_, (name, kind, annots), atd_ty)) java_ty =
                  ^ sprintf "      %s = new %s();\n" name java_ty
              | _ -> assert false
           )
-      | _ -> failwith "Not yet supported"
+      | x -> not_supported x
+  )
   else
     f ()
+
 
 (* Check whether a type supports an accept method *)
 let rec can_accept env atd_ty =
@@ -298,7 +321,7 @@ let rec can_accept env atd_ty =
         can_accept env sub_atd_ty
     | `List (_, sub_atd_ty, _) ->
         can_accept env sub_atd_ty
-    | _ -> failwith "Not yet implemented"
+    | x -> not_supported x
 
 (* Generate an accept method for a type *)
 let accept env var java_ty atd_ty visitor indent =
@@ -499,7 +522,7 @@ let javadoc loc annots indent =
         List.fold_left
           (fun acc -> function
              | `Paragraph para -> from_doc_para acc para
-             | `Pre _          -> failwith "Not yet implemented"
+             | `Pre _ -> failwith "Preformatted doc blocks are not supported"
           )
           []
           blocks in
@@ -554,7 +577,7 @@ let open_class env cname =
 let rec trans_module env items = List.fold_left trans_outer env items
 
 and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
-  match atd_ty with
+  match unwrap atd_ty with
     | `Sum _ as s ->
         trans_sum name env s
     | `Record _ as r ->
@@ -562,7 +585,7 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
     | `Name (_, (_, name, _), _) ->
         (* Don't translate primitive types at the top-level *)
         env
-    | _ -> failwith "Not yet implemented"
+    | x -> not_supported x
 
 (* Translation of sum types.  For a sum type
  *
@@ -918,7 +941,7 @@ and trans_inner env atd_ty =
   | `List (_, sub_atd_ty, _)  ->
       let (ty', env) = trans_inner env sub_atd_ty in
       (ty' ^ "[]", env)
-  | _ -> assert false
+  | x -> not_supported x
 
 (* Translate an option type *)
 and trans_option env (`Option (_, atd_ty, _)) =
@@ -1341,7 +1364,7 @@ let output_package_javadoc env (loc, annots) =
     List.fold_left
       (fun acc -> function
          | `Text text -> text :: acc
-         | `Code _    -> failwith "Not yet implemented"
+         | `Code _ -> failwith "Not yet implemented: code in javadoc comments"
       )
       acc
       para in
@@ -1350,7 +1373,9 @@ let output_package_javadoc env (loc, annots) =
         List.fold_left
           (fun acc -> function
              | `Paragraph para -> from_doc_para acc para
-             | `Pre _          -> failwith "Not yet implemented"
+             | `Pre _ ->
+                 failwith "Not yet implemented: \
+                           preformatted text in javadoc comments"
           )
           []
           blocks in
@@ -1396,7 +1421,8 @@ let make_package_dirs package =
     )
     "." dirs
 
-let () =
+let main () =
+  Printexc.record_backtrace true;
   let env = ref default_env in
 
   (* Parse command line options *)
@@ -1473,3 +1499,9 @@ let () =
   (* Output graph in dot format *)
   if env.graph then
     output_graph env
+
+let () =
+  try main ()
+  with Atd_ast.Atd_error s ->
+    eprintf "Error:\n%s\n" s;
+    exit 1

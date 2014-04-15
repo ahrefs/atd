@@ -1,5 +1,3 @@
-# $Id$
-
 # No default target.
 # `omake pdf' requires pdflatex and builds readme.pdf
 # `omake txt' requires hevea and builds readme.txt

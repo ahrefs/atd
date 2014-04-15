@@ -1,13 +1,13 @@
 (* Sum *)
 type t =
-  [ U       
+  [ U
   | V of v
   | W of w
   | X of x
   ]
 
 (* Record *)
-type v = 
+type v =
   { b <doc text="foo bar baz"> : bool
   ; i : int
   ; s : string

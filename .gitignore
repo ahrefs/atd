@@ -1,0 +1,16 @@
+*~
+*.cm[ioxa]
+*.cmx[as]
+*.o
+*.a
+*.annot
+*.opt
+.omakedb
+.omakedb.lock
+*.omc
+*.class
+atdj
+com
+doc/test
+*.dot
+*.pdf

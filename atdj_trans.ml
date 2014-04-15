@@ -1,167 +1,6 @@
-(*
-Copyright (c) 2011, MyLife.com, Inc.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-   - Redistributions of source code must retain the above copyright
-     notice, this list of conditions and the following disclaimer.
-   - Redistributions in binary form must reproduce the above copyright
-     notice, this list of conditions and the following disclaimer in the
-     documentation and/or other materials provided with the distribution.
-   - Neither the name of the <organization> nor the
-     names of its contributors may be used to endorse or promote products
-     derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*)
-
-(* TODO
- * - Clean up constructors for option types
- * - Change naming for variant constructors
- * - Add support for lists of lists
- * - Add location information to exceptions (need own parser)
- * - Print full type expression instead of "not yet implemented"; requires
- *   string_of_type_expr function provided by the atd library.
- *)
-
 open Printf
-open Atd_ast
-
-
-(* ------------------------------------------------------------------------- *)
-(* Translation environment *)
-
-type id = string
-type ty_name = string
-
-(* Java types *)
-type ty =
-  [ `Class of ty_name * (id * ty_name) list
-      (* Class name and constructor parameters *)
-  | `Interface of ty_name
-      (* Interface name *)
-  ]
-
-module Names = Map.Make(
-  struct
-    type t = string
-    let compare = Pervasives.compare
-  end
-)
-
-type env_t =
-  { module_items : (string * type_expr) list
-  ; package      : string
-  ; package_dir  : string
-  ; input_file   : string option
-  ; graph        : bool
-  ; types        : ty list
-  ; sub_types    : (ty_name * ty_name) list
-  ; names        : int Names.t
-  }
-
-let default_env =
-  { module_items = []
-  ; package      = "out"
-  ; package_dir  = "out"
-  ; input_file   = None
-  ; graph        = false              (* Whether to ouput a dot graph *)
-  ; types        = []                 (* Generated Java types *)
-  ; sub_types    = []                 (* Sub-typing relation amongst types *)
-  ; names        = Names.empty        (* Current used names, for freshening *)
-  }
-
-
-(* ------------------------------------------------------------------------- *)
-(* Names *)
-
-(* Translate type names into idiomatic Java class names.  We special case
- * `string', `int' and `bool'  (see code).  For the remainder, we remove
- * underscores and capitalise any character that is immediately following
- * an underscore or digit.  We also capitalise the initial character
- * e.g. "foo_bar42baz" becomes "FooBar42Baz". *)
-let to_class_name str =
-  let str = Str.global_replace (Str.regexp "\\[\\]") "Array" str in
-  match str with
-    | "string" -> "String"
-    | "int"    -> "int"
-    | "bool"   -> "boolean"
-    | "float"  -> "double"
-    | _ ->
-        let res    = String.copy str in
-        let offset = ref 0 in
-        let upper  = ref true in
-        let f = function
-          | '_' ->
-              upper := true;
-          | ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9') as x ->
-              upper := true;
-              res.[!offset] <- x;
-              incr offset
-          | _ as x ->
-              if !upper then (
-                res.[!offset] <- Char.uppercase x;
-                upper := false
-              ) else
-                res.[!offset] <- x;
-              incr offset in
-        String.iter f str;
-        String.sub res 0 !offset
-
-(* Generate a unique name by appending, if necessary, an integer
- * suffix to the string.  For example, after successive calls with the name
- * `foo', we obtain `foo', `foo1', `foo2' etc. *)
-let freshen env str =
-  if Names.mem str env.names then
-    let n = succ (Names.find str env.names) in
-    let env = { env with names = Names.add str n env.names } in
-    (env, str ^ (string_of_int n))
-  else
-    let env = { env with names = Names.add str 0 env.names } in
-    (env, str)
-
-
-(* ------------------------------------------------------------------------- *)
-(* Utilies *)
-
-(* Get rid of `wrap' constructors that we don't support on the Java side yet.
-   They could be useful for timestamps, though. *)
-let rec unwrap atd_ty =
-  match atd_ty with
-  | `Wrap (_, x, _) -> unwrap x
-  | x -> x
-
-(* Normalise an ATD type by expanding `top-level' type aliases *)
-let rec norm_ty env atd_ty =
-  let atd_ty = unwrap atd_ty in
-  match atd_ty with
-    | `Name (_, (_, name, _), _) ->
-        (match name with
-           | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
-           | _ ->
-               (try
-                  let x = List.assoc name env.module_items in
-                  norm_ty env x
-                with Not_found ->
-                  eprintf "Warning: unknown type %s\n%!" name;
-                  atd_ty
-               )
-        )
-    | _ -> atd_ty
-
-let not_supported x =
-  let loc = Atd_ast.loc_of_type_expr x in
-  Atd_ast.error_at loc "Construct not yet supported by atdj."
+open Atdj_env
+open Atdj_util
 
 (* Calculate the JSON representation of an ATD type.
  *
@@ -602,7 +441,7 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
  *)
 and trans_sum my_name env (`Sum (loc, vars, annots)) =
   (* Interface *)
-  let ifc_name = to_class_name my_name in
+  let ifc_name = Atdj_names.to_class_name my_name in
   let ifc_out = open_class env ifc_name in
   output_string ifc_out (javadoc loc annots "");
   fprintf ifc_out "public interface %s extends Atdj {\n" ifc_name;
@@ -634,7 +473,8 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
   let (env, names, _) = List.fold_left
     (fun (env, names, count) -> function
        | `Variant (_, (var_name, _), atd_type_expr_opt) ->
-           let (env, var_class_name) = freshen env (to_class_name var_name) in
+           let (env, var_class_name) =
+             Atdj_names.freshen env (Atdj_names.to_class_name var_name) in
            let out = open_class env var_class_name in
            fprintf out "public class %s implements %s {\n"
              var_class_name ifc_name;
@@ -765,7 +605,7 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
     )
     (env, [], 1) vars in
   (* Factory class *)
-  let fact_name = to_class_name (my_name ^ "Factory") in
+  let fact_name = Atdj_names.to_class_name (my_name ^ "Factory") in
   let fact_out = open_class env fact_name in
   fprintf fact_out "/**\n";
   fprintf fact_out " * Construct objects of type %s.\n" my_name;
@@ -829,7 +669,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
     ([], env) fields in
   let java_tys = List.rev java_tys in
   (* Output Java class *)
-  let class_name = to_class_name my_name in
+  let class_name = Atdj_names.to_class_name my_name in
   let out = open_class env class_name in
   (* Javadoc *)
   output_string out (javadoc loc annots "");
@@ -934,9 +774,9 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
          | `Name (_, (_, name2, _), _) ->
              (* It's a primitive type e.g. int *)
-             (to_class_name name2, env)
+             (Atdj_names.to_class_name name2, env)
          | _ ->
-             (to_class_name name1, env)
+             (Atdj_names.to_class_name name1, env)
       )
   | `List (_, sub_atd_ty, _)  ->
       let (ty', env) = trans_inner env sub_atd_ty in
@@ -946,7 +786,7 @@ and trans_inner env atd_ty =
 (* Translate an option type *)
 and trans_option env (`Option (_, atd_ty, _)) =
   let (java_ty, env) = trans_inner env atd_ty in
-  let class_name = to_class_name (java_ty ^ "Opt") in
+  let class_name = Atdj_names.to_class_name (java_ty ^ "Opt") in
   let out = open_class env class_name in
   fprintf out "/** An optional %s. */\n" java_ty;
   fprintf out "public class %s implements Atdj {\n" class_name;
@@ -1077,6 +917,7 @@ and trans_option env (`Option (_, atd_ty, _)) =
    { env with types = `Class (class_name, ["value", java_ty]) :: env.types } )
 
 
+
 (* ------------------------------------------------------------------------- *)
 (* Visitors *)
 
@@ -1125,383 +966,3 @@ let output_visitor env =
     )
     (unique env.types);
   fprintf out "}\n"
-
-
-(* ------------------------------------------------------------------------- *)
-(* Graphical ouput *)
-
-(* Ouput a dot graph of the class hierarchy *)
-let output_graph env =
-  let filename =
-    match env.input_file with
-      | None   -> assert false
-      | Some x -> Filename.chop_extension x ^ ".dot" in
-  let out = open_out filename in
-  let env = { env with
-                types     = unique env.types;
-                sub_types = unique env.sub_types } in
-  fprintf out "digraph \"G\" {\n";
-  fprintf out "  rankdir=BT\n";
-  List.iter
-    (function
-       | `Class (c, args) ->
-           (match args with
-              | [] -> fprintf out "  %s [shape=box]\n" c
-              | _  ->
-                  let args' = String.concat "|"
-                    (List.map
-                       (fun (x, t) ->
-                          let is_array =
-                            Str.string_match (Str.regexp ".*\\[\\]$") t 0 in
-                          let t' =
-                            Str.global_replace (Str.regexp "\\[\\]$") "" t in
-                          (* For primitive types, append the type name
-                             to the field name *)
-                          if List.mem t' ["int"; "IntOpt";
-                                          "boolean"; "BooleanOpt";
-                                          "String"; "StringOpt";
-                                          "double"; "DoubleOpt"] then
-                            sprintf "%s:%s" x t
-                          else (
-                            (* For the rest, place an arc from the type
-                               to the field name, reversing the apparent
-                               direction to give the expected view *)
-                            fprintf out
-                              "  \"%s\" -> \"%s\":%s [style=dashed,dir=back]\n"
-                              t' c x;
-                            (* The <> notation labels a node *)
-                            sprintf "<%s>%s%s" x x
-                              (if is_array then ":[]" else "")
-                          )
-                       )
-                       args) in
-                  fprintf out "  %s [shape=record, label=\"{\\N|{%s}}\"]\n"
-                    c args'
-           )
-       | `Interface i -> fprintf out "  %s [shape=oval]\n" i
-    )
-    env.types;
-  List.iter
-    (function (ty, ty') -> fprintf out "  %s -> %s [style=solid]\n" ty ty')
-    env.sub_types;
-  fprintf out "}\n";
-  close_out out
-
-
-(* ------------------------------------------------------------------------- *)
-(* Helper classes *)
-
-let output_atdj env =
-  let out = open_class env "Atdj" in
-  fprintf out "\
-/**
- * Common utility interface.
- */
-public interface Atdj {
-  /**
-   * Get the JSON string representation.
-   * @return The JSON string.
-   */
-  String toString();
-  /**
-   * Get the JSON string representation, with each line indented.
-   * @param indent The number of spaces to indent by.
-   * @return The indented JSON string.
-   */
-  String toString(int indent);
-  /**
-   * Get the hash code.
-   * @return The hash code.
-   */
-  int hashCode();
-  /**
-   * Accept a visitor.
-   * @param visitor The visitor.
-   * @return The same visitor, for convenience.
-   */
-  Visitor accept(Visitor visitor);
-}";
-  close_out out
-
-let output_util env =
-  let out = open_class env "Util" in
-  fprintf out "\
-class Util {
-  static String indent(int n) {
-    String str = \"\";
-    for (int i = 0; i < n; ++i)
-       str += \" \";
-    return str;
-  }
-
-  static int compareTo(boolean[] xs, boolean[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Boolean(xs[i]).compareTo(new Boolean(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(int[] xs, int[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Integer(xs[i]).compareTo(new Integer(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(double[] xs, double[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Double(xs[i]).compareTo(new Double(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(String[] xs, String[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = xs[i].compareTo(ys[i]);
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  // Extract the tag of sum-typed value
-  static String tag(Object value) throws JSONException {
-    if (value instanceof String)
-      return (String)value;
-    else if (value instanceof JSONArray)
-      return ((JSONArray)value).getString(0);
-    else throw new JSONException(\"Cannot extract type\");
-  }
-
-  // Is an option value a none?
-  static boolean isNone(Object value) throws JSONException {
-    return (value instanceof String) && (((String)value).equals(\"None\"));
-  }
-
-  // Is an option value a Some?
-  static boolean isSome(Object value) throws JSONException {
-    return (value instanceof JSONArray)
-      && ((JSONArray)value).getString(0).equals(\"Some\");
-  }
-
-  // Escape double quotes and backslashes
-  static String escape(String str) {
-    return str.replace(\"\\\\\", \"\\\\\\\\\").replace(\"\\\"\", \"\\\\\\\"\");
-  }
-
-  // Parse a JSON string, strictly
-  static String parseJSONString(String str) throws JSONException {
-    if (str.length() < 1 || str.charAt(0) != '\"')
-      throw new JSONException(\"Expected '\\\"'\");
-    for (int i = 1; i < str.length(); ++i)
-      if (str.charAt(i) == '\"'
-          && str.charAt(i - 1) != '\\\\'
-          && i < str.length() - 1)
-        throw new JSONException(\"Trailing characters\");
-    if (str.length() < 2 || str.charAt(str.length() - 1) != '\"')
-      throw new JSONException(\"Unterminated string '\\\"'\");
-    return str.substring(1, str.length() - 1);
-  }
-
-  // Unescape escaped backslashes and double quotations.
-  // All other escape sequences are considered invalid
-  // (this is probably too strict).
-  static String unescapeString(String str) throws JSONException {
-    StringBuffer buf = new StringBuffer();
-    for (int i = 0; i < str.length(); ++i) {
-      if (str.charAt(i) == '\\\\') {
-        if (i == str.length() - 1 ||
-            (str.charAt(i + 1) != '\\\\' && str.charAt(i + 1) != '\"'))
-          throw new JSONException(\"Invalid escape\");
-        else {
-          buf.append(str.charAt(i + 1));
-          ++i;
-        }
-      } else {
-        buf.append(str.charAt(i));
-      }
-    }
-    return buf.toString();
-  }
-}
-";
-  close_out out
-
-let output_package_javadoc env (loc, annots) =
-  let out = open_out (env.package_dir ^ "/" ^ "package.html") in
-  output_string out "<body>\n";
-  let from_doc_para acc para =
-    List.fold_left
-      (fun acc -> function
-         | `Text text -> text :: acc
-         | `Code _ -> failwith "Not yet implemented: code in javadoc comments"
-      )
-      acc
-      para in
-  let from_doc = function
-    | `Text blocks ->
-        List.fold_left
-          (fun acc -> function
-             | `Paragraph para -> from_doc_para acc para
-             | `Pre _ ->
-                 failwith "Not yet implemented: \
-                           preformatted text in javadoc comments"
-          )
-          []
-          blocks in
-  (match Ag_doc.get_doc loc annots with
-     | Some doc ->
-         let str = String.concat "\n<p>\n" (List.rev (from_doc doc)) in
-         output_string out str
-     | _ -> ()
-  );
-  output_string out "\n</body>";
-  close_out out
-
-
-(* ------------------------------------------------------------------------- *)
-(* Main *)
-
-let args_spec env = Arg.align
-    [ ("-package",
-       Arg.String (fun x -> env := { !env with package = x }),
-       " Package name of generated files")
-    ; ("-graph",
-       Arg.Unit   (fun x -> env := { !env with graph = true }),
-       " Output class graph in dot format")
-    ]
-
-let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"
-
-let make_package_dirs package =
-  let re   = Str.regexp "\\." in
-  let dirs = Str.split re package in
-  List.fold_left
-    (fun parent dir ->
-       let full_dir = parent ^ "/" ^ dir in
-       if Sys.file_exists full_dir then
-         if not (Sys.is_directory full_dir) then
-           failwith (
-             sprintf "Cannot make directory %s: file already exists" full_dir
-           )
-         else ()
-       else
-         Unix.mkdir full_dir 0o755;
-       full_dir
-    )
-    "." dirs
-
-let main () =
-  Printexc.record_backtrace true;
-  let env = ref default_env in
-
-  (* Parse command line options *)
-  let args_spec' = args_spec env in
-  Arg.parse args_spec'
-    (fun x -> env := { !env with input_file = Some x }) usage_msg;
-
-  (* Check for input file *)
-  let input_file =
-    match !env.input_file with
-      | None   ->
-          prerr_endline "No input file specified";
-          Arg.usage args_spec' usage_msg;
-          exit 1
-      | Some x ->
-          if not (Filename.check_suffix x ".atd") then (
-            prerr_endline "Input filename must end with `.atd'";
-            Arg.usage args_spec' usage_msg;
-            exit 1
-          ) else x in
-
-  (* Validate package name *)
-  let re = Str.regexp "^[a-zA-Z0-9]+\\(\\.[a-zA-Z0-9]+\\)*$" in
-  if not (Str.string_match re !env.package 0) then (
-    prerr_endline "Invalid package name";
-    Arg.usage args_spec' usage_msg;
-    exit 1
-  );
-
-  (* Parse ATD file *)
-  let (atd_head, atd_module), original_types =
-    Atd_util.load_file
-      ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
-  in
-  env := { !env with
-             module_items =
-               List.map
-                 (function (`Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
-                 atd_module };
-
-  (* Create package directories *)
-  env := { !env with package_dir = make_package_dirs !env.package };
-
-  (* Pre-populate fresh name generator with top-level names.
-   * Top-level names are guaranteed unique amonst themselves, and
-   * therefore can be output without freshening.  However, variant
-   * names may collide, both with top-level names and also amongst
-   * themselves.  Therefore these latter names must be freshened (see
-   * trans_variant).
-   *)
-  let env =
-    List.fold_left
-      (fun env (`Type (_, (name, _, _), _)) ->
-         let (env, _) = freshen env (to_class_name name) in
-         (* Bodge to prevent possible collision between variants and ... *)
-         let (env, _) = freshen env (to_class_name (name ^ "Opt")) in
-         let (env, _) = freshen env (to_class_name (name ^ "Factory")) in
-         env)
-      !env
-      atd_module in
-
-  (* Generate classes from ATD definition *)
-  let env = trans_module env atd_module in
-
-  (* Generate the visitor interface *)
-  output_visitor env;
-
-  (* Output helper classes *)
-  output_util env;
-  output_atdj env;
-
-  output_package_javadoc env atd_head;
-
-  (* Output graph in dot format *)
-  if env.graph then
-    output_graph env
-
-let () =
-  try main ()
-  with Atd_ast.Atd_error s ->
-    eprintf "Error:\n%s\n" s;
-    exit 1

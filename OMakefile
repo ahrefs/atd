@@ -1,7 +1,14 @@
 USE_OCAMLFIND = true
 BYTE_ENABLED = true
 
-FILES[] = atdj
+FILES[] =
+  atdj_env
+  atdj_names
+  atdj_util
+  atdj_trans
+  atdj_graph
+  atdj_helper
+  atdj_main
 
 OCAMLFLAGS = -dtypes -g
 OCAMLPACKS = str unix atd atdgen

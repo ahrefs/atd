@@ -1,30 +1,34 @@
+(* Sum (enum) *)
+type e = [ Alpha | Beta ]
+
 (* Sum *)
-type t =
-  [ U
+type t = [
+  | U
   | V of v
   | W of w
   | X of x
-  ]
+]
 
 (* Record *)
-type v =
-  { b <doc text="foo bar baz"> : bool
-  ; i : int
-  ; s : string
-  ; o : bool option
-  ; l : bool list
-  }
+type v = {
+  b <doc text="foo bar baz"> : bool;
+  i : int;
+  s : string;
+  o : bool option;
+  l : bool list;
+}
 
 <doc text="wibble">
 
 (* Record with default fields *)
-type w =
-  { ~b : bool
-  ; ~i : int
-  ; ~s : string
-  ; ~o : bool option
-  ; ~l : bool list
-  }
+type w = {
+  ~b : bool;
+  ~i : int;
+  ~s : string;
+  ~o : bool option;
+  ~l : bool list;
+(*  ~e : e; *)
+}
 
 (* Record with optional field *)
 type x = { ?o : bool option }

@@ -15,7 +15,7 @@ public class AtdjTest {
   public void testUEquals() throws JSONException {
     T t1 = TFactory.make("\"U\"");
     T t2 = TFactory.make("\"U\"");
-    T t3 = TFactory.make("[\"W\", {}]");
+    T t3 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
 
     assertTrue(t1.equals(t1));
     assertTrue(t1.compareTo(t1) == 0);
@@ -136,7 +136,7 @@ public class AtdjTest {
 
   @Test
   public void testW() throws JSONException {
-    T t = TFactory.make("[\"W\", {}]");
+    T t = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
     assertTrue(t instanceof W1);
 
     W w = ((W1)t).value;
@@ -149,8 +149,8 @@ public class AtdjTest {
 
   @Test
   public void testWEquals() throws JSONException {
-    T t1 = TFactory.make("[\"W\", {}]");
-    T t2 = TFactory.make("[\"W\", {}]");
+    T t1 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
+    T t2 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
     T t3 = TFactory.make("\"U\"");
 
     assertTrue(t1.equals(t1));

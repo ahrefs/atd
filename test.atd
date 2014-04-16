@@ -27,7 +27,7 @@ type w = {
   ~s : string;
   ~o : bool option;
   ~l : bool list;
-(*  ~e : e; *)
+  ~e : e;
 }
 
 (* Record with optional field *)

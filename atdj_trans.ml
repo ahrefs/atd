@@ -86,8 +86,8 @@ let rec assign env dst src java_ty atd_ty indent =
  *   list   -> []
  *   option -> None
  *
- * Optional fields of record and sum types abort compilation (we do not yet
- * support default values for these types).
+ * Optional fields of record and sum types are not supported. They are
+ * treated as required fields.
  *
  * Fields of the `Optional kind extend this behaviour by automatically lifting
  * values of type t to option t by wrapping within a `Some'.
@@ -143,7 +143,12 @@ let assign_field env (`Field (_, (name, kind, annots), atd_ty)) java_ty =
                  ^ sprintf "      %s = new %s();\n" name java_ty
              | _ -> assert false
           )
-      | x -> not_supported x
+      | x ->
+          (* #ReqOpt *)
+          warning x
+            (sprintf "Field %s was declared optional but will be required."
+               name);
+          f ()
   )
   else
     f ()
@@ -221,24 +226,23 @@ let to_string_field env = function
             | `Optional | `With_default -> true
             | `Required -> false in
         if is_opt then
-          Some
-            (match atd_ty with
-               | `Option _ ->
-                   sprintf "%s.is_set" name
-               | `List _ ->
-                   sprintf "%s.length > 0" name
-               | `Name (_, (_, sub_name, _), _) ->
-                   (match sub_name with
-                      | "bool" ->
-                          sprintf "%s" name
-                      | "int" | "float" ->
-                          sprintf "%s != 0" name
-                      | "string" ->
-                          sprintf "%s.equals(\"\") == false" name
-                      | _ -> assert false
-                   )
-               | _ -> assert false
-            )
+          (match atd_ty with
+           | `Option _ ->
+               Some (sprintf "%s.is_set" name)
+           | `List _ ->
+               Some (sprintf "%s.length > 0" name)
+           | `Name (_, (_, sub_name, _), _) ->
+               Some (match sub_name with
+                 | "bool" ->
+                     sprintf "%s" name
+                 | "int" | "float" ->
+                     sprintf "%s != 0" name
+                 | "string" ->
+                     sprintf "%s.equals(\"\") == false" name
+                 | _ -> assert false
+               )
+           | _ -> None (* unsupported optional record or variant #ReqOpt *)
+          )
         else None in
       let lift_opt =
           match kind with

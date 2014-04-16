@@ -32,8 +32,7 @@ let not_supported x =
   let loc = Atd_ast.loc_of_type_expr x in
   Atd_ast.error_at loc "Construct not yet supported by atdj."
 
-let warning x msg =
-  let loc = Atd_ast.loc_of_type_expr x in
+let warning loc msg =
   let loc_s = Atd_ast.string_of_loc loc in
   eprintf "\
 Warning:

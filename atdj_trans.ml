@@ -101,7 +101,7 @@ let rec assign env dst src java_ty atd_ty indent =
  * check for the field and manually create a default.  If the field is present,
  * then we wrap its values as necessary.
  *)
-let assign_field env (`Field (_, (name, kind, annots), atd_ty)) java_ty =
+let assign_field env (`Field (loc, (name, kind, annots), atd_ty)) java_ty =
   (* Check whether the field is optional *)
   let is_opt =
     match kind with
@@ -145,7 +145,7 @@ let assign_field env (`Field (_, (name, kind, annots), atd_ty)) java_ty =
           )
       | x ->
           (* #ReqOpt *)
-          warning x
+          warning loc
             (sprintf "Field %s was declared optional but will be required."
                name);
           f ()

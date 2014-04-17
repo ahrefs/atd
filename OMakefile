@@ -17,7 +17,7 @@ CLASSPATH = '.:json.jar:junit-4.8.2.jar'
 
 .SUBDIRS: doc
 
-.DEFAULT: atdj.opt atdj
+.DEFAULT: atdj.opt
 
 .PHONY: clean
 
@@ -37,8 +37,8 @@ README: doc/readme.txt
 #		>psapi_response_example.out
 
 .PHONY: test
-test: atdj test.atd
-	./atdj -graph test.atd -package com.mylife.test
+test: atdj.opt test.atd
+	./atdj.opt -graph test.atd -package com.mylife.test
 	dot -Tpdf test.dot >test.pdf
 	javac -classpath $(CLASSPATH) com/mylife/test/*.java
         javac -classpath $(CLASSPATH) AtdjTest.java

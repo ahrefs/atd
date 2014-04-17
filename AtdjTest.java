@@ -43,6 +43,7 @@ public class AtdjTest {
 
     V v = ((V1)t).value;
     assertEquals(v.b, true);
+    v.b = false;
     assertEquals(v.i, 42);
     assertEquals(v.s, "foo");
     assertTrue(v.o.is_set);
@@ -176,7 +177,7 @@ public class AtdjTest {
   public void testXNone() throws JSONException {
     T t = TFactory.make("[\"X\", {}]");
     assertTrue(t instanceof X1);
-    
+
     X x = ((X1)t).value;
     assertEquals(x.o.is_set, false);
   }
@@ -185,7 +186,7 @@ public class AtdjTest {
   public void testXSome() throws JSONException {
     T t = TFactory.make("[\"X\", {\"o\" : true}]");
     assertTrue(t instanceof X1);
-    
+
     X x = ((X1)t).value;
     assertEquals(x.o.is_set, true);
     assertEquals(x.o.value, true);

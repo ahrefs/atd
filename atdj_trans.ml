@@ -763,7 +763,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
     (function `Field (loc, (field_name, _, annots), _) ->
        let java_ty = List.assoc field_name java_tys in
        output_string out (javadoc loc annots "  ");
-       fprintf out "  public final %s %s;\n" java_ty field_name)
+       fprintf out "  public %s %s;\n" java_ty field_name)
     fields;
   fprintf out "}\n";
   close_out out;

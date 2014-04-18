@@ -16,12 +16,6 @@ public interface Atdj {
    */
   String toString();
   /**
-   * Get the JSON string representation, with each line indented.
-   * @param indent The number of spaces to indent by.
-   * @return The indented JSON string.
-   */
-  String toString(int indent);
-  /**
    * Get the hash code.
    * @return The hash code.
    */
@@ -39,13 +33,6 @@ let output_util env =
   let out = Atdj_trans.open_class env "Util" in
   fprintf out "\
 class Util {
-  static String indent(int n) {
-    String str = \"\";
-    for (int i = 0; i < n; ++i)
-       str += \" \";
-    return str;
-  }
-
   static <T extends Comparable<? super T>> int
     compareTo(ArrayList<T> xs, ArrayList<T> ys) {
     int xsLen = xs.size();

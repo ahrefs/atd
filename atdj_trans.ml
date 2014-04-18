@@ -217,23 +217,15 @@ let rec to_string env id atd_ty lift_opt indent =
   let atd_ty = norm_ty env atd_ty in
   match atd_ty with
     | `List (_, atd_sub_ty, _) ->
-          sprintf "%sstr += Util.indent(indent) + \"[\\n\";\n" indent
-        ^ sprintf "%sindent += 2;\n" indent
+          sprintf "%sstr += \"[\";\n" indent
         ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
-        ^ (match norm_ty env atd_sub_ty with
-             | `Name _ -> sprintf "%s  str += Util.indent(indent);\n" indent
-             | _ -> ""
-          )
         ^ to_string env (id ^ ".get(i)") atd_sub_ty false (indent ^ "  ")
         ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
-        ^ sprintf "%s    str += \",\\n\";\n" indent
-        ^ sprintf "%s  else\n" indent
-        ^ sprintf "%s    str += \"\\n\";\n" indent
+        ^ sprintf "%s    str += \",\";\n" indent
         ^ sprintf "%s}\n" indent
-        ^ sprintf "%sindent -= 2;\n" indent
-        ^ sprintf "%sstr += Util.indent(indent) + \"]\";\n" indent
+        ^ sprintf "%sstr += \"]\";\n" indent
     | `Option _ ->
-        sprintf "%sstr += %s.toString(indent, %b);\n" indent id lift_opt
+        sprintf "%sstr += %s.toString(%b);\n" indent id lift_opt
     | `Name (_, (_, "string", _), _) ->
         (* TODO Check that this is the correct behaviour *)
         sprintf
@@ -242,7 +234,7 @@ let rec to_string env id atd_ty lift_opt indent =
     | `Name _ ->
         sprintf "%sstr += String.valueOf(%s);\n" indent id
     | _ ->
-        sprintf "%sstr += %s.toString(indent);\n" indent id
+        sprintf "%sstr += %s.toString();\n" indent id
 
 (* Generate a toString command for a record field.  For brevity, we omit
  * optional fields that have their default value. *)
@@ -284,23 +276,20 @@ let to_string_field env = function
           | Some p ->  (sprintf "    if (%s) {\n" p, "    }\n", "      ")
           | None   ->  ("", "", "    ") in
         prefix
-      ^ sprintf "%sstr += Util.indent(indent + 2) + \"\\\"%s\\\": \";\n"
+      ^ sprintf "%sstr += \"\\\"%s\\\":\";\n"
         indent name
-      ^ sprintf "%sindent += 4;\n" indent
       ^ (match atd_ty with
            | `Name _ -> ""
            | `Option (_, atd_sub_ty, _) ->
                let atd_sub_ty = norm_ty env atd_sub_ty in
                (match atd_sub_ty with
                   | `Name _ | `Sum _ -> ""
-                  | _ ->  (* Output a newline *)
-                      sprintf "%sstr += \"\\n\";\n" indent
+                  | _ -> ""
                )
-           | _ -> sprintf "%sstr += \"\\n\";\n" indent
+           | _ -> ""
         )
       ^ to_string env name atd_ty lift_opt indent
-      ^ sprintf "%sindent -= 4;\n" indent
-      ^ sprintf "%sstr += \",\\n\";\n" indent
+      ^ sprintf "%sstr += \",\";\n" indent
       ^ suffix
 
 (* Generate a hashCode command *)
@@ -408,13 +397,12 @@ let javadoc loc annots indent =
  *
  *  interface Atdj {
  *    String toString();
- *    String toString(int indent);
  *    Visitor accept(Visitor v);
  *  }
  *
- * The toString(int indent) method outputs a JSON representation of the
- * associated value.  The indent level is required for nicely formatting
- * nested types.   The toString() method simply invokes the previous method
+ * The toString() method outputs a JSON representation of the
+ * associated value.
+ * The toString() method simply invokes the previous method
  * with an indent level of zero.  The accept(Visitor v) method accepts visitors
  * to the class (see below).
  *
@@ -517,10 +505,6 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "  }\n";
                     fprintf out "\n";
                     fprintf out "  public String toString() {\n";
-                    fprintf out "    return toString(0);\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public String toString(int indent) {\n";
                     fprintf out "    return \"\\\"%s\\\"\";\n" var_name;
                     fprintf out "  }\n";
                     fprintf out "\n";
@@ -565,20 +549,11 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "  }\n";
                     fprintf out "\n";
                     fprintf out "  public String toString() {\n";
-                    fprintf out "    return toString(0);\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public String toString(int indent) {\n";
                     fprintf out "    String str = \"\";\n";
-                    fprintf out "    str += Util.indent(indent) \
-                                 + \"[\\n\" + Util.indent(indent + 2) \
-                                 + \"\\\"%s\\\",\\n\";" var_name;
-                    fprintf out "    indent += 2;\n";
+                    fprintf out "    str += \"[\\\"%s\\\",\";\n" var_name;
                     fprintf out "    %s"
                       (to_string env "value" atd_ty false "");
-                    fprintf out "    indent -= 2;\n";
-                    fprintf out "    str += \"\\n\" \
-                                         + Util.indent(indent) + \"]\";\n";
+                    fprintf out "    str += \"]\";\n";
                     fprintf out "    return str;\n";
                     fprintf out "  }\n";
                     fprintf out "\n";
@@ -736,15 +711,10 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "  }\n";
   fprintf out "\n";
   fprintf out "  public String toString() {\n";
-  fprintf out "    return toString(0);\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  public String toString(int indent) {\n";
-  fprintf out "    String str = \"\";\n";
-  fprintf out "    str += Util.indent(indent) + \"{\\n\";\n";
+  fprintf out "    String str = \"{\";\n";
   List.iter (fun field -> output_string out (to_string_field env field)) fields;
   fprintf out "    str = str.replaceAll(\",\\n$\", \"\\n\");\n";
-  fprintf out "    str += Util.indent(indent) + \"}\";\n";
+  fprintf out "    str += \"}\";\n";
   fprintf out "    return str;\n";
   fprintf out "  }\n";
   fprintf out "\n";
@@ -881,14 +851,10 @@ and trans_option env (`Option (_, atd_ty, _)) =
   fprintf out "  }\n";
   fprintf out "\n";
   fprintf out "  public String toString() {\n";
-  fprintf out "    return toString(0);\n";
+  fprintf out "    return toString(false);\n";
   fprintf out "  }\n";
   fprintf out "\n";
-  fprintf out "  public String toString(int indent) {\n";
-  fprintf out "    return toString(0, false);\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  String toString(int indent, boolean lift) {\n";
+  fprintf out "  String toString(boolean lift) {\n";
   fprintf out "    String str = \"\";\n";
   fprintf out "    if (is_set) {\n";
   fprintf out "      if (!lift)\n";

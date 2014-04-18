@@ -17,24 +17,6 @@ public class AtdjTest {
     T t1 = TFactory.make("\"U\"");
     T t2 = TFactory.make("\"U\"");
     T t3 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
-
-    assertTrue(t1.equals(t1));
-    assertTrue(t1.compareTo(t1) == 0);
-    assertTrue(t1.equals(TFactory.make(t1.toString())));
-
-    assertTrue(t1.equals(t2));
-    assertTrue(t2.equals(t1));
-    assertTrue(t2.compareTo(t1) == 0);
-    assertTrue(t1.compareTo(t2) == 0);
-    assertTrue(t2.equals(TFactory.make(t2.toString())));
-    assertTrue(t1.hashCode() == t2.hashCode());
-
-    assertFalse(t1.equals(t3));
-    assertFalse(t3.equals(t1));
-    assertFalse(t1.hashCode() == t3.hashCode());
-    assertTrue(t1.compareTo(t3) < 0);
-    assertTrue(t3.compareTo(t1) > 0);
-    assertTrue(t3.equals(TFactory.make(t3.toString())));
   }
 
   @Test
@@ -67,73 +49,6 @@ public class AtdjTest {
     T t9  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [], \"l2\":[]}]");
     T t10 = TFactory.make("\"U\"");
 
-    assertTrue(t1.equals(t1));
-    assertTrue(t1.compareTo(t1) == 0);
-    assertTrue(t1.equals(TFactory.make(t1.toString())));
-    assertTrue(t1.equals(TFactory.make(t1.toString())));
-
-    assertTrue(t1.equals(t2));
-    assertTrue(t2.equals(t1));
-    assertTrue(t1.hashCode() == t2.hashCode());
-    assertTrue(t1.compareTo(t2) == 0);
-    assertTrue(t2.compareTo(t1) == 0);
-    assertTrue(t2.equals(TFactory.make(t2.toString())));
-
-    assertFalse(t1.equals(t3));
-    assertFalse(t3.equals(t1));
-    assertFalse(t1.hashCode() == t3.hashCode());
-    assertTrue(t1.compareTo(t3) > 0);
-    assertTrue(t3.compareTo(t1) < 0);
-    assertTrue(t3.equals(TFactory.make(t3.toString())));
-
-    assertFalse(t1.equals(t4));
-    assertFalse(t4.equals(t1));
-    assertFalse(t1.hashCode() == t4.hashCode());
-    assertTrue(t1.compareTo(t4) < 0);
-    assertTrue(t4.compareTo(t1) > 0);
-    assertTrue(t4.equals(TFactory.make(t4.toString())));
-
-    assertFalse(t1.equals(t5));
-    assertFalse(t5.equals(t1));
-    assertFalse(t1.hashCode() == t5.hashCode());
-    assertTrue(t1.compareTo(t5) > 0);
-    assertTrue(t5.compareTo(t1) < 0);
-    assertTrue(t5.equals(TFactory.make(t5.toString())));
-
-    assertFalse(t1.equals(t6));
-    assertFalse(t6.equals(t1));
-    assertFalse(t1.hashCode() == t6.hashCode());
-    assertTrue(t1.compareTo(t6) > 0);
-    assertTrue(t6.compareTo(t1) < 0);
-    assertTrue(t6.equals(TFactory.make(t6.toString())));
-
-    assertFalse(t1.equals(t7));
-    assertFalse(t7.equals(t1));
-    assertFalse(t1.hashCode() == t7.hashCode());
-    assertTrue(t1.compareTo(t7) > 0);
-    assertTrue(t7.compareTo(t1) < 0);
-    assertTrue(t7.equals(TFactory.make(t7.toString())));
-
-    assertFalse(t1.equals(t8));
-    assertFalse(t8.equals(t1));
-    assertFalse(t1.hashCode() == t8.hashCode());
-    assertTrue(t1.compareTo(t8) < 0);
-    assertTrue(t8.compareTo(t1) > 0);
-    assertTrue(t8.equals(TFactory.make(t8.toString())));
-
-    assertFalse(t1.equals(t9));
-    assertFalse(t9.equals(t1));
-    assertFalse(t1.hashCode() == t9.hashCode());
-    assertTrue(t1.compareTo(t9) > 0);
-    assertTrue(t9.compareTo(t1) < 0);
-    assertTrue(t9.equals(TFactory.make(t9.toString())));
-
-    assertFalse(t1.equals(t10));
-    assertFalse(t10.equals(t1));
-    assertFalse(t1.hashCode() == t10.hashCode());
-    assertTrue(t1.compareTo(t10) > 0);
-    assertTrue(t10.compareTo(t1) < 0);
-    assertTrue(t10.equals(TFactory.make(t10.toString())));
   }
 
   @Test
@@ -154,24 +69,6 @@ public class AtdjTest {
     T t1 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
     T t2 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
     T t3 = TFactory.make("\"U\"");
-
-    assertTrue(t1.equals(t1));
-    assertTrue(t1.compareTo(t1) == 0);
-    assertTrue(t1.equals(TFactory.make(t1.toString())));
-
-    assertTrue(t1.equals(t2));
-    assertTrue(t2.equals(t1));
-    assertTrue(t1.hashCode() == t2.hashCode());
-    assertTrue(t1.compareTo(t2) == 0);
-    assertTrue(t2.compareTo(t1) == 0);
-    assertTrue(t2.equals(TFactory.make(t2.toString())));
-
-    assertFalse(t1.equals(t3));
-    assertFalse(t3.equals(t1));
-    assertFalse(t1.hashCode() == t3.hashCode());
-    assertTrue(t1.compareTo(t3) > 0);
-    assertTrue(t3.compareTo(t1) < 0);
-    assertTrue(t3.equals(TFactory.make(t3.toString())));
   }
 
   @Test
@@ -199,31 +96,6 @@ public class AtdjTest {
     T t2 = TFactory.make("[\"X\", {}]");
     T t3 = TFactory.make("[\"X\", {\"o\" : true}]");
     T t4 = TFactory.make("\"U\"");
-
-    assertTrue(t1.equals(t1));
-    assertTrue(t1.compareTo(t1) == 0);
-    assertTrue(t1.equals(TFactory.make(t1.toString())));
-
-    assertTrue(t1.equals(t2));
-    assertTrue(t2.equals(t1));
-    assertTrue(t1.hashCode() == t2.hashCode());
-    assertTrue(t1.compareTo(t2) == 0);
-    assertTrue(t2.compareTo(t1) == 0);
-    assertTrue(t2.equals(TFactory.make(t2.toString())));
-
-    assertFalse(t1.equals(t3));
-    assertFalse(t3.equals(t1));
-    assertFalse(t1.hashCode() == t3.hashCode());
-    assertTrue(t1.compareTo(t3) < 0);
-    assertTrue(t3.compareTo(t1) > 0);
-    assertTrue(t3.equals(TFactory.make(t3.toString())));
-
-    assertFalse(t1.equals(t4));
-    assertFalse(t4.equals(t1));
-    assertFalse(t1.hashCode() == t4.hashCode());
-    assertTrue(t1.compareTo(t4) > 0);
-    assertTrue(t4.compareTo(t1) < 0);
-    assertTrue(t4.equals(TFactory.make(t4.toString())));
   }
 
   public static void main(String[] args) {

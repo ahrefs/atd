@@ -102,9 +102,6 @@ let main () =
   (* Generate classes from ATD definition *)
   let env = Atdj_trans.trans_module env atd_module in
 
-  (* Generate the visitor interface *)
-  Atdj_trans.output_visitor env;
-
   (* Output helper classes *)
   Atdj_helper.output_util env;
   Atdj_helper.output_atdj env;

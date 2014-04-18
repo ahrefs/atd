@@ -199,19 +199,6 @@ let rec can_accept env atd_ty =
         can_accept env sub_atd_ty
     | x -> not_supported x
 
-(* Generate an accept method for a type *)
-let accept env var java_ty atd_ty visitor indent =
-  if not (can_accept env atd_ty) then ""
-  else
-    let atd_ty = norm_ty env atd_ty in
-    match atd_ty with
-      | `List _ ->
-          let java_sub_ty = extract_from_edgy_brackets java_ty in
-            sprintf "%sfor (%s elt : %s)\n" indent java_sub_ty var
-          ^ sprintf "%s  elt.accept(%s);\n" indent visitor
-      | _ ->
-          sprintf "%s%s.accept(%s);\n" indent var visitor
-
 (* Generate a toString command *)
 let rec to_string env id atd_ty lift_opt indent =
   let atd_ty = norm_ty env atd_ty in
@@ -292,69 +279,6 @@ let to_string_field env = function
       ^ sprintf "%sstr += \",\";\n" indent
       ^ suffix
 
-(* Generate a hashCode command *)
-let hash_code env atd_ty java_ty id res indent =
-  let atd_ty = norm_ty env atd_ty in
-  match atd_ty with
-    | `Name _ ->
-        let class_name =
-          match java_ty with
-            | "int" -> "Integer"
-            | _     -> String.capitalize java_ty in
-        sprintf "%s%s += new %s(%s).hashCode();\n" indent res class_name id
-    | `List (_, _, _) ->
-          sprintf "%sfor (int i = 0; i < %s.size(); ++i)\n" indent id
-        ^ sprintf "%s  %s *= 31 + %s.get(i).hashCode();\n" indent res id
-
-    | _       -> sprintf "%s%s += %s.hashCode();\n" indent res id
-
-(* Generate a compareTo command *)
-let compare_to env atd_ty java_ty this that res indent =
-  let atd_ty = norm_ty env atd_ty in
-  match atd_ty with
-    | `Name _ ->
-        let class_name =
-          match java_ty with
-            | "int" -> "Integer"
-            | _     -> String.capitalize java_ty in
-        sprintf "%s%s = new %s(%s).compareTo(%s);\n"
-          indent res class_name this that
-    | `List (_, sub_atd_ty, _) ->
-        let sub_atd_ty = norm_ty env sub_atd_ty in
-        (match sub_atd_ty with
-           | `Name _ ->
-               sprintf
-                 "%s%s = Util.compareTo(%s, %s);\n"
-                 indent res this that
-           | _ ->
-                 sprintf "%s{\n" indent
-               ^ sprintf "%s  int i = 0;\n" indent
-               ^ sprintf "%s  int minLen = Math.min(%s.size(), %s.size());\n"
-                 indent this that
-               ^ sprintf "%s  for (; i < minLen; ++i) {\n" indent
-               ^ sprintf "%s    int mycmp = %s.get(i).compareTo(%s.get(i));\n"
-                 indent this that
-               ^ sprintf "%s    if (mycmp != 0) {\n" indent
-               ^ sprintf "%s      // Found differing elements; we are done\n"
-                 indent
-               ^ sprintf "%s      %s = mycmp;\n" indent res
-               ^ sprintf "%s      break;\n" indent
-               ^ sprintf "%s    }\n" indent
-               ^ sprintf "%s  }\n" indent
-               ^ sprintf "%s  if (i == minLen) {\n" indent
-               ^ sprintf "%s    // Identical prefixes; find shorter list\n"
-                 indent
-               ^ sprintf "%s    if (%s.size() == minLen)\n" indent this
-               ^ sprintf "%s      %s = -1;\n" indent res
-               ^ sprintf "%s    else if (%s.size() == minLen)\n" indent that
-               ^ sprintf "%s      %s = 1;\n" indent res
-               ^ sprintf "%s    else\n" indent
-               ^ sprintf "%s      %s = 0;\n" indent res
-               ^ sprintf "%s  }\n" indent
-               ^ sprintf "%s}\n" indent
-        )
-    | _  -> sprintf "%s%s = %s.compareTo(%s);\n" indent res this that
-
 (* Generate a javadoc comment *)
 let javadoc loc annots indent =
   let from_inline_text text = indent ^ " * " ^ text ^ "\n" in
@@ -397,14 +321,10 @@ let javadoc loc annots indent =
  *
  *  interface Atdj {
  *    String toString();
- *    Visitor accept(Visitor v);
  *  }
  *
  * The toString() method outputs a JSON representation of the
  * associated value.
- * The toString() method simply invokes the previous method
- * with an indent level of zero.  The accept(Visitor v) method accepts visitors
- * to the class (see below).
  *
  * Each class also has a String constructor for a JSON string as well as a
  * constructor from the corresponding org.json type (see json_of_atd, above).
@@ -461,26 +381,6 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
   let ifc_out = open_class env ifc_name in
   output_string ifc_out (javadoc loc annots "");
   fprintf ifc_out "public interface %s extends Atdj {\n" ifc_name;
-  fprintf ifc_out "  /**\n";
-  fprintf ifc_out "   * Get the the constructor index.  \
-                        For example, given an ATD type\n";
-  fprintf ifc_out "   * <pre>\n";
-  fprintf ifc_out "   *   type t =\n";
-  fprintf ifc_out "   *     [ Foo of ...\n";
-  fprintf ifc_out "   *     | Bar of ...\n";
-  fprintf ifc_out "   *     ],\n";
-  fprintf ifc_out "   * </pre>\n";
-  fprintf ifc_out "   * {@code Foo} values have index {@code 0} \
-                        and {@code Bar} values have index {@code 1}.\n";
-  fprintf ifc_out "   * @return The constructor index.\n";
-  fprintf ifc_out "   */\n";
-  fprintf ifc_out "  int getIndex();\n";
-  fprintf ifc_out "  /**\n";
-  fprintf ifc_out "   * Comparison, using a total order.\n";
-  fprintf ifc_out "   * @return The result of the comparison.\n";
-  fprintf ifc_out "   */\n";
-  fprintf ifc_out "  int compareTo(%s that);\n" ifc_name;
-  fprintf ifc_out "  boolean equals(%s that);\n" ifc_name;
   fprintf ifc_out "}\n";
   close_out ifc_out;
   let env = { env with types = (`Interface ifc_name) :: env.types; } in
@@ -499,33 +399,8 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                 | None ->
                     fprintf out "  %s() { }\n" var_class_name;
                     fprintf out "\n";
-                    fprintf out "  public Visitor accept(Visitor v) {\n";
-                    fprintf out "    v.visit(this);\n";
-                    fprintf out "    return v;\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
                     fprintf out "  public String toString() {\n";
                     fprintf out "    return \"\\\"%s\\\"\";\n" var_name;
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public int hashCode() {\n";
-                    fprintf out "    return 31 * %d;\n" count;
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public int compareTo(%s that) {\n" ifc_name;
-                    fprintf out "    return this.index - that.getIndex();\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  /**\n";
-                    fprintf out "   * Test for equality.\n";
-                    fprintf out "   * @return Whether the \
-                                      two objects are equal.\n";
-                    fprintf out "   */\n";
-                    fprintf out "  public boolean equals(%s that) {\n" ifc_name;
-                    fprintf out "    return this.compareTo(that) == 0;\n";
-                    fprintf out "  }\n";
-                    fprintf out "  public int getIndex() {\n";
-                    fprintf out "    return index;\n";
                     fprintf out "  }\n";
                     fprintf out "\n";
                     { env with
@@ -541,13 +416,6 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                          "    ");
                     fprintf out "  }\n";
                     fprintf out "\n";
-                    fprintf out "  public Visitor accept(Visitor v) {\n";
-                    fprintf out "    v.visit(this);\n";
-                    output_string out
-                      (accept env "value" java_ty atd_ty "v" "    ");
-                    fprintf out "    return v;\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
                     fprintf out "  public String toString() {\n";
                     fprintf out "    String str = \"\";\n";
                     fprintf out "    str += \"[\\\"%s\\\",\";\n" var_name;
@@ -555,42 +423,6 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                       (to_string env "value" atd_ty false "");
                     fprintf out "    str += \"]\";\n";
                     fprintf out "    return str;\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public int hashCode() {\n";
-                    fprintf out "    int h = 31 * %d;\n" count;
-                    output_string out
-                      (hash_code env atd_ty java_ty "value" "h" "    ");
-                    fprintf out "    return h;\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public int compareTo(%s that) {\n" ifc_name;
-                    fprintf out "    int cmp = this.index - that.getIndex();\n";
-                    fprintf out "    if (cmp == 0) {\n";
-                    output_string out
-                      (compare_to env
-                         atd_ty
-                         java_ty
-                         "this.value"
-                         ("((" ^ var_class_name ^ ")that).value")
-                         "cmp"
-                         "      "
-                      );
-                    fprintf out "    }\n";
-                    fprintf out "    return cmp;\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  /**\n";
-                    fprintf out "   * Test for equality.\n";
-                    fprintf out "   * @return Whether the \
-                                      two objects are equal.\n";
-                    fprintf out "   */\n";
-                    fprintf out "  public boolean equals(%s that) {\n" ifc_name;
-                    fprintf out "    return this.compareTo(that) == 0;\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public int getIndex() {\n";
-                    fprintf out "    return index;\n";
                     fprintf out "  }\n";
                     fprintf out "\n";
                     fprintf out "  public final %s value;\n" java_ty;
@@ -601,7 +433,6 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                                     :: env.sub_types
                     }
              ) in
-           fprintf out "  private final int index = %d;\n" count;
            fprintf out "}\n";
            close_out out;
            (env, (var_name, var_class_name) :: names, succ count)
@@ -697,66 +528,12 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
     env fields in
   fprintf out "  }\n";
   fprintf out "\n";
-  fprintf out "  public Visitor accept(Visitor v) {\n";
-  fprintf out "    v.visit(this);\n";
-  List.iter
-    (fun (`Field (_, (field_name, _, annots), atd_ty)) ->
-       let field_name = name_field field_name annots in
-       output_string out
-         (accept env field_name
-            (List.assoc field_name java_tys) atd_ty "v" "    ");
-    )
-    fields;
-  fprintf out "  return v;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
   fprintf out "  public String toString() {\n";
   fprintf out "    String str = \"{\";\n";
   List.iter (fun field -> output_string out (to_string_field env field)) fields;
   fprintf out "    str = str.replaceAll(\",\\n$\", \"\\n\");\n";
   fprintf out "    str += \"}\";\n";
   fprintf out "    return str;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  public int hashCode() {\n";
-  fprintf out "    int h = 1;\n";
-  List.iter
-    (function `Field (_, (field_name, _, annots), atd_ty) ->
-      let field_name = name_field field_name annots in
-      let java_ty = List.assoc field_name java_tys in
-      fprintf out "    h *= 31;\n";
-      output_string out (hash_code env atd_ty java_ty field_name "h" "    ")
-    )
-    fields;
-  fprintf out "    return h;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Comparison, using a total order.\n";
-  fprintf out "   * @return The result of the comparison.\n";
-  fprintf out "   */\n";
-  fprintf out "  public int compareTo(%s that) {\n" class_name;
-  fprintf out "    int cmp = 0;\n";
-  List.iter
-    (function `Field (_, (field_name, _, annots), atd_ty) ->
-      let field_name = name_field field_name annots in
-      let java_ty = List.assoc field_name java_tys in
-      output_string out
-        (compare_to env atd_ty java_ty
-           ("this." ^ field_name) ("that." ^ field_name) "cmp" "    ");
-      fprintf out "    if (cmp != 0)\n";
-      fprintf out "      return cmp;\n";
-    )
-    fields;
-  fprintf out "    return 0;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Test for equality.\n";
-  fprintf out "   * @return Whether the two objects are equal.\n";
-  fprintf out "   */\n";
-  fprintf out "  public boolean equals(%s that) {\n" class_name;
-  fprintf out "    return this.compareTo(that) == 0;\n";
   fprintf out "  }\n";
   fprintf out "\n";
   List.iter
@@ -828,19 +605,6 @@ and trans_option env (`Option (_, atd_ty, _)) =
   fprintf out "      throw new JSONException(\"Invalid option value\");\n";
   fprintf out "  }\n";
   fprintf out "\n";
-  fprintf out "  public Visitor accept(Visitor v) {\n";
-  (* Don't visit optional primitive types *)
-  if not (List.mem class_name ["BoolOpt"; "IntOpt"; "FloatOpt"; "StringOpt"])
-  then (
-    fprintf out "    v.visit(this);\n";
-    if (can_accept env atd_ty) then (
-      fprintf out "    if (is_set)\n";
-      output_string out (accept env "value" java_ty atd_ty "v" "      ");
-    );
-  );
-  fprintf out "    return v;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
   fprintf out "  /** Attempt to get the value.\n";
   fprintf out "   *  @throws JSONException if the value is not set. */\n";
   fprintf out "  public %s get() throws JSONException {\n" java_ty;
@@ -867,48 +631,6 @@ and trans_option env (`Option (_, atd_ty, _)) =
   fprintf out "    return str;\n";
   fprintf out "  }\n";
   fprintf out "\n";
-  fprintf out "  public int hashCode() {\n";
-  fprintf out "    int h = 0;\n";
-  fprintf out "    if (is_set)\n";
-  output_string out (hash_code env atd_ty java_ty "value" "h" "    ");
-  fprintf out "    return h;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Comparison, using a total order.\n";
-  fprintf out "   * @return The result of the comparison.\n";
-  fprintf out "   */\n";
-  fprintf out "  public int compareTo(%s that) {\n" class_name;
-  fprintf out "    if (!this.is_set && !that.is_set)\n";
-  fprintf out "      return 0;\n";
-  fprintf out "    else if (!this.is_set && that.is_set)\n";
-  fprintf out "      return -1;\n";
-  fprintf out "    else if (this.is_set && !that.is_set)\n";
-  fprintf out "      return 1;\n";
-  fprintf out "    else {\n";
-  fprintf out "      int cmp = 0;\n";
-  output_string out
-    (compare_to
-       env
-       atd_ty
-       java_ty
-       "this.value"
-       "that.value"
-       "cmp"
-       "      "
-    );
-  fprintf out "      return cmp;\n";
-  fprintf out "    }\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Test for equality.\n";
-  fprintf out "   * @return Whether the two objects are equal.\n";
-  fprintf out "   */\n";
-  fprintf out "  public boolean equals(%s that) {\n" class_name;
-  fprintf out "    return this.compareTo(that) == 0;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
   fprintf out "  /** Whether the {@link #value} is set. */\n";
   fprintf out "  public boolean is_set;\n";
   fprintf out "  /** The value itself. */\n";
@@ -917,54 +639,3 @@ and trans_option env (`Option (_, atd_ty, _)) =
   close_out out;
   (class_name,
    { env with types = `Class (class_name, ["value", java_ty]) :: env.types } )
-
-
-
-(* ------------------------------------------------------------------------- *)
-(* Visitors *)
-
-(* Remove duplicate elements from a list *)
-let unique xs =
-  let xs' = List.sort Pervasives.compare xs in
-  let rec f = function
-    | (y::z::zs) -> if y = z then f (z::zs) else y :: (f (z :: zs))
-    | zs         -> zs in
-  f xs'
-
-(* Generate a Visitor interface that has a method for each accepting type.  We
- * also generate a `SimpleVisitor' class that implements the Visitor interface.
- * This class performs a no-op upon visiting each type.  However, it may be
- * sub-classed to perform more interesting actions at speicifc types.
- *)
-let output_visitor env =
-  let out = open_class env "Visitor" in
-  fprintf out "/**\n";
-  fprintf out " * The visitor interface.\n";
-  fprintf out " */\n";
-  fprintf out "public interface Visitor {\n";
-  (* Don't visit optional primitive types *)
-  let filtered = ["BoolOpt"; "IntOpt"; "FloatOpt"; "StringOpt"] in
-  List.iter
-    (function
-       | `Class (name, _) ->
-           if not (List.mem name filtered) then
-             fprintf out "  public void visit(%s value);\n" name;
-       | `Interface _ -> ()
-    )
-    (unique env.types);
-  fprintf out "}\n";
-  let out = open_class env "SimpleVisitor" in
-  fprintf out "/**\n";
-  fprintf out " * A no-op imlementation of the {@link Visitor} interface.\n";
-  fprintf out " * Methods can be overriden by clients as required.\n";
-  fprintf out " */\n";
-  fprintf out "public class SimpleVisitor implements Visitor {\n";
-  List.iter
-    (function
-       | `Class (name, _) ->
-           if not (List.mem name filtered) then
-             fprintf out "  public void visit(%s value) { }\n" name;
-       | `Interface _ -> ()
-    )
-    (unique env.types);
-  fprintf out "}\n"

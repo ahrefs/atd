@@ -15,17 +15,6 @@ public interface Atdj {
    * @return The JSON string.
    */
   String toString();
-  /**
-   * Get the hash code.
-   * @return The hash code.
-   */
-  int hashCode();
-  /**
-   * Accept a visitor.
-   * @param visitor The visitor.
-   * @return The same visitor, for convenience.
-   */
-  Visitor accept(Visitor visitor);
 }";
   close_out out
 
@@ -33,24 +22,6 @@ let output_util env =
   let out = Atdj_trans.open_class env "Util" in
   fprintf out "\
 class Util {
-  static <T extends Comparable<? super T>> int
-    compareTo(ArrayList<T> xs, ArrayList<T> ys) {
-    int xsLen = xs.size();
-    int ysLen = ys.size();
-    int minLen = Math.min(xsLen, ysLen);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = xs.get(i).compareTo(ys.get(i));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xsLen < ysLen)
-      return -1;
-    else if (xsLen > ysLen)
-      return 1;
-    else
-      return 0;
-  }
-
   // Extract the tag of sum-typed value
   static String tag(Object value) throws JSONException {
     if (value instanceof String)

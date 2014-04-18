@@ -6,12 +6,6 @@ import static org.junit.Assert.*;
 import com.mylife.test.*;
 
 public class AtdjTest {
-  ArrayList<Integer> l = new ArrayList<Integer>();
-
-  boolean bar() {
-    return false;
-  }
-
   @Test
   public void testU() throws JSONException {
     T t = TFactory.make("\"U\"");

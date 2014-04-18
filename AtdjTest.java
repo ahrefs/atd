@@ -1,10 +1,17 @@
 import java.io.*;
+import java.util.*;
 import org.json.*;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import com.mylife.test.*;
 
 public class AtdjTest {
+  ArrayList<Integer> l = new ArrayList<Integer>();
+
+  boolean bar() {
+    return false;
+  }
+
   @Test
   public void testU() throws JSONException {
     T t = TFactory.make("\"U\"");
@@ -48,9 +55,9 @@ public class AtdjTest {
     assertEquals(v.s, "foo");
     assertTrue(v.o.is_set);
     assertEquals(v.o.value, true);
-    assertEquals(v.l.length, 2);
-    assertEquals(v.l[0], true);
-    assertEquals(v.l[1], false);
+    assertEquals(v.l.size(), 2);
+    assertEquals(v.l.get(0), true);
+    assertEquals(v.l.get(1), false);
   }
 
   @Test
@@ -145,7 +152,7 @@ public class AtdjTest {
     assertEquals(w.i, 0);
     assertEquals(w.s, "");
     assertEquals(w.o.is_set, false);
-    assertEquals(w.l.length, 0);
+    assertEquals(w.l.size(), 0);
   }
 
   @Test

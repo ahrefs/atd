@@ -7,13 +7,13 @@ open Atdj_env
  * underscores and capitalise any character that is immediately following
  * an underscore or digit.  We also capitalise the initial character
  * e.g. "foo_bar42baz" becomes "FooBar42Baz". *)
-let to_class_name str =
+let to_class_name ?(require_class = false) str =
   let str = Str.global_replace (Str.regexp "\\[\\]") "Array" str in
   match str with
     | "string" -> "String"
-    | "int"    -> "int"
-    | "bool"   -> "boolean"
-    | "float"  -> "double"
+    | "int"    -> if require_class then "Integer" else "int"
+    | "bool"   -> if require_class then "Boolean" else "boolean"
+    | "float"  -> if require_class then "Double"  else "double"
     | _ ->
         let res    = String.copy str in
         let offset = ref 0 in

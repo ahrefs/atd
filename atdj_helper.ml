@@ -46,61 +46,19 @@ class Util {
     return str;
   }
 
-  static int compareTo(boolean[] xs, boolean[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
+  static <T extends Comparable<? super T>> int
+    compareTo(ArrayList<T> xs, ArrayList<T> ys) {
+    int xsLen = xs.size();
+    int ysLen = ys.size();
+    int minLen = Math.min(xsLen, ysLen);
     for (int i = 0; i < minLen; ++i) {
-      int cmp = new Boolean(xs[i]).compareTo(new Boolean(ys[i]));
+      int cmp = xs.get(i).compareTo(ys.get(i));
       if (cmp != 0)
         return cmp;
     }
-    if (xs.length < ys.length)
+    if (xsLen < ysLen)
       return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(int[] xs, int[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Integer(xs[i]).compareTo(new Integer(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(double[] xs, double[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Double(xs[i]).compareTo(new Double(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(String[] xs, String[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = xs[i].compareTo(ys[i]);
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
+    else if (xsLen > ysLen)
       return 1;
     else
       return 0;

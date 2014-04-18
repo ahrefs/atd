@@ -55,17 +55,11 @@ let rec assign env dst src java_ty atd_ty indent =
         sprintf "%s%s = %sFactory.make(%s);\n" indent dst java_ty src
     | `Record _ | `Option _ ->
         sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
-    | `List (_, ty, _) ->  (* FIXME This is a bodge *)
-          sprintf "%s%s = new %s;\n" indent dst
-            (Str.global_replace
-               (Str.regexp "\\[\\]")
-               ("[" ^ src ^ ".length()]") java_ty)
+    | `List (_, ty, _) ->
+          sprintf "%s%s = new %s();\n" indent dst java_ty
         ^ sprintf "%sfor (int i = 0; i < %s.length(); ++i) {\n" indent src
-        ^ sprintf "%s  %s tmp = %s.%s(i);\n" indent
-          (json_of_atd env ty) src (get env ty false)
-        ^ assign env (dst ^ "[i]") "tmp"
-          (Str.global_replace
-             (Str.regexp "\\[\\]") "" java_ty) ty (indent ^  "  ")
+        ^ sprintf "%s  %s.add(%s.%s(i));\n" indent
+          dst src (get env ty false)
         ^ sprintf "%s}\n" indent
     | `Name (_, (_, ty, _), _) ->
         (match ty with
@@ -118,8 +112,7 @@ let assign_field env (`Field (loc, (name, kind, annots), atd_ty)) java_ty =
             sprintf "    if (jo.has(\"%s\")) {\n" name
           ^ assign env name src java_ty atd_ty "      "
           ^ sprintf "    } else {\n"
-          ^ sprintf "      %s = new %s;\n" name
-              (Str.global_replace (Str.regexp "\\[\\]") "[0]" java_ty)
+          ^ sprintf "      %s = new %s();\n" name java_ty
           ^ sprintf "    }\n"
       | `Option (_, sub_atd_ty, _) ->
           (match kind with
@@ -188,13 +181,13 @@ let rec to_string env id atd_ty lift_opt indent =
     | `List (_, atd_sub_ty, _) ->
           sprintf "%sstr += Util.indent(indent) + \"[\\n\";\n" indent
         ^ sprintf "%sindent += 2;\n" indent
-        ^ sprintf "%sfor (int i = 0; i < %s.length; ++i) {\n" indent id
+        ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
         ^ (match norm_ty env atd_sub_ty with
              | `Name _ -> sprintf "%s  str += Util.indent(indent);\n" indent
              | _ -> ""
           )
-        ^ to_string env (id ^ "[i]") atd_sub_ty false (indent ^ "  ")
-        ^ sprintf "%s  if (i < %s.length - 1)\n" indent id
+        ^ to_string env (id ^ ".get(i)") atd_sub_ty false (indent ^ "  ")
+        ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
         ^ sprintf "%s    str += \",\\n\";\n" indent
         ^ sprintf "%s  else\n" indent
         ^ sprintf "%s    str += \"\\n\";\n" indent
@@ -230,7 +223,7 @@ let to_string_field env = function
            | `Option _ ->
                Some (sprintf "%s.is_set" name)
            | `List _ ->
-               Some (sprintf "%s.length > 0" name)
+               Some (sprintf "%s.size() > 0" name)
            | `Name (_, (_, sub_name, _), _) ->
                Some (match sub_name with
                  | "bool" ->
@@ -283,21 +276,9 @@ let hash_code env atd_ty java_ty id res indent =
         sprintf "%s%s += new %s(%s).hashCode();\n" indent res class_name id
     | `List (_, sub_atd_ty, _) ->
         let sub_atd_ty = norm_ty env sub_atd_ty in
-        (match sub_atd_ty with
-           | `Name _ ->
-               let java_sub_ty =
-                 Str.global_replace (Str.regexp "\\[\\]$") "" java_ty in
-               let class_name =
-                 match java_sub_ty with
-                   | "int" -> "Integer"
-                   | _     -> String.capitalize java_sub_ty in
-                 sprintf "%sfor (int i = 0; i < %s.length; ++i)\n" indent id
-               ^ sprintf "%s  %s *= 31 + new %s(%s[i]).hashCode();\n"
-                 indent res class_name id
-           | _ ->
-                 sprintf "%sfor (int i = 0; i < %s.length; ++i)\n" indent id
-               ^ sprintf "%s  %s *= 31 + %s[i].hashCode();\n" indent res id
-        )
+          sprintf "%sfor (int i = 0; i < %s.size(); ++i)\n" indent id
+        ^ sprintf "%s  %s *= 31 + %s.get(i).hashCode();\n" indent res id
+
     | _       -> sprintf "%s%s += %s.hashCode();\n" indent res id
 
 (* Generate a compareTo command *)
@@ -315,15 +296,16 @@ let compare_to env atd_ty java_ty this that res indent =
         let sub_atd_ty = norm_ty env sub_atd_ty in
         (match sub_atd_ty with
            | `Name _ ->
-               sprintf "%s%s = Util.compareTo(%s, %s);\n"
+               sprintf
+                 "%s%s = Util.compareTo(%s, %s);\n"
                  indent res this that
            | _ ->
                  sprintf "%s{\n" indent
                ^ sprintf "%s  int i = 0;\n" indent
-               ^ sprintf "%s  int minLen = Math.min(%s.length, %s.length);\n"
+               ^ sprintf "%s  int minLen = Math.min(%s.size(), %s.size());\n"
                  indent this that
                ^ sprintf "%s  for (; i < minLen; ++i) {\n" indent
-               ^ sprintf "%s    int mycmp = %s[i].compareTo(%s[i]);\n"
+               ^ sprintf "%s    int mycmp = %s.get(i).compareTo(%s.get(i));\n"
                  indent this that
                ^ sprintf "%s    if (mycmp != 0) {\n" indent
                ^ sprintf "%s      // Found differing elements; we are done\n"
@@ -335,9 +317,9 @@ let compare_to env atd_ty java_ty this that res indent =
                ^ sprintf "%s  if (i == minLen) {\n" indent
                ^ sprintf "%s    // Identical prefixes; find shorter list\n"
                  indent
-               ^ sprintf "%s    if (%s.length == minLen)\n" indent this
+               ^ sprintf "%s    if (%s.size() == minLen)\n" indent this
                ^ sprintf "%s      %s = -1;\n" indent res
-               ^ sprintf "%s    else if (%s.length == minLen)\n" indent that
+               ^ sprintf "%s    else if (%s.size() == minLen)\n" indent that
                ^ sprintf "%s      %s = 1;\n" indent res
                ^ sprintf "%s    else\n" indent
                ^ sprintf "%s      %s = 0;\n" indent res
@@ -410,11 +392,15 @@ let javadoc loc annots indent =
 
 let open_class env cname =
   let out = open_out (env.package_dir ^ "/" ^ cname ^ ".java") in
-  fprintf out "// Automatically generated; do not edit\n\n";
-  fprintf out "package %s;\n\n" env.package;
-  fprintf out "import org.json.*;\n";
-  fprintf out "import java.util.Arrays;\n\n";
-  fprintf out "import java.lang.Math;\n\n";
+  fprintf out "\
+// Automatically generated; do not edit
+package %s;
+import java.util.ArrayList;
+import org.json.*;
+import java.lang.Math;
+
+"
+    env.package;
   out
 
 let rec trans_module env items = List.fold_left trans_outer env items
@@ -770,7 +756,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   { env with types = `Class (class_name, java_tys) :: env.types }
 
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)
-and trans_inner env atd_ty =
+and trans_inner ?(require_class = false) env atd_ty =
   match atd_ty with
   | `Option _ as opt ->
       trans_option env opt
@@ -778,13 +764,13 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
          | `Name (_, (_, name2, _), _) ->
              (* It's a primitive type e.g. int *)
-             (Atdj_names.to_class_name name2, env)
+             (Atdj_names.to_class_name ~require_class name2, env)
          | _ ->
              (Atdj_names.to_class_name name1, env)
       )
   | `List (_, sub_atd_ty, _)  ->
-      let (ty', env) = trans_inner env sub_atd_ty in
-      (ty' ^ "[]", env)
+      let (ty', env) = trans_inner ~require_class:true env sub_atd_ty in
+      ("ArrayList<" ^ ty' ^ ">", env)
   | x -> not_supported x
 
 (* Translate an option type *)
@@ -819,9 +805,10 @@ and trans_option env (`Option (_, atd_ty, _)) =
   fprintf out "      is_set = false;\n";
   fprintf out "    else if (Util.isSome(value)) {\n";
   fprintf out "      is_set = true;\n";
-  output_string out (assign env "this.value"
-                       (sprintf "((JSONArray)value).%s(1)" (get env atd_ty false))
-                       java_ty atd_ty "      ");
+  output_string out
+    (assign env "this.value"
+       (sprintf "((JSONArray)value).%s(1)" (get env atd_ty false))
+       java_ty atd_ty "      ");
   fprintf out "    } else\n";
   fprintf out "      throw new JSONException(\"Invalid option value\");\n";
   fprintf out "  }\n";

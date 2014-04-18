@@ -15,23 +15,6 @@ public interface Atdj {
    * @return The JSON string.
    */
   String toString();
-  /**
-   * Get the JSON string representation, with each line indented.
-   * @param indent The number of spaces to indent by.
-   * @return The indented JSON string.
-   */
-  String toString(int indent);
-  /**
-   * Get the hash code.
-   * @return The hash code.
-   */
-  int hashCode();
-  /**
-   * Accept a visitor.
-   * @param visitor The visitor.
-   * @return The same visitor, for convenience.
-   */
-  Visitor accept(Visitor visitor);
 }";
   close_out out
 
@@ -39,73 +22,6 @@ let output_util env =
   let out = Atdj_trans.open_class env "Util" in
   fprintf out "\
 class Util {
-  static String indent(int n) {
-    String str = \"\";
-    for (int i = 0; i < n; ++i)
-       str += \" \";
-    return str;
-  }
-
-  static int compareTo(boolean[] xs, boolean[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Boolean(xs[i]).compareTo(new Boolean(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(int[] xs, int[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Integer(xs[i]).compareTo(new Integer(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(double[] xs, double[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = new Double(xs[i]).compareTo(new Double(ys[i]));
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
-  static int compareTo(String[] xs, String[] ys) {
-    int minLen = Math.min(xs.length, ys.length);
-    for (int i = 0; i < minLen; ++i) {
-      int cmp = xs[i].compareTo(ys[i]);
-      if (cmp != 0)
-        return cmp;
-    }
-    if (xs.length < ys.length)
-      return -1;
-    else if (xs.length > ys.length)
-      return 1;
-    else
-      return 0;
-  }
-
   // Extract the tag of sum-typed value
   static String tag(Object value) throws JSONException {
     if (value instanceof String)

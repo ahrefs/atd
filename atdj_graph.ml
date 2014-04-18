@@ -3,6 +3,13 @@
 open Printf
 open Atdj_env
 
+let unique xs =
+  let xs' = List.sort Pervasives.compare xs in
+  let rec f = function
+    | (y::z::zs) -> if y = z then f (z::zs) else y :: (f (z :: zs))
+    | zs         -> zs in
+  f xs'
+
 (* Output a dot graph of the class hierarchy *)
 let output_graph env =
   let filename =
@@ -11,8 +18,8 @@ let output_graph env =
       | Some x -> Filename.chop_extension x ^ ".dot" in
   let out = open_out filename in
   let env = { env with
-                types     = Atdj_trans.unique env.types;
-                sub_types = Atdj_trans.unique env.sub_types } in
+                types     = unique env.types;
+                sub_types = unique env.sub_types } in
   fprintf out "digraph \"G\" {\n";
   fprintf out "  rankdir=BT\n";
   List.iter

@@ -92,8 +92,6 @@ let main () =
            freshen env (to_class_name name) in
          (* Bodge to prevent possible collision between variants and ... *)
          let (env, _) =
-           freshen env (to_class_name (name ^ "Opt")) in
-         let (env, _) =
            freshen env (to_class_name (name ^ "Factory")) in
          env)
       !env
@@ -101,9 +99,6 @@ let main () =
 
   (* Generate classes from ATD definition *)
   let env = Atdj_trans.trans_module env atd_module in
-
-  (* Generate the visitor interface *)
-  Atdj_trans.output_visitor env;
 
   (* Output helper classes *)
   Atdj_helper.output_util env;

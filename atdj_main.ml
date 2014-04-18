@@ -92,8 +92,6 @@ let main () =
            freshen env (to_class_name name) in
          (* Bodge to prevent possible collision between variants and ... *)
          let (env, _) =
-           freshen env (to_class_name (name ^ "Opt")) in
-         let (env, _) =
            freshen env (to_class_name (name ^ "Factory")) in
          env)
       !env

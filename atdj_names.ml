@@ -7,12 +7,12 @@ open Atdj_env
  * underscores and capitalise any character that is immediately following
  * an underscore or digit.  We also capitalise the initial character
  * e.g. "foo_bar42baz" becomes "FooBar42Baz". *)
-let to_class_name ?(require_class = false) str =
+let to_class_name str =
   match str with
     | "string" -> "String"
-    | "int"    -> if require_class then "Integer" else "int"
-    | "bool"   -> if require_class then "Boolean" else "boolean"
-    | "float"  -> if require_class then "Double"  else "double"
+    | "int"    -> "Integer"
+    | "bool"   -> "Boolean"
+    | "float"  -> "Double"
     | _ ->
         let res    = String.copy str in
         let offset = ref 0 in

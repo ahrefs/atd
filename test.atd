@@ -14,7 +14,6 @@ type v = {
   b <doc text="foo bar baz"> : bool;
   i : int;
   s : string;
-  o : bool option;
   l : bool list;
 
   (* Java keywords used as field names *)

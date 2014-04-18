@@ -11,15 +11,13 @@ open Atdj_util
  * an application of a unary constructor C to an ATD value v is denoted by the
  * JSONArray ["C", <v>], where <v> is the JSON representation of v.
  *
- * Option types follow the same encoding as sum types; the value None
- * is represented by the String "None", whilst a value Some v is denoted by the
- * JSONArray ["Some", <v>].
+ * Option types other than in optional fields (e.g. '?foo: int option')
+ * are not supported.
  *)
 let json_of_atd env atd_ty =
-  let atd_ty = norm_ty env atd_ty in
+  let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
   match atd_ty with
     | `Sum    _              (* Either a String or a two element JSONArray *)
-    | `Option _ -> "Object"  (* Either a String or a two element JSONArray *)
     | `Record _ -> "JSONObject"
     | `List   _ -> "JSONArray"
     | `Name (_, (_, ty, _), _) ->
@@ -30,17 +28,18 @@ let json_of_atd env atd_ty =
            | "string" -> "String"
            | _        -> assert false
         )
-    | x -> not_supported x
+    | x -> type_not_supported x
 
 (* Calculate the method name required to extract the JSON representation of an
- * ATD value from either a JSONObject or a JSONArray.
+ * ATD value from either a JSONObject or a JSONArray ("get", "opt",
+ * "getInt", "optInt", ...)
  *)
 let get env atd_ty opt =
-  let atd_ty = norm_ty env atd_ty in
+  let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
   let prefix = if opt then "opt" else "get" in
   let suffix =
     match atd_ty with
-      | `Sum _ | `Option _ -> ""
+      | `Sum _ -> ""
       | _ -> String.capitalize (json_of_atd env atd_ty) in
   prefix ^ suffix
 
@@ -64,20 +63,20 @@ let rec assign env opt_dst src java_ty atd_ty indent =
       (match atd_ty with
        | `Sum _ ->
            sprintf "Factory.make(%s)" src
-       | `Record _ | `Option _ ->
+       | `Record _ ->
            sprintf "new %s(%s)" java_ty src
        | `Name (_, (_, ty, _), _) ->
            (match ty with
             | "bool" | "int" | "float" | "string" -> src
             | _  -> assert false
            )
-       | x -> not_supported x
+       | x -> type_not_supported x
       )
   | Some dst ->
       (match atd_ty with
        | `Sum _ ->
            sprintf "%s%s = %sFactory.make(%s);\n" indent dst java_ty src
-       | `Record _ | `Option _ ->
+       | `Record _ ->
            sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
        | `List (_, sub_ty, _) ->
            let java_sub_ty = (*ahem*) extract_from_edgy_brackets java_ty in
@@ -91,11 +90,6 @@ let rec assign env opt_dst src java_ty atd_ty indent =
 
            ^ sprintf "%s  %s.add(%s);\n" indent
              dst sub_expr
-
-(*
-        ^ sprintf "%s  %s.add(%s.%s(i));\n" indent
-          dst src (get env ty false)
-*)
            ^ sprintf "%s}\n" indent
 
        | `Name (_, (_, ty, _), _) ->
@@ -104,7 +98,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
                 sprintf "%s%s = %s;\n" indent dst src
             | _  -> assert false
            )
-       | x -> not_supported x
+       | x -> type_not_supported x
       )
 
 (* Assign from an object field, with support for optional fields.  The are two
@@ -133,86 +127,65 @@ let rec assign env opt_dst src java_ty atd_ty indent =
  * check for the field and manually create a default.  If the field is present,
  * then we wrap its values as necessary.
  *)
-let assign_field env (`Field (loc, (name, kind, annots), atd_ty)) java_ty =
-  let name = name_field name annots in
+let assign_field env
+    (`Field (loc, (atd_field_name, kind, annots), atd_ty)) java_ty =
+  let json_field_name = atd_field_name in
+  let field_name = name_field atd_field_name annots in
   (* Check whether the field is optional *)
   let is_opt =
     match kind with
       | `Optional | `With_default -> true
       | `Required -> false in
-  let f () =
-    let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) name in
-    assign env (Some name) src java_ty atd_ty "    " in
-  if is_opt then (
-    match norm_ty env atd_ty with
-      | `Name _ -> f ()  (* Primitive types, such as bool, int etc. *)
-      | `List _ ->
-          let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) name in
-            sprintf "    if (jo.has(\"%s\")) {\n" name
-          ^ assign env (Some name) src java_ty atd_ty "      "
-          ^ sprintf "    } else {\n"
-          ^ sprintf "      %s = new %s();\n" name java_ty
-          ^ sprintf "    }\n"
-      | `Option (_, sub_atd_ty, _) ->
-          (match kind with
-             | `Optional ->
-                 (* Lift *)
-                 sprintf "    if (jo.has(\"%s\")) {\n" name
-                 ^ sprintf "      Object[] a = new Object[2];\n"
-                 ^ sprintf "      a[0] = new String(\"Some\");\n"
-                 ^ sprintf "      a[1] = jo.%s(\"%s\");\n"
-                     (get env sub_atd_ty false) name
-                 ^ sprintf "      %s = new %s(new JSONArray(a));\n"
-                     name java_ty
-                 ^ sprintf "    } else {\n"
-                 ^ sprintf "      %s = new %s();\n" name java_ty
-                 ^ sprintf "    }\n"
-             | `With_default ->
-                 (* Already lifted *)
-                   sprintf "    if (jo.has(\"%s\"))\n" name
-                 ^ sprintf "      %s = new %s(jo);\n" name java_ty
-                 ^ sprintf "    else\n"
-                 ^ sprintf "      %s = new %s();\n" name java_ty
-             | _ -> assert false
-          )
-      | x ->
-          (* #ReqOpt *)
-          warning loc
-            (sprintf "Field %s was declared optional but will be required."
-               name);
-          f ()
-  )
+  let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) json_field_name in
+  if not is_opt then
+    assign env (Some field_name) src java_ty atd_ty "    "
   else
-    f ()
+    let mk_else = function
+      | Some default ->
+          sprintf "    } else {\n    %s = %s;\n    }\n"
+            field_name default
+      | None ->
+          "    }\n"
+    in
+    let opt_set_default =
+      match kind with
+      | `With_default ->
+          (match norm_ty ~unwrap_option:true env atd_ty with
+           | `Name (_, (_, name, _), _) ->
+               (match name with
+                | "bool" -> mk_else (Some "false")
+                | "int" -> mk_else (Some "0")
+                | "float" -> mk_else (Some "0.0")
+                | "string" -> mk_else (Some "\"\"")
+                | _ -> mk_else None (* TODO: fail if no default is provided *)
+               )
+           | `List _ ->
+               (* java_ty is supposed to be of the form "ArrayList<...>" *)
+               mk_else (Some (sprintf "new %s()" java_ty))
+           | _ ->
+               mk_else None (* TODO: fail if no default is provided *)
+          )
+      | _ ->
+          mk_else None
+    in
+    let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
+    sprintf "    if (jo.has(\"%s\")) {\n" json_field_name
+    ^ assign env (Some field_name) src java_ty atd_ty "      "
+    ^ opt_set_default
 
-
-(* Check whether a type supports an accept method *)
-let rec can_accept env atd_ty =
-  let atd_ty = norm_ty env atd_ty in
-  match atd_ty with
-    | `Sum    _ -> true
-    | `Record _ -> true
-    | `Name   _ -> false
-    | `Option (_, sub_atd_ty, _) ->
-        can_accept env sub_atd_ty
-    | `List (_, sub_atd_ty, _) ->
-        can_accept env sub_atd_ty
-    | x -> not_supported x
 
 (* Generate a toString command *)
-let rec to_string env id atd_ty lift_opt indent =
+let rec to_string env id atd_ty indent =
   let atd_ty = norm_ty env atd_ty in
   match atd_ty with
     | `List (_, atd_sub_ty, _) ->
           sprintf "%sstr += \"[\";\n" indent
         ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
-        ^ to_string env (id ^ ".get(i)") atd_sub_ty false (indent ^ "  ")
+        ^ to_string env (id ^ ".get(i)") atd_sub_ty (indent ^ "  ")
         ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
         ^ sprintf "%s    str += \",\";\n" indent
         ^ sprintf "%s}\n" indent
         ^ sprintf "%sstr += \"]\";\n" indent
-    | `Option _ ->
-        sprintf "%sstr += %s.toString(%b);\n" indent id lift_opt
     | `Name (_, (_, "string", _), _) ->
         (* TODO Check that this is the correct behaviour *)
         sprintf
@@ -223,12 +196,12 @@ let rec to_string env id atd_ty lift_opt indent =
     | _ ->
         sprintf "%sstr += %s.toString();\n" indent id
 
-(* Generate a toString command for a record field.  For brevity, we omit
- * optional fields that have their default value. *)
+(* Generate a toString command for a record field. *)
 let to_string_field env = function
-  | (`Field (_, (name, kind, annots), atd_ty)) ->
-      let name = name_field name annots in
-      let atd_ty = norm_ty env atd_ty in
+  | (`Field (loc, (atd_field_name, kind, annots), atd_ty)) ->
+      let json_field_name = atd_field_name in
+      let field_name = name_field atd_field_name annots in
+      let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
       (* In the case of an optional field, create a predicate to test whether
        * the field has its default value. *)
       let pred =
@@ -237,45 +210,17 @@ let to_string_field env = function
             | `Optional | `With_default -> true
             | `Required -> false in
         if is_opt then
-          (match atd_ty with
-           | `Option _ ->
-               Some (sprintf "%s.is_set" name)
-           | `List _ ->
-               Some (sprintf "%s.size() > 0" name)
-           | `Name (_, (_, sub_name, _), _) ->
-               Some (match sub_name with
-                 | "bool" ->
-                     sprintf "%s" name
-                 | "int" | "float" ->
-                     sprintf "%s != 0" name
-                 | "string" ->
-                     sprintf "%s.equals(\"\") == false" name
-                 | _ -> assert false
-               )
-           | _ -> None (* unsupported optional record or variant #ReqOpt *)
-          )
-        else None in
-      let lift_opt =
-          match kind with
-            | `Optional -> true | _ -> false in
+          Some (sprintf "%s != null" field_name)
+        else
+          None
+      in
       let (prefix, suffix, indent) =
         match pred with
           | Some p ->  (sprintf "    if (%s) {\n" p, "    }\n", "      ")
           | None   ->  ("", "", "    ") in
         prefix
-      ^ sprintf "%sstr += \"\\\"%s\\\":\";\n"
-        indent name
-      ^ (match atd_ty with
-           | `Name _ -> ""
-           | `Option (_, atd_sub_ty, _) ->
-               let atd_sub_ty = norm_ty env atd_sub_ty in
-               (match atd_sub_ty with
-                  | `Name _ | `Sum _ -> ""
-                  | _ -> ""
-               )
-           | _ -> ""
-        )
-      ^ to_string env name atd_ty lift_opt indent
+      ^ sprintf "%sstr += \"\\\"%s\\\":\";\n" indent json_field_name
+      ^ to_string env field_name atd_ty indent
       ^ sprintf "%sstr += \",\";\n" indent
       ^ suffix
 
@@ -360,7 +305,7 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
     | `Name (_, (_, name, _), _) ->
         (* Don't translate primitive types at the top-level *)
         env
-    | x -> not_supported x
+    | x -> type_not_supported x
 
 (* Translation of sum types.  For a sum type
  *
@@ -420,7 +365,7 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "    String str = \"\";\n";
                     fprintf out "    str += \"[\\\"%s\\\",\";\n" var_name;
                     fprintf out "    %s"
-                      (to_string env "value" atd_ty false "");
+                      (to_string env "value" atd_ty "");
                     fprintf out "    str += \"]\";\n";
                     fprintf out "    return str;\n";
                     fprintf out "  }\n";
@@ -499,7 +444,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
     (fun (java_tys, env) -> function
        | `Field (_, (field_name, _, annots), atd_ty) ->
            let field_name = name_field field_name annots in
-           let (java_ty, env) = trans_inner env atd_ty in
+           let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
            ((field_name, java_ty) :: java_tys, env)
     )
     ([], env) fields in
@@ -548,94 +493,17 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   { env with types = `Class (class_name, java_tys) :: env.types }
 
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)
-and trans_inner ?(require_class = false) env atd_ty =
+and trans_inner env atd_ty =
   match atd_ty with
-  | `Option _ as opt ->
-      trans_option env opt
   | `Name (_, (_, name1, _), _) ->
       (match norm_ty env atd_ty with
          | `Name (_, (_, name2, _), _) ->
              (* It's a primitive type e.g. int *)
-             (Atdj_names.to_class_name ~require_class name2, env)
+             (Atdj_names.to_class_name name2, env)
          | _ ->
              (Atdj_names.to_class_name name1, env)
       )
   | `List (_, sub_atd_ty, _)  ->
-      let (ty', env) = trans_inner ~require_class:true env sub_atd_ty in
+      let (ty', env) = trans_inner env sub_atd_ty in
       ("ArrayList<" ^ ty' ^ ">", env)
-  | x -> not_supported x
-
-(* Translate an option type *)
-and trans_option env (`Option (_, atd_ty, _)) =
-  let (java_ty, env) = trans_inner env atd_ty in
-  let class_name = Atdj_names.to_class_name (java_ty ^ "Opt") in
-  let out = open_class env class_name in
-  fprintf out "/** An optional %s. */\n" java_ty;
-  fprintf out "public class %s implements Atdj {\n" class_name;
-  fprintf out "  %s() {\n" class_name;
-  fprintf out "    is_set = false;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  /**\n";
-  fprintf out "   * Construct from a JSON string.\n";
-  fprintf out "   */\n";
-  fprintf out "  public %s(String s) throws JSONException {\n" class_name;
-  fprintf out "    try {\n";
-  fprintf out "      init(new JSONArray(s));\n";
-  fprintf out "    } catch (JSONException e) {\n";
-  fprintf out "      init(s);\n";
-  fprintf out "    }\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  // Construct an option from an org.json parsed value \n";
-  fprintf out "  %s(Object value) throws JSONException {\n" class_name;
-  fprintf out "    init(value);\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  void init(Object value) throws JSONException {\n";
-  fprintf out "    if (Util.isNone(value))\n";
-  fprintf out "      is_set = false;\n";
-  fprintf out "    else if (Util.isSome(value)) {\n";
-  fprintf out "      is_set = true;\n";
-  output_string out
-    (assign env (Some "this.value")
-       (sprintf "((JSONArray)value).%s(1)" (get env atd_ty false))
-       java_ty atd_ty "      ");
-  fprintf out "    } else\n";
-  fprintf out "      throw new JSONException(\"Invalid option value\");\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  /** Attempt to get the value.\n";
-  fprintf out "   *  @throws JSONException if the value is not set. */\n";
-  fprintf out "  public %s get() throws JSONException {\n" java_ty;
-  fprintf out "    if (is_set)\n";
-  fprintf out "      return value;\n";
-  fprintf out "    else\n";
-  fprintf out "      throw new JSONException(\"Value is not set\");\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  public String toString() {\n";
-  fprintf out "    return toString(false);\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  String toString(boolean lift) {\n";
-  fprintf out "    String str = \"\";\n";
-  fprintf out "    if (is_set) {\n";
-  fprintf out "      if (!lift)\n";
-  fprintf out "        str += \"[\\\"Some\\\", \";\n";
-  output_string out (to_string env "value" atd_ty false "        ");
-  fprintf out "      if (!lift)\n";
-  fprintf out "        str += \"]\";\n";
-  fprintf out "    } else\n";
-  fprintf out "      str = \"None\";\n";
-  fprintf out "    return str;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  /** Whether the {@link #value} is set. */\n";
-  fprintf out "  public boolean is_set;\n";
-  fprintf out "  /** The value itself. */\n";
-  fprintf out "  public %s value;\n" java_ty;
-  fprintf out "}\n";
-  close_out out;
-  (class_name,
-   { env with types = `Class (class_name, ["value", java_ty]) :: env.types } )
+  | x -> type_not_supported x

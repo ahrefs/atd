@@ -10,8 +10,14 @@ let rec unwrap atd_ty =
   | `Wrap (_, x, _) -> unwrap x
   | x -> x
 
+let rec unwrap_option env atd_ty =
+  match atd_ty with
+  | `Wrap (_, x, _) -> unwrap_option env x
+  | `Option (_, x, _) -> unwrap_option env x
+  | x -> x
+
 (* Normalise an ATD type by expanding `top-level' type aliases *)
-let rec norm_ty env atd_ty =
+let rec norm_ty ?(unwrap_option = false) env atd_ty =
   let atd_ty = unwrap atd_ty in
   match atd_ty with
     | `Name (_, (_, name, _), _) ->
@@ -26,11 +32,17 @@ let rec norm_ty env atd_ty =
                   atd_ty
                )
         )
-    | _ -> atd_ty
+    | `Option (_, atd_ty, _) when unwrap_option ->
+        norm_ty ~unwrap_option env atd_ty
+    | _ ->
+        atd_ty
 
-let not_supported x =
-  let loc = Atd_ast.loc_of_type_expr x in
+let not_supported loc =
   Atd_ast.error_at loc "Construct not yet supported by atdj."
+
+let type_not_supported x =
+  let loc = Atd_ast.loc_of_type_expr x in
+  Atd_ast.error_at loc "Type not supported by atdj."
 
 let warning loc msg =
   let loc_s = Atd_ast.string_of_loc loc in

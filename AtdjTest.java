@@ -25,15 +25,13 @@ public class AtdjTest {
     assertTrue(t instanceof V1);
 
     V v = ((V1)t).value;
-    assertEquals(v.b, true);
+    assertEquals(true, v.b);
     v.b = false;
-    assertEquals(v.i, 42);
-    assertEquals(v.s, "foo");
-    assertTrue(v.o.is_set);
-    assertEquals(v.o.value, true);
-    assertEquals(v.l.size(), 2);
-    assertEquals(v.l.get(0), true);
-    assertEquals(v.l.get(1), false);
+    assertEquals(42, (int)v.i);
+    assertEquals("foo", v.s);
+    assertEquals(2, v.l.size());
+    assertEquals(true, v.l.get(0));
+    assertEquals(false, v.l.get(1));
   }
 
   @Test
@@ -57,11 +55,10 @@ public class AtdjTest {
     assertTrue(t instanceof W1);
 
     W w = ((W1)t).value;
-    assertEquals(w.b, false);
-    assertEquals(w.i, 0);
-    assertEquals(w.s, "");
-    assertEquals(w.o.is_set, false);
-    assertEquals(w.l.size(), 0);
+    assertEquals(false, w.b);
+    assertEquals(0, (int)w.i);
+    assertEquals("", w.s);
+    assertEquals(0, w.l.size());
   }
 
   @Test
@@ -77,7 +74,6 @@ public class AtdjTest {
     assertTrue(t instanceof X1);
 
     X x = ((X1)t).value;
-    assertEquals(x.o.is_set, false);
   }
 
   @Test
@@ -86,8 +82,7 @@ public class AtdjTest {
     assertTrue(t instanceof X1);
 
     X x = ((X1)t).value;
-    assertEquals(x.o.is_set, true);
-    assertEquals(x.o.value, true);
+    assertEquals(true, x.o);
   }
 
   @Test

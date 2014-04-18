@@ -16,6 +16,10 @@ type v = {
   s : string;
   o : bool option;
   l : bool list;
+
+  (* Java keywords used as field names *)
+  ?class : int option;
+  ?final <java name="is_final"> : int option;
 }
 
 <doc text="wibble">

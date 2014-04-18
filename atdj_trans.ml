@@ -1,4 +1,5 @@
 open Printf
+open Atdj_names
 open Atdj_env
 open Atdj_util
 
@@ -96,6 +97,7 @@ let rec assign env dst src java_ty atd_ty indent =
  * then we wrap its values as necessary.
  *)
 let assign_field env (`Field (loc, (name, kind, annots), atd_ty)) java_ty =
+  let name = name_field name annots in
   (* Check whether the field is optional *)
   let is_opt =
     match kind with
@@ -210,6 +212,7 @@ let rec to_string env id atd_ty lift_opt indent =
  * optional fields that have their default value. *)
 let to_string_field env = function
   | (`Field (_, (name, kind, annots), atd_ty)) ->
+      let name = name_field name annots in
       let atd_ty = norm_ty env atd_ty in
       (* In the case of an optional field, create a predicate to test whether
        * the field has its default value. *)
@@ -274,8 +277,7 @@ let hash_code env atd_ty java_ty id res indent =
             | "int" -> "Integer"
             | _     -> String.capitalize java_ty in
         sprintf "%s%s += new %s(%s).hashCode();\n" indent res class_name id
-    | `List (_, sub_atd_ty, _) ->
-        let sub_atd_ty = norm_ty env sub_atd_ty in
+    | `List (_, _, _) ->
           sprintf "%sfor (int i = 0; i < %s.size(); ++i)\n" indent id
         ^ sprintf "%s  %s *= 31 + %s.get(i).hashCode();\n" indent res id
 
@@ -652,7 +654,8 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   (* Translate field types *)
   let (java_tys, env) = List.fold_left
     (fun (java_tys, env) -> function
-       | `Field (_, (field_name, _, _), atd_ty) ->
+       | `Field (_, (field_name, _, annots), atd_ty) ->
+           let field_name = name_field field_name annots in
            let (java_ty, env) = trans_inner env atd_ty in
            ((field_name, java_ty) :: java_tys, env)
     )
@@ -674,9 +677,10 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "  %s(JSONObject jo) throws JSONException {\n" class_name;
   let env = List.fold_left
     (fun env (`Field (loc, (field_name, _, annots), _) as field) ->
-       let cmd = assign_field env field (List.assoc field_name java_tys) in
-       fprintf out "%s" cmd;
-       env
+      let field_name = name_field field_name annots in
+      let cmd = assign_field env field (List.assoc field_name java_tys) in
+      fprintf out "%s" cmd;
+      env
     )
     env fields in
   fprintf out "  }\n";
@@ -684,7 +688,8 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "  public Visitor accept(Visitor v) {\n";
   fprintf out "    v.visit(this);\n";
   List.iter
-    (fun (`Field (_, (field_name, _, _), atd_ty)) ->
+    (fun (`Field (_, (field_name, _, annots), atd_ty)) ->
+       let field_name = name_field field_name annots in
        output_string out
          (accept env field_name
             (List.assoc field_name java_tys) atd_ty "v" "    ");
@@ -709,10 +714,11 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "  public int hashCode() {\n";
   fprintf out "    int h = 1;\n";
   List.iter
-    (function `Field (_, (field_name, _, _), atd_ty) ->
-       let java_ty = List.assoc field_name java_tys in
-       fprintf out "    h *= 31;\n";
-       output_string out (hash_code env atd_ty java_ty field_name "h" "    ")
+    (function `Field (_, (field_name, _, annots), atd_ty) ->
+      let field_name = name_field field_name annots in
+      let java_ty = List.assoc field_name java_tys in
+      fprintf out "    h *= 31;\n";
+      output_string out (hash_code env atd_ty java_ty field_name "h" "    ")
     )
     fields;
   fprintf out "    return h;\n";
@@ -725,13 +731,14 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "  public int compareTo(%s that) {\n" class_name;
   fprintf out "    int cmp = 0;\n";
   List.iter
-    (function `Field (_, (field_name, _, _), atd_ty) ->
-       let java_ty = List.assoc field_name java_tys in
-       output_string out
-         (compare_to env atd_ty java_ty
-            ("this." ^ field_name) ("that." ^ field_name) "cmp" "    ");
-       fprintf out "    if (cmp != 0)\n";
-       fprintf out "      return cmp;\n";
+    (function `Field (_, (field_name, _, annots), atd_ty) ->
+      let field_name = name_field field_name annots in
+      let java_ty = List.assoc field_name java_tys in
+      output_string out
+        (compare_to env atd_ty java_ty
+           ("this." ^ field_name) ("that." ^ field_name) "cmp" "    ");
+      fprintf out "    if (cmp != 0)\n";
+      fprintf out "      return cmp;\n";
     )
     fields;
   fprintf out "    return 0;\n";
@@ -747,9 +754,10 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "\n";
   List.iter
     (function `Field (loc, (field_name, _, annots), _) ->
-       let java_ty = List.assoc field_name java_tys in
-       output_string out (javadoc loc annots "  ");
-       fprintf out "  public %s %s;\n" java_ty field_name)
+      let field_name = name_field field_name annots in
+      let java_ty = List.assoc field_name java_tys in
+      output_string out (javadoc loc annots "  ");
+      fprintf out "  public %s %s;\n" java_ty field_name)
     fields;
   fprintf out "}\n";
   close_out out;

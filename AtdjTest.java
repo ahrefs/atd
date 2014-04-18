@@ -39,7 +39,7 @@ public class AtdjTest {
 
   @Test
   public void testV() throws JSONException {
-    T t = TFactory.make("[\"V\", {\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false]}]");
+    T t = TFactory.make("[\"V\", {\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"l2\":[]}]");
     assertTrue(t instanceof V1);
 
     V v = ((V1)t).value;
@@ -56,15 +56,15 @@ public class AtdjTest {
 
   @Test
   public void testVEquals() throws JSONException {
-    T t1  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false]}]");
-    T t2  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false]}]");
-    T t3  = TFactory.make("[\"V\", {\"b\": false, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false]}]");
-    T t4  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 43, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false]}]");
-    T t5  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"bar\", \"o\": [\"Some\", true],  \"l\": [true, false]}]");
-    T t6  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", false], \"l\": [true, false]}]");
-    T t7  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": \"None\",          \"l\": [true, false]}]");
-    T t8  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, true]}]");
-    T t9  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": []}]");
+    T t1  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
+    T t2  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
+    T t3  = TFactory.make("[\"V\", {\"b\": false, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
+    T t4  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 43, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
+    T t5  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"bar\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
+    T t6  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", false], \"l\": [true, false], \"l2\":[]}]");
+    T t7  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": \"None\",          \"l\": [true, false], \"l2\":[]}]");
+    T t8  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, true], \"l2\":[]}]");
+    T t9  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [], \"l2\":[]}]");
     T t10 = TFactory.make("\"U\"");
 
     assertTrue(t1.equals(t1));

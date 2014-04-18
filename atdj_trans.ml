@@ -44,31 +44,68 @@ let get env atd_ty opt =
       | _ -> String.capitalize (json_of_atd env atd_ty) in
   prefix ^ suffix
 
+let extract_from_edgy_brackets s =
+  Str.global_replace
+    (Str.regexp "^[^<]*<\\|>[^>]*$") "" s
+(*
+extract_from_edgy_brackets "ab<cd<e>>f";;
+- : string = "cd<e>"
+*)
+
 (* Assignment with translation.  Suppose that atd_ty is an ATD type, with
  * corresponding Java and (Javafied) JSON types java_ty and json_ty. Then this
  * function assigns to a variable `dst' of type java_ty from a variable `src' of
  * type `json_ty'.
  *)
-let rec assign env dst src java_ty atd_ty indent =
+let rec assign env opt_dst src java_ty atd_ty indent =
   let atd_ty = norm_ty env atd_ty in
-  match atd_ty with
-    | `Sum _ ->
-        sprintf "%s%s = %sFactory.make(%s);\n" indent dst java_ty src
-    | `Record _ | `Option _ ->
-        sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
-    | `List (_, ty, _) ->
-          sprintf "%s%s = new %s();\n" indent dst java_ty
-        ^ sprintf "%sfor (int i = 0; i < %s.length(); ++i) {\n" indent src
+  match opt_dst with
+  | None ->
+      (match atd_ty with
+       | `Sum _ ->
+           sprintf "Factory.make(%s)" src
+       | `Record _ | `Option _ ->
+           sprintf "new %s(%s)" java_ty src
+       | `Name (_, (_, ty, _), _) ->
+           (match ty with
+            | "bool" | "int" | "float" | "string" -> src
+            | _  -> assert false
+           )
+       | x -> not_supported x
+      )
+  | Some dst ->
+      (match atd_ty with
+       | `Sum _ ->
+           sprintf "%s%s = %sFactory.make(%s);\n" indent dst java_ty src
+       | `Record _ | `Option _ ->
+           sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
+       | `List (_, sub_ty, _) ->
+           let java_sub_ty = (*ahem*) extract_from_edgy_brackets java_ty in
+           let sub_expr = assign env None "tmp" java_sub_ty sub_ty "" in
+
+           sprintf "%s%s = new %s();\n" indent dst java_ty
+           ^ sprintf "%sfor (int i = 0; i < %s.length(); ++i) {\n" indent src
+
+           ^ sprintf "%s  %s tmp = %s.%s(i);\n" indent
+             (json_of_atd env sub_ty) src (get env sub_ty false)
+
+           ^ sprintf "%s  %s.add(%s);\n" indent
+             dst sub_expr
+
+(*
         ^ sprintf "%s  %s.add(%s.%s(i));\n" indent
           dst src (get env ty false)
-        ^ sprintf "%s}\n" indent
-    | `Name (_, (_, ty, _), _) ->
-        (match ty with
-           | "bool" | "int" | "float" | "string" ->
-               sprintf "%s%s = %s;\n" indent dst src
-           | _  -> assert false
-        )
-    | x -> not_supported x
+*)
+           ^ sprintf "%s}\n" indent
+
+       | `Name (_, (_, ty, _), _) ->
+           (match ty with
+            | "bool" | "int" | "float" | "string" ->
+                sprintf "%s%s = %s;\n" indent dst src
+            | _  -> assert false
+           )
+       | x -> not_supported x
+      )
 
 (* Assign from an object field, with support for optional fields.  The are two
  * kinds of optional fields: `With_default (~) and `Optional (?).  For both
@@ -105,14 +142,14 @@ let assign_field env (`Field (loc, (name, kind, annots), atd_ty)) java_ty =
       | `Required -> false in
   let f () =
     let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) name in
-    assign env name src java_ty atd_ty "    " in
+    assign env (Some name) src java_ty atd_ty "    " in
   if is_opt then (
     match norm_ty env atd_ty with
       | `Name _ -> f ()  (* Primitive types, such as bool, int etc. *)
       | `List _ ->
           let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) name in
             sprintf "    if (jo.has(\"%s\")) {\n" name
-          ^ assign env name src java_ty atd_ty "      "
+          ^ assign env (Some name) src java_ty atd_ty "      "
           ^ sprintf "    } else {\n"
           ^ sprintf "      %s = new %s();\n" name java_ty
           ^ sprintf "    }\n"
@@ -169,8 +206,7 @@ let accept env var java_ty atd_ty visitor indent =
     let atd_ty = norm_ty env atd_ty in
     match atd_ty with
       | `List _ ->
-          let java_sub_ty =
-            Str.global_replace (Str.regexp "\\[\\]") "" java_ty in
+          let java_sub_ty = extract_from_edgy_brackets java_ty in
             sprintf "%sfor (%s elt : %s)\n" indent java_sub_ty var
           ^ sprintf "%s  elt.accept(%s);\n" indent visitor
       | _ ->
@@ -517,7 +553,8 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
                     fprintf out "  %s(%s value) throws JSONException {\n"
                       var_class_name (json_of_atd env atd_ty);
                     fprintf out "%s\n"
-                      (assign env "this.value" "value" java_ty atd_ty "    ");
+                      (assign env (Some "this.value") "value" java_ty atd_ty
+                         "    ");
                     fprintf out "  }\n";
                     fprintf out "\n";
                     fprintf out "  public Visitor accept(Visitor v) {\n";
@@ -814,7 +851,7 @@ and trans_option env (`Option (_, atd_ty, _)) =
   fprintf out "    else if (Util.isSome(value)) {\n";
   fprintf out "      is_set = true;\n";
   output_string out
-    (assign env "this.value"
+    (assign env (Some "this.value")
        (sprintf "((JSONArray)value).%s(1)" (get env atd_ty false))
        java_ty atd_ty "      ");
   fprintf out "    } else\n";

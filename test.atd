@@ -20,6 +20,9 @@ type v = {
   (* Java keywords used as field names *)
   ?class : int option;
   ?final <java name="is_final"> : int option;
+
+  (* List of records *)
+  l2 : w list;
 }
 
 <doc text="wibble">

@@ -15,6 +15,7 @@ type v = {
   i : int;
   s : string;
   l : bool list;
+  t : t;
 
   (* Java keywords used as field names *)
   ?class : int option;

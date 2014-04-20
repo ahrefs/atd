@@ -116,7 +116,7 @@ let is_java_keyword =
    not_a_keyword <java name="class">   class
 
 *)
-let name_field field_name annot =
+let get_java_field_name field_name annot =
   let field_name =
     if is_java_keyword field_name then
       field_name ^ "_"
@@ -124,3 +124,24 @@ let name_field field_name annot =
       field_name
   in
   Atd_annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
+
+let get_java_variant_names field_name annot =
+  let lower_field_name = String.lowercase field_name in
+  let field_name =
+    if is_java_keyword lower_field_name then
+      field_name ^ "_"
+    else
+      field_name
+  in
+  let field_name =
+    Atd_annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
+  in
+  let enum_name = String.uppercase field_name in
+  let private_field_name = String.lowercase field_name in
+  enum_name, private_field_name
+
+let get_json_field_name field_name annot =
+  Atd_annot.get_field (fun s -> Some s) field_name ["json"] "name" annot
+
+let get_json_variant_name field_name annot =
+  Atd_annot.get_field (fun s -> Some s) field_name ["json"] "name" annot

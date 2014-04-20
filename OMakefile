@@ -6,7 +6,6 @@ FILES[] =
   atdj_names
   atdj_util
   atdj_trans
-  atdj_graph
   atdj_helper
   atdj_main
 
@@ -28,8 +27,7 @@ README: doc/readme.txt
 
 .PHONY: test
 test: atdj.opt test.atd
-	./atdj.opt -graph test.atd -package com.mylife.test
-	dot -Tpdf test.dot >test.pdf
+	./atdj.opt test.atd -package com.mylife.test
 	javac -classpath $(CLASSPATH) com/mylife/test/*.java
         javac -classpath $(CLASSPATH) AtdjTest.java
 	javadoc -classpath $(CLASSPATH) -d doc/test -public com.mylife.test
@@ -37,7 +35,7 @@ test: atdj.opt test.atd
 
 clean:
         rm -f *.o *.a *.cm* *~ *.annot atdj atdj.opt TAGS
-	rm -f AtdjTest*.class test.dot test.pdf
+	rm -f AtdjTest*.class
         rm -f PsapiResponseExample*.class psapi_response.dot \
 		psapi_response.pdf psapi_response_example.out
 	rm -rf com doc/example doc/test

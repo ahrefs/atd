@@ -4,12 +4,9 @@ open Printf
 open Atdj_env
 
 let args_spec env = Arg.align
-    [ ("-package",
-       Arg.String (fun x -> env := { !env with package = x }),
-       " Package name of generated files")
-    ; ("-graph",
-       Arg.Unit   (fun x -> env := { !env with graph = true }),
-       " Output class graph in dot format")
+    [ "-package",
+      Arg.String (fun x -> env := { !env with package = x }),
+      " Package name of generated files"
     ]
 
 let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"
@@ -104,11 +101,8 @@ let main () =
   Atdj_helper.output_util env;
   Atdj_helper.output_atdj env;
 
-  Atdj_helper.output_package_javadoc env atd_head;
+  Atdj_helper.output_package_javadoc env atd_head
 
-  (* Output graph in dot format *)
-  if env.graph then
-    Atdj_graph.output_graph env
 
 let () =
   try main ()

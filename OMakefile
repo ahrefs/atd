@@ -26,16 +26,6 @@ doc: README
 README: doc/readme.txt
 	cp doc/readme.txt README
 
-#.PHONY: example
-#example: atdj psapi_response.atd
-#	./atdj -graph psapi_response.atd -package com.mylife.psapi.response
-#	dot -Tpdf psapi_response.dot >psapi_response.pdf
-#	javac -classpath $(CLASSPATH) com/mylife/psapi/response/*.java
-#	javac -classpath $(CLASSPATH) PsapiResponseExample.java
-#	javadoc -classpath $(CLASSPATH) -d doc/example -public com.mylife.psapi.response
-#	java  -classpath $(CLASSPATH) PsapiResponseExample \
-#		>psapi_response_example.out
-
 .PHONY: test
 test: atdj.opt test.atd
 	./atdj.opt -graph test.atd -package com.mylife.test

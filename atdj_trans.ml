@@ -288,7 +288,6 @@ let open_class env cname =
 package %s;
 import java.util.ArrayList;
 import org.json.*;
-import java.lang.Math;
 
 "
     env.package;

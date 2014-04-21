@@ -26,7 +26,7 @@ public class AtdjTest {
   @Test
   public void testV() throws JSONException {
     V v = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": \"U\", \"l2\":[]}");
-    V v2 = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": [\"X\",true], \"l2\":[]}");
+    V v2 = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": [\"X\",{\"o\":true}], \"l2\":[]}");
 
     assertEquals(true, v.b);
     v.b = false;

@@ -7,7 +7,7 @@ import com.mylife.test.*;
 
 public class AtdjTest {
   @Test
-  public void testU() throws JSONException {
+  public void testSum() throws JSONException {
     SampleSum s = new SampleSum();
 
     boolean errorDetected;
@@ -19,8 +19,8 @@ public class AtdjTest {
     }
     assertTrue(errorDetected);
 
-    s.setU();
-    assertEquals(SampleSumTag.U, s.tag());
+    s.setSimpleTag();
+    assertEquals(SampleSumTag.SIMPLE_TAG, s.tag());
 
     SimpleRecord r = new SimpleRecord();
     assertEquals(null, r.o);
@@ -30,13 +30,26 @@ public class AtdjTest {
     s.setSimpleRecord(r);
     assertEquals(SampleSumTag.SIMPLE_RECORD, s.tag());
     assertTrue(s.getSimpleRecord() != null);
-    assertTrue(s.getV() == null);
+    assertTrue(s.getComplexRecord() == null);
   }
 
   @Test
-  public void testV() throws JSONException {
-    V v = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"sample_sum\": \"U\", \"l2\":[]}");
-    V v2 = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"sample_sum\": [\"Simple_record\",{\"o\":true}], \"l2\":[]}");
+  public void testMissingField() throws JSONException {
+    ComplexRecord x = new ComplexRecord();
+    boolean errorDetected;
+    try {
+      x.toJson();
+      errorDetected = false;
+    } catch (JSONException e) {
+      errorDetected = true;
+    }
+    assertTrue(errorDetected);
+  }
+
+  @Test
+  public void testComplexRecord() throws JSONException {
+    ComplexRecord v = new ComplexRecord("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"sample_sum\": \"Simple_tag\", \"l2\":[]}");
+    ComplexRecord v2 = new ComplexRecord("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"sample_sum\": [\"Simple_record\",{\"o\":true}], \"l2\":[]}");
 
     assertEquals(true, v.b);
     v.b = false;

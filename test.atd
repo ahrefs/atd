@@ -2,33 +2,33 @@
 type e = [ Alpha | Beta ]
 
 (* Sum *)
-type t = [
-  | U
-  | V of v
-  | W of w
+type sample_sum = [
+  | Simple_tag
   | Simple_record of simple_record
+  | Complex_record of complex_record
+  | Record_with_defaults of record_with_defaults
 ]
 
 (* Record *)
-type v = {
+type complex_record = {
   b <doc text="foo bar baz"> : bool;
   i : int;
   s : string;
   l : bool list;
-  t : t;
+  sample_sum : sample_sum;
 
   (* Java keywords used as field names *)
   ?class : int option;
   ?final <java name="is_final"> : int option;
 
   (* List of records *)
-  l2 : w list;
+  l2 : record_with_defaults list;
 }
 
 <doc text="wibble">
 
 (* Record with default fields *)
-type w = {
+type record_with_defaults = {
   ~b : bool;
   ~i : int;
   ~s : string;

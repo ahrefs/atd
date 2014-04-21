@@ -53,3 +53,18 @@ Warning:
 %!"
     loc_s
     msg
+
+(*
+   Insert given string ind_S at the beginning of each line from string s.
+*)
+let indent_block_s =
+  let rex = Str.regexp "^" in
+  fun ins s ->
+    Str.global_replace rex ins s
+
+(*
+   Insert n spaces at the beginning of each line from string s.
+*)
+let indent_block n s =
+  let ins = String.make n ' ' in
+  indent_block_s ins s

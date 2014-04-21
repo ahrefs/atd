@@ -7,26 +7,49 @@ import com.mylife.test.*;
 
 public class AtdjTest {
   @Test
-  public void testU() throws JSONException {
-    T t = new T();
-    t.setU();
-    assertEquals(TTag.U, t.tag());
+  public void testSum() throws JSONException {
+    SampleSum s = new SampleSum();
 
-    SimpleRecord x = new SimpleRecord();
-    assertEquals(null, x.o);
-    x.o = true;
-    assertEquals(true, x.o);
+    boolean errorDetected;
+    try {
+      s.toJson();
+      errorDetected = false;
+    } catch (JSONException e) {
+      errorDetected = true;
+    }
+    assertTrue(errorDetected);
 
-    t.setSimpleRecord(x);
-    assertEquals(TTag.SIMPLE_RECORD, t.tag());
-    assertTrue(t.getSimpleRecord() != null);
-    assertTrue(t.getV() == null);
+    s.setSimpleTag();
+    assertEquals(SampleSumTag.SIMPLE_TAG, s.tag());
+
+    SimpleRecord r = new SimpleRecord();
+    assertEquals(null, r.o);
+    r.o = true;
+    assertEquals(true, r.o);
+
+    s.setSimpleRecord(r);
+    assertEquals(SampleSumTag.SIMPLE_RECORD, s.tag());
+    assertTrue(s.getSimpleRecord() != null);
+    assertTrue(s.getComplexRecord() == null);
   }
 
   @Test
-  public void testV() throws JSONException {
-    V v = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": \"U\", \"l2\":[]}");
-    V v2 = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": [\"Simple_record\",{\"o\":true}], \"l2\":[]}");
+  public void testMissingField() throws JSONException {
+    ComplexRecord x = new ComplexRecord();
+    boolean errorDetected;
+    try {
+      x.toJson();
+      errorDetected = false;
+    } catch (JSONException e) {
+      errorDetected = true;
+    }
+    assertTrue(errorDetected);
+  }
+
+  @Test
+  public void testComplexRecord() throws JSONException {
+    ComplexRecord v = new ComplexRecord("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"sample_sum\": \"Simple_tag\", \"l2\":[]}");
+    ComplexRecord v2 = new ComplexRecord("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"sample_sum\": [\"Simple_record\",{\"o\":true}], \"l2\":[]}");
 
     assertEquals(true, v.b);
     v.b = false;

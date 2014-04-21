@@ -7,9 +7,10 @@ Later:
 - write to a buffer rather than concatenating strings (for performance)
 - produce an output tree using Atd_indent rather fprintf
   (for clarity and atdj performance)
-- support top-level lists
-- add support for lists of lists
-- add location information to exceptions (need own parser)
+- variant implementation: avoid memory leak by clearing previous field
 - translate atd syntax tree first, then generate code instead of doing
   everything in the same pass (for clarity and atdj performance)
 - merge into atdgen
+- support top-level lists
+- add support for lists of lists
+- add location information to exceptions (need own parser)

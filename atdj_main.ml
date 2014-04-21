@@ -4,12 +4,9 @@ open Printf
 open Atdj_env
 
 let args_spec env = Arg.align
-    [ ("-package",
-       Arg.String (fun x -> env := { !env with package = x }),
-       " Package name of generated files")
-    ; ("-graph",
-       Arg.Unit   (fun x -> env := { !env with graph = true }),
-       " Output class graph in dot format")
+    [ "-package",
+      Arg.String (fun x -> env := { !env with package = x }),
+      " Package name of generated files"
     ]
 
 let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"
@@ -40,10 +37,11 @@ let main () =
   let args_spec' = args_spec env in
   Arg.parse args_spec'
     (fun x -> env := { !env with input_file = Some x }) usage_msg;
+  let env = !env in
 
   (* Check for input file *)
   let input_file =
-    match !env.input_file with
+    match env.input_file with
       | None   ->
           prerr_endline "No input file specified";
           Arg.usage args_spec' usage_msg;
@@ -57,7 +55,7 @@ let main () =
 
   (* Validate package name *)
   let re = Str.regexp "^[a-zA-Z0-9]+\\(\\.[a-zA-Z0-9]+\\)*$" in
-  if not (Str.string_match re !env.package 0) then (
+  if not (Str.string_match re env.package 0) then (
     prerr_endline "Invalid package name";
     Arg.usage args_spec' usage_msg;
     exit 1
@@ -68,34 +66,16 @@ let main () =
     Atd_util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in
-  env := { !env with
-             module_items =
-               List.map
-                 (function (`Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
-                 atd_module };
+  let env = {
+    env with
+    module_items =
+      List.map
+        (function (`Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
+        atd_module
+  } in
 
   (* Create package directories *)
-  env := { !env with package_dir = make_package_dirs !env.package };
-
-  (* Pre-populate fresh name generator with top-level names.
-   * Top-level names are guaranteed unique amonst themselves, and
-   * therefore can be output without freshening.  However, variant
-   * names may collide, both with top-level names and also amongst
-   * themselves.  Therefore these latter names must be freshened (see
-   * trans_variant).
-   *)
-  let env =
-    List.fold_left
-      (fun env (`Type (_, (name, _, _), _)) ->
-         let open Atdj_names in
-         let (env, _) =
-           freshen env (to_class_name name) in
-         (* Bodge to prevent possible collision between variants and ... *)
-         let (env, _) =
-           freshen env (to_class_name (name ^ "Factory")) in
-         env)
-      !env
-      atd_module in
+  let env = { env with package_dir = make_package_dirs env.package } in
 
   (* Generate classes from ATD definition *)
   let env = Atdj_trans.trans_module env atd_module in
@@ -104,11 +84,8 @@ let main () =
   Atdj_helper.output_util env;
   Atdj_helper.output_atdj env;
 
-  Atdj_helper.output_package_javadoc env atd_head;
+  Atdj_helper.output_package_javadoc env atd_head
 
-  (* Output graph in dot format *)
-  if env.graph then
-    Atdj_graph.output_graph env
 
 let () =
   try main ()

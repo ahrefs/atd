@@ -23,7 +23,7 @@ let output_util env =
   fprintf out "\
 class Util {
   // Extract the tag of sum-typed value
-  static String tag(Object value) throws JSONException {
+  static String extractTag(Object value) throws JSONException {
     if (value instanceof String)
       return (String)value;
     else if (value instanceof JSONArray)

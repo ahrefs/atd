@@ -33,7 +33,7 @@ let rec norm_ty ?(unwrap_option = false) env atd_ty =
                )
         )
     | `Option (_, atd_ty, _) when unwrap_option ->
-        norm_ty ~unwrap_option env atd_ty
+        norm_ty env atd_ty
     | _ ->
         atd_ty
 

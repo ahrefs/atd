@@ -8,23 +8,26 @@ import com.mylife.test.*;
 public class AtdjTest {
   @Test
   public void testU() throws JSONException {
-    T t = TFactory.make("\"U\"");
-    assertTrue(t instanceof U);
-  }
+    T t = new T();
+    t.setU();
+    assertEquals(TTag.U, t.tag());
 
-  @Test
-  public void testUEquals() throws JSONException {
-    T t1 = TFactory.make("\"U\"");
-    T t2 = TFactory.make("\"U\"");
-    T t3 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
+    SimpleRecord x = new SimpleRecord();
+    assertEquals(null, x.o);
+    x.o = true;
+    assertEquals(true, x.o);
+
+    t.setSimpleRecord(x);
+    assertEquals(TTag.SIMPLE_RECORD, t.tag());
+    assertTrue(t.getSimpleRecord() != null);
+    assertTrue(t.getV() == null);
   }
 
   @Test
   public void testV() throws JSONException {
-    T t = TFactory.make("[\"V\", {\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"l2\":[]}]");
-    assertTrue(t instanceof V1);
+    V v = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": \"U\", \"l2\":[]}");
+    V v2 = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": [\"Simple_record\",{\"o\":true}], \"l2\":[]}");
 
-    V v = ((V1)t).value;
     assertEquals(true, v.b);
     v.b = false;
     assertEquals(42, (int)v.i);
@@ -32,65 +35,6 @@ public class AtdjTest {
     assertEquals(2, v.l.size());
     assertEquals(true, v.l.get(0));
     assertEquals(false, v.l.get(1));
-  }
-
-  @Test
-  public void testVEquals() throws JSONException {
-    T t1  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
-    T t2  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
-    T t3  = TFactory.make("[\"V\", {\"b\": false, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
-    T t4  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 43, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
-    T t5  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"bar\", \"o\": [\"Some\", true],  \"l\": [true, false], \"l2\":[]}]");
-    T t6  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", false], \"l\": [true, false], \"l2\":[]}]");
-    T t7  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": \"None\",          \"l\": [true, false], \"l2\":[]}]");
-    T t8  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [true, true], \"l2\":[]}]");
-    T t9  = TFactory.make("[\"V\", {\"b\": true,  \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true],  \"l\": [], \"l2\":[]}]");
-    T t10 = TFactory.make("\"U\"");
-
-  }
-
-  @Test
-  public void testW() throws JSONException {
-    T t = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
-    assertTrue(t instanceof W1);
-
-    W w = ((W1)t).value;
-    assertEquals(false, w.b);
-    assertEquals(0, (int)w.i);
-    assertEquals("", w.s);
-    assertEquals(0, w.l.size());
-  }
-
-  @Test
-  public void testWEquals() throws JSONException {
-    T t1 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
-    T t2 = TFactory.make("[\"W\", {\"e\":\"Alpha\"}]");
-    T t3 = TFactory.make("\"U\"");
-  }
-
-  @Test
-  public void testXNone() throws JSONException {
-    T t = TFactory.make("[\"X\", {}]");
-    assertTrue(t instanceof X1);
-
-    X x = ((X1)t).value;
-  }
-
-  @Test
-  public void testXSome() throws JSONException {
-    T t = TFactory.make("[\"X\", {\"o\" : true}]");
-    assertTrue(t instanceof X1);
-
-    X x = ((X1)t).value;
-    assertEquals(true, x.o);
-  }
-
-  @Test
-  public void testXEquals() throws JSONException {
-    T t1 = TFactory.make("[\"X\", {}]");
-    T t2 = TFactory.make("[\"X\", {}]");
-    T t3 = TFactory.make("[\"X\", {\"o\" : true}]");
-    T t4 = TFactory.make("\"U\"");
   }
 
   public static void main(String[] args) {

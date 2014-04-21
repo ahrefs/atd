@@ -1,11 +1,15 @@
 Now:
-- support enum fields with default value
-- use a single class with enums for sum types, provide a getKind()
-  returning the constructor; provide unsafe getters to get the
-  associated value if any, and a setter for each case.
+- fail with a useful error message when trying to serialize undefined fields
+  (both in records and variants) rather than returning null.
+- update documentation for ArrayList and for variants
 
 Later:
-- use ArrayList instead of regular arrays
+- write to a buffer rather than concatenating strings (for performance)
+- produce an output tree using Atd_indent rather fprintf
+  (for clarity and atdj performance)
 - support top-level lists
-- Add support for lists of lists
-- Add location information to exceptions (need own parser)
+- add support for lists of lists
+- add location information to exceptions (need own parser)
+- translate atd syntax tree first, then generate code instead of doing
+  everything in the same pass (for clarity and atdj performance)
+- merge into atdgen

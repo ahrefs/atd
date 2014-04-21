@@ -17,7 +17,7 @@ open Atdj_util
 let json_of_atd env atd_ty =
   let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
   match atd_ty with
-    | `Sum    _              (* Either a String or a two element JSONArray *)
+    | `Sum    _ -> "" (* Either a String or a two element JSONArray *)
     | `Record _ -> "JSONObject"
     | `List   _ -> "JSONArray"
     | `Name (_, (_, ty, _), _) ->
@@ -62,7 +62,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
   | None ->
       (match atd_ty with
        | `Sum _ ->
-           sprintf "Factory.make(%s)" src
+           sprintf "new %s(%s)" java_ty src
        | `Record _ ->
            sprintf "new %s(%s)" java_ty src
        | `Name (_, (_, ty, _), _) ->
@@ -75,7 +75,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
   | Some dst ->
       (match atd_ty with
        | `Sum _ ->
-           sprintf "%s%s = %sFactory.make(%s);\n" indent dst java_ty src
+           sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
        | `Record _ ->
            sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
        | `List (_, sub_ty, _) ->
@@ -129,8 +129,8 @@ let rec assign env opt_dst src java_ty atd_ty indent =
  *)
 let assign_field env
     (`Field (loc, (atd_field_name, kind, annots), atd_ty)) java_ty =
-  let json_field_name = atd_field_name in
-  let field_name = name_field atd_field_name annots in
+  let json_field_name = get_json_field_name atd_field_name annots in
+  let field_name = get_java_field_name atd_field_name annots in
   (* Check whether the field is optional *)
   let is_opt =
     match kind with
@@ -199,8 +199,8 @@ let rec to_string env id atd_ty indent =
 (* Generate a toString command for a record field. *)
 let to_string_field env = function
   | (`Field (loc, (atd_field_name, kind, annots), atd_ty)) ->
-      let json_field_name = atd_field_name in
-      let field_name = name_field atd_field_name annots in
+      let json_field_name = get_json_field_name atd_field_name annots in
+      let field_name = get_java_field_name atd_field_name annots in
       let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
       (* In the case of an optional field, create a predicate to test whether
        * the field has its default value. *)
@@ -288,7 +288,6 @@ let open_class env cname =
 package %s;
 import java.util.ArrayList;
 import org.json.*;
-import java.lang.Math;
 
 "
     env.package;
@@ -309,123 +308,174 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
 
 (* Translation of sum types.  For a sum type
  *
- *   type t = Foo | Bar,
+ *   type ty = Foo | Bar of whatever
  *
- * we generate:
- *
- * 1. An marker interface
- * 2. A class for each constructor (i.e. Foo and Bar), implementing the marker
- *    interface.
- * 3. A factory class with a static `make' method.
- *    This method accepts a JSON parameter
- *    corresponding to a t, and instantiates the appropriate class from (2).
+ * we generate a class Ty implemented in Ty.java and an enum TyEnum defined
+ * in a separate file TyTag.java.
  *)
 and trans_sum my_name env (`Sum (loc, vars, annots)) =
-  (* Interface *)
-  let ifc_name = Atdj_names.to_class_name my_name in
-  let ifc_out = open_class env ifc_name in
-  output_string ifc_out (javadoc loc annots "");
-  fprintf ifc_out "public interface %s extends Atdj {\n" ifc_name;
-  fprintf ifc_out "}\n";
-  close_out ifc_out;
-  let env = { env with types = (`Interface ifc_name) :: env.types; } in
-  (* Constructors *)
-  (* Javadoc doesn't seem to be used here, so omit for now *)
-  let (env, names, _) = List.fold_left
-    (fun (env, names, count) -> function
-       | `Variant (_, (var_name, _), atd_type_expr_opt) ->
-           let (env, var_class_name) =
-             Atdj_names.freshen env (Atdj_names.to_class_name var_name) in
-           let out = open_class env var_class_name in
-           fprintf out "public class %s implements %s {\n"
-             var_class_name ifc_name;
-           let env =
-             (match atd_type_expr_opt with
-                | None ->
-                    fprintf out "  %s() { }\n" var_class_name;
-                    fprintf out "\n";
-                    fprintf out "  public String toString() {\n";
-                    fprintf out "    return \"\\\"%s\\\"\";\n" var_name;
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    { env with
-                        types = `Class (var_class_name, []) :: env.types;
-                        sub_types = (var_class_name, ifc_name) :: env.sub_types
-                    }
-                | Some atd_ty ->
-                    let (java_ty, env) = trans_inner env atd_ty in
-                    fprintf out "  %s(%s value) throws JSONException {\n"
-                      var_class_name (json_of_atd env atd_ty);
-                    fprintf out "%s\n"
-                      (assign env (Some "this.value") "value" java_ty atd_ty
-                         "    ");
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public String toString() {\n";
-                    fprintf out "    String str = \"\";\n";
-                    fprintf out "    str += \"[\\\"%s\\\",\";\n" var_name;
-                    fprintf out "    %s"
-                      (to_string env "value" atd_ty "");
-                    fprintf out "    str += \"]\";\n";
-                    fprintf out "    return str;\n";
-                    fprintf out "  }\n";
-                    fprintf out "\n";
-                    fprintf out "  public final %s value;\n" java_ty;
-                    { env with
-                        types = `Class (var_class_name, ["value", java_ty])
-                                :: env.types;
-                        sub_types = (var_class_name, ifc_name)
-                                    :: env.sub_types
-                    }
-             ) in
-           fprintf out "}\n";
-           close_out out;
-           (env, (var_name, var_class_name) :: names, succ count)
-       | `Inherit _ -> assert false
-    )
-    (env, [], 1) vars in
-  (* Factory class *)
-  let fact_name = Atdj_names.to_class_name (my_name ^ "Factory") in
-  let fact_out = open_class env fact_name in
-  fprintf fact_out "/**\n";
-  fprintf fact_out " * Construct objects of type %s.\n" my_name;
-  fprintf fact_out " */\n";
-  fprintf fact_out "public class %s {\n" fact_name;
-  fprintf fact_out "  public static %s make(String s) throws JSONException {\n"
-    ifc_name;
-  fprintf fact_out "    try {\n";
-  fprintf fact_out "      return make(new JSONArray(s));\n";
-  fprintf fact_out "    } catch (Exception e) {\n";
-  fprintf fact_out "      // Could not parse as JSONArray, so try as string\n";
-  fprintf fact_out "      return make((Object)Util.unescapeString\
-                                                (Util.parseJSONString(s)));\n";
-  fprintf fact_out "    }\n";
-  fprintf fact_out "  }\n";
-  fprintf fact_out "\n";
-  fprintf fact_out "  static %s make(Object o) throws JSONException {\n"
-    ifc_name;
-  fprintf fact_out "    String tag = Util.tag(o);\n";
-  List.iter
-    (function
-       | `Variant (_, (var_name, _), type_expr_opt) ->
-           (match type_expr_opt with
-              | None ->
-                  fprintf fact_out "    if (tag.equals(\"%s\"))\n" var_name;
-                  fprintf fact_out "      return new %s();\n"
-                    (List.assoc var_name names)
-              | Some t ->
-                  fprintf fact_out "    if (tag.equals(\"%s\"))\n" var_name;
-                  fprintf fact_out "      return new %s(((JSONArray)o).%s(1));\n"
-                    (List.assoc var_name names)
-                    (get env t false);
-           )
-       | `Inherit _ -> assert false
-    )
-    vars;
-  fprintf fact_out "    throw new JSONException(\"Invalid tag: \" + tag);\n";
-  fprintf fact_out "  }\n";
-  fprintf fact_out "}\n";
-  close_out fact_out;
+  let class_name = Atdj_names.to_class_name my_name in
+
+  let cases = List.map (function
+    | `Variant (_, (atd_name, an), opt_ty) ->
+        let json_name = get_json_variant_name atd_name an in
+        let func_name, enum_name, field_name =
+          get_java_variant_names atd_name an in
+        let opt_java_ty =
+          match opt_ty with
+          | None -> None
+          | Some ty ->
+              let (java_ty, env) = trans_inner env (unwrap_option env ty) in
+              Some (ty, java_ty)
+        in
+        (json_name, func_name, enum_name, field_name, opt_java_ty)
+    | `Inherit _ -> assert false
+  ) vars
+  in
+
+  let tags = List.map (fun (_, _, enum_name, _, _) -> enum_name) cases in
+
+  let enum_out = open_class env (class_name ^ "Tag") in
+  fprintf enum_out "\
+/**
+ * Define tags for sum type %s.
+ */
+
+public enum %sTag {
+  %s
+}
+"
+    my_name
+    class_name
+    (String.concat ", " tags);
+  close_out enum_out;
+
+
+  let out = open_class env class_name in
+
+  fprintf out "\
+/**
+ * Construct objects of type %s.
+ */
+
+public class %s {
+  %sTag t = null;
+
+  public %s() {
+  }
+
+  public %sTag tag() {
+    return t;
+  }
+"
+    my_name
+    class_name
+    class_name
+    class_name
+    class_name;
+
+  fprintf out "
+  public %s(Object o) throws JSONException {
+    String tag = Util.extractTag(o);
+   %a
+      throw new JSONException(\"Invalid tag: \" + tag);
+  }
+"
+    class_name
+    (fun out l ->
+       List.iter (fun (json_name, func_name, enum_name, field_name, opt_ty) ->
+         match opt_ty with
+         | None ->
+             fprintf out " \
+    if (tag.equals(\"%s\"))
+      t = %sTag.%s;
+    else"
+               json_name (* TODO: java-string-escape this *)
+               class_name enum_name
+
+         | Some (atd_ty, java_ty) ->
+             let src = sprintf "((JSONArray)o).%s(1)" (get env atd_ty false) in
+             let set_value =
+               assign env
+                 (Some ("field_" ^ field_name)) src
+                 java_ty atd_ty "      "
+             in
+             fprintf out " \
+    if (tag.equals(\"%s\")) {
+%s
+      t = %sTag.%s;
+    }
+    else"
+               json_name (* TODO: java-string-escape this *)
+               set_value
+               class_name enum_name
+       ) l
+  ) cases;
+
+  List.iter (fun (_, func_name, enum_name, field_name, opt_ty) ->
+    match opt_ty with
+    | None ->
+        fprintf out "
+  public void set%s() {
+    /* TODO: clear previously-set field and avoid memory leak */
+    t = %sTag.%s;
+  }
+"
+          func_name
+          class_name enum_name;
+    | Some (atd_ty, java_ty) ->
+        fprintf out "
+  %s field_%s = null;
+  public void set%s(%s x) {
+    /* TODO: clear previously-set field in order to avoid memory leak */
+    t = %sTag.%s;
+    field_%s = x;
+  }
+  public %s get%s() {
+    if (t == %sTag.%s)
+      return field_%s;
+    else
+      return null;
+  }
+"
+          java_ty field_name
+          func_name java_ty
+          class_name enum_name
+          field_name
+          java_ty func_name
+          class_name enum_name
+          field_name;
+  ) cases;
+
+  fprintf out "
+  public String toString() {
+    switch(t) {%a
+    default:
+      return null;
+    }
+  }
+"
+    (fun out l ->
+       List.iter (fun (json_name, func_name, enum_name, field_name, opt_ty) ->
+         match opt_ty with
+         | None ->
+             fprintf out "
+    case %s:
+      return \"\\\"%s\\\"\";"
+               enum_name
+               json_name (* TODO: java-string-escape *)
+
+         | Some _ ->
+             fprintf out "
+    case %s:
+      return \"[\\\"%s\\\",\" + field_%s.toString() + \"]\";"
+               enum_name
+               json_name field_name
+       ) l
+    ) cases;
+
+  fprintf out "}\n";
+  close_out out;
   env
 
 (* Translate a record into a Java class.  Each record field becomes a field
@@ -443,7 +493,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   let (java_tys, env) = List.fold_left
     (fun (java_tys, env) -> function
        | `Field (_, (field_name, _, annots), atd_ty) ->
-           let field_name = name_field field_name annots in
+           let field_name = get_java_field_name field_name annots in
            let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
            ((field_name, java_ty) :: java_tys, env)
     )
@@ -458,6 +508,8 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "  /**\n";
   fprintf out "   * Construct from a JSON string.\n";
   fprintf out "   */\n";
+  fprintf out "  public %s() {\n" class_name;
+  fprintf out "  }\n";
   fprintf out "  public %s(String s) throws JSONException {\n" class_name;
   fprintf out "    this(new JSONObject(s));\n";
   fprintf out "  }\n";
@@ -465,7 +517,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "  %s(JSONObject jo) throws JSONException {\n" class_name;
   let env = List.fold_left
     (fun env (`Field (loc, (field_name, _, annots), _) as field) ->
-      let field_name = name_field field_name annots in
+      let field_name = get_java_field_name field_name annots in
       let cmd = assign_field env field (List.assoc field_name java_tys) in
       fprintf out "%s" cmd;
       env
@@ -483,14 +535,14 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   fprintf out "\n";
   List.iter
     (function `Field (loc, (field_name, _, annots), _) ->
-      let field_name = name_field field_name annots in
+      let field_name = get_java_field_name field_name annots in
       let java_ty = List.assoc field_name java_tys in
       output_string out (javadoc loc annots "  ");
       fprintf out "  public %s %s;\n" java_ty field_name)
     fields;
   fprintf out "}\n";
   close_out out;
-  { env with types = `Class (class_name, java_tys) :: env.types }
+  env
 
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)
 and trans_inner env atd_ty =

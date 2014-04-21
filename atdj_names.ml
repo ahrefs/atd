@@ -2,6 +2,27 @@
 
 open Atdj_env
 
+let to_camel_case s =
+  let res    = String.copy s in
+  let offset = ref 0 in
+  let upper  = ref true in
+  let f = function
+    | '_' ->
+        upper := true;
+    | ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9') as x ->
+        upper := true;
+        res.[!offset] <- x;
+        incr offset
+    | _ as x ->
+        if !upper then (
+          res.[!offset] <- Char.uppercase x;
+          upper := false
+        ) else
+          res.[!offset] <- x;
+        incr offset in
+  String.iter f s;
+  String.sub res 0 !offset
+
 (* Translate type names into idiomatic Java class names.  We special case
  * `string', `int' and `bool'  (see code).  For the remainder, we remove
  * underscores and capitalise any character that is immediately following
@@ -13,38 +34,7 @@ let to_class_name str =
     | "int"    -> "Integer"
     | "bool"   -> "Boolean"
     | "float"  -> "Double"
-    | _ ->
-        let res    = String.copy str in
-        let offset = ref 0 in
-        let upper  = ref true in
-        let f = function
-          | '_' ->
-              upper := true;
-          | ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9') as x ->
-              upper := true;
-              res.[!offset] <- x;
-              incr offset
-          | _ as x ->
-              if !upper then (
-                res.[!offset] <- Char.uppercase x;
-                upper := false
-              ) else
-                res.[!offset] <- x;
-              incr offset in
-        String.iter f str;
-        String.sub res 0 !offset
-
-(* Generate a unique name by appending, if necessary, an integer
- * suffix to the string.  For example, after successive calls with the name
- * `foo', we obtain `foo', `foo1', `foo2' etc. *)
-let freshen env str =
-  if Names.mem str env.names then
-    let n = succ (Names.find str env.names) in
-    let env = { env with names = Names.add str n env.names } in
-    (env, str ^ (string_of_int n))
-  else
-    let env = { env with names = Names.add str 0 env.names } in
-    (env, str)
+    | _ -> to_camel_case str
 
 let java_keywords = [
   "abstract";
@@ -116,7 +106,7 @@ let is_java_keyword =
    not_a_keyword <java name="class">   class
 
 *)
-let name_field field_name annot =
+let get_java_field_name field_name annot =
   let field_name =
     if is_java_keyword field_name then
       field_name ^ "_"
@@ -124,3 +114,25 @@ let name_field field_name annot =
       field_name
   in
   Atd_annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
+
+let get_java_variant_names field_name annot =
+  let lower_field_name = String.lowercase field_name in
+  let field_name =
+    if is_java_keyword lower_field_name then
+      field_name ^ "_"
+    else
+      field_name
+  in
+  let field_name =
+    Atd_annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
+  in
+  let func_name = to_camel_case field_name in
+  let enum_name = String.uppercase field_name in
+  let private_field_name = String.lowercase field_name in
+  func_name, enum_name, private_field_name
+
+let get_json_field_name field_name annot =
+  Atd_annot.get_field (fun s -> Some s) field_name ["json"] "name" annot
+
+let get_json_variant_name field_name annot =
+  Atd_annot.get_field (fun s -> Some s) field_name ["json"] "name" annot

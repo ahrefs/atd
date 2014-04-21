@@ -14,8 +14,13 @@ public interface Atdj {
    * Get the JSON string representation.
    * @return The JSON string.
    */
-  String toString();
-}";
+  String toJson() throws JSONException;
+
+  /* TODO:
+  void toJsonBuffer(Buffer buf);
+  */
+}
+";
   close_out out
 
 let output_util env =
@@ -45,20 +50,6 @@ class Util {
   // Escape double quotes and backslashes
   static String escape(String str) {
     return str.replace(\"\\\\\", \"\\\\\\\\\").replace(\"\\\"\", \"\\\\\\\"\");
-  }
-
-  // Parse a JSON string, strictly
-  static String parseJSONString(String str) throws JSONException {
-    if (str.length() < 1 || str.charAt(0) != '\"')
-      throw new JSONException(\"Expected '\\\"'\");
-    for (int i = 1; i < str.length(); ++i)
-      if (str.charAt(i) == '\"'
-          && str.charAt(i - 1) != '\\\\'
-          && i < str.length() - 1)
-        throw new JSONException(\"Trailing characters\");
-    if (str.length() < 2 || str.charAt(str.length() - 1) != '\"')
-      throw new JSONException(\"Unterminated string '\\\"'\");
-    return str.substring(1, str.length() - 1);
   }
 
   // Unescape escaped backslashes and double quotations.

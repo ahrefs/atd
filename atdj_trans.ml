@@ -174,7 +174,7 @@ let assign_field env
     ^ opt_set_default
 
 
-(* Generate a toString command *)
+(* Generate a toJson command *)
 let rec to_string env id atd_ty indent =
   let atd_ty = norm_ty env atd_ty in
   match atd_ty with
@@ -194,9 +194,9 @@ let rec to_string env id atd_ty indent =
     | `Name _ ->
         sprintf "%sstr += String.valueOf(%s);\n" indent id
     | _ ->
-        sprintf "%sstr += %s.toString();\n" indent id
+        sprintf "%sstr += %s.toJson();\n" indent id
 
-(* Generate a toString command for a record field. *)
+(* Generate a toJson command for a record field. *)
 let to_string_field env = function
   | (`Field (loc, (atd_field_name, kind, annots), atd_ty)) ->
       let json_field_name = get_json_field_name atd_field_name annots in
@@ -265,10 +265,10 @@ let javadoc loc annots indent =
  * implements the following interface:
  *
  *  interface Atdj {
- *    String toString();
+ *    String toJson() throws JSONException;
  *  }
  *
- * The toString() method outputs a JSON representation of the
+ * The toJson() method outputs a JSON representation of the
  * associated value.
  *
  * Each class also has a String constructor for a JSON string as well as a
@@ -448,10 +448,10 @@ public class %s {
   ) cases;
 
   fprintf out "
-  public String toString() {
+  public String toJson() throws JSONException {
     switch(t) {%a
     default:
-      return null;
+      throw new JSONException(\"Uninitialized %s\");
     }
   }
 "
@@ -468,11 +468,12 @@ public class %s {
          | Some _ ->
              fprintf out "
     case %s:
-      return \"[\\\"%s\\\",\" + field_%s.toString() + \"]\";"
+      return \"[\\\"%s\\\",\" + field_%s.toJson() + \"]\";"
                enum_name
                json_name field_name
        ) l
-    ) cases;
+    ) cases
+    class_name;
 
   fprintf out "}\n";
   close_out out;
@@ -525,7 +526,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
     env fields in
   fprintf out "  }\n";
   fprintf out "\n";
-  fprintf out "  public String toString() {\n";
+  fprintf out "  public String toJson() throws JSONException {\n";
   fprintf out "    String str = \"{\";\n";
   List.iter (fun field -> output_string out (to_string_field env field)) fields;
   fprintf out "    str = str.replaceAll(\",\\n$\", \"\\n\");\n";

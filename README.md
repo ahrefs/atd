@@ -18,12 +18,12 @@ Specifically, the generated interface offers the following features:
 Installation
 ============
 
-Building atdj requires atd and omake.
+Building atdj requires atdgen and omake.
 The easiest way to set this up is with opam
 (http://opam.ocamlpro.com/).
 Once opam is installed, run:
 ```
-opam install atd
+opam install atdgen
 opam install omake
 ```
 

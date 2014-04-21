@@ -537,7 +537,7 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
     fields;
   fprintf out "}\n";
   close_out out;
-  { env with types = `Class (class_name, java_tys) :: env.types }
+  env
 
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)
 and trans_inner env atd_ty =

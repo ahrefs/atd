@@ -34,18 +34,6 @@ let to_class_name str =
         String.iter f str;
         String.sub res 0 !offset
 
-(* Generate a unique name by appending, if necessary, an integer
- * suffix to the string.  For example, after successive calls with the name
- * `foo', we obtain `foo', `foo1', `foo2' etc. *)
-let freshen env str =
-  if Names.mem str env.names then
-    let n = succ (Names.find str env.names) in
-    let env = { env with names = Names.add str n env.names } in
-    (env, str ^ (string_of_int n))
-  else
-    let env = { env with names = Names.add str 0 env.names } in
-    (env, str)
-
 let java_keywords = [
   "abstract";
   "assert";

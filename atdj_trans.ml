@@ -462,6 +462,7 @@ public class %s {
     if (t == null)
       throw new JSONException(\"Uninitialized %s\");
     else {
+      String str = \"\";
       switch(t) {%a
       default:
         return \"\"; /* unused; keeps compiler happy */
@@ -480,12 +481,15 @@ public class %s {
                enum_name
                json_name (* TODO: java-string-escape *)
 
-         | Some _ ->
+         | Some (atd_ty, _) ->
              fprintf out "
       case %s:
-         return \"[\\\"%s\\\",\" + field_%s.toJson() + \"]\";"
-               enum_name
-               json_name field_name
+         str = \"[\\\"%s\\\",\";
+%s         str += \"]\";
+         return str;"
+             enum_name
+             json_name
+             (to_string env ("field_" ^ field_name) atd_ty "         ")
        ) l
     ) cases;
 

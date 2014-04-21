@@ -4,6 +4,10 @@ type e = [ Alpha | Beta ]
 (* Sum *)
 type sample_sum = [
   | Simple_tag
+  | Bool of bool
+  | Int of int
+  | Float of float
+  | String <java name="S"> of string
   | Simple_record of simple_record
   | Complex_record of complex_record
   | Record_with_defaults of record_with_defaults

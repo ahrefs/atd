@@ -11,7 +11,8 @@ let output_atdj env =
  */
 public interface Atdj {
   /**
-   * Get the JSON string representation.
+   * Get the JSON string representation, failing if some of the data
+   * was not initialized.
    * @return The JSON string.
    */
   String toJson() throws JSONException;

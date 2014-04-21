@@ -2,7 +2,7 @@
 type e = [ Alpha | Beta ]
 
 (* Sum *)
-type t = [
+type sample_sum = [
   | U
   | V of v
   | W of w
@@ -15,7 +15,7 @@ type v = {
   i : int;
   s : string;
   l : bool list;
-  t : t;
+  sample_sum : sample_sum;
 
   (* Java keywords used as field names *)
   ?class : int option;

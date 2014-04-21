@@ -449,31 +449,35 @@ public class %s {
 
   fprintf out "
   public String toJson() throws JSONException {
-    switch(t) {%a
-    default:
+    if (t == null)
       throw new JSONException(\"Uninitialized %s\");
+    else {
+      switch(t) {%a
+      default:
+        return \"\"; /* unused; keeps compiler happy */
+      }
     }
   }
 "
+    class_name
     (fun out l ->
        List.iter (fun (json_name, func_name, enum_name, field_name, opt_ty) ->
          match opt_ty with
          | None ->
              fprintf out "
-    case %s:
-      return \"\\\"%s\\\"\";"
+      case %s:
+        return \"\\\"%s\\\"\";"
                enum_name
                json_name (* TODO: java-string-escape *)
 
          | Some _ ->
              fprintf out "
-    case %s:
-      return \"[\\\"%s\\\",\" + field_%s.toJson() + \"]\";"
+      case %s:
+         return \"[\\\"%s\\\",\" + field_%s.toJson() + \"]\";"
                enum_name
                json_name field_name
        ) l
-    ) cases
-    class_name;
+    ) cases;
 
   fprintf out "}\n";
   close_out out;

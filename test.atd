@@ -6,7 +6,7 @@ type t = [
   | U
   | V of v
   | W of w
-  | X of x
+  | Simple_record of simple_record
 ]
 
 (* Record *)
@@ -38,4 +38,4 @@ type w = {
 }
 
 (* Record with optional field *)
-type x = { ?o : bool option }
+type simple_record = { ?o : bool option }

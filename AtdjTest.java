@@ -9,24 +9,24 @@ public class AtdjTest {
   @Test
   public void testU() throws JSONException {
     T t = new T();
-    t.set_U();
-    assertEquals(T.TTag.U, t.tag());
+    t.setU();
+    assertEquals(TTag.U, t.tag());
 
-    X x = new X();
+    SimpleRecord x = new SimpleRecord();
     assertEquals(null, x.o);
     x.o = true;
     assertEquals(true, x.o);
 
-    t.set_X(x);
-    assertEquals(T.TTag.X, t.tag());
-    assertTrue(t.get_X() != null);
-    assertTrue(t.get_V() == null);
+    t.setSimpleRecord(x);
+    assertEquals(TTag.SIMPLE_RECORD, t.tag());
+    assertTrue(t.getSimpleRecord() != null);
+    assertTrue(t.getV() == null);
   }
 
   @Test
   public void testV() throws JSONException {
     V v = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": \"U\", \"l2\":[]}");
-    V v2 = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": [\"X\",{\"o\":true}], \"l2\":[]}");
+    V v2 = new V("{\"b\": true, \"i\": 42, \"s\": \"foo\", \"o\": [\"Some\", true], \"l\": [true, false], \"t\": [\"Simple_record\",{\"o\":true}], \"l2\":[]}");
 
     assertEquals(true, v.b);
     v.b = false;

@@ -2,6 +2,27 @@
 
 open Atdj_env
 
+let to_camel_case s =
+  let res    = String.copy s in
+  let offset = ref 0 in
+  let upper  = ref true in
+  let f = function
+    | '_' ->
+        upper := true;
+    | ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9') as x ->
+        upper := true;
+        res.[!offset] <- x;
+        incr offset
+    | _ as x ->
+        if !upper then (
+          res.[!offset] <- Char.uppercase x;
+          upper := false
+        ) else
+          res.[!offset] <- x;
+        incr offset in
+  String.iter f s;
+  String.sub res 0 !offset
+
 (* Translate type names into idiomatic Java class names.  We special case
  * `string', `int' and `bool'  (see code).  For the remainder, we remove
  * underscores and capitalise any character that is immediately following
@@ -13,26 +34,7 @@ let to_class_name str =
     | "int"    -> "Integer"
     | "bool"   -> "Boolean"
     | "float"  -> "Double"
-    | _ ->
-        let res    = String.copy str in
-        let offset = ref 0 in
-        let upper  = ref true in
-        let f = function
-          | '_' ->
-              upper := true;
-          | ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9') as x ->
-              upper := true;
-              res.[!offset] <- x;
-              incr offset
-          | _ as x ->
-              if !upper then (
-                res.[!offset] <- Char.uppercase x;
-                upper := false
-              ) else
-                res.[!offset] <- x;
-              incr offset in
-        String.iter f str;
-        String.sub res 0 !offset
+    | _ -> to_camel_case str
 
 let java_keywords = [
   "abstract";
@@ -124,9 +126,10 @@ let get_java_variant_names field_name annot =
   let field_name =
     Atd_annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
   in
+  let func_name = to_camel_case field_name in
   let enum_name = String.uppercase field_name in
   let private_field_name = String.lowercase field_name in
-  enum_name, private_field_name
+  func_name, enum_name, private_field_name
 
 let get_json_field_name field_name annot =
   Atd_annot.get_field (fun s -> Some s) field_name ["json"] "name" annot

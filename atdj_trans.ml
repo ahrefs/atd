@@ -308,19 +308,49 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
 
 (* Translation of sum types.  For a sum type
  *
- *   type t = Foo | Bar,
+ *   type ty = Foo | Bar of whatever
  *
- * we generate:
- *
- * 1. An marker interface
- * 2. A class for each constructor (i.e. Foo and Bar), implementing the marker
- *    interface.
- * 3. A factory class with a static `make' method.
- *    This method accepts a JSON parameter
- *    corresponding to a t, and instantiates the appropriate class from (2).
+ * we generate a class Ty implemented in Ty.java and an enum TyEnum defined
+ * in a separate file TyTag.java.
  *)
 and trans_sum my_name env (`Sum (loc, vars, annots)) =
   let class_name = Atdj_names.to_class_name my_name in
+
+  let cases = List.map (function
+    | `Variant (_, (atd_name, an), opt_ty) ->
+        let json_name = get_json_variant_name atd_name an in
+        let func_name, enum_name, field_name =
+          get_java_variant_names atd_name an in
+        let opt_java_ty =
+          match opt_ty with
+          | None -> None
+          | Some ty ->
+              let (java_ty, env) = trans_inner env (unwrap_option env ty) in
+              Some (ty, java_ty)
+        in
+        (json_name, func_name, enum_name, field_name, opt_java_ty)
+    | `Inherit _ -> assert false
+  ) vars
+  in
+
+  let tags = List.map (fun (_, _, enum_name, _, _) -> enum_name) cases in
+
+  let enum_out = open_class env (class_name ^ "Tag") in
+  fprintf enum_out "\
+/**
+ * Define tags for sum type %s.
+ */
+
+public enum %sTag {
+  %s
+}
+"
+    my_name
+    class_name
+    (String.concat ", " tags);
+  close_out enum_out;
+
+
   let out = open_class env class_name in
 
   fprintf out "\
@@ -329,31 +359,6 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
  */
 
 public class %s {
-"
-    my_name
-    class_name;
-
-  let cases = List.map (function
-    | `Variant (_, (atd_name, an), opt_ty) ->
-        let json_name = get_json_variant_name atd_name an in
-        let enum_name, field_name = get_java_variant_names atd_name an in
-        let opt_java_ty =
-          match opt_ty with
-          | None -> None
-          | Some ty ->
-              let (java_ty, env) = trans_inner env (unwrap_option env ty) in
-              Some (ty, java_ty)
-        in
-        (json_name, enum_name, field_name, opt_java_ty)
-    | `Inherit _ -> assert false
-  ) vars
-  in
-
-  let tags = List.map (fun (_, enum_name, _, _) -> enum_name) cases in
-  fprintf out "
-  public enum %sTag {
-    %s
-  }
   %sTag t = null;
 
   public %s() {
@@ -363,8 +368,8 @@ public class %s {
     return t;
   }
 "
+    my_name
     class_name
-    (String.concat ", " tags)
     class_name
     class_name
     class_name;
@@ -378,7 +383,7 @@ public class %s {
 "
     class_name
     (fun out l ->
-       List.iter (fun (json_name, enum_name, field_name, opt_ty) ->
+       List.iter (fun (json_name, func_name, enum_name, field_name, opt_ty) ->
          match opt_ty with
          | None ->
              fprintf out " \
@@ -407,26 +412,26 @@ public class %s {
        ) l
   ) cases;
 
-  List.iter (fun (_, enum_name, field_name, opt_ty) ->
+  List.iter (fun (_, func_name, enum_name, field_name, opt_ty) ->
     match opt_ty with
     | None ->
         fprintf out "
-  public void set_%s() {
+  public void set%s() {
     /* TODO: clear previously-set field and avoid memory leak */
     t = %sTag.%s;
   }
 "
-          enum_name
+          func_name
           class_name enum_name;
     | Some (atd_ty, java_ty) ->
         fprintf out "
   %s field_%s = null;
-  public void set_%s(%s x) {
+  public void set%s(%s x) {
     /* TODO: clear previously-set field in order to avoid memory leak */
     t = %sTag.%s;
     field_%s = x;
   }
-  public %s get_%s() {
+  public %s get%s() {
     if (t == %sTag.%s)
       return field_%s;
     else
@@ -434,10 +439,10 @@ public class %s {
   }
 "
           java_ty field_name
-          enum_name java_ty
+          func_name java_ty
           class_name enum_name
           field_name
-          java_ty enum_name
+          java_ty func_name
           class_name enum_name
           field_name;
   ) cases;
@@ -451,7 +456,7 @@ public class %s {
   }
 "
     (fun out l ->
-       List.iter (fun (json_name, enum_name, field_name, opt_ty) ->
+       List.iter (fun (json_name, func_name, enum_name, field_name, opt_ty) ->
          match opt_ty with
          | None ->
              fprintf out "

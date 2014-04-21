@@ -204,25 +204,35 @@ let to_string_field env = function
       let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
       (* In the case of an optional field, create a predicate to test whether
        * the field has its default value. *)
-      let pred =
+      let if_part =
+        sprintf "
+    if (%s != null) {
+      if (isFirst)
+        isFirst = false;
+      else
+        str += \",\";
+      str += \"\\\"%s\\\":\";
+%s    }
+"
+          field_name
+          json_field_name
+          (to_string env field_name atd_ty "      ")
+      in
+      let else_part =
         let is_opt =
           match kind with
             | `Optional | `With_default -> true
             | `Required -> false in
         if is_opt then
-          Some (sprintf "%s != null" field_name)
+          ""
         else
-          None
+          sprintf "    \
+    else
+      throw new JSONException(\"Uninitialized field %s\");
+"
+            field_name
       in
-      let (prefix, suffix, indent) =
-        match pred with
-          | Some p ->  (sprintf "    if (%s) {\n" p, "    }\n", "      ")
-          | None   ->  ("", "", "    ") in
-        prefix
-      ^ sprintf "%sstr += \"\\\"%s\\\":\";\n" indent json_field_name
-      ^ to_string env field_name atd_ty indent
-      ^ sprintf "%sstr += \",\";\n" indent
-      ^ suffix
+      if_part ^ else_part
 
 (* Generate a javadoc comment *)
 let javadoc loc annots indent =
@@ -509,17 +519,28 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
   let out = open_class env class_name in
   (* Javadoc *)
   output_string out (javadoc loc annots "");
-  fprintf out "public class %s implements Atdj {\n" class_name;
-  fprintf out "  /**\n";
-  fprintf out "   * Construct from a JSON string.\n";
-  fprintf out "   */\n";
-  fprintf out "  public %s() {\n" class_name;
-  fprintf out "  }\n";
-  fprintf out "  public %s(String s) throws JSONException {\n" class_name;
-  fprintf out "    this(new JSONObject(s));\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  %s(JSONObject jo) throws JSONException {\n" class_name;
+  fprintf out "\
+public class %s implements Atdj {
+  /**
+   * Construct from a fresh record with null fields.
+   */
+  public %s() {
+  }
+
+  /**
+   * Construct from a JSON string.
+   */
+  public %s(String s) throws JSONException {
+    this(new JSONObject(s));
+  }
+
+  %s(JSONObject jo) throws JSONException {
+"
+    class_name
+    class_name
+    class_name
+    class_name;
+
   let env = List.fold_left
     (fun env (`Field (loc, (field_name, _, annots), _) as field) ->
       let field_name = get_java_field_name field_name annots in
@@ -528,16 +549,23 @@ and trans_record my_name env (`Record (loc, fields, annots)) =
       env
     )
     env fields in
-  fprintf out "  }\n";
-  fprintf out "\n";
-  fprintf out "  public String toJson() throws JSONException {\n";
-  fprintf out "    String str = \"{\";\n";
-  List.iter (fun field -> output_string out (to_string_field env field)) fields;
-  fprintf out "    str = str.replaceAll(\",\\n$\", \"\\n\");\n";
-  fprintf out "    str += \"}\";\n";
-  fprintf out "    return str;\n";
-  fprintf out "  }\n";
-  fprintf out "\n";
+  fprintf out "\n  \
+}
+
+  public String toJson() throws JSONException {
+    boolean isFirst = true;
+    String str = \"{\";%a
+    str += \"}\";
+    return str;
+  }
+
+"
+    (fun out l ->
+       List.iter (fun field ->
+         output_string out (to_string_field env field)
+       ) l;
+    ) fields;
+
   List.iter
     (function `Field (loc, (field_name, _, annots), _) ->
       let field_name = get_java_field_name field_name annots in

@@ -48,9 +48,49 @@ class Util {
       && ((JSONArray)value).getString(0).equals(\"Some\");
   }
 
-  // Escape double quotes and backslashes
-  static String escape(String str) {
-    return str.replace(\"\\\\\", \"\\\\\\\\\").replace(\"\\\"\", \"\\\\\\\"\");
+  /*
+    Encode a JSON string into a buffer
+   */
+  static void writeJsonString(StringBuffer buf, String s) {
+    buf.append(\"\\\"\");
+    for (int i = 0; i < s.length(); ++i) {
+      char c = s.charAt(i);
+      switch (c) {
+      case '\\b':
+        buf.append(\"\\\\b\");
+        break;
+      case '\\f':
+        buf.append(\"\\\\f\");
+        break;
+      case '\\n':
+        buf.append(\"\\\\n\");
+        break;
+      case '\\r':
+        buf.append(\"\\\\r\");
+        break;
+      case '\\t':
+        buf.append(\"\\\\t\");
+        break;
+      case '\\\\':
+        buf.append(\"\\\\\\\\\");
+        break;
+      case '\"':
+        buf.append(\"\\\\\\\"\");
+        break;
+      default:
+        if (c < 32 || c == 127)
+          buf.append(String.format(\"\\\\u%%04x\", (int) c));
+        else
+          buf.append(c);
+      }
+    }
+    buf.append(\"\\\"\");
+  }
+
+  static String jsonStringOfString(String s) {
+    StringBuffer buf = new StringBuffer();
+    writeJsonString(buf, s);
+    return buf.toString();
   }
 
   // Unescape escaped backslashes and double quotations.

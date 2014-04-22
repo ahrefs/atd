@@ -189,7 +189,7 @@ let rec to_string env id atd_ty indent =
     | `Name (_, (_, "string", _), _) ->
         (* TODO Check that this is the correct behaviour *)
         sprintf
-          "%sstr += \"\\\"\" + Util.escape(String.valueOf(%s)) + \"\\\"\";\n"
+          "%sstr += Util.jsonStringOfString(%s);\n"
           indent id
     | `Name _ ->
         sprintf "%sstr += String.valueOf(%s);\n" indent id

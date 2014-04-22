@@ -1,6 +1,5 @@
 Now:
-- fail with a useful error message when trying to serialize undefined fields
-  (both in records and variants) rather than returning null.
+- escape JSON strings according to strict JSON standard
 - update documentation for ArrayList and for variants
 
 Later:

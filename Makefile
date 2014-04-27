@@ -18,6 +18,7 @@ SOURCES = \
   atd_expand.mli atd_expand.ml \
   atd_inherit.mli atd_inherit.ml \
   atd_tsort.mli atd_tsort.ml \
+  atd_sort.ml \
   atd_util.mli atd_util.ml \
   atd_reflect.mli atd_reflect.ml \
   atd_indent.mli atd_indent.ml

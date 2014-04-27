@@ -1,0 +1,169 @@
+(*
+   Topological sort that doesn't give up on cycles.
+*)
+
+module type Param =
+sig
+  type t
+  type id
+  val id : t -> id
+end
+
+module Make (P : Param) =
+struct
+  type id = P.id
+
+  type node_state = Visited | Unvisited
+
+  (* graph node with mutable labels *)
+  type node = {
+    id: P.id;
+    value: P.t;
+    mutable state: node_state;
+  }
+
+  (* all edges of the original graph *)
+  type graph = {
+    forward: (id, node list) Hashtbl.t;
+    backward: (id, node list) Hashtbl.t;
+  }
+
+  (* subset of nodes on which iteration and set operations are possible
+     (intersection, union, etc.) *)
+  module S = Set.Make (
+    struct
+      type t = node
+      let compare a b = Pervasives.compare a.id b.id
+    end
+  )
+
+  (*
+     Algorithm outline:
+
+     Input: directed graph
+     Output: a list of node groups sorted topologically, i.e.
+             for any group A coming after group B and any node n_a in A
+             and any node n_b in B, there is no edge
+             going from n_b to n_a.
+             ... such that the number of groups is maximum.
+
+     Initialization:
+     Build graph structure such that allows following edges both forward
+     and backward.
+
+     1. root and leaf elimination: a leaf is a node without outgoing edges,
+        a root is a node without incoming edges.
+     2. partitioning into strict ancestors (left), cycle (middle),
+        and strict descendants (right), and other (independent):
+        pick an processed node V (our pivot), determine the set of
+        descendant nodes and the set of ancestor nodes by following edges
+        from V respectively forward and backward.
+        Nodes that belong both to the descendant set
+        and to the ancestor set form a cycle with V and are removed
+        from the graph.
+        Strict ancestors are sorted starting from step 1, strict descendants
+        are sorted starting from step 1.
+  *)
+
+  let get_neighbors v edges =
+    try Hashtbl.find edges v.id
+    with Not_found -> []
+
+  let filtered_neighbors v edges graph_nodes =
+    let all = get_neighbors v edges in
+    List.filter
+      (fun neighbor -> S.mem neighbor graph_nodes)
+      all
+
+  let pick_one nodes =
+    try
+      let v = S.choose nodes in
+      Some (v, S.remove v nodes)
+    with Not_found ->
+      None
+
+  let remove_list set l =
+    List.fold_left (fun set v -> S.remove v set) set l
+
+  let add_list set l =
+    List.fold_left (fun set v -> S.add v set) set l
+
+  let is_root back_edges graph_nodes v =
+    filtered_neighbors v back_edges graph_nodes = []
+
+  let eliminate_roots_recursively edges back_edges nodes =
+    let rec aux sorted graph_nodes input_nodes =
+      match pick_one input_nodes with
+      | None -> List.rev_map (fun v -> S.singleton v) sorted, graph_nodes
+      | Some (v, input_nodes) ->
+          if is_root back_edges graph_nodes v then
+            let sorted = v :: sorted in
+            let children = filtered_neighbors v edges graph_nodes in
+            let graph_nodes = S.remove v graph_nodes in
+            let input_nodes = add_list input_nodes children in
+            assert (not (S.mem v input_nodes));
+            aux sorted graph_nodes input_nodes
+          else
+            aux sorted graph_nodes input_nodes
+    in
+    aux [] nodes nodes
+
+  let eliminate_roots graph nodes =
+    eliminate_roots_recursively graph.forward graph.backward nodes
+
+  let eliminate_leaves graph nodes =
+    let sorted_leaves, remaining_nodes =
+      eliminate_roots_recursively graph.backward graph.forward nodes
+    in
+    remaining_nodes, List.rev sorted_leaves
+
+  let clear nodes =
+    S.iter (fun v -> v.state <- Unvisited) nodes
+
+  let visit edges start_node nodes =
+    let rec color acc v =
+      match v.state with
+      | Visited -> acc
+      | Unvisited ->
+          v.state <- Visited;
+          let acc = S.add v acc in
+          List.fold_left (fun acc neighbor ->
+            if S.mem neighbor nodes then
+              color acc neighbor
+            else
+              acc
+          ) acc (get_neighbors v edges)
+    in
+    let visited = color S.empty start_node in
+    clear visited;
+    visited
+
+  let find_descendants graph pivot nodes =
+    visit graph.forward pivot nodes
+
+  let find_ancestors graph pivot nodes =
+    visit graph.backward pivot nodes
+
+  let rec sort graph nodes =
+    let sorted_left, nodes = eliminate_roots graph nodes in
+    let nodes, sorted_right = eliminate_leaves graph nodes in
+    let sorted_middle =
+      match pick_one nodes with
+      | None -> []
+      | Some (pivot, _) -> partition graph pivot nodes
+    in
+    sorted_left @ sorted_middle @ sorted_right
+
+  and partition graph pivot nodes =
+    let ( - ) = S.diff in
+    let ancestors = find_ancestors graph pivot nodes in
+    let descendants = find_descendants graph pivot nodes in
+    let strict_ancestors = ancestors - descendants in
+    let strict_descendants = descendants - ancestors in
+    let cycle = S.inter descendants ancestors in
+    let other = nodes - ancestors - descendants in
+    sort graph strict_ancestors
+    @ [cycle]
+    @ sort graph strict_descendants
+    @ sort graph other (* could as well be inserted anywhere *)
+end

@@ -94,7 +94,8 @@ struct
   let eliminate_roots_recursively edges back_edges nodes =
     let rec aux sorted graph_nodes input_nodes =
       match pick_one input_nodes with
-      | None -> List.rev_map (fun v -> S.singleton v) sorted, graph_nodes
+      | None ->
+          List.rev_map (fun v -> false, S.singleton v) sorted, graph_nodes
       | Some (v, input_nodes) ->
           if is_root back_edges graph_nodes v then
             let sorted = v :: sorted in
@@ -144,7 +145,7 @@ struct
   let find_ancestors graph pivot nodes =
     visit graph.backward pivot nodes
 
-  let rec sort graph nodes =
+  let rec sort_subgraph graph nodes =
     let sorted_left, nodes = eliminate_roots graph nodes in
     let nodes, sorted_right = eliminate_leaves graph nodes in
     let sorted_middle =
@@ -162,8 +163,51 @@ struct
     let strict_descendants = descendants - ancestors in
     let cycle = S.inter descendants ancestors in
     let other = nodes - ancestors - descendants in
-    sort graph strict_ancestors
-    @ [cycle]
-    @ sort graph strict_descendants
-    @ sort graph other (* could as well be inserted anywhere *)
+    sort_subgraph graph strict_ancestors
+    @ [true, cycle]
+    @ sort_subgraph graph strict_descendants
+    @ sort_subgraph graph other (* could as well be inserted anywhere *)
+
+  (* Data preparation and cleanup *)
+  let sort l =
+    let node_tbl = Hashtbl.create (2 * List.length l) in
+    let make_node x =
+      let id = P.id x in
+      try Hashtbl.find node_tbl id
+      with Not_found ->
+        let v = {
+          id;
+          state = Unvisited;
+          value = x;
+        } in
+        Hashtbl.add node_tbl id v;
+        v
+    in
+    let make_edge edges v1 v2 =
+      let l =
+        try Hashtbl.find edges v1.id
+        with Not_found -> []
+      in
+      Hashtbl.replace edges v1.id (v2 :: l)
+    in
+    let forward = Hashtbl.create (2 * List.length l) in
+    let backward = Hashtbl.create (2 * List.length l) in
+    List.iter (fun (x1, l) ->
+      let v1 = make_node x1 in
+      List.iter (fun x2 ->
+        let v2 = make_node x2 in
+        make_edge forward v1 v2;
+        if v1.id <> v2.id then
+          make_edge backward v2 v1;
+      ) l
+    ) l;
+    let graph = { forward; backward } in
+    let nodes = Hashtbl.fold (fun k v set -> S.add v set) node_tbl S.empty in
+
+    let sorted_groups = sort_subgraph graph nodes in
+
+    (* Export as lists *)
+    List.map (fun (is_cyclic, set) ->
+      is_cyclic, List.map (fun node -> node.value) (S.elements set)
+    ) sorted_groups
 end

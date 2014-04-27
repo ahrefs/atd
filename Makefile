@@ -138,6 +138,12 @@ atdcat$(EXE): dep $(CMI) $(CMX) atdcat.ml
 		-package "$(OCAMLPACKS)" -linkpkg \
 		$(CMX) atdcat.ml
 
+unit-tests$(EXE): dep $(CMI) $(CMX) unit_tests.ml
+	ocamlfind ocamlopt $(OCAMLFLAGS) -o unit-tests$(EXE) \
+		-package "$(OCAMLPACKS)" -linkpkg \
+		$(CMX) unit_tests.ml
+
+
 .PHONY: doc
 doc: odoc/index.html atdcat$(EXE)
 	cd manual; $(MAKE)
@@ -149,7 +155,8 @@ odoc/index.html: $(CMI)
 		-package "$(OCAMLPACKS)" $(DOCSOURCES)
 
 .PHONY: test
-test: atdcat$(EXE) test.atd test2.atd
+test: atdcat$(EXE) unit-tests$(EXE) test.atd test2.atd
+	./unit-tests$(EXE)
 	./atdcat test.atd > test.out
 	./atdcat test.out > test.out.out
 	cmp test.out test.out.out
@@ -187,6 +194,7 @@ clean:
 	rm -f $(patsubst %.mly,%.ml, $(MLY))
 	rm -f $(patsubst %.mll,%.ml, $(MLL))
 	rm -f atdcat.cm[ioxa] atdcat.o atdcat.cma atdcat.cmxa atdcat$(EXE)
+	rm -f unit-tests$(EXE)
 	rm -rf odoc
 	cd manual; $(MAKE) clean
 

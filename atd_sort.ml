@@ -197,8 +197,7 @@ struct
       List.iter (fun x2 ->
         let v2 = make_node x2 in
         make_edge forward v1 v2;
-        if v1.id <> v2.id then
-          make_edge backward v2 v1;
+        make_edge backward v2 v1;
       ) l
     ) l;
     let graph = { forward; backward } in
@@ -211,3 +210,87 @@ struct
       is_cyclic, List.map (fun node -> node.value) (S.elements set)
     ) sorted_groups
 end
+
+
+(* Testing *)
+
+module Sorter = Make (
+struct
+  type t = int
+  type id = int
+  let id x = x
+end
+)
+
+let rec in_order result a b =
+  match result with
+  | [] -> false
+  | (cyclic, l) :: ll ->
+      if List.mem b l then
+        false
+      else if List.mem a l then
+        List.exists (fun (_, l) -> List.mem b l) ll
+      else
+        in_order ll a b
+
+let rec in_same_cycle result a b =
+  match result with
+  | [] -> false
+  | (cyclic, l) :: ll ->
+      cyclic && List.mem a l && List.mem b l
+      || in_same_cycle ll a b
+
+let not_in_cycle result x =
+  List.exists (function
+    | (false, [y]) when y = x -> true
+    | _ -> false
+  ) result
+
+
+let seq result a b =
+  in_order result a b
+  && not (in_order result b a)
+  && not (in_same_cycle result a b)
+
+let cyc result a b =
+  in_same_cycle result a b
+  && not (in_order result a b)
+  && not (in_order result b a)
+
+let sng result x =
+  not_in_cycle result x
+
+let run_test () =
+  Sorter.sort [
+    1, [ 2; 3 ];
+    2, [ 3 ];
+    3, [ 3; 4 ];
+    4, [ 3; ];
+    5, [ 6 ];
+    6, [ 6; 1 ];
+    5, [ 7 ];
+    7, [ 8 ];
+    8, [ 9 ];
+    10, [ 10 ];
+    11, [ 12 ];
+    12, [ 13 ];
+    13, [ 11 ];
+  ]
+
+let test () =
+  let r = run_test () in
+  assert (seq r 1 2);
+  assert (seq r 1 4);
+  assert (seq r 1 3);
+  assert (seq r 2 3);
+  assert (cyc r 3 4);
+  assert (sng r 5);
+  assert (seq r 6 1);
+  assert (sng r 7);
+  assert (sng r 8);
+  assert (sng r 9);
+  assert (seq r 5 9);
+  assert (cyc r 10 10);
+  assert (cyc r 11 12);
+  assert (cyc r 12 13);
+  assert (cyc r 11 13)

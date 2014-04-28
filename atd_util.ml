@@ -1,5 +1,3 @@
-
-
 let read_lexbuf
     ?(expand = false) ?keep_poly ?(xdebug = false)
     ?(inherit_fields = false)
@@ -67,11 +65,16 @@ let load_string
   read_lexbuf ?expand ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
 
-module Tsort = Atd_tsort.Make (
+module Tsort = Atd_sort.Make (
   struct
-    type t = string
-    let compare = String.compare
-    let to_string s = s
+    type t = Atd_ast.module_item
+    type id = string (* type name *)
+
+    let id def =
+      let `Type (loc, (name, _, _), x) = def in
+      name
+
+    let to_string name = name
   end
 )
 
@@ -82,7 +85,7 @@ let tsort l0 =
       fun def ->
         let `Type (loc, (name, _, _), x) = def in
         let deps = Atd_ast.extract_type_names ~ignorable x in
-        (name, deps, def)
+        (def, deps)
     ) l0
   in
   List.rev (Tsort.sort l)

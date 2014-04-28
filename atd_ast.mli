@@ -1,5 +1,3 @@
-
-
 (** Abstract syntax tree (AST) representing ATD data *)
 
 type loc = Lexing.position * Lexing.position

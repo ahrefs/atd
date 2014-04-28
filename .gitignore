@@ -18,4 +18,6 @@ atd_parser.ml
 atd_parser.mli
 atd_version.ml
 atdcat
+unit-tests
 dep
+*.out

@@ -1,5 +1,3 @@
-
-
 (*
   Generic topological sorting and cycle detection.
 

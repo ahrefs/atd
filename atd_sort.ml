@@ -1,12 +1,22 @@
 (*
-   Topological sort that doesn't give up on cycles.
+   Topological sort that doesn't give up on cycles:
+
+   A --> B
+   C --> D        gives: [A] [B C] [D]
+   B --> C
+   C --> B
 *)
+
+open Printf
 
 module type Param =
 sig
   type t
   type id
   val id : t -> id
+
+  (* for error messages and debugging *)
+  val to_string : id -> string
 end
 
 module Make (P : Param) =
@@ -36,6 +46,21 @@ struct
       let compare a b = Pervasives.compare a.id b.id
     end
   )
+
+  let debug = ref false
+
+  let print msg =
+    if !debug then
+      printf "%s\n%!" msg
+
+  let print_nodes msg nodes =
+    if !debug then
+      printf "%s: %s\n%!"
+        msg (String.concat " "
+               (List.map (fun v -> P.to_string v.id)
+                  (S.elements nodes)
+               )
+            )
 
   (*
      Algorithm outline:
@@ -118,34 +143,47 @@ struct
     in
     remaining_nodes, List.rev sorted_leaves
 
-  let clear nodes =
-    S.iter (fun v -> v.state <- Unvisited) nodes
-
+  (*
+     Collect all nodes reachable from the root.
+     Exclude the root unless it can be reached by some cycle.
+   *)
   let visit edges start_node nodes =
+    assert (S.for_all (fun v -> v.state = Unvisited) nodes);
+    let visited = ref [] in
+    let mark_visited v =
+      v.state <- Visited;
+      visited := v :: !visited
+    in
+    let clear_visited () =
+      List.iter (fun v -> v.state <- Unvisited) !visited
+    in
     let rec color acc v =
       match v.state with
       | Visited -> acc
       | Unvisited ->
-          v.state <- Visited;
-          let acc = S.add v acc in
+          mark_visited v;
           List.fold_left (fun acc neighbor ->
             if S.mem neighbor nodes then
+              let acc = S.add neighbor acc in
               color acc neighbor
             else
               acc
           ) acc (get_neighbors v edges)
     in
-    let visited = color S.empty start_node in
-    clear visited;
-    visited
+    let visited_excluding_root = color S.empty start_node in
+    clear_visited ();
+    visited_excluding_root
 
   let find_descendants graph pivot nodes =
+    print_nodes "find_descendants" nodes;
     visit graph.forward pivot nodes
 
   let find_ancestors graph pivot nodes =
+    print_nodes "find_ancestors" nodes;
     visit graph.backward pivot nodes
 
   let rec sort_subgraph graph nodes =
+    print_nodes "sort_subgraph" nodes;
     let sorted_left, nodes = eliminate_roots graph nodes in
     let nodes, sorted_right = eliminate_leaves graph nodes in
     let sorted_middle =
@@ -156,15 +194,31 @@ struct
     sorted_left @ sorted_middle @ sorted_right
 
   and partition graph pivot nodes =
+    print_nodes "partition" nodes;
     let ( - ) = S.diff in
     let ancestors = find_ancestors graph pivot nodes in
     let descendants = find_descendants graph pivot nodes in
     let strict_ancestors = ancestors - descendants in
     let strict_descendants = descendants - ancestors in
     let cycle = S.inter descendants ancestors in
-    let other = nodes - ancestors - descendants in
+    let is_cyclic, pivot_group =
+      if S.is_empty cycle then (
+        assert (not (S.mem pivot ancestors));
+        assert (not (S.mem pivot descendants));
+        false, S.singleton pivot
+      )
+      else (
+        assert (S.mem pivot cycle);
+        true, cycle
+      )
+    in
+    let other = nodes - pivot_group - strict_ancestors - strict_descendants in
+    print_nodes "ancestors" ancestors;
+    print_nodes "descendants" descendants;
+    print_nodes "cycle" cycle;
+    print_nodes "other" other;
     sort_subgraph graph strict_ancestors
-    @ [true, cycle]
+    @ [ is_cyclic, pivot_group ]
     @ sort_subgraph graph strict_descendants
     @ sort_subgraph graph other (* could as well be inserted anywhere *)
 
@@ -173,15 +227,17 @@ struct
     let node_tbl = Hashtbl.create (2 * List.length l) in
     let make_node x =
       let id = P.id x in
-      try Hashtbl.find node_tbl id
-      with Not_found ->
+      if not (Hashtbl.mem node_tbl id) then
         let v = {
           id;
           state = Unvisited;
           value = x;
         } in
-        Hashtbl.add node_tbl id v;
-        v
+        Hashtbl.add node_tbl id v
+    in
+    let get_node id =
+      try Some (Hashtbl.find node_tbl id)
+      with Not_found -> None
     in
     let make_edge edges v1 v2 =
       let l =
@@ -190,14 +246,21 @@ struct
       in
       Hashtbl.replace edges v1.id (v2 :: l)
     in
+    List.iter (fun (x, _) -> make_node x) l;
     let forward = Hashtbl.create (2 * List.length l) in
     let backward = Hashtbl.create (2 * List.length l) in
     List.iter (fun (x1, l) ->
-      let v1 = make_node x1 in
-      List.iter (fun x2 ->
-        let v2 = make_node x2 in
-        make_edge forward v1 v2;
-        make_edge backward v2 v1;
+      let v1 =
+        match get_node (P.id x1) with
+        | Some v -> v
+        | None -> assert false
+      in
+      List.iter (fun id2 ->
+        match get_node id2 with
+        | None -> ()
+        | Some v2 ->
+            make_edge forward v1 v2;
+            make_edge backward v2 v1;
       ) l
     ) l;
     let graph = { forward; backward } in
@@ -219,6 +282,7 @@ struct
   type t = int
   type id = int
   let id x = x
+  let to_string x = string_of_int x
 end
 )
 
@@ -260,7 +324,39 @@ let cyc result a b =
 let sng result x =
   not_in_cycle result x
 
-let run_test () =
+let run_test1 () =
+  Sorter.sort [
+    1, [ 2 ];
+    2, [ 3 ];
+    3, [ 1 ];
+  ]
+
+let test1 () =
+  let r = run_test1 () in
+  assert (cyc r 1 2);
+  assert (cyc r 2 3);
+  assert (cyc r 1 3)
+
+let run_test2 () =
+  Sorter.sort [
+    1, [ 2 ];
+    2, [ 3 ];
+    3, [];
+    5, [ 6 ];
+    4, [ 5 ];
+    6, [];
+  ]
+
+let test2 () =
+  let r = run_test2 () in
+  assert (seq r 1 2);
+  assert (seq r 2 3);
+  assert (seq r 4 5);
+  assert (seq r 5 6);
+  assert (sng r 3);
+  assert (sng r 6)
+
+let run_test3 () =
   Sorter.sort [
     1, [ 2; 3 ];
     2, [ 3 ];
@@ -271,14 +367,20 @@ let run_test () =
     5, [ 7 ];
     7, [ 8 ];
     8, [ 9 ];
+    9, [ 0 ];
     10, [ 10 ];
     11, [ 12 ];
     12, [ 13 ];
     13, [ 11 ];
   ]
 
-let test () =
-  let r = run_test () in
+let test3 () =
+  let r = run_test3 () in
+  assert (not (sng r 0));
+  assert (not (seq r 0 1));
+  assert (not (seq r 1 0));
+  assert (not (cyc r 0 0));
+  assert (sng r 1);
   assert (seq r 1 2);
   assert (seq r 1 4);
   assert (seq r 1 3);
@@ -294,3 +396,8 @@ let test () =
   assert (cyc r 11 12);
   assert (cyc r 12 13);
   assert (cyc r 11 13)
+
+let test () =
+  test1 ();
+  test2 ();
+  test3 ()

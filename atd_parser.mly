@@ -93,6 +93,9 @@ type_expr:
 | OP_CURL CL_CURL a = annot
      { `Record (($startpos, $endpos), [], a) }
 
+| OP_PAREN x = annot_expr CL_PAREN a = annot
+     { `Tuple (($startpos, $endpos), [x], a) }
+
 | OP_PAREN l = cartesian_product CL_PAREN a = annot
      { `Tuple (($startpos, $endpos), l, a) }
 
@@ -135,7 +138,6 @@ type_expr:
 cartesian_product:
 | x = annot_expr STAR l = cartesian_product   { x :: l }
 | x = annot_expr STAR y = annot_expr          { [ x; y ] }
-| x = annot_expr                              { [ x ] }
 |                                             { [] }
 ;
 
@@ -158,7 +160,7 @@ type_args:
 
 type_arg_list:
 | type_expr COMMA type_arg_list  { $1 :: $3 }
-| type_expr                      { [ $1 ] }
+| type_expr COMMA type_expr      { [ $1; $3 ] }
 ;
 
 variant_list:

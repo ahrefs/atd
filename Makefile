@@ -96,7 +96,7 @@ pp: VERSION META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
 all: pp
 	$(MAKE) atdgen.cma atdgen.run
 opt: pp
-	$(MAKE) atdgen.cmxa $(CMXS) atdgen
+	$(MAKE) atdgen.cmxa $(CMXS) atdgen$(EXE)
 
 install: META
 	test ! -f atdgen.run || cp atdgen.run $(BINDIR)/

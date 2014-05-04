@@ -297,7 +297,6 @@ let open_class env cname =
   fprintf out "\
 // Automatically generated; do not edit
 package %s;
-import java.util.ArrayList;
 import org.json.*;
 
 "
@@ -605,5 +604,5 @@ and trans_inner env atd_ty =
       )
   | `List (_, sub_atd_ty, _)  ->
       let (ty', env) = trans_inner env sub_atd_ty in
-      ("ArrayList<" ^ ty' ^ ">", env)
+      ("java.util.ArrayList<" ^ ty' ^ ">", env)
   | x -> type_not_supported x

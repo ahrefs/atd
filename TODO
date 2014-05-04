@@ -2,7 +2,6 @@ Now:
 - update documentation for ArrayList and for variants
 
 Later:
-- write to a buffer rather than concatenating strings (for performance)
 - produce an output tree using Atd_indent rather fprintf
   (for clarity and atdj performance)
 - variant implementation: avoid memory leak by clearing previous field

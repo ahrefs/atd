@@ -17,9 +17,11 @@ public interface Atdj {
    */
   String toJson() throws JSONException;
 
-  /* TODO:
-  void toJsonBuffer(Buffer buf);
-  */
+  /**
+   * Write the JSON representation to a buffer, failing if some of the data
+   * was not initialized.
+   */
+  void toJsonBuffer(StringBuilder out) throws JSONException;
 }
 ";
   close_out out
@@ -51,53 +53,53 @@ class Util {
   /*
     Encode a JSON string into a buffer
    */
-  static void writeJsonString(StringBuffer buf, String s) {
-    buf.append(\"\\\"\");
+  static void writeJsonString(StringBuilder out, String s) {
+    out.append(\"\\\"\");
     for (int i = 0; i < s.length(); ++i) {
       char c = s.charAt(i);
       switch (c) {
       case '\\b':
-        buf.append(\"\\\\b\");
+        out.append(\"\\\\b\");
         break;
       case '\\f':
-        buf.append(\"\\\\f\");
+        out.append(\"\\\\f\");
         break;
       case '\\n':
-        buf.append(\"\\\\n\");
+        out.append(\"\\\\n\");
         break;
       case '\\r':
-        buf.append(\"\\\\r\");
+        out.append(\"\\\\r\");
         break;
       case '\\t':
-        buf.append(\"\\\\t\");
+        out.append(\"\\\\t\");
         break;
       case '\\\\':
-        buf.append(\"\\\\\\\\\");
+        out.append(\"\\\\\\\\\");
         break;
       case '\"':
-        buf.append(\"\\\\\\\"\");
+        out.append(\"\\\\\\\"\");
         break;
       default:
         if (c < 32 || c == 127)
-          buf.append(String.format(\"\\\\u%%04x\", (int) c));
+          out.append(String.format(\"\\\\u%%04x\", (int) c));
         else
-          buf.append(c);
+          out.append(c);
       }
     }
-    buf.append(\"\\\"\");
+    out.append(\"\\\"\");
   }
 
   static String jsonStringOfString(String s) {
-    StringBuffer buf = new StringBuffer();
-    writeJsonString(buf, s);
-    return buf.toString();
+    StringBuilder out = new StringBuilder();
+    writeJsonString(out, s);
+    return out.toString();
   }
 
   // Unescape escaped backslashes and double quotations.
   // All other escape sequences are considered invalid
   // (this is probably too strict).
   static String unescapeString(String str) throws JSONException {
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     for (int i = 0; i < str.length(); ++i) {
       if (str.charAt(i) == '\\\\') {
         if (i == str.length() - 1 ||

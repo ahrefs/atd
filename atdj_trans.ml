@@ -174,29 +174,29 @@ let assign_field env
     ^ opt_set_default
 
 
-(* Generate a toJson command *)
+(* Generate a toJsonBuffer command *)
 let rec to_string env id atd_ty indent =
   let atd_ty = norm_ty env atd_ty in
   match atd_ty with
     | `List (_, atd_sub_ty, _) ->
-          sprintf "%sstr += \"[\";\n" indent
+          sprintf "%sout.append(\"[\");\n" indent
         ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
         ^ to_string env (id ^ ".get(i)") atd_sub_ty (indent ^ "  ")
         ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
-        ^ sprintf "%s    str += \",\";\n" indent
+        ^ sprintf "%s    out.append(\",\");\n" indent
         ^ sprintf "%s}\n" indent
-        ^ sprintf "%sstr += \"]\";\n" indent
+        ^ sprintf "%sout.append(\"]\");\n" indent
     | `Name (_, (_, "string", _), _) ->
         (* TODO Check that this is the correct behaviour *)
         sprintf
-          "%sstr += Util.jsonStringOfString(%s);\n"
+          "%sUtil.writeJsonString(out, %s);\n"
           indent id
     | `Name _ ->
-        sprintf "%sstr += String.valueOf(%s);\n" indent id
+        sprintf "%sout.append(String.valueOf(%s));\n" indent id
     | _ ->
-        sprintf "%sstr += %s.toJson();\n" indent id
+        sprintf "%s%s.toJsonBuffer(out);\n" indent id
 
-(* Generate a toJson command for a record field. *)
+(* Generate a toJsonBuffer command for a record field. *)
 let to_string_field env = function
   | (`Field (loc, (atd_field_name, kind, annots), atd_ty)) ->
       let json_field_name = get_json_field_name atd_field_name annots in
@@ -210,8 +210,8 @@ let to_string_field env = function
       if (isFirst)
         isFirst = false;
       else
-        str += \",\";
-      str += \"\\\"%s\\\":\";
+        out.append(\",\");
+      out.append(\"\\\"%s\\\":\");
 %s    }
 "
           field_name
@@ -276,6 +276,7 @@ let javadoc loc annots indent =
  *
  *  interface Atdj {
  *    String toJson() throws JSONException;
+ *    void toJsonBuffer(StringBuilder out) throws JSONException;
  *  }
  *
  * The toJson() method outputs a JSON representation of the
@@ -458,16 +459,21 @@ public class %s {
   ) cases;
 
   fprintf out "
-  public String toJson() throws JSONException {
+  public void toJsonBuffer(StringBuilder out) throws JSONException {
     if (t == null)
       throw new JSONException(\"Uninitialized %s\");
     else {
-      String str = \"\";
       switch(t) {%a
       default:
-        return \"\"; /* unused; keeps compiler happy */
+        break; /* unused; keeps compiler happy */
       }
     }
+  }
+
+  public String toJson() throws JSONException {
+    StringBuilder out = new StringBuilder(128);
+    toJsonBuffer(out);
+    return out.toString();
   }
 "
     class_name
@@ -477,16 +483,17 @@ public class %s {
          | None ->
              fprintf out "
       case %s:
-        return \"\\\"%s\\\"\";"
+        out.append(\"\\\"%s\\\"\");
+        break;"
                enum_name
                json_name (* TODO: java-string-escape *)
 
          | Some (atd_ty, _) ->
              fprintf out "
       case %s:
-         str = \"[\\\"%s\\\",\";
-%s         str += \"]\";
-         return str;"
+         out.append(\"[\\\"%s\\\",\");
+%s         out.append(\"]\");
+         break;"
              enum_name
              json_name
              (to_string env ("field_" ^ field_name) atd_ty "         ")
@@ -556,13 +563,17 @@ public class %s implements Atdj {
   fprintf out "\n  \
 }
 
-  public String toJson() throws JSONException {
+  public void toJsonBuffer(StringBuilder out) throws JSONException {
     boolean isFirst = true;
-    String str = \"{\";%a
-    str += \"}\";
-    return str;
+    out.append(\"{\");%a
+    out.append(\"}\");
   }
 
+  public String toJson() throws JSONException {
+    StringBuilder out = new StringBuilder(128);
+    toJsonBuffer(out);
+    return out.toString();
+  }
 "
     (fun out l ->
        List.iter (fun field ->

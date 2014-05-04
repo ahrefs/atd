@@ -80,12 +80,12 @@ let rec assign env opt_dst src java_ty atd_ty indent =
            sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
        | `List (_, sub_ty, _) ->
            let java_sub_ty = (*ahem*) extract_from_edgy_brackets java_ty in
-           let sub_expr = assign env None "tmp" java_sub_ty sub_ty "" in
+           let sub_expr = assign env None "_tmp" java_sub_ty sub_ty "" in
 
            sprintf "%s%s = new %s();\n" indent dst java_ty
-           ^ sprintf "%sfor (int i = 0; i < %s.length(); ++i) {\n" indent src
+           ^ sprintf "%sfor (int _i = 0; _i < %s.length(); ++_i) {\n" indent src
 
-           ^ sprintf "%s  %s tmp = %s.%s(i);\n" indent
+           ^ sprintf "%s  %s _tmp = %s.%s(_i);\n" indent
              (json_of_atd env sub_ty) src (get env sub_ty false)
 
            ^ sprintf "%s  %s.add(%s);\n" indent
@@ -142,7 +142,7 @@ let assign_field env
   else
     let mk_else = function
       | Some default ->
-          sprintf "    } else {\n    %s = %s;\n    }\n"
+          sprintf "    } else {\n      %s = %s;\n    }\n"
             field_name default
       | None ->
           "    }\n"
@@ -179,22 +179,22 @@ let rec to_string env id atd_ty indent =
   let atd_ty = norm_ty env atd_ty in
   match atd_ty with
     | `List (_, atd_sub_ty, _) ->
-          sprintf "%sout.append(\"[\");\n" indent
+          sprintf "%s_out.append(\"[\");\n" indent
         ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
         ^ to_string env (id ^ ".get(i)") atd_sub_ty (indent ^ "  ")
         ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
-        ^ sprintf "%s    out.append(\",\");\n" indent
+        ^ sprintf "%s    _out.append(\",\");\n" indent
         ^ sprintf "%s}\n" indent
-        ^ sprintf "%sout.append(\"]\");\n" indent
+        ^ sprintf "%s_out.append(\"]\");\n" indent
     | `Name (_, (_, "string", _), _) ->
         (* TODO Check that this is the correct behaviour *)
         sprintf
-          "%sUtil.writeJsonString(out, %s);\n"
+          "%sUtil.writeJsonString(_out, %s);\n"
           indent id
     | `Name _ ->
-        sprintf "%sout.append(String.valueOf(%s));\n" indent id
+        sprintf "%s_out.append(String.valueOf(%s));\n" indent id
     | _ ->
-        sprintf "%s%s.toJsonBuffer(out);\n" indent id
+        sprintf "%s%s.toJsonBuffer(_out);\n" indent id
 
 (* Generate a toJsonBuffer command for a record field. *)
 let to_string_field env = function
@@ -207,11 +207,11 @@ let to_string_field env = function
       let if_part =
         sprintf "
     if (%s != null) {
-      if (isFirst)
-        isFirst = false;
+      if (_isFirst)
+        _isFirst = false;
       else
-        out.append(\",\");
-      out.append(\"\\\"%s\\\":\");
+        _out.append(\",\");
+      _out.append(\"\\\"%s\\\":\");
 %s    }
 "
           field_name
@@ -458,7 +458,7 @@ public class %s {
   ) cases;
 
   fprintf out "
-  public void toJsonBuffer(StringBuilder out) throws JSONException {
+  public void toJsonBuffer(StringBuilder _out) throws JSONException {
     if (t == null)
       throw new JSONException(\"Uninitialized %s\");
     else {
@@ -482,7 +482,7 @@ public class %s {
          | None ->
              fprintf out "
       case %s:
-        out.append(\"\\\"%s\\\"\");
+        _out.append(\"\\\"%s\\\"\");
         break;"
                enum_name
                json_name (* TODO: java-string-escape *)
@@ -490,8 +490,8 @@ public class %s {
          | Some (atd_ty, _) ->
              fprintf out "
       case %s:
-         out.append(\"[\\\"%s\\\",\");
-%s         out.append(\"]\");
+         _out.append(\"[\\\"%s\\\",\");
+%s         _out.append(\"]\");
          break;"
              enum_name
              json_name
@@ -562,10 +562,10 @@ public class %s implements Atdj {
   fprintf out "\n  \
 }
 
-  public void toJsonBuffer(StringBuilder out) throws JSONException {
-    boolean isFirst = true;
-    out.append(\"{\");%a
-    out.append(\"}\");
+  public void toJsonBuffer(StringBuilder _out) throws JSONException {
+    boolean _isFirst = true;
+    _out.append(\"{\");%a
+    _out.append(\"}\");
   }
 
   public String toJson() throws JSONException {

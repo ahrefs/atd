@@ -345,22 +345,6 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
 
   let tags = List.map (fun (_, _, enum_name, _, _) -> enum_name) cases in
 
-  let enum_out = open_class env (class_name ^ "Tag") in
-  fprintf enum_out "\
-/**
- * Define tags for sum type %s.
- */
-
-public enum %sTag {
-  %s
-}
-"
-    my_name
-    class_name
-    (String.concat ", " tags);
-  close_out enum_out;
-
-
   let out = open_class env class_name in
 
   fprintf out "\
@@ -369,20 +353,29 @@ public enum %sTag {
  */
 
 public class %s {
-  %sTag t = null;
+  Tag t = null;
 
   public %s() {
   }
 
-  public %sTag tag() {
+  public Tag tag() {
     return t;
   }
 "
     my_name
     class_name
-    class_name
-    class_name
     class_name;
+
+  fprintf out "
+  /**
+   * Define tags for sum type %s.
+   */
+  public enum Tag {
+    %s
+  }
+"
+    my_name
+    (String.concat ", " tags);
 
   fprintf out "
   public %s(Object o) throws JSONException {
@@ -398,10 +391,10 @@ public class %s {
          | None ->
              fprintf out " \
     if (tag.equals(\"%s\"))
-      t = %sTag.%s;
+      t = Tag.%s;
     else"
                json_name (* TODO: java-string-escape this *)
-               class_name enum_name
+               enum_name
 
          | Some (atd_ty, java_ty) ->
              let src = sprintf "((JSONArray)o).%s(1)" (get env atd_ty false) in
@@ -413,12 +406,12 @@ public class %s {
              fprintf out " \
     if (tag.equals(\"%s\")) {
 %s
-      t = %sTag.%s;
+      t = Tag.%s;
     }
     else"
                json_name (* TODO: java-string-escape this *)
                set_value
-               class_name enum_name
+               enum_name
        ) l
   ) cases;
 
@@ -428,21 +421,21 @@ public class %s {
         fprintf out "
   public void set%s() {
     /* TODO: clear previously-set field and avoid memory leak */
-    t = %sTag.%s;
+    t = Tag.%s;
   }
 "
           func_name
-          class_name enum_name;
+          enum_name;
     | Some (atd_ty, java_ty) ->
         fprintf out "
   %s field_%s = null;
   public void set%s(%s x) {
     /* TODO: clear previously-set field in order to avoid memory leak */
-    t = %sTag.%s;
+    t = Tag.%s;
     field_%s = x;
   }
   public %s get%s() {
-    if (t == %sTag.%s)
+    if (t == Tag.%s)
       return field_%s;
     else
       return null;
@@ -450,10 +443,10 @@ public class %s {
 "
           java_ty field_name
           func_name java_ty
-          class_name enum_name
+          enum_name
           field_name
           java_ty func_name
-          class_name enum_name
+          enum_name
           field_name;
   ) cases;
 

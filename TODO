@@ -1,4 +1,6 @@
 Now:
+- suppress Eclipse warning about unused import by importing ArrayList
+  only when needed.
 - update documentation for ArrayList and for variants
 
 Later:

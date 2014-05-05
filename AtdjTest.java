@@ -20,7 +20,7 @@ public class AtdjTest {
     assertTrue(errorDetected);
 
     s.setSimpleTag();
-    assertEquals(SampleSumTag.SIMPLE_TAG, s.tag());
+    assertEquals(SampleSum.Tag.SIMPLE_TAG, s.tag());
 
     SimpleRecord r = new SimpleRecord();
     assertEquals(null, r.o);
@@ -28,7 +28,7 @@ public class AtdjTest {
     assertEquals(true, r.o);
 
     s.setSimpleRecord(r);
-    assertEquals(SampleSumTag.SIMPLE_RECORD, s.tag());
+    assertEquals(SampleSum.Tag.SIMPLE_RECORD, s.tag());
     assertTrue(s.getSimpleRecord() != null);
     assertTrue(s.getComplexRecord() == null);
   }

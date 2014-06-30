@@ -16,6 +16,8 @@
   given by one of their fields.
 
 * Plans for atdgen 2:
+  - create one (sub)command for each target language
+    (atdgen-ocaml, atdgen-java, atdgen-atd, atdgen-ts)
   - imply -std-json, i.e. do not produce code that produces JSON
     in the extended syntax for variants (<"A">, <"B":123>)
     or tuples (("a", 123, {"x":0}))
@@ -24,4 +26,7 @@
      files foo_{t|j|v}.{ml|mli}
   - use classic variants instead of polymorphic variants by default
     since ocaml >= 4.01 makes them easier to use
-  - call the executable "atdgen2" if that helps
+
+* Support for other languages:
+  - merge atdj (JSON serializers for Java) into atdgen
+  - translate ATD into TypeScript type definitions

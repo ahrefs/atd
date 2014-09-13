@@ -56,9 +56,9 @@ struct
 
     let x =
       if Yojson.Safe.read_eof lexbuf then
-	raise Yojson.End_of_input
+        raise Yojson.End_of_input
       else
-	read ls lexbuf
+        read ls lexbuf
     in
 
     if not stream then
@@ -89,12 +89,12 @@ struct
     let rec f i =
       try Some (from_lexbuf ?stream read ls lexbuf)
       with
-	  Yojson.End_of_input ->
-	    fin ();
-	    None
-	| e ->
+          Yojson.End_of_input ->
+            fin ();
+            None
+        | e ->
             (try fin () with _ -> ());
-	    raise e
+            raise e
     in
     Stream.from f
 

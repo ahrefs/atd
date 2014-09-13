@@ -20,40 +20,40 @@ type oj_def =
 let rec mapping_of_expr (x : type_expr) : oj_mapping =
   match x with
       `Sum (loc, l, an) ->
-	let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
-	let json_t = `Sum in
-	`Sum (loc, Array.of_list (List.map mapping_of_variant l),
-	      ocaml_t, json_t)
+        let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
+        let json_t = `Sum in
+        `Sum (loc, Array.of_list (List.map mapping_of_variant l),
+              ocaml_t, json_t)
 
     | `Record (loc, l, an) ->
-	let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
-	let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
-	let json_t = `Record in
-	`Record (loc,
+        let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
+        let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
+        let json_t = `Record in
+        `Record (loc,
                  Array.of_list
                    (List.map (mapping_of_field ocaml_field_prefix) l),
-		 ocaml_t, json_t)
+                 ocaml_t, json_t)
 
     | `Tuple (loc, l, an) ->
-	let ocaml_t = `Tuple in
-	let json_t = `Tuple in
-	`Tuple (loc, Array.of_list (List.map mapping_of_cell l),
-		ocaml_t, json_t)
+        let ocaml_t = `Tuple in
+        let json_t = `Tuple in
+        `Tuple (loc, Array.of_list (List.map mapping_of_cell l),
+                ocaml_t, json_t)
 
     | `List (loc, x, an) ->
-	let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
-	let json_t = `List (Ag_json.get_json_list an) in
-	`List (loc, mapping_of_expr x, ocaml_t, json_t)
+        let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
+        let json_t = `List (Ag_json.get_json_list an) in
+        `List (loc, mapping_of_expr x, ocaml_t, json_t)
 
     | `Option (loc, x, an) ->
-	let ocaml_t = `Option in
-	let json_t = `Option in
-	`Option (loc, mapping_of_expr x, ocaml_t, json_t)
+        let ocaml_t = `Option in
+        let json_t = `Option in
+        `Option (loc, mapping_of_expr x, ocaml_t, json_t)
 
     | `Nullable (loc, x, an) ->
-	let ocaml_t = `Nullable in
-	let json_t = `Nullable in
-	`Nullable (loc, mapping_of_expr x, ocaml_t, json_t)
+        let ocaml_t = `Nullable in
+        let json_t = `Nullable in
+        `Nullable (loc, mapping_of_expr x, ocaml_t, json_t)
 
     | `Shared (loc, x, an) ->
         error loc "Sharing is not supported by the JSON interface"
@@ -64,24 +64,24 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
         `Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
     | `Name (loc, (loc2, s, l), an) ->
-	(match s with
-	     "unit" ->
-	       `Unit (loc, `Unit, `Unit)
-	   | "bool" ->
-	       `Bool (loc, `Bool, `Bool)
-	   | "int" ->
-	       let o = Ag_ocaml.get_ocaml_int an in
-	       `Int (loc, `Int o, `Int)
-	   | "float" ->
+        (match s with
+             "unit" ->
+               `Unit (loc, `Unit, `Unit)
+           | "bool" ->
+               `Bool (loc, `Bool, `Bool)
+           | "int" ->
+               let o = Ag_ocaml.get_ocaml_int an in
+               `Int (loc, `Int o, `Int)
+           | "float" ->
                let j = Ag_json.get_json_float an in
-	       `Float (loc, `Float, `Float j)
-	   | "string" ->
-	       `String (loc, `String, `String)
-	   | s ->
-	       `Name (loc, s, List.map mapping_of_expr l, None, None)
-	)
+               `Float (loc, `Float, `Float j)
+           | "string" ->
+               `String (loc, `String, `String)
+           | s ->
+               `Name (loc, s, List.map mapping_of_expr l, None, None)
+        )
     | `Tvar (loc, s) ->
-	`Tvar (loc, s)
+        `Tvar (loc, s)
 
 and mapping_of_cell (loc, x, an) =
   let default = Ag_ocaml.get_ocaml_default an in
@@ -108,27 +108,27 @@ and mapping_of_variant = function
       let ocaml_cons = Ag_ocaml.get_ocaml_cons s an in
       let doc = Ag_doc.get_doc loc an in
       let ocaml_t =
-	`Variant {
-	  Ag_ocaml.ocaml_cons = ocaml_cons;
+        `Variant {
+          Ag_ocaml.ocaml_cons = ocaml_cons;
           ocaml_vdoc = doc;
-	}
+        }
       in
       let json_cons = Ag_json.get_json_cons s an in
       let json_t =
-	`Variant {
-	  Ag_json.json_cons = json_cons;
-	}
+        `Variant {
+          Ag_json.json_cons = json_cons;
+        }
       in
       let arg =
-	match o with
-	    None -> None
-	  | Some x -> Some (mapping_of_expr x) in
+        match o with
+            None -> None
+          | Some x -> Some (mapping_of_expr x) in
       {
-	var_loc = loc;
-	var_cons = s;
-	var_arg = arg;
-	var_arepr = ocaml_t;
-	var_brepr = json_t
+        var_loc = loc;
+        var_cons = s;
+        var_arg = arg;
+        var_arepr = ocaml_t;
+        var_brepr = json_t
       }
 
   | `Inherit _ -> assert false
@@ -152,21 +152,21 @@ and mapping_of_field ocaml_field_prefix = function
       let doc = Ag_doc.get_doc loc an in
       let json_fname = Ag_json.get_json_fname s an in
       { f_loc = loc;
-	f_name = s;
-	f_kind = fk;
-	f_value = fvalue;
+        f_name = s;
+        f_kind = fk;
+        f_value = fvalue;
 
-	f_arepr = `Field {
-	  Ag_ocaml.ocaml_default = ocaml_default;
-	  ocaml_fname = ocaml_fname;
-	  ocaml_mutable = ocaml_mutable;
+        f_arepr = `Field {
+          Ag_ocaml.ocaml_default = ocaml_default;
+          ocaml_fname = ocaml_fname;
+          ocaml_mutable = ocaml_mutable;
           ocaml_fdoc = doc;
-	};
+        };
 
-	f_brepr = `Field {
-	  Ag_json.json_fname = json_fname;
-	  json_unwrapped = json_unwrapped
-	};
+        f_brepr = `Field {
+          Ag_json.json_fname = json_fname;
+          json_unwrapped = json_unwrapped
+        };
       }
 
   | `Inherit _ -> assert false

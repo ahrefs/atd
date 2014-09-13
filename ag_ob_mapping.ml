@@ -20,40 +20,40 @@ type ob_def =
 let rec mapping_of_expr (x : type_expr) : ob_mapping =
   match x with
       `Sum (loc, l, an) ->
-	let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
-	let biniou_t = `Sum in
-	`Sum (loc, Array.of_list (List.map mapping_of_variant l),
-	      ocaml_t, biniou_t)
+        let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
+        let biniou_t = `Sum in
+        `Sum (loc, Array.of_list (List.map mapping_of_variant l),
+              ocaml_t, biniou_t)
 
     | `Record (loc, l, an) ->
-	let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
-	let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
-	let biniou_t = `Record in
-	`Record (loc,
+        let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
+        let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
+        let biniou_t = `Record in
+        `Record (loc,
                  Array.of_list
                    (List.map (mapping_of_field ocaml_field_prefix) l),
-		 ocaml_t, biniou_t)
+                 ocaml_t, biniou_t)
 
     | `Tuple (loc, l, an) ->
-	let ocaml_t = `Tuple in
-	let biniou_t = `Tuple in
-	`Tuple (loc, Array.of_list (List.map mapping_of_cell l),
-		ocaml_t, biniou_t)
-	
+        let ocaml_t = `Tuple in
+        let biniou_t = `Tuple in
+        `Tuple (loc, Array.of_list (List.map mapping_of_cell l),
+                ocaml_t, biniou_t)
+        
     | `List (loc, x, an) ->
-	let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
-	let biniou_t = `List (Ag_biniou.get_biniou_list an) in
-	`List (loc, mapping_of_expr x, ocaml_t, biniou_t)
+        let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
+        let biniou_t = `List (Ag_biniou.get_biniou_list an) in
+        `List (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
     | `Option (loc, x, an) ->
-	let ocaml_t = `Option in
-	let biniou_t = `Option in
-	`Option (loc, mapping_of_expr x, ocaml_t, biniou_t)
+        let ocaml_t = `Option in
+        let biniou_t = `Option in
+        `Option (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
     | `Nullable (loc, x, an) ->
-	let ocaml_t = `Nullable in
-	let biniou_t = `Nullable in
-	`Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
+        let ocaml_t = `Nullable in
+        let biniou_t = `Nullable in
+        `Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
     | `Shared (loc, x, a) ->
         let ocaml_t = `Shared (Ag_ocaml.get_ocaml_shared a) in
@@ -70,25 +70,25 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
         `Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
     | `Name (loc, (loc2, s, l), an) ->
-	(match s with
+        (match s with
              "unit" ->
                `Unit (loc, `Unit, `Unit)
-	   | "bool" ->
-	       `Bool (loc, `Bool, `Bool)
-	   | "int" ->
-	       let o = Ag_ocaml.get_ocaml_int an in
-	       let b = Ag_biniou.get_biniou_int an in
-	       `Int (loc, `Int o, `Int b)
-	   | "float" ->
+           | "bool" ->
+               `Bool (loc, `Bool, `Bool)
+           | "int" ->
+               let o = Ag_ocaml.get_ocaml_int an in
+               let b = Ag_biniou.get_biniou_int an in
+               `Int (loc, `Int o, `Int b)
+           | "float" ->
                let b = Ag_biniou.get_biniou_float an in
-	       `Float (loc, `Float, `Float b)
-	   | "string" ->
-	       `String (loc, `String, `String)
-	   | s ->
-	       `Name (loc, s, List.map mapping_of_expr l, None, None)
-	)
+               `Float (loc, `Float, `Float b)
+           | "string" ->
+               `String (loc, `String, `String)
+           | s ->
+               `Name (loc, s, List.map mapping_of_expr l, None, None)
+        )
     | `Tvar (loc, s) ->
-	`Tvar (loc, s)
+        `Tvar (loc, s)
 
 and mapping_of_cell (loc, x, an) =
   let default = Ag_ocaml.get_ocaml_default an in
@@ -115,22 +115,22 @@ and mapping_of_variant = function
       let ocaml_cons = Ag_ocaml.get_ocaml_cons s an in
       let doc = Ag_doc.get_doc loc an in
       let ocaml_t =
-	`Variant {
-	  Ag_ocaml.ocaml_cons = ocaml_cons;
+        `Variant {
+          Ag_ocaml.ocaml_cons = ocaml_cons;
           ocaml_vdoc = doc;
-	}
+        }
       in
       let biniou_t = `Variant in
       let arg =
-	match o with
-	    None -> None
-	  | Some x -> Some (mapping_of_expr x) in
+        match o with
+            None -> None
+          | Some x -> Some (mapping_of_expr x) in
       {
-	var_loc = loc;
-	var_cons = s;
-	var_arg = arg;
-	var_arepr = ocaml_t;
-	var_brepr = biniou_t
+        var_loc = loc;
+        var_cons = s;
+        var_arg = arg;
+        var_arepr = ocaml_t;
+        var_brepr = biniou_t
       }
 
   | `Inherit _ -> assert false
@@ -139,32 +139,32 @@ and mapping_of_field ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr x in
       let ocaml_default, biniou_unwrapped =
-	match fk, Ag_ocaml.get_ocaml_default an with
-	    `Required, None -> None, false
-	  | `Optional, None -> Some "None", true
-	  | (`Required | `Optional), Some _ ->
-	      error loc "Superfluous default OCaml value"
-	  | `With_default, Some s -> Some s, false
-	  | `With_default, None ->
-	      (* will try to determine implicit default value later *)
-	      None, false
+        match fk, Ag_ocaml.get_ocaml_default an with
+            `Required, None -> None, false
+          | `Optional, None -> Some "None", true
+          | (`Required | `Optional), Some _ ->
+              error loc "Superfluous default OCaml value"
+          | `With_default, Some s -> Some s, false
+          | `With_default, None ->
+              (* will try to determine implicit default value later *)
+              None, false
       in
       let ocaml_fname = Ag_ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
       let ocaml_mutable = Ag_ocaml.get_ocaml_mutable an in
       let doc = Ag_doc.get_doc loc an in
       { f_loc = loc;
-	f_name = s;
-	f_kind = fk;
-	f_value = fvalue;
+        f_name = s;
+        f_kind = fk;
+        f_value = fvalue;
 
-	f_arepr = `Field {
-	  Ag_ocaml.ocaml_default = ocaml_default;
-	  ocaml_fname = ocaml_fname;
-	  ocaml_mutable = ocaml_mutable;
+        f_arepr = `Field {
+          Ag_ocaml.ocaml_default = ocaml_default;
+          ocaml_fname = ocaml_fname;
+          ocaml_mutable = ocaml_mutable;
           ocaml_fdoc = doc;
-	};
+        };
 
-	f_brepr = `Field { Ag_biniou.biniou_unwrapped = biniou_unwrapped };
+        f_brepr = `Field { Ag_biniou.biniou_unwrapped = biniou_unwrapped };
       }
 
   | `Inherit _ -> assert false

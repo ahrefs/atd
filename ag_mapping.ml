@@ -67,7 +67,7 @@ type ('a, 'b) def = {
 let as_abstract = function
     `Name (_, (loc, "abstract", l), a) ->
       if l <> [] then
-	error loc "\"abstract\" takes no type parameters";
+        error loc "\"abstract\" takes no type parameters";
       Some (loc, a)
   | _ ->
       None
@@ -164,10 +164,10 @@ let rec find_name loc env visited name =
 and deref_expr env visited x =
   match x with
       `Name (loc, name, args, _, _) ->
-	(try
+        (try
            let param, x = find_name loc env visited name in
            apply param x args
-	 with Not_found -> x)
+         with Not_found -> x)
     | _ -> x
 
 let flatten l = List.flatten (List.map snd l)
@@ -179,9 +179,9 @@ let make_deref
   let defs =
     List.fold_left
       (fun env d ->
-	 match d.def_value with
-	     None -> env
-	   | Some v -> Env.add d.def_name (d.def_param, v) env)
+         match d.def_value with
+             None -> env
+           | Some v -> Env.add d.def_name (d.def_param, v) env)
       Env.empty (flatten l) in
 
   fun x -> deref_expr defs [] x

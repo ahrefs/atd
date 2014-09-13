@@ -33,7 +33,7 @@ let make_ocaml_validate_intf ~with_create buf deref defs =
               x.def_param
           )
         in
-	bprintf buf "\
+        bprintf buf "\
 val validate_%s :%s
   Ag_util.Validation.path -> %s -> Ag_util.Validation.error option
   (** Validate a value of type {!%s}. *)
@@ -54,9 +54,9 @@ let get_fields a =
   let all =
     List.map (
       fun x ->
-	match x.f_arepr with
-	    `Field o -> (x, o.Ag_ocaml.ocaml_fname)
-	  | _ -> assert false
+        match x.f_arepr with
+            `Field o -> (x, o.Ag_ocaml.ocaml_fname)
+          | _ -> assert false
     )
       (Array.to_list a)
   in
@@ -218,88 +218,88 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
         if shallow then
           opt_validator v
         else
-	  let tick =
-	    match x with
-	        `Classic -> ""
-	      | `Poly -> "`"
-	  in
-	  let body : Ag_indent.t list =
-	    [
-	      `Line "match x with";
-	      `Block (
-	        Array.to_list (
-		  Array.map
-		    (fun x -> `Inline (make_variant_validator tick x))
-		    a
-	        )
-	      )
-	    ]
-	  in
-	  [
-	    `Annot ("fun", `Line "fun path x ->");
-	    `Block (prepend_validator v body);
-	  ]
+          let tick =
+            match x with
+                `Classic -> ""
+              | `Poly -> "`"
+          in
+          let body : Ag_indent.t list =
+            [
+              `Line "match x with";
+              `Block (
+                Array.to_list (
+                  Array.map
+                    (fun x -> `Inline (make_variant_validator tick x))
+                    a
+                )
+              )
+            ]
+          in
+          [
+            `Annot ("fun", `Line "fun path x ->");
+            `Block (prepend_validator v body);
+          ]
 
     | `Record (loc, a, `Record o, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
-	  [
+          [
             `Annot ("fun", `Line "fun path x ->");
             `Block (prepend_validator v (make_record_validator a o));
-	  ]
+          ]
 
     | `Tuple (loc, a, `Tuple, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
-	  let len = Array.length a in
-	  let l = Array.to_list (Array.mapi (fun i x -> (i, x)) a) in
+          let len = Array.length a in
+          let l = Array.to_list (Array.mapi (fun i x -> (i, x)) a) in
           let l = List.filter (fun (i, x) -> not (snd x.cel_brepr)) l in
-	  let l =
+          let l =
             List.map (
-	      fun (i, x) ->
-	        `Inline [
-		  `Line (sprintf "(let %s = x in" (nth "x" i len));
-		  `Line "(";
-		  `Block (make_validator x.cel_value);
-		  `Line (sprintf ") (`Index %i :: path) x" i);
-		  `Line ")"
-	        ]
-	    ) l
-	  in
-	  let l = forall l
-	  in
+              fun (i, x) ->
+                `Inline [
+                  `Line (sprintf "(let %s = x in" (nth "x" i len));
+                  `Line "(";
+                  `Block (make_validator x.cel_value);
+                  `Line (sprintf ") (`Index %i :: path) x" i);
+                  `Line ")"
+                ]
+            ) l
+          in
+          let l = forall l
+          in
           [
-	    `Annot ("fun", `Line "fun path x ->");
-	    `Block (prepend_validator v l);
-	  ]
+            `Annot ("fun", `Line "fun path x ->");
+            `Block (prepend_validator v l);
+          ]
 
     | `List (loc, x, `List o, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
           let validate =
-	    match o with
+            match o with
                 `List -> "Ag_ov_run.validate_list ("
               | `Array -> "Ag_ov_run.validate_array ("
           in
-	  prepend_validator_f v [
+          prepend_validator_f v [
             `Line validate;
-	    `Block (make_validator x);
-	    `Line ")";
-	  ]
+            `Block (make_validator x);
+            `Line ")";
+          ]
 
     | `Option (loc, x, `Option, (v, shallow))
     | `Nullable (loc, x, `Nullable, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
-	  prepend_validator_f v [
-	    `Line "Ag_ov_run.validate_option (";
-	    `Block (make_validator x);
-	    `Line ")";
-	  ]
+          prepend_validator_f v [
+            `Line "Ag_ov_run.validate_option (";
+            `Block (make_validator x);
+            `Line ")";
+          ]
 
     | `Shared (loc, _, _, _, (v, shallow)) ->
         if shallow then
@@ -322,29 +322,29 @@ and make_variant_validator tick x :
     Ag_indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
-	`Variant o, (None, _) -> o
+        `Variant o, (None, _) -> o
       | _ -> assert false
   in
   let ocaml_cons = o.Ag_ocaml.ocaml_cons in
   match x.var_arg with
       None ->
         [
-	  `Line (sprintf "| %s%s -> None" tick ocaml_cons)
-	]
+          `Line (sprintf "| %s%s -> None" tick ocaml_cons)
+        ]
     | Some v ->
         [
-	  `Line (sprintf "| %s%s x ->" tick ocaml_cons);
-	  `Block [
-	    `Line "(";
-	    `Block (make_validator v);
-	    `Line ") path x"
-	  ]
-	]
+          `Line (sprintf "| %s%s x ->" tick ocaml_cons);
+          `Block [
+            `Line "(";
+            `Block (make_validator v);
+            `Line ") path x"
+          ]
+        ]
 
 and make_record_validator a record_kind =
   let dot =
     match record_kind with
-	`Record -> "."
+        `Record -> "."
       | `Object -> "#"
   in
   let fields = get_fields a in
@@ -352,12 +352,12 @@ and make_record_validator a record_kind =
   let validate_fields : Ag_indent.t list =
     List.map (
       fun (x, ocaml_fname) ->
-	`Inline [
+        `Inline [
           `Line "(";
-	  `Block (make_validator x.Ag_mapping.f_value);
-	  `Line (sprintf
+          `Block (make_validator x.Ag_mapping.f_value);
+          `Line (sprintf
                    ") (`Field %S :: path) x%s%s" ocaml_fname dot ocaml_fname);
-	]
+        ]
     ) fields
   in
   forall validate_fields
@@ -404,15 +404,15 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
   let ll =
     List.map (
       fun (is_rec, l) ->
-	let l = List.filter (fun x -> x.def_value <> None) l in
-	let validators =
-	  map (
-	    fun is_first def ->
-	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_validator ~original_types is_rec let1 let2 def
-	  ) l
-	in
-	List.flatten validators
+        let l = List.filter (fun x -> x.def_value <> None) l in
+        let validators =
+          map (
+            fun is_first def ->
+              let let1, let2 = get_let ~is_rec ~is_first in
+              make_ocaml_validator ~original_types is_rec let1 let2 def
+          ) l
+        in
+        List.flatten validators
   ) defs
   in
   Atd_indent.to_buffer buf (List.flatten ll);

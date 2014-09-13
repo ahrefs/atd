@@ -304,21 +304,21 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
 
   let atd_file =
     match !files with
-	[s] -> Some s
+        [s] -> Some s
       | [] -> None
       | _ ->
-	  Arg.usage options msg;
-	  exit 1
+          Arg.usage options msg;
+          exit 1
   in
   let base_ocaml_prefix =
     match !out_prefix, atd_file with
-	Some x, _ -> x
+        Some x, _ -> x
       | None, Some file ->
-	  `Files (
+          `Files (
               if Filename.check_suffix file ".atd" then
-	        Filename.chop_extension file
-	      else
-	        file
+                Filename.chop_extension file
+              else
+                file
           )
       | None, None -> `Stdout
   in
@@ -399,6 +399,6 @@ let () =
       Atd_ast.Atd_error s
     | Failure s ->
         flush stdout;
-	eprintf "%s\n%!" s;
-	exit 1
+        eprintf "%s\n%!" s;
+        exit 1
     | e -> raise e

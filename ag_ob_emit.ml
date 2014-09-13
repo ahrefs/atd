@@ -45,9 +45,9 @@ let make_ocaml_biniou_intf ~with_create buf deref defs =
               x.def_param
           )
         in
-	bprintf buf "(* Writers for type %s *)\n\n" s;
+        bprintf buf "(* Writers for type %s *)\n\n" s;
 
-	bprintf buf "\
+        bprintf buf "\
 val %s_tag : Bi_io.node_tag
   (** Tag used by the writers for type {!%s}.
       Readers may support more than just this tag. *)
@@ -56,7 +56,7 @@ val %s_tag : Bi_io.node_tag
           s
           s;
 
-	bprintf buf "\
+        bprintf buf "\
 val write_untagged_%s :%s
   Bi_outbuf.t -> %s -> unit
   (** Output an untagged biniou value of type {!%s}. *)
@@ -66,7 +66,7 @@ val write_untagged_%s :%s
           full_name
           s;
 
-	bprintf buf "\
+        bprintf buf "\
 val write_%s :%s
   Bi_outbuf.t -> %s -> unit
   (** Output a biniou value of type {!%s}. *)
@@ -76,7 +76,7 @@ val write_%s :%s
           full_name
           s;
 
-	bprintf buf "\
+        bprintf buf "\
 val string_of_%s :%s
   ?len:int -> %s -> string
   (** Serialize a value of type {!%s} into
@@ -87,9 +87,9 @@ val string_of_%s :%s
           full_name
           s;
 
-	bprintf buf "(* Readers for type %s *)\n\n" s;
+        bprintf buf "(* Readers for type %s *)\n\n" s;
 
-	bprintf buf "\
+        bprintf buf "\
 val get_%s_reader :%s
   Bi_io.node_tag -> (Bi_inbuf.t -> %s)
   (** Return a function that reads an untagged
@@ -100,7 +100,7 @@ val get_%s_reader :%s
           full_name
           s;
 
-	bprintf buf "\
+        bprintf buf "\
 val read_%s :%s
   Bi_inbuf.t -> %s
   (** Input a tagged biniou value of type {!%s}. *)
@@ -110,7 +110,7 @@ val read_%s :%s
           full_name
           s;
 
-	bprintf buf "\
+        bprintf buf "\
 val %s_of_string :%s
   ?pos:int -> string -> %s
   (** Deserialize a biniou value of type {!%s}.
@@ -137,14 +137,14 @@ let rec get_biniou_tag (x : ob_mapping) =
       `Unit (loc, `Unit, `Unit) -> "Bi_io.unit_tag"
     | `Bool (loc, `Bool, `Bool) -> "Bi_io.bool_tag"
     | `Int (loc, `Int o, `Int b) ->
-	(match b with
-	     `Uvint -> "Bi_io.uvint_tag"
-	   | `Svint -> "Bi_io.svint_tag"
-	   | `Int8 -> "Bi_io.int8_tag"
-	   | `Int16 -> "Bi_io.int16_tag"
-	   | `Int32 -> "Bi_io.int32_tag"
-	   | `Int64 -> "Bi_io.int64_tag"
-	)
+        (match b with
+             `Uvint -> "Bi_io.uvint_tag"
+           | `Svint -> "Bi_io.svint_tag"
+           | `Int8 -> "Bi_io.int8_tag"
+           | `Int16 -> "Bi_io.int16_tag"
+           | `Int32 -> "Bi_io.int32_tag"
+           | `Int64 -> "Bi_io.int64_tag"
+        )
     | `Float (loc, `Float, `Float b) ->
         (match b with
             `Float32 -> "Bi_io.float32_tag"
@@ -155,10 +155,10 @@ let rec get_biniou_tag (x : ob_mapping) =
     | `Record (loc, a, `Record o, `Record) -> "Bi_io.record_tag"
     | `Tuple (loc, a, `Tuple, `Tuple) -> "Bi_io.tuple_tag"
     | `List (loc, x, `List o, `List b) ->
-	(match b with
-	     `Array -> "Bi_io.array_tag"
-	   | `Table -> "Bi_io.table_tag"
-	)
+        (match b with
+             `Array -> "Bi_io.array_tag"
+           | `Table -> "Bi_io.table_tag"
+        )
     | `Option (loc, x, `Option, `Option)
     | `Nullable (loc, x, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
     | `Shared (loc, id, x, `Shared _, `Shared) -> "Bi_io.shared_tag"
@@ -182,35 +182,35 @@ let get_fields deref a =
   List.map (
     fun x ->
       let ocaml_fname, ocaml_default, optional, unwrapped =
-	match x.f_arepr, x.f_brepr with
-	    `Field o, `Field b ->
-	      let ocaml_default =
-		match x.f_kind with
-		    `With_default ->
-		      (match o.Ag_ocaml.ocaml_default with
-			   None ->
-			     let d =
-			       Ag_ocaml.get_implicit_ocaml_default
+        match x.f_arepr, x.f_brepr with
+            `Field o, `Field b ->
+              let ocaml_default =
+                match x.f_kind with
+                    `With_default ->
+                      (match o.Ag_ocaml.ocaml_default with
+                           None ->
+                             let d =
+                               Ag_ocaml.get_implicit_ocaml_default
                                  deref x.f_value in
-			     if d = None then
-			       error x.f_loc "Missing default field value"
-			     else
-			       d
-			 | Some _ as default -> default
-		      )
-		  | `Optional -> Some "None"
-		  | `Required -> None
-	      in
-	      let optional =
-		match x.f_kind with
-		    `Optional | `With_default -> true
-		  | `Required -> false
-	      in
-	      o.Ag_ocaml.ocaml_fname,
-	      ocaml_default,
-	      optional,
-	      b.Ag_biniou.biniou_unwrapped
-	  | _ -> assert false
+                             if d = None then
+                               error x.f_loc "Missing default field value"
+                             else
+                               d
+                         | Some _ as default -> default
+                      )
+                  | `Optional -> Some "None"
+                  | `Required -> None
+              in
+              let optional =
+                match x.f_kind with
+                    `Optional | `With_default -> true
+                  | `Required -> false
+              in
+              o.Ag_ocaml.ocaml_fname,
+              ocaml_default,
+              optional,
+              b.Ag_biniou.biniou_unwrapped
+          | _ -> assert false
       in
       (x, ocaml_fname, ocaml_default, optional, unwrapped)
   )
@@ -238,21 +238,21 @@ let rec get_writer_name
   let un = if tagged then "" else "untagged_" in
   match x with
       `Unit (loc, `Unit, `Unit) ->
-	sprintf "Bi_io.write_%sunit" un
+        sprintf "Bi_io.write_%sunit" un
     | `Bool (loc, `Bool, `Bool) ->
-	sprintf "Bi_io.write_%sbool" un
+        sprintf "Bi_io.write_%sbool" un
     | `Int (loc, `Int o, `Int b) ->
-	(match o, b with
-	     `Int, `Uvint -> sprintf "Bi_io.write_%suvint" un
-	   | `Int, `Svint -> sprintf "Bi_io.write_%ssvint" un
-	   | `Char, `Int8 -> sprintf "Bi_io.write_%schar" un
-	   | `Int, `Int8 -> sprintf "Bi_io.write_%sint8" un
-	   | `Int, `Int16 -> sprintf "Bi_io.write_%sint16" un
-	   | `Int32, `Int32 -> sprintf "Bi_io.write_%sint32" un
-	   | `Int64, `Int64 -> sprintf "Bi_io.write_%sint64" un
-	   | _ ->
-	       error loc "Unsupported combination of OCaml/Biniou int types"
-	)
+        (match o, b with
+             `Int, `Uvint -> sprintf "Bi_io.write_%suvint" un
+           | `Int, `Svint -> sprintf "Bi_io.write_%ssvint" un
+           | `Char, `Int8 -> sprintf "Bi_io.write_%schar" un
+           | `Int, `Int8 -> sprintf "Bi_io.write_%sint8" un
+           | `Int, `Int16 -> sprintf "Bi_io.write_%sint16" un
+           | `Int32, `Int32 -> sprintf "Bi_io.write_%sint32" un
+           | `Int64, `Int64 -> sprintf "Bi_io.write_%sint64" un
+           | _ ->
+               error loc "Unsupported combination of OCaml/Biniou int types"
+        )
 
     | `Float (loc, `Float, `Float b) ->
         (match b with
@@ -260,7 +260,7 @@ let rec get_writer_name
           | `Float64 -> sprintf "Bi_io.write_%sfloat64" un
         )
     | `String (loc, `String, `String) ->
-	sprintf "Bi_io.write_%sstring" un
+        sprintf "Bi_io.write_%sstring" un
 
     | `Tvar (loc, s) ->
         sprintf "write_%s%s" un (name_of_var s)
@@ -346,17 +346,17 @@ let rec get_reader_name
     | `Bool (loc, `Bool, `Bool) -> xreader "bool"
 
     | `Int (loc, `Int o, `Int b) ->
-	(match o, b with
-	     `Int, `Uvint
-	   | `Int, `Svint
-	   | `Int, `Int8
-	   | `Int, `Int16 -> xreader "int"
-	   | `Char, `Int8 -> xreader "char"
-	   | `Int32, `Int32 -> xreader "int32"
-	   | `Int64, `Int64 -> xreader "int64"
-	   | _ ->
-	       error loc "Unsupported combination of OCaml/Biniou int types"
-	)
+        (match o, b with
+             `Int, `Uvint
+           | `Int, `Svint
+           | `Int, `Int8
+           | `Int, `Int16 -> xreader "int"
+           | `Char, `Int8 -> xreader "char"
+           | `Int32, `Int32 -> xreader "int32"
+           | `Int64, `Int64 -> xreader "int64"
+           | _ ->
+               error loc "Unsupported combination of OCaml/Biniou int types"
+        )
 
     | `Float (loc, `Float, `Float b) ->
         (match b with
@@ -420,111 +420,111 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
     | `Tvar _ -> [ `Line (get_writer_name ~tagged x) ]
 
     | `Sum (loc, a, `Sum x, `Sum) ->
-	let tick =
-	  match x with
-	      `Classic -> ""
-	    | `Poly -> "`"
-	in
-	let match_ =
-	  [
+        let tick =
+          match x with
+              `Classic -> ""
+            | `Poly -> "`"
+        in
+        let match_ =
+          [
             `Line "match x with";
             `Block (
               Array.to_list (
-		Array.map
-		  (fun x -> `Inline (make_variant_writer deref tick x))
-		  a
-	      )
-	    )
-	  ]
-	in
-	let body =
-	  if tagged then
-	    `Line "Bi_io.write_tag ob Bi_io.variant_tag;" :: match_
-	  else
-	    match_
-	in
-	[
+                Array.map
+                  (fun x -> `Inline (make_variant_writer deref tick x))
+                  a
+              )
+            )
+          ]
+        in
+        let body =
+          if tagged then
+            `Line "Bi_io.write_tag ob Bi_io.variant_tag;" :: match_
+          else
+            match_
+        in
+        [
           `Annot ("fun", `Line "fun ob x ->");
           `Block body;
         ]
 
     | `Record (loc, a, `Record o, `Record) ->
-	let body = make_record_writer deref tagged a o in
-	[
+        let body = make_record_writer deref tagged a o in
+        [
           `Annot ("fun", `Line "fun ob x ->");
           `Block body;
         ]
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
-	let main =
-	  let len = Array.length a in
-	  let a =
-	    Array.mapi (
-	      fun i x ->
-		[
+        let main =
+          let len = Array.length a in
+          let a =
+            Array.mapi (
+              fun i x ->
+                [
                   `Line "(";
                   `Block [
-		    `Line (sprintf "let %s = x in (" (nth "x" i len));
+                    `Line (sprintf "let %s = x in (" (nth "x" i len));
                     `Block (make_writer ~tagged:true deref x.cel_value);
-		    `Line ") ob x";
+                    `Line ") ob x";
                   ];
-		  `Line ");"
-		]
-	    ) a
-	  in
-	  [
+                  `Line ");"
+                ]
+            ) a
+          in
+          [
             `Line (sprintf "Bi_vint.write_uvint ob %i;" len);
-	    `Inline (List.flatten (Array.to_list a))
+            `Inline (List.flatten (Array.to_list a))
           ]
-	in
-	let body =
-	  if tagged then
-	    `Line "Bi_io.write_tag ob Bi_io.tuple_tag;" :: main
-	  else
-	    main
-	in
-	[
+        in
+        let body =
+          if tagged then
+            `Line "Bi_io.write_tag ob Bi_io.tuple_tag;" :: main
+          else
+            main
+        in
+        [
           `Annot ("fun", `Line "fun ob x ->");
           `Block body;
         ]
 
     | `List (loc, x, `List o, `List b) ->
-	(match o, b with
-	     `List, `Array ->
-	       let tag = get_biniou_tag x in
-	       [
+        (match o, b with
+             `List, `Array ->
+               let tag = get_biniou_tag x in
+               [
                  `Line (sprintf "Ag_ob_run.write_%slist" un);
                  `Block [
-		   `Line tag;
+                   `Line tag;
                    `Line "(";
                    `Block (make_writer ~tagged:false deref x);
                    `Line ")";
                  ]
                ]
-	   | `Array, `Array ->
-	       let tag = get_biniou_tag x in
+           | `Array, `Array ->
+               let tag = get_biniou_tag x in
                [
-	         `Line (sprintf "Ag_ob_run.write_%sarray" un);
+                 `Line (sprintf "Ag_ob_run.write_%sarray" un);
                  `Block [
-		   `Line tag;
+                   `Line tag;
                    `Line "(";
                    `Block (make_writer ~tagged deref x);
                    `Line ")";
                  ]
                ]
-	   | list_kind, `Table ->
-	       let body = make_table_writer deref tagged list_kind x in
-	       [
+           | list_kind, `Table ->
+               let body = make_table_writer deref tagged list_kind x in
+               [
                  `Annot ("fun", `Line "fun ob x ->");
                  `Block body;
                ]
-	)
+        )
 
     | `Option (loc, x, `Option, `Option)
     | `Nullable (loc, x, `Nullable, `Nullable) ->
-	[
+        [
           `Line (sprintf "Ag_ob_run.write_%soption (" un);
-	  `Block (make_writer ~tagged:true deref x);
+          `Block (make_writer ~tagged:true deref x);
           `Line ")";
         ]
 
@@ -534,9 +534,9 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
               `Flat -> ""
             | `Ref -> "_ref"
         in
-	[
+        [
           `Line (sprintf "Ag_ob_run.write_%sshared%s shared%s (" un suffix id);
-	  `Block (make_writer ~tagged:true deref x);
+          `Block (make_writer ~tagged:true deref x);
           `Line ")";
         ]
 
@@ -562,33 +562,33 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
 and make_variant_writer deref tick x : Ag_indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
-	`Variant o, `Variant -> o
+        `Variant o, `Variant -> o
       | _ -> assert false
   in
   let ocaml_cons = o.Ag_ocaml.ocaml_cons in
   match x.var_arg with
       None ->
-	let h = Bi_io.string_of_hashtag (Bi_io.hash_name x.var_cons) false in
-	[ `Line (sprintf "| %s%s -> Bi_outbuf.add_char4 ob %C %C %C %C"
-		   tick ocaml_cons
-		   h.[0] h.[1] h.[2] h.[3]) ]
+        let h = Bi_io.string_of_hashtag (Bi_io.hash_name x.var_cons) false in
+        [ `Line (sprintf "| %s%s -> Bi_outbuf.add_char4 ob %C %C %C %C"
+                   tick ocaml_cons
+                   h.[0] h.[1] h.[2] h.[3]) ]
     | Some v ->
-	let h = Bi_io.string_of_hashtag (Bi_io.hash_name x.var_cons) true in
-	[
+        let h = Bi_io.string_of_hashtag (Bi_io.hash_name x.var_cons) true in
+        [
           `Line (sprintf "| %s%s x ->" tick ocaml_cons);
           `Block [
-	    `Line (sprintf "Bi_outbuf.add_char4 ob %C %C %C %C;"
-		     h.[0] h.[1] h.[2] h.[3]);
-	    `Line "(";
+            `Line (sprintf "Bi_outbuf.add_char4 ob %C %C %C %C;"
+                     h.[0] h.[1] h.[2] h.[3]);
+            `Line "(";
             `Block (make_writer ~tagged:true deref v);
-	    `Line ") ob x"
-	  ]
+            `Line ") ob x"
+          ]
         ]
 
 and make_record_writer deref tagged a record_kind =
   let dot =
     match record_kind with
-	`Record -> "."
+        `Record -> "."
       | `Object -> "#"
   in
   let fields = get_fields deref a in
@@ -597,7 +597,7 @@ and make_record_writer deref tagged a record_kind =
        to determine the length of the record *)
     let min_len =
       List.fold_left
-	(fun n (_, _, _, opt, _) -> if opt then n else n + 1) 0 fields
+        (fun n (_, _, _, opt, _) -> if opt then n else n + 1) 0 fields
     in
     let max_len = List.length fields in
     if min_len = max_len then
@@ -606,65 +606,65 @@ and make_record_writer deref tagged a record_kind =
       [
         (* Using a ref because many "let len = ... len + 1 in"
            cause ocamlopt to take a very long time to finish *)
-	`Line (sprintf "let len = ref %i in" min_len);
-	`Inline (
-	  List.fold_right (
-	    fun (x, ocaml_fname, default, opt, unwrap) l ->
-	      if opt then
-		let getfield =
-		  sprintf "let x_%s = x%s%s in" ocaml_fname dot ocaml_fname in
-		let setlen =
-		  sprintf "if x_%s != %s then incr len;"
-		    ocaml_fname (unopt default)
-		in
-		`Line getfield :: `Line setlen :: l
-	      else l
-	  ) fields []
-	);
-	`Line "Bi_vint.write_uvint ob !len;"
+        `Line (sprintf "let len = ref %i in" min_len);
+        `Inline (
+          List.fold_right (
+            fun (x, ocaml_fname, default, opt, unwrap) l ->
+              if opt then
+                let getfield =
+                  sprintf "let x_%s = x%s%s in" ocaml_fname dot ocaml_fname in
+                let setlen =
+                  sprintf "if x_%s != %s then incr len;"
+                    ocaml_fname (unopt default)
+                in
+                `Line getfield :: `Line setlen :: l
+              else l
+          ) fields []
+        );
+        `Line "Bi_vint.write_uvint ob !len;"
       ]
   in
 
   let write_fields =
     List.map (
       fun (x, ocaml_fname, ocaml_default, optional, unwrapped) ->
-	let f_value =
-	  if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
-	  else x.f_value
-	in
-	let write_field_tag =
-	  let s = Bi_io.string_of_hashtag (Bi_io.hash_name x.f_name) true in
-	  sprintf "Bi_outbuf.add_char4 ob %C %C %C %C;"
-	    s.[0] s.[1] s.[2] s.[3]
-	in
-	let app v =
-	  [
-	    `Line write_field_tag;
+        let f_value =
+          if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
+          else x.f_value
+        in
+        let write_field_tag =
+          let s = Bi_io.string_of_hashtag (Bi_io.hash_name x.f_name) true in
+          sprintf "Bi_outbuf.add_char4 ob %C %C %C %C;"
+            s.[0] s.[1] s.[2] s.[3]
+        in
+        let app v =
+          [
+            `Line write_field_tag;
             `Line "(";
-	    `Block (make_writer ~tagged:true deref f_value);
-	    `Line (sprintf ") ob %s;" v);
-	  ]
-	in
-	let v =
-	  if optional then
-	    sprintf "x_%s" ocaml_fname
-	  else
-	    sprintf "x%s%s" dot ocaml_fname
-	in
-	if unwrapped then
-	  [
-	    `Line (sprintf "(match %s with None -> () | Some x ->" v);
-	    `Block (app "x");
-	    `Line ");"
-	  ]
-	else if optional then
-	  [
-	    `Line (sprintf "if %s != %s then (" v (unopt ocaml_default));
-	    `Block (app v);
-	    `Line ");"
-	  ]
-	else
-	  app v
+            `Block (make_writer ~tagged:true deref f_value);
+            `Line (sprintf ") ob %s;" v);
+          ]
+        in
+        let v =
+          if optional then
+            sprintf "x_%s" ocaml_fname
+          else
+            sprintf "x%s%s" dot ocaml_fname
+        in
+        if unwrapped then
+          [
+            `Line (sprintf "(match %s with None -> () | Some x ->" v);
+            `Block (app "x");
+            `Line ");"
+          ]
+        else if optional then
+          [
+            `Line (sprintf "if %s != %s then (" v (unopt ocaml_default));
+            `Block (app v);
+            `Line ");"
+          ]
+        else
+          app v
     ) fields
   in
 
@@ -680,23 +680,23 @@ and make_record_writer deref tagged a record_kind =
 and make_table_writer deref tagged list_kind x =
   let a, record_kind =
     match deref x with
-	`Record (_, a, `Record record_kind, `Record) -> a, record_kind
+        `Record (_, a, `Record record_kind, `Record) -> a, record_kind
       | _ ->
-	  error (loc_of_mapping x) "Not a record type"
+          error (loc_of_mapping x) "Not a record type"
   in
   let dot =
     match record_kind with
-	`Record -> "."
+        `Record -> "."
       | `Object -> "#"
   in
   let let_len =
     match list_kind with
-	`List -> `Line "let len = List.length x in"
+        `List -> `Line "let len = List.length x in"
       | `Array -> `Line "let len = Array.length x in"
   in
   let iter2 =
     match list_kind with
-	`List -> "Ag_ob_run.list_iter2"
+        `List -> "Ag_ob_run.list_iter2"
       | `Array -> "Ag_ob_run.array_iter2"
   in
   let l = Array.to_list a in
@@ -704,22 +704,22 @@ and make_table_writer deref tagged list_kind x =
     `Line (sprintf "Bi_vint.write_uvint ob %i;" (Array.length a)) ::
     List.flatten (
       List.map (
-	fun x ->
-	  [ `Line (sprintf "Bi_io.write_hashtag ob (%i) true;"
-		     (Bi_io.hash_name x.f_name));
-	    `Line (sprintf "Bi_io.write_tag ob %s;"
-		     (get_biniou_tag x.f_value)) ]
+        fun x ->
+          [ `Line (sprintf "Bi_io.write_hashtag ob (%i) true;"
+                     (Bi_io.hash_name x.f_name));
+            `Line (sprintf "Bi_io.write_tag ob %s;"
+                     (get_biniou_tag x.f_value)) ]
       ) l
     )
   in
   let write_record =
     List.flatten (
       List.map (
-	fun x ->
-	  [ `Line "(";
-	    `Block (make_writer ~tagged:false deref x.f_value);
-	    `Line ")";
-	    `Block [ `Line (sprintf "ob x%s%s;" dot x.f_name) ] ]
+        fun x ->
+          [ `Line "(";
+            `Block (make_writer ~tagged:false deref x.f_value);
+            `Line ")";
+            `Block [ `Line (sprintf "ob x%s%s;" dot x.f_name) ] ]
       ) l
     )
   in
@@ -750,31 +750,31 @@ let study_record deref fields =
   let _, init_fields =
     List.fold_right (
       fun (x, name, default, opt, unwrap) (maybe_constant, l) ->
-	let maybe_constant, v =
-	  match default with
-	      None ->
-		assert (not opt);
-		(*
-		  The initial value is a float because the record may be
-		  represented as a double_array (unboxed floats).
-		  Float values work in all cases.
-		*)
-		let v = "Obj.magic 0.0" in
-		maybe_constant, v
-	    | Some s ->
-		false, (if maybe_constant then sprintf "(fun x -> x) (%s)" s
-			else s)
-	in
-	(maybe_constant, `Line (sprintf "%s = %s;" name v) :: l)
+        let maybe_constant, v =
+          match default with
+              None ->
+                assert (not opt);
+                (*
+                  The initial value is a float because the record may be
+                  represented as a double_array (unboxed floats).
+                  Float values work in all cases.
+                *)
+                let v = "Obj.magic 0.0" in
+                maybe_constant, v
+            | Some s ->
+                false, (if maybe_constant then sprintf "(fun x -> x) (%s)" s
+                        else s)
+        in
+        (maybe_constant, `Line (sprintf "%s = %s;" name v) :: l)
     ) fields (maybe_constant, [])
   in
   let n, mapping =
     List.fold_left (
       fun (i, acc) (x, name, default, opt, unwrap) ->
-	if not opt then
-	  (i+1, (Some i :: acc))
-	else
-	  (i, (None :: acc))
+        if not opt then
+          (i+1, (Some i :: acc))
+        else
+          (i, (None :: acc))
     ) (0, []) fields
   in
   let mapping = Array.of_list (List.rev mapping) in
@@ -785,35 +785,35 @@ let study_record deref fields =
   let init_bits =
     Array.to_list (
       Array.init k (
-	fun i -> `Line (sprintf "let bits%i = ref 0 in" i)
+        fun i -> `Line (sprintf "let bits%i = ref 0 in" i)
       )
     )
   in
   let final_bits = Array.make k 0 in
   for z0 = 0 to List.length fields - 1 do
     match mapping.(z0) with
-	None -> ()
+        None -> ()
       | Some z ->
-	  let i = z / 31 in
-	  let j = z mod 31 in
-	  final_bits.(i) <- final_bits.(i) lor (1 lsl j);
+          let i = z / 31 in
+          let j = z mod 31 in
+          final_bits.(i) <- final_bits.(i) lor (1 lsl j);
   done;
   let set_bit z0 =
     match mapping.(z0) with
-	None -> []
+        None -> []
       | Some z ->
-	  let i = z / 31 in
-	  let j = z mod 31 in
-	  [ `Line (sprintf "bits%i := !bits%i lor 0x%x;" i i (1 lsl j)) ]
+          let i = z / 31 in
+          let j = z mod 31 in
+          [ `Line (sprintf "bits%i := !bits%i lor 0x%x;" i i (1 lsl j)) ]
   in
   let check_bits =
     let bool_expr =
       String.concat " || " (
-	Array.to_list (
-	  Array.mapi (
-	    fun i x -> sprintf "!bits%i <> 0x%x" i x
-	  ) final_bits
-	)
+        Array.to_list (
+          Array.mapi (
+            fun i x -> sprintf "!bits%i <> 0x%x" i x
+          ) final_bits
+        )
       )
     in
     let bit_fields =
@@ -822,20 +822,20 @@ let study_record deref fields =
     in
     let field_names =
       let l =
-	List.fold_right (
-	  fun (x, name, default, opt, unwrap) acc ->
-	    if not opt then
-	      sprintf "%S" x.f_name :: acc
-	    else
-	      acc
-	) fields []
+        List.fold_right (
+          fun (x, name, default, opt, unwrap) acc ->
+            if not opt then
+              sprintf "%S" x.f_name :: acc
+            else
+              acc
+        ) fields []
       in
       sprintf "[| %s |]" (String.concat "; " l)
     in
     if k = 0 then []
     else
       [ `Line (sprintf "if %s then Ag_ob_run.missing_fields %s %s;"
-		 bool_expr bit_fields field_names) ]
+                 bool_expr bit_fields field_names) ]
   in
   init_val, init_bits, set_bit, check_bits
 
@@ -845,21 +845,21 @@ let wrap_body ~tagged expected_tag body =
     [
       `Annot ("fun", `Line "fun ib ->");
       `Block [
-	`Line (sprintf "if Bi_io.read_tag ib <> %i then \
+        `Line (sprintf "if Bi_io.read_tag ib <> %i then \
                         Ag_ob_run.read_error_at ib;"
-		 expected_tag);
-	`Inline body;
+                 expected_tag);
+        `Inline body;
       ]
     ]
   else
     [
       `Annot ("fun", `Line "fun tag ->");
       `Block [
-	`Line (sprintf "if tag <> %i then \
+        `Line (sprintf "if tag <> %i then \
                           Ag_ob_run.read_error () else"
-		 expected_tag);
+                 expected_tag);
         `Block [
-	  `Line "fun ib ->";
+          `Line "fun ib ->";
           `Block body;
         ]
       ]
@@ -869,42 +869,42 @@ let wrap_bodies ~tagged l =
   if tagged then
     let cases =
       List.map (
-	fun (expected_tag, body) ->
-	  `Inline [
-	    `Line (sprintf "| %i -> " expected_tag);
-	    `Block body;
-	  ]
+        fun (expected_tag, body) ->
+          `Inline [
+            `Line (sprintf "| %i -> " expected_tag);
+            `Block body;
+          ]
       ) l
     in
     [
       `Line "fun ib ->";
       `Block [
-	`Line "match Bi_io.read_tag ib with";
-	`Block [
-	  `Inline cases;
-	  `Line "| _ -> Ag_ob_run.read_error_at ib"
-	]
+        `Line "match Bi_io.read_tag ib with";
+        `Block [
+          `Inline cases;
+          `Line "| _ -> Ag_ob_run.read_error_at ib"
+        ]
       ]
     ]
   else
     let cases =
       List.map (
-	fun (expected_tag, body) ->
-	  `Inline [
-	    `Line (sprintf "| %i -> " expected_tag);
-	    `Block [
-	      `Line "(fun ib ->";
-	      `Block body;
-	      `Line ")";
-	    ]
-	  ]
+        fun (expected_tag, body) ->
+          `Inline [
+            `Line (sprintf "| %i -> " expected_tag);
+            `Block [
+              `Line "(fun ib ->";
+              `Block body;
+              `Line ")";
+            ]
+          ]
       ) l
     in
     [
       `Line "function";
       `Block [
-	`Inline cases;
-	`Line "| _ -> Ag_ob_run.read_error ()"
+        `Inline cases;
+        `Line "| _ -> Ag_ob_run.read_error ()"
       ]
     ]
 
@@ -923,110 +923,110 @@ let rec make_reader
     | `Tvar _ -> [ `Line (get_reader_name ~tagged x) ]
 
     | `Sum (loc, a, `Sum x, `Sum) ->
-	let tick =
-	  match x with
-	      `Classic -> ""
-	    | `Poly -> "`"
-	in
-	let body =
-	  [
-	    `Line "Bi_io.read_hashtag ib (fun ib h has_arg ->";
-	    `Block [
-	      `Line "match h, has_arg with";
+        let tick =
+          match x with
+              `Classic -> ""
+            | `Poly -> "`"
+        in
+        let body =
+          [
+            `Line "Bi_io.read_hashtag ib (fun ib h has_arg ->";
+            `Block [
+              `Line "match h, has_arg with";
               `Block [
-		`Inline (
+                `Inline (
                   Array.to_list (
-		    Array.map
-		      (fun x ->
+                    Array.map
+                      (fun x ->
                         `Inline (make_variant_reader deref type_annot tick x)
                       )
-		      a
+                      a
                   )
-		);
+                );
                 `Line "| _ -> Ag_ob_run.unsupported_variant h has_arg";
               ]
-	    ];
-	    `Line ")"
-	  ]
-	in
-	wrap_body ~tagged Bi_io.variant_tag body
+            ];
+            `Line ")"
+          ]
+        in
+        wrap_body ~tagged Bi_io.variant_tag body
 
     | `Record (loc, a, `Record o, `Record) ->
-	(match o with
-	     `Record -> ()
-	   | `Object ->
-	       error loc "Sorry, OCaml objects are not supported"
-	);
-	let body = make_record_reader deref ~tagged type_annot a o in
-	wrap_body ~tagged Bi_io.record_tag body
+        (match o with
+             `Record -> ()
+           | `Object ->
+               error loc "Sorry, OCaml objects are not supported"
+        );
+        let body = make_record_reader deref ~tagged type_annot a o in
+        wrap_body ~tagged Bi_io.record_tag body
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
-	let body = make_tuple_reader deref ~tagged a in
-	wrap_body ~tagged Bi_io.tuple_tag body
+        let body = make_tuple_reader deref ~tagged a in
+        wrap_body ~tagged Bi_io.tuple_tag body
 
     | `List (loc, x, `List o, `List b) ->
-	(match o, b with
-	     `List, `Array ->
-	       let f =
-		 if tagged then "Ag_ob_run.read_list"
+        (match o, b with
+             `List, `Array ->
+               let f =
+                 if tagged then "Ag_ob_run.read_list"
                  else "Ag_ob_run.get_list_reader"
-	       in
-	       [
+               in
+               [
                  `Line (f ^ " (");
                  `Block (make_reader deref ~tagged:false x);
                  `Line ")";
-	       ]
-	   | `Array, `Array ->
-	       let f =
+               ]
+           | `Array, `Array ->
+               let f =
                  if tagged then "Ag_ob_run.read_array"
                  else "Ag_ob_run.get_array_reader"
-	       in
-	       [
+               in
+               [
                  `Line (f ^ " (");
                  `Block (make_reader deref ~tagged:false x);
                  `Line ")";
-	       ]
-	   | list_kind, `Table ->
-	       (* Support table format and regular array format *)
-	       let body1 = make_table_reader deref loc list_kind x in
-	       let body2 =
-		 let f =
-		   match list_kind with
-		       `List -> "Ag_ob_run.read_list_value"
-		     | `Array -> "Ag_ob_run.read_array_value"
-		 in
-		 [
-		   `Line (f ^ " (");
-		   `Block (make_reader deref ~tagged:false x);
-		   `Line ") ib";
-		 ]
-	       in
-	       wrap_bodies ~tagged [ Bi_io.table_tag, body1;
-				     Bi_io.array_tag, body2 ]
-	)
+               ]
+           | list_kind, `Table ->
+               (* Support table format and regular array format *)
+               let body1 = make_table_reader deref loc list_kind x in
+               let body2 =
+                 let f =
+                   match list_kind with
+                       `List -> "Ag_ob_run.read_list_value"
+                     | `Array -> "Ag_ob_run.read_array_value"
+                 in
+                 [
+                   `Line (f ^ " (");
+                   `Block (make_reader deref ~tagged:false x);
+                   `Line ") ib";
+                 ]
+               in
+               wrap_bodies ~tagged [ Bi_io.table_tag, body1;
+                                     Bi_io.array_tag, body2 ]
+        )
 
     | `Option (loc, x, `Option, `Option)
     | `Nullable (loc, x, `Nullable, `Nullable) ->
-	let body = [
-	  `Line "match Char.code (Bi_inbuf.read_char ib) with";
-	  `Block [
-	    `Line "| 0 -> None";
-	    `Line "| 0x80 ->";
-	    `Block [
-	      `Line "Some (";
-	      `Block [
-		`Line "(";
-		`Block (make_reader deref ~tagged:true x);
-		`Line ")";
-		 `Block [ `Line "ib"];
-	      ];
-	      `Line ")"
-	    ];
-	    `Line "| _ -> Ag_ob_run.read_error_at ib";
-	  ]
-	]
-	in
-	wrap_body ~tagged Bi_io.num_variant_tag body
+        let body = [
+          `Line "match Char.code (Bi_inbuf.read_char ib) with";
+          `Block [
+            `Line "| 0 -> None";
+            `Line "| 0x80 ->";
+            `Block [
+              `Line "Some (";
+              `Block [
+                `Line "(";
+                `Block (make_reader deref ~tagged:true x);
+                `Line ")";
+                 `Block [ `Line "ib"];
+              ];
+              `Line ")"
+            ];
+            `Line "| _ -> Ag_ob_run.read_error_at ib";
+          ]
+        ]
+        in
+        wrap_body ~tagged Bi_io.num_variant_tag body
 
     | `Shared (loc, id, x, `Shared kind, `Shared) ->
         let body =
@@ -1035,11 +1035,11 @@ let rec make_reader
                 (match deref x with
                      `Record (loc, a, `Record o, `Record) ->
                        (match o with
-	                    `Record -> ()
-	                  | `Object ->
-	                      error loc "OCaml objects are not supported"
-	               );
-	               make_record_reader
+                            `Record -> ()
+                          | `Object ->
+                              error loc "OCaml objects are not supported"
+                       );
+                       make_record_reader
                          ~shared_id:id deref ~tagged type_annot a o
 
                    | _ ->
@@ -1047,8 +1047,8 @@ let rec make_reader
                                   (or use <ocaml repr=\"ref\">)"
                 )
             | `Ref ->
-	        let read_value = make_reader deref ~tagged:true x in
-	        [
+                let read_value = make_reader deref ~tagged:true x in
+                [
                   `Line (sprintf "Ag_ob_run.read_shared shared%s (" id);
                   `Block read_value;
                   `Line ") ib";
@@ -1086,27 +1086,27 @@ let rec make_reader
 and make_variant_reader deref type_annot tick x : Ag_indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
-	`Variant o, `Variant -> o
+        `Variant o, `Variant -> o
       | _ -> assert false
   in
   let ocaml_cons = o.Ag_ocaml.ocaml_cons in
   match x.var_arg with
       None ->
-	let h = Bi_io.hash_name x.var_cons in
+        let h = Bi_io.hash_name x.var_cons in
         let typed_cons = Ag_ox_emit.opt_annot type_annot (tick ^ ocaml_cons) in
-	[ `Line (sprintf "| %i, false -> %s" h typed_cons) ]
+        [ `Line (sprintf "| %i, false -> %s" h typed_cons) ]
     | Some v ->
-	let h = Bi_io.hash_name x.var_cons in
-	[
+        let h = Bi_io.hash_name x.var_cons in
+        [
           `Line (sprintf "| %i, true -> (%s%s (" h tick ocaml_cons);
           `Block [
             `Block [
               `Line "(";
-	      `Block (make_reader deref ~tagged:true v);
-	      `Line ") ib";
-	    ];
+              `Block (make_reader deref ~tagged:true v);
+              `Line ") ib";
+            ];
             `Line (sprintf ")%s)" (Ag_ox_emit.insert_annot type_annot));
-	  ];
+          ];
         ]
 
 and make_record_reader
@@ -1138,7 +1138,7 @@ and make_record_reader
           let share = [
             `Line (sprintf "if Bi_io.read_tag ib <> %i then \
                               Ag_ob_run.read_error_at ib;"
-		     Bi_io.record_tag);
+                     Bi_io.record_tag);
             `Line (sprintf "Bi_share.Rd.put ib.Bi_inbuf.i_shared \
                               (pos, shared%s) (Obj.repr x);" id);
           ]
@@ -1159,36 +1159,36 @@ and make_record_reader
     let a = Array.of_list fields in
     let cases =
       Array.mapi (
-	fun i (x, name, _, opt, unwrapped) ->
-	  let f_value =
-	    if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
-	    else x.f_value
-	  in
-	  let wrap l =
-	    if unwrapped then
-	      [
-		`Line "Some (";
-		`Block l;
-		`Line ")"
-	      ]
-	    else l
-	  in
-	  let read_value =
-	    [
-	      `Line "(";
-	      `Block (make_reader deref ~tagged:true f_value);
-	      `Line ") ib"
-	    ]
-	  in
-	  `Inline [
+        fun i (x, name, _, opt, unwrapped) ->
+          let f_value =
+            if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
+            else x.f_value
+          in
+          let wrap l =
+            if unwrapped then
+              [
+                `Line "Some (";
+                `Block l;
+                `Line ")"
+              ]
+            else l
+          in
+          let read_value =
+            [
+              `Line "(";
+              `Block (make_reader deref ~tagged:true f_value);
+              `Line ") ib"
+            ]
+          in
+          `Inline [
             `Line (sprintf "| %i ->" (Bi_io.hash_name x.f_name));
             `Block [
-	      `Line "let v =";
-	      `Block (wrap read_value);
-	      `Line "in";
-	      `Line (sprintf "Obj.set_field (Obj.repr x) %i (Obj.repr v);" i);
-	      `Inline (set_bit i);
-	    ];
+              `Line "let v =";
+              `Block (wrap read_value);
+              `Line "in";
+              `Line (sprintf "Obj.set_field (Obj.repr x) %i (Obj.repr v);" i);
+              `Inline (set_bit i);
+            ];
           ]
       ) a
     in
@@ -1207,20 +1207,20 @@ and make_tuple_reader deref ~tagged a =
   let cells =
     Array.map (
       fun x ->
-	match x.cel_arepr with
-	    `Cell f -> x, f.Ag_ocaml.ocaml_default
-	  | _ -> assert false
+        match x.cel_arepr with
+            `Cell f -> x, f.Ag_ocaml.ocaml_default
+          | _ -> assert false
     ) a
   in
   let min_length =
     let n = ref (Array.length cells) in
     (try
        for i = Array.length cells - 1 downto 0 do
-	 let x, default = cells.(i) in
-	 if default = None then (
-	   n := i + 1;
-	   raise Exit
-	 )
+         let x, default = cells.(i) in
+         if default = None then (
+           n := i + 1;
+           raise Exit
+         )
        done
      with Exit -> ());
     !n
@@ -1230,34 +1230,34 @@ and make_tuple_reader deref ~tagged a =
   let read_cells =
     List.flatten (
       Array.to_list (
-	Array.mapi (
-	  fun i (x, default) ->
-	    let read_value = make_reader deref ~tagged:true x.cel_value in
-	    let get_value =
-	      if i < min_length then
+        Array.mapi (
+          fun i (x, default) ->
+            let read_value = make_reader deref ~tagged:true x.cel_value in
+            let get_value =
+              if i < min_length then
                 [
                   `Line "(";
                   `Block read_value;
                   `Line ") ib";
                 ]
-	      else
-		[
+              else
+                [
                   `Line (sprintf "if len >= %i then (" (i+1));
                   `Block read_value;
                   `Line ") ib";
                   `Line "else";
-		  `Block [
-		    `Line
-		      (match default with None -> assert false | Some s -> s)
+                  `Block [
+                    `Line
+                      (match default with None -> assert false | Some s -> s)
                   ]
                 ]
-	    in
-	    [
+            in
+            [
               `Line (sprintf "let x%i =" i);
               `Block get_value;
               `Line "in"
             ]
-	) cells
+        ) cells
       )
     )
   in
@@ -1265,22 +1265,22 @@ and make_tuple_reader deref ~tagged a =
   let make_tuple =
     sprintf "(%s)"
       (String.concat ", "
-	 (Array.to_list (Array.mapi (fun i _ -> sprintf "x%i" i) a)))
+         (Array.to_list (Array.mapi (fun i _ -> sprintf "x%i" i) a)))
   in
   let req_fields =
     let acc = ref [] in
     for i = Array.length cells - 1 downto 0 do
       let _, default = cells.(i) in
       if default = None then
-	acc := string_of_int i :: !acc
+        acc := string_of_int i :: !acc
     done;
     sprintf "[ %s ]" (String.concat "; " !acc)
   in
   [
     `Line "let len = Bi_vint.read_uvint ib in";
     `Line (sprintf
-	     "if len < %i then Ag_ob_run.missing_tuple_fields len %s;"
-	     min_length req_fields);
+             "if len < %i then Ag_ob_run.missing_tuple_fields len %s;"
+             min_length req_fields);
     `Inline read_cells;
     `Line (sprintf "for i = %i to len - 1 do Bi_io.skip ib done;" tup_len);
     `Line make_tuple
@@ -1290,47 +1290,47 @@ and make_tuple_reader deref ~tagged a =
 and make_table_reader deref loc list_kind x =
   let empty_list, to_list =
     match list_kind with
-	`List -> "[ ]", (fun s -> "Array.to_list " ^ s)
+        `List -> "[ ]", (fun s -> "Array.to_list " ^ s)
       | `Array -> "[| |]", (fun s -> s)
   in
   let fields =
     match deref x with
-	`Record (loc, a, `Record o, `Record) ->
-	  (match o with
-	       `Record -> ()
-	     | `Object ->
-		 error loc "Sorry, OCaml objects are not supported"
-	  );
-	  get_fields deref a
+        `Record (loc, a, `Record o, `Record) ->
+          (match o with
+               `Record -> ()
+             | `Object ->
+                 error loc "Sorry, OCaml objects are not supported"
+          );
+          get_fields deref a
       | _ ->
-	  error loc "Not a list or array of records"
+          error loc "Not a list or array of records"
   in
   let init_val, init_bits, set_bit, check_bits = study_record deref fields in
   let cases =
     Array.to_list (
       Array.mapi (
-	fun i (x, name, default, opt, unwrap) ->
-	  `Inline [
-	    `Line (sprintf "| %i ->" (Bi_io.hash_name x.f_name));
-	    `Block [
-	      `Inline (set_bit i);
-	      `Line "let read =";
-	      `Block [
-		`Line "(";
-		`Block (make_reader deref ~tagged:false x.f_value);
-		`Line ")";
-		`Block [ `Line "tag" ]
-	      ];
-	      `Line "in";
-	      `Line "(fun x ib ->";
-	      `Block [
-		`Line (sprintf
-			 "Obj.set_field (Obj.repr x) %i \
+        fun i (x, name, default, opt, unwrap) ->
+          `Inline [
+            `Line (sprintf "| %i ->" (Bi_io.hash_name x.f_name));
+            `Block [
+              `Inline (set_bit i);
+              `Line "let read =";
+              `Block [
+                `Line "(";
+                `Block (make_reader deref ~tagged:false x.f_value);
+                `Line ")";
+                `Block [ `Line "tag" ]
+              ];
+              `Line "in";
+              `Line "(fun x ib ->";
+              `Block [
+                `Line (sprintf
+                         "Obj.set_field (Obj.repr x) %i \
                             (Obj.repr (read ib)))" i
-		      )
-	      ]
-	    ]
-	  ]
+                      )
+              ]
+            ]
+          ]
       ) (Array.of_list fields)
     )
   in
@@ -1343,31 +1343,31 @@ and make_table_reader deref loc list_kind x =
        `Inline init_bits;
        `Line "let readers =";
        `Block [
-	 `Line "Ag_ob_run.array_init2 col_num ib (";
-	 `Block [
-	   `Line "fun col ib ->";
-	   `Block [
-	     `Line "let h = Bi_io.read_field_hashtag ib in";
-	     `Line "let tag = Bi_io.read_tag ib in";
-	     `Line "match h with";
-	     `Block cases;
-	     `Block [ `Line "| _ -> (fun x ib -> Bi_io.skip ib)" ]
-	   ]
-	 ];
-	 `Line ")";
+         `Line "Ag_ob_run.array_init2 col_num ib (";
+         `Block [
+           `Line "fun col ib ->";
+           `Block [
+             `Line "let h = Bi_io.read_field_hashtag ib in";
+             `Line "let tag = Bi_io.read_tag ib in";
+             `Line "match h with";
+             `Block cases;
+             `Block [ `Line "| _ -> (fun x ib -> Bi_io.skip ib)" ]
+           ]
+         ];
+         `Line ")";
        ];
        `Line "in";
        `Inline check_bits;
        `Line "let a = Array.make row_num (Obj.magic 0) in";
        `Line "for row = 0 to row_num - 1 do";
        `Block [
-	 `Line "let x =";
-	 `Block init_val;
-	 `Line "in";
-	 `Line "for i = 0 to Array.length readers - 1 do";
-	 `Block [ `Line "readers.(i) x ib" ];
-	 `Line "done;";
-	 `Line "a.(row) <- x";
+         `Line "let x =";
+         `Block init_val;
+         `Line "in";
+         `Line "for i = 0 to Array.length readers - 1 do";
+         `Block [ `Line "readers.(i) x ib" ];
+         `Line "done;";
+         `Line "a.(row) <- x";
        ];
        `Line "done;";
        `Line (to_list "a")
@@ -1511,24 +1511,24 @@ let make_ocaml_biniou_impl ~with_create ~original_types buf deref defs =
   let ll =
     List.map (
       fun (is_rec, l) ->
-	let l = List.filter (fun x -> x.def_value <> None) l in
-	let writers =
-	  map (
-	    fun is_first def ->
-	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_biniou_writer
+        let l = List.filter (fun x -> x.def_value <> None) l in
+        let writers =
+          map (
+            fun is_first def ->
+              let let1, let2 = get_let ~is_rec ~is_first in
+              make_ocaml_biniou_writer
                 ~original_types deref is_rec let1 let2 def
-	  ) l
-	in
-	let readers =
-	  map (
-	    fun is_first def ->
-	      let let1, let2 = get_let ~is_rec ~is_first in
-	      make_ocaml_biniou_reader
+          ) l
+        in
+        let readers =
+          map (
+            fun is_first def ->
+              let let1, let2 = get_let ~is_rec ~is_first in
+              make_ocaml_biniou_reader
                 ~original_types deref is_rec let1 let2 def
-	  ) l
-	in
-	List.flatten (writers @ readers)
+          ) l
+        in
+        List.flatten (writers @ readers)
   ) defs
   in
   Atd_indent.to_buffer buf (List.flatten ll);

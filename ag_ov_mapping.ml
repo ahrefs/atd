@@ -164,35 +164,35 @@ let rec mapping_of_expr
   let v2 an x = (Ag_validate.get_validator an, is_shallow x) in
   match x0 with
       `Sum (loc, l, an) ->
-	let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
-	`Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
-	      ocaml_t, v2 an x0)
+        let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
+        `Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
+              ocaml_t, v2 an x0)
 
     | `Record (loc, l, an) ->
-	let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
-	let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
-	`Record (loc,
+        let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
+        let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
+        `Record (loc,
                  Array.of_list
                    (List.map
                       (mapping_of_field is_shallow ocaml_field_prefix) l),
-		 ocaml_t, v2 an x0)
+                 ocaml_t, v2 an x0)
 
     | `Tuple (loc, l, an) ->
-	let ocaml_t = `Tuple in
-	`Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
-		ocaml_t, v2 an x0)
+        let ocaml_t = `Tuple in
+        `Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
+                ocaml_t, v2 an x0)
 
     | `List (loc, x, an) ->
-	let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
-	`List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+        let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
+        `List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Option (loc, x, an) ->
-	let ocaml_t = `Option in
-	`Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+        let ocaml_t = `Option in
+        `Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Nullable (loc, x, an) ->
-	let ocaml_t = `Nullable in
-	`Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+        let ocaml_t = `Nullable in
+        `Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Shared (loc, x, an) ->
         let ocaml_t = `Shared (Ag_ocaml.get_ocaml_shared an) in
@@ -213,19 +213,19 @@ let rec mapping_of_expr
         `Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
 
     | `Name (loc, (loc2, s, l), an) ->
-	(match s with
+        (match s with
              "unit" ->
                `Unit (loc, `Unit, (v an, true))
-	   | "bool" ->
-	       `Bool (loc, `Bool, (v an, true))
-	   | "int" ->
-	       let o = Ag_ocaml.get_ocaml_int an in
-	       `Int (loc, `Int o, (v an, true))
-	   | "float" ->
-	       `Float (loc, `Float, (v an, true))
-	   | "string" ->
-	       `String (loc, `String, (v an, true))
-	   | s ->
+           | "bool" ->
+               `Bool (loc, `Bool, (v an, true))
+           | "int" ->
+               let o = Ag_ocaml.get_ocaml_int an in
+               `Int (loc, `Int o, (v an, true))
+           | "float" ->
+               `Float (loc, `Float, (v an, true))
+           | "string" ->
+               `String (loc, `String, (v an, true))
+           | s ->
                let validator =
                  match v2 an x0 with
                      None, true -> None
@@ -233,9 +233,9 @@ let rec mapping_of_expr
                in
                `Name (loc, s, List.map (mapping_of_expr is_shallow) l,
                       None, validator)
-	)
+        )
     | `Tvar (loc, s) ->
-	`Tvar (loc, s)
+        `Tvar (loc, s)
 
 and mapping_of_cell is_shallow (loc, x, an) =
   let default = Ag_ocaml.get_ocaml_default an in
@@ -261,25 +261,25 @@ and mapping_of_variant is_shallow = function
       let ocaml_cons = Ag_ocaml.get_ocaml_cons s an in
       let doc = Ag_doc.get_doc loc an in
       let ocaml_t =
-	`Variant {
-	  Ag_ocaml.ocaml_cons = ocaml_cons;
+        `Variant {
+          Ag_ocaml.ocaml_cons = ocaml_cons;
           ocaml_vdoc = doc;
-	}
+        }
       in
       let arg, validate_t =
-	match o with
-	    None ->
+        match o with
+            None ->
               None, (None, true)
-	  | Some x ->
+          | Some x ->
               (Some (mapping_of_expr is_shallow x),
                (None, noval x && is_shallow x))
       in
       {
-	var_loc = loc;
-	var_cons = s;
-	var_arg = arg;
-	var_arepr = ocaml_t;
-	var_brepr = validate_t;
+        var_loc = loc;
+        var_cons = s;
+        var_arg = arg;
+        var_arepr = ocaml_t;
+        var_brepr = validate_t;
       }
 
   | `Inherit _ -> assert false
@@ -288,32 +288,32 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr is_shallow x in
       let ocaml_default =
-	match fk, Ag_ocaml.get_ocaml_default an with
-	    `Required, None -> None
-	  | `Optional, None -> Some "None"
-	  | (`Required | `Optional), Some _ ->
-	      error loc "Superfluous default OCaml value"
-	  | `With_default, Some s -> Some s
-	  | `With_default, None ->
-	      (* will try to determine implicit default value later *)
-	      None
+        match fk, Ag_ocaml.get_ocaml_default an with
+            `Required, None -> None
+          | `Optional, None -> Some "None"
+          | (`Required | `Optional), Some _ ->
+              error loc "Superfluous default OCaml value"
+          | `With_default, Some s -> Some s
+          | `With_default, None ->
+              (* will try to determine implicit default value later *)
+              None
       in
       let ocaml_fname = Ag_ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
       let ocaml_mutable = Ag_ocaml.get_ocaml_mutable an in
       let doc = Ag_doc.get_doc loc an in
       { f_loc = loc;
-	f_name = s;
-	f_kind = fk;
-	f_value = fvalue;
+        f_name = s;
+        f_kind = fk;
+        f_value = fvalue;
 
-	f_arepr = `Field {
-	  Ag_ocaml.ocaml_default = ocaml_default;
-	  ocaml_fname = ocaml_fname;
-	  ocaml_mutable = ocaml_mutable;
+        f_arepr = `Field {
+          Ag_ocaml.ocaml_default = ocaml_default;
+          ocaml_fname = ocaml_fname;
+          ocaml_mutable = ocaml_mutable;
           ocaml_fdoc = doc;
-	};
+        };
 
-	f_brepr = (None, noval x && is_shallow x);
+        f_brepr = (None, noval x && is_shallow x);
       }
 
   | `Inherit _ -> assert false

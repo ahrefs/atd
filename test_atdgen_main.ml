@@ -149,26 +149,26 @@ let make_mixed_record_array n =
   Array.init n (
     fun i ->
       {
-	Test.field0 = Some i;
-	field1 = Some 0.555;
-	field2 = Some (String.copy "abcdefghijklmnopqrstuvwxyz");
-	field3 = 12345678L;
-	field4 = [| 1.23; 3.45; 4.56 |];
-	field5 = None;
-	field6 = None;
-	field7 = `Case4 [ `Case1; `Case2 999; `Case3 "abcdefghij"; `Case4 [] ];
-	field8 = [| "a"; "bc"; "def"; "ghij"; "klmno";
-		    "pqrstu"; "vwxyz01"; "23456789" |];
-	field9 = (
-	  1_000_000,
-	  0xff,
-	  '\xff',
-	  0xffff,
-	  0xffffffffl,
-	  0xffffffffffffffffL
-	);
-	field10 = true;
-	field11 = false;
+        Test.field0 = Some i;
+        field1 = Some 0.555;
+        field2 = Some (String.copy "abcdefghijklmnopqrstuvwxyz");
+        field3 = 12345678L;
+        field4 = [| 1.23; 3.45; 4.56 |];
+        field5 = None;
+        field6 = None;
+        field7 = `Case4 [ `Case1; `Case2 999; `Case3 "abcdefghij"; `Case4 [] ];
+        field8 = [| "a"; "bc"; "def"; "ghij"; "klmno";
+                    "pqrstu"; "vwxyz01"; "23456789" |];
+        field9 = (
+          1_000_000,
+          0xff,
+          '\xff',
+          0xffff,
+          0xffffffffl,
+          0xffffffffffffffffL
+        );
+        field10 = true;
+        field11 = false;
         field12 = [ (); () ];
         field13 = [ Some "abc"; None ];
         field14 = (2012, Some 3, None);
@@ -179,7 +179,7 @@ let make_mixed ~top_len ~tab_len ~ar_len =
   Array.to_list (
     Array.init top_len (
       fun _ ->
-	(make_mixed_record_array tab_len, make_mixed_record_array ar_len)
+        (make_mixed_record_array tab_len, make_mixed_record_array ar_len)
     )
   )
 
@@ -200,12 +200,12 @@ let test_correctness_data = {
       field7 = `Case4 [ `Case1; `Case2 999; `Case3 "abcdefghij"; `Case4 [] ];
       field8 = [| "abcdef"; "0123456789" |];
       field9 = (
-	1_000_000,
-	0xff,
-	'\xff',
-	0xffff,
-	0xffffffffl,
-	0xffffffffffffffffL
+        1_000_000,
+        0xff,
+        '\xff',
+        0xffff,
+        0xffffffffl,
+        0xffffffffffffffffL
       );
       field10 = true;
       field11 = false;
@@ -486,8 +486,8 @@ let quality_test () =
   match List.rev !errors with
       [] -> printf "\nSUCCESS\n"
     | l ->
-	printf "\nThe following tests failed:\n%s\n"
-	  (String.concat "\n" l);
-	printf "*** FAILURE ***\n"
+        printf "\nThe following tests failed:\n%s\n"
+          (String.concat "\n" l);
+        printf "*** FAILURE ***\n"
 
 let () = quality_test ()

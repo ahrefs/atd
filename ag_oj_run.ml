@@ -24,15 +24,15 @@ let list_iter f sep x l =
   let rec aux f sep x = function
       [] -> ()
     | y :: l ->
-	sep x;
-	f x y;
-	aux f sep x l
+        sep x;
+        f x y;
+        aux f sep x l
   in
   match l with
       [] -> ()
     | y :: l ->
-	f x y;
-	aux f sep x l
+        f x y;
+        aux f sep x l
 
 let array_iter f sep x a =
   let n = Array.length a in
@@ -172,14 +172,14 @@ let array_of_rev_list l =
   match l with
       [] -> [| |]
     | x :: tl ->
-	let len = List.length l in
-	let a = Array.make len x in
-	let r = ref tl in
-	for i = len - 2 downto 0 do
-	  a.(i) <- List.hd !r;
-	  r := List.tl !r
-	done;
-	a
+        let len = List.length l in
+        let a = Array.make len x in
+        let r = ref tl in
+        for i = len - 2 downto 0 do
+          a.(i) <- List.hd !r;
+          r := List.tl !r
+        done;
+        a
 
 let read_assoc_array read_item p lb =
   array_of_rev_list (read_assoc_list_rev read_item p lb)
@@ -196,8 +196,8 @@ let missing_tuple_fields p len req_fields =
     ) req_fields []
   in
   error_with_line p (sprintf "Missing tuple field%s %s"
-	   (if List.length missing > 1 then "s" else "")
-	   (String.concat ", " (List.map string_of_int missing)))
+           (if List.length missing > 1 then "s" else "")
+           (String.concat ", " (List.map string_of_int missing)))
 
 
 let missing_fields p bit_fields field_names =
@@ -209,8 +209,8 @@ let missing_fields p bit_fields field_names =
       acc := field_names.(z) :: !acc
   done;
   error_with_line p (sprintf "Missing record field%s %s"
-	   (if List.length !acc > 1 then "s" else "")
-	   (String.concat ", " !acc))
+           (if List.length !acc > 1 then "s" else "")
+           (String.concat ", " !acc))
 
 let invalid_variant_tag p s =
   error_with_line p (sprintf "Unsupported variant %S" s)

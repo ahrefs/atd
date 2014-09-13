@@ -32,8 +32,8 @@ let missing_tuple_fields len req_fields =
     ) req_fields []
   in
   error (sprintf "Missing tuple field%s %s"
-	   (if List.length missing > 1 then "s" else "")
-	   (String.concat ", " (List.map string_of_int missing)))
+           (if List.length missing > 1 then "s" else "")
+           (String.concat ", " (List.map string_of_int missing)))
 
 
 let missing_fields bit_fields field_names =
@@ -45,8 +45,8 @@ let missing_fields bit_fields field_names =
       acc := field_names.(z) :: !acc
   done;
   error (sprintf "Missing record field%s %s"
-	   (if List.length !acc > 1 then "s" else "")
-	   (String.concat ", " !acc))
+           (if List.length !acc > 1 then "s" else "")
+           (String.concat ", " !acc))
 
 
 (*
@@ -229,8 +229,8 @@ let write_untagged_option write buf x =
   match x with
       None -> Bi_io.write_numtag buf 0 false
     | Some x ->
-	Bi_io.write_numtag buf 0 true;
-	write buf x
+        Bi_io.write_numtag buf 0 true;
+        write buf x
 
 let write_option write buf x =
   Bi_io.write_tag buf Bi_io.num_variant_tag;

@@ -15,11 +15,11 @@ let group_by f l =
     fun x ->
       let k = f x in
       let r =
-	try Hashtbl.find tbl k
-	with Not_found ->
-	  let r = ref [] in
-	  Hashtbl.add tbl k r;
-	  r
+        try Hashtbl.find tbl k
+        with Not_found ->
+          let r = ref [] in
+          Hashtbl.add tbl k r;
+          r
       in
       r := x :: !r
   ) l;
@@ -31,12 +31,12 @@ let rec finish s pos =
   match pos with
       `End -> []
     | `Length ->
-	(`Length, `Int (String.length s)) :: finish s (`Position 0)
+        (`Length, `Int (String.length s)) :: finish s (`Position 0)
     | `Position i ->
-	if i < String.length s then
-	  (pos, `Char s.[i]) :: finish s (`Position (i+1))
-	else
-	  finish s `End
+        if i < String.length s then
+          (pos, `Char s.[i]) :: finish s (`Position (i+1))
+        else
+          finish s `End
 
 let make_end_branch s pos x =
   match finish s pos with
@@ -52,43 +52,43 @@ let rec make_branches (x : 'a tree) : 'a tree =
   match x with
       `Leaf _ -> x
     | `Branch (l, x) ->
-	(match make_branches x with
-	     `Branch (l2, x2) -> `Branch ((l @ l2), x2)
-	   | x -> `Branch (l, x))
+        (match make_branches x with
+             `Branch (l2, x2) -> `Branch ((l @ l2), x2)
+           | x -> `Branch (l, x))
     | `Node (pos, [ value, x ]) ->
-	(match make_branches x with
-	     `Branch (l2, x2) -> `Branch (((pos, value) :: l2), x2)
-	   | x -> `Branch ([pos, value], x))
+        (match make_branches x with
+             `Branch (l2, x2) -> `Branch (((pos, value) :: l2), x2)
+           | x -> `Branch ([pos, value], x))
     | `Node (pos, l) ->
-	`Node (pos, List.map (fun (value, x) -> (value, make_branches x)) l)
+        `Node (pos, List.map (fun (value, x) -> (value, make_branches x)) l)
 
 
 let make_initial_tree l : 'a tree =
   let rec aux i = function
       [] -> assert false
     | [ (s, x) ] ->
-	let pos =
-	  if i < String.length s then `Position i
-	  else `End
-	in
-	make_end_branch s pos x
-	
+        let pos =
+          if i < String.length s then `Position i
+          else `End
+        in
+        make_end_branch s pos x
+        
     | ((s, _) :: _) as l ->
-	if i < String.length s then
-	  let groups = group_by (fun (s, _) -> `Char s.[i]) l in
-	  `Node (`Position i,
-		   List.map (fun (k, l) -> (k, aux (i+1) l)) groups)
-	else
-	  (* reached end of string but multiple strings remain *)
-	  invalid_arg (sprintf "String_match.make_tree: duplicate key %S" s)
+        if i < String.length s then
+          let groups = group_by (fun (s, _) -> `Char s.[i]) l in
+          `Node (`Position i,
+                   List.map (fun (k, l) -> (k, aux (i+1) l)) groups)
+        else
+          (* reached end of string but multiple strings remain *)
+          invalid_arg (sprintf "String_match.make_tree: duplicate key %S" s)
   in
   match l with
       [] -> `Node (`Length, [])
     | [ (s, x) ] -> make_end_branch s `Length x
     | l ->
-	let groups = group_by (fun (s, _) -> `Int (String.length s)) l in
-	`Node (`Length,
-		 List.map (fun (k, l) -> (k, aux 0 l)) groups)
+        let groups = group_by (fun (s, _) -> `Int (String.length s)) l in
+        `Node (`Length,
+                 List.map (fun (k, l) -> (k, aux 0 l)) groups)
 
 let make_tree l =
   make_branches (make_initial_tree l)
@@ -149,20 +149,20 @@ let rec map_to_ocaml string_id pos_id e = function
 
   | `Branch (l, x) ->
       cond (make_branch_tests string_id pos_id l)
-	(map_to_ocaml string_id pos_id e x)
-	e
+        (map_to_ocaml string_id pos_id e x)
+        e
 
   | `Node (pos, l) ->
       [
-	`Line (sprintf "match %s with" (get_value string_id pos_id pos));
-	`Block [
-	  `Inline (List.map (make_case string_id pos_id e) l);
-	  `Line "| _ -> (";
+        `Line (sprintf "match %s with" (get_value string_id pos_id pos));
+        `Block [
+          `Inline (List.map (make_case string_id pos_id e) l);
+          `Line "| _ -> (";
           `Block [
             `Block e;
             `Line ")";
           ];
-	]
+        ]
       ]
 
 and make_case string_id pos_id e (value, tree) =
@@ -197,10 +197,10 @@ let make_ocaml_expr_factored
               `Line "try";
               `Block x;
               `Line (sprintf "with %s -> (" error_exn);
-	      `Block [
-	        `Block error_expr;
-	        `Line ")";
-	      ];
+              `Block [
+                `Block error_expr;
+                `Line ")";
+              ];
             ]
           in
           exit_expr, catch
@@ -208,7 +208,7 @@ let make_ocaml_expr_factored
   match cases with
       [] -> error_expr
     | l ->
-	catch (map_to_ocaml string_id pos_id exit_expr (make_tree cases))
+        catch (map_to_ocaml string_id pos_id exit_expr (make_tree cases))
 
 let test () =
   let l = [

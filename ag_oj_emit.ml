@@ -547,30 +547,23 @@ and make_record_writer p a record_kind =
 
 
 let study_record deref fields =
-  let maybe_constant =
-    List.for_all (function (_, _, Some _, _, _, _) -> true | _ -> false) fields
-  in
-  let _, init_fields =
+  let field_assignments =
     List.fold_right (
-      fun (x, oname, default, jname, opt, unwrap) (maybe_constant, l) ->
-        let maybe_constant, v =
+      fun (x, oname, default, jname, opt, unwrap) field_assignments ->
+        let v =
           match default with
-              None ->
-                assert (not opt);
-                (*
-                  The initial value is a float because the record may be
-                  represented as a double_array (unboxed floats).
-                  Float values work in all cases.
-                *)
-                let v = "Obj.magic 0.0" in
-                maybe_constant, v
-            | Some s ->
-                false, (if maybe_constant then sprintf "(fun x -> x) (%s)" s
-                        else s)
+            None ->
+              assert (not opt);
+              "Obj.magic 0.0"
+          | Some s ->
+              s
         in
-        (maybe_constant, `Line (sprintf "%s = %s;" oname v) :: l)
-    ) fields (maybe_constant, [])
+        let init = `Line (sprintf "let field_%s = ref (%s) in" oname v) in
+        let create = `Line (sprintf "%s = !field_%s;" oname oname) in
+        (init, create) :: field_assignments
+    ) fields []
   in
+  let init_fields, create_record_fields = List.split field_assignments in
   let n, mapping =
     List.fold_left (
       fun (i, acc) (x, oname, default, jname, opt, unwrap) ->
@@ -582,7 +575,7 @@ let study_record deref fields =
   in
   let mapping = Array.of_list (List.rev mapping) in
 
-  let init_val = [ `Line "{"; `Block init_fields; `Line "}" ] in
+  let create_record = [ `Line "{"; `Block create_record_fields; `Line "}" ] in
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
   let init_bits =
@@ -640,7 +633,7 @@ let study_record deref fields =
       [ `Line (sprintf "if %s then Ag_oj_run.missing_fields p %s %s;"
                  bool_expr bit_fields field_names) ]
   in
-  init_val, init_bits, set_bit, check_bits
+  init_fields, init_bits, set_bit, check_bits, create_record
 
 let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
   match x with
@@ -901,7 +894,9 @@ and make_variant_reader p type_annot tick std x : (string * Ag_indent.t list) =
 
 and make_record_reader p type_annot loc a record_kind =
   let fields = get_fields p a in
-  let init_val, init_bits, set_bit, check_bits = study_record p.deref fields in
+  let init_fields, init_bits, set_bit, check_bits, create_record =
+    study_record p.deref fields
+  in
 
   let read_field =
     let a = Array.of_list fields in
@@ -930,10 +925,9 @@ and make_record_reader p type_annot loc a record_kind =
           in
           let expr =
             [
-              `Line "let v =";
+              `Line (sprintf "field_%s := (" ocaml_fname);
               `Block (wrap read_value);
-              `Line "in";
-              `Line (sprintf "Obj.set_field (Obj.repr x) %i (Obj.repr v);" i);
+              `Line ");";
               `Inline (set_bit i);
             ]
           in
@@ -980,9 +974,7 @@ and make_record_reader p type_annot loc a record_kind =
   [
     `Line "Yojson.Safe.read_space p lb;";
     `Line "Yojson.Safe.read_lcurl p lb;";
-    `Line (sprintf "let %s =" (Ag_ox_emit.opt_annot type_annot "x"));
-    `Block init_val;
-    `Line "in";
+    `Inline init_fields;
     `Inline init_bits;
     `Line "try";
     `Block [
@@ -1002,7 +994,9 @@ and make_record_reader p type_annot loc a record_kind =
     `Block [
       `Block [
         `Inline check_bits;
-        `Line "Ag_oj_run.identity x";
+        `Line "(";
+        `Block create_record;
+        `Line (sprintf "%s)" (Ag_ox_emit.insert_annot type_annot));
       ];
       `Line ")";
     ];

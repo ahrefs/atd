@@ -60,17 +60,23 @@ let test_extended_record = {
 let test_missing_tuple = (123, 4.56)
 
 
-type internals1 = { int1 : bool }
-type internals2 = { mutable int2 : bool }
+type internals1 = { int : int }
+type internals2 = { float : float }
 
 let test_ocaml_internals () =
   section "ocaml internals";
-  let f () = { int1 = Obj.magic false } in
-  check (f () != f ());
-  let g () = { int1 = false } in
-  check (g () == g ());
-  let h () = { int2 = false } in
-  check (h () != h ())
+
+  let int = ref (Obj.magic 0.0) in
+  Gc.compact ();
+  int := 123;
+  Gc.compact ();
+  check ({ int = !int }.int = 123);
+
+  let float = ref (Obj.magic 0) in
+  Gc.compact ();
+  float := 4.5;
+  Gc.compact ();
+  check ({ float = !float }.float = 4.5)
 
 let test_biniou_missing_field () =
   section "biniou missing record fields";

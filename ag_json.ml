@@ -28,7 +28,6 @@ type json_repr =
     | `List of json_list
     | `Option
     | `Nullable
-    | `Shared
     | `Wrap (* should we add support for Base64 encoding of binary data? *)
     | `External
 

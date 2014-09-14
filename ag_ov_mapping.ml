@@ -195,12 +195,7 @@ let rec mapping_of_expr
         `Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Shared (loc, x, an) ->
-        let ocaml_t = `Shared (Ag_ocaml.get_ocaml_shared an) in
-        let id = Atd_annot.get_field (fun s -> Some s) "" ["share"] "id" an in
-        if id = "" then
-          error loc "bug: missing or empty share.id annotation";
-        `Shared (loc, id,
-                 mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+        failwith "Sharing is not supported"
 
     | `Wrap (loc, x, an) ->
         let w = Ag_ocaml.get_ocaml_wrap loc an in

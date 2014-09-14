@@ -24,7 +24,6 @@ type ('a, 'b) mapping =
     | `List of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Option of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Nullable of (loc * ('a, 'b) mapping * 'a * 'b)
-    | `Shared of (loc * loc_id * ('a, 'b) mapping * 'a * 'b)
     | `Wrap of (loc * ('a, 'b) mapping * 'a * 'b)
     | `Name of (loc * string * ('a, 'b) mapping list * 'a option * 'b option)
     | `External of (loc * string * ('a, 'b) mapping list * 'a * 'b)
@@ -88,7 +87,6 @@ let loc_of_mapping x =
     | `List (loc, _, _, _)
     | `Option (loc, _, _, _)
     | `Nullable (loc, _, _, _)
-    | `Shared (loc, _, _, _, _)
     | `Wrap (loc, _, _, _)
     | `Name (loc, _, _, _, _)
     | `External (loc, _, _, _, _)
@@ -116,8 +114,6 @@ let rec subst env (x : (_, _) mapping) =
         `Option (loc, subst env x, a, b)
     | `Nullable (loc, x, a, b) ->
         `Nullable (loc, subst env x, a, b)
-    | `Shared (loc, id, x, a, b) ->
-        `Shared (loc, id, subst env x, a, b)
     | `Wrap (loc, x, a, b) ->
         `Wrap (loc, subst env x, a, b)
     | `Name (loc, name, args, a, b) ->

@@ -236,39 +236,6 @@ let write_option write buf x =
   Bi_io.write_tag buf Bi_io.num_variant_tag;
   write_untagged_option write buf x
 
-let write_untagged_shared_ref id write ob x =
-  let pos = ob.Bi_outbuf.o_offs + ob.Bi_outbuf.o_len in
-  let offset = Bi_share.Wr.put ob.Bi_outbuf.o_shared (x, id) pos in
-  Bi_vint.write_uvint ob offset;
-  if offset = 0 then
-    write ob !x
-
-let write_shared_ref id write ob x =
-  Bi_io.write_tag ob Bi_io.shared_tag;
-  write_untagged_shared_ref id write ob x
-
-let write_untagged_shared id write ob x =
-  let pos = ob.Bi_outbuf.o_offs + ob.Bi_outbuf.o_len in
-  let offset = Bi_share.Wr.put ob.Bi_outbuf.o_shared (x, id) pos in
-  Bi_vint.write_uvint ob offset;
-  if offset = 0 then
-    write ob x
-
-let write_shared id write ob x =
-  Bi_io.write_tag ob Bi_io.shared_tag;
-  write_untagged_shared id write ob x
-
-let read_shared id read ib =
-  let pos = ib.Bi_inbuf.i_offs + ib.Bi_inbuf.i_pos in
-  let offset = Bi_vint.read_uvint ib in
-  if offset = 0 then
-    let r = ref (Obj.magic 0) in
-    Bi_share.Rd.put ib.Bi_inbuf.i_shared (pos, id) (Obj.repr r);
-    r := read ib;
-    r
-  else
-    Obj.obj (Bi_share.Rd.get ib.Bi_inbuf.i_shared (pos - offset, id))
-
 let array_init2 len x f =
   if len = 0 then [| |]
   else

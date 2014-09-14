@@ -161,7 +161,6 @@ let rec get_biniou_tag (x : ob_mapping) =
         )
     | `Option (loc, x, `Option, `Option)
     | `Nullable (loc, x, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
-    | `Shared (loc, id, x, `Shared _, `Shared) -> "Bi_io.shared_tag"
     | `Wrap (loc, x, `Wrap _, `Wrap) -> get_biniou_tag x
 
     | `Name (loc, s, args, None, None) -> sprintf "%s_tag" s
@@ -528,18 +527,6 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
           `Line ")";
         ]
 
-    | `Shared (loc, id, x, `Shared kind, `Shared) ->
-        let suffix =
-          match kind with
-              `Flat -> ""
-            | `Ref -> "_ref"
-        in
-        [
-          `Line (sprintf "Ag_ob_run.write_%sshared%s shared%s (" un suffix id);
-          `Block (make_writer ~tagged:true deref x);
-          `Line ")";
-        ]
-
     | `Wrap (loc, x, `Wrap o, `Wrap) ->
         let simple_writer = make_writer ~tagged deref x in
         (match o with
@@ -744,30 +731,23 @@ and make_table_writer deref tagged list_kind x =
 
 
 let study_record deref fields =
-  let maybe_constant =
-    List.for_all (function (_, _, Some _, _, _) -> true | _ -> false) fields
-  in
-  let _, init_fields =
+  let field_assignments =
     List.fold_right (
-      fun (x, name, default, opt, unwrap) (maybe_constant, l) ->
-        let maybe_constant, v =
+      fun (x, name, default, opt, unwrap) field_assignments ->
+        let v =
           match default with
               None ->
                 assert (not opt);
-                (*
-                  The initial value is a float because the record may be
-                  represented as a double_array (unboxed floats).
-                  Float values work in all cases.
-                *)
-                let v = "Obj.magic 0.0" in
-                maybe_constant, v
+                "Obj.magic 0.0"
             | Some s ->
-                false, (if maybe_constant then sprintf "(fun x -> x) (%s)" s
-                        else s)
+                s
         in
-        (maybe_constant, `Line (sprintf "%s = %s;" name v) :: l)
-    ) fields (maybe_constant, [])
+        let init = `Line (sprintf "let field_%s = ref (%s) in" name v) in
+        let create = `Line (sprintf "%s = !field_%s;" name name) in
+        (init, create) :: field_assignments
+    ) fields []
   in
+  let init_fields, create_record_fields = List.split field_assignments in
   let n, mapping =
     List.fold_left (
       fun (i, acc) (x, name, default, opt, unwrap) ->
@@ -779,7 +759,7 @@ let study_record deref fields =
   in
   let mapping = Array.of_list (List.rev mapping) in
 
-  let init_val = [ `Line "{"; `Block init_fields; `Line "}" ] in
+  let create_record = [ `Line "{"; `Block create_record_fields; `Line "}" ] in
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
   let init_bits =
@@ -837,7 +817,7 @@ let study_record deref fields =
       [ `Line (sprintf "if %s then Ag_ob_run.missing_fields %s %s;"
                  bool_expr bit_fields field_names) ]
   in
-  init_val, init_bits, set_bit, check_bits
+  init_fields, init_bits, set_bit, check_bits, create_record
 
 
 let wrap_body ~tagged expected_tag body =
@@ -1028,34 +1008,6 @@ let rec make_reader
         in
         wrap_body ~tagged Bi_io.num_variant_tag body
 
-    | `Shared (loc, id, x, `Shared kind, `Shared) ->
-        let body =
-          match kind with
-              `Flat ->
-                (match deref x with
-                     `Record (loc, a, `Record o, `Record) ->
-                       (match o with
-                            `Record -> ()
-                          | `Object ->
-                              error loc "OCaml objects are not supported"
-                       );
-                       make_record_reader
-                         ~shared_id:id deref ~tagged type_annot a o
-
-                   | _ ->
-                       error loc "Only record types can use sharing \
-                                  (or use <ocaml repr=\"ref\">)"
-                )
-            | `Ref ->
-                let read_value = make_reader deref ~tagged:true x in
-                [
-                  `Line (sprintf "Ag_ob_run.read_shared shared%s (" id);
-                  `Block read_value;
-                  `Line ") ib";
-                ]
-        in
-        wrap_body ~tagged Bi_io.shared_tag body
-
     | `Wrap (loc, x, `Wrap o, `Wrap) ->
         let simple_reader = make_reader deref ~tagged x in
         (match o with
@@ -1110,51 +1062,13 @@ and make_variant_reader deref type_annot tick x : Ag_indent.t list =
         ]
 
 and make_record_reader
-    ?shared_id deref ~tagged type_annot
+    deref ~tagged type_annot
     a record_kind =
   let fields = get_fields deref a in
-  let init_val, init_bits, set_bit, check_bits = study_record deref fields in
-
-  let build share body =
-    [
-      `Line (sprintf "let %s =" (Ag_ox_emit.opt_annot_def type_annot "x"));
-      `Block init_val;
-      `Line "in";
-      `Inline share;
-      `Inline init_bits;
-      `Line "let len = Bi_vint.read_uvint ib in";
-      `Line "for i = 1 to len do";
-      `Block body;
-      `Line "done;";
-      `Inline check_bits;
-      `Line "Ag_ob_run.identity x"
-    ]
+  let init_fields, init_bits, set_bit, check_bits, create_record =
+    study_record deref fields
   in
 
-  let loop body =
-    match shared_id with
-        None -> build [] body
-      | Some id ->
-          let share = [
-            `Line (sprintf "if Bi_io.read_tag ib <> %i then \
-                              Ag_ob_run.read_error_at ib;"
-                     Bi_io.record_tag);
-            `Line (sprintf "Bi_share.Rd.put ib.Bi_inbuf.i_shared \
-                              (pos, shared%s) (Obj.repr x);" id);
-          ]
-          in
-          [
-            `Line "let pos = ib.Bi_inbuf.i_offs + ib.Bi_inbuf.i_pos in";
-            `Line "let offset = Bi_vint.read_uvint ib in";
-            `Line "if offset = 0 then";
-            `Block (build share body);
-            `Line "else";
-            `Block [
-              `Line (sprintf "Obj.obj (Bi_share.Rd.get ib.Bi_inbuf.i_shared \
-                                        (pos - offset, shared%s))" id)
-            ]
-          ]
-  in
   let body =
     let a = Array.of_list fields in
     let cases =
@@ -1183,10 +1097,9 @@ and make_record_reader
           `Inline [
             `Line (sprintf "| %i ->" (Bi_io.hash_name x.f_name));
             `Block [
-              `Line "let v =";
+              `Line (sprintf "field_%s := (" name);
               `Block (wrap read_value);
-              `Line "in";
-              `Line (sprintf "Obj.set_field (Obj.repr x) %i (Obj.repr v);" i);
+              `Line ");";
               `Inline (set_bit i);
             ];
           ]
@@ -1201,7 +1114,19 @@ and make_record_reader
     ]
   in
 
-  loop body
+  [
+    `Inline init_fields;
+    `Inline init_bits;
+    `Line "let len = Bi_vint.read_uvint ib in";
+    `Line "for i = 1 to len do";
+    `Block body;
+    `Line "done;";
+    `Inline check_bits;
+    `Line "(";
+    `Block create_record;
+    `Line (sprintf "%s)" (Ag_ox_emit.insert_annot type_annot));
+  ]
+
 
 and make_tuple_reader deref ~tagged a =
   let cells =
@@ -1305,7 +1230,9 @@ and make_table_reader deref loc list_kind x =
       | _ ->
           error loc "Not a list or array of records"
   in
-  let init_val, init_bits, set_bit, check_bits = study_record deref fields in
+  let init_fields, init_bits, set_bit, check_bits, create_record =
+    study_record deref fields
+  in
   let cases =
     Array.to_list (
       Array.mapi (
@@ -1322,13 +1249,7 @@ and make_table_reader deref loc list_kind x =
                 `Block [ `Line "tag" ]
               ];
               `Line "in";
-              `Line "(fun x ib ->";
-              `Block [
-                `Line (sprintf
-                         "Obj.set_field (Obj.repr x) %i \
-                            (Obj.repr (read ib)))" i
-                      )
-              ]
+              `Line (sprintf "(fun ib -> field_%s := read ib)" name);
             ]
           ]
       ) (Array.of_list fields)
@@ -1340,6 +1261,7 @@ and make_table_reader deref loc list_kind x =
      `Line "else";
      `Block [
        `Line "let col_num = Bi_vint.read_uvint ib in";
+       `Inline init_fields;
        `Inline init_bits;
        `Line "let readers =";
        `Block [
@@ -1351,7 +1273,7 @@ and make_table_reader deref loc list_kind x =
              `Line "let tag = Bi_io.read_tag ib in";
              `Line "match h with";
              `Block cases;
-             `Block [ `Line "| _ -> (fun x ib -> Bi_io.skip ib)" ]
+             `Block [ `Line "| _ -> (fun ib -> Bi_io.skip ib)" ]
            ]
          ];
          `Line ")";
@@ -1361,13 +1283,11 @@ and make_table_reader deref loc list_kind x =
        `Line "let a = Array.make row_num (Obj.magic 0) in";
        `Line "for row = 0 to row_num - 1 do";
        `Block [
-         `Line "let x =";
-         `Block init_val;
-         `Line "in";
          `Line "for i = 0 to Array.length readers - 1 do";
-         `Block [ `Line "readers.(i) x ib" ];
+         `Block [ `Line "readers.(i) ib" ];
          `Line "done;";
-         `Line "a.(row) <- x";
+         `Line "a.(row) <-";
+         `Block create_record;
        ];
        `Line "done;";
        `Line (to_list "a")
@@ -1469,44 +1389,7 @@ let get_let ~is_rec ~is_first =
     else "let", "let"
   else "and", "and"
 
-module S = Set.Make (String)
-
-let extract_loc_ids_from_expr x acc =
-  Atd_ast.fold
-    (fun x acc ->
-       match x with
-           (`Shared (_, _, a)) ->
-             let id =
-               Atd_annot.get_field (fun s -> Some s) "" ["share"] "id" a in
-             if id <> "" then
-               S.add id acc
-             else
-               acc
-         | _ -> acc)
-    x
-    acc
-
-let extract_loc_ids l =
-  let set =
-    List.fold_left (
-      fun acc (`Type (loc, (name, param, a), x)) ->
-        extract_loc_ids_from_expr x acc
-    ) S.empty l
-  in
-  S.elements set
-
-let make_shared_id_defs atd_module =
-  let buf = Buffer.create 200 in
-  let l = extract_loc_ids atd_module in
-  List.iter
-    (fun id ->
-       bprintf buf
-         "let shared%s = Bi_share.create_type_id ()\n" id)
-    l;
-  Buffer.contents buf
-
 let make_ocaml_biniou_impl ~with_create ~original_types buf deref defs =
-  (*bprintf buf "%s\n" (make_shared_id_defs ());*)
 
   let ll =
     List.map (
@@ -1572,7 +1455,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs ~original_types
-    ocaml_typedefs ocaml_impl_misc deref defs =
+    ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   write_opens buf opens;
@@ -1580,10 +1463,8 @@ let make_ml
     bprintf buf "%s\n" ocaml_typedefs;
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
-  if with_fundefs then (
-    bprintf buf "%s\n" ocaml_impl_misc;
-    make_ocaml_biniou_impl ~with_create ~original_types buf deref defs
-  );
+  if with_fundefs then
+    make_ocaml_biniou_impl ~with_create ~original_types buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1631,7 +1512,6 @@ let make_ocaml_files
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
     Ag_ocaml.ocaml_of_atd ~target:`Biniou ~type_aliases (head, m1) in
-  let ocaml_impl_misc = make_shared_id_defs m0 in
   let defs = translate_mapping m2 in
   let header =
     let src =
@@ -1647,7 +1527,7 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~original_types ocaml_typedefs ocaml_impl_misc
+      ~original_types ocaml_typedefs
       (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

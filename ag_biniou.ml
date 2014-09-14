@@ -25,7 +25,6 @@ type biniou_repr =
     | `List of biniou_list
     | `Option
     | `Nullable
-    | `Shared
     | `Wrap
     | `External
 

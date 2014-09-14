@@ -18,7 +18,7 @@ sig
     'a reader -> in_channel -> 'a
     (** Read a biniou value from a channel.
         @param len     input buffer length.
-        @param shrlen  initial length of the table used to store shared values.
+        @param shrlen  obsolete and ignored.
     *)
 
   val from_file :
@@ -27,7 +27,7 @@ sig
     'a reader -> string -> 'a
     (** Read a biniou value from a file.
         @param len     input buffer length.
-        @param shrlen  initial length of the table used to store shared values.
+        @param shrlen  obsolete and ignored.
     *)
 
   val to_channel :
@@ -36,7 +36,7 @@ sig
     'a writer -> out_channel -> 'a -> unit
     (** Write a biniou value to a channel.
         @param len     output buffer length.
-        @param shrlen  initial length of the table used to store shared values.
+        @param shrlen  obsolete and ignored.
     *)
 
   val to_file :
@@ -45,7 +45,7 @@ sig
     'a writer -> string -> 'a -> unit
     (** Write a biniou value to a file.
         @param len     output buffer length.
-        @param shrlen  initial length of the table used to store shared values.
+        @param shrlen  obsolete and ignored.
     *)
 end
 

@@ -39,7 +39,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
         let biniou_t = `Tuple in
         `Tuple (loc, Array.of_list (List.map mapping_of_cell l),
                 ocaml_t, biniou_t)
-        
+
     | `List (loc, x, an) ->
         let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
         let biniou_t = `List (Ag_biniou.get_biniou_list an) in
@@ -56,13 +56,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
         `Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
     | `Shared (loc, x, a) ->
-        let ocaml_t = `Shared (Ag_ocaml.get_ocaml_shared a) in
-        let biniou_t = `Shared in
-        let id = Atd_annot.get_field (fun s -> Some s) "" ["share"] "id" a in
-        if id = "" then
-          error loc "bug: missing or empty share.id annotation";
-        `Shared (loc, id,
-                 mapping_of_expr x, ocaml_t, biniou_t)
+        failwith "Sharing is no longer supported"
 
     | `Wrap (loc, x, a) ->
         let ocaml_t = `Wrap (Ag_ocaml.get_ocaml_wrap loc a) in

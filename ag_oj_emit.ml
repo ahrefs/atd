@@ -414,9 +414,6 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
           `Line ")";
         ]
 
-    | `Shared (loc, _, _, _, _) ->
-        error loc "Sharing is not supported by the JSON interface"
-
     | `Wrap (loc, x, `Wrap o, `Wrap) ->
         (match o with
             None -> make_writer p x
@@ -812,9 +809,6 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
             `Line ") p lb) : _ option)"
           ]
         ]
-
-    | `Shared (loc, _, _, _, _) ->
-        error loc "Sharing is not supported by the JSON interface"
 
     | `Wrap (loc, x, `Wrap o, `Wrap) ->
         (match o with

@@ -365,42 +365,6 @@ let test_raw_json () =
   let x' = Test3j.t_of_string s in
   check (x = x')
 
-let test_biniou_sharing_graph () =
-  section "biniou sharing - graph";
-  let a = { Test3b.value = "a"; neighbors = [] } in
-  let b = { Test3b.value = "b"; neighbors = [] } in
-  a.Test3b.neighbors <- [ a; b ];
-  b.Test3b.neighbors <- [ b; a ];
-  let g = [ a; b ] in
-  let s = Test3b.string_of_graph g in
-  let g' = Test3b.graph_of_string s in
-  check (g != g');
-  let a', b' =
-    match g' with
-        [ a'; b' ] -> a', b'
-      | _ -> fail ()
-  in
-  let a'', b'' =
-    match a'.Test3b.neighbors with
-        [ a''; b''  ] -> a'', b''
-      | _ -> fail ()
-  in
-  check (a' == a'');
-  check (b' == b'')
-
-let test_biniou_sharing_strings () =
-  section "biniou sharing - strings";
-  let x = ref "abc" in
-  let a = [| x; x |] in
-  let b = x in
-  let a' = Test3b.a_of_string (Test3b.string_of_a a) in
-  let b' = Test3b.b_of_string (Test3b.string_of_b b) in
-  check (a.(0) == b);
-  check (a.(0) == a.(1));
-  check (a'.(0) != a.(0));
-  check (a'.(0) == a'.(1));
-  check (a'.(0) != b')
-
 let test_wrapping_ints () =
   section "ocaml wrapping - ints";
   let x = Test_lib.Natural.wrap 7 in
@@ -474,8 +438,6 @@ let all_tests = [
   test_json_files;
   test_json_streams;
   test_raw_json;
-  test_biniou_sharing_graph;
-  test_biniou_sharing_strings;
   test_wrapping_ints;
   test_double_wrapping;
   test_wrapping_with_validation;

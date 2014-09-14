@@ -19,8 +19,6 @@ type atd_ocaml_record = [ `Record | `Object ]
 type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
 type atd_ocaml_list = [ `List | `Array ]
 
-type atd_ocaml_shared = [ `Flat | `Ref ]
-
 type atd_ocaml_wrap = {
   ocaml_wrap_t : string;
   ocaml_wrap : string;
@@ -57,7 +55,6 @@ type atd_ocaml_repr =
     | `List of atd_ocaml_list
     | `Option
     | `Nullable
-    | `Shared of atd_ocaml_shared
     | `Wrap of atd_ocaml_wrap option
     | `Name of string
     | `External of (string * string * string)
@@ -116,12 +113,6 @@ let string_of_ocaml_list (x : atd_ocaml_list) =
       `List -> "list"
     | `Array -> "Ag_util.ocaml_array"
 
-let ocaml_shared_of_string s : atd_ocaml_shared option =
-  match s with
-      "flat" -> Some `Flat
-    | "ref" -> Some `Ref
-    | s -> None
-
 let get_ocaml_int an =
   Atd_annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
 
@@ -161,9 +152,6 @@ let get_ocaml_record an =
 
 let get_ocaml_list an =
   Atd_annot.get_field ocaml_list_of_string `List ["ocaml"] "repr" an
-
-let get_ocaml_shared an =
-  Atd_annot.get_field ocaml_shared_of_string `Flat ["ocaml"] "repr" an
 
 let get_ocaml_wrap loc an =
   let module_ =
@@ -302,10 +290,7 @@ let rec map_expr (x : type_expr) : ocaml_expr =
     | `Nullable (loc, x, an) ->
         `Name ("option", [map_expr x])
     | `Shared (loc, x, a) ->
-        (match get_ocaml_shared a with
-             `Flat -> map_expr x
-           | `Ref -> `Name ("Pervasives.ref", [map_expr x])
-        )
+        failwith "Sharing is not supported"
     | `Wrap (loc, x, a) ->
         (match get_ocaml_wrap loc a with
             None -> map_expr x

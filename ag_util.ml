@@ -25,20 +25,20 @@ struct
   type 'a reader = Bi_inbuf.t -> 'a
   type 'a writer = Bi_outbuf.t -> 'a -> unit
 
-  let from_channel ?len ?shrlen read ic =
-    let ib = Bi_inbuf.from_channel ?len ?shrlen ic in
+  let from_channel ?len ?(shrlen = 0) read ic =
+    let ib = Bi_inbuf.from_channel ?len ~shrlen ic in
     read ib
 
-  let from_file ?len ?shrlen read fname =
-    input_file fname (fun ic -> from_channel ?len ?shrlen read ic)
+  let from_file ?len ?(shrlen = 0) read fname =
+    input_file fname (fun ic -> from_channel ?len ~shrlen read ic)
 
-  let to_channel ?len ?shrlen write oc x =
-    let ob = Bi_outbuf.create_channel_writer ?len ?shrlen oc in
+  let to_channel ?len ?(shrlen = 0) write oc x =
+    let ob = Bi_outbuf.create_channel_writer ?len ~shrlen oc in
     write ob x;
     Bi_outbuf.flush_channel_writer ob
 
-  let to_file ?len ?shrlen write fname x =
-    output_file fname (fun oc -> to_channel ?len ?shrlen write oc x)
+  let to_file ?len ?(shrlen = 0) write fname x =
+    output_file fname (fun oc -> to_channel ?len ~shrlen write oc x)
 end
 
 module Json =

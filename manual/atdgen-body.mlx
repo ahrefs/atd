@@ -187,7 +187,7 @@ ATD & OCaml & Biniou & JSON \\
 \tt string & \tt string & string & string \\
 \tt option & \tt option & numeric variants (tag 0) & None/Some variants \\
 \tt list & \tt list & array & array \\
-\tt shared & no wrapping & shared & not implemented \\
+\tt shared & no wrapping & no longer supported & not implemented \\
 variants & polymorphic variants & regular variants & variants \\
 record & record & record & object \\
 tuple & tuple & tuple & tuple \\
@@ -741,22 +741,7 @@ type fruit = Apple | Orange
 
 \annotposition after a \texttt{shared} type
 
-\annotvalues \texttt{ref}
-
-\annotsemantics wraps the value using OCaml's \texttt{ref} type,
-which is as of Atdgen 1.1.0
-the only way of sharing values other than records.
-
-\annotexample
-## atdgen () ##
-type shared_string = string shared <ocaml repr="ref">
-## () ##
-
-translates to the following OCaml type definition:
-
-## ocaml () ##
-type shared_string = string ref
-## () ##
+This feature is obsolete and was last supported by atdgen 1.3.1.
 
 
 ## annot_field "validator" ##

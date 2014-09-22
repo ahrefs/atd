@@ -15,7 +15,7 @@ atdgen [*mode*] [*input-file*] [*options*]
 Description
 ===========
 
-Bla.
+Bla.?!
 
 Subsection
 ----------
@@ -24,6 +24,6 @@ Subsection
 
 ### Another subsubsection
 
-``` {.ocaml}
-let x = "abc" (* yay *)
+```ocaml
+let x = "abc" (* yay! *)
 ```

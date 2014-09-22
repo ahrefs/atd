@@ -174,6 +174,7 @@ type date = {
 }
   <ocaml validator="Date_util.validate_date">
 ```
+
 is used to produce
 files `example_t.mli`,
 `example_t.ml`,
@@ -298,6 +299,7 @@ any biniou integer type can be read into OCaml data regardless of the
 declared biniou type.
 
 Example:
+
 ```ocaml
 type t = {
   id : int
@@ -318,6 +320,7 @@ of floats, using 4 bytes instead of 8, with reduced precision.
 OCaml floats always use 8 bytes, though.
 
 Example:
+
 ```ocaml
 type t = {
   lat : float <biniou repr="float32">;
@@ -338,6 +341,7 @@ Both formats are supported for reading into OCaml data
 regardless of the annotation. The table format allows
 
 Example:
+
 ```ocaml
 type item = {
   id : int;
@@ -361,6 +365,7 @@ Semantics: specifies an alternate object field name or variant
   name to be used by the JSON representation.
 
 Example:
+
 ```ocaml
 type color = [
     Black <json name="black">
@@ -397,6 +402,7 @@ Semantics: uses JSON's object notation to represent association
 lists.
 
 Example:
+
 ```ocaml
 type counts = (string * int) list <json repr="object">
 ```
@@ -432,6 +438,7 @@ nearest integer and represented in JSON without
 a decimal point nor an exponent.
 
 Example:
+
 ```ocaml
 type unixtime = float <json repr="int">
 ```
@@ -450,6 +457,7 @@ Semantics: this flag indicates that the corresponding OCaml
 type definition must be omitted.
 
 Example:
+
 ```ocaml
 (* Some third-party OCaml code *)
 type message = {
@@ -482,6 +490,7 @@ Semantics: this flag indicates that the corresponding OCaml
 record field is mutable.
 
 Example:
+
 ```ocaml
 type counter = {
   total <ocaml mutable> : int;
@@ -512,6 +521,7 @@ Semantics: specifies an explicit default value for a field of an
 OCaml record or tuple, allowing that field to be omitted.
 
 Example:
+
 ```ocaml
 type color = [ Black | White | Rgb of (int * int * int) ]
 
@@ -630,6 +640,7 @@ Typically we may want to give the name `foo` to a type
 originally defined in OCaml as `Foo.t`.
 
 Example:
+
 ```ocaml
 type foo <ocaml_biniou module="Foo" t="t"> = abstract
 type bar <ocaml_biniou module="Bar" t="t"> = abstract
@@ -658,6 +669,7 @@ Semantics: specifies a prefix to be prepended to each field of
   names defined on a per-field basis.
 
 Example:
+
 ```ocaml
 type point2 = {
   x : int;
@@ -685,6 +697,7 @@ Semantics: specifies an alternate record field name or variant
   names to be used in OCaml.
 
 Example:
+
 ```ocaml
 type color = [
     Black <ocaml name="Grey0">
@@ -737,6 +750,7 @@ such as a time in seconds returned by `Unix.time()`. When
 converted into JSON, floats are rounded to the nearest integer.
 
 Example:
+
 ```ocaml
 type t = {
   id : int
@@ -756,6 +770,7 @@ Values: `array`
 Semantics: maps to OCaml's `array` type instead of `list`.
 
 Example:
+
 ```ocaml
 type t = {
   id : int;
@@ -774,6 +789,7 @@ Semantics: maps to OCaml's classic variants instead of
 polymorphic variants.
 
 Example:
+
 ```ocaml
 type fruit = [ Apple | Orange ] <ocaml repr="classic">
 ```
@@ -811,6 +827,7 @@ subnodes pass all the validators specified by annotations of the form
 `<ocaml validator="...">`.
 
 Example:
+
 ```ocaml
 type positive = int <ocaml validator="fun x -> x > 0">
 
@@ -877,6 +894,7 @@ type t = { foo : int; bar : dyn }
 ```
 
 Sample OCaml value of type `t`:
+
 ```ocaml
 {
   foo = 12345;

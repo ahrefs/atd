@@ -50,15 +50,15 @@ with Atdgen:
 
 
 Command-line usage
-========
+==================
 
 Command-line help
-----------
+-----------------
 
 Call `atdgen -help` for the full list of available options.
 
 Atdgen-json example
-----------
+-------------------
 
 ```
 $ atdgen -t example.atd
@@ -110,7 +110,7 @@ expressions `((x : Example_t.date) : Example_j.date)`
 and `x.Example_t.year = x.Example_j.year` are both valid.
 
 Atdgen-biniou example
-----------
+---------------------
 
 ```
 $ atdgen -t example.atd
@@ -161,7 +161,7 @@ and `x.Example_t.year = x.Example_b.year` are both valid.
 
 
 Validator example
-----------
+-----------------
 
 ```
 $ atdgen -t example.atd
@@ -195,41 +195,50 @@ validators are used:
 
 
 Default type mapping
-========
+====================
 
 The following table summarizes the default mapping between ATD types and
 OCaml, biniou and JSON data types. For each language more
 representations are available and are detailed in the next section of this
 manual.
 
----------------------------------------------------------------------
-ATD         OCaml               Biniou             JSON
------------ ------------------- ------------------ ------------------
-`unit`      `unit`              unit               null
+-------------------------------------------------------------------------
+ATD             OCaml               JSON              Biniou
+--------------- ------------------- ----------------- -------------------
+`unit`          `unit`              null              unit
 
-`bool`      `bool`              bool               boolean
+`bool`          `bool`              boolean           bool
 
-`int`       `int`               svint              number (int)
+`int`           `int`               -?(0|[1-9][0-9]*) svint
 
-`float`     `float`             float64            number (not int)
+`float`         `float`             number            float64
 
-`string`    `string`            string             string
+`string`        `string`            string            string
 
-`option`    `option`            numeric variants
-                                (tag 0)            None/Some variants
+`'a option`     `'a option`         `"None"` or       numeric variants
+                                    `["Some", ...]`   (tag 0)
 
-`list`      `list`              array              array
+`'a nullable`   `'a option`         `null` or         numeric variants
+                                    representation    (tag 0)
+                                    of `'a`
 
-`shared`    no wrapping         no longer          not implemented
-                                supported
+`'a list`       `'a list`           array             array
 
-variants    polymorphic         regular variants   variants
-            variants            variants
+`'a shared`     no wrapping         not implemented   no longer
+                                                      supported
 
-record      record              record             object
+`'a wrap`       defined             representation    representation
+                by annotation,      of `'a`           of `'a`
+                converted from
+                `'a`
 
-tuple       tuple               tuple              array
----------------------------------------------------------------------
+variants        polymorphic         variants          regular
+                variants                              variants
+
+record          record              object            record
+
+tuple           tuple               array             tuple
+-------------------------------------------------------------------------
 
 Notes:
 
@@ -264,10 +273,10 @@ Notes:
 
 
 ATD Annotations
-========
+===============
 
 Section '`json`'
--------
+----------------
 
 ### Field '`name`' ###
 
@@ -359,7 +368,7 @@ type unixtime = float <json repr="int">
 
 
 Section '`biniou`'
--------
+------------------
 
 ### Field '`repr`' ###
 
@@ -452,7 +461,7 @@ type items = item list <biniou repr="table">
 
 
 Section '`ocaml`'
--------
+-----------------
 
 ### Field '`predef`' ###
 
@@ -580,6 +589,61 @@ type points = point list
 
 ### Field '`module`' ###
 
+#### Using a custom wrapper ####
+
+Using the built-in `wrap` constructor, it is possible to add a layer
+of abstraction on top of the concrete structure used for
+serialization.
+
+Position: after a `wrap` type constructor
+
+Values: OCaml module name
+
+A common use case is to parse strings used
+as unique identifiers and wrap the result into an abstract type.
+Our OCaml module `Uid` needs to provide a type `t`, and two functions `wrap`
+and `unwrap` as follows:
+
+```ocaml
+type t
+val wrap : string -> t
+val unwrap : t -> string
+```
+
+Given that `Uid` OCaml module, we can write the following ATD
+definition:
+
+```ocaml
+type uid = string wrap <ocaml module="Uid">
+```
+
+Other languages than OCaml using the same ATD type definitions may or
+may not add their own abstract layer. Without an annotation, the
+`wrap` construct has no effect on the value being wrapped, i.e. `wrap`
+and `unwrap` default to the identity function.
+
+It is also possible to define `t`, `wrap`, and `unwrap` inline:
+
+```ocaml
+type uid = string wrap <ocaml t="Uid.t"
+                              wrap="Uid.wrap"
+                              unwrap="Uid.unwrap">
+```
+
+This can be useful for very simple validation:
+
+```ocaml
+type uid = string wrap
+  <ocaml wrap="fun s ->
+                 if String.length s <> 16 then
+                   failwith \"Invalid user ID\";
+                 s"
+  >
+```
+
+
+#### Importing an external type definition ####
+
 In most cases since Atdgen 1.2.0
 `module` annotations are deprecated in favor of `from`
 annotations previously described.
@@ -633,6 +697,32 @@ can be used interchangeably in other modules.
 
 ### Field '`t`' ###
 
+
+#### Using a custom wrapper ####
+
+Specifies the OCaml type of an abstract `wrap` construct, possibly
+overriding the default _M_`.t` if _M_ is the module where the `wrap`
+and `unwrap` functions are found.
+
+Position: after a `wrap` type constructor
+
+Values: OCaml type name
+
+Example:
+
+```ocaml
+type uid = string wrap <ocaml module="Uid" t="Uid.uid">
+```
+
+is equivalent to:
+
+```ocaml
+type uid = string wrap <ocaml t="Uid.uid" wrap="Uid.wrap" unwrap="Uid.unwrap">
+```
+
+
+#### Importing an external type definition ####
+
 Position: left-hand side of a type definition, after the type
 name. Must be used in conjunction with a `module` field.
 
@@ -663,6 +753,10 @@ type bar = Bar.t
 type t = Baz.t
 ```
 
+### Fields '`wrap`' and '`unwrap`' ###
+
+See "Using a custom wrapper" under section '`ocaml`', fields
+'`module`' and '`t`'.
 
 
 ### Field '`field_prefix`' ###
@@ -859,7 +953,7 @@ let validate_point p =
 
 
 Section '`ocaml_biniou`'
--------
+------------------------
 
 Section `ocaml_biniou` takes precedence over section `ocaml`
 in Biniou mode (`-b`) for the following fields:
@@ -870,7 +964,7 @@ in Biniou mode (`-b`) for the following fields:
 
 
 Section '`ocaml_json`'
--------
+----------------------
 
 Section `ocaml_json` takes precedence over section `ocaml`
 in JSON mode (`-j`) for the following fields:
@@ -925,7 +1019,7 @@ Corresponding JSON data as obtained with `string_of_t`:
 
 
 Section '`doc`'
--------
+---------------
 
 Unlike comments, `doc` annotations are meant to be
 propagated into the generated source code.  This is useful for
@@ -1046,7 +1140,7 @@ file `genealogy_b.mli` with ocamldoc-compliant comments:
 
 
 Library
-========
+=======
 
 A library named `atdgen` is installed by the standard
 installation process. Only a fraction of it is officially supported

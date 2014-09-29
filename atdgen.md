@@ -10,19 +10,30 @@ atdgen - derive code from type definitions
 Synopsis
 ========
 
-atdgen [*mode*] [*input-file*] [*options*]
+atdgen **-t** [_infile_**.atd**] [_options_...]
+
+atdgen **-j** **-j-std** [_infile_**.atd**] [_options_...]
+
+atdgen **-b** [_infile_**.atd**] [_options_...]
+
+atdgen **-v** [_infile_**.atd**] [_options_...]
+
+atdgen [_mode_] [_options_...]
+
+atdgen **-help**
 
 Description
 ===========
 
 Atdgen is a command-line program that takes as input type definitions
-in the [ATD](http://mjambon.com/atd) syntax and produces OCaml
+in the [ATD syntax](http://mjambon.com/atd) and produces OCaml
 code suitable for data serialization and deserialization.
 
 Two data formats are currently supported, these are
-[biniou](http://mjambon.com/biniou.html)
-and [JSON](http://json.org/). Atdgen-biniou and Atdgen-json will
-refer to Atdgen used in one context or the other.
+[JSON](http://json.org/) and [biniou](http://mjambon.com/biniou.html),
+a binary format with extensibility properties similar to JSON.
+Atdgen-json and Atdgen-biniou will refer to Atdgen used in one context
+or the other.
 
 Atdgen was designed with efficiency and durability in mind. Software
 authors are encouraged to use Atdgen directly and to write
@@ -38,68 +49,13 @@ with Atdgen:
   parser and printer for JSON, a widespread text-based data format
 
 
-Atdgen does not use Camlp4.
-
 Command-line usage
 ========
 
 Command-line help
 ----------
 
-```
-$ atdgen -help
-```
-
-Atdgen-biniou example
-----------
-
-```
-$ atdgen -t example.atd
-$ atdgen -b example.atd
-```
-
-Input file `example.atd`:
-
-```ocaml
-type profile = {
-  id : string;
-  email : string;
-  ~email_validated : bool;
-  name : string;
-  ?real_name : string option;
-  ~about_me : string list;
-  ?gender : gender option;
-  ?date_of_birth : date option;
-}
-
-type gender = [ Female | Male ]
-
-type date = {
-  year : int;
-  month : int;
-  day : int;
-}
-```
-
-is used to produce files `example_t.mli`,
-`example_t.ml`,
-`example_b.mli` and
-`example_b.ml`.
-
-This is `example_b.mli`:
-...
-
-Module `Example_t` (files `example_t.mli` and
-`example_t.ml`) contains all OCaml type definitions that
-can be used independently from Biniou or JSON.
-
-For convenience, these definitions are also made available from the
-`Example_b` module whose interface is shown above.
-Any type name, record field name or variant constructor can be
-referred to using either module. For example, the OCaml
-expressions `((x : Example_t.date) : Example_b.date)`
-and `x.Example_t.year = x.Example_b.year` are both valid.
-
+Call `atdgen -help` for the full list of available options.
 
 Atdgen-json example
 ----------
@@ -152,6 +108,57 @@ Any type name, record field name or variant constructor can be
 referred to using either module. For example, the OCaml
 expressions `((x : Example_t.date) : Example_j.date)`
 and `x.Example_t.year = x.Example_j.year` are both valid.
+
+Atdgen-biniou example
+----------
+
+```
+$ atdgen -t example.atd
+$ atdgen -b example.atd
+```
+
+Input file `example.atd`:
+
+```ocaml
+type profile = {
+  id : string;
+  email : string;
+  ~email_validated : bool;
+  name : string;
+  ?real_name : string option;
+  ~about_me : string list;
+  ?gender : gender option;
+  ?date_of_birth : date option;
+}
+
+type gender = [ Female | Male ]
+
+type date = {
+  year : int;
+  month : int;
+  day : int;
+}
+```
+
+is used to produce files `example_t.mli`,
+`example_t.ml`,
+`example_b.mli` and
+`example_b.ml`.
+
+This is `example_b.mli`:
+...
+
+Module `Example_t` (files `example_t.mli` and
+`example_t.ml`) contains all OCaml type definitions that
+can be used independently from Biniou or JSON.
+
+For convenience, these definitions are also made available from the
+`Example_b` module whose interface is shown above.
+Any type name, record field name or variant constructor can be
+referred to using either module. For example, the OCaml
+expressions `((x : Example_t.date) : Example_b.date)`
+and `x.Example_t.year = x.Example_b.year` are both valid.
+
 
 Validator example
 ----------
@@ -259,10 +266,102 @@ Notes:
 ATD Annotations
 ========
 
-Section `biniou`
+Section '`json`'
 -------
 
-### Field `repr` ###
+### Field '`name`' ###
+
+Position: after field name or variant name
+
+Values: any string making a valid JSON string value
+
+Semantics: specifies an alternate object field name or variant
+  name to be used by the JSON representation.
+
+Example:
+
+```ocaml
+type color = [
+    Black <json name="black">
+  | White <json name="white">
+  | Grey <json name="grey">
+]
+
+type profile = {
+  id <json name="ID"> : int;
+  username : string;
+  background_color : color;
+}
+```
+
+A valid JSON object of the `profile` type above is:
+```
+{
+  "ID": 12345678,
+  "username": "kimforever",
+  "background_color": "black"
+}
+```
+
+
+### Field '`repr`' ###
+
+#### Association lists ####
+
+Position: after `(string * _) list` type
+
+Values: `object`
+
+Semantics: uses JSON's object notation to represent association
+lists.
+
+Example:
+
+```ocaml
+type counts = (string * int) list <json repr="object">
+```
+
+A valid JSON object of the `counts` type above is:
+```
+{
+  "bob": 3,
+  "john": 1408,
+  "mary": 450987,
+  "peter": 93087
+}
+```
+Without the annotation `<json repr="object">`, the data above
+would be represented as:
+```
+[
+  [ "bob", 3 ],
+  [ "john", 1408 ],
+  [ "mary", 450987 ],
+  [ "peter", 93087 ]
+]
+```
+
+#### Floats ####
+
+Position: after `float` type
+
+Values: `int`
+
+Semantics: specifies a float value that must be rounded to the
+nearest integer and represented in JSON without
+a decimal point nor an exponent.
+
+Example:
+
+```ocaml
+type unixtime = float <json repr="int">
+```
+
+
+Section '`biniou`'
+-------
+
+### Field '`repr`' ###
 
 #### Integers ####
 
@@ -352,102 +451,10 @@ type items = item list <biniou repr="table">
 ```
 
 
-Section `json`
+Section '`ocaml`'
 -------
 
-### Field `name` ###
-
-Position: after field name or variant name
-
-Values: any string making a valid JSON string value
-
-Semantics: specifies an alternate object field name or variant
-  name to be used by the JSON representation.
-
-Example:
-
-```ocaml
-type color = [
-    Black <json name="black">
-  | White <json name="white">
-  | Grey <json name="grey">
-]
-
-type profile = {
-  id <json name="ID"> : int;
-  username : string;
-  background_color : color;
-}
-```
-
-A valid JSON object of the `profile` type above is:
-```
-{
-  "ID": 12345678,
-  "username": "kimforever",
-  "background_color": "black"
-}
-```
-
-
-### Field `repr` ###
-
-#### Association lists ####
-
-Position: after `(string * _) list` type
-
-Values: `object`
-
-Semantics: uses JSON's object notation to represent association
-lists.
-
-Example:
-
-```ocaml
-type counts = (string * int) list <json repr="object">
-```
-
-A valid JSON object of the `counts` type above is:
-```
-{
-  "bob": 3,
-  "john": 1408,
-  "mary": 450987,
-  "peter": 93087
-}
-```
-Without the annotation `<json repr="object">`, the data above
-would be represented as:
-```
-[
-  [ "bob", 3 ],
-  [ "john", 1408 ],
-  [ "mary", 450987 ],
-  [ "peter", 93087 ]
-]
-```
-
-#### Floats ####
-
-Position: after `float` type
-
-Values: `int`
-
-Semantics: specifies a float value that must be rounded to the
-nearest integer and represented in JSON without
-a decimal point nor an exponent.
-
-Example:
-
-```ocaml
-type unixtime = float <json repr="int">
-```
-
-
-Section `ocaml`
--------
-
-### Field `predef` ###
+### Field '`predef`' ###
 
 Position: left-hand side of a type definition, after the type name
 
@@ -480,7 +487,7 @@ type message <ocaml predef> = {
 ```
 
 
-### Field `mutable` ###
+### Field '`mutable`' ###
 
 Position: after a record field name
 
@@ -508,7 +515,7 @@ type counter = {
 ```
 
 
-### Field `default` ###
+### Field '`default`' ###
 
 
 Position: after a record field name marked with a `\~{`}
@@ -534,7 +541,7 @@ type point = (int * int * <ocaml default="0"> : int)
 ```
 
 
-### Field `from` ###
+### Field '`from`' ###
 
 Position: left-hand side of a type definition, after the type name
 
@@ -571,7 +578,7 @@ type points = point list
 ```
 
 
-### Field `module` ###
+### Field '`module`' ###
 
 In most cases since Atdgen 1.2.0
 `module` annotations are deprecated in favor of `from`
@@ -624,7 +631,7 @@ Now for instance `Example.Black` and `Color.Black`
 can be used interchangeably in other modules.
 
 
-### Field `t` ###
+### Field '`t`' ###
 
 Position: left-hand side of a type definition, after the type
 name. Must be used in conjunction with a `module` field.
@@ -658,7 +665,7 @@ type t = Baz.t
 
 
 
-### Field `field_prefix` ###
+### Field '`field_prefix`' ###
 
 Position: record type expression
 
@@ -686,7 +693,7 @@ type point2 = {
 }
 ```
 
-### Field `name` ###
+### Field '`name`' ###
 
 Position: after record field name or variant name
 
@@ -727,7 +734,7 @@ type profile = {
 ```
 
 
-### Field `repr` ###
+### Field '`repr`' ###
 
 #### Integers ####
 
@@ -808,7 +815,7 @@ Position: after a `shared` type
 This feature is obsolete and was last supported by atdgen 1.3.1.
 
 
-### Field `validator` ###
+### Field '`validator`' ###
 
 Position: after any type expression except type variables
 
@@ -851,7 +858,7 @@ let validate_point p =
 ```
 
 
-Section `ocaml_biniou`
+Section '`ocaml_biniou`'
 -------
 
 Section `ocaml_biniou` takes precedence over section `ocaml`
@@ -862,7 +869,7 @@ in Biniou mode (`-b`) for the following fields:
 * `t` (see section `ocaml.t`)
 
 
-Section `ocaml_json`
+Section '`ocaml_json`'
 -------
 
 Section `ocaml_json` takes precedence over section `ocaml`
@@ -917,7 +924,7 @@ Corresponding JSON data as obtained with `string_of_t`:
 ```
 
 
-Section `doc`
+Section '`doc`'
 -------
 
 Unlike comments, `doc` annotations are meant to be
@@ -930,7 +937,7 @@ take advantage of documentation generators such as javadoc or
 ocamldoc.
 
 
-### Field `text` ###
+### Field '`text`' ###
 
 
 Position:

@@ -95,7 +95,86 @@ files `example_t.mli`,
 `example_j.mli` and
 `example_j.ml`.
 This is `example_j.mli`:
-...
+
+```ocaml
+(* Auto-generated from "example.atd" *)
+
+
+type gender = Example_t.gender
+
+type date = Example_t.date = { year: int; month: int; day: int }
+
+type profile = Example_t.profile = {
+  id: string;
+  email: string;
+  email_validated: bool;
+  name: string;
+  real_name: string option;
+  about_me: string list;
+  gender: gender option;
+  date_of_birth: date option
+}
+
+val write_gender :
+  Bi_outbuf.t -> gender -> unit
+  (** Output a JSON value of type {!gender}. *)
+
+val string_of_gender :
+  ?len:int -> gender -> string
+  (** Serialize a value of type {!gender}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_gender :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> gender
+  (** Input JSON data of type {!gender}. *)
+
+val gender_of_string :
+  string -> gender
+  (** Deserialize JSON data of type {!gender}. *)
+
+val write_date :
+  Bi_outbuf.t -> date -> unit
+  (** Output a JSON value of type {!date}. *)
+
+val string_of_date :
+  ?len:int -> date -> string
+  (** Serialize a value of type {!date}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_date :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> date
+  (** Input JSON data of type {!date}. *)
+
+val date_of_string :
+  string -> date
+  (** Deserialize JSON data of type {!date}. *)
+
+val write_profile :
+  Bi_outbuf.t -> profile -> unit
+  (** Output a JSON value of type {!profile}. *)
+
+val string_of_profile :
+  ?len:int -> profile -> string
+  (** Serialize a value of type {!profile}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_profile :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> profile
+  (** Input JSON data of type {!profile}. *)
+
+val profile_of_string :
+  string -> profile
+  (** Deserialize JSON data of type {!profile}. *)
+```
 
 
 Module `Example_t` (files `example_t.mli` and
@@ -146,7 +225,134 @@ is used to produce files `example_t.mli`,
 `example_b.ml`.
 
 This is `example_b.mli`:
-...
+
+```ocaml
+(* Auto-generated from "example.atd" *)
+
+
+type gender = Example_t.gender
+
+type date = Example_t.date = { year: int; month: int; day: int }
+
+type profile = Example_t.profile = {
+  id: string;
+  email: string;
+  email_validated: bool;
+  name: string;
+  real_name: string option;
+  about_me: string list;
+  gender: gender option;
+  date_of_birth: date option
+}
+
+(* Writers for type gender *)
+
+val gender_tag : Bi_io.node_tag
+  (** Tag used by the writers for type {!gender}.
+      Readers may support more than just this tag. *)
+
+val write_untagged_gender :
+  Bi_outbuf.t -> gender -> unit
+  (** Output an untagged biniou value of type {!gender}. *)
+
+val write_gender :
+  Bi_outbuf.t -> gender -> unit
+  (** Output a biniou value of type {!gender}. *)
+
+val string_of_gender :
+  ?len:int -> gender -> string
+  (** Serialize a value of type {!gender} into
+      a biniou string. *)
+
+(* Readers for type gender *)
+
+val get_gender_reader :
+  Bi_io.node_tag -> (Bi_inbuf.t -> gender)
+  (** Return a function that reads an untagged
+      biniou value of type {!gender}. *)
+
+val read_gender :
+  Bi_inbuf.t -> gender
+  (** Input a tagged biniou value of type {!gender}. *)
+
+val gender_of_string :
+  ?pos:int -> string -> gender
+  (** Deserialize a biniou value of type {!gender}.
+      @param pos specifies the position where
+                 reading starts. Default: 0. *)
+
+(* Writers for type date *)
+
+val date_tag : Bi_io.node_tag
+  (** Tag used by the writers for type {!date}.
+      Readers may support more than just this tag. *)
+
+val write_untagged_date :
+  Bi_outbuf.t -> date -> unit
+  (** Output an untagged biniou value of type {!date}. *)
+
+val write_date :
+  Bi_outbuf.t -> date -> unit
+  (** Output a biniou value of type {!date}. *)
+
+val string_of_date :
+  ?len:int -> date -> string
+  (** Serialize a value of type {!date} into
+      a biniou string. *)
+
+(* Readers for type date *)
+
+val get_date_reader :
+  Bi_io.node_tag -> (Bi_inbuf.t -> date)
+  (** Return a function that reads an untagged
+      biniou value of type {!date}. *)
+
+val read_date :
+  Bi_inbuf.t -> date
+  (** Input a tagged biniou value of type {!date}. *)
+
+val date_of_string :
+  ?pos:int -> string -> date
+  (** Deserialize a biniou value of type {!date}.
+      @param pos specifies the position where
+                 reading starts. Default: 0. *)
+
+(* Writers for type profile *)
+
+val profile_tag : Bi_io.node_tag
+  (** Tag used by the writers for type {!profile}.
+      Readers may support more than just this tag. *)
+
+val write_untagged_profile :
+  Bi_outbuf.t -> profile -> unit
+  (** Output an untagged biniou value of type {!profile}. *)
+
+val write_profile :
+  Bi_outbuf.t -> profile -> unit
+  (** Output a biniou value of type {!profile}. *)
+
+val string_of_profile :
+  ?len:int -> profile -> string
+  (** Serialize a value of type {!profile} into
+      a biniou string. *)
+
+(* Readers for type profile *)
+
+val get_profile_reader :
+  Bi_io.node_tag -> (Bi_inbuf.t -> profile)
+  (** Return a function that reads an untagged
+      biniou value of type {!profile}. *)
+
+val read_profile :
+  Bi_inbuf.t -> profile
+  (** Input a tagged biniou value of type {!profile}. *)
+
+val profile_of_string :
+  ?pos:int -> string -> profile
+  (** Deserialize a biniou value of type {!profile}.
+      @param pos specifies the position where
+                 reading starts. Default: 0. *)
+```
 
 Module `Example_t` (files `example_t.mli` and
 `example_t.ml`) contains all OCaml type definitions that
@@ -190,7 +396,56 @@ files `example_t.mli`,
 This is `example_v.ml`, showing how the user-specified
 validators are used:
 
-...
+```ocaml
+(* Auto-generated from "example.atd" *)
+
+
+type gender = Example_t.gender
+
+type date = Example_t.date = { year: int; month: int; day: int }
+
+type profile = Example_t.profile = {
+  id: string;
+  email: string;
+  email_validated: bool;
+  name: string;
+  real_name: string option;
+  about_me: string list;
+  gender: gender option;
+  date_of_birth: date option
+}
+
+val validate_gender :
+  Ag_util.Validation.path -> gender -> Ag_util.Validation.error option
+  (** Validate a value of type {!gender}. *)
+
+val create_date :
+  year: int ->
+  month: int ->
+  day: int ->
+  unit -> date
+  (** Create a record of type {!date}. *)
+
+val validate_date :
+  Ag_util.Validation.path -> date -> Ag_util.Validation.error option
+  (** Validate a value of type {!date}. *)
+
+val create_profile :
+  id: string ->
+  email: string ->
+  ?email_validated: bool ->
+  name: string ->
+  ?real_name: string ->
+  ?about_me: string list ->
+  ?gender: gender ->
+  ?date_of_birth: date ->
+  unit -> profile
+  (** Create a record of type {!profile}. *)
+
+val validate_profile :
+  Ag_util.Validation.path -> profile -> Ag_util.Validation.error option
+  (** Validate a value of type {!profile}. *)
+```
 
 
 
@@ -1058,83 +1313,66 @@ Semantics: The markup language is defined as follows:
   In verbatim text, special sequences are `\` and `}}}`.
 
 
-Example: The following is a full example demonstrating the use of
-`doc` annotations but also shows the full interface
-file `genealogy.mli` generated using:
+Example: The following is an example demonstrating the use of
+`doc` annotations generated using:
 
 ```
-$ atdgen -b genealogy.atd
+$ atdgen -t ocamldoc_example.atd
 ```
 
-
-Input file `genealogy.atd`:
+Input file `ocamldoc_example.atd`:
 
 ```ocaml
-<doc text="Type definitions for family trees">
+<doc text="This is the title">
 
-type tree = {
-  members : person list;
-  filiations : filiation list;
-}
-
-type filiation = {
-  parent : person_id;
-  child : person_id;
-  filiation_type : filiation_type;
-}
-  <doc text="Connection between parent or primary caretaker and child">
-
-type filiation_type = {
-  ?genetic : bool option;
-  ?pregnancy : bool option;
-  ?raised_from_birth : bool option;
-  ?raised : bool option;
-  ?stepchild : bool option;
-  ?adopted : bool option;
+type point = {
+  x <doc text="The first coordinate">: float;
+  y <doc text="The second coordinate">: float;
 }
   <doc text="
-Example of a father who raised his child from birth
-but may not be the biological father:
-
+The type of a point. A value {{p}} can be created as follows:
 {{{
-{
-  genetic = None;
-  pregnancy = Some false;
-  raised_from_birth = Some true;
-  raised = Some true;
-  stepchild = Some false;
-  adopted = Some false;
-}
+let p = { x = 1.2; y = 5.0 }
 }}}
 ">
 
-type person_id
-  <doc text="Two persons with the same {{person_id}} must be the same
-             person. Two persons with different {{person_id}}s
-             may be the same person if there is not enough evidence to
-             support it."> = int
-
-type person = {
-  person_id : person_id;
-  name : string;
-  ~gender : gender list;
-  ?biological_gender
-    <doc text="Biological gender actually used for procreating"> :
-    gender option;
-}
-
-type gender =
-  [
-  | F <doc text="female">
-  | M <doc text="male">
-  ]
-    <doc text="Gender, definition depending on the context">
+type color = [
+ | Black <doc text="Same as {{RGB (0,0,0)}}">
+ | White <doc text="Same as {{RGB (255, 255, 255)}}">
+ | RGB
+     <doc text="Red, green, blue components">
+     of (int * int * int)
+]
 ```
 
-translates using `atdgen -b genealogy.atd`
+translates using `atdgen -t ocamldoc_example.atd`
 into the following OCaml interface
-file `genealogy_b.mli` with ocamldoc-compliant comments:
-...
+file `ocamldoc_example_t.mli` with ocamldoc-compliant comments:
+
+```ocaml
+(* Auto-generated from "ocamldoc_example.atd" *)
+
+
+(** This is the title *)
+
+(**
+  The type of a point. A value [p] can be created as follows:
+  
+{v
+let p = \{ x = 1.2; y = 5.0 \}
+v}
+*)
+type point = {
+  x: float (** The first coordinate *);
+  y: float (** The second coordinate *)
+}
+
+type color = [
+    `Black (** Same as [RGB (0,0,0)] *)
+  | `White (** Same as [RGB (255, 255, 255)] *)
+  | `RGB of (int * int * int) (** Red, green, blue components *)
+]
+```
 
 
 

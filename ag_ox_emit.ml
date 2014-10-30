@@ -242,6 +242,11 @@ end
         write_file (prefix ^ ".mli") mli;
         write_file (prefix ^ ".ml") ml
 
+let is_exportable def =
+  let s = def.def_name in
+  s <> "" && s.[0] <> '_'
+  && def.def_value <> None
+
 let make_record_creator deref x =
   match x.def_value with
       Some (`Record (loc, a, `Record `Record, _)) ->

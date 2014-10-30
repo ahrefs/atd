@@ -122,7 +122,7 @@ val %s_of_string :%s
           full_name
           s;
 
-        if with_create then
+        if with_create && Ag_ox_emit.is_exportable x then
           let create_record_intf, create_record_impl =
             Ag_ox_emit.make_record_creator deref x
           in
@@ -1419,6 +1419,7 @@ let make_ocaml_biniou_impl ~with_create ~original_types buf deref defs =
   if with_create then
     List.iter (
       fun (is_rec, l) ->
+        let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->
             let intf, impl = Ag_ox_emit.make_record_creator deref x in

@@ -196,3 +196,6 @@ type precision = {
   small_2 : float <json precision="2">;
   large_2 : float <json precision="2">;
 }
+
+type 'a generic = { x294623: int; }
+type specialized = string generic

@@ -14,25 +14,25 @@ let name_of_var s = "_" ^ s
 let make_ocaml_validate_intf ~with_create buf deref defs =
   List.iter (
     fun x ->
-      let s = x.def_name in
-      if s <> "" && s.[0] <> '_' && x.def_value <> None then (
-        if with_create then (
-          let create_record_intf, create_record_impl =
-            Ag_ox_emit.make_record_creator deref x
-          in
-          bprintf buf "%s" create_record_intf;
-        );
-
-        let full_name = Ag_ox_emit.get_full_type_name x in
-        let validator_params =
-          String.concat "" (
-            List.map
-              (fun s ->
-                sprintf "\n  (Ag_util.Validation.path -> '%s -> \
-                             Ag_util.Validation.error option) ->" s)
-              x.def_param
-          )
+      if with_create && Ag_ox_emit.is_exportable x then (
+        let create_record_intf, create_record_impl =
+          Ag_ox_emit.make_record_creator deref x
         in
+        bprintf buf "%s" create_record_intf;
+      );
+
+      let full_name = Ag_ox_emit.get_full_type_name x in
+      let validator_params =
+        String.concat "" (
+          List.map
+            (fun s ->
+               sprintf "\n  (Ag_util.Validation.path -> '%s -> \
+                        Ag_util.Validation.error option) ->" s)
+            x.def_param
+        )
+      in
+      let s = x.def_name in
+      if Ag_ox_emit.is_exportable x then (
         bprintf buf "\
 val validate_%s :%s
   Ag_util.Validation.path -> %s -> Ag_util.Validation.error option
@@ -413,6 +413,7 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
   if with_create then
     List.iter (
       fun (is_rec, l) ->
+        let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->
             let intf, impl = Ag_ox_emit.make_record_creator deref x in

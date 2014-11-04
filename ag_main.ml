@@ -71,6 +71,7 @@ let main () =
   let j_preprocess_input = ref None in
   let j_defaults = ref false in
   let unknown_field_handler = ref None in
+  let constr_mismatch_handler = ref None in
   let type_aliases = ref None in
   let name_overlap = ref (get_default_name_overlap ()) in
   let set_opens s =
@@ -193,6 +194,18 @@ let main () =
           instead of simply skipping them.
           See also -j-strict-fields.";
 
+    "-j-strict-constrs",
+    Arg.Unit (
+      fun () ->
+        set_once "constructor mismatch handler" constr_mismatch_handler
+          "!Ag_util.Json.constr_mismatch_handler"
+    ),
+    "
+          Call !Ag_util.Json.constr_mismatch_handler for every mismatched
+          constructor field value and value field constructor in the data
+          structures to output instead of simply serializing them.
+          The initial behavior is to raise an exception.";
+
     "-validate",
     Arg.Unit (fun () ->
                 set_once "output type" mode `Validate),
@@ -273,7 +286,9 @@ Generate OCaml code offering:
 Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
-  if (!std_json || !unknown_field_handler <> None) && !mode = None then
+  if (!std_json
+      || !unknown_field_handler <> None
+      || !constr_mismatch_handler <> None) && !mode = None then
     set_once "output mode" mode `Json;
 
   let mode =
@@ -373,6 +388,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
                 Ag_oj_emit.make_ocaml_files
                   ~std: !std_json
                   ~unknown_field_handler: !unknown_field_handler
+                  ~constr_mismatch_handler: !constr_mismatch_handler
                   ~preprocess_input: !j_preprocess_input
             | `V | `Validate ->
                 Ag_ov_emit.make_ocaml_files

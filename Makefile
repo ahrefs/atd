@@ -280,6 +280,8 @@ clean:
 		test2.ml test2.mli test2j.ml test2j.mli \
 		test3j.mli test3j.ml \
 		test4.mli test4.ml test4j.mli test4j.ml \
+		test5_b.mli test5_b.ml test5_j.mli test5_j.ml \
+		test5_t.mli test5_t.ml \
 		ag_doc_lexer.ml
 	rm -rf odoc testdoc
 	cd manual && $(MAKE) clean

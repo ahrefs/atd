@@ -196,7 +196,7 @@ really-test:
 	  test.atd -o testj
 	./atdgen -std-json -extend Test test.atd -o testjstd
 	./atdgen -json -extend Test2 test2.atd -o test2j
-	./atdgen -json test3j.atd
+	./atdgen -json -j-strict-constrs test3j.atd
 	./atdgen test4.atd
 	./atdgen -json test4.atd -o test4j
 	./atdgen -validate -extend Test test.atd -o testv

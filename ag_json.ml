@@ -10,7 +10,8 @@ type json_list = [ `Array | `Object ]
 type json_variant = { json_cons : string }
 
 type json_field = {
-  json_fname : string;
+  json_fname  : string;
+  json_constr : string option;
   json_unwrapped : bool
 }
 
@@ -73,3 +74,5 @@ let get_json_cons default an =
 let get_json_fname default an =
   Atd_annot.get_field (fun s -> Some s) default ["json"] "name" an
 
+let get_json_constr an =
+  Atd_annot.get_field (fun s -> Some (Some s)) None ["json"] "constr" an

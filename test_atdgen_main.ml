@@ -133,7 +133,7 @@ let test_json_int_ocaml_float_gen of_json to_json kind () =
 
   let l2 = [ 12345678901234567890.; -12345678901234567890. ] in
   let l2' = of_json (to_json l2) in
-  List.map2 (fun x x' -> abs_float (1. -. x /. x') < 1e-15) l2 l2';
+  List.iter2 (fun x x' -> assert (abs_float (1. -. x /. x') < 1e-15)) l2 l2';
 
   expect_error to_json [infinity];
   expect_error to_json [neg_infinity];
@@ -365,6 +365,289 @@ let test_raw_json () =
   let x' = Test3j.t_of_string s in
   check (x = x')
 
+let test_json_constr_mismatch () =
+  section "json constructors mismatch";
+  let x = { Test3j.int_field = 1;
+            string_field = "it's mismatch";
+            tag_field = "a";
+            constr_field = `B 52;
+          }
+  in
+  expect_error Test3j.string_of_constr_record x
+
+let test_json_constr_nullary () =
+  section "json constructors nullary";
+  let x = { Test3j.int_field = 0;
+            string_field = "it's a";
+            tag_field = "a";
+            constr_field = `A;
+          }
+  in
+  let s = Test3j.string_of_constr_record x in
+  let x' = Test3j.constr_record_of_string s in
+  check (x = x')
+
+let test_json_constr_unary () =
+  section "json constructors unary";
+  let x = { Test3j.int_field = 2;
+            string_field = "it's c";
+            tag_field = "c";
+            constr_field = `C "see the sea";
+          }
+  in
+  let s = Test3j.string_of_constr_record x in
+  let x' = Test3j.constr_record_of_string s in
+  check (x = x')
+
+let test_json_constr_implicit () =
+  section "json constructors implicit";
+  let x = {
+    Test3j.implicit_constr_field1 = `A;
+    Test3j.implicit_constr_field2 = `A;
+  } in
+  let s = Test3j.string_of_implicit_constr_record x in
+  let x'= Test3j.implicit_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["implicit_tag_field", `String "a"] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.implicit_constr_field1 = `B 12;
+    Test3j.implicit_constr_field2 = `B 13;
+  } in
+  let s = Test3j.string_of_implicit_constr_record x in
+  let x'= Test3j.implicit_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [
+    "implicit_constr_field1", `Int 12;
+    "implicit_constr_field2", `Int 13;
+    "implicit_tag_field", `String "b";
+  ] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.implicit_constr_field1 = `B 12;
+    Test3j.implicit_constr_field2 = `C "muahaha";
+  } in
+  expect_error Test3j.string_of_implicit_constr_record x
+
+let test_json_constr_tag () =
+  section "json constructors tag roundtrip";
+  let x = { Test3j.tag = `B; constr = `B 6 } in
+  let s = Test3j.string_of_tag_record x in
+  let x'= Test3j.tag_record_of_string s in
+  check (x = x');
+
+  section "json constructors tag repr";
+  let j = `Assoc ["tag", `Variant ("b", None); "constr", `Int 6] in
+  let s = Yojson.Safe.to_string j in
+  let s'= Test3j.string_of_tag_record x in
+  check (s = s');
+
+  (* TODO: should this be an error? *)
+  let j = `Assoc [
+    "constr", `String "what";
+    "tag", `String "a";
+  ] in
+  let s = Yojson.Safe.to_string j in
+  let x = Test3j.tag_record_of_string s in
+  let x'= { Test3j.tag = `A; constr = `A } in
+  check (x = x')
+
+let test_json_constr_multi () =
+  section "json constructors multi";
+  let x = {
+    Test3j.multi_tag = `B;
+    Test3j.first_constr = `B 52;
+    Test3j.second_constr = `B `A;
+  } in
+  let s = Test3j.string_of_multi_constr_record x in
+  let x'= Test3j.multi_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [
+    "multi_tag",     `Variant ("b", None);
+    "first_constr",  `Int 52;
+    "second_constr", `Variant ("a", None);
+  ] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.multi_tag = `C;
+    Test3j.first_constr = `C "hel10";
+    Test3j.second_constr = `B (`C "goodbyte");
+  } in
+  expect_error Test3j.string_of_multi_constr_record x
+
+let test_json_constr_default_tag () =
+  section "json constructors default tag";
+  let x = {
+    Test3j.default_tag = `B;
+    Test3j.default_tag_constr = `B 12;
+  } in
+  let s = Test3j.string_of_default_tag_record x in
+  let x'= Test3j.default_tag_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["default_tag_constr", `Int 12] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.default_tag = `A;
+    Test3j.default_tag_constr = `A;
+  } in
+  let s = Test3j.string_of_default_tag_record x in
+  let x'= Test3j.default_tag_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["default_tag", `Variant ("a",None)] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let j = `Assoc [] in
+  let s = Yojson.Safe.to_string j in
+  expect_error Test3j.default_tag_record_of_string s
+
+let test_json_constr_default_constr () =
+  section "json constructors default constr";
+  let x = {
+    Test3j.default_constr_tag = `B;
+    Test3j.default_constr = `B 12;
+  } in
+  let s = Test3j.string_of_default_constr_record x in
+  let x'= Test3j.default_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["default_constr_tag", `Variant ("b",None)] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.default_constr_tag = `B;
+    Test3j.default_constr = `B 13;
+  } in
+  let s = Test3j.string_of_default_constr_record x in
+  let x'= Test3j.default_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [
+    "default_constr_tag", `Variant ("b",None);
+    "default_constr",     `Int 13;
+  ] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.default_constr_tag = `A;
+    Test3j.default_constr = `A;
+  } in
+  let s = Test3j.string_of_default_constr_record x in
+  let x'= Test3j.default_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["default_constr_tag", `Variant ("a",None)] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let j = `Assoc ["default_constr_tag", `Variant ("c",None)] in
+  let s = Yojson.Safe.to_string j in
+  expect_error Test3j.default_constr_record_of_string s
+
+let test_json_constr_default () =
+  section "json constructors default both";
+  let x = {
+    Test3j.default2_tag = `B;
+    Test3j.default2_tag_constr = `B 12;
+  } in
+  let s = Test3j.string_of_default_record x in
+  let x'= Test3j.default_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [] in
+  let s'= Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.default2_tag = `A;
+    Test3j.default2_tag_constr = `A;
+  } in
+  let s = Test3j.string_of_default_record x in
+  let x'= Test3j.default_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["default2_tag", `Variant ("a",None)] in
+  let s'= Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j.default2_tag = `B;
+    Test3j.default2_tag_constr = `B 0;
+  } in
+  let s = Test3j.string_of_default_record x in
+  let x'= Test3j.default_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["default2_tag_constr", `Int 0] in
+  let s'= Yojson.Safe.to_string j in
+  check (s = s');
+
+  let j = `Assoc ["default2_tag", `Variant ("c",None)] in
+  let s = Yojson.Safe.to_string j in
+  expect_error Test3j.default_record_of_string s
+
+let test_json_constr_default_implicit () =
+  section "json constructors default implicit";
+  let x = {
+    Test3j.def_imp_constr = `B 12;
+  } in
+  let s = Test3j.string_of_default_implicit x in
+  let x'= Test3j.default_implicit_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["tag", `String "b"] in
+  let s'= Yojson.Safe.to_string j in
+  check (s = s');
+
+  let j = `Assoc [] in
+  let s'= Yojson.Safe.to_string j in
+  let x'= Test3j.default_implicit_of_string s' in
+  check (x = x');
+
+  let x = {
+    Test3j.def_imp_constr = `A;
+  } in
+  let s = Test3j.string_of_default_implicit x in
+  let x'= Test3j.default_implicit_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["tag", `String "a"] in
+  let s'= Yojson.Safe.to_string j in
+  check (s = s')
+
+let test_json_constr_chained () =
+  section "json constructors chained";
+  let x = {
+    Test3j.first_tag = `A;
+    Test3j.second_tag = `A (`B 6);
+    Test3j.chained_constr = `A;
+  } in
+  let s = Test3j.string_of_chained_constr_record x in
+  let x'= Test3j.chained_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [
+    "first_tag",      `Variant ("a",None);
+    "second_tag",     `Variant ("b",Some (`Int 6));
+  ] in
+  let s'= Yojson.Safe.to_string j in
+  check (s = s')
+
 let test_wrapping_ints () =
   section "ocaml wrapping - ints";
   let x = Test_lib.Natural.wrap 7 in
@@ -438,6 +721,17 @@ let all_tests = [
   test_json_files;
   test_json_streams;
   test_raw_json;
+  test_json_constr_mismatch;
+  test_json_constr_nullary;
+  test_json_constr_unary;
+  test_json_constr_implicit;
+  test_json_constr_tag;
+  test_json_constr_multi;
+  test_json_constr_default_tag;
+  test_json_constr_default_constr;
+  test_json_constr_default;
+  test_json_constr_default_implicit;
+  test_json_constr_chained;
   test_wrapping_ints;
   test_double_wrapping;
   test_wrapping_with_validation;

@@ -232,7 +232,7 @@ type t = {
 }
 
 let create () =
-  { { _a = None; _b = 42 } with _a = None }
+  { { _a = None; _b = Array.length Sys.argv } with _a = None }
 
 let test () =
   let r = create () in

@@ -244,7 +244,7 @@ let get_fields p a =
         k
   ) (Hashtbl.copy fm) k
   in
-  let a = Array.create (Hashtbl.length fm) (Hashtbl.find fm 0) in
+  let a = Array.make (Hashtbl.length fm) (Hashtbl.find fm 0) in
   Array.iteri (fun n _ -> a.(n) <- Hashtbl.find fm n) a;
   a
 

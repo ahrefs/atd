@@ -743,7 +743,7 @@ let study_record deref fields =
         | None -> init_f
         | Some _constr_i ->
           let oname = field.ocamlf.Ag_ocaml.ocaml_fname in
-          `Block [ (* prepare to defer parsing *)
+          `Inline [ (* prepare to defer parsing *)
             init_f;
             `Line (sprintf "let raw_%s = (" oname);
             `Line "Yojson.init_lexer ~lnum:(-1) ()";

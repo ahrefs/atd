@@ -11,6 +11,32 @@ type t = {
 
 type unixtime_list = int <ocaml repr="float"> list
 
+
+(*** JSON records using one field to indicate the type of other fields ***)
+
+(*
+   Support for the following JSON records:
+   { "type": "integer", data: 123 }    -> { data = `Integer 123 }
+   { "type": "string", data: "abc" }   -> { data = `String "abc" }
+*)
+type simple = {
+  data <json tag_field="type">: integer_or_string;
+    (* JSON object has one extra field "type" that must
+       contain the constructor for the OCaml variant.
+
+       integer_or_string is a variant type, broken into 2 fields in the
+       JSON representation.
+    *)
+}
+
+type integer_or_string = [
+  | Integer <json name="integer"> of int
+  | String <json name="string"> of string
+]
+
+
+(* More complex cases *)
+
 type tag = [
 | A <json name="a">
 | B <json name="b">
@@ -32,51 +58,51 @@ type inter_constr = [
 type constr_record = {
   int_field : int;
   tag_field : string;
-  constr_field <json constr="tag_field"> : constr;
+  constr_field <json tag_field="tag_field"> : constr;
   string_field : string;
 }
 
 type implicit_constr_record = {
-  implicit_constr_field1 <json constr="implicit_tag_field"> : constr;
-  implicit_constr_field2 <json constr="implicit_tag_field"> : constr;
+  implicit_constr_field1 <json tag_field="implicit_tag_field"> : constr;
+  implicit_constr_field2 <json tag_field="implicit_tag_field"> : constr;
 }
 
 type tag_record = {
   tag : tag;
-  constr <json constr="tag"> : constr;
+  constr <json tag_field="tag"> : constr;
 }
 
 type multi_constr_record = {
   multi_tag : tag;
-  first_constr <json constr="multi_tag"> : constr;
-  second_constr <json constr="multi_tag"> : inter_constr;
+  first_constr <json tag_field="multi_tag"> : constr;
+  second_constr <json tag_field="multi_tag"> : inter_constr;
 }
 
 type default_tag_record = {
   ~default_tag <ocaml default="`B"> : tag;
-  default_tag_constr <json constr="default_tag"> : constr;
+  default_tag_constr <json tag_field="default_tag"> : constr;
 }
 
 type default_constr_record = {
   default_constr_tag : tag;
   ~default_constr
   <ocaml default="`B 12">
-  <json constr="default_constr_tag"> : constr;
+  <json tag_field="default_constr_tag"> : constr;
 }
 
 type default_record = {
   ~default2_tag <ocaml default="`B"> : tag;
   ~default2_tag_constr
   <ocaml default="`B 12">
-  <json constr="default2_tag"> : constr;
+  <json tag_field="default2_tag"> : constr;
 }
 
 type default_implicit = {
-  ~def_imp_constr <json constr="tag"> <ocaml default="`B 12"> : constr;
+  ~def_imp_constr <json tag_field="tag"> <ocaml default="`B 12"> : constr;
 }
 
 type chained_constr_record = {
   first_tag : tag;
-  second_tag <json constr="first_tag"> : inter_constr;
-  chained_constr <json constr="second_tag"> : constr;
+  second_tag <json tag_field="first_tag"> : inter_constr;
+  chained_constr <json tag_field="second_tag"> : constr;
 }

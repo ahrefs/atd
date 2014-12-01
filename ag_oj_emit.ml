@@ -194,8 +194,8 @@ let get_fields p a =
     with Not_found -> None
   in
   (* Add implicit fields and index the deconstructed/tag field relations *)
-  let _k = Hashtbl.fold (fun i { jsonf = {Ag_json.json_constr} } k ->
-    match json_constr with
+  let _k = Hashtbl.fold (fun i { jsonf = {Ag_json.json_tag_field} } k ->
+    match json_tag_field with
     | None -> k
     | Some constr ->
       let field = Hashtbl.find fm i in
@@ -216,7 +216,7 @@ let get_fields p a =
         } in
         let jsonf = {
           Ag_json.json_fname = constr;
-          json_constr = None;
+          json_tag_field = None;
           json_unwrapped = false;
         } in
         let synloc = (Lexing.dummy_pos, Lexing.dummy_pos) in
@@ -1249,7 +1249,7 @@ and make_record_reader p type_annot loc a record_kind =
             ]
           in
           let ocaml_fname = ocamlf.Ag_ocaml.ocaml_fname in
-          let expr = match jsonf.Ag_json.json_constr with
+          let expr = match jsonf.Ag_json.json_tag_field with
             | Some _ -> [
                 (* Defer parsing until we have read the whole record including
                    the constructor tag. *)

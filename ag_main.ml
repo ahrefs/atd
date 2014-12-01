@@ -201,9 +201,18 @@ let main () =
           "!Ag_util.Json.constr_mismatch_handler"
     ),
     "
-          Call !Ag_util.Json.constr_mismatch_handler for every mismatched
-          constructor field value and value field constructor in the data
-          structures to output instead of simply serializing them.
+          Given a record type of the form
+          { t: string; v <json tag_field=\"t\">: v },
+          this option allows the user to define a runtime conflict handler.
+          A conflict occurs when trying to serialize an OCaml record
+          such as { t = \"A\"; v = `B } into JSON.
+          A correct record might be { t = \"B\"; v = `B }
+          or { t = \"A\"; v = `A 123 }.
+
+          With this option, !Ag_util.Json.constr_mismatch_handler is called
+          for every mismatched constructor field value and value
+          field constructor in the data structures to output instead
+          of simply serializing them.
           The initial behavior is to raise an exception.";
 
     "-validate",

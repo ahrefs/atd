@@ -151,7 +151,7 @@ and mapping_of_field ocaml_field_prefix = function
       let ocaml_mutable = Ag_ocaml.get_ocaml_mutable an in
       let doc = Ag_doc.get_doc loc an in
       let json_fname = Ag_json.get_json_fname s an in
-      let json_constr = Ag_json.get_json_constr an in
+      let json_tag_field = Ag_json.get_json_tag_field an in
       { f_loc = loc;
         f_name = s;
         f_kind = fk;
@@ -166,7 +166,7 @@ and mapping_of_field ocaml_field_prefix = function
 
         f_brepr = `Field {
           Ag_json.json_fname = json_fname;
-          json_constr = json_constr;
+          json_tag_field = json_tag_field;
           json_unwrapped = json_unwrapped
         };
       }

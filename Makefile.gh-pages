@@ -5,7 +5,7 @@ PAGES = atdgen.html atdgen.css
 
 default:
 	$(MAKE) -C src
-	for x in $(PAGES); cp html/$$x . ; done
+	cd html && cp $(PAGES) ..
 
 clean:
 	$(MAKE) -C src clean

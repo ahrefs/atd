@@ -6,7 +6,7 @@ ifndef BRANCH
   ifneq ($(GITBRANCH),gh-pages)
     BRANCH = master
   else
-    BRANCH= $(GITBRANCH)
+    BRANCH = $(GITBRANCH)
   endif
 endif
 

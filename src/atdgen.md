@@ -62,7 +62,7 @@ Atdgen-json example
 
 ```
 $ atdgen -t example.atd
-$ atdgen -j example.atd
+$ atdgen -j -j-std example.atd
 ```
 
 

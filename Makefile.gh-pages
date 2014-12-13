@@ -1,0 +1,11 @@
+# -*- makefile -*-
+.PHONY: default dev pub clean
+
+PAGES = atdgen.html atdgen.css
+
+default:
+	$(MAKE) -C src
+	for x in $(PAGES); cp html/$$x . ; done
+
+clean:
+	$(MAKE) -C src clean

@@ -1,7 +1,7 @@
 # -*- makefile -*-
 .PHONY: default dev pub clean
 
-PAGES = atdgen.html atdgen.css
+PAGES = index.html atdgen.html atdgen.css
 
 default:
 	$(MAKE) -C src

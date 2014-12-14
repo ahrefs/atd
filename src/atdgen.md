@@ -492,7 +492,9 @@ variants        polymorphic         variants          regular
 
 record          record              object            record
 
-tuple           tuple               array             tuple
+`('a * 'b)`     `('a * 'b)`         array             tuple
+
+`('a)`          `'a`                array             tuple
 -------------------------------------------------------------------------
 
 Notes:

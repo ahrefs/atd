@@ -1,6 +1,5 @@
 % atdgen(1) user manual
-% Martin Jambon
-% September 29, 2014
+% December 12, 2014
 
 Name
 ====

@@ -1387,3 +1387,9 @@ A library named `atdgen` is installed by the standard
 installation process. Only a fraction of it is officially supported
 and documented. It is intended for tool developers. Please refer to
 the comments in the [source code of atdgen](https://github.com/mjambon/atdgen).
+
+
+See also
+========
+
+[atd](atd-syntax)(1)

@@ -3,6 +3,20 @@
 
 [Home](https://mjambon.github.io/atdgen-doc/)
 
+Name
+====
+
+atd - syntax for cross-language **a**djustable **t**ype **d**efinitions
+
+Synopsis
+========
+
+atdcat [_infile_**.atd**] [_options_...]
+
+atdcat **-version**
+
+atdcat **-help**
+
 Introduction
 ============
 
@@ -558,3 +572,9 @@ type node = {
 
 type graph = node shared <share id="1"> list
 ```
+
+
+See also
+========
+
+[atdgen](atdgen)(1)

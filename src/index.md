@@ -6,10 +6,10 @@ while atdj is for Java.
 
 Documentation:
 
-* [atdgen tutorial](atdgen-tutorial)
-* [atdj](https://github.com/esperco/atdj)
+* [atdgen tutorial](tutorial)
 * [atdgen reference manual](atdgen)
 * [atd syntax reference](atd)
+* [atdj project](https://github.com/esperco/atdj)
 
 Development and community:
 

@@ -2,6 +2,7 @@
 .PHONY: default dev pub clean
 
 PAGES = \
+  atd-syntax.html \
   atdgen.css \
   atdgen.html \
   biniou-format.txt \

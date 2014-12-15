@@ -404,7 +404,7 @@ discarding whitespace and comments.
                  | `]` | \str{\{} | `\`}
                  | `<` | `>` &
                  | `;` | `,` | `:` | `*`
-                 | `|` | `=` | `?` | `~` &
+                 | `|` | `=` | `?` | `~`
                  | `type` | `of` | `inherit`
 ---------------- ---------------------------------------- --------------------
 
@@ -484,11 +484,21 @@ Type name          Intended use
 
 `string`           Sequence of bytes or characters
 
-`'a option`        Zero or one element
+`'a option`        Container of zero or one element of type `'a`.
+                   See also `'a nullable`.
 
-`'a list`          Collection or sequence of elements
+`'a list`          Collection or sequence of elements of type `'a`
 
-`'a shared`        Values for which sharing must be preserved
+`'a nullable`      Extend type `'a` with an extra conventional value,
+                   typically called "null". The operation is idempotent,
+                   i.e. `'a nullable` is equivalent to
+                   `'a nullable nullable`.
+
+`'a shared`        Values of type `'a` for which sharing must be preserved
+
+`'a wrap`          Values on which a custom, reversible transformation
+                   may be applied, as specified by
+                   language-specific annotations.
 
 `abstract`         Type defined elsewhere
 ------------------------------------------------------------------------------

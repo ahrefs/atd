@@ -8,7 +8,7 @@ Documentation:
 
 * [atdgen tutorial](tutorial)
 * [atdgen reference manual](atdgen)
-* [atd syntax reference](atd)
+* [atd syntax reference](atd-syntax)
 * [atdj project](https://github.com/esperco/atdj)
 
 Development and community:

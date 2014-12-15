@@ -8,7 +8,7 @@ Currently it provides support for:
 
 
 * [JSON](http://json.org/) serialization and deserialization.
-* [Biniou](http://jambon.com/biniou-format.txt)
+* [Biniou](http://mjambon.com/biniou-format.txt)
   serialization and deserialization.
   Biniou is a binary format extensible like JSON but more compact
   and faster to process.
@@ -29,12 +29,12 @@ which was based on Camlp4:
 * runs fast, keeping build times low.
 * same ATD definitions can be used to generate code other than
   OCaml. See for instance
-  [Atdj](https://github.com/MyLifeLabs/atdj)
+  [atdj](https://github.com/esperco/atdj)
   which generates Java classes for JSON IO.
   Auto-generating GUI widgets from type definitions is another
   popular use of annotated type definitions. The implementation of
   such code generators is facilitated by the
-  [`atd`](http://oss.wink.com/atd/) library.
+  [`atd`](https://github.com/mjambon/atd) library.
 
 
 

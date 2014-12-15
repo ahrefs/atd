@@ -1,6 +1,8 @@
 % atdgen(1) user manual
 % December 12, 2014
 
+[Home](https://mjambon.github.io/atdgen-doc/)
+
 Name
 ====
 

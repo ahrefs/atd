@@ -1,5 +1,7 @@
 % atdgen tutorial
 
+[Home](https://mjambon.github.io/atdgen-doc/)
+
 What is atdgen?
 ===============
 

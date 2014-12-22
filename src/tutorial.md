@@ -1171,6 +1171,7 @@ definitions. The `Atdgen.mk` file contains its own documentation.
 
 Here is a sample `Makefile` that takes advantage of
 [`OCamlMakefile`](http://mmottl.github.io/ocaml-makefile/):
+
 ```
 .PHONY: default
 default: opt

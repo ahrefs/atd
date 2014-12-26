@@ -1241,7 +1241,7 @@ JSON abstract syntax tree (AST), which lets the user inspect it at runtime.
 
 Let's consider a list of JSON objects for which we don't know the type
 definitions, but somehow some other system knows how to deal with such
-data. Let's consider this example of JSON data:
+data. Here is such data:
 
 ```
 [

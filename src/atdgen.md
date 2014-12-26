@@ -1225,7 +1225,7 @@ Value: name of another JSON field which holds the
 
 Semantics: The type definition
 
-```
+```ocaml
 type t = {
   value <json tag_field="kind">: [ A | B <json name="b"> of int ];
 }
@@ -1235,7 +1235,7 @@ covers JSON objects that have an extra field `kind` which holds either
 `"A"` or `"b"`. Valid JSON values of type `t` include
 `{ "kind": "A" }` and `{ "kind": "b", "value": 123 }`.
 
-Available since version 1.5.0.
+Available since atdgen 1.5.0 and yojson 1.2.0.
 
 
 Section '`ocaml_biniou`'

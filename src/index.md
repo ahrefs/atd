@@ -7,7 +7,7 @@ while atdj is for Java.
 Documentation:
 
 * [Adjustable type definitions for data
-  exchange](http://mjambon.com/atd-biniou-intro.html): background and
+  exchange](http://mjambon.com/atd-biniou-intro.html):
   original motivation for the atdgen project
 * [atdgen tutorial](tutorial)
 * [atdgen reference manual](atdgen)

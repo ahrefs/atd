@@ -1221,15 +1221,21 @@ in Biniou mode (`-b`) for the following fields:
 * `t` (see section `ocaml.t`)
 
 
-Section '`ocaml_json`'
-----------------------
+Section '`ocaml_json`' (obsolete)
+---------------------------------
 
 Section `ocaml_json` takes precedence over section `ocaml`
-in JSON mode (`-j`) for the following fields:
+in JSON mode (`-json` or `-j`) for the following fields:
 
 * `predef` (see section `ocaml`, field `predef`)
 * `module` (see section `ocaml`, field `module`)
 * `t` (see section `ocaml`, field `t`)
+
+Please note that `atdgen -json` is now deprecated in favor of `atdgen -j`
+(json) and `atdgen -t` (types). The latter is in charge of producing
+type definitions independently from JSON and will ignore
+`<ocaml_json ...>` annotations, making them almost useless.
+The equivalent `<ocaml ...>` annotations are almost always preferable.
 
 
 Example:

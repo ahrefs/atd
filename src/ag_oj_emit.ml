@@ -1728,8 +1728,7 @@ let make_ocaml_files
     else
       Atd_util.tsort
   in
-  let m1 = tsort m0
-  in
+  let m1 = tsort m0 in
   let defs1 = translate_mapping m1 in
   if not name_overlap then Ag_ox_emit.check defs1;
   let (m1', original_types) =

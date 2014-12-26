@@ -22,7 +22,8 @@ really-test:
 	  test.atd -o testj
 	$(ATDGEN) -std-json -extend Test test.atd -o testjstd
 	$(ATDGEN) -json -extend Test2 test2.atd -o test2j
-	$(ATDGEN) -json -j-strict-constrs test3j.atd
+	$(ATDGEN) -t test3j.atd
+	$(ATDGEN) -j -j-std -j-strict-constrs test3j.atd
 	$(ATDGEN) test4.atd
 	$(ATDGEN) -json test4.atd -o test4j
 	$(ATDGEN) -validate -extend Test test.atd -o testv
@@ -38,8 +39,8 @@ really-test:
 	ocamlfind ocamlopt -c -g test.ml -package atdgen
 	ocamlfind ocamlc -c -g test2.mli -package atdgen
 	ocamlfind ocamlopt -c -g test2.ml -package atdgen
-	ocamlfind ocamlc -c -g test3j.mli -package atdgen
-	ocamlfind ocamlopt -c -g test3j.ml -package atdgen
+	ocamlfind ocamlc -c -g test3j_t.mli test3j_j.mli -package atdgen
+	ocamlfind ocamlopt -c -g test3j_t.ml test3j_j.ml -package atdgen
 	ocamlfind ocamlc -c -g test4.mli -package atdgen
 	ocamlfind ocamlopt -c -g test4.ml -package atdgen
 	ocamlfind ocamlc -c -g testj.mli -package atdgen
@@ -55,11 +56,12 @@ really-test:
 	ocamlfind ocamlopt -c -g test_atdgen_main.ml -package atdgen
 	ocamlfind ocamlopt -o test_atdgen$(EXE) -g -linkpkg -package atdgen \
 		test_lib.cmx test.cmx test2.cmx testj.cmx testjstd.cmx \
-		test2j.cmx test3j.cmx testv.cmx test_atdgen_main.cmx
+		test2j.cmx test3j_t.cmx test3j_j.cmx \
+		testv.cmx test_atdgen_main.cmx
 	mkdir -p testdoc
 	ocamlfind ocamldoc -html -d testdoc -package atdgen \
 		test.mli test2.mli testj.mli test2j.mli \
-		test3j.mli test4.mli test4j.mli testv.mli
+		test3j_t.mli test4.mli test4j.mli testv.mli
 	./test_atdgen
 
 

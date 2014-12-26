@@ -1,8 +1,3 @@
-* Website and documentation refresh: move pages to mjambon.com/atdgen,
-  fix broken links pointing to the defunct oss.wink.com, create single
-  sub-site for everything atdgen-related (biniou, yojson, atd, atdgen,
-  atdgen-omake, atdgen-make, documentation)
-
 * Support JSON object syntax for variants, e.g.:
   type t = A | B of int
   Currently supported: "A"

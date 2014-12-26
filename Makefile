@@ -30,6 +30,6 @@ test:
 	$(MAKE) -C test
 
 clean:
-	rm -f *~
+	rm -f *~ util/*~ example/*~
 	$(MAKE) -C src clean
 	$(MAKE) -C test clean

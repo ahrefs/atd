@@ -106,4 +106,6 @@ clean:
 		test3j.mli test3j.ml \
 		test4.mli test4.ml test4j.mli test4j.ml \
 		test5_b.mli test5_b.ml test5_j.mli test5_j.ml \
-		test5_t.mli test5_t.ml
+		test5_t.mli test5_t.ml testjstd.ml testjstd.mli \
+		testv.ml testv.mli
+	rm -rf testdoc

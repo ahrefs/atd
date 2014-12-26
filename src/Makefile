@@ -177,4 +177,4 @@ atdgen$(EXE): dep $(CMI) $(CMX) ag_main.ml
 clean:
 	rm -f *.o *.a *.cm* *~ *.annot \
           dep atdgen atdgen.exe atdgen.run \
-          ag_doc_lexer.ml
+          ag_doc_lexer.ml ag_version.ml META VERSION

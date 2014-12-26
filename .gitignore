@@ -1,3 +1,7 @@
 *~
 html
 man1
+*.cm[ioxa]
+*.cmx[as]
+*.[oa]
+*.annot

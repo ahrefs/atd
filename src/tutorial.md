@@ -1247,14 +1247,18 @@ data. Let's consider this example of JSON data:
 [
   {
     "label": "flower",
-    "value": { "petals": [12, 45, 83.5555],
-               "water": "a340bcf02e" }
+    "value": {
+      "petals": [12, 45, 83.5555],
+      "water": "a340bcf02e"
+    }
   },
   {
     "label": "flower",
-    "value": { "petals": "undefined",
-               "fold": null,
-               "water": 0 }
+    "value": {
+      "petals": "undefined",
+      "fold": null,
+      "water": 0
+    }
   },
   { "labels": ["fork", "scissors"],
     "value": [ 8, 8 ]
@@ -1267,7 +1271,7 @@ that each object has a `value` field of an unknown type, and may have
 a field `label` or a field `labels` of type `string`:
 
 ```ocaml
-(* File flowers.atd *)
+(* File untypable.atd *)
 
 type json <ocaml module="Yojson.Safe"> = abstract
   (* uses type Yojson.Safe.json,
@@ -1305,10 +1309,10 @@ type obj = {
 Compile the example with:
 
 ```bash
-$ atdgen -t flowers.atd
-$ atdgen -j -j-std flowers.atd
-$ ocamlfind ocamlc -a -o flowers.cma -package atdgen \
-    flowers_t.mli flowers_t.ml flowers_j.mli flowers_j.ml
+$ atdgen -t untypable.atd
+$ atdgen -j -j-std untypable.atd
+$ ocamlfind ocamlc -a -o untypable.cma -package atdgen \
+    untypable_t.mli untypable_t.ml untypable_j.mli untypable_j.ml
 ```
 
 Test the example with your favorite OCaml toplevel (`ocaml` or `utop`):
@@ -1317,35 +1321,39 @@ Test the example with your favorite OCaml toplevel (`ocaml` or `utop`):
 $ utop
 # #use "topfind";;
 # #require "atdgen";;
-# #load "flowers.cma";;
-# Ag_util.Json.from_channel Flowers_t.read_obj_list stdin;;
+# #load "untypable.cma";;
+# Ag_util.Json.from_channel Untypable_j.read_obj_list stdin;;
 [
   {
     "label": "flower",
-    "value": { "petals": [12, 45, 83.5555],
-               "water": "a340bcf02e" }
+    "value": {
+      "petals": [12, 45, 83.5555],
+      "water": "a340bcf02e"
+    }
   },
   {
     "label": "flower",
-    "value": { "petals": "undefined",
-               "fold": null,
-               "water": 0 }
+    "value": {
+      "petals": "undefined",
+      "fold": null,
+      "water": 0
+    }
   },
   { "labels": ["fork", "scissors"],
     "value": [ 8, 8 ]
   }
 ]
-- : Flowers_t.obj_list =
-[{Flowers_t.label = Some "flower"; labels = None;
+- : Untypable_t.obj_list =
+[{Untypable_t.label = Some "flower"; labels = None;
   value =
    `Assoc
      [("petals", `List [`Int 12; `Int 45; `Float 83.5555]);
       ("water", `String "a340bcf02e")]};
- {Flowers_t.label = Some "flower"; labels = None;
+ {Untypable_t.label = Some "flower"; labels = None;
   value =
    `Assoc [("petals", `String "undefined");
            ("fold", `Null);
            ("water", `Int 0)]};
- {Flowers_t.label = None; labels = Some ["fork"; "scissors"];
+ {Untypable_t.label = None; labels = Some ["fork"; "scissors"];
   value = `List [`Int 8; `Int 8]}]
 ```

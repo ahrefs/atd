@@ -1160,7 +1160,7 @@ type fruit = Apple | Orange
 ```
 
 
-#### Shared values ####
+#### Shared values (obsolete) ####
 
 Position: after a `shared` type
 
@@ -1208,6 +1208,34 @@ let validate_point p =
   && (fun x -> x > 0) p.x
   && (fun x -> x > 0) p.y
 ```
+
+Section '`json`'
+----------------
+
+### Field '`tag_field`' ###
+
+This feature makes it possible to read JSON objects representing
+variants that use one field for the tag and another field for the
+untagged value of the specific type associated with that tag.
+
+Position: on a record field name, for a field holding a variant type.
+
+Value: name of another JSON field which holds the
+       string representing the constructor for the variant.
+
+Semantics: The type definition
+
+```
+type t = {
+  value <json tag_field="kind">: [ A | B <json name="b"> of int ];
+}
+```
+
+covers JSON objects that have an extra field `kind` which holds either
+`"A"` or `"b"`. Valid JSON values of type `t` include
+`{ "kind": "A" }` and `{ "kind": "b", "value": 123 }`.
+
+Available since version 1.5.0.
 
 
 Section '`ocaml_biniou`'

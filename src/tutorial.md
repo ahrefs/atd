@@ -1207,29 +1207,8 @@ and options which are documented in `OCamlMakefile`'s README.
 
 ### Ocamlbuild ###
 
-Rule to add in `myocamlbuild.ml`:
-
-```
-let _ = dispatch begin function
-  | After_rules -> rule "atdgen: .atd -> _t.ml*, _j.ml*"
-      ~prods:["%_t.ml";"%_t.mli";"%_j.ml";"%_j.mli";"%_v.ml";"%_v.mli";]
-      ~dep:"%.atd"
-      (fun env build ->
-        let atdgen = "atdgen" in
-        Seq [
-          Cmd (S [A atdgen; A "-t"; P (env "%.atd")]);
-          Cmd (S [A atdgen; A "-j"; A "-j-std"; P (env "%.atd")]);
-          Cmd (S [A atdgen; A "-v"; P (env "%.atd")]);
-        ]
-      );
-end
-```
-
-Flag to add in `_tags` file:
-
-```
-<*.{ml,mli,byte,native}>:package(atdgen),package(biniou)
-```
+A plugin for Ocamlbuild is available at
+https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml
 
 
 Dealing with untypable JSON

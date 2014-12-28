@@ -1207,8 +1207,7 @@ and options which are documented in `OCamlMakefile`'s README.
 
 ### Ocamlbuild ###
 
-A plugin for Ocamlbuild is available at
-https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml
+There is an [atdgen plugin for ocamlbuild](https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml).
 
 
 Dealing with untypable JSON

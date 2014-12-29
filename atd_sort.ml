@@ -5,6 +5,13 @@
    C --> D        gives: [A] [B C] [D]
    B --> C
    C --> B
+
+   The complexity of this algorithm is in O(N^2), although it is plenty
+   fast for the application.
+
+   TODO: use the Kosaraju–Sharir algorithm which is simpler and has a linear
+   complexity. A good description of the algorithm is given here:
+   http://scienceblogs.com/goodmath/2007/10/30/computing-strongly-connected-c/
 *)
 
 open Printf

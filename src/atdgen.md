@@ -378,8 +378,8 @@ $ atdgen -v example.atd
 Input file `example.atd`:
 
 ```ocaml
-type month = int <ocaml validator="fun x -> x >= 1 && x <= 12">
-type day = int <ocaml validator="fun x -> x >= 1 && x <= 31">
+type month = int <ocaml valid="fun x -> x >= 1 && x <= 12">
+type day = int <ocaml valid="fun x -> x >= 1 && x <= 31">
 
 type date = {
   year : int;
@@ -1167,7 +1167,9 @@ Position: after a `shared` type
 This feature is obsolete and was last supported by atdgen 1.3.1.
 
 
-### Field '`validator`' ###
+### Field '`valid`' ###
+
+Since atdgen 1.6.0.
 
 Position: after any type expression except type variables
 
@@ -1178,12 +1180,12 @@ Semantics: `atdgen -v` produces for each type named
 _t_ a function `validate_`_t_:
 
 ```ocaml
-val validate_t : t -> bool
+val validate_t : Ag_util.Validation.path -> t -> Ag_util.Validation.error option
 ```
 
-Such a function returns true if and only if the value and all of its
+Such a function returns `None` if and only if the value and all of its
 subnodes pass all the validators specified by annotations of the form
-`<ocaml validator="...">`.
+`<ocaml validator="...">` or `<ocaml valid="...">` (at most one per node).
 
 Example:
 
@@ -1195,19 +1197,92 @@ type point = {
   y : positive;
   z : int;
 }
+  <ocaml valid="Point.validate">
+  (* Some validating function from a user-defined module Point *)
+```
+
+The generated `validate_point` function calls the validator
+for the containing object first (`Point.validate`) and continues on
+its fields `x` then `y` until an error is returned.
+
+```ocaml
+match validate_point [] { x = 1; y = 0; z = 1 } with
+| None -> ()
+| Some e ->
+    Printf.eprintf "Error: %s\n%!"
+      (Ag_util.Validation.string_of_error e)
+```
+
+The above code prints the following error message:
+
+```
+Error: Validation error; path = <root>.y
+```
+
+In order to customize the error message and print the faulty value,
+use `validator` instead of `valid`, as described next.
+
+### Field '`validator`' ###
+
+This is a variant of the `valid` annotation that allows
+full control over the error message that gets generated in case of
+an error.
+
+Position: after any type expression except type variables
+
+Values: OCaml function that takes the path in current JSON structure
+and the object to validate, and returns an optional error.
+
+Semantics: `atdgen -v` produces for each type named
+_t_ a function `validate_`_t_:
+
+```ocaml
+val validate_t : Ag_util.Validation.path -> t -> Ag_util.Validation.error option
+```
+
+Such a function returns `None` if and only if the value and all of its
+subnodes pass all the validators specified by annotations of the form
+`<ocaml validator="...">` or `<ocaml valid="...">` (at most one per node).
+
+Example:
+
+```ocaml
+type positive = int <ocaml validator="
+  fun path x ->
+    if x > 0 then None
+    else
+      Some (
+        Ag_util.Validation.error
+          ~msg: (\"Not a positive integer: \" ^ string_of_int x)
+          path
+      )
+">
+
+type point = {
+  x : positive;
+  y : positive;
+  z : int;
+}
   <ocaml validator="Point.validate">
   (* Some validating function from a user-defined module Point *)
 ```
 
-The generated `validate_point` function is equivalent to the
-following:
+The following user code
 
 ```ocaml
-let validate_point p =
-  Point.validate p
-  && (fun x -> x > 0) p.x
-  && (fun x -> x > 0) p.y
+match Toto_v.validate_point [] { x = 1; y = 0; z = 1 } with
+| None -> ()
+| Some e ->
+    Printf.eprintf "Error: %s\n%!"
+      (Ag_util.Validation.string_of_error e)
 ```
+
+results in printing:
+
+```
+Error: Validation error: Not a positive integer: 0; path = <root>.y
+```
+
 
 Section '`json`'
 ----------------

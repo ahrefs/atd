@@ -2,6 +2,8 @@
   Mapping from ATD to "validate"
 *)
 
+open Printf
+
 type validate_repr = (string option * bool)
     (* (opt_v, b)
        is obtained by analyzing all available type definitions.
@@ -20,7 +22,25 @@ type validate_repr = (string option * bool)
                                      in addition to scanning sub-fields
     *)
 
-let get_validator an =
-  Atd_annot.get_field (fun s -> Some (Some s)) None
-    ["ocaml"] "validator" an
+let make_full_validator s =
+  sprintf "\
+    fun path x -> \
+      if ( %s ) x then None \
+      else Some (Ag_util.Validation.error path)"
+    s
 
+let get_validator an =
+  let full =
+    Atd_annot.get_field (fun s -> Some (Some s)) None
+      ["ocaml"] "validator" an
+  in
+  match full with
+  | Some _ -> full
+  | None ->
+      let shorthand =
+        Atd_annot.get_field (fun s -> Some (Some s)) None
+          ["ocaml"] "valid" an
+      in
+      match shorthand with
+      | None -> None
+      | Some s -> Some (make_full_validator s)

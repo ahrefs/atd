@@ -36,6 +36,8 @@ type p =
            `A -> Some (Ag_util.Validation.error path)
          | _ -> None">
 
+type star_rating = int <ocaml valid="fun x -> x >= 1 && x <= 5">
+
 type p'' = int p'
 
 type 'a p' = [ A | Bb of 'a p' | Ccccc of 'a ] <ocaml repr="classic">

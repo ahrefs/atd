@@ -1254,8 +1254,9 @@ and make_record_reader p type_annot loc a record_kind =
                 (* Defer parsing until we have read the whole record including
                    the constructor tag. *)
               `Line (sprintf "(let loc = raw_%s in" ocaml_fname);
+              `Line "let cnum = lb.Lexing.lex_curr_pos in";
               `Line "loc.Yojson.lnum <- p.Yojson.lnum;";
-              `Line "loc.Yojson.bol <- p.Yojson.bol;";
+              `Line "loc.Yojson.bol <- p.Yojson.bol - cnum;";
               `Line "loc.Yojson.fname <- p.Yojson.fname;";
               `Line "Bi_outbuf.clear p.Yojson.buf;";
               `Line "Yojson.Safe.buffer_json p lb;";

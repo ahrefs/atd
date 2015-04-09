@@ -1,0 +1,4 @@
+bin: [
+  "src/atdgen.run"
+  "src/atdgen"
+]

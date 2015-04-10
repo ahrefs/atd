@@ -566,7 +566,7 @@ based on user-given validators specified only for certain types.
 A simple example is:
 
 ```ocaml
-type t = string <ocaml validator="fun s -> String.length s >= 8"> option
+type t = string <ocaml valid="fun s -> String.length s >= 8"> option
 ```
 
 `atdgen -v` will produce something equivalent to the following
@@ -604,20 +604,20 @@ In terms of OCaml modules we have:
 Type definitions are placed in `resume.atd`:
 
 ```ocaml
-type text = string <ocaml validator="Resume_util.validate_some_text">
+type text = string <ocaml valid="Resume_util.validate_some_text">
 
 type date = {
   year : int;
   month : int;
   day : int;
-} <ocaml validator="Resume_util.validate_date">
+} <ocaml valid="Resume_util.validate_date">
 
 type job = {
   company : text;
   title : text;
   start_date : date;
   ?end_date : date option;
-} <ocaml validator="Resume_util.validate_job">
+} <ocaml valid="Resume_util.validate_job">
 
 type work_experience = job list
 ```
@@ -850,15 +850,15 @@ type config = {
   ?description : string option;
   ~timeout <ocaml default="10"> : int;
   ~credentials : param list
-    <ocaml validator="fun l ->
-                        l <> [] || failwith \"missing credentials\"">;
+    <ocaml valid="fun l ->
+                    l <> [] || failwith \"missing credentials\"">;
 }
 
 type param = {
   name : string
-    <ocaml validator="fun s -> s <> \"\"">;
+    <ocaml valid="fun s -> s <> \"\"">;
   key : string
-    <ocaml validator="fun s -> String.length s = 16">;
+    <ocaml valid="fun s -> String.length s = 16">;
 }
 ```
 
@@ -878,15 +878,15 @@ type config = {
   ?description : string option;
   ~timeout <ocaml default="10"> : int;
   ~credentials : param list
-    <ocaml validator="fun l ->
-                        l <> [] || failwith \"missing credentials\"">;
+    <ocaml valid="fun l ->
+                    l <> [] || failwith \"missing credentials\"">;
 }
 
 type param = {
   name : string
-    <ocaml validator="fun s -> s <> \"\"">;
+    <ocaml valid="fun s -> s <> \"\"">;
   key : string
-    <ocaml validator="fun s -> String.length s = 16">;
+    <ocaml valid="fun s -> String.length s = 16">;
 }
 
 $ cat sample-config.json
@@ -999,7 +999,7 @@ let validate fname =
     try
       (* Read config data structure from JSON file *)
       let x = Ag_util.Json.from_file Config_j.read_config fname in
-      (* Call the validators specified by <ocaml validator=...> *)
+      (* Call the validators specified by <ocaml valid=...> *)
       if not (Config_v.validate_config x) then
         failwith "Some fields are invalid"
       else

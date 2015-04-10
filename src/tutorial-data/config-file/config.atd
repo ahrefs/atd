@@ -3,13 +3,13 @@ type config = {
   ?description : string option;
   ~timeout <ocaml default="10"> : int;
   ~credentials : param list
-    <ocaml validator="fun l ->
-                        l <> [] || failwith \"missing credentials\"">;
+    <ocaml valid="fun l ->
+                    l <> [] || failwith \"missing credentials\"">;
 }
 
 type param = {
   name : string
-    <ocaml validator="fun s -> s <> \"\"">;
+    <ocaml valid="fun s -> s <> \"\"">;
   key : string
-    <ocaml validator="fun s -> String.length s = 16">;
+    <ocaml valid="fun s -> String.length s = 16">;
 }

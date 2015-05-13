@@ -113,16 +113,25 @@ val %s_of_string :%s
   )
     (flatten defs)
 
+let is_json_string deref x =
+  (*
+    Calling 'unwrap' allows us to ignore 'wrap' constructors
+    and determine that the JSON representation is a string.
+    This assumes that no '<json>' annotation imposes
+    another representation for the JSON string.
+  *)
+  match Ag_mapping.unwrap deref x with
+  | `String _ -> true
+  | _ -> false (* or maybe we just don't know *)
+
 let get_assoc_type deref loc x =
   match deref x with
-      `Tuple (loc2, [| k; v |], `Tuple, `Tuple) ->
-        (match deref k.cel_value with
-             `String _ -> ()
-           | _ ->
-               error loc "Due to <json repr=\"object\"> keys must be strings");
-        v.cel_value
-    | _ ->
-        error loc "Expected due to <json repr=\"object\">: (string * _) list"
+  | `Tuple (loc2, [| k; v |], `Tuple, `Tuple) ->
+      if not (is_json_string deref k.cel_value) then
+        error loc "Due to <json repr=\"object\"> keys must be strings";
+      (k.cel_value, v.cel_value)
+  | _ ->
+      error loc "Expected due to <json repr=\"object\">: (string * _) list"
 
 
 let nth name i len =
@@ -515,7 +524,7 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
                ]
 
            | `Object ->
-               let x = get_assoc_type p.deref loc x in
+               let k, v = get_assoc_type p.deref loc x in
                let write =
                  match o with
                      `List -> "Ag_oj_run.write_assoc_list ("
@@ -523,7 +532,9 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
                in
                [
                  `Line write;
-                 `Block (make_writer p x);
+                 `Block (make_writer p k);
+                 `Line ") (";
+                 `Block (make_writer p v);
                  `Line ")";
                ]
         )
@@ -951,7 +962,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
                ]
 
            | `Object ->
-               let x = get_assoc_type p.deref loc x in
+               let k, v = get_assoc_type p.deref loc x in
                let read =
                  match o with
                      `List -> "Ag_oj_run.read_assoc_list ("
@@ -959,7 +970,9 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
                in
                [
                  `Line read;
-                 `Block (make_reader p None x);
+                 `Block (make_reader p None k);
+                 `Line ") (";
+                 `Block (make_reader p None v);
                  `Line ")";
                ]
         )

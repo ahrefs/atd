@@ -181,3 +181,30 @@ let make_deref
       Env.empty (flatten l) in
 
   fun x -> deref_expr defs [] x
+
+(*
+   Resolve names and unwrap `wrap` constructs
+   (discarding annotations along the way)
+*)
+let rec unwrap (deref: ('a, 'b) mapping -> ('a, 'b) mapping) x =
+  match deref x with
+  | `Wrap (loc, x, a, b) -> unwrap deref x
+  | x -> x
+
+(* This is for debugging *)
+let constructor : ('a, 'b) mapping -> string = function
+  | `Unit _ -> "Unit"
+  | `Bool _ -> "Bool"
+  | `Int _ -> "Int"
+  | `Float _ -> "Float"
+  | `String _ -> "String"
+  | `Sum _ -> "Sum"
+  | `Record _ -> "Record"
+  | `Tuple _ -> "Tuple"
+  | `List _ -> "List"
+  | `Option _ -> "Option"
+  | `Nullable _ -> "Nullable"
+  | `Wrap _ -> "Wrap"
+  | `Name (loc, name, _, _, _) -> "Name " ^ name
+  | `External _ -> "External"
+  | `Tvar _ -> "Tvar"

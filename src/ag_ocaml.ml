@@ -412,6 +412,8 @@ let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
         `Name ("option", [ocaml_of_expr_mapping x])
     | `Nullable (loc, x, `Nullable, _) ->
         `Name ("option", [ocaml_of_expr_mapping x])
+    | `Wrap _ ->
+        assert false
     | `Name (loc, s, l, _, _) ->
         `Name (s, List.map ocaml_of_expr_mapping l)
     | `Tvar (loc, s) ->

@@ -57,21 +57,21 @@ let write_array write_item ob a =
   array_iter write_item write_comma ob a;
   Bi_outbuf.add_char ob ']'
 
-let write_assoc_list write_item ob l =
+let write_assoc_list write_key write_item ob l =
   Bi_outbuf.add_char ob '{';
   list_iter (
     fun ob (k, v) ->
-      Yojson.Safe.write_string ob k;
+      write_key ob k;
       Bi_outbuf.add_char ob ':';
       write_item ob v
   ) write_comma ob l;
   Bi_outbuf.add_char ob '}'
 
-let write_assoc_array write_item ob l =
+let write_assoc_array write_key write_item ob l =
   Bi_outbuf.add_char ob '{';
   array_iter (
     fun ob (k, v) ->
-      Yojson.Safe.write_string ob k;
+      write_key ob k;
       Bi_outbuf.add_char ob ':';
       write_item ob v
   ) write_comma ob l;
@@ -160,13 +160,13 @@ let read_array read_item p lb =
   Yojson.Safe.read_space p lb;
   Yojson.Safe.read_array read_item p lb
 
-let read_assoc_list_rev read_item p lb =
+let read_assoc_list_rev read_key read_item p lb =
   Yojson.Safe.read_space p lb;
   let read acc k p lb = (k, read_item p lb) :: acc in
-  Yojson.Safe.read_fields read [] p lb
+  Yojson.Safe.read_abstract_fields read_key read [] p lb
 
-let read_assoc_list read_item p lb =
-  List.rev (read_assoc_list_rev read_item p lb)
+let read_assoc_list read_key read_item p lb =
+  List.rev (read_assoc_list_rev read_key read_item p lb)
 
 let array_of_rev_list l =
   match l with
@@ -181,8 +181,8 @@ let array_of_rev_list l =
         done;
         a
 
-let read_assoc_array read_item p lb =
-  array_of_rev_list (read_assoc_list_rev read_item p lb)
+let read_assoc_array read_key read_item p lb =
+  array_of_rev_list (read_assoc_list_rev read_key read_item p lb)
 
 let read_until_field_value p lb =
   Yojson.Safe.read_space p lb;

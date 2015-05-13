@@ -183,6 +183,8 @@ type id = string <ocaml validator="fun path x -> assert false"> wrap
                          `Id \"\" -> failwith \"empty\"
                        | _ -> None">
 
+type json_map = (id * int) list <json repr="object">
+
 type natural = int wrap <ocaml module="Test_lib.Natural">
 type even_natural = natural wrap <ocaml module="Test_lib.Even_natural">
 

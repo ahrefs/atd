@@ -744,12 +744,6 @@ let format_module_items is_rec (l : ocaml_module_body) =
           List.map (fun x -> format_module_item false x) l
     | [] -> []
 
-let format_module_body is_rec (l : ocaml_module_body) =
-  List (
-    ("", "", "", rlist),
-    format_module_items is_rec l
-  )
-
 let format_module_bodies (l : (bool * ocaml_module_body) list) =
   List.flatten (List.map (fun (is_rec, x) -> format_module_items is_rec x) l)
 

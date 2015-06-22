@@ -30,6 +30,7 @@ really-test:
 	$(ATDGEN) -o-name-overlap -t test5.atd
 	$(ATDGEN) -o-name-overlap -j test5.atd
 	$(ATDGEN) -o-name-overlap -b test5.atd
+	$(ATDGEN) -t test_type_conv.atd -type-conv sexp -open "Sexplib.Std"
 	ocamlfind ocamlc -c -package atdgen \
 		test5_t.mli test5_t.ml test5_j.mli test5_j.ml
 	ocamlfind ocamlc -c -package atdgen \
@@ -64,6 +65,20 @@ really-test:
 		test3j_t.mli test4.mli test4j.mli testv.mli
 	./test_atdgen
 
+.PHONY: test-all
+test-all: really-test
+	ocamlfind ocamlc -c -g -syntax camlp4o -package camlp4 \
+	  -package sexplib -package sexplib.syntax \
+	  test_type_conv_t.mli
+	ocamlfind ocamlopt -c -g -syntax camlp4o -package camlp4 \
+	  -package sexplib -package sexplib.syntax \
+	  test_type_conv_t.ml
+	ocamlfind ocamlopt -c -g test_atdgen_type_conv.ml -package atdgen -package sexplib
+	ocamlfind ocamlopt -o test_atdgen_type_conv$(EXE) -g -linkpkg \
+	  -syntax camlp4o -package camlp4 \
+	  -package sexplib -package sexplib.syntax \
+	  test_type_conv_t.cmx test_atdgen_type_conv.cmx
+	./test_atdgen_type_conv
 
 # Benchmarking and more testing
 

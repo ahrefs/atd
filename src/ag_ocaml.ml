@@ -1,3 +1,4 @@
+
 (*
   Translation from ATD types into OCaml types and pretty-printing.
 
@@ -596,7 +597,13 @@ let append_ocamldoc_comment x doc =
         let comment = make_ocamldoc_comment y in
         Label ((x, label), comment)
 
-let rec format_module_item
+let format_type_conv_node node = function
+  | [] -> node
+  | converters ->
+    let converters = "with " ^ (String.concat ", " converters) in
+    Label ((node, label), make_atom converters)
+
+let rec format_module_item type_convs
     is_first (`Type def : ocaml_module_item) =
   let type_ = if is_first then "type" else "and" in
   let s, param = def.o_def_name in
@@ -639,7 +646,7 @@ let rec format_module_item
             format_type_expr t
           )
   in
-  prepend_ocamldoc_comment doc part123
+  format_type_conv_node (prepend_ocamldoc_comment doc part123) type_convs
 
 
 and prepend_type_param l tl =
@@ -737,21 +744,15 @@ and format_variant kind (s, o, doc) =
   in
   append_ocamldoc_comment variant doc
 
-let format_module_items is_rec (l : ocaml_module_body) =
+let format_module_items type_convs is_rec (l : ocaml_module_body) =
   match l with
       x :: l ->
-        format_module_item true x ::
-          List.map (fun x -> format_module_item false x) l
+        format_module_item type_convs true x ::
+          List.map (fun x -> format_module_item type_convs false x) l
     | [] -> []
 
-let format_module_body is_rec (l : ocaml_module_body) =
-  List (
-    ("", "", "", rlist),
-    format_module_items is_rec l
-  )
-
-let format_module_bodies (l : (bool * ocaml_module_body) list) =
-  List.flatten (List.map (fun (is_rec, x) -> format_module_items is_rec x) l)
+let format_module_bodies type_conv (l : (bool * ocaml_module_body) list) =
+  List.flatten (List.map (fun (is_rec, x) -> format_module_items type_conv is_rec x) l)
 
 let format_head (loc, an) =
   match Ag_doc.get_doc loc an with
@@ -765,14 +766,14 @@ let format_all l =
 let ocaml_of_expr x : string =
   Easy_format.Pretty.to_string (format_type_expr x)
 
-let ocaml_of_atd ~target ~type_aliases
+let ocaml_of_atd ?(type_convs=[]) ~target ~type_aliases
     (head, (l : (bool * module_body) list)) : string =
   let head = format_head head in
   let bodies =
     List.map (fun (is_rec, m) ->
                 (is_rec, map_module ~target ~type_aliases m)) l
   in
-  let body = format_module_bodies bodies in
+  let body = format_module_bodies type_convs bodies in
   let x = format_all (head @ body) in
   Easy_format.Pretty.to_string x
 

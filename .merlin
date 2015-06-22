@@ -1,4 +1,4 @@
 PKG yojson atd
 
-B .
-S .
+B ./**
+S ./**

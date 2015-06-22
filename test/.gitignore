@@ -31,3 +31,6 @@ testjstd.ml
 testjstd.mli
 testv.ml
 testv.mli
+test3j_*.ml*
+test_type_conv_*.ml*
+test_atdgen_type_conv

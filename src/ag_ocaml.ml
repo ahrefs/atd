@@ -596,6 +596,12 @@ let append_ocamldoc_comment x doc =
         let comment = make_ocamldoc_comment y in
         Label ((x, label), comment)
 
+let format_type_conv_node node = function
+  | [] -> node
+  | converters ->
+    let converters = "with " ^ (String.concat ", " converters) in
+    Label ((node, label), make_atom converters)
+
 let rec format_module_item
     is_first (`Type def : ocaml_module_item) =
   let type_ = if is_first then "type" else "and" in

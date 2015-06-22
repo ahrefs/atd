@@ -29,6 +29,9 @@ reinstall:
 test:
 	$(MAKE) -C test
 
+test-all:
+	$(MAKE) -C test test-all
+
 clean:
 	rm -f *~ util/*~ example/*~
 	$(MAKE) -C src clean

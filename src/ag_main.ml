@@ -78,7 +78,11 @@ let main () =
     let l = Str.split (Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
   in
+  let type_convs = ref [] in
   let options = [
+    "-type-conv", Arg.String (fun s ->
+      type_convs := Str.split (Str.regexp ",") s
+    ), "Type conv stuff";
     "-t", Arg.Unit (fun () ->
                       set_once "output type" mode `T;
                       set_once "no function definitions" with_fundefs false),
@@ -406,6 +410,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
         let with_default default = function None -> default | Some x -> x in
 
         make_ocaml_files
+          ~type_convs: !type_convs
           ~opens
           ~with_typedefs: (with_default true !with_typedefs)
           ~with_create

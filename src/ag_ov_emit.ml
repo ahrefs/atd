@@ -472,6 +472,7 @@ let make_ocaml_files
     ~type_aliases
     ~force_defaults
     ~name_overlap
+    ~type_convs
     atd_file out =
   let ((head, m0), _) =
     match atd_file with
@@ -504,7 +505,7 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ag_ocaml.ocaml_of_atd ~target:`Validate ~type_aliases (head, m1) in
+    Ag_ocaml.ocaml_of_atd ~type_convs ~target:`Validate ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
   let header =
     let src =

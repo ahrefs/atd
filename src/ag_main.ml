@@ -81,8 +81,12 @@ let main () =
   let type_convs = ref [] in
   let options = [
     "-type-conv", Arg.String (fun s ->
-      type_convs := Str.split (Str.regexp ",") s
-    ), "Type conv stuff";
+      type_convs := Str.split (Str.regexp ",") s),
+    "
+    GEN1,GEN2,...
+         Insert 'with GEN1, GEN2, ...' after OCaml type definitions for the
+         type-conv preprocessor
+    ";
     "-t", Arg.Unit (fun () ->
                       set_once "output type" mode `T;
                       set_once "no function definitions" with_fundefs false),

@@ -17,6 +17,9 @@ all:
 opt:
 	$(MAKE) -C src opt
 
+findlib-install:
+	$(MAKE) -C src findlib-install
+
 install:
 	$(MAKE) -C src install
 

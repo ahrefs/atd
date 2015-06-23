@@ -1,4 +1,4 @@
-VERSION = 1.6.1
+VERSION = 1.7.0
 ifeq "$(shell ocamlc -config |grep os_type)" "os_type: Win32"
 EXE=.exe
 else
@@ -102,7 +102,7 @@ all: pp
 opt: pp
 	$(MAKE) atdgen.cmxa $(CMXS) atdgen$(EXE)
 
-install: META
+install: META findlib-install
 	test ! -f atdgen.run || cp atdgen.run $(BINDIR)/
 	test ! -f atdgen.run.exe || cp atdgen.run.exe $(BINDIR)/
 	test ! -f atdgen || cp atdgen $(BINDIR)/
@@ -117,6 +117,11 @@ uninstall:
 	test ! -f $(BINDIR)/atdgen || rm $(BINDIR)/atdgen
 	test ! -f $(BINDIR)/atdgen.exe || rm $(BINDIR)/atdgen.exe
 	ocamlfind remove atdgen
+
+findlib-install:
+	ocamlfind install atdgen META \
+		 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) \
+			atdgen.cma atdgen.a atdgen.cmxa
 
 reinstall:
 	$(MAKE) uninstall || :

@@ -1,10 +1,20 @@
-opam-version: "1"
+opam-version: "1.2"
 maintainer: "martin@mjambon.com"
+authors: ["Martin Jambon"]
+
 homepage: "https://github.com/mjambon/atdgen"
-build: [
+bug-reports: "https://github.com/mjambon/atdgen/issues"
+dev-repo: "https://github.com/mjambon/atdgen.git"
+
+build: [ [make] ]
+
+install: [make "findlib-install"]
+
+build-test: [
   [make]
-  [make "install" "BINDIR=%{bin}%"]
+  [make "test"]
 ]
+
 remove: [
     ["ocamlfind" "remove" "atdgen"]
 ]

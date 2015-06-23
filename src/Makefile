@@ -96,7 +96,7 @@ default: all opt
 pp: VERSION META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
 	$(MAKE) dep
 
-.PHONY: all opt install uninstall reinstall
+.PHONY: all opt install uninstall reinstall findlib-install
 all: pp
 	$(MAKE) atdgen.cma atdgen.run
 opt: pp

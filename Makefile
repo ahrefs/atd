@@ -8,7 +8,7 @@ ifndef BINDIR
   export BINDIR
 endif
 
-.PHONY: default test all opt install uninstall reinstall clean
+.PHONY: default test all opt install uninstall reinstall clean findlib-install
 default:
 	$(MAKE) -C src
 

@@ -107,9 +107,6 @@ install: META findlib-install
 	test ! -f atdgen.run.exe || cp atdgen.run.exe $(BINDIR)/
 	test ! -f atdgen || cp atdgen $(BINDIR)/
 	test ! -f atdgen.exe || cp atdgen.exe $(BINDIR)/
-	ocamlfind install atdgen META \
-		 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) \
-			atdgen.cma atdgen.a atdgen.cmxa
 
 uninstall:
 	test ! -f $(BINDIR)/atdgen.run || rm $(BINDIR)/atdgen.run

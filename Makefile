@@ -8,7 +8,7 @@ ifndef BINDIR
   export BINDIR
 endif
 
-.PHONY: default test all opt install uninstall reinstall clean findlib-install
+.PHONY: default test all opt install uninstall reinstall clean
 default:
 	$(MAKE) -C src
 
@@ -17,8 +17,19 @@ all:
 opt:
 	$(MAKE) -C src opt
 
+.PHONY: findlib-install findlib-uninstall
 findlib-install:
 	$(MAKE) -C src findlib-install
+
+findlib-uninstall:
+	$(MAKE) -C src findlib-uninstall
+
+.PHONY: exe-install exe-uninstall
+exe-install:
+	$(MAKE) -C src exe-install
+
+exe-uninstall:
+	$(MAKE) -C src exe-uninstall
 
 install:
 	$(MAKE) -C src install

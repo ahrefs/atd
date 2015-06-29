@@ -96,27 +96,38 @@ default: all opt
 pp: VERSION META $(OCAMLLEX_ML) $(OCAMLYACC_MLI) $(OCAMLYACC_ML)
 	$(MAKE) dep
 
-.PHONY: all opt install uninstall reinstall
+.PHONY: all opt
 all: pp
 	$(MAKE) atdgen.cma atdgen.run
 opt: pp
 	$(MAKE) atdgen.cmxa $(CMXS) atdgen$(EXE)
 
-install: META
+.PHONY: exe-install exe-uninstall
+exe-install:
 	test ! -f atdgen.run || cp atdgen.run $(BINDIR)/
 	test ! -f atdgen.run.exe || cp atdgen.run.exe $(BINDIR)/
 	test ! -f atdgen || cp atdgen $(BINDIR)/
 	test ! -f atdgen.exe || cp atdgen.exe $(BINDIR)/
-	ocamlfind install atdgen META \
-		 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) \
-			atdgen.cma atdgen.a atdgen.cmxa
 
-uninstall:
+exe-uninstall:
 	test ! -f $(BINDIR)/atdgen.run || rm $(BINDIR)/atdgen.run
 	test ! -f $(BINDIR)/atdgen.run.exe || rm $(BINDIR)/atdgen.run.exe
 	test ! -f $(BINDIR)/atdgen || rm $(BINDIR)/atdgen
 	test ! -f $(BINDIR)/atdgen.exe || rm $(BINDIR)/atdgen.exe
+
+.PHONY: findlib-install findlib-uninstall
+findlib-uninstall:
 	ocamlfind remove atdgen
+
+findlib-install: META
+	ocamlfind install atdgen META \
+		 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) \
+			atdgen.cma atdgen.a atdgen.cmxa
+
+.PHONY: install uninstall reinstall
+uninstall: findlib-uninstall exe-uninstall
+
+install: findlib-install exe-install
 
 reinstall:
 	$(MAKE) uninstall || :

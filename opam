@@ -22,5 +22,5 @@ depends: [
   "ocamlfind"
   "atd" {>= "1.1.0"}
   "biniou" {>= "1.0.6"}
-  "yojson" {>= "1.2.0" }
+  "yojson" {>= "1.2.1" }
 ]

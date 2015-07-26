@@ -792,7 +792,7 @@ symbol or at the beginning of a tuple field.
 Values: any valid OCaml expression
 
 Semantics: specifies an explicit default value for a field of an
-OCaml record or tuple, allowing that field to be omitted.
+OCaml record or tuple, allowing that field to be omitted. Default strings must be escaped.
 
 Example:
 
@@ -802,6 +802,7 @@ type color = [ Black | White | Rgb of (int * int * int) ]
 type ford_t = {
   year : int;
   ~color <ocaml default="`Black"> : color;
+  ~name <ocaml default="\"Ford Model T\""> : string;
 }
 
 type point = (int * int * <ocaml default="0"> : int)

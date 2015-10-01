@@ -17,7 +17,7 @@ open Atdj_util
 let json_of_atd env atd_ty =
   let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
   match atd_ty with
-    | `Sum    _ -> "" (* Either a String or a two element JSONArray *)
+    | `Sum    _ -> "Object" (* Either a String or a two element JSONArray *)
     | `Record _ -> "JSONObject"
     | `List   _ -> "JSONArray"
     | `Name (_, (_, ty, _), _) ->

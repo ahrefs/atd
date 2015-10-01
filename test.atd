@@ -43,3 +43,7 @@ type record_with_defaults = {
 
 (* Record with optional field *)
 type simple_record = { ?o : bool option }
+
+(* https://github.com/esperco/atdj/issues/2 *)
+type a = [ A of b list ]
+type b = [ B ]

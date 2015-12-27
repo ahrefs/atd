@@ -203,3 +203,9 @@ type precision = {
 
 type 'a generic = { x294623: int; }
 type specialized = string generic
+
+type validate_me =
+  string
+    <ocaml valid="fun s -> true">
+      list
+        <ocaml valid="fun l -> true">

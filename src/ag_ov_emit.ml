@@ -138,7 +138,8 @@ let prepend_validator_f v l =
               ]
             ];
             `Line ")";
-          ]
+          ];
+          `Line ")";
         ]
 
 (*

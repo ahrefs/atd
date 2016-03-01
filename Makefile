@@ -27,18 +27,23 @@ findlib-uninstall:
 .PHONY: exe-install exe-uninstall
 exe-install:
 	$(MAKE) -C src exe-install
+	$(MAKE) -C atdgen-cppo exe-install
 
 exe-uninstall:
 	$(MAKE) -C src exe-uninstall
+	$(MAKE) -C atdgen-cppo exe-uninstall
 
 install:
 	$(MAKE) -C src install
+	$(MAKE) -C atdgen-cppo install
 
 uninstall:
 	$(MAKE) -C src uninstall
+	$(MAKE) -C atdgen-cppo uninstall
 
 reinstall:
 	$(MAKE) -C src reinstall
+	$(MAKE) -C atdgen-cppo reinstall
 
 test:
 	$(MAKE) -C test
@@ -50,3 +55,4 @@ clean:
 	rm -f *~ util/*~ example/*~
 	$(MAKE) -C src clean
 	$(MAKE) -C test clean
+	$(MAKE) -C atdgen-cppo clean

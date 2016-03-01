@@ -1,8 +1,16 @@
-ifndef BINDIR
-  BINDIR = $$HOME/bin
+ifndef PREFIX
+  PREFIX = $(shell dirname $$(dirname $$(which ocamlfind)))
+  export PREFIX
 endif
 
-.PHONY: default demo clean install
+ifndef BINDIR
+  BINDIR = $(PREFIX)/bin
+  export BINDIR
+endif
+
+.PHONY: default demo clean install uninstall reinstall
+.PHONY: exe-install exe-uninstall
+
 default: demo
 
 demo:
@@ -13,8 +21,18 @@ demo:
           example.ml
 	./example
 
-install:
+exe-install:
 	cp atdgen-cppo cppo-json "$(BINDIR)"
+
+exe-uninstall:
+	rm -f "$(BINDIR)"/atdgen-cppo "$(BINDIR)"/cppo-json
+
+install: exe-install
+uninstall: exe-uninstall
+
+reinstall:
+	$(MAKE) uninstall BINDIR="$(BINDIR)"
+	$(MAKE) install BINDIR="$(BINDIR)"
 
 clean:
 	rm -f *.cm[iox] *.o *~ example

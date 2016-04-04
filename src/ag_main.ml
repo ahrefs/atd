@@ -41,6 +41,10 @@ type mode =
     | `Validate (* -validate (deprecated) *)
     ]
 
+type conv =
+  [ `Ppx of string list
+  | `Camlp4 of string list ]
+
 let parse_ocaml_version () =
   let re = Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
   if Str.string_match re Sys.ocaml_version 0 then
@@ -78,14 +82,21 @@ let main () =
     let l = Str.split (Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
   in
-  let type_convs = ref [] in
+  let pp_convs : conv ref = ref (`Ppx []) in
   let options = [
     "-type-conv", Arg.String (fun s ->
-      type_convs := Str.split (Str.regexp ",") s),
+      pp_convs := `Camlp4 (Str.split (Str.regexp ",") s)),
     "
     GEN1,GEN2,...
          Insert 'with GEN1, GEN2, ...' after OCaml type definitions for the
          type-conv preprocessor
+    ";
+    "-deriving-conv", Arg.String (fun s ->
+      pp_convs := `Ppx (Str.split (Str.regexp ",") s)),
+    "
+    GEN1,GEN2,...
+         Insert 'with GEN1, GEN2, ...' after OCaml type definitions for the
+         ppx_deriving preprocessor
     ";
     "-t", Arg.Unit (fun () ->
                       set_once "output type" mode `T;
@@ -414,7 +425,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
         let with_default default = function None -> default | Some x -> x in
 
         make_ocaml_files
-          ~type_convs: !type_convs
+          ~pp_convs: !pp_convs
           ~opens
           ~with_typedefs: (with_default true !with_typedefs)
           ~with_create

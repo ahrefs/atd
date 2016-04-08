@@ -53,7 +53,7 @@ We provide an OCaml library that provides a parser and a collection of
 tools that make it easy to write data validators and code generators
 based on ATD definitions.
 
-Unlike the big `frameworks` that provide `everything` in one
+Unlike big frameworks that provide everything in one
 monolithic package, we split the problem of data exchange into logical
 modules and ATD is one of them.
 In particular, we acknowledge that the following pieces have

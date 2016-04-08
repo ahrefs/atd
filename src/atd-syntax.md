@@ -53,7 +53,7 @@ We provide an OCaml library that provides a parser and a collection of
 tools that make it easy to write data validators and code generators
 based on ATD definitions.
 
-Unlike the big ``frameworks'' that provide ``everything'' in one
+Unlike the big `frameworks` that provide `everything` in one
 monolithic package, we split the problem of data exchange into logical
 modules and ATD is one of them.
 In particular, we acknowledge that the following pieces have
@@ -128,7 +128,7 @@ ATD supports:
 * the following atomic types: bool, int, float, string and unit;
 * built-in list and option types;
 * records aka structs with a syntax for optional fields with or
-  with default;
+  without default;
 * tuples;
 * sum types aka variant types, algebraic data types or tagged unions;
 * parametrized types;

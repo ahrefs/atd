@@ -730,7 +730,7 @@ and make_table_writer deref tagged list_kind x =
     main
 
 
-let study_record deref fields =
+let study_record ~ocaml_version deref fields =
   let field_assignments =
     List.fold_right (
       fun (x, name, default, opt, unwrap) field_assignments ->
@@ -890,7 +890,7 @@ let wrap_bodies ~tagged l =
 
 
 let rec make_reader
-    deref ~tagged ?type_annot (x : ob_mapping)
+    deref ~tagged ~ocaml_version ?type_annot (x : ob_mapping)
     : Ag_indent.t list =
   match x with
       `Unit _
@@ -918,7 +918,8 @@ let rec make_reader
                   Array.to_list (
                     Array.map
                       (fun x ->
-                        `Inline (make_variant_reader deref type_annot tick x)
+                        `Inline (make_variant_reader ~ocaml_version
+                                   deref type_annot tick x)
                       )
                       a
                   )
@@ -937,11 +938,11 @@ let rec make_reader
            | `Object ->
                error loc "Sorry, OCaml objects are not supported"
         );
-        let body = make_record_reader deref ~tagged type_annot a o in
+        let body = make_record_reader deref ~ocaml_version ~tagged type_annot a o in
         wrap_body ~tagged Bi_io.record_tag body
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
-        let body = make_tuple_reader deref ~tagged a in
+        let body = make_tuple_reader deref ~ocaml_version ~tagged a in
         wrap_body ~tagged Bi_io.tuple_tag body
 
     | `List (loc, x, `List o, `List b) ->
@@ -953,7 +954,7 @@ let rec make_reader
                in
                [
                  `Line (f ^ " (");
-                 `Block (make_reader deref ~tagged:false x);
+                 `Block (make_reader deref ~ocaml_version ~tagged:false x);
                  `Line ")";
                ]
            | `Array, `Array ->
@@ -963,12 +964,13 @@ let rec make_reader
                in
                [
                  `Line (f ^ " (");
-                 `Block (make_reader deref ~tagged:false x);
+                 `Block (make_reader deref ~ocaml_version ~tagged:false x);
                  `Line ")";
                ]
            | list_kind, `Table ->
                (* Support table format and regular array format *)
-               let body1 = make_table_reader deref loc list_kind x in
+               let body1 =
+                 make_table_reader ~ocaml_version deref loc list_kind x in
                let body2 =
                  let f =
                    match list_kind with
@@ -977,7 +979,7 @@ let rec make_reader
                  in
                  [
                    `Line (f ^ " (");
-                   `Block (make_reader deref ~tagged:false x);
+                   `Block (make_reader deref ~tagged:false ~ocaml_version x);
                    `Line ") ib";
                  ]
                in
@@ -996,7 +998,7 @@ let rec make_reader
               `Line "Some (";
               `Block [
                 `Line "(";
-                `Block (make_reader deref ~tagged:true x);
+                `Block (make_reader deref ~tagged:true ~ocaml_version x);
                 `Line ")";
                  `Block [ `Line "ib"];
               ];
@@ -1009,7 +1011,7 @@ let rec make_reader
         wrap_body ~tagged Bi_io.num_variant_tag body
 
     | `Wrap (loc, x, `Wrap o, `Wrap) ->
-        let simple_reader = make_reader deref ~tagged x in
+        let simple_reader = make_reader deref ~tagged ~ocaml_version x in
         (match o with
             None -> simple_reader
           | Some { Ag_ocaml.ocaml_wrap } ->
@@ -1035,7 +1037,7 @@ let rec make_reader
     | _ -> assert false
 
 
-and make_variant_reader deref type_annot tick x : Ag_indent.t list =
+and make_variant_reader ~ocaml_version deref type_annot tick x : Ag_indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
         `Variant o, `Variant -> o
@@ -1054,7 +1056,7 @@ and make_variant_reader deref type_annot tick x : Ag_indent.t list =
           `Block [
             `Block [
               `Line "(";
-              `Block (make_reader deref ~tagged:true v);
+              `Block (make_reader deref ~tagged:true ~ocaml_version v);
               `Line ") ib";
             ];
             `Line (sprintf ")%s)" (Ag_ox_emit.insert_annot type_annot));
@@ -1062,11 +1064,11 @@ and make_variant_reader deref type_annot tick x : Ag_indent.t list =
         ]
 
 and make_record_reader
-    deref ~tagged type_annot
+    deref ~ocaml_version ~tagged type_annot
     a record_kind =
   let fields = get_fields deref a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record deref fields
+    study_record ~ocaml_version deref fields
   in
 
   let body =
@@ -1090,7 +1092,7 @@ and make_record_reader
           let read_value =
             [
               `Line "(";
-              `Block (make_reader deref ~tagged:true f_value);
+              `Block (make_reader deref ~tagged:true ~ocaml_version f_value);
               `Line ") ib"
             ]
           in
@@ -1128,7 +1130,7 @@ and make_record_reader
   ]
 
 
-and make_tuple_reader deref ~tagged a =
+and make_tuple_reader deref ~tagged ~ocaml_version a =
   let cells =
     Array.map (
       fun x ->
@@ -1157,7 +1159,9 @@ and make_tuple_reader deref ~tagged a =
       Array.to_list (
         Array.mapi (
           fun i (x, default) ->
-            let read_value = make_reader deref ~tagged:true x.cel_value in
+            let read_value =
+              make_reader deref ~ocaml_version ~tagged:true
+                x.cel_value in
             let get_value =
               if i < min_length then
                 [
@@ -1212,7 +1216,7 @@ and make_tuple_reader deref ~tagged a =
   ]
 
 
-and make_table_reader deref loc list_kind x =
+and make_table_reader deref ~ocaml_version loc list_kind x =
   let empty_list, to_list =
     match list_kind with
         `List -> "[ ]", (fun s -> "Array.to_list " ^ s)
@@ -1231,7 +1235,7 @@ and make_table_reader deref loc list_kind x =
           error loc "Not a list or array of records"
   in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record deref fields
+    study_record ~ocaml_version deref fields
   in
   let cases =
     Array.to_list (
@@ -1244,7 +1248,7 @@ and make_table_reader deref loc list_kind x =
               `Line "let read =";
               `Block [
                 `Line "(";
-                `Block (make_reader deref ~tagged:false x.f_value);
+                `Block (make_reader deref ~tagged:false ~ocaml_version x.f_value);
                 `Line ")";
                 `Block [ `Line "tag" ]
               ];
@@ -1339,7 +1343,8 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
     ]
   ]
 
-let make_ocaml_biniou_reader ~original_types deref is_rec let1 let2 def =
+let make_ocaml_biniou_reader ~original_types ~ocaml_version
+    deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
   let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
@@ -1352,8 +1357,9 @@ let make_ocaml_biniou_reader ~original_types deref is_rec let1 let2 def =
     | true -> Some type_constraint
     | false -> None
   in
-  let get_reader_expr = make_reader deref ~tagged:false ?type_annot x in
-  let read_expr = make_reader deref ~tagged:true ?type_annot x in
+  let get_reader_expr =
+    make_reader deref ~tagged:false ~ocaml_version ?type_annot x in
+  let read_expr = make_reader deref ~tagged:true ~ocaml_version ?type_annot x in
   let eta_expand1 = is_rec && not (Ag_ox_emit.is_function get_reader_expr) in
   let eta_expand2 = is_rec && not (Ag_ox_emit.is_function read_expr) in
   let extra_param1, extra_args1 =
@@ -1389,7 +1395,8 @@ let get_let ~is_rec ~is_first =
     else "let", "let"
   else "and", "and"
 
-let make_ocaml_biniou_impl ~with_create ~original_types buf deref defs =
+let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
+    buf deref defs =
 
   let ll =
     List.map (
@@ -1407,7 +1414,7 @@ let make_ocaml_biniou_impl ~with_create ~original_types buf deref defs =
           map (
             fun is_first def ->
               let let1, let2 = get_let ~is_rec ~is_first in
-              make_ocaml_biniou_reader
+              make_ocaml_biniou_reader ~ocaml_version
                 ~original_types deref is_rec let1 let2 def
           ) l
         in
@@ -1456,6 +1463,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs ~original_types
+    ~ocaml_version
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1465,7 +1473,9 @@ let make_ml
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_biniou_impl ~with_create ~original_types buf deref defs;
+    make_ocaml_biniou_impl
+      ~with_create ~original_types ~ocaml_version
+      buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -1529,7 +1539,7 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~original_types ocaml_typedefs
+      ~original_types ~ocaml_version ocaml_typedefs
       (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

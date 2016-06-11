@@ -63,10 +63,135 @@ let test_missing_tuple = (123, 4.56)
 type internals1 = { int : int }
 type internals2 = { float : float }
 
+  (* Obj.magic 0.0, opaque_identity, and record fields
+
+     Instead of using options (which may allocate), atdgen uses
+     a default value for references that denote record fields that may
+     not yet have been deserialized.
+
+     For example, consider the following example in the test.ml
+     generated code:
+
+type extended = {
+  b0x: int;
+  b1x: bool;
+  b2x: string;
+  b3x: string option;
+  b4x: string option;
+  b5x: float
+}
+
+let get_extended_reader = (
+  fun tag ->
+    if tag <> 21 then Ag_ob_run.read_error () else
+      fun ib ->
+        let field_b0x = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+        let field_b1x = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+        let field_b2x = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+        let field_b3x = ref (None) in
+        let field_b4x = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+        let field_b5x = ref (0.5) in
+        let bits0 = ref 0 in
+        let len = Bi_vint.read_uvint ib in
+        for i = 1 to len do
+          match Bi_io.read_field_hashtag ib with
+            | 21902 ->
+              field_b0x := (
+                (
+                  Ag_ob_run.read_int
+                ) ib
+              );
+              bits0 := !bits0 lor 0x1;
+            | 21903 ->
+              field_b1x := (
+                (
+                  Ag_ob_run.read_bool
+                ) ib
+              );
+              bits0 := !bits0 lor 0x2;
+           (* ... CODE ELIDED HERE ... *)
+            | 21907 ->
+              field_b5x := (
+                (
+                  Ag_ob_run.read_float64
+                ) ib
+              );
+            | _ -> Bi_io.skip ib
+        done;
+        if !bits0 <> 0xf then Ag_ob_run.missing_fields
+          [| !bits0 |] [| "b0"; "b1"; "b2"; "b4" |];
+        (
+          {
+            b0x = !field_b0x;
+            b1x = !field_b1x;
+            b2x = !field_b2x;
+            b3x = !field_b3x;
+            b4x = !field_b4x;
+            b5x = !field_b5x;
+          }
+         : extended)
+
+     # Why Obj.magic?
+
+     At code generation time we do not have a default
+     value for the type of this field (we don't know what the type
+     is), so we create one out of thin air with Obj.magic
+
+     # Why 0.0?
+
+     Atdgen does not run the type-checker, so it does not a-priori
+     know if the field type is float (it may be a type alias of
+     "float" or even depend on a functor parameter).
+
+     If the type *is* float and the type-checker notices it
+     statically, then it may allocate an unboxed float reference, and
+     in particular unbox the default value passed at reference create
+     time. If this default value was *not* a float, then the code could
+     segfault. So in this case we must use a float value.
+
+     If the type is *not* float, then passing a float value is still
+     correct: the compiler will not try to unbox it, so a (word-sized)
+     pointer will be stored in the reference.
+
+     # Why Sys.opaque_identity?
+
+     Starting from 4.03, the compiler is more clever at assuming
+     things from values. When it sees the constant 0.0, it will infer
+     in particular that the reference contains a float (so it may
+     decide to unbox it!), etc. Notice that the compiler makes just
+     the same assumptions about (Obj.magic 0.0) than about 0.0, the
+     magic changes the type but not the value.
+
+     Also in 4.03, the Sys.opaque_identity function was added in the
+     Sys module; it is a compiler primitive of type ('a -> 'a) that
+     prevents the compiler from assuming anything about its return value.
+
+     In practice, using Sys.opaque_identity here avoids the segfault
+     that happened without it on 4.03. Note that this may not be
+     enough; in particular, (Sys.opaque_identity 0.0) is still
+     recognizeably a value of "float" type to the compiler (only the
+     value is unknown), so it would be legal for the compiler to still
+     decide to unbox in the future!
+
+     The long-term solution would be to stop using these unsafe
+     Obj.magic and use an option type to store the reference fields in
+     this case. This would be a more invasive change to the
+     implementation.
+  *)
+
 let test_ocaml_internals () =
   section "ocaml internals";
 
-  let int = ref (Obj.magic 0.0) in
+  let opaque_identity =
+    (* neat trick to fallback to just the identity if we are using
+       a <4.03 version and Sys.opaque_identity is not available; found
+       in
+         https://github.com/LaurentMazare/tensorflow-ocaml/commit/111b4727cec992bab8bc67c22ccc8c31942ffbb2 *)
+    let opaque_identity x = x in
+    ignore opaque_identity;
+    let open Sys in opaque_identity in
+
+  let int = ref (Obj.magic (opaque_identity 0.0)) in
   Gc.compact ();
   int := 123;
   Gc.compact ();

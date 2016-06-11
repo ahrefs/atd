@@ -738,7 +738,11 @@ let study_record ~ocaml_version deref fields =
           match default with
               None ->
                 assert (not opt);
-                "Obj.magic 0.0"
+                begin match ocaml_version with
+                  | Some (maj, min) when (maj > 4 || maj = 4 && min >= 3) ->
+                      "Obj.magic (Sys.opaque_identity 0.0)"
+                  | _ -> "Obj.magic 0.0"
+                end
             | Some s ->
                 s
         in

@@ -54,8 +54,8 @@ let parse_ocaml_version () =
   else
     None
 
-let get_default_name_overlap () =
-  match parse_ocaml_version () with
+let get_default_name_overlap ocaml_version =
+  match ocaml_version with
   | Some (major, minor) when major < 4 -> false
   | Some (4, 0) -> false
   | _ -> true
@@ -77,7 +77,8 @@ let main () =
   let unknown_field_handler = ref None in
   let constr_mismatch_handler = ref None in
   let type_aliases = ref None in
-  let name_overlap = ref (get_default_name_overlap ()) in
+  let ocaml_version = parse_ocaml_version () in
+  let name_overlap = ref (get_default_name_overlap ocaml_version) in
   let set_opens s =
     let l = Str.split (Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
@@ -435,6 +436,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
           ~pos_lnum: !pos_lnum
           ~type_aliases
           ~force_defaults
+          ~ocaml_version
           ~name_overlap: !name_overlap
           atd_file ocaml_prefix
 

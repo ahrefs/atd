@@ -34,6 +34,8 @@ type param = {
   preprocess_input : string option;
     (* intended for UTF-8 validation *)
 
+  ocaml_version: (int * int) option;
+
 }
 
 
@@ -1617,6 +1619,7 @@ let get_let ~is_rec ~is_first =
 let make_ocaml_json_impl
     ~std ~unknown_field_handler ~constr_mismatch_handler
     ~with_create ~force_defaults ~preprocess_input ~original_types
+    ~ocaml_version
     buf deref defs =
   let p = {
     deref = deref;
@@ -1625,6 +1628,7 @@ let make_ocaml_json_impl
     constr_mismatch_handler = constr_mismatch_handler;
     force_defaults = force_defaults;
     preprocess_input;
+    ocaml_version;
   } in
   let ll =
     List.map (
@@ -1692,6 +1696,7 @@ let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~std ~unknown_field_handler ~constr_mismatch_handler
     ~force_defaults ~preprocess_input ~original_types
+    ~ocaml_version
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1704,6 +1709,7 @@ let make_ml
     make_ocaml_json_impl
       ~std ~unknown_field_handler ~constr_mismatch_handler
       ~with_create ~force_defaults ~preprocess_input ~original_types
+      ~ocaml_version
       buf deref defs;
   Buffer.contents buf
 
@@ -1722,6 +1728,7 @@ let make_ocaml_files
     ~force_defaults
     ~preprocess_input
     ~name_overlap
+    ~ocaml_version
     ~pp_convs
     atd_file out =
   let ((head, m0), _) =
@@ -1772,6 +1779,7 @@ let make_ocaml_files
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~std ~unknown_field_handler ~constr_mismatch_handler
       ~force_defaults ~preprocess_input ~original_types
+      ~ocaml_version
       ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

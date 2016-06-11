@@ -473,6 +473,7 @@ let make_ocaml_files
     ~type_aliases
     ~force_defaults
     ~name_overlap
+    ~ocaml_version
     ~pp_convs
     atd_file out =
   let ((head, m0), _) =

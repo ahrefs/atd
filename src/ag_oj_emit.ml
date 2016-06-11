@@ -741,8 +741,11 @@ and make_record_writer p a record_kind =
     `Line "Bi_outbuf.add_char ob '}';";
   ]
 
-let study_record deref fields =
-  let unset_field_value = "Obj.magic 0.0" in
+let study_record p fields =
+  let unset_field_value = match p.ocaml_version with
+    | Some (maj, min) when (maj > 4 || maj = 4 && min >= 3) ->
+      "Obj.magic (Sys.opaque_identity 0.0)"
+    | _ -> "Obj.magic 0.0" in
 
   let _, field_assignments =
     Array.fold_right (fun field (i, field_assignments) ->
@@ -1235,7 +1238,7 @@ and make_deconstructed_reader p loc fields set_bit =
 and make_record_reader p type_annot loc a record_kind =
   let fields = get_fields p a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record p.deref fields
+    study_record p fields
   in
 
   let read_field =

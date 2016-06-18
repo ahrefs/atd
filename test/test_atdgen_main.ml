@@ -188,7 +188,8 @@ let test_ocaml_internals () =
        in
          https://github.com/LaurentMazare/tensorflow-ocaml/commit/111b4727cec992bab8bc67c22ccc8c31942ffbb2 *)
     let opaque_identity x = x in
-    ignore opaque_identity;
+    (* avoiding unused function warning and partial application warning. *)
+    opaque_identity ();
     let open Sys in opaque_identity in
 
   let int = ref (Obj.magic (opaque_identity 0.0)) in

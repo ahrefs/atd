@@ -34,6 +34,8 @@ type param = {
   preprocess_input : string option;
     (* intended for UTF-8 validation *)
 
+  ocaml_version: (int * int) option;
+
 }
 
 
@@ -739,8 +741,11 @@ and make_record_writer p a record_kind =
     `Line "Bi_outbuf.add_char ob '}';";
   ]
 
-let study_record deref fields =
-  let unset_field_value = "Obj.magic 0.0" in
+let study_record p fields =
+  let unset_field_value = match p.ocaml_version with
+    | Some (maj, min) when (maj > 4 || maj = 4 && min >= 3) ->
+      "Obj.magic (Sys.opaque_identity 0.0)"
+    | _ -> "Obj.magic 0.0" in
 
   let _, field_assignments =
     Array.fold_right (fun field (i, field_assignments) ->
@@ -1233,7 +1238,7 @@ and make_deconstructed_reader p loc fields set_bit =
 and make_record_reader p type_annot loc a record_kind =
   let fields = get_fields p a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record p.deref fields
+    study_record p fields
   in
 
   let read_field =
@@ -1617,6 +1622,7 @@ let get_let ~is_rec ~is_first =
 let make_ocaml_json_impl
     ~std ~unknown_field_handler ~constr_mismatch_handler
     ~with_create ~force_defaults ~preprocess_input ~original_types
+    ~ocaml_version
     buf deref defs =
   let p = {
     deref = deref;
@@ -1625,6 +1631,7 @@ let make_ocaml_json_impl
     constr_mismatch_handler = constr_mismatch_handler;
     force_defaults = force_defaults;
     preprocess_input;
+    ocaml_version;
   } in
   let ll =
     List.map (
@@ -1692,6 +1699,7 @@ let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~std ~unknown_field_handler ~constr_mismatch_handler
     ~force_defaults ~preprocess_input ~original_types
+    ~ocaml_version
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -1704,6 +1712,7 @@ let make_ml
     make_ocaml_json_impl
       ~std ~unknown_field_handler ~constr_mismatch_handler
       ~with_create ~force_defaults ~preprocess_input ~original_types
+      ~ocaml_version
       buf deref defs;
   Buffer.contents buf
 
@@ -1722,6 +1731,7 @@ let make_ocaml_files
     ~force_defaults
     ~preprocess_input
     ~name_overlap
+    ~ocaml_version
     ~pp_convs
     atd_file out =
   let ((head, m0), _) =
@@ -1772,6 +1782,7 @@ let make_ocaml_files
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~std ~unknown_field_handler ~constr_mismatch_handler
       ~force_defaults ~preprocess_input ~original_types
+      ~ocaml_version
       ocaml_typedefs (Ag_mapping.make_deref defs) defs
   in
   Ag_ox_emit.write_ocaml out mli ml

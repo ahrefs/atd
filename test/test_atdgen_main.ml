@@ -777,6 +777,88 @@ let test_json_constr_chained () =
   let s'= Yojson.Safe.to_string j in
   check (s = s')
 
+let test_json_constr_fallback_tag () =
+  section "json constructors fallback tag";
+  let x = {
+    Test3j_t.fallback_constr = `A;
+  } in
+  let s = Test3j_j.string_of_fallback_constr_record x in
+  let x'= Test3j_j.fallback_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["tag", `String "a"] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j_t.fallback_constr = `Other ("b", None);
+  } in
+  let s = Test3j_j.string_of_fallback_constr_record x in
+  let x'= Test3j_j.fallback_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["tag", `String "b"] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j_t.fallback_constr = `Other ("b", Some `Null);
+  } in
+  let s = Test3j_j.string_of_fallback_constr_record x in
+  let x'= Test3j_j.fallback_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [
+    "fallback_constr", `Null;
+    "tag", `String "b";
+  ] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s')
+
+let test_json_constr_fallback_empty () =
+  section "json constructors fallback empty";
+  let x = {
+    Test3j_t.empty = `A;
+    empty_constr = `Other ("foo", None);
+  } in
+  let s = Test3j_j.string_of_empty_constr_record x in
+  let x'= Test3j_j.empty_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc ["empty", `String ""; "tag", `String "foo"] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j_t.empty = `Other ("baz", Some `Null);
+    empty_constr = `A;
+  } in
+  let s = Test3j_j.string_of_empty_constr_record x in
+  let x'= Test3j_j.empty_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [
+    "empty", `List [`String "baz"; `Null];
+    "tag", `String "";
+  ] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s');
+
+  let x = {
+    Test3j_t.empty = `Other ("baz", None);
+    empty_constr = `A;
+  } in
+  let s = Test3j_j.string_of_empty_constr_record x in
+  let x'= Test3j_j.empty_constr_record_of_string s in
+  check (x = x');
+
+  let j = `Assoc [
+    "empty", `String "baz";
+    "tag", `String "";
+  ] in
+  let s' = Yojson.Safe.to_string j in
+  check (s = s')
+
 let test_wrapping_ints () =
   section "ocaml wrapping - ints";
   let x = Test_lib.Natural.wrap 7 in
@@ -861,6 +943,8 @@ let all_tests = [
   test_json_constr_default;
   test_json_constr_default_implicit;
   test_json_constr_chained;
+  test_json_constr_fallback_tag;
+  test_json_constr_fallback_empty;
   test_wrapping_ints;
   test_double_wrapping;
   test_wrapping_with_validation;

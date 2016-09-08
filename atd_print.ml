@@ -245,17 +245,22 @@ let make_closures format_annot =
     )
   in
 
-  format_full_module, format_type_name
+  format_full_module, format_type_name, format_type_expr
 
 
 
 let format ?(annot = default_annot) x =
-  let f, _ = make_closures annot in
+  let f, _, _ = make_closures annot in
   f x
 
-let default_format, default_format_type_name = make_closures default_annot
+let default_format, default_format_type_name, default_format_type_expr =
+  make_closures default_annot
 
 let string_of_type_name name args an =
   let x = default_format_type_name name args an in
 
+  Easy_format.Pretty.to_string x
+
+let string_of_type_expr expr =
+  let x = default_format_type_expr expr in
   Easy_format.Pretty.to_string x

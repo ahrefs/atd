@@ -20,3 +20,5 @@ val string_of_type_name :
   string -> Atd_ast.type_expr list -> Atd_ast.annot -> string
   (** Convert a type name with its arguments and its annotations
       into a string. *)
+
+val string_of_type_expr : Atd_ast.type_expr -> string

@@ -1790,8 +1790,43 @@ let make_ocaml_json_impl
         ) l
     ) defs
 
+let check_variant untypeds = function
+  | `Inherit _ -> assert false (* inherits have been inlined by now *)
+  | `Variant (loc, (cons, ann), arg) ->
+      if not (Atd_annot.get_flag ["json"] "untyped" ann)
+      then untypeds
+      else match arg with
+        | Some (`Tuple (_,[(_, `Name (_, (_, "string", _), _), _);
+                           (_, `Option (_,
+                                        `Name (_, (_, "json", _), _), _), _)],
+                        _)) -> cons::untypeds
+        | Some typ ->
+            let msg = sprintf "constructor is untyped but argument is %s\n%s"
+                (Atd_print.string_of_type_expr typ)
+                "Untyped constructors must be of (string * json option)"
+            in
+            Atd_ast.error_at loc msg
+        | None ->
+            let msg =
+              sprintf "constructor is untyped and nullary\n%s"
+                "Untyped constructors must be of (string * json option)"
+            in
+            Atd_ast.error_at loc msg
 
+let error_too_many_untypeds name untypeds =
+  sprintf "type %s has more than one untyped constructor: %s"
+    name (String.concat " " untypeds)
 
+let check_atd (_head, body) =
+  List.iter (function
+    | (`Type (loc, (name, _, _), `Sum (_, conss, _))) ->
+        begin match List.fold_left check_variant [] conss with
+          | [] | [_] -> ()
+          | untypeds ->
+              Atd_ast.error_at loc (error_too_many_untypeds name untypeds)
+        end
+    | _ -> ()
+  ) body
 
 (*
   Glue
@@ -1870,6 +1905,9 @@ let make_ocaml_files
             ?pos_fname ?pos_lnum
             stdin
   in
+
+  check_atd (head, m0);
+
   let tsort =
     if all_rec then
       function m -> [ (true, m) ]

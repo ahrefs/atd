@@ -41,11 +41,13 @@ ML = $(filter %.ml, $(MLSOURCES))
 CMI = $(patsubst %.ml,%.cmi, $(ML))
 CMO = $(patsubst %.ml,%.cmo, $(ML))
 CMX = $(patsubst %.ml,%.cmx, $(ML))
+CMT = $(patsubst %.ml,%.cmt, $(ML))
+CMTI= $(patsubst %.ml,%.cmti, $(ML))
 O = $(patsubst %.ml,%.o, $(ML))
 INSTALL_EXTRAS = atd_check.ml atd_doc_lexer.mll atd_doc_lexer.ml \
 		 atd_lexer.mll atd_lexer.ml atd_predef.ml atd_version.ml
 
-OCAMLFLAGS = -dtypes -g
+OCAMLFLAGS = -dtypes -g -bin-annot
 OCAMLPACKS = easy-format unix str
 
 DOCFILES = \
@@ -83,7 +85,10 @@ install: META
 	test ! -f atdcat || cp atdcat $(BINDIR)/
 	test ! -f atdcat.exe || cp atdcat.exe $(BINDIR)/
 	ocamlfind install atd META \
-	 $(MLI) $(CMI) $(CMO) $(CMX) $(CMXS) $(O) atd.cma atd.a atd.cmxa \
+	 $(MLI) $(CMI) $(CMO) $(CMX) $(CMT) \
+	 $(shell echo $(CMTI) | xargs ls -d 2>/dev/null) \
+	 $(CMXS) $(O) \
+	 atd.cma atd.a atd.cmxa \
          $(INSTALL_EXTRAS)
 
 uninstall:
@@ -201,11 +206,11 @@ div.atd-doc pre { \
 clean:
 	rm -f dep
 	rm -f atd_version.ml
-	rm -f $(CMI) $(CMO) $(CMX) $(O) *.annot *.cma *.cmxa *.a
+	rm -f $(CMI) $(CMO) $(CMX) $(CMT) $(CMTI) $(O) *.annot *.cma *.cmxa *.a
 	rm -f $(patsubst %.mly,%.mli, $(MLY))
 	rm -f $(patsubst %.mly,%.ml, $(MLY))
 	rm -f $(patsubst %.mll,%.ml, $(MLL))
-	rm -f atdcat.cm[ioxa] atdcat.o atdcat.cma atdcat.cmxa atdcat$(EXE)
+	rm -f atdcat.cm[ioxat] atdcat.o atdcat.cma atdcat.cmxa atdcat$(EXE)
 	rm -f unit-tests$(EXE)
 	rm -rf odoc
 	cd manual; $(MAKE) clean

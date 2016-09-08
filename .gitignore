@@ -5,6 +5,8 @@
 *.cma
 *.cmxa
 *.cmxs
+*.cmt
+*.cmti
 *.a
 *.o
 *.annot

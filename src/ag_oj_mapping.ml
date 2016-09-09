@@ -113,11 +113,12 @@ and mapping_of_variant = function
           ocaml_vdoc = doc;
         }
       in
-      let json_cons = Ag_json.get_json_cons s an in
       let json_t =
-        `Variant {
-          Ag_json.json_cons = json_cons;
-        }
+        if Ag_json.get_json_untyped an
+        then `Variant { Ag_json.json_cons = None; }
+        else
+          let json_cons = Ag_json.get_json_cons s an in
+          `Variant { Ag_json.json_cons = Some json_cons; }
       in
       let arg =
         match o with

@@ -7,7 +7,7 @@ type json_float = [ `Float of int option (* max decimal places *)
 
 type json_list = [ `Array | `Object ]
 
-type json_variant = { json_cons : string }
+type json_variant = { json_cons : string option }
 
 type json_field = {
   json_fname  : string;           (* <json name=...> *)
@@ -76,3 +76,6 @@ let get_json_fname default an =
 
 let get_json_tag_field an =
   Atd_annot.get_field (fun s -> Some (Some s)) None ["json"] "tag_field" an
+
+let get_json_untyped an =
+  Atd_annot.get_flag ["json"] "untyped" an

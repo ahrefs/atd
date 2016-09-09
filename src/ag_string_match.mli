@@ -33,14 +33,14 @@ val make_ocaml_expr_factored :
   ?len_id: string ->
   ?exit_with: exit_with ->
   error_expr: Ag_indent.t list ->
-  (string * Ag_indent.t list) list -> Ag_indent.t list
+  (string option * Ag_indent.t list) list -> Ag_indent.t list
 
 val make_ocaml_expr_naive :
   ?string_id: string ->
   ?pos_id: string ->
   ?len_id: string ->
   error_expr: Ag_indent.t list ->
-  (string * Ag_indent.t list) list -> Ag_indent.t list
+  (string option * Ag_indent.t list) list -> Ag_indent.t list
 
 val make_ocaml_expr :
   optimized: bool ->
@@ -49,7 +49,7 @@ val make_ocaml_expr :
   ?len_id: string ->
   ?exit_with: exit_with ->
   error_expr: Ag_indent.t list ->
-  (string * Ag_indent.t list) list -> Ag_indent.t list
+  (string option * Ag_indent.t list) list -> Ag_indent.t list
 
 
 val make_ocaml_int_mapping :
@@ -60,7 +60,7 @@ val make_ocaml_int_mapping :
   error_expr1: Ag_indent.t list ->
   ?error_expr2: Ag_indent.t list ->
   ?int_id: string ->
-  (string * Ag_indent.t list) list ->
+  (string option * Ag_indent.t list) list ->
 
   (Ag_indent.t list * Ag_indent.t list)
     (*

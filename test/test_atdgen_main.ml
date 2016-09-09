@@ -283,7 +283,7 @@ let make_mixed_record_array n =
       {
         Test.field0 = Some i;
         field1 = Some 0.555;
-        field2 = Some (String.copy "abcdefghijklmnopqrstuvwxyz");
+        field2 = Some "abcdefghijklmnopqrstuvwxyz";
         field3 = 12345678L;
         field4 = [| 1.23; 3.45; 4.56 |];
         field5 = None;

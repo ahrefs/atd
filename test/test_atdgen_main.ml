@@ -780,6 +780,7 @@ let test_json_constr_chained () =
 let test_json_constr_fallback_tag () =
   section "json constructors fallback tag";
   let x = {
+    Test3j_t.tag = "a";
     Test3j_t.fallback_constr = `A;
   } in
   let s = Test3j_j.string_of_fallback_constr_record x in
@@ -790,7 +791,11 @@ let test_json_constr_fallback_tag () =
   let s' = Yojson.Safe.to_string j in
   check (s = s');
 
+  let s' = Test3j_j.string_of_fallback_constr_record x' in
+  check (s = s');
+
   let x = {
+    Test3j_t.tag = "b";
     Test3j_t.fallback_constr = `Other ("b", None);
   } in
   let s = Test3j_j.string_of_fallback_constr_record x in
@@ -801,19 +806,40 @@ let test_json_constr_fallback_tag () =
   let s' = Yojson.Safe.to_string j in
   check (s = s');
 
+  let s' = Test3j_j.string_of_fallback_constr_record x' in
+  check (s = s');
+
   let x = {
-    Test3j_t.fallback_constr = `Other ("b", Some `Null);
+    Test3j_t.tag = "b";
+    Test3j_t.fallback_constr = `Other ("b", Some (`Assoc []));
   } in
   let s = Test3j_j.string_of_fallback_constr_record x in
   let x'= Test3j_j.fallback_constr_record_of_string s in
   check (x = x');
 
   let j = `Assoc [
-    "fallback_constr", `Null;
     "tag", `String "b";
+    "fallback_constr", `Assoc [];
   ] in
   let s' = Yojson.Safe.to_string j in
-  check (s = s')
+  check (s = s');
+
+  let s' = Test3j_j.string_of_fallback_constr_record x' in
+  check (s = s');
+
+  let j = `Assoc [
+    "fallback_constr", `Int 123;
+  ] in
+  let s = Yojson.Safe.to_string j in
+  let x = Test3j_j.fallback_constr_record_of_string s in
+  let s'= Test3j_j.string_of_fallback_constr_record x in
+  check (s = s');
+
+  let x'= {
+    Test3j_t.tag = "unknown";
+    Test3j_t.fallback_constr = `Other ("unknown", Some (`Int 123));
+  } in
+  check (x = x')
 
 let test_json_constr_fallback_empty () =
   section "json constructors fallback empty";

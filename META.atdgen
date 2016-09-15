@@ -1,0 +1,17 @@
+# This META file is used during testing only.
+# The META file that we install is src/META (generated from src/META.in)
+
+# The .atdgen is required at the end of the name of this meta file to
+# be able to run the tests even if atdgen is not installed.
+#
+# From http://projects.camlcity.org/projects/dl/findlib-1.6.2/doc/ref-html/r721.html:
+# The name of the main package is not defined within META; it is
+# either the name of the directory containing META or the suffix of the
+# META file (if the name of the META file is formed like META.name).
+
+description = "Development version of atdgen - not installed"
+requires = "str atd biniou yojson"
+directory = "src"
+archive(byte) = "atdgen.cma"
+archive(native) = "atdgen.cmxa"
+archive(native,plugin) = "atdgen.cmxs"

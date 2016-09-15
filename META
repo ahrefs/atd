@@ -1,9 +1,0 @@
-# This META file is used during testing only.
-# The META file that we install is src/META (generated from src/META.in)
-
-description = "Development version of atdgen - not installed"
-requires = "str atd biniou yojson"
-directory = "src"
-archive(byte) = "atdgen.cma"
-archive(native) = "atdgen.cmxa"
-archive(native,plugin) = "atdgen.cmxs"

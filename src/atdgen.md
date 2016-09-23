@@ -1,5 +1,5 @@
 % atdgen(1) user manual
-% December 12, 2014
+% September 23, 2016
 
 [Home](https://mjambon.github.io/atdgen-doc/)
 

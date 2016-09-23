@@ -624,6 +624,61 @@ Example:
 type unixtime = float <json repr="int">
 ```
 
+### Field '`tag_field`' ###
+
+This feature makes it possible to read JSON objects representing
+variants that use one field for the tag and another field for the
+untagged value of the specific type associated with that tag.
+
+Position: on a record field name, for a field holding a variant type.
+
+Value: name of another JSON field which holds the
+       string representing the constructor for the variant.
+
+Semantics: The type definition
+
+```ocaml
+type t = {
+  value <json tag_field="kind">: [ A | B <json name="b"> of int ];
+}
+```
+
+covers JSON objects that have an extra field `kind` which holds either
+`"A"` or `"b"`. Valid JSON values of type `t` include
+`{ "kind": "A" }` and `{ "kind": "b", "value": 123 }`.
+
+Available since atdgen 1.5.0 and yojson 1.2.0.
+
+### Field '`untyped`' ###
+
+This flag enables parsing of arbitrary variants without prior knowledge
+of their type. It is useful for constructing flexible parsers for
+extensible serializations. `json untyped` is compatible with regular
+variants, `json tag_field` variants, default values, and implicit
+`tag_field` constructors.
+
+Position: on a variant constructor with argument type `string * json
+option` (at most one per variant type)
+
+Value: none, `true` or `false`
+
+Semantics: The type definition
+
+```ocaml
+type v = [
+  | A
+  | B <json name="b"> of int
+  | Unknown <json untyped> of (string * json option)
+]
+```
+
+will parse and print `"A"`, `["b", 0]`, `"foo"`, and `["bar", [null]]`
+in a regular variant context. In the `tag_field` type `t` context in the
+previous section, `v` will parse and print `{ "kind": "foo" }` and `{
+"kind": "bar", "value": [null] }` as well as the examples previously
+given.
+
+Available since atdgen 1.10.0 and atd 1.2.0.
 
 Section '`biniou`'
 ------------------
@@ -1283,66 +1338,6 @@ results in printing:
 ```
 Error: Validation error: Not a positive integer: 0; path = <root>.y
 ```
-
-
-Section '`json`'
-----------------
-
-### Field '`tag_field`' ###
-
-This feature makes it possible to read JSON objects representing
-variants that use one field for the tag and another field for the
-untagged value of the specific type associated with that tag.
-
-Position: on a record field name, for a field holding a variant type.
-
-Value: name of another JSON field which holds the
-       string representing the constructor for the variant.
-
-Semantics: The type definition
-
-```ocaml
-type t = {
-  value <json tag_field="kind">: [ A | B <json name="b"> of int ];
-}
-```
-
-covers JSON objects that have an extra field `kind` which holds either
-`"A"` or `"b"`. Valid JSON values of type `t` include
-`{ "kind": "A" }` and `{ "kind": "b", "value": 123 }`.
-
-Available since atdgen 1.5.0 and yojson 1.2.0.
-
-### Field '`untyped`' ###
-
-This flag enables parsing of arbitrary variants without prior knowledge
-of their type. It is useful for constructing flexible parsers for
-extensible serializations. `json untyped` is compatible with regular
-variants, `json tag_field` variants, default values, and implicit
-`tag_field` constructors.
-
-Position: on a variant constructor with argument type `string * json
-option` (at most one per variant type)
-
-Value: none, `true` or `false`
-
-Semantics: The type definition
-
-```ocaml
-type v = [
-  | A
-  | B <json name="b"> of int
-  | Unknown <json untyped> of (string * json option)
-]
-```
-
-will parse and print `"A"`, `["b", 0]`, `"foo"`, and `["bar", [null]]`
-in a regular variant context. In the `tag_field` type `t` context in the
-previous section, `v` will parse and print `{ "kind": "foo" }` and `{
-"kind": "bar", "value": [null] }` as well as the examples previously
-given.
-
-Available since atdgen 1.10.0 and atd 1.2.0.
 
 Section '`ocaml_biniou`'
 ------------------------

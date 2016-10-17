@@ -1,11 +1,11 @@
 VERSION = 1.2.0
-ifeq "$(shell ocamlc -config |grep os_type)" "os_type: Win32"
+ifeq "$(shell ocamlfind ocamlc -config |grep os_type)" "os_type: Win32"
 EXE=.exe
 else
 EXE=
 endif
 
-NATDYNLINK := $(shell if [ -f `ocamlc -where`/dynlink.cmxa ]; then \
+NATDYNLINK := $(shell if [ -f `ocamlfind ocamlc -where`/dynlink.cmxa ]; then \
                         echo YES; \
                       else \
                         echo NO; \

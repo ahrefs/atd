@@ -117,17 +117,19 @@ VERSION: Makefile
 %.cmx: %.ml
 	ocamlfind ocamlopt $(OCAMLFLAGS) -c -package "$(OCAMLPACKS)" $<
 
-atd_parser.mli: atd_parser.mly
+atd_parser.mli: atd_parser.mly atd_ast.cmi
 	menhir $<
 
 atd_parser.ml: atd_parser.mly
 	menhir $<
 
-atd_lexer.ml: atd_lexer.mll
+atd_lexer.ml: atd_lexer.mll atd_parser.mli atd_parser.cmi
 	ocamllex $<
 
 atd_doc_lexer.ml: atd_doc_lexer.mll
 	ocamllex $<
+
+atd_util.ml: atd_lexer.ml
 
 dep: $(SOURCES) Makefile
 	ocamlfind ocamldep -package "$(OCAMLPACKS)" $(MLI) $(ML) > dep

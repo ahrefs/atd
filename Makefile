@@ -129,7 +129,11 @@ atd_lexer.ml: atd_lexer.mll
 atd_doc_lexer.ml: atd_doc_lexer.mll
 	ocamllex $<
 
-dep: $(SOURCES) Makefile
+# This allows a parallel build (make -j). No idea what a proper Makefile
+# should be or why this dependency is not produced by ocamldep.
+atd_lexer.cmi: atd_parser.cmi
+
+dep: $(MLSOURCES) Makefile
 	ocamlfind ocamldep -package "$(OCAMLPACKS)" $(MLI) $(ML) > dep
 
 ifneq ($(MAKECMDGOALS),clean)

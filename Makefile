@@ -205,7 +205,7 @@ div.atd-doc pre { \
 clean:
 	rm -f dep
 	rm -f atd_version.ml
-	rm -f $(CMI) $(CMO) $(CMX) $(O) *.annot *.cma *.cmxa *.a
+	rm -f $(CMI) $(CMO) $(CMX) $(O) *.annot *.cma *.cmxa *.a *.cmxs
 	rm -f $(patsubst %.mly,%.mli, $(MLY))
 	rm -f $(patsubst %.mly,%.ml, $(MLY))
 	rm -f $(patsubst %.mll,%.ml, $(MLL))

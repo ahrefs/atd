@@ -12,7 +12,6 @@
 *.opt
 *.exe
 META
-VERSION
 atd_doc_lexer.ml
 atd_lexer.ml
 atd_parser.ml

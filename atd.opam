@@ -15,7 +15,7 @@ build-test: [
 ]
 
 depends: [
-  "jbuild" {build}
+  "jbuilder" {build}
   "menhir"
   "easy-format"
 ]

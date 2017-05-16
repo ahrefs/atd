@@ -1,0 +1,11 @@
+(jbuild_version 1)
+
+(executables
+ ((libraries (atd))
+  (names (unit_tests))
+  (package atd)))
+
+(alias
+ ((name   runtest)
+  (deps   (unit_tests.exe))
+  (action (run ${<}))))

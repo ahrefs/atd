@@ -11,3 +11,6 @@
 *.run
 *.opt
 *.exe
+_build
+.merlin
+*.install

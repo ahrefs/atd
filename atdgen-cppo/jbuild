@@ -1,0 +1,5 @@
+(jbuild_version 1)
+
+(install
+ ((section bin)
+  (files (atdgen-cppo cppo-json))))

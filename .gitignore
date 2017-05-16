@@ -14,3 +14,13 @@
 _build
 .merlin
 *.install
+META
+atd_doc_lexer.ml
+atd_lexer.ml
+atd_parser.ml
+atd_parser.mli
+atd_version.ml
+atdcat
+unit-tests
+dep
+*.out

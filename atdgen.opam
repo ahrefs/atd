@@ -6,20 +6,16 @@ homepage: "https://github.com/mjambon/atdgen"
 bug-reports: "https://github.com/mjambon/atdgen/issues"
 dev-repo: "https://github.com/mjambon/atdgen.git"
 
-build: [ [make] ]
-
-install: [make "findlib-install"]
+build: [
+  ["jbuilder" "build" "-p" name "-j" jobs]
+]
 
 build-test: [
-  [make]
-  [make "test"]
+  ["jbuilder" "runtest" "-p" name]
 ]
 
-remove: [
-    ["ocamlfind" "remove" "atdgen"]
-]
 depends: [
-  "ocamlfind"
+  "jbuidler" {build}
   "atd" {>= "1.1.0"}
   "biniou" {>= "1.0.6"}
   "yojson" {>= "1.2.1" }

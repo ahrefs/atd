@@ -22,3 +22,6 @@ atdcat
 unit-tests
 dep
 *.out
+_build
+*.install
+.merlin

@@ -11,6 +11,9 @@
 *.run
 *.opt
 *.exe
+_build
+.merlin
+*.install
 META
 atd_doc_lexer.ml
 atd_lexer.ml
@@ -20,6 +23,3 @@ atd_version.ml
 unit-tests
 dep
 *.out
-_build
-*.install
-.merlin

@@ -1,0 +1,67 @@
+(jbuild_version 1)
+
+(rule
+ ((targets (test.ml test.mli))
+  (deps    (test.atd))
+  (action  (run ${bin:atdgen} ${<}))))
+
+(rule
+ ((targets (test2.ml test2.mli))
+  (deps    (test2.atd))
+  (action  (run ${bin:atdgen} -open Test ${<}))))
+
+(rule
+ ((targets (testj.ml testj.mli))
+  (deps    (test.atd test.ml test.mli))
+  (action
+   (run
+    ${bin:atdgen} -json -extend Test -j-custom-fields
+    "fun loc s -> Printf.printf \"Warning: skipping field %s (def: %s)\" s loc"
+    ${<}
+    -o testj))))
+
+(rule
+ ((targets (test2j.ml test2j.mli))
+  (deps    (test2.atd))
+  (action
+   (run ${bin:atdgen} -json -std-json -o test2j -open Test,Test2,Testj -ntd ${<}))))
+
+(rule
+ ((targets (test3j_t.ml test3j_t.mli))
+  (deps    (test3j.atd))
+  (action  (run ${bin:atdgen} -t ${<}))))
+
+(rule
+ ((targets (test3j_j.ml test3j_j.mli))
+  (deps    (test3j.atd))
+  (action  (run ${bin:atdgen} -j -j-std -j-strict-constrs ${<}))))
+
+(rule
+ ((targets (testjstd.ml testjstd.mli))
+  (deps    (test.atd))
+  (action  (run ${bin:atdgen} -std-json -extend Test test.atd -o testjstd))))
+
+(rule
+ ((targets (testv.ml testv.mli))
+  (deps    (test.atd))
+  (action  (run ${bin:atdgen} -validate -extend Test test.atd -o testv))))
+
+(executables
+ ((libraries (atd atdgen))
+  (names (test_atdgen_main))
+  (modules
+   (test
+    test3j_j
+    test3j_t
+    testjstd
+    testj
+    testv
+    test_atdgen_main
+    test_atdgen_type_conv
+    test_lib))
+  (package atd)))
+
+(alias
+ ((name   runtest)
+  (deps   (test_atdgen_main.exe))
+  (action (run ${<}))))

@@ -2,7 +2,7 @@
 #require "unix"
 
 let version =
-  let ic = open_in "../VERSION" in
+  let ic = open_in "../../VERSION" in
   let version = input_line ic in
   close_in ic;
   version
@@ -10,18 +10,17 @@ let version =
 let () = Printf.ksprintf Jbuild_plugin.V1.send {|
 (jbuild_version 1)
 
-(ocamllex (atd_lexer atd_doc_lexer))
-(menhir ((modules (atd_parser))))
+(ocamllex (ag_doc_lexer))
 
 (rule
- ((targets (atd_version.ml))
+ ((targets (ag_version.ml))
   (action
    (with-stdout-to ${@}
     (echo "let version = \"%s\"")))))
 
 (library
- ((name atd)
-  (public_name atd)
+ ((name atdgen)
+  (public_name atdgen)
   (wrapped false)
-  (libraries (easy-format unix str))))
+  (libraries (atd str biniou yojson))))
 |} version

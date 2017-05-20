@@ -23,3 +23,9 @@ atd_version.ml
 unit-tests
 dep
 *.out
+html
+man1
+*.cm[ioxa]
+*.cmx[as]
+*.[oa]
+*.annot

@@ -3,6 +3,7 @@
 (executables
  ((libraries (atd))
   (names (unit_tests))
+  (public_names (unit_tests))  
   (package atd)))
 
 (alias

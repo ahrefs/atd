@@ -49,6 +49,7 @@
 (executables
  ((libraries (atd atdgen))
   (names (test_atdgen_main))
+  (public_names (test_atdgen_main))
   (modules
    (test
     test3j_j

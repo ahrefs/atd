@@ -479,7 +479,7 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
 
     | `Sum _ -> make_sum_writer p x make_variant_writer
 
-    | `Record (loc, a, `Record o, `Record) ->
+    | `Record (loc, a, `Record o, `Record j) ->
         [
           `Annot ("fun", `Line "fun ob x ->");
           `Block (make_record_writer p a o);
@@ -1001,7 +1001,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
           ]
         ]
 
-    | `Record (loc, a, `Record o, `Record) ->
+    | `Record (loc, a, `Record o, `Record j) ->
         (match o with
              `Record -> ()
            | `Object ->
@@ -1009,7 +1009,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
         );
         [
           `Annot ("fun", `Line "fun p lb ->");
-          `Block (make_record_reader p type_annot loc a o)
+          `Block (make_record_reader p type_annot loc a o j)
         ]
 
     | `Tuple (loc, a, `Tuple, `Tuple) ->
@@ -1358,7 +1358,8 @@ and make_deconstructed_reader p loc fields set_bit =
         ])::updates
   ) [] toposorted_fields
 
-and make_record_reader p type_annot loc a record_kind =
+and make_record_reader p type_annot loc a record_kind json_options =
+  let keep_nulls = json_options.json_keep_nulls in
   let fields = get_fields p a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
     study_record p fields
@@ -1419,15 +1420,22 @@ and make_record_reader p type_annot loc a record_kind =
               | Default _ -> `Inline []
             ]
           in
-          let opt_expr = match field.default with
+          let opt_expr =
+            match field.default with
             | Default _ ->
-              [
-                `Line "if not (Yojson.Safe.read_null_if_possible p lb) then (";
-                `Block expr;
-                `Line ")"
-              ]
+                if keep_nulls then
+                  expr
+                else
+                  (* treat fields with null values as missing fields
+                     (atdgen's default) *)
+                  [
+                    `Line "if not (Yojson.Safe.read_null_if_possible p lb) \
+                           then (";
+                    `Block expr;
+                    `Line ")"
+                  ]
             | Checked _ ->
-              expr
+                expr
           in
           (Some jsonf.Ag_json.json_fname, opt_expr)
       ) fields

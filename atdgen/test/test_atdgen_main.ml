@@ -937,6 +937,15 @@ let test_json_float_decimals () =
   print_endline s;
   check (s = "{\"sqrt2_5\":1.4142,\"small_2\":0.00012,\"large_2\":1.2e+12}")
 
+let test_patch () =
+  section "read json record with null fields meaning (Some None)";
+  let json = {| { "patch1": 1, "patch2": null } |} in
+  let open Test3j_t in
+  let x = Test3j_j.patch_of_string json in
+  check (x.patch1 = Some (Some 1));
+  check (x.patch2 = Some None);
+  check (x.patch3 = None)
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -977,6 +986,7 @@ let all_tests = [
   test_ignored_wrap;
   test_biniou_float32;
   test_json_float_decimals;
+  test_patch;
 ]
 
 let quality_test () =

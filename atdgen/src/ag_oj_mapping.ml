@@ -28,7 +28,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
     | `Record (loc, l, an) ->
         let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
         let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
-        let json_t = `Record in
+        let json_t = `Record (Ag_json.get_json_record an) in
         `Record (loc,
                  Array.of_list
                    (List.map (mapping_of_field ocaml_field_prefix) l),
@@ -166,9 +166,9 @@ and mapping_of_field ocaml_field_prefix = function
         };
 
         f_brepr = `Field {
-          Ag_json.json_fname = json_fname;
-          json_tag_field = json_tag_field;
-          json_unwrapped = json_unwrapped
+          Ag_json.json_fname;
+          json_tag_field;
+          json_unwrapped;
         };
       }
 

@@ -9,8 +9,13 @@ type json_variant = { json_cons : string option }
 type json_field = {
   json_fname  : string;           (* <json name=...> *)
   json_tag_field : string option; (* <json tag_field=...> *)
-  json_unwrapped : bool
+  json_unwrapped : bool;
 }
+
+type json_record = {
+  json_keep_nulls : bool; (* { ... } <json keep_nulls> *)
+}
+
 type json_repr =
   [ `Bool
   | `Cell
@@ -22,7 +27,7 @@ type json_repr =
   | `List of json_list
   | `Nullable
   | `Option
-  | `Record
+  | `Record of json_record
   | `String
   | `Sum
   | `Tuple
@@ -42,3 +47,5 @@ val get_json_fname : string -> Atd_annot.t -> string
 val get_json_tag_field : Atd_annot.t -> string option
 
 val get_json_untyped : Atd_annot.t -> bool
+
+val get_json_record : Atd_annot.t -> json_record

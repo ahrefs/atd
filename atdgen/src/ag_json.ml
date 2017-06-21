@@ -12,7 +12,11 @@ type json_variant = { json_cons : string option }
 type json_field = {
   json_fname  : string;           (* <json name=...> *)
   json_tag_field : string option; (* <json tag_field=...> *)
-  json_unwrapped : bool
+  json_unwrapped : bool;
+}
+
+type json_record = {
+  json_keep_nulls : bool; (* { ... } <json keep_nulls> *)
 }
 
 type json_repr =
@@ -24,7 +28,7 @@ type json_repr =
 
     | `String
     | `Sum
-    | `Record
+    | `Record of json_record
     | `Tuple
     | `List of json_list
     | `Option
@@ -79,3 +83,11 @@ let get_json_tag_field an =
 
 let get_json_untyped an =
   Atd_annot.get_flag ["json"] "untyped" an
+
+let get_json_keep_nulls an =
+  Atd_annot.get_flag ["json"] "keep_nulls" an
+
+let get_json_record an =
+  {
+    json_keep_nulls = get_json_keep_nulls an;
+  }

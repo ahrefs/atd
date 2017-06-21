@@ -126,3 +126,10 @@ type empty_constr_record = {
   empty : empty_constr;
   empty_constr <json tag_field="tag"> : empty_constr;
 }
+
+type patch = {
+  ?patch1: int nullable option;
+  ?patch2: int nullable option;
+  ?patch3: int nullable option;
+} <json keep_nulls>
+

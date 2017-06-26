@@ -58,10 +58,10 @@
     testv
     test_atdgen_main
     test_atdgen_type_conv
-    test_lib))
-  (package atd)))
+    test_lib))))
 
 (alias
  ((name   runtest)
+  (package atd)
   (deps   (test_atdgen_main.exe))
   (action (run ${<}))))

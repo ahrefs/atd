@@ -1,3 +1,6 @@
+(** The type signatures in this module are not yet for public consumption.
+
+    Please don't rely on them in any way.*)
 
 type o = Ag_ocaml.atd_ocaml_repr
 type j = Ag_json.json_repr

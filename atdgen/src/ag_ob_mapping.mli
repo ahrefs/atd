@@ -1,3 +1,6 @@
+(** The type signatures in this module are not yet for public consumption.
+
+    Please don't rely on them in any way.*)
 
 type ob_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_biniou.biniou_repr) Ag_mapping.mapping

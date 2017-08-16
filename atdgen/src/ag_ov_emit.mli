@@ -8,8 +8,8 @@ val make_ocaml_files
   -> pos_fname:string option
   -> pos_lnum:int option
   -> type_aliases:string option
-  -> force_defaults:'a
+  -> force_defaults:_ (* TODO unused *)
   -> name_overlap:bool
-  -> ocaml_version:'b
+  -> ocaml_version:_ (* TODO unused *)
   -> pp_convs:[ `Camlp4 of string list | `Ppx of string list ]
   -> string option -> [< `Files of string | `Stdout ] -> unit

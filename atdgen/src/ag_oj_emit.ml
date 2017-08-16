@@ -1007,7 +1007,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
         );
         [
           `Annot ("fun", `Line "fun p lb ->");
-          `Block (make_record_reader p type_annot loc a o j)
+          `Block (make_record_reader p type_annot loc a j)
         ]
 
     | `Tuple (_, a, `Tuple, `Tuple) ->

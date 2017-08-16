@@ -348,7 +348,7 @@ and make_record_validator a record_kind =
   in
   forall validate_fields
 
-let make_ocaml_validator ~original_types is_rec let1 let2 def =
+let make_ocaml_validator ~original_types is_rec let1 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
   let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
@@ -394,8 +394,8 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
         let validators =
           map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
-              make_ocaml_validator ~original_types is_rec let1 let2 def
+              let let1, _ = get_let ~is_rec ~is_first in
+              make_ocaml_validator ~original_types is_rec let1 def
           ) l
         in
         List.flatten validators
@@ -405,11 +405,11 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
 
   if with_create then
     List.iter (
-      fun (is_rec, l) ->
+      fun (_, l) ->
         let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->
-            let intf, impl = Ag_ox_emit.make_record_creator deref x in
+            let _, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs
@@ -463,9 +463,9 @@ let make_ocaml_files
     ~pos_fname
     ~pos_lnum
     ~type_aliases
-    ~force_defaults
+    ~force_defaults:_
     ~name_overlap
-    ~ocaml_version
+    ~ocaml_version:_
     ~pp_convs
     atd_file out =
   let ((head, m0), _) =

@@ -737,7 +737,7 @@ and format_variant kind (s, o, doc) =
   in
   append_ocamldoc_comment variant doc
 
-let format_module_items pp_convs is_rec (l : ocaml_module_body) =
+let format_module_items pp_convs (l : ocaml_module_body) =
   match l with
       x :: l ->
         format_module_item pp_convs true x ::
@@ -745,7 +745,7 @@ let format_module_items pp_convs is_rec (l : ocaml_module_body) =
     | [] -> []
 
 let format_module_bodies pp_conv (l : (bool * ocaml_module_body) list) =
-  List.flatten (List.map (fun (is_rec, x) -> format_module_items pp_conv is_rec x) l)
+  List.flatten (List.map (fun (_, x) -> format_module_items pp_conv x) l)
 
 let format_head (loc, an) =
   match Ag_doc.get_doc loc an with

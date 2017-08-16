@@ -2,14 +2,8 @@ open Atd_ast
 open Ag_error
 open Ag_mapping
 
-type o = Ag_ocaml.atd_ocaml_repr
-type v = Ag_validate.validate_repr
-
 type ov_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.mapping
-
-type ob_def =
-    (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.def
 
 (*
   Determine whether a type expression does not need validation.

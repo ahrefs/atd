@@ -2,15 +2,8 @@ open Atd_ast
 open Ag_error
 open Ag_mapping
 
-type o = Ag_ocaml.atd_ocaml_repr
-type b = Ag_biniou.biniou_repr
-
 type ob_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_biniou.biniou_repr) Ag_mapping.mapping
-
-type ob_def =
-    (Ag_ocaml.atd_ocaml_repr, Ag_biniou.biniou_repr) Ag_mapping.def
-
 
 (*
   Translation of the types into the ocaml/biniou mapping.

@@ -8,10 +8,6 @@ type j = Ag_json.json_repr
 type oj_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_json.json_repr) Ag_mapping.mapping
 
-type oj_def =
-    (Ag_ocaml.atd_ocaml_repr, Ag_json.json_repr) Ag_mapping.def
-
-
 (*
   Translation of the types into the ocaml/json mapping.
 *)

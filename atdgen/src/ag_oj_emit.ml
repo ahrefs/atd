@@ -1787,7 +1787,7 @@ let make_ocaml_json_impl
 
   if with_create then
     List.iter (
-      fun (is_rec, l) ->
+      fun (_, l) ->
         let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->

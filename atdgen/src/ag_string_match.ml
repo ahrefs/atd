@@ -317,7 +317,7 @@ let make_ocaml_int_mapping
   in
   let int_matching_cases =
     Array.mapi (
-      fun i (s, x) ->
+      fun i (_, x) ->
         `Inline [
           `Line (sprintf "| %i ->" i);
           `Block x;

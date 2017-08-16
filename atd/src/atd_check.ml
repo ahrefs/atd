@@ -5,7 +5,7 @@ open Printf
 open Atd_ast
 
 let add_name accu = function
-    `Name (_, (loc, k, tal), _) -> k :: accu
+    `Name (_, (_, k, _), _) -> k :: accu
   | _ -> accu
 
 let get_kind = function
@@ -14,7 +14,7 @@ let get_kind = function
   | _ -> `Other
 
 let check_inheritance tbl (t0 : type_expr) =
-  let not_a kind x =
+  let not_a kind _ =
     let msg =
       sprintf "Cannot inherit from non-%s type"
         (match kind with
@@ -50,11 +50,11 @@ let check_inheritance tbl (t0 : type_expr) =
       | `Shared _
       | `Wrap _ as x -> not_a kind x
 
-      | `Name (_, (loc, k, tal), _) ->
+      | `Name (_, (loc, k, _), _) ->
           if List.mem k inherited then
             error_at (loc_of_type_expr t0) "Cyclic inheritance"
           else
-            let (arity, opt_def) =
+            let (_arity, opt_def) =
               try Hashtbl.find tbl k
               with Not_found -> error_at loc ("Undefined type " ^ k)
             in
@@ -94,7 +94,7 @@ let check_type_expr tbl tvars (t : type_expr) =
     | `Name (_, (loc, k, tal), _) ->
         assert (k <> "list" && k <> "option"
                 && k <> "nullable" && k <> "shared" && k <> "wrap");
-        let (arity, opt_def) =
+        let (arity, _opt_def) =
           try Hashtbl.find tbl k
           with Not_found -> error_at loc ("Undefined type " ^ k)
         in
@@ -129,7 +129,7 @@ let check_type_expr tbl tvars (t : type_expr) =
         check t
 
   and check_field accu = function
-      `Field (loc, (k, fk, _), t) ->
+      `Field (loc, (k, _, _), t) ->
         if Hashtbl.mem accu k then
           error_at loc
             (sprintf "Multiple definitions of the same field %s" k);
@@ -150,7 +150,7 @@ let check (l : Atd_ast.module_body) =
 
   (* first pass: put all definitions in the table *)
   List.iter (
-    function `Type ((loc, (k, pl, a), t) as x) ->
+    function `Type ((loc, (k, pl, _), _) as x) ->
       if Hashtbl.mem tbl k then
         if Hashtbl.mem predef k then
           error_at loc
@@ -165,6 +165,6 @@ let check (l : Atd_ast.module_body) =
   (* second pass: check existence and arity of types in type expressions,
      check that inheritance is not cyclic *)
   List.iter (
-    function `Type (loc, (k, tvars, a), t) ->
+    function `Type (_, (_, tvars, _), t) ->
       check_type_expr tbl tvars t
   ) l;

@@ -4,12 +4,12 @@ let html_of_doc loc s =
   let doc = Atd_doc.parse_text loc s in
   Atd_doc.html_of_doc doc
 
-let format_html_comments ((section, (loc, l)) as x) =
+let format_html_comments ((section, (_, l)) as x) =
   match section with
       "doc" ->
         (try
            match List.assoc "html" l with
-               (loc, Some s) ->
+               (_, Some s) ->
                  let comment = "(*html " ^ s ^ "*)" in
                  Easy_format.Atom (comment, Easy_format.atom)
              | _ -> raise Not_found
@@ -42,9 +42,9 @@ let print_ml ~name ast =
 let strip all sections x =
   let filter =
     if all then
-      fun l -> []
+      fun _ -> []
     else
-      List.filter (fun (name, fields) -> not (List.mem name sections))
+      List.filter (fun (name, _) -> not (List.mem name sections))
   in
   Atd_ast.map_all_annot filter x
 
@@ -64,7 +64,7 @@ let parse
   let first_head =
     (* heads in other files than the first one are tolerated but ignored *)
     match heads with
-        x :: l -> x
+        x :: _ -> x
       | [] -> (Atd_ast.dummy_loc, [])
   in
   let m = first_head, List.flatten bodies in

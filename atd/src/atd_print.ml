@@ -176,19 +176,19 @@ let make_closures format_annot =
             )
           )
 
-      | `List (loc, t, a) ->
+      | `List (_, t, a) ->
           format_type_name "list" [t] a
 
-      | `Option (loc, t, a) ->
+      | `Option (_, t, a) ->
           format_type_name "option" [t] a
 
-      | `Nullable (loc, t, a) ->
+      | `Nullable (_, t, a) ->
           format_type_name "nullable" [t] a
 
-      | `Shared (loc, t, a) ->
+      | `Shared (_, t, a) ->
           format_type_name "shared" [t] a
 
-      | `Wrap (loc, t, a) ->
+      | `Wrap (_, t, a) ->
           format_type_name "wrap" [t] a
 
       | `Name (_, (_, name, args), a) ->
@@ -205,7 +205,7 @@ let make_closures format_annot =
   and format_inherit t =
     horizontal_sequence [ make_atom "inherit"; format_type_expr t ]
 
-  and format_tuple_field (loc, x, a) =
+  and format_tuple_field (_, x, a) =
     prepend_colon_annots a (format_type_expr x)
 
   and format_field x =
@@ -238,7 +238,7 @@ let make_closures format_annot =
       | `Inherit (_, t) -> format_inherit t
   in
 
-  let format_full_module ((loc, an), l) =
+  let format_full_module ((_, an), l) =
     List (
       ("", "", "", rlist),
       List.map format_annot an @ List.map format_module_item l
@@ -253,7 +253,7 @@ let format ?(annot = default_annot) x =
   let f, _, _ = make_closures annot in
   f x
 
-let default_format, default_format_type_name, default_format_type_expr =
+let _default_format, default_format_type_name, default_format_type_expr =
   make_closures default_annot
 
 let string_of_type_name name args an =

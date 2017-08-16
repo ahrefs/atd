@@ -56,7 +56,7 @@ let parse_ocaml_version () =
 
 let get_default_name_overlap ocaml_version =
   match ocaml_version with
-  | Some (major, minor) when major < 4 -> false
+  | Some (major, _) when major < 4 -> false
   | Some (4, 0) -> false
   | _ -> true
 

@@ -86,7 +86,7 @@ struct
 
   let stream_from_lexbuf ?(fin = fun () -> ()) read ls lexbuf =
     let stream = Some true in
-    let rec f i =
+    let f _ =
       try Some (from_lexbuf ?stream read ls lexbuf)
       with
           Yojson.End_of_input ->

@@ -103,7 +103,7 @@ type_expr:
      { let pos1 = $startpos in
        let pos2 = $endpos in
        let loc = (pos1, pos2) in
-       let loc2, name, args = x in
+       let _, name, args = x in
        match name, args with
            "list", [x] -> `List (loc, x, a)
          | "option", [x] -> `Option (loc, x, a)

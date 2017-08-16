@@ -1791,7 +1791,7 @@ let make_ocaml_json_impl
         let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->
-            let intf, impl = Ag_ox_emit.make_record_creator deref x in
+            let _, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs

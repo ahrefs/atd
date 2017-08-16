@@ -4,7 +4,7 @@
 
 open Printf
 
-let print_loc buf (pos1, pos2) =
+let print_loc buf (_, _) =
   bprintf buf "loc"
 
 let print_list f buf l =

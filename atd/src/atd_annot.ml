@@ -35,7 +35,7 @@ let get_flag k k2 l =
       fun k1 ->
         try
           (* each section must be unique *)
-          let loc, l2 = List.assoc k1 l in
+          let _, l2 = List.assoc k1 l in
           let loc, o = List.assoc k2 l2 in
           match o with
               None -> Some true
@@ -57,12 +57,12 @@ let get_field parse default k k2 l =
       fun k1 ->
         try
           (* each section must be unique *)
-          let loc, l2 = List.assoc k1 l in
+          let _, l2 = List.assoc k1 l in
           let loc, o = List.assoc k2 l2 in
           match o with
               Some s ->
                 (match parse s with
-                     Some x as y -> y
+                     Some _ as y -> y
                    | None ->
                        error_at loc
                          (sprintf "Invalid annotation <%s %s=%S>" k1 k2 s)
@@ -122,9 +122,9 @@ let collapse merge l =
   let l = List.sort (fun (i, _) (j, _) -> compare j i) l in
   List.map snd l
 
-let override_values x1 x2 = x1
+let override_values x1 _ = x1
 
-let override_fields (loc1, l1) (loc2, l2) =
+let override_fields (loc1, l1) (_, l2) =
   (loc1, collapse override_values (l1 @ l2))
 
 let merge l =

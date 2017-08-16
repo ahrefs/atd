@@ -26,7 +26,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
                    (List.map (mapping_of_field ocaml_field_prefix) l),
                  ocaml_t, biniou_t)
 
-    | `Tuple (loc, l, an) ->
+    | `Tuple (loc, l, _) ->
         let ocaml_t = `Tuple in
         let biniou_t = `Tuple in
         `Tuple (loc, Array.of_list (List.map mapping_of_cell l),
@@ -37,17 +37,17 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
         let biniou_t = `List (Ag_biniou.get_biniou_list an) in
         `List (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
-    | `Option (loc, x, an) ->
+    | `Option (loc, x, _) ->
         let ocaml_t = `Option in
         let biniou_t = `Option in
         `Option (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
-    | `Nullable (loc, x, an) ->
+    | `Nullable (loc, x, _) ->
         let ocaml_t = `Nullable in
         let biniou_t = `Nullable in
         `Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
-    | `Shared (loc, x, a) ->
+    | `Shared (_, _, _) ->
         failwith "Sharing is no longer supported"
 
     | `Wrap (loc, x, a) ->
@@ -55,7 +55,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
         let json_t = `Wrap in
         `Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
-    | `Name (loc, (loc2, s, l), an) ->
+    | `Name (loc, (_, s, l), an) ->
         (match s with
              "unit" ->
                `Unit (loc, `Unit, `Unit)
@@ -161,7 +161,7 @@ let def_of_atd (loc, (name, param, an), x) =
   let doc = Ag_doc.get_doc loc an in
   let o =
     match as_abstract x with
-        Some (loc2, an2) ->
+        Some (_, _) ->
           (match Ag_ocaml.get_ocaml_module_and_t `Biniou name an with
                None -> None
              | Some (types_module, main_module, ext_name) ->

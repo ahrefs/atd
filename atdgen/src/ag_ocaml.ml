@@ -783,21 +783,21 @@ let unwrap_option deref x =
 
 let get_implicit_ocaml_default deref x =
   match deref x with
-      `Unit (loc, `Unit, _) -> Some "()"
-    | `Bool (loc, `Bool, _) -> Some "false"
-    | `Int (loc, `Int o, _) ->
+      `Unit (_, `Unit, _) -> Some "()"
+    | `Bool (_, `Bool, _) -> Some "false"
+    | `Int (_, `Int o, _) ->
         Some (match o with
                   `Int -> "0"
                 | `Char -> "'\000'"
                 | `Int32 -> "0l"
                 | `Int64 -> "0L"
                 | `Float -> "0.")
-    | `Float (loc, `Float, _) -> Some "0.0"
-    | `String (loc, `String, _) -> Some "\"\""
-    | `List (loc, x, `List `List, _) -> Some "[]"
-    | `List (loc, x, `List `Array, _) -> Some "[||]"
-    | `Option (loc, x, `Option, _) -> Some "None"
-    | `Nullable (loc, x, `Nullable, _) -> Some "None"
+    | `Float (_, `Float, _) -> Some "0.0"
+    | `String (_, `String, _) -> Some "\"\""
+    | `List (_, _, `List `List, _) -> Some "[]"
+    | `List (_, _, `List `Array, _) -> Some "[||]"
+    | `Option (_, _, `Option, _) -> Some "None"
+    | `Nullable (_, _, `Nullable, _) -> Some "None"
     | _ -> None
 
 

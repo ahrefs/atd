@@ -1,3 +1,4 @@
+[@@@ocaml.warning "-32"]
 
 (*
   Runtime library

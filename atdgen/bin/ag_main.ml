@@ -392,7 +392,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
             | None ->
                 (match mode with
                      `B | `J | `V ->
-                       Some (String.capitalize (Filename.basename base) ^ "_t")
+                       Some (String.capitalize_ascii (Filename.basename base) ^ "_t")
                    | _ -> None
           )
   in

@@ -5,7 +5,6 @@
 open Printf
 
 open Atd_ast
-open Ag_error
 open Ag_mapping
 open Ag_ov_mapping
 

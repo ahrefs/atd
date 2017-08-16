@@ -9,7 +9,6 @@ open Atd_ast
 open Ag_error
 open Ag_mapping
 open Ag_ob_mapping
-open Ag_ob_spe
 
 (*
   OCaml code generator (biniou readers and writers)

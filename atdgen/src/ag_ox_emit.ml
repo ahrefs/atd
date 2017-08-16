@@ -128,7 +128,7 @@ let check_duplicate_names container_kind field_kind l =
           sprintf "\
 %s contains a %s that is already defined elsewhere
 and cannot be reused."
-            (String.capitalize container_kind) field_kind
+            (String.capitalize_ascii container_kind) field_kind
         in
         let msg2 = sprintf "First definition of %s %s." field_kind s in
         let msg3 = sprintf "\

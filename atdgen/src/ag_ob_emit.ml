@@ -1313,12 +1313,12 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let write_untagged_expr = make_writer deref ~tagged:false x in
   let eta_expand = is_rec && not (Ag_ox_emit.is_function write_untagged_expr) in
   let needs_annot = Ag_ox_emit.needs_type_annot x in
-  let extra_param, extra_args, type_annot =
+  let extra_param, extra_args =
     match eta_expand, needs_annot with
-    | true, false -> " ob x", " ob x", None
-    | true, true -> sprintf " ob (x : %s)" type_constraint, " ob x", None
-    | false, false -> "", "", None
-    | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
+    | true, false -> " ob x", " ob x"
+    | true, true -> sprintf " ob (x : %s)" type_constraint, " ob x"
+    | false, false -> "", ""
+    | false, true -> "", ""
   in
   let type_annot =
     match Ag_ox_emit.needs_type_annot x with

@@ -729,10 +729,10 @@ and make_table_writer deref tagged list_kind x =
     main
 
 
-let study_record ~ocaml_version deref fields =
+let study_record ~ocaml_version fields =
   let field_assignments =
     List.fold_right (
-      fun (x, name, default, opt, unwrap) field_assignments ->
+      fun (_, name, default, opt, _) field_assignments ->
         let v =
           match default with
               None ->
@@ -941,11 +941,11 @@ let rec make_reader
            | `Object ->
                error loc "Sorry, OCaml objects are not supported"
         );
-        let body = make_record_reader deref ~ocaml_version ~tagged type_annot a o in
+        let body = make_record_reader deref ~ocaml_version type_annot a in
         wrap_body ~tagged Bi_io.record_tag body
 
-        let body = make_tuple_reader deref ~ocaml_version ~tagged a in
     | `Tuple (_, a, `Tuple, `Tuple) ->
+        let body = make_tuple_reader deref ~ocaml_version a in
         wrap_body ~tagged Bi_io.tuple_tag body
 
     | `List (loc, x, `List o, `List b) ->
@@ -1067,18 +1067,18 @@ and make_variant_reader ~ocaml_version deref type_annot tick x : Ag_indent.t lis
         ]
 
 and make_record_reader
-    deref ~ocaml_version ~tagged type_annot
-    a record_kind =
+    deref ~ocaml_version type_annot
+    a =
   let fields = get_fields deref a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record ~ocaml_version deref fields
+    study_record ~ocaml_version fields
   in
 
   let body =
     let a = Array.of_list fields in
     let cases =
       Array.mapi (
-        fun i (x, name, _, opt, unwrapped) ->
+        fun i (x, name, _, _, unwrapped) ->
           let f_value =
             if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
             else x.f_value
@@ -1133,7 +1133,7 @@ and make_record_reader
   ]
 
 
-and make_tuple_reader deref ~tagged ~ocaml_version a =
+and make_tuple_reader deref ~ocaml_version a =
   let cells =
     Array.map (
       fun x ->
@@ -1238,12 +1238,12 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
           error loc "Not a list or array of records"
   in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record ~ocaml_version deref fields
+    study_record ~ocaml_version fields
   in
   let cases =
     Array.to_list (
       Array.mapi (
-        fun i (x, name, default, opt, unwrap) ->
+        fun i (x, name, _, _, _) ->
           `Inline [
             `Line (sprintf "| %i ->" (Bi_io.hash_name x.f_name));
             `Block [
@@ -1490,7 +1490,7 @@ let make_ocaml_files
     ~pos_fname
     ~pos_lnum
     ~type_aliases
-    ~force_defaults
+    ~force_defaults:_
     ~name_overlap
     ~ocaml_version
     ~pp_convs

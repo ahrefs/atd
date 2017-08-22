@@ -1,6 +1,16 @@
 (jbuild_version 1)
 
 (rule
+ ((targets (github_t.ml github_t.mli))
+  (deps    (github.atd))
+  (action  (run atdgen -t ${<}))))
+
+(rule
+ ((targets (github_j.ml github_j.mli))
+  (deps    (github.atd))
+  (action  (run atdgen -j -j-std ${<}))))
+
+(rule
  ((targets (test.ml test.mli))
   (deps    (test.atd))
   (action  (run ${bin:atdgen} ${<}))))
@@ -59,6 +69,17 @@
     test_atdgen_main
     test_atdgen_type_conv
     test_lib))))
+
+(executables
+ ((libraries (atd atdgen))
+  (names (github_j))
+  (modules (github_t github_j))))
+
+(alias
+ ((name runtest)
+  (package atdgen)
+  (deps (github_j.exe))
+  (action (run ${<}))))
 
 (alias
  ((name   runtest)

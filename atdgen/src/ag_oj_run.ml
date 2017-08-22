@@ -4,6 +4,8 @@
 
 open Printf
 
+type 'a write = Bi_outbuf.t -> 'a -> unit
+
 exception Error of string
 
 (*
@@ -119,6 +121,8 @@ let write_float_as_int ob x =
       | FP_zero -> Bi_outbuf.add_string ob (Printf.sprintf "%.0f" x)
       | FP_infinite -> error "Cannot convert inf or -inf into a JSON int"
       | FP_nan -> error "Cannot convert NaN into a JSON int"
+
+type 'a read = Yojson.lexer_state -> Lexing.lexbuf -> 'a
 
 let read_null p lb =
   Yojson.Safe.read_space p lb;

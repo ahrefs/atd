@@ -1,0 +1,7 @@
+(jbuild_version 1)
+
+(executable
+ ((name atdj_main)
+  (public_name atdj)
+  (package atdj)
+  (libraries (atd atdgen))))

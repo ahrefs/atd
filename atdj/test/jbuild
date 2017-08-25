@@ -1,0 +1,7 @@
+(jbuild_version 1)
+
+(alias
+ ((name runtest)
+  (package atdj)
+  (deps (AtdjTest.java json.jar junit-4.8.2.jar test.atd))
+  (action (run ./run_test.sh ${bin:atdj}))))

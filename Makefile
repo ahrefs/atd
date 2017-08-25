@@ -9,7 +9,7 @@ tests:
 check: tests
 
 clean:
-	rm -rf _build *.install
+	$(JBUILDER) clean
 
 .PHONY: all tests clean check
 

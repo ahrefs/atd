@@ -1,3 +1,5 @@
+[@@@ocaml.warning "-32"]
+
 exception Error of string
 
 
@@ -13,14 +15,14 @@ val write_untagged_option
 
 val write_untagged_list
   : Bi_io.node_tag
-  -> (Bi_outbuf.t -> 'a -> 'b)
+  -> (Bi_outbuf.t -> 'a -> unit)
   -> Bi_outbuf.t
   -> 'a list
   -> unit
 
 val write_untagged_array
   : Bi_io.node_tag
-  -> (Bi_outbuf.t -> 'a -> 'b)
+  -> (Bi_outbuf.t -> 'a -> unit)
   -> Bi_outbuf.t
   -> 'a array
   -> unit
@@ -71,5 +73,5 @@ val get_int_reader : Bi_io.node_tag -> Bi_inbuf.t -> int
 val read_error : unit -> 'a
 
 
-val array_iter2 : ('a -> 'b -> 'c) -> 'a -> 'b array -> unit
+val array_iter2 : ('a -> 'b -> unit) -> 'a -> 'b array -> unit
 val array_init2 : int -> 'a -> (int -> 'a -> 'b) -> 'b array

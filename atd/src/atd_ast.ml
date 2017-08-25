@@ -173,52 +173,49 @@ let map_all_annot f ((head, body) : full_module) =
 let rec fold (f : type_expr -> 'a -> 'a) (x : type_expr) acc =
   let acc = f x acc in
   match x with
-      `Sum (loc, variant_list, annot) ->
+      `Sum (_, variant_list, _annot) ->
         List.fold_right (fold_variant f) variant_list acc
 
-    | `Record (loc, field_list, annot) ->
+    | `Record (_, field_list, _annot) ->
         List.fold_right (fold_field f) field_list acc
 
-    | `Tuple (loc, l, annot) ->
-        List.fold_right (fun (loc, x, _) acc -> fold f x acc) l acc
+    | `Tuple (_, l, _annot) ->
+        List.fold_right (fun (_, x, _) acc -> fold f x acc) l acc
 
-    | `List (loc, type_expr, annot) ->
+    | `List (_, type_expr, _annot) ->
         fold f type_expr acc
 
-    | `Option (loc, type_expr, annot) ->
+    | `Option (_, type_expr, _annot) ->
         fold f type_expr acc
 
-    | `Nullable (loc, type_expr, annot) ->
+    | `Nullable (_, type_expr, _annot) ->
         fold f type_expr acc
 
-    | `Shared (loc, type_expr, annot) ->
+    | `Shared (_, type_expr, _annot) ->
         fold f type_expr acc
 
-    | `Wrap (loc, type_expr, annot) ->
+    | `Wrap (_, type_expr, _annot) ->
         fold f type_expr acc
 
-    | `Name (loc, (loc2, name, type_expr_list), annot) ->
+    | `Name (_, (_2, _name, type_expr_list), _annot) ->
         List.fold_right (fold f) type_expr_list acc
 
-    | `Tvar (loc, string) ->
+    | `Tvar (_, _string) ->
         acc
 
 and fold_variant f x acc =
   match x with
-      `Variant (loc, _, Some type_expr) -> fold f type_expr acc
+      `Variant (_, _, Some type_expr) -> fold f type_expr acc
     | `Variant _ -> acc
-    | `Inherit (loc, type_expr) -> fold f type_expr acc
+    | `Inherit (_, type_expr) -> fold f type_expr acc
 
 and fold_field f x acc =
   match x with
-      `Field (loc, _, type_expr) -> fold f type_expr acc
-    | `Inherit (loc, type_expr) -> fold f type_expr acc
+      `Field (_, _, type_expr) -> fold f type_expr acc
+    | `Inherit (_, type_expr) -> fold f type_expr acc
 
 
 module Type_names = Set.Make (String)
-
-let union l =
-  List.fold_left Type_names.union Type_names.empty l
 
 let extract_type_names ?(ignorable = []) x =
   let ign s = List.mem s ignorable in
@@ -232,7 +229,7 @@ let extract_type_names ?(ignorable = []) x =
     fold (
       fun x acc ->
         match x with
-            `Name (loc, (loc2, name, l), a) -> add name acc
+            `Name (_, (_, name, _), _) -> add name acc
           | _ -> acc
     )
       x Type_names.empty

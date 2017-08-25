@@ -106,7 +106,7 @@ val %s_of_string :%s
           s;
 
         if with_create && Ag_ox_emit.is_exportable x then
-          let create_record_intf, create_record_impl =
+          let create_record_intf, _ =
             Ag_ox_emit.make_record_creator deref x
           in
           bprintf buf "%s" create_record_intf;
@@ -128,7 +128,7 @@ let is_json_string deref x =
 
 let get_assoc_type deref loc x =
   match deref x with
-  | `Tuple (loc2, [| k; v |], `Tuple, `Tuple) ->
+  | `Tuple (_, [| k; v |], `Tuple, `Tuple) ->
       if not (is_json_string deref k.cel_value) then
         error loc "Due to <json repr=\"object\"> keys must be strings";
       (k.cel_value, v.cel_value)
@@ -160,7 +160,7 @@ type parse_field = {
 let implicit_field_name jname = "0jic_"^jname
 
 let get_fields p a =
-  let k, acc = Array.fold_left (fun (k,acc) (i, x) ->
+  let k, acc = Array.fold_left (fun (k,acc) (_, x) ->
     let ocamlf, default, jsonf, k =
       match x.f_arepr, x.f_brepr with
         `Field o, `Field j ->
@@ -205,7 +205,8 @@ let get_fields p a =
     with Not_found -> None
   in
   (* Add implicit fields and index the deconstructed/tag field relations *)
-  let _k = Hashtbl.fold (fun i { jsonf = {Ag_json.json_tag_field} } k ->
+  (* TODO why is a fold only being used for its side effect? *)
+  let (_ : int) = Hashtbl.fold (fun i { jsonf = {Ag_json.json_tag_field; _}; _ } k ->
     match json_tag_field with
     | None -> k
     | Some constr ->
@@ -271,9 +272,6 @@ let insert sep l =
 
 let make_json_string s = Yojson.Safe.to_string (`String s)
 
-let unopt = function None -> assert false | Some x -> x
-
-
 (*
   ('a, 'b) t            -> write_t write__a write__b
   ('a, foo) t           -> write_t write__a write_foo
@@ -284,11 +282,11 @@ let rec get_writer_name
     ?(name_f = fun s -> "write_" ^ s)
     p (x : oj_mapping) : string =
   match x with
-      `Unit (loc, `Unit, `Unit) ->
+      `Unit (_, `Unit, `Unit) ->
         "Yojson.Safe.write_null"
-    | `Bool (loc, `Bool, `Bool) ->
+    | `Bool (_, `Bool, `Bool) ->
         "Yojson.Safe.write_bool"
-    | `Int (loc, `Int o, `Int) ->
+    | `Int (_, `Int o, `Int) ->
         (match o with
              `Int -> "Yojson.Safe.write_int"
            | `Char -> "Ag_oj_run.write_int8"
@@ -297,7 +295,7 @@ let rec get_writer_name
            | `Float -> "Ag_oj_run.write_float_as_int"
         )
 
-    | `Float (loc, `Float, `Float j) ->
+    | `Float (_, `Float, `Float j) ->
         (match j with
             `Float None ->
               if p.std then "Yojson.Safe.write_std_float"
@@ -311,19 +309,19 @@ let rec get_writer_name
               "Ag_oj_run.write_float_as_int"
         )
 
-    | `String (loc, `String, `String) ->
+    | `String (_, `String, `String) ->
         "Yojson.Safe.write_string"
 
-    | `Tvar (loc, s) -> "write_" ^ name_of_var s
+    | `Tvar (_, s) -> "write_" ^ name_of_var s
 
-    | `Name (loc, s, args, None, None) ->
+    | `Name (_, s, args, None, None) ->
         let l = List.map (get_writer_name ~paren:true p) args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args,
-                 `External (types_module, main_module, ext_name),
+    | `External (_, _, args,
+                 `External (_, main_module, ext_name),
                  `External) ->
         let f = main_module ^ "." ^ name_f ext_name in
         let l = List.map (get_writer_name ~paren:true p) args in
@@ -350,9 +348,9 @@ let rec get_reader_name
     p (x : oj_mapping) : string =
 
   match x with
-      `Unit (loc, `Unit, `Unit) -> "Ag_oj_run.read_null"
-    | `Bool (loc, `Bool, `Bool) -> "Ag_oj_run.read_bool"
-    | `Int (loc, `Int o, `Int) ->
+      `Unit (_, `Unit, `Unit) -> "Ag_oj_run.read_null"
+    | `Bool (_, `Bool, `Bool) -> "Ag_oj_run.read_bool"
+    | `Int (_, `Int o, `Int) ->
         (match o with
              `Int -> "Ag_oj_run.read_int"
            | `Char -> "Ag_oj_run.read_int8"
@@ -361,20 +359,20 @@ let rec get_reader_name
            | `Float -> "Ag_oj_run.read_number"
         )
 
-    | `Float (loc, `Float, `Float j) -> "Ag_oj_run.read_number"
+    | `Float (_, `Float, `Float _) -> "Ag_oj_run.read_number"
 
-    | `String (loc, `String, `String) -> "Ag_oj_run.read_string"
+    | `String (_, `String, `String) -> "Ag_oj_run.read_string"
 
-    | `Tvar (loc, s) -> "read_" ^ name_of_var s
+    | `Tvar (_, s) -> "read_" ^ name_of_var s
 
-    | `Name (loc, s, args, None, None) ->
+    | `Name (_, s, args, None, None) ->
         let l = List.map (get_reader_name ~paren:true p) args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args,
-                 `External (types_module, main_module, ext_name),
+    | `External (_, _, args,
+                 `External (_, main_module, ext_name),
                  `External) ->
         let f = main_module ^ "." ^ name_f ext_name in
         let l = List.map (get_reader_name ~paren:true p) args in
@@ -396,7 +394,7 @@ let get_left_of_string_name p name param =
 
 let destruct_sum (x : oj_mapping) =
   match x with
-      `Sum (loc, a, `Sum x, `Sum) ->
+      `Sum (_, a, `Sum x, `Sum) ->
         let tick = match x with `Classic -> "" | `Poly -> "`" in
         tick, a
     | `Unit _ -> error (loc_of_mapping x) "Cannot destruct unit"
@@ -435,10 +433,10 @@ let make_sum_writer p sum f =
   ]
 
 let is_optional = function
-  | { default=Default _ } -> true
-  | { default=Checked _ } -> false
+  | { default=Default _ ; _ } -> true
+  | { default=Checked _ ; _ } -> false
 
-let unwrap p { jsonf=jsonf; mapping=mapping } =
+let unwrap p { jsonf=jsonf; mapping=mapping ; _} =
   if jsonf.Ag_json.json_unwrapped
   then Ag_ocaml.unwrap_option p.deref mapping.f_value
   else mapping.f_value
@@ -450,7 +448,7 @@ let string_expr_of_constr_field p v_of_field field =
     `String _ -> [ `Line v ]
   | _ ->
     ( `Line "(" )::
-      (make_sum_writer p f_value (fun p tick o j x ->
+      (make_sum_writer p f_value (fun _ tick o j x ->
         let ocaml_cons = o.Ag_ocaml.ocaml_cons in
         let json_cons = j.Ag_json.json_cons in
         match json_cons with
@@ -479,13 +477,13 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
 
     | `Sum _ -> make_sum_writer p x make_variant_writer
 
-    | `Record (loc, a, `Record o, `Record j) ->
+    | `Record (_, a, `Record o, `Record _) ->
         [
           `Annot ("fun", `Line "fun ob x ->");
           `Block (make_record_writer p a o);
         ]
 
-    | `Tuple (loc, a, `Tuple, `Tuple) ->
+    | `Tuple (_, a, `Tuple, `Tuple) ->
         let len = Array.length a in
         let a =
           Array.mapi (
@@ -545,7 +543,7 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
                ]
         )
 
-    | `Option (loc, x, `Option, `Option) ->
+    | `Option (_, x, `Option, `Option) ->
         [
           `Line (sprintf "Ag_oj_run.write_%soption ("
                    (if p.std then "std_" else ""));
@@ -553,17 +551,17 @@ let rec make_writer p (x : oj_mapping) : Ag_indent.t list =
           `Line ")";
         ]
 
-    | `Nullable (loc, x, `Nullable, `Nullable) ->
+    | `Nullable (_, x, `Nullable, `Nullable) ->
         [
           `Line "Ag_oj_run.write_nullable (";
           `Block (make_writer p x);
           `Line ")";
         ]
 
-    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+    | `Wrap (_, x, `Wrap o, `Wrap) ->
         (match o with
             None -> make_writer p x
-          | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
+          | Some { Ag_ocaml.ocaml_unwrap; _} ->
               [
                 `Line "fun ob x -> (";
                 `Block [
@@ -710,30 +708,30 @@ and make_record_writer p a record_kind =
   let constr_var constr = "constr_" ^ constr.mapping.f_name in
 
   let write_constr_ss = Array.map (function
-    | { payloads = payload_i :: _ } as field ->
+    | { payloads = payload_i :: _; _ } as field ->
       `Inline [
         `Line (sprintf "let %s =" (constr_var field));
         `Block (string_expr_of_constr_field p v_of_field
                   (if field.implicit then fields.(payload_i) else field));
         `Line "in";
       ]
-    | { payloads = [] } -> `Inline []
+    | { payloads = []; _ } -> `Inline []
   ) fields in
 
   let v_or_constr v field = if field.implicit then constr_var field else v in
 
   let write_fields =
     Array.mapi (
-      fun i field ->
+      fun _ field ->
         let json_fname = field.jsonf.Ag_json.json_fname in
         let app v =
           let f_value = unwrap p field in
           match field with
-            | { constructor = Some constr_i } ->
+            | { constructor = Some constr_i; _ } ->
               let constr = fields.(constr_i) in
               let cons_code json_cons_code =
                 (* Tag will be written. Check equality. *)
-                `Block (apply p (fun v ->
+                `Block (apply p (fun _ ->
                   [
                     `Line (sprintf "if %s <> %s then"
                              (constr_var constr) json_cons_code);
@@ -756,7 +754,7 @@ and make_record_writer p a record_kind =
                    ]
                   ) cons_code)
               )@[ `Line (sprintf ") ob %s;" (v_or_constr v field)) ]
-            | { constructor = None } ->
+            | { constructor = None; _ } ->
               [
                 `Inline sep;
                 `Line (write_field_tag json_fname);
@@ -816,8 +814,8 @@ let study_record p fields =
   let create_record = [ `Line "{"; `Block create_record_fields; `Line "}" ] in
 
   let n = Array.fold_left (fun n -> function
-    | { default = Checked k } -> max n (k + 1)
-    | { default = Default _ } -> n
+    | { default = Checked k; _ } -> max n (k + 1)
+    | { default = Default _; _ } -> n
   ) 0 fields in
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
@@ -884,7 +882,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
     | `External _
     | `Tvar _ -> [ `Line (get_reader_name p x) ]
 
-    | `Sum (loc, a, `Sum x, `Sum) ->
+    | `Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
               `Classic -> ""
@@ -1009,10 +1007,10 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
         );
         [
           `Annot ("fun", `Line "fun p lb ->");
-          `Block (make_record_reader p type_annot loc a o j)
+          `Block (make_record_reader p type_annot loc a j)
         ]
 
-    | `Tuple (loc, a, `Tuple, `Tuple) ->
+    | `Tuple (_, a, `Tuple, `Tuple) ->
         [
           `Annot ("fun", `Line "fun p lb ->");
           `Block (make_tuple_reader p a);
@@ -1071,7 +1069,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
         in
         make_reader p (Some "_ option") (`Sum (loc, a, `Sum `Classic, `Sum))
 
-    | `Nullable (loc, x, `Nullable, `Nullable) ->
+    | `Nullable (_, x, `Nullable, `Nullable) ->
         [
           `Line "fun p lb ->";
           `Block [
@@ -1083,10 +1081,10 @@ let rec make_reader p type_annot (x : oj_mapping) : Ag_indent.t list =
           ]
         ]
 
-    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+    | `Wrap (_, x, `Wrap o, `Wrap) ->
         (match o with
             None -> make_reader p type_annot x
-          | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
+          | Some { Ag_ocaml.ocaml_wrap; _ } ->
               [
                 `Line "fun p lb ->";
                 `Block [
@@ -1322,8 +1320,8 @@ and make_deconstructed_reader p loc fields set_bit =
 
   let toposorted_fields =
     toposort_fields [] (fst (Array.fold_left (fun (s, i) -> function
-    | { constructor = None   } -> (i :: s, i + 1)
-    | { constructor = Some _ } -> (s,      i + 1)
+    | { constructor = None ; _  } -> (i :: s, i + 1)
+    | { constructor = Some _; _ } -> (s,      i + 1)
     ) ([], 0) fields)) in
 
   List.fold_left (fun updates i ->
@@ -1358,7 +1356,7 @@ and make_deconstructed_reader p loc fields set_bit =
         ])::updates
   ) [] toposorted_fields
 
-and make_record_reader p type_annot loc a record_kind json_options =
+and make_record_reader p type_annot loc a json_options =
   let keep_nulls = json_options.json_keep_nulls in
   let fields = get_fields p a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
@@ -1367,8 +1365,8 @@ and make_record_reader p type_annot loc a record_kind json_options =
 
   let read_field =
     let cases =
-      Array.mapi (fun i field ->
-        let { ocamlf = ocamlf; jsonf = jsonf; mapping = x } = field in
+      Array.map (fun field ->
+        let { ocamlf = ocamlf; jsonf = jsonf; mapping = x; _ } = field in
         let unwrapped = jsonf.Ag_json.json_unwrapped in
         let f_value =
           if unwrapped then Ag_ocaml.unwrap_option p.deref x.f_value
@@ -1469,8 +1467,8 @@ and make_record_reader p type_annot loc a record_kind json_options =
 
   let update_deconstructed_fields =
     if List.exists (function
-    | { constructor = Some _ } -> true
-    | { constructor = None   } -> false
+    | { constructor = Some _; _ } -> true
+    | { constructor = None ; _  } -> false
     ) (Array.to_list fields)
     then make_deconstructed_reader p loc fields set_bit
     else []
@@ -1522,7 +1520,7 @@ and make_tuple_reader p a =
     let n = ref (Array.length cells) in
     (try
        for i = Array.length cells - 1 downto 0 do
-         let x, default = cells.(i) in
+         let _, default = cells.(i) in
          if default = None then (
            n := i + 1;
            raise Exit
@@ -1789,11 +1787,11 @@ let make_ocaml_json_impl
 
   if with_create then
     List.iter (
-      fun (is_rec, l) ->
+      fun (_, l) ->
         let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->
-            let intf, impl = Ag_ox_emit.make_record_creator deref x in
+            let _, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs

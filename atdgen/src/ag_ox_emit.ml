@@ -57,19 +57,19 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
         else
           error loc "Anonymous record types are not allowed by OCaml."
 
-    | `Tuple (loc, ca, _, _) ->
+    | `Tuple (_, ca, _, _) ->
         Array.fold_left (extract_names_from_cell root_loc) acc ca
 
-    | `List (loc, x, _, _)
-    | `Option (loc, x, _, _)
-    | `Nullable (loc, x, _, _)
-    | `Wrap (loc, x, _, _) ->
+    | `List (_, x, _, _)
+    | `Option (_, x, _, _)
+    | `Nullable (_, x, _, _)
+    | `Wrap (_, x, _, _) ->
         extract_names_from_expr root_loc acc x
 
-    | `Name (loc, _, l, _, _) ->
+    | `Name (_, _, l, _, _) ->
         List.fold_left (extract_names_from_expr root_loc) acc l
 
-    | `External (loc, _, l, _, _) ->
+    | `External (_, _, l, _, _) ->
         List.fold_left (extract_names_from_expr root_loc) acc l
 
     | `Tvar _ -> acc
@@ -128,7 +128,7 @@ let check_duplicate_names container_kind field_kind l =
           sprintf "\
 %s contains a %s that is already defined elsewhere
 and cannot be reused."
-            (String.capitalize container_kind) field_kind
+            (String.capitalize_ascii container_kind) field_kind
         in
         let msg2 = sprintf "First definition of %s %s." field_kind s in
         let msg3 = sprintf "\
@@ -249,7 +249,7 @@ let is_exportable def =
 
 let make_record_creator deref x =
   match x.def_value with
-      Some (`Record (loc, a, `Record `Record, _)) ->
+      Some (`Record (_, a, `Record `Record, _)) ->
         let s = x.def_name in
         let full_name = get_full_type_name x in
         let l =

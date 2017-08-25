@@ -95,19 +95,19 @@ let ocaml_sum_of_string s : atd_ocaml_sum option =
   match s with
       "classic" -> Some `Classic
     | "poly" -> Some `Poly
-    | s -> None
+    | _ -> None
 
 let ocaml_record_of_string s : atd_ocaml_record option =
   match s with
       "record" -> Some `Record
     | "object" -> Some `Object
-    | s -> None
+    | _ -> None
 
 let ocaml_list_of_string s : atd_ocaml_list option =
   match s with
       "list" -> Some `List
     | "array" -> Some `Array
-    | s -> None
+    | _ -> None
 
 let string_of_ocaml_list (x : atd_ocaml_list) =
   match x with
@@ -271,7 +271,7 @@ let omap f = function None -> None | Some x -> Some (f x)
 
 let rec map_expr (x : type_expr) : ocaml_expr =
   match x with
-      `Sum (loc, l, an) ->
+      `Sum (_, l, an) ->
         let kind = get_ocaml_sum an in
         `Sum (kind, List.map map_variant l)
     | `Record (loc, l, an) ->
@@ -281,26 +281,26 @@ let rec map_expr (x : type_expr) : ocaml_expr =
           Ag_error.error loc "Empty record (not valid in OCaml)"
         else
           `Record (kind, List.map (map_field field_prefix) l)
-    | `Tuple (loc, l, an) ->
+    | `Tuple (_, l, _) ->
         `Tuple (List.map (fun (_, x, _) -> map_expr x) l)
-    | `List (loc, x, an) ->
+    | `List (_, x, an) ->
         let s = string_of_ocaml_list (get_ocaml_list an) in
         `Name (s, [map_expr x])
-    | `Option (loc, x, an) ->
+    | `Option (_, x, _) ->
         `Name ("option", [map_expr x])
-    | `Nullable (loc, x, an) ->
+    | `Nullable (_, x, _) ->
         `Name ("option", [map_expr x])
-    | `Shared (loc, x, a) ->
+    | `Shared (_, _, _) ->
         failwith "Sharing is not supported"
     | `Wrap (loc, x, a) ->
         (match get_ocaml_wrap loc a with
             None -> map_expr x
-          | Some { ocaml_wrap_t } -> `Name (ocaml_wrap_t, [])
+          | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
         )
-    | `Name (loc, (loc2, s, l), an) ->
+    | `Name (_, (_2, s, l), an) ->
         let s = get_ocaml_type_path s an in
         `Name (s, List.map map_expr l)
-    | `Tvar (loc, s) ->
+    | `Tvar (_, s) ->
         `Tvar s
 
 and map_variant (x : variant) : ocaml_variant =
@@ -313,7 +313,7 @@ and map_variant (x : variant) : ocaml_variant =
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
       `Inherit _ -> assert false
-    | `Field (loc, (atd_fname, fkind, an), x) ->
+    | `Field (loc, (atd_fname, _, an), x) ->
         let ocaml_fname =
           get_ocaml_fname (ocaml_field_prefix ^ atd_fname) an in
         let fname =
@@ -332,7 +332,7 @@ let map_def
   let define_alias =
     if is_predef || is_abstract || type_aliases <> None then
       match get_ocaml_module_and_t target s an1, type_aliases with
-          Some (types_module, main_module, s), _ -> Some (types_module, s)
+          Some (types_module, _, s), _ -> Some (types_module, s)
         | None, Some types_module -> Some (types_module, s)
 
         | None, None -> None
@@ -393,31 +393,31 @@ let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
 
 let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
   match x with
-      `Unit (loc, `Unit, _) -> `Name ("unit", [])
-    | `Bool (loc, `Bool, _) -> `Name ("bool", [])
-    | `Int (loc, `Int x, _) -> `Name (string_of_ocaml_int x, [])
-    | `Float (loc, `Float, _) -> `Name ("float", [])
-    | `String (loc, `String, _) -> `Name ("string", [])
-    | `Sum (loc, a, `Sum kind, _) ->
+      `Unit (_, `Unit, _) -> `Name ("unit", [])
+    | `Bool (_, `Bool, _) -> `Name ("bool", [])
+    | `Int (_, `Int x, _) -> `Name (string_of_ocaml_int x, [])
+    | `Float (_, `Float, _) -> `Name ("float", [])
+    | `String (_, `String, _) -> `Name ("string", [])
+    | `Sum (_, a, `Sum kind, _) ->
         let l = Array.to_list a in
         `Sum (kind, List.map ocaml_of_variant_mapping l)
-    | `Record (loc, a, `Record o, _) ->
+    | `Record (_, a, `Record _, _) ->
         let l = Array.to_list a in
         `Record (`Record, List.map ocaml_of_field_mapping l)
-    | `Tuple (loc, a, o, _) ->
+    | `Tuple (_, a, _, _) ->
         let l = Array.to_list a in
         `Tuple (List.map (fun x -> ocaml_of_expr_mapping x.cel_value) l)
-    | `List (loc, x, `List kind, _) ->
+    | `List (_, x, `List kind, _) ->
         `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
-    | `Option (loc, x, `Option, _) ->
+    | `Option (_, x, `Option, _) ->
         `Name ("option", [ocaml_of_expr_mapping x])
-    | `Nullable (loc, x, `Nullable, _) ->
+    | `Nullable (_, x, `Nullable, _) ->
         `Name ("option", [ocaml_of_expr_mapping x])
     | `Wrap _ ->
         assert false
-    | `Name (loc, s, l, _, _) ->
+    | `Name (_, s, l, _, _) ->
         `Name (s, List.map ocaml_of_expr_mapping l)
-    | `Tvar (loc, s) ->
+    | `Tvar (_, s) ->
         `Tvar s
     | _ -> assert false
 
@@ -463,7 +463,6 @@ let shlist = { hlist with
                  stick_to_label = false;
                  space_after_opening = false;
                  space_before_closing = false }
-let shlist0 = { shlist with space_after_separator = false }
 
 let llist = {
   list with
@@ -478,13 +477,6 @@ let lplist = {
     space_before_closing = false
 }
 
-let vseq = {
-  list with
-    indent_body = 0;
-    wrap_body = `Force_breaks;
-}
-
-
 let vlist1 = { list with stick_to_label = false }
 
 let vlist = {
@@ -493,12 +485,9 @@ let vlist = {
 }
 
 
-let label0 = { label with space_after_label = false }
-
 let make_atom s = Atom (s, atom)
 
 let horizontal_sequence l = List (("", "", "", shlist), l)
-let horizontal_sequence0 l = List (("", "", "", shlist0), l)
 
 let rec insert sep = function
     [] | [_] as l -> l
@@ -564,7 +553,7 @@ let make_ocamldoc_block = function
 let make_ocamldoc_blocks (l : Ag_doc.block list) =
   let l =
     insert2 (
-      fun x y ->
+      fun _ y ->
         match y with
             `Paragraph _ -> [`Before_paragraph]
           | `Pre _ -> []
@@ -748,7 +737,7 @@ and format_variant kind (s, o, doc) =
   in
   append_ocamldoc_comment variant doc
 
-let format_module_items pp_convs is_rec (l : ocaml_module_body) =
+let format_module_items pp_convs (l : ocaml_module_body) =
   match l with
       x :: l ->
         format_module_item pp_convs true x ::
@@ -756,7 +745,7 @@ let format_module_items pp_convs is_rec (l : ocaml_module_body) =
     | [] -> []
 
 let format_module_bodies pp_conv (l : (bool * ocaml_module_body) list) =
-  List.flatten (List.map (fun (is_rec, x) -> format_module_items pp_conv is_rec x) l)
+  List.flatten (List.map (fun (_, x) -> format_module_items pp_conv x) l)
 
 let format_head (loc, an) =
   match Ag_doc.get_doc loc an with
@@ -794,21 +783,21 @@ let unwrap_option deref x =
 
 let get_implicit_ocaml_default deref x =
   match deref x with
-      `Unit (loc, `Unit, _) -> Some "()"
-    | `Bool (loc, `Bool, _) -> Some "false"
-    | `Int (loc, `Int o, _) ->
+      `Unit (_, `Unit, _) -> Some "()"
+    | `Bool (_, `Bool, _) -> Some "false"
+    | `Int (_, `Int o, _) ->
         Some (match o with
                   `Int -> "0"
                 | `Char -> "'\000'"
                 | `Int32 -> "0l"
                 | `Int64 -> "0L"
                 | `Float -> "0.")
-    | `Float (loc, `Float, _) -> Some "0.0"
-    | `String (loc, `String, _) -> Some "\"\""
-    | `List (loc, x, `List `List, _) -> Some "[]"
-    | `List (loc, x, `List `Array, _) -> Some "[||]"
-    | `Option (loc, x, `Option, _) -> Some "None"
-    | `Nullable (loc, x, `Nullable, _) -> Some "None"
+    | `Float (_, `Float, _) -> Some "0.0"
+    | `String (_, `String, _) -> Some "\"\""
+    | `List (_, _, `List `List, _) -> Some "[]"
+    | `List (_, _, `List `Array, _) -> Some "[||]"
+    | `Option (_, _, `Option, _) -> Some "None"
+    | `Nullable (_, _, `Nullable, _) -> Some "None"
     | _ -> None
 
 

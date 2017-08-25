@@ -1,16 +1,9 @@
-open Printf
 open Atd_ast
 open Ag_error
 open Ag_mapping
 
-type o = Ag_ocaml.atd_ocaml_repr
-type v = Ag_validate.validate_repr
-
 type ov_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.mapping
-
-type ob_def =
-    (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.def
 
 (*
   Determine whether a type expression does not need validation.
@@ -23,12 +16,6 @@ type ob_def =
      If any of the type expressions has a validator annotation or if
      on the type expressions is abstract, then the result is false.
 *)
-
-let ploc x =
-  eprintf "%s\n" (string_of_loc (loc_of_type_expr x))
-
-let print s =
-  eprintf "%s\n%!" s
 
 let get_def defs name : type_expr option =
   try Some (Hashtbl.find defs name)
@@ -103,7 +90,7 @@ let rec scan_expr
 
 and name_is_shallow defs visited results x =
   match x with
-      `Name (loc, (loc2, name, _), _) ->
+      `Name (_, (_, name, _), _) ->
         (match get_def defs name with
              None ->
                (match name with
@@ -117,7 +104,7 @@ and name_is_shallow defs visited results x =
            | Some x -> noval x && scan_expr defs visited results x
         )
 
-    | `Tvar (loc, _) -> false
+    | `Tvar (_, _) -> false
     | _ -> (* already verified in the call to scan_expr above *) true
 
 
@@ -145,7 +132,7 @@ let scan_top_expr
 let make_is_shallow defs =
   let results = H.create 100 in
   Hashtbl.iter (
-    fun name x -> scan_top_expr defs results x
+    fun _ x -> scan_top_expr defs results x
   ) defs;
   fun x ->
     try
@@ -194,7 +181,7 @@ let rec mapping_of_expr
         let ocaml_t = `Nullable in
         `Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
-    | `Shared (loc, x, an) ->
+    | `Shared (_, _, _) ->
         failwith "Sharing is not supported"
 
     | `Wrap (loc, x, an) ->
@@ -207,7 +194,7 @@ let rec mapping_of_expr
         in
         `Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
 
-    | `Name (loc, (loc2, s, l), an) ->
+    | `Name (loc, (_, s, l), an) ->
         (match s with
              "unit" ->
                `Unit (loc, `Unit, (v an, true))
@@ -319,7 +306,7 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
   let doc = Ag_doc.get_doc loc an in
   let o =
     match as_abstract x with
-        Some (loc2, an2) ->
+        Some (_, an2) ->
           (match Ag_ocaml.get_ocaml_module_and_t `Validate name an with
                None -> None
              | Some (types_module, main_module, ext_name) ->
@@ -344,29 +331,19 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
 
 let fill_def_tbl defs l =
   List.iter (
-    function `Type (loc, (name, param, an), x) -> Hashtbl.add defs name x
+    function `Type (_, (name, _, _), x) -> Hashtbl.add defs name x
   ) l
 
 let init_def_tbl () =
   Hashtbl.create 100
 
-let make_def_tbl l =
-  let defs = init_def_tbl () in
-  fill_def_tbl defs l;
-  defs
-
 let make_def_tbl2 l =
   let defs = init_def_tbl () in
-  List.iter (fun (is_rec, l) -> fill_def_tbl defs l) l;
+  List.iter (fun (_, l) -> fill_def_tbl defs l) l;
   defs
 
 let defs_of_atd_module_gen is_shallow l =
   List.map (function `Type def -> def_of_atd is_shallow def) l
-
-let defs_of_atd_module l =
-  let defs = make_def_tbl l in
-  let is_shallow = make_is_shallow defs in
-  defs_of_atd_module_gen is_shallow l
 
 let defs_of_atd_modules l =
   let defs = make_def_tbl2 l in

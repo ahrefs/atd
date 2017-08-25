@@ -3,8 +3,6 @@
 *)
 
 
-open Printf
-
 open Atd_ast
 
 module S = Set.Make (String)
@@ -19,7 +17,7 @@ let load_defs l =
   tbl
 
 let keep_last_defined get_name l =
-  let set, l =
+  let _, l =
     List.fold_right (
       fun x (set, l) ->
         let k = get_name x in
@@ -30,11 +28,11 @@ let keep_last_defined get_name l =
   l
 
 let get_field_name : field -> string = function
-    `Field (loc, (k, _, _), _) -> k
+    `Field (_, (k, _, _), _) -> k
   | `Inherit _ -> assert false
 
 let get_variant_name : variant -> string = function
-    `Variant (loc, (k, _), _) -> k
+    `Variant (_, (k, _), _) -> k
   | `Inherit _ -> assert false
 
 
@@ -88,18 +86,18 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
       | `Name (loc, (_, "wrap", [t]), a) ->
           `Wrap (loc, subst false param t, a)
 
-      | `Tvar (loc, s) ->
+      | `Tvar (_, s) ->
           (try List.assoc s param
            with Not_found -> t)
 
       | `Name (loc, (loc2, k, args), a) ->
           let expanded_args = List.map (subst false param) args in
           if deref then
-            let k, vars, a, t =
+            let _, vars, _, t =
               try
                 match Hashtbl.find tbl k with
-                    n, Some (_, (k, vars, a), t) -> k, vars, a, t
-                  | n, None -> failwith ("Cannot inherit from type " ^ k)
+                    _, Some (_, (k, vars, a), t) -> k, vars, a, t
+                  | _, None -> failwith ("Cannot inherit from type " ^ k)
               with Not_found ->
                 failwith ("Missing type definition for " ^ k)
             in
@@ -110,9 +108,9 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
 
   and subst_field param = function
       `Field (loc, k, t) -> [ `Field (loc, k, subst false param t) ]
-    | `Inherit (loc, t) as x ->
+    | `Inherit (_, t) as x ->
         (match subst true param t with
-             `Record (loc, vl, a) ->
+             `Record (_, vl, _) ->
                if inherit_fields then vl
                else [ x ]
            | _ -> failwith "Not a record type"
@@ -124,9 +122,9 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
              None -> [ x ]
            | Some t -> [ `Variant (loc, k, Some (subst false param t)) ]
         )
-    | `Inherit (loc, t) as x ->
+    | `Inherit (_, t) as x ->
         (match subst true param t with
-             `Sum (loc, vl, a) ->
+             `Sum (_, vl, _) ->
                if inherit_variants then vl
                else [ x ]
            | _ -> failwith "Not a sum type"

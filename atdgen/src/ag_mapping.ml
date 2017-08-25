@@ -4,9 +4,6 @@ open Ag_error
 
 type loc = Atd_ast.loc
 
-let annot_error loc =
-  Ag_error.error loc "Invalid annotation"
-
 type loc_id = string
 
 (*
@@ -97,11 +94,11 @@ module Env = Map.Make (String)
 
 let rec subst env (x : (_, _) mapping) =
   match x with
-      `Unit (loc, _, _)
-    | `Bool (loc, _, _)
-    | `Int (loc, _, _)
-    | `Float (loc, _, _)
-    | `String (loc, _, _) -> x
+      `Unit (_, _, _)
+    | `Bool (_, _, _)
+    | `Int (_, _, _)
+    | `Float (_, _, _)
+    | `String (_, _, _) -> x
     | `Sum (loc, ar, a, b) ->
         `Sum (loc, Array.map (subst_variant env) ar, a, b)
     | `Record (loc, ar, a, b) ->
@@ -120,7 +117,7 @@ let rec subst env (x : (_, _) mapping) =
         `Name (loc, name, List.map (subst env) args, a, b)
     | `External (loc, name, args, a, b) ->
         `External (loc, name, List.map (subst env) args, a, b)
-    | `Tvar (loc, s) ->
+    | `Tvar (_, s) ->
         try Env.find s env
         with Not_found ->
           invalid_arg (sprintf "Ag_mapping.subst_var: '%s" s)
@@ -188,23 +185,5 @@ let make_deref
 *)
 let rec unwrap (deref: ('a, 'b) mapping -> ('a, 'b) mapping) x =
   match deref x with
-  | `Wrap (loc, x, a, b) -> unwrap deref x
+  | `Wrap (_, x, _, _) -> unwrap deref x
   | x -> x
-
-(* This is for debugging *)
-let constructor : ('a, 'b) mapping -> string = function
-  | `Unit _ -> "Unit"
-  | `Bool _ -> "Bool"
-  | `Int _ -> "Int"
-  | `Float _ -> "Float"
-  | `String _ -> "String"
-  | `Sum _ -> "Sum"
-  | `Record _ -> "Record"
-  | `Tuple _ -> "Tuple"
-  | `List _ -> "List"
-  | `Option _ -> "Option"
-  | `Nullable _ -> "Nullable"
-  | `Wrap _ -> "Wrap"
-  | `Name (loc, name, _, _, _) -> "Name " ^ name
-  | `External _ -> "External"
-  | `Tvar _ -> "Tvar"

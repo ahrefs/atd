@@ -4,7 +4,7 @@
 
 open Printf
 
-let print_loc buf (pos1, pos2) =
+let print_loc buf (_, _) =
   bprintf buf "loc"
 
 let print_list f buf l =
@@ -163,7 +163,7 @@ let %s_head : Atd_ast.module_head =
 "
     name print_annot_list an
 
-let print_full_module_def buf name ((loc, an), l) =
+let print_full_module_def buf name ((_, an), l) =
   print_module_head_def buf name an;
   print_module_body_def buf name l;
   bprintf buf "\

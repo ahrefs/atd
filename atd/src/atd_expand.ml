@@ -55,8 +55,6 @@
 
 *)
 
-open Printf
-
 open Atd_ast
 
 module S = Set.Make (String)
@@ -239,7 +237,7 @@ let expr_of_lvalue loc name param annot =
 
 let is_cyclic lname t =
   match t with
-      `Name (_, (_, rname, args), _) -> lname = rname
+      `Name (_, (_, rname, _), _) -> lname = rname
     | _ -> false
 
 let is_tvar = function
@@ -294,7 +292,7 @@ let expand ?(keep_poly = false) (l : type_def list)
           let t' = subst env t in
           subst_type_name loc loc2 "wrap" [t'] a
 
-      | `Tvar (loc, s) as x ->
+      | `Tvar (_, s) as x ->
           (try List.assoc s env
            with Not_found -> x)
 
@@ -363,18 +361,18 @@ let expand ?(keep_poly = false) (l : type_def list)
     Hashtbl.add original_types name (orig_name, List.length orig_args);
 
     (* Get the original type definition *)
-    let (_, n, orig_opt_td, new_opt_td) =
+    let (_, _, orig_opt_td, _) =
       try Hashtbl.find tbl orig_name
       with Not_found ->
         assert false (* All original type definitions must
                         have been put in the table initially *)
     in
-    let ((_, _, t') as td') =
+    let ((_, _, _) as td') =
       match orig_opt_td with
           None ->
             assert false (* Original type definitions must all exist,
                             even for predefined types and abstract types. *)
-        | Some (orig_loc, (k, pl, def_an), t) ->
+        | Some (_, (k, pl, def_an), t) ->
             assert (k = orig_name);
             let new_params = vars_of_int n_param in
             let t = add_annot t an0 in
@@ -477,7 +475,7 @@ let expand ?(keep_poly = false) (l : type_def list)
 
   (* first pass: add all original definitions to the table *)
   List.iter (
-    fun ((_, (k, pl, _), x) as td) ->
+    fun ((_, (k, pl, _), _) as td) ->
       incr seqnum;
       let i = !seqnum in
       let n = List.length pl in
@@ -501,7 +499,7 @@ let expand ?(keep_poly = false) (l : type_def list)
   (* third pass: collect all parameterless definitions *)
   let l =
     Hashtbl.fold (
-      fun k (i, n, opt_td, opt_td') l ->
+      fun _ (i, n, _, opt_td') l ->
         match opt_td' with
             None -> l
           | Some td' ->
@@ -526,7 +524,7 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
       | `Nullable (loc, t, a) -> `Nullable (loc, replace t, a)
       | `Shared (loc, t, a) -> `Shared (loc, replace t, a)
       | `Wrap (loc, t, a) -> `Wrap (loc, replace t, a)
-      | `Tvar (loc, s) as t -> t
+      | `Tvar (_, _) as t -> t
       | `Name (loc, (loc2, k, l), a) ->
           `Name (loc, (loc2, subst k, List.map replace l), a)
 

@@ -1,4 +1,3 @@
-open Printf
 open Atd_ast
 open Ag_error
 open Ag_mapping
@@ -8,10 +7,6 @@ type j = Ag_json.json_repr
 
 type oj_mapping =
     (Ag_ocaml.atd_ocaml_repr, Ag_json.json_repr) Ag_mapping.mapping
-
-type oj_def =
-    (Ag_ocaml.atd_ocaml_repr, Ag_json.json_repr) Ag_mapping.def
-
 
 (*
   Translation of the types into the ocaml/json mapping.
@@ -34,7 +29,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
                    (List.map (mapping_of_field ocaml_field_prefix) l),
                  ocaml_t, json_t)
 
-    | `Tuple (loc, l, an) ->
+    | `Tuple (loc, l, _) ->
         let ocaml_t = `Tuple in
         let json_t = `Tuple in
         `Tuple (loc, Array.of_list (List.map mapping_of_cell l),
@@ -45,17 +40,17 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
         let json_t = `List (Ag_json.get_json_list an) in
         `List (loc, mapping_of_expr x, ocaml_t, json_t)
 
-    | `Option (loc, x, an) ->
+    | `Option (loc, x, _) ->
         let ocaml_t = `Option in
         let json_t = `Option in
         `Option (loc, mapping_of_expr x, ocaml_t, json_t)
 
-    | `Nullable (loc, x, an) ->
+    | `Nullable (loc, x, _) ->
         let ocaml_t = `Nullable in
         let json_t = `Nullable in
         `Nullable (loc, mapping_of_expr x, ocaml_t, json_t)
 
-    | `Shared (loc, x, an) ->
+    | `Shared (loc, _, _) ->
         error loc "Sharing is not supported by the JSON interface"
 
     | `Wrap (loc, x, an) ->
@@ -63,7 +58,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
         let json_t = `Wrap in
         `Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
-    | `Name (loc, (loc2, s, l), an) ->
+    | `Name (loc, (_, s, l), an) ->
         (match s with
              "unit" ->
                `Unit (loc, `Unit, `Unit)
@@ -180,7 +175,7 @@ let def_of_atd (loc, (name, param, an), x) =
   let doc = Ag_doc.get_doc loc an in
   let o =
     match as_abstract x with
-        Some (loc2, an2) ->
+        Some (_, _) ->
           (match Ag_ocaml.get_ocaml_module_and_t `Json name an with
                None -> None
              | Some (types_module, main_module, ext_name) ->

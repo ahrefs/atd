@@ -12,7 +12,7 @@ let to_buffer ?(offset = 0) ?(indent = 2) buf l =
       `Block l -> List.iter (print (n + indent)) l
     | `Inline l -> List.iter (print n) l
     | `Line s ->
-        for i = 1 to n do
+        for _ = 1 to n do
           Buffer.add_char buf ' '
         done;
         Buffer.add_string buf s;

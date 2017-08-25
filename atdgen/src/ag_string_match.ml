@@ -182,7 +182,6 @@ type exit_with =
 let make_ocaml_expr_factored
     ?(string_id = "s")
     ?(pos_id = "pos")
-    ?(len_id = "len")
     ?(exit_with = `Exn "Exit")
     ~error_expr
     cases : Ag_indent.t list =
@@ -211,10 +210,10 @@ let make_ocaml_expr_factored
   ) [] cases)) in
   match cases with
       [] -> error_expr
-    | l ->
+    | _ ->
         catch (map_to_ocaml string_id pos_id exit_expr (make_tree cases))
 
-let test () =
+let test2 () =
   let l = [
     "abc";
     "abcd";
@@ -238,8 +237,6 @@ let test () =
 
 let make_ocaml_expr_naive
     ?(string_id = "s")
-    ?(pos_id = "pos")
-    ?(len_id = "len")
     ~error_expr
     cases =
   let map = function
@@ -264,17 +261,16 @@ let make_ocaml_expr
     ~optimized
     ?string_id
     ?pos_id
-    ?len_id
     ?exit_with
     ~error_expr
     cases : Ag_indent.t list =
 
   if optimized then
     make_ocaml_expr_factored
-      ?string_id ?pos_id ?len_id ?exit_with ~error_expr cases
+      ?string_id ?pos_id ?exit_with ~error_expr cases
   else
     make_ocaml_expr_naive
-      ?string_id ?pos_id ?len_id ~error_expr cases
+      ?string_id ~error_expr cases
 
 
 let make_ocaml_int_mapping
@@ -289,13 +285,12 @@ let make_ocaml_int_mapping
 
   let a = Array.of_list cases in
   let int_cases =
-    Array.mapi (fun i (s, x) -> (s, [ `Line (string_of_int i) ])) a
+    Array.mapi (fun i (s, _) -> (s, [ `Line (string_of_int i) ])) a
   in
   let int_mapping_body =
     make_ocaml_expr_factored
       ~string_id
       ~pos_id
-      ~len_id
       ?exit_with
       ~error_expr: error_expr1
       (Array.to_list int_cases)
@@ -317,7 +312,7 @@ let make_ocaml_int_mapping
   in
   let int_matching_cases =
     Array.mapi (
-      fun i (s, x) ->
+      fun i (_, x) ->
         `Inline [
           `Line (sprintf "| %i ->" i);
           `Block x;

@@ -3,9 +3,6 @@
   Optimization of the biniou representation
 *)
 
-open Ag_mapping
-open Ag_ob_mapping
-
 let get_table_info deref x =
   match deref x with
       `Record y -> y

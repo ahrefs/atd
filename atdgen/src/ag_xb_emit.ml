@@ -25,31 +25,31 @@ let rec extract_names_from_expr acc (x : 'a expr) =
     | `Int _
     | `Float  _
     | `String _ -> acc
-    | `Sum (loc, va, _, _) ->
+    | `Sum (_, va, _, _) ->
         let l, (fn, vn) =
           Array.fold_left extract_names_from_variant ([], acc) va
         in
         (fn, List.rev l :: vn)
 
-    | `Record (loc, fa, _, _) ->
+    | `Record (_, fa, _, _) ->
         let l, (fn, vn) =
           Array.fold_left extract_names_from_field ([], acc) fa
         in
         (List.rev l :: fn, vn)
 
-    | `Tuple (loc, ca, _, _) ->
+    | `Tuple (_, ca, _, _) ->
         Array.fold_left extract_names_from_cell acc ca
 
-    | `List (loc, x, _, _)
-    | `Option (loc, x, _, _)
-    | `Nullable (loc, x, _, _)
-    | `Wrap (loc, x, _, _) ->
+    | `List (_, x, _, _)
+    | `Option (_, x, _, _)
+    | `Nullable (_, x, _, _)
+    | `Wrap (_, x, _, _) ->
         extract_names_from_expr acc x
 
-    | `Name (loc, _, l, _, _) ->
+    | `Name (_, _, l, _, _) ->
         List.fold_left extract_names_from_expr acc l
 
-    | `External (loc, _, l, _, _) ->
+    | `External (_, _, l, _, _) ->
         List.fold_left extract_names_from_expr acc l
 
     | `Tvar _ -> acc

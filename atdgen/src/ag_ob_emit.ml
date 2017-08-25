@@ -9,7 +9,6 @@ open Atd_ast
 open Ag_error
 open Ag_mapping
 open Ag_ob_mapping
-open Ag_ob_spe
 
 (*
   OCaml code generator (biniou readers and writers)
@@ -123,7 +122,7 @@ val %s_of_string :%s
           s;
 
         if with_create && Ag_ox_emit.is_exportable x then
-          let create_record_intf, create_record_impl =
+          let create_record_intf, _create_record_impl =
             Ag_ox_emit.make_record_creator deref x
           in
           bprintf buf "%s" create_record_intf;
@@ -134,9 +133,9 @@ val %s_of_string :%s
 
 let rec get_biniou_tag (x : ob_mapping) =
   match x with
-      `Unit (loc, `Unit, `Unit) -> "Bi_io.unit_tag"
-    | `Bool (loc, `Bool, `Bool) -> "Bi_io.bool_tag"
-    | `Int (loc, `Int o, `Int b) ->
+      `Unit (_, `Unit, `Unit) -> "Bi_io.unit_tag"
+    | `Bool (_, `Bool, `Bool) -> "Bi_io.bool_tag"
+    | `Int (_, `Int _, `Int b) ->
         (match b with
              `Uvint -> "Bi_io.uvint_tag"
            | `Svint -> "Bi_io.svint_tag"
@@ -145,30 +144,30 @@ let rec get_biniou_tag (x : ob_mapping) =
            | `Int32 -> "Bi_io.int32_tag"
            | `Int64 -> "Bi_io.int64_tag"
         )
-    | `Float (loc, `Float, `Float b) ->
+    | `Float (_, `Float, `Float b) ->
         (match b with
             `Float32 -> "Bi_io.float32_tag"
           | `Float64 -> "Bi_io.float64_tag"
         )
-    | `String (loc, `String, `String) -> "Bi_io.string_tag"
-    | `Sum (loc, a, `Sum x, `Sum) -> "Bi_io.variant_tag"
-    | `Record (loc, a, `Record o, `Record) -> "Bi_io.record_tag"
-    | `Tuple (loc, a, `Tuple, `Tuple) -> "Bi_io.tuple_tag"
-    | `List (loc, x, `List o, `List b) ->
+    | `String (_, `String, `String) -> "Bi_io.string_tag"
+    | `Sum (_, _, `Sum _, `Sum) -> "Bi_io.variant_tag"
+    | `Record (_, _, `Record _, `Record) -> "Bi_io.record_tag"
+    | `Tuple (_, _, `Tuple, `Tuple) -> "Bi_io.tuple_tag"
+    | `List (_, _, `List _, `List b) ->
         (match b with
              `Array -> "Bi_io.array_tag"
            | `Table -> "Bi_io.table_tag"
         )
-    | `Option (loc, x, `Option, `Option)
-    | `Nullable (loc, x, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
-    | `Wrap (loc, x, `Wrap _, `Wrap) -> get_biniou_tag x
+    | `Option (_, _, `Option, `Option)
+    | `Nullable (_, _, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
+    | `Wrap (_, x, `Wrap _, `Wrap) -> get_biniou_tag x
 
-    | `Name (loc, s, args, None, None) -> sprintf "%s_tag" s
-    | `External (loc, s, args,
-                 `External (types_module, main_module, ext_name),
+    | `Name (_, s, _, None, None) -> sprintf "%s_tag" s
+    | `External (_, _, _,
+                 `External (_, main_module, ext_name),
                  `External) ->
         sprintf "%s.%s_tag" main_module ext_name
-    | `Tvar (loc, s) -> sprintf "%s_tag" (name_of_var s)
+    | `Tvar (_, s) -> sprintf "%s_tag" (name_of_var s)
     | _ -> assert false
 
 let nth name i len =
@@ -236,9 +235,9 @@ let rec get_writer_name
 
   let un = if tagged then "" else "untagged_" in
   match x with
-      `Unit (loc, `Unit, `Unit) ->
+      `Unit (_, `Unit, `Unit) ->
         sprintf "Bi_io.write_%sunit" un
-    | `Bool (loc, `Bool, `Bool) ->
+    | `Bool (_, `Bool, `Bool) ->
         sprintf "Bi_io.write_%sbool" un
     | `Int (loc, `Int o, `Int b) ->
         (match o, b with
@@ -253,25 +252,25 @@ let rec get_writer_name
                error loc "Unsupported combination of OCaml/Biniou int types"
         )
 
-    | `Float (loc, `Float, `Float b) ->
+    | `Float (_, `Float, `Float b) ->
         (match b with
             `Float32 -> sprintf "Bi_io.write_%sfloat32" un
           | `Float64 -> sprintf "Bi_io.write_%sfloat64" un
         )
-    | `String (loc, `String, `String) ->
+    | `String (_, `String, `String) ->
         sprintf "Bi_io.write_%sstring" un
 
-    | `Tvar (loc, s) ->
+    | `Tvar (_, s) ->
         sprintf "write_%s%s" un (name_of_var s)
 
-    | `Name (loc, s, args, None, None) ->
+    | `Name (_, s, args, None, None) ->
         let l = List.map get_writer_names args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args,
-                 `External (types_module, main_module, ext_name),
+    | `External (_, _, args,
+                 `External (_, main_module, ext_name),
                  `External) ->
         let f = main_module ^ "." ^ name_f ext_name in
         let l = List.map get_writer_names args in
@@ -340,9 +339,9 @@ let rec get_reader_name
       sprintf "Ag_ob_run.get_%s_reader" s
   in
   match x with
-      `Unit (loc, `Unit, `Unit) -> xreader "unit"
+      `Unit (_, `Unit, `Unit) -> xreader "unit"
 
-    | `Bool (loc, `Bool, `Bool) -> xreader "bool"
+    | `Bool (_, `Bool, `Bool) -> xreader "bool"
 
     | `Int (loc, `Int o, `Int b) ->
         (match o, b with
@@ -357,29 +356,29 @@ let rec get_reader_name
                error loc "Unsupported combination of OCaml/Biniou int types"
         )
 
-    | `Float (loc, `Float, `Float b) ->
+    | `Float (_, `Float, `Float b) ->
         (match b with
             `Float32 -> xreader "float32"
           | `Float64 -> xreader "float64"
         )
 
-    | `String (loc, `String, `String) -> xreader "string"
+    | `String (_, `String, `String) -> xreader "string"
 
-    | `Tvar (loc, s) ->
+    | `Tvar (_, s) ->
         let name = name_of_var s in
         if tagged then
           sprintf "read_%s" name
         else
           sprintf "get_%s_reader" name
 
-    | `Name (loc, s, args, None, None) ->
+    | `Name (_, s, args, None, None) ->
         let l = List.map get_reader_names args in
         let s = String.concat " " (name_f s :: l) in
         if paren && l <> [] then "(" ^ s ^ ")"
         else s
 
-    | `External (loc, s, args,
-                 `External (types_module, main_module, ext_name),
+    | `External (_, _, args,
+                 `External (_, main_module, ext_name),
                  `External) ->
         let f = main_module ^ "." ^ name_f ext_name in
         let l = List.map get_reader_names args in
@@ -418,7 +417,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
     | `External _
     | `Tvar _ -> [ `Line (get_writer_name ~tagged x) ]
 
-    | `Sum (loc, a, `Sum x, `Sum) ->
+    | `Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
               `Classic -> ""
@@ -447,14 +446,14 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
           `Block body;
         ]
 
-    | `Record (loc, a, `Record o, `Record) ->
+    | `Record (_, a, `Record o, `Record) ->
         let body = make_record_writer deref tagged a o in
         [
           `Annot ("fun", `Line "fun ob x ->");
           `Block body;
         ]
 
-    | `Tuple (loc, a, `Tuple, `Tuple) ->
+    | `Tuple (_, a, `Tuple, `Tuple) ->
         let main =
           let len = Array.length a in
           let a =
@@ -487,7 +486,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
           `Block body;
         ]
 
-    | `List (loc, x, `List o, `List b) ->
+    | `List (_, x, `List o, `List b) ->
         (match o, b with
              `List, `Array ->
                let tag = get_biniou_tag x in
@@ -519,19 +518,19 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
                ]
         )
 
-    | `Option (loc, x, `Option, `Option)
-    | `Nullable (loc, x, `Nullable, `Nullable) ->
+    | `Option (_, x, `Option, `Option)
+    | `Nullable (_, x, `Nullable, `Nullable) ->
         [
           `Line (sprintf "Ag_ob_run.write_%soption (" un);
           `Block (make_writer ~tagged:true deref x);
           `Line ")";
         ]
 
-    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+    | `Wrap (_, x, `Wrap o, `Wrap) ->
         let simple_writer = make_writer ~tagged deref x in
         (match o with
             None -> simple_writer
-          | Some { Ag_ocaml.ocaml_wrap_t; ocaml_wrap; ocaml_unwrap } ->
+          | Some { Ag_ocaml.ocaml_unwrap; _ } ->
               [
                 `Line "fun ob x -> (";
                 `Block [
@@ -596,7 +595,7 @@ and make_record_writer deref tagged a record_kind =
         `Line (sprintf "let len = ref %i in" min_len);
         `Inline (
           List.fold_right (
-            fun (x, ocaml_fname, default, opt, unwrap) l ->
+            fun (_, ocaml_fname, default, opt, _) l ->
               if opt then
                 let getfield =
                   sprintf "let x_%s = x%s%s in" ocaml_fname dot ocaml_fname in
@@ -730,10 +729,10 @@ and make_table_writer deref tagged list_kind x =
     main
 
 
-let study_record ~ocaml_version deref fields =
+let study_record ~ocaml_version fields =
   let field_assignments =
     List.fold_right (
-      fun (x, name, default, opt, unwrap) field_assignments ->
+      fun (_, name, default, opt, _) field_assignments ->
         let v =
           match default with
               None ->
@@ -754,7 +753,7 @@ let study_record ~ocaml_version deref fields =
   let init_fields, create_record_fields = List.split field_assignments in
   let n, mapping =
     List.fold_left (
-      fun (i, acc) (x, name, default, opt, unwrap) ->
+      fun (i, acc) (_, _, _, opt, _) ->
         if not opt then
           (i+1, (Some i :: acc))
         else
@@ -807,7 +806,7 @@ let study_record ~ocaml_version deref fields =
     let field_names =
       let l =
         List.fold_right (
-          fun (x, name, default, opt, unwrap) acc ->
+          fun (x, _, _, opt, _) acc ->
             if not opt then
               sprintf "%S" x.f_name :: acc
             else
@@ -906,7 +905,7 @@ let rec make_reader
     | `External _
     | `Tvar _ -> [ `Line (get_reader_name ~tagged x) ]
 
-    | `Sum (loc, a, `Sum x, `Sum) ->
+    | `Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
               `Classic -> ""
@@ -942,11 +941,11 @@ let rec make_reader
            | `Object ->
                error loc "Sorry, OCaml objects are not supported"
         );
-        let body = make_record_reader deref ~ocaml_version ~tagged type_annot a o in
+        let body = make_record_reader deref ~ocaml_version type_annot a in
         wrap_body ~tagged Bi_io.record_tag body
 
-    | `Tuple (loc, a, `Tuple, `Tuple) ->
-        let body = make_tuple_reader deref ~ocaml_version ~tagged a in
+    | `Tuple (_, a, `Tuple, `Tuple) ->
+        let body = make_tuple_reader deref ~ocaml_version a in
         wrap_body ~tagged Bi_io.tuple_tag body
 
     | `List (loc, x, `List o, `List b) ->
@@ -991,8 +990,8 @@ let rec make_reader
                                      Bi_io.array_tag, body2 ]
         )
 
-    | `Option (loc, x, `Option, `Option)
-    | `Nullable (loc, x, `Nullable, `Nullable) ->
+    | `Option (_, x, `Option, `Option)
+    | `Nullable (_, x, `Nullable, `Nullable) ->
         let body = [
           `Line "match Char.code (Bi_inbuf.read_char ib) with";
           `Block [
@@ -1014,11 +1013,11 @@ let rec make_reader
         in
         wrap_body ~tagged Bi_io.num_variant_tag body
 
-    | `Wrap (loc, x, `Wrap o, `Wrap) ->
+    | `Wrap (_, x, `Wrap o, `Wrap) ->
         let simple_reader = make_reader deref ~tagged ~ocaml_version x in
         (match o with
             None -> simple_reader
-          | Some { Ag_ocaml.ocaml_wrap } ->
+          | Some { Ag_ocaml.ocaml_wrap ; _ } ->
               if tagged then
                 [
                   `Line "fun ib ->";
@@ -1068,18 +1067,18 @@ and make_variant_reader ~ocaml_version deref type_annot tick x : Ag_indent.t lis
         ]
 
 and make_record_reader
-    deref ~ocaml_version ~tagged type_annot
-    a record_kind =
+    deref ~ocaml_version type_annot
+    a =
   let fields = get_fields deref a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record ~ocaml_version deref fields
+    study_record ~ocaml_version fields
   in
 
   let body =
     let a = Array.of_list fields in
     let cases =
       Array.mapi (
-        fun i (x, name, _, opt, unwrapped) ->
+        fun i (x, name, _, _, unwrapped) ->
           let f_value =
             if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
             else x.f_value
@@ -1134,7 +1133,7 @@ and make_record_reader
   ]
 
 
-and make_tuple_reader deref ~tagged ~ocaml_version a =
+and make_tuple_reader deref ~ocaml_version a =
   let cells =
     Array.map (
       fun x ->
@@ -1147,7 +1146,7 @@ and make_tuple_reader deref ~tagged ~ocaml_version a =
     let n = ref (Array.length cells) in
     (try
        for i = Array.length cells - 1 downto 0 do
-         let x, default = cells.(i) in
+         let _, default = cells.(i) in
          if default = None then (
            n := i + 1;
            raise Exit
@@ -1239,12 +1238,12 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
           error loc "Not a list or array of records"
   in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record ~ocaml_version deref fields
+    study_record ~ocaml_version fields
   in
   let cases =
     Array.to_list (
       Array.mapi (
-        fun i (x, name, default, opt, unwrap) ->
+        fun i (x, name, _, _, _) ->
           `Inline [
             `Line (sprintf "| %i ->" (Bi_io.hash_name x.f_name));
             `Block [
@@ -1314,12 +1313,12 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let write_untagged_expr = make_writer deref ~tagged:false x in
   let eta_expand = is_rec && not (Ag_ox_emit.is_function write_untagged_expr) in
   let needs_annot = Ag_ox_emit.needs_type_annot x in
-  let extra_param, extra_args, type_annot =
+  let extra_param, extra_args =
     match eta_expand, needs_annot with
-    | true, false -> " ob x", " ob x", None
-    | true, true -> sprintf " ob (x : %s)" type_constraint, " ob x", None
-    | false, false -> "", "", None
-    | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
+    | true, false -> " ob x", " ob x"
+    | true, true -> sprintf " ob (x : %s)" type_constraint, " ob x"
+    | false, false -> "", ""
+    | false, true -> "", ""
   in
   let type_annot =
     match Ag_ox_emit.needs_type_annot x with
@@ -1429,11 +1428,11 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
 
   if with_create then
     List.iter (
-      fun (is_rec, l) ->
+      fun (_, l) ->
         let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->
-            let intf, impl = Ag_ox_emit.make_record_creator deref x in
+            let _, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs
@@ -1491,7 +1490,7 @@ let make_ocaml_files
     ~pos_fname
     ~pos_lnum
     ~type_aliases
-    ~force_defaults
+    ~force_defaults:_
     ~name_overlap
     ~ocaml_version
     ~pp_convs

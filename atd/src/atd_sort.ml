@@ -56,10 +56,6 @@ struct
 
   let debug = ref false
 
-  let print msg =
-    if !debug then
-      printf "%s\n%!" msg
-
   let print_nodes msg nodes =
     if !debug then
       printf "%s: %s\n%!"
@@ -113,9 +109,6 @@ struct
       Some (v, S.remove v nodes)
     with Not_found ->
       None
-
-  let remove_list set l =
-    List.fold_left (fun set v -> S.remove v set) set l
 
   let add_list set l =
     List.fold_left (fun set v -> S.add v set) set l
@@ -271,7 +264,7 @@ struct
       ) l
     ) l;
     let graph = { forward; backward } in
-    let nodes = Hashtbl.fold (fun k v set -> S.add v set) node_tbl S.empty in
+    let nodes = Hashtbl.fold (fun _ v set -> S.add v set) node_tbl S.empty in
 
     let sorted_groups = sort_subgraph graph nodes in
 
@@ -296,7 +289,7 @@ end
 let rec in_order result a b =
   match result with
   | [] -> false
-  | (cyclic, l) :: ll ->
+  | (_, l) :: ll ->
       if List.mem b l then
         false
       else if List.mem a l then

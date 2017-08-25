@@ -56,7 +56,7 @@ let parse_ocaml_version () =
 
 let get_default_name_overlap ocaml_version =
   match ocaml_version with
-  | Some (major, minor) when major < 4 -> false
+  | Some (major, _) when major < 4 -> false
   | Some (4, 0) -> false
   | _ -> true
 
@@ -392,7 +392,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
             | None ->
                 (match mode with
                      `B | `J | `V ->
-                       Some (String.capitalize (Filename.basename base) ^ "_t")
+                       Some (String.capitalize_ascii (Filename.basename base) ^ "_t")
                    | _ -> None
           )
   in

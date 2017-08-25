@@ -5,7 +5,6 @@
 open Printf
 
 open Atd_ast
-open Ag_error
 open Ag_mapping
 open Ag_ov_mapping
 
@@ -15,7 +14,7 @@ let make_ocaml_validate_intf ~with_create buf deref defs =
   List.iter (
     fun x ->
       if with_create && Ag_ox_emit.is_exportable x then (
-        let create_record_intf, create_record_impl =
+        let create_record_intf, _ =
           Ag_ox_emit.make_record_creator deref x
         in
         bprintf buf "%s" create_record_intf;
@@ -62,7 +61,7 @@ let get_fields a =
   in
   List.filter (
     function
-        { f_brepr = (None, shallow) }, name -> not shallow
+        { f_brepr = (None, shallow) ; _ }, _ -> not shallow
       | _ -> assert false
   ) all
 
@@ -81,14 +80,7 @@ let rec forall : Ag_indent.t list -> Ag_indent.t list = function
         ]
       ]
 
-let unopt = function None -> assert false | Some x -> x
-
-let return_true = "fun _ _ -> None"
 let return_true_paren = "(fun _ _ -> None)"
-
-let opt_validator_name = function
-    None -> return_true_paren
-  | Some s -> sprintf "( %s )" s
 
 let opt_validator = function
     None -> [ `Line "fun _ _ -> None" ]
@@ -156,19 +148,19 @@ let rec get_validator_name
     (x : ov_mapping) : string =
 
   match x with
-      `Unit (loc, `Unit, v)
-    | `Bool (loc, `Bool, v)
-    | `Int (loc, `Int _, v)
-    | `Float (loc, `Float, v)
-    | `String (loc, `String, v) ->
+      `Unit (_, `Unit, v)
+    | `Bool (_, `Bool, v)
+    | `Int (_, `Int _, v)
+    | `Float (_, `Float, v)
+    | `String (_, `String, v) ->
         (match v with
              (None, true) -> return_true_paren
            | (Some s, true) -> s
            | (_, false) -> assert false
         )
-    | `Tvar (loc, s) -> "validate_" ^ name_of_var s
+    | `Tvar (_, s) -> "validate_" ^ name_of_var s
 
-    | `Name (loc, s, args, None, opt) ->
+    | `Name (_, s, args, None, opt) ->
         let v1 =
           let l =
             List.map (get_validator_name ~paren:true) args in
@@ -182,8 +174,8 @@ let rec get_validator_name
            | Some (o, true) -> opt_validator_s o
         )
 
-    | `External (loc, s, args,
-                 `External (types_module, main_module, ext_name),
+    | `External (_, _, args,
+                 `External (_, main_module, ext_name),
                  v) ->
         (match v with
              (o, false) ->
@@ -215,7 +207,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
     | `External _
     | `Tvar _ -> [ `Line (get_validator_name x) ]
 
-    | `Sum (loc, a, `Sum x, (v, shallow)) ->
+    | `Sum (_, a, `Sum x, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
@@ -241,7 +233,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
             `Block (prepend_validator v body);
           ]
 
-    | `Record (loc, a, `Record o, (v, shallow)) ->
+    | `Record (_, a, `Record o, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
@@ -250,13 +242,13 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
             `Block (prepend_validator v (make_record_validator a o));
           ]
 
-    | `Tuple (loc, a, `Tuple, (v, shallow)) ->
+    | `Tuple (_, a, `Tuple, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
           let len = Array.length a in
           let l = Array.to_list (Array.mapi (fun i x -> (i, x)) a) in
-          let l = List.filter (fun (i, x) -> not (snd x.cel_brepr)) l in
+          let l = List.filter (fun (_, x) -> not (snd x.cel_brepr)) l in
           let l =
             List.map (
               fun (i, x) ->
@@ -276,7 +268,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
             `Block (prepend_validator v l);
           ]
 
-    | `List (loc, x, `List o, (v, shallow)) ->
+    | `List (_, x, `List o, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
@@ -291,8 +283,8 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
             `Line ")";
           ]
 
-    | `Option (loc, x, `Option, (v, shallow))
-    | `Nullable (loc, x, `Nullable, (v, shallow)) ->
+    | `Option (_, x, `Option, (v, shallow))
+    | `Nullable (_, x, `Nullable, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
@@ -302,7 +294,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
             `Line ")";
           ]
 
-    | `Wrap (loc, x, `Wrap o, (v, shallow)) ->
+    | `Wrap (_, x, `Wrap _, (v, shallow)) ->
         if shallow then
           opt_validator v
         else
@@ -356,7 +348,7 @@ and make_record_validator a record_kind =
   in
   forall validate_fields
 
-let make_ocaml_validator ~original_types is_rec let1 let2 def =
+let make_ocaml_validator ~original_types is_rec let1 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
   let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
@@ -402,8 +394,8 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
         let validators =
           map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
-              make_ocaml_validator ~original_types is_rec let1 let2 def
+              let let1, _ = get_let ~is_rec ~is_first in
+              make_ocaml_validator ~original_types is_rec let1 def
           ) l
         in
         List.flatten validators
@@ -413,11 +405,11 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
 
   if with_create then
     List.iter (
-      fun (is_rec, l) ->
+      fun (_, l) ->
         let l = List.filter Ag_ox_emit.is_exportable l in
         List.iter (
           fun x ->
-            let intf, impl = Ag_ox_emit.make_record_creator deref x in
+            let _, impl = Ag_ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs
@@ -471,9 +463,9 @@ let make_ocaml_files
     ~pos_fname
     ~pos_lnum
     ~type_aliases
-    ~force_defaults
+    ~force_defaults:_
     ~name_overlap
-    ~ocaml_version
+    ~ocaml_version:_
     ~pp_convs
     atd_file out =
   let ((head, m0), _) =

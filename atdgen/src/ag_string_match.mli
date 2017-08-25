@@ -30,15 +30,12 @@ type exit_with =
 val make_ocaml_expr_factored :
   ?string_id: string ->
   ?pos_id: string ->
-  ?len_id: string ->
   ?exit_with: exit_with ->
   error_expr: Ag_indent.t list ->
   (string option * Ag_indent.t list) list -> Ag_indent.t list
 
 val make_ocaml_expr_naive :
   ?string_id: string ->
-  ?pos_id: string ->
-  ?len_id: string ->
   error_expr: Ag_indent.t list ->
   (string option * Ag_indent.t list) list -> Ag_indent.t list
 
@@ -46,7 +43,6 @@ val make_ocaml_expr :
   optimized: bool ->
   ?string_id: string ->
   ?pos_id: string ->
-  ?len_id: string ->
   ?exit_with: exit_with ->
   error_expr: Ag_indent.t list ->
   (string option * Ag_indent.t list) list -> Ag_indent.t list
@@ -79,3 +75,7 @@ val make_ocaml_int_mapping :
       The whole point is to read records or variants without
       creating new strings or closures.
     *)
+
+val test : unit -> string tree
+val test2 : unit -> unit
+(** For internal use only *)

@@ -1,8 +1,14 @@
 ATD stands for Adaptable Type Definitions. It is a syntax for defining
-cross-language data types and it is used by
-[atdgen](https://github.com/mjambon/atdgen) for defining the
-type of [JSON](http://json.org) data and generating efficient
-serializers, deserializers and validators.
+cross-language data types. It is used as input to generate efficient
+serializers, deserializers and validators. The current target languages are OCaml and Java.
+
+The following opam packages are provided by the atd project:
+
+* atdgen: executable that generates OCaml code dealing with JSON and biniou data formats
+* atdj: executable that generates Java code dealing with JSON
+* atd: library for parsing atd files used by code generators
+
+[Documentation](https://mjambon.github.io/atdgen-doc/)
 
 The ATD language and its OCaml library were originally designed and implemented
 at MyLife by Martin Jambon. We distribute the source code under the

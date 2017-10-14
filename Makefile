@@ -12,7 +12,3 @@ clean:
 	$(JBUILDER) clean
 
 .PHONY: all tests clean check
-
-.PHONY: release
-release:
-	./release.sh

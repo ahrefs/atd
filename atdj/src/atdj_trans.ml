@@ -26,7 +26,7 @@ let json_of_atd env atd_ty =
            | "int"    -> "int"
            | "float"  -> "double"
            | "string" -> "String"
-           | _        -> assert false
+           | _        -> type_not_supported atd_ty
         )
     | x -> type_not_supported x
 
@@ -68,7 +68,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
        | `Name (_, (_, ty, _), _) ->
            (match ty with
             | "bool" | "int" | "float" | "string" -> src
-            | _  -> assert false
+            | _  -> type_not_supported atd_ty
            )
        | x -> type_not_supported x
       )
@@ -96,7 +96,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
            (match ty with
             | "bool" | "int" | "float" | "string" ->
                 sprintf "%s%s = %s;\n" indent dst src
-            | _  -> assert false
+            | _  -> type_not_supported atd_ty
            )
        | x -> type_not_supported x
       )

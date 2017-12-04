@@ -1,10 +1,10 @@
 JBUILDER ?= jbuilder
 
 all:
-	$(JBUILDER) build
+	$(JBUILDER) build --dev
 
 tests:
-	$(JBUILDER) runtest
+	$(JBUILDER) runtest --dev
 
 check: tests
 
@@ -12,6 +12,6 @@ clean:
 	$(JBUILDER) clean
 
 all-supported-ocaml-versions:
-	$(JBUILDER) runtest --workspace jbuild-workspace.dev
+	$(JBUILDER) runtest --dev --workspace jbuild-workspace.dev
 
 .PHONY: all tests clean check

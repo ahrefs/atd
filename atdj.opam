@@ -18,3 +18,5 @@ depends: [
   "jbuilder" {build}
   "atd" {>= "1.1.0"}
 ]
+
+available: [ocaml-version >= "4.02.3"]

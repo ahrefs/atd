@@ -1,7 +1,5 @@
 (* Names *)
 
-open Atdj_env
-
 let to_camel_case s =
   let res    = String.copy s in
   let offset = ref 0 in

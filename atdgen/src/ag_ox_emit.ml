@@ -5,6 +5,7 @@
 
 open Printf
 
+open Atd_import
 open Ag_error
 open Ag_mapping
 

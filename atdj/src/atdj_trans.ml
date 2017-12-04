@@ -1,3 +1,4 @@
+open Atd_import
 open Printf
 open Atdj_names
 open Atdj_env
@@ -40,7 +41,7 @@ let get env atd_ty opt =
   let suffix =
     match atd_ty with
       | `Sum _ -> ""
-      | _ -> String.capitalize (json_of_atd env atd_ty) in
+      | _ -> String.capitalize_ascii (json_of_atd env atd_ty) in
   prefix ^ suffix
 
 let extract_from_edgy_brackets s =

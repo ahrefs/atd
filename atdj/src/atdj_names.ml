@@ -1,3 +1,4 @@
+open Atd_import
 (* Names *)
 
 let to_camel_case (s : string) =
@@ -9,14 +10,14 @@ let to_camel_case (s : string) =
         upper := true;
     | ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9') as x ->
         upper := true;
-        res.[!offset] <- x;
+        Bytes.set res !offset x;
         incr offset
     | _ as x ->
         if !upper then (
-          res.[!offset] <- Char.uppercase x;
+          Bytes.set res !offset (Char.uppercase_ascii x);
           upper := false
         ) else
-          res.[!offset] <- x;
+          Bytes.set res !offset x;
         incr offset in
   String.iter f s;
   Bytes.to_string (Bytes.sub res 0 !offset)
@@ -114,7 +115,7 @@ let get_java_field_name field_name annot =
   Atd_annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
 
 let get_java_variant_names field_name annot =
-  let lower_field_name = String.lowercase field_name in
+  let lower_field_name = String.lowercase_ascii field_name in
   let field_name =
     if is_java_keyword lower_field_name then
       field_name ^ "_"
@@ -125,8 +126,8 @@ let get_java_variant_names field_name annot =
     Atd_annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
   in
   let func_name = to_camel_case field_name in
-  let enum_name = String.uppercase field_name in
-  let private_field_name = String.lowercase field_name in
+  let enum_name = String.uppercase_ascii field_name in
+  let private_field_name = String.lowercase_ascii field_name in
   func_name, enum_name, private_field_name
 
 let get_json_field_name field_name annot =

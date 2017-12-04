@@ -59,6 +59,7 @@
 (executables
  ((libraries (atd atdgen))
   (names (test_atdgen_main))
+  (flags (:include ${ROOT}/ocamlflags.sexp))
   (modules
    (test
     test3j_j
@@ -72,6 +73,7 @@
 
 (executables
  ((libraries (atd atdgen))
+  (flags (:include ${ROOT}/ocamlflags.sexp))
   (names (github_j))
   (modules (github_t github_j))))
 

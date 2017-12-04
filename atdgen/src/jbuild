@@ -11,5 +11,6 @@
 (library
  ((name atdgen)
   (public_name atdgen)
+  (flags (:include ${ROOT}/ocamlflags.sexp))
   (wrapped false)
   (libraries (atd str biniou yojson))))

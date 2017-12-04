@@ -3,5 +3,6 @@
 (executables
  ((libraries (atdgen))
   (names (ag_main))
+  (flags (:include ${ROOT}/ocamlflags.sexp))
   (public_names (atdgen))
   (package atdgen)))

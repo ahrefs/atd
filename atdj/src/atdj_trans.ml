@@ -129,7 +129,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
  * then we wrap its values as necessary.
  *)
 let assign_field env
-    (`Field (loc, (atd_field_name, kind, annots), atd_ty)) java_ty =
+    (`Field (_, (atd_field_name, kind, annots), atd_ty)) java_ty =
   let json_field_name = get_json_field_name atd_field_name annots in
   let field_name = get_java_field_name atd_field_name annots in
   (* Check whether the field is optional *)
@@ -199,7 +199,7 @@ let rec to_string env id atd_ty indent =
 
 (* Generate a toJsonBuffer command for a record field. *)
 let to_string_field env = function
-  | (`Field (loc, (atd_field_name, kind, annots), atd_ty)) ->
+  | (`Field (_, (atd_field_name, kind, annots), atd_ty)) ->
       let json_field_name = get_json_field_name atd_field_name annots in
       let field_name = get_java_field_name atd_field_name annots in
       let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
@@ -312,7 +312,7 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
         trans_sum name env s
     | `Record _ as r ->
         trans_record name env r
-    | `Name (_, (_, name, _), _) ->
+    | `Name (_, (_, _name, _), _) ->
         (* Don't translate primitive types at the top-level *)
         env
     | x -> type_not_supported x
@@ -324,7 +324,7 @@ and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
  * we generate a class Ty implemented in Ty.java and an enum TyEnum defined
  * in a separate file TyTag.java.
  *)
-and trans_sum my_name env (`Sum (loc, vars, annots)) =
+and trans_sum my_name env (`Sum (_, vars, _)) =
   let class_name = Atdj_names.to_class_name my_name in
 
   let cases = List.map (function
@@ -336,7 +336,7 @@ and trans_sum my_name env (`Sum (loc, vars, annots)) =
           match opt_ty with
           | None -> None
           | Some ty ->
-              let (java_ty, env) = trans_inner env (unwrap_option env ty) in
+              let (java_ty, _) = trans_inner env (unwrap_option env ty) in
               Some (ty, java_ty)
         in
         (json_name, func_name, enum_name, field_name, opt_java_ty)
@@ -387,7 +387,7 @@ public class %s {
 "
     class_name
     (fun out l ->
-       List.iter (fun (json_name, func_name, enum_name, field_name, opt_ty) ->
+       List.iter (fun (json_name, _func_name, enum_name, field_name, opt_ty) ->
          match opt_ty with
          | None ->
              fprintf out " \
@@ -427,7 +427,7 @@ public class %s {
 "
           func_name
           enum_name;
-    | Some (atd_ty, java_ty) ->
+    | Some (_atd_ty, java_ty) ->
         fprintf out "
   %s field_%s = null;
   public void set%s(%s x) {
@@ -471,7 +471,7 @@ public class %s {
 "
     class_name
     (fun out l ->
-       List.iter (fun (json_name, func_name, enum_name, field_name, opt_ty) ->
+       List.iter (fun (json_name, _func_name, enum_name, field_name, opt_ty) ->
          match opt_ty with
          | None ->
              fprintf out "
@@ -546,7 +546,7 @@ public class %s implements Atdj {
     class_name;
 
   let env = List.fold_left
-    (fun env (`Field (loc, (field_name, _, annots), _) as field) ->
+    (fun env (`Field (_, (field_name, _, annots), _) as field) ->
       let field_name = get_java_field_name field_name annots in
       let cmd = assign_field env field (List.assoc field_name java_tys) in
       fprintf out "%s" cmd;

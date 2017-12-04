@@ -62,7 +62,7 @@ let main () =
   );
 
   (* Parse ATD file *)
-  let (atd_head, atd_module), original_types =
+  let (atd_head, atd_module), _original_types =
     Atd_util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in

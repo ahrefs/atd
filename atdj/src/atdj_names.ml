@@ -1,7 +1,7 @@
 (* Names *)
 
-let to_camel_case s =
-  let res    = String.copy s in
+let to_camel_case (s : string) =
+  let res    = Bytes.of_string s in
   let offset = ref 0 in
   let upper  = ref true in
   let f = function
@@ -19,7 +19,7 @@ let to_camel_case s =
           res.[!offset] <- x;
         incr offset in
   String.iter f s;
-  String.sub res 0 !offset
+  Bytes.to_string (Bytes.sub res 0 !offset)
 
 (* Translate type names into idiomatic Java class names.  We special case
  * `string', `int' and `bool'  (see code).  For the remainder, we remove

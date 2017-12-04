@@ -1,1 +1,1 @@
-(:standard -w @33)
+(:standard -w @33 -safe-string)

@@ -190,7 +190,7 @@ let test_ocaml_internals () =
     let opaque_identity x = x in
     (* avoiding unused function warning and partial application warning. *)
     opaque_identity ();
-    let open Sys in opaque_identity in
+    opaque_identity in
 
   let int = ref (Obj.magic (opaque_identity 0.0)) in
   Gc.compact ();
@@ -906,6 +906,7 @@ let test_double_wrapping () =
   let x' = Testj.even_natural_of_string json in
   check (x = x')
 
+[@@@warning "-52"]
 let test_wrapping_with_validation () =
   section "ocaml wrapping - with validation";
   let x = `Id "" in
@@ -917,6 +918,7 @@ let test_ignored_wrap () =
   let x = { Test.some_field = 0 } in
   try ignore (Testv.validate_no_real_wrap [] x); check false
   with Failure "passed" -> ()
+[@@@warning "+52"]
 
 let test_biniou_float32 () =
   section "check length of floats serialized as float32";

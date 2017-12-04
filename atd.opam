@@ -19,3 +19,5 @@ depends: [
   "menhir"
   "easy-format"
 ]
+
+available: [ocaml-version >= "4.02.3"]

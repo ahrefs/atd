@@ -12,5 +12,6 @@
 (library
  ((name atd)
   (public_name atd)
+  (flags (:include ${ROOT}/ocamlflags.sexp))
   (wrapped false)
   (libraries (easy-format unix str))))

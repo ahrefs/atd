@@ -2,6 +2,7 @@
 
 (executables
  ((libraries (atd))
+  (flags (:include ${ROOT}/ocamlflags.sexp))
   (names (unit_tests))))
 
 (alias

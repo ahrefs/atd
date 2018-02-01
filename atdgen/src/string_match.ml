@@ -184,7 +184,7 @@ let make_ocaml_expr_factored
     ?(pos_id = "pos")
     ?(exit_with = `Exn "Exit")
     ~error_expr
-    cases : Ag_indent.t list =
+    cases : Indent.t list =
 
   let exit_expr, catch =
     match exit_with with
@@ -232,7 +232,7 @@ let test2 () =
       ~error_expr:[ `Line "None" ]
       cases
   in
-  Atd_indent.to_stdout (List.map Ag_indent.strip expr)
+  Atd_indent.to_stdout (List.map Indent.strip expr)
 
 
 let make_ocaml_expr_naive
@@ -263,7 +263,7 @@ let make_ocaml_expr
     ?pos_id
     ?exit_with
     ~error_expr
-    cases : Ag_indent.t list =
+    cases : Indent.t list =
 
   if optimized then
     make_ocaml_expr_factored
@@ -281,7 +281,7 @@ let make_ocaml_int_mapping
     ~error_expr1
     ?(error_expr2 = [ `Line "assert false" ])
     ?(int_id = "i")
-    cases : Ag_indent.t list * Ag_indent.t list =
+    cases : Indent.t list * Indent.t list =
 
   let a = Array.of_list cases in
   let int_cases =

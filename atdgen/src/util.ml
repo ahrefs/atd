@@ -187,7 +187,7 @@ struct
         "Field %s has constructor %s but field %s expects constructor %s"
         value_field value_constr constr_field constr_constr
     in
-    Ag_oj_run.error msg
+    Oj_run.error msg
 
   let constr_mismatch_handler = ref preset_constr_mismatch_handler
 end

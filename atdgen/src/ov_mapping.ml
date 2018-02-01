@@ -1,9 +1,9 @@
 open Atd_ast
-open Ag_error
-open Ag_mapping
+open Error
+open Mapping
 
 type ov_mapping =
-    (Ag_ocaml.atd_ocaml_repr, Ag_validate.validate_repr) Ag_mapping.mapping
+    (Ocaml.atd_ocaml_repr, Validate.validate_repr) Mapping.mapping
 
 (*
   Determine whether a type expression does not need validation.
@@ -23,7 +23,7 @@ let get_def defs name : type_expr option =
 
 let noval x =
   let an = Atd_ast.annot_of_type_expr x in
-  Ag_validate.get_validator an = None
+  Validate.get_validator an = None
 
 module H = Hashtbl.Make (
   struct
@@ -147,17 +147,17 @@ let rec mapping_of_expr
     (is_shallow : type_expr -> bool)
     (x0 : type_expr) : ov_mapping =
 
-  let v an = Ag_validate.get_validator an in
-  let v2 an x = (Ag_validate.get_validator an, is_shallow x) in
+  let v an = Validate.get_validator an in
+  let v2 an x = (Validate.get_validator an, is_shallow x) in
   match x0 with
       `Sum (loc, l, an) ->
-        let ocaml_t = `Sum (Ag_ocaml.get_ocaml_sum an) in
+        let ocaml_t = `Sum (Ocaml.get_ocaml_sum an) in
         `Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
               ocaml_t, v2 an x0)
 
     | `Record (loc, l, an) ->
-        let ocaml_t = `Record (Ag_ocaml.get_ocaml_record an) in
-        let ocaml_field_prefix = Ag_ocaml.get_ocaml_field_prefix an in
+        let ocaml_t = `Record (Ocaml.get_ocaml_record an) in
+        let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
         `Record (loc,
                  Array.of_list
                    (List.map
@@ -170,7 +170,7 @@ let rec mapping_of_expr
                 ocaml_t, v2 an x0)
 
     | `List (loc, x, an) ->
-        let ocaml_t = `List (Ag_ocaml.get_ocaml_list an) in
+        let ocaml_t = `List (Ocaml.get_ocaml_list an) in
         `List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Option (loc, x, an) ->
@@ -185,7 +185,7 @@ let rec mapping_of_expr
         failwith "Sharing is not supported"
 
     | `Wrap (loc, x, an) ->
-        let w = Ag_ocaml.get_ocaml_wrap loc an in
+        let w = Ocaml.get_ocaml_wrap loc an in
         let ocaml_t = `Wrap w in
         let validator =
           match w with
@@ -201,7 +201,7 @@ let rec mapping_of_expr
            | "bool" ->
                `Bool (loc, `Bool, (v an, true))
            | "int" ->
-               let o = Ag_ocaml.get_ocaml_int an in
+               let o = Ocaml.get_ocaml_int an in
                `Int (loc, `Int o, (v an, true))
            | "float" ->
                `Float (loc, `Float, (v an, true))
@@ -220,11 +220,11 @@ let rec mapping_of_expr
         `Tvar (loc, s)
 
 and mapping_of_cell is_shallow (loc, x, an) =
-  let default = Ag_ocaml.get_ocaml_default an in
-  let doc = Ag_doc.get_doc loc an in
+  let default = Ocaml.get_ocaml_default an in
+  let doc = Doc.get_doc loc an in
   let ocaml_t =
     `Cell {
-      Ag_ocaml.ocaml_default = default;
+      Ocaml.ocaml_default = default;
       ocaml_fname = "";
       ocaml_mutable = false;
       ocaml_fdoc = doc;
@@ -240,11 +240,11 @@ and mapping_of_cell is_shallow (loc, x, an) =
 
 and mapping_of_variant is_shallow = function
     `Variant (loc, (s, an), o) ->
-      let ocaml_cons = Ag_ocaml.get_ocaml_cons s an in
-      let doc = Ag_doc.get_doc loc an in
+      let ocaml_cons = Ocaml.get_ocaml_cons s an in
+      let doc = Doc.get_doc loc an in
       let ocaml_t =
         `Variant {
-          Ag_ocaml.ocaml_cons = ocaml_cons;
+          Ocaml.ocaml_cons = ocaml_cons;
           ocaml_vdoc = doc;
         }
       in
@@ -270,7 +270,7 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr is_shallow x in
       let ocaml_default =
-        match fk, Ag_ocaml.get_ocaml_default an with
+        match fk, Ocaml.get_ocaml_default an with
             `Required, None -> None
           | `Optional, None -> Some "None"
           | (`Required | `Optional), Some _ ->
@@ -280,16 +280,16 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
               (* will try to determine implicit default value later *)
               None
       in
-      let ocaml_fname = Ag_ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
-      let ocaml_mutable = Ag_ocaml.get_ocaml_mutable an in
-      let doc = Ag_doc.get_doc loc an in
+      let ocaml_fname = Ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
+      let ocaml_mutable = Ocaml.get_ocaml_mutable an in
+      let doc = Doc.get_doc loc an in
       { f_loc = loc;
         f_name = s;
         f_kind = fk;
         f_value = fvalue;
 
         f_arepr = `Field {
-          Ag_ocaml.ocaml_default = ocaml_default;
+          Ocaml.ocaml_default = ocaml_default;
           ocaml_fname = ocaml_fname;
           ocaml_mutable = ocaml_mutable;
           ocaml_fdoc = doc;
@@ -302,19 +302,19 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
 
 
 let def_of_atd is_shallow (loc, (name, param, an), x) =
-  let ocaml_predef = Ag_ocaml.get_ocaml_predef `Validate an in
-  let doc = Ag_doc.get_doc loc an in
+  let ocaml_predef = Ocaml.get_ocaml_predef `Validate an in
+  let doc = Doc.get_doc loc an in
   let o =
     match as_abstract x with
         Some (_, an2) ->
-          (match Ag_ocaml.get_ocaml_module_and_t `Validate name an with
+          (match Ocaml.get_ocaml_module_and_t `Validate name an with
                None -> None
              | Some (types_module, main_module, ext_name) ->
                  let args = List.map (fun s -> `Tvar (loc, s)) param in
                  Some (`External
                          (loc, name, args,
                           `External (types_module, main_module, ext_name),
-                          (Ag_validate.get_validator an2, false))
+                          (Validate.get_validator an2, false))
                       )
           )
       | None -> Some (mapping_of_expr is_shallow x)
@@ -324,7 +324,7 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
     def_name = name;
     def_param = param;
     def_value = o;
-    def_arepr = `Def { Ag_ocaml.ocaml_predef = ocaml_predef;
+    def_arepr = `Def { Ocaml.ocaml_predef = ocaml_predef;
                        ocaml_ddoc = doc; };
     def_brepr = (None, false);
   }

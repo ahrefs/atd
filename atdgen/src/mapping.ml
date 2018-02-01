@@ -1,6 +1,6 @@
 open Printf
 
-open Ag_error
+open Error
 
 type loc = Atd_ast.loc
 
@@ -120,7 +120,7 @@ let rec subst env (x : (_, _) mapping) =
     | `Tvar (_, s) ->
         try Env.find s env
         with Not_found ->
-          invalid_arg (sprintf "Ag_mapping.subst_var: '%s" s)
+          invalid_arg (sprintf "Mapping.subst_var: '%s" s)
 
 and subst_variant env x =
   match x.var_arg with
@@ -138,7 +138,7 @@ and subst_cell env x =
 *)
 let apply param x args =
   if List.length param <> List.length args then
-    invalid_arg "Ag_mapping.apply";
+    invalid_arg "Mapping.apply";
   let env =
     List.fold_left2
       (fun env var value -> Env.add var value env)

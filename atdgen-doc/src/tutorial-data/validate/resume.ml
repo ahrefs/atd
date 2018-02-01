@@ -4,7 +4,7 @@ let check_experience x =
         Printf.printf "VALID:\n"
     | Some error ->
         Printf.printf "INVALID: %s\n"
-          (Ag_util.Validation.string_of_error error)
+          (Atdgen.Util.Validation.string_of_error error)
   );
   Printf.printf "%s\n"
     (Yojson.Safe.prettify (Resume_j.string_of_work_experience x))

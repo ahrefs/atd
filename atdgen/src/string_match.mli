@@ -31,21 +31,21 @@ val make_ocaml_expr_factored :
   ?string_id: string ->
   ?pos_id: string ->
   ?exit_with: exit_with ->
-  error_expr: Ag_indent.t list ->
-  (string option * Ag_indent.t list) list -> Ag_indent.t list
+  error_expr: Indent.t list ->
+  (string option * Indent.t list) list -> Indent.t list
 
 val make_ocaml_expr_naive :
   ?string_id: string ->
-  error_expr: Ag_indent.t list ->
-  (string option * Ag_indent.t list) list -> Ag_indent.t list
+  error_expr: Indent.t list ->
+  (string option * Indent.t list) list -> Indent.t list
 
 val make_ocaml_expr :
   optimized: bool ->
   ?string_id: string ->
   ?pos_id: string ->
   ?exit_with: exit_with ->
-  error_expr: Ag_indent.t list ->
-  (string option * Ag_indent.t list) list -> Ag_indent.t list
+  error_expr: Indent.t list ->
+  (string option * Indent.t list) list -> Indent.t list
 
 
 val make_ocaml_int_mapping :
@@ -53,12 +53,12 @@ val make_ocaml_int_mapping :
   ?pos_id: string ->
   ?len_id: string ->
   ?exit_with: exit_with ->
-  error_expr1: Ag_indent.t list ->
-  ?error_expr2: Ag_indent.t list ->
+  error_expr1: Indent.t list ->
+  ?error_expr2: Indent.t list ->
   ?int_id: string ->
-  (string option * Ag_indent.t list) list ->
+  (string option * Indent.t list) list ->
 
-  (Ag_indent.t list * Ag_indent.t list)
+  (Indent.t list * Indent.t list)
     (*
       takes a list of cases, each being defined by a string to match against
       and by a corresponding expression of type 'a.

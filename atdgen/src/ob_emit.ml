@@ -6,9 +6,9 @@
 open Printf
 
 open Atd_ast
-open Ag_error
-open Ag_mapping
-open Ag_ob_mapping
+open Error
+open Mapping
+open Ob_mapping
 
 (*
   OCaml code generator (biniou readers and writers)
@@ -22,7 +22,7 @@ let make_ocaml_biniou_intf ~with_create buf deref defs =
     fun x ->
       let s = x.def_name in
       if s <> "" && s.[0] <> '_' && x.def_value <> None then (
-        let full_name = Ag_ox_emit.get_full_type_name x in
+        let full_name = Ox_emit.get_full_type_name x in
         let writer_params =
           String.concat "" (
             List.map
@@ -121,9 +121,9 @@ val %s_of_string :%s
           full_name
           s;
 
-        if with_create && Ag_ox_emit.is_exportable x then
+        if with_create && Ox_emit.is_exportable x then
           let create_record_intf, _create_record_impl =
-            Ag_ox_emit.make_record_creator deref x
+            Ox_emit.make_record_creator deref x
           in
           bprintf buf "%s" create_record_intf;
           bprintf buf "\n";
@@ -185,10 +185,10 @@ let get_fields deref a =
               let ocaml_default =
                 match x.f_kind with
                     `With_default ->
-                      (match o.Ag_ocaml.ocaml_default with
+                      (match o.Ocaml.ocaml_default with
                            None ->
                              let d =
-                               Ag_ocaml.get_implicit_ocaml_default
+                               Ocaml.get_implicit_ocaml_default
                                  deref x.f_value in
                              if d = None then
                                error x.f_loc "Missing default field value"
@@ -204,10 +204,10 @@ let get_fields deref a =
                     `Optional | `With_default -> true
                   | `Required -> false
               in
-              o.Ag_ocaml.ocaml_fname,
+              o.Ocaml.ocaml_fname,
               ocaml_default,
               optional,
-              b.Ag_biniou.biniou_unwrapped
+              b.Biniou.biniou_unwrapped
           | _ -> assert false
       in
       (x, ocaml_fname, ocaml_default, optional, unwrapped)
@@ -334,9 +334,9 @@ let rec get_reader_name
 
   let xreader s =
     if tagged then
-      sprintf "Ag_ob_run.read_%s" s
+      sprintf "Atdgen.Ob_run.read_%s" s
     else
-      sprintf "Ag_ob_run.get_%s_reader" s
+      sprintf "Atdgen.Ob_run.get_%s_reader" s
   in
   match x with
       `Unit (_, `Unit, `Unit) -> xreader "unit"
@@ -405,7 +405,7 @@ let get_left_of_string_name name param =
     (`Name (dummy_loc, name, args, None, None))
 
 
-let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
+let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
   let un = if tagged then "" else "untagged_" in
   match x with
       `Unit _
@@ -491,7 +491,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
              `List, `Array ->
                let tag = get_biniou_tag x in
                [
-                 `Line (sprintf "Ag_ob_run.write_%slist" un);
+                 `Line (sprintf "Atdgen.Ob_run.write_%slist" un);
                  `Block [
                    `Line tag;
                    `Line "(";
@@ -502,7 +502,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
            | `Array, `Array ->
                let tag = get_biniou_tag x in
                [
-                 `Line (sprintf "Ag_ob_run.write_%sarray" un);
+                 `Line (sprintf "Atdgen.Ob_run.write_%sarray" un);
                  `Block [
                    `Line tag;
                    `Line "(";
@@ -521,7 +521,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
     | `Option (_, x, `Option, `Option)
     | `Nullable (_, x, `Nullable, `Nullable) ->
         [
-          `Line (sprintf "Ag_ob_run.write_%soption (" un);
+          `Line (sprintf "Atdgen.Ob_run.write_%soption (" un);
           `Block (make_writer ~tagged:true deref x);
           `Line ")";
         ]
@@ -530,7 +530,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
         let simple_writer = make_writer ~tagged deref x in
         (match o with
             None -> simple_writer
-          | Some { Ag_ocaml.ocaml_unwrap; _ } ->
+          | Some { Ocaml.ocaml_unwrap; _ } ->
               [
                 `Line "fun ob x -> (";
                 `Block [
@@ -545,13 +545,13 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Ag_indent.t list =
 
 
 
-and make_variant_writer deref tick x : Ag_indent.t list =
+and make_variant_writer deref tick x : Indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
         `Variant o, `Variant -> o
       | _ -> assert false
   in
-  let ocaml_cons = o.Ag_ocaml.ocaml_cons in
+  let ocaml_cons = o.Ocaml.ocaml_cons in
   match x.var_arg with
       None ->
         let h = Bi_io.string_of_hashtag (Bi_io.hash_name x.var_cons) false in
@@ -615,7 +615,7 @@ and make_record_writer deref tagged a record_kind =
     List.map (
       fun (x, ocaml_fname, ocaml_default, optional, unwrapped) ->
         let f_value =
-          if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
+          if unwrapped then Ocaml.unwrap_option deref x.f_value
           else x.f_value
         in
         let write_field_tag =
@@ -682,8 +682,8 @@ and make_table_writer deref tagged list_kind x =
   in
   let iter2 =
     match list_kind with
-        `List -> "Ag_ob_run.list_iter2"
-      | `Array -> "Ag_ob_run.array_iter2"
+        `List -> "Atdgen.Ob_run.list_iter2"
+      | `Array -> "Atdgen.Ob_run.array_iter2"
   in
   let l = Array.to_list a in
   let write_header =
@@ -817,7 +817,7 @@ let study_record ~ocaml_version fields =
     in
     if k = 0 then []
     else
-      [ `Line (sprintf "if %s then Ag_ob_run.missing_fields %s %s;"
+      [ `Line (sprintf "if %s then Atdgen.Ob_run.missing_fields %s %s;"
                  bool_expr bit_fields field_names) ]
   in
   init_fields, init_bits, set_bit, check_bits, create_record
@@ -829,7 +829,7 @@ let wrap_body ~tagged expected_tag body =
       `Annot ("fun", `Line "fun ib ->");
       `Block [
         `Line (sprintf "if Bi_io.read_tag ib <> %i then \
-                        Ag_ob_run.read_error_at ib;"
+                        Atdgen.Ob_run.read_error_at ib;"
                  expected_tag);
         `Inline body;
       ]
@@ -839,7 +839,7 @@ let wrap_body ~tagged expected_tag body =
       `Annot ("fun", `Line "fun tag ->");
       `Block [
         `Line (sprintf "if tag <> %i then \
-                          Ag_ob_run.read_error () else"
+                          Atdgen.Ob_run.read_error () else"
                  expected_tag);
         `Block [
           `Line "fun ib ->";
@@ -865,7 +865,7 @@ let wrap_bodies ~tagged l =
         `Line "match Bi_io.read_tag ib with";
         `Block [
           `Inline cases;
-          `Line "| _ -> Ag_ob_run.read_error_at ib"
+          `Line "| _ -> Atdgen.Ob_run.read_error_at ib"
         ]
       ]
     ]
@@ -887,14 +887,14 @@ let wrap_bodies ~tagged l =
       `Line "function";
       `Block [
         `Inline cases;
-        `Line "| _ -> Ag_ob_run.read_error ()"
+        `Line "| _ -> Atdgen.Ob_run.read_error ()"
       ]
     ]
 
 
 let rec make_reader
     deref ~tagged ~ocaml_version ?type_annot (x : ob_mapping)
-    : Ag_indent.t list =
+    : Indent.t list =
   match x with
       `Unit _
     | `Bool _
@@ -927,7 +927,7 @@ let rec make_reader
                       a
                   )
                 );
-                `Line "| _ -> Ag_ob_run.unsupported_variant h has_arg";
+                `Line "| _ -> Atdgen.Ob_run.unsupported_variant h has_arg";
               ]
             ];
             `Line ")"
@@ -952,8 +952,8 @@ let rec make_reader
         (match o, b with
              `List, `Array ->
                let f =
-                 if tagged then "Ag_ob_run.read_list"
-                 else "Ag_ob_run.get_list_reader"
+                 if tagged then "Atdgen.Ob_run.read_list"
+                 else "Atdgen.Ob_run.get_list_reader"
                in
                [
                  `Line (f ^ " (");
@@ -962,8 +962,8 @@ let rec make_reader
                ]
            | `Array, `Array ->
                let f =
-                 if tagged then "Ag_ob_run.read_array"
-                 else "Ag_ob_run.get_array_reader"
+                 if tagged then "Atdgen.Ob_run.read_array"
+                 else "Atdgen.Ob_run.get_array_reader"
                in
                [
                  `Line (f ^ " (");
@@ -977,8 +977,8 @@ let rec make_reader
                let body2 =
                  let f =
                    match list_kind with
-                       `List -> "Ag_ob_run.read_list_value"
-                     | `Array -> "Ag_ob_run.read_array_value"
+                       `List -> "Atdgen.Ob_run.read_list_value"
+                     | `Array -> "Atdgen.Ob_run.read_array_value"
                  in
                  [
                    `Line (f ^ " (");
@@ -1007,7 +1007,7 @@ let rec make_reader
               ];
               `Line ")"
             ];
-            `Line "| _ -> Ag_ob_run.read_error_at ib";
+            `Line "| _ -> Atdgen.Ob_run.read_error_at ib";
           ]
         ]
         in
@@ -1017,7 +1017,7 @@ let rec make_reader
         let simple_reader = make_reader deref ~tagged ~ocaml_version x in
         (match o with
             None -> simple_reader
-          | Some { Ag_ocaml.ocaml_wrap ; _ } ->
+          | Some { Ocaml.ocaml_wrap ; _ } ->
               if tagged then
                 [
                   `Line "fun ib ->";
@@ -1040,17 +1040,17 @@ let rec make_reader
     | _ -> assert false
 
 
-and make_variant_reader ~ocaml_version deref type_annot tick x : Ag_indent.t list =
+and make_variant_reader ~ocaml_version deref type_annot tick x : Indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
         `Variant o, `Variant -> o
       | _ -> assert false
   in
-  let ocaml_cons = o.Ag_ocaml.ocaml_cons in
+  let ocaml_cons = o.Ocaml.ocaml_cons in
   match x.var_arg with
       None ->
         let h = Bi_io.hash_name x.var_cons in
-        let typed_cons = Ag_ox_emit.opt_annot type_annot (tick ^ ocaml_cons) in
+        let typed_cons = Ox_emit.opt_annot type_annot (tick ^ ocaml_cons) in
         [ `Line (sprintf "| %i, false -> %s" h typed_cons) ]
     | Some v ->
         let h = Bi_io.hash_name x.var_cons in
@@ -1062,7 +1062,7 @@ and make_variant_reader ~ocaml_version deref type_annot tick x : Ag_indent.t lis
               `Block (make_reader deref ~tagged:true ~ocaml_version v);
               `Line ") ib";
             ];
-            `Line (sprintf ")%s)" (Ag_ox_emit.insert_annot type_annot));
+            `Line (sprintf ")%s)" (Ox_emit.insert_annot type_annot));
           ];
         ]
 
@@ -1080,7 +1080,7 @@ and make_record_reader
       Array.mapi (
         fun i (x, name, _, _, unwrapped) ->
           let f_value =
-            if unwrapped then Ag_ocaml.unwrap_option deref x.f_value
+            if unwrapped then Ocaml.unwrap_option deref x.f_value
             else x.f_value
           in
           let wrap l =
@@ -1129,7 +1129,7 @@ and make_record_reader
     `Inline check_bits;
     `Line "(";
     `Block create_record;
-    `Line (sprintf "%s)" (Ag_ox_emit.insert_annot type_annot));
+    `Line (sprintf "%s)" (Ox_emit.insert_annot type_annot));
   ]
 
 
@@ -1138,7 +1138,7 @@ and make_tuple_reader deref ~ocaml_version a =
     Array.map (
       fun x ->
         match x.cel_arepr with
-            `Cell f -> x, f.Ag_ocaml.ocaml_default
+            `Cell f -> x, f.Ocaml.ocaml_default
           | _ -> assert false
     ) a
   in
@@ -1211,7 +1211,7 @@ and make_tuple_reader deref ~ocaml_version a =
   [
     `Line "let len = Bi_vint.read_uvint ib in";
     `Line (sprintf
-             "if len < %i then Ag_ob_run.missing_tuple_fields len %s;"
+             "if len < %i then Atdgen.Ob_run.missing_tuple_fields len %s;"
              min_length req_fields);
     `Inline read_cells;
     `Line (sprintf "for i = %i to len - 1 do Bi_io.skip ib done;" tup_len);
@@ -1272,7 +1272,7 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
        `Inline init_bits;
        `Line "let readers =";
        `Block [
-         `Line "Ag_ob_run.array_init2 col_num ib (";
+         `Line "Atdgen.Ob_run.array_init2 col_num ib (";
          `Block [
            `Line "fun col ib ->";
            `Block [
@@ -1304,15 +1304,15 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
 let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let tag = get_biniou_tag (deref x) in
   let write_untagged = get_left_writer_name ~tagged:false name param in
   let write = get_left_writer_name ~tagged:true name param in
   let to_string = get_left_to_string_name name param in
   let write_untagged_expr = make_writer deref ~tagged:false x in
-  let eta_expand = is_rec && not (Ag_ox_emit.is_function write_untagged_expr) in
-  let needs_annot = Ag_ox_emit.needs_type_annot x in
+  let eta_expand = is_rec && not (Ox_emit.is_function write_untagged_expr) in
+  let needs_annot = Ox_emit.needs_type_annot x in
   let extra_param, extra_args =
     match eta_expand, needs_annot with
     | true, false -> " ob x", " ob x"
@@ -1321,7 +1321,7 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
     | false, true -> "", ""
   in
   let type_annot =
-    match Ag_ox_emit.needs_type_annot x with
+    match Ox_emit.needs_type_annot x with
     | true -> Some (sprintf "Bi_outbuf.t -> %s -> unit" type_constraint)
     | false -> None
   in
@@ -1329,9 +1329,9 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
     `Line (sprintf "%s %s_tag = %s" let1 name tag);
     `Line (sprintf "%s %s = ("
              let2
-             (Ag_ox_emit.opt_annot_def type_annot
+             (Ox_emit.opt_annot_def type_annot
                 (write_untagged ^ extra_param)));
-    `Block (List.map Ag_indent.strip write_untagged_expr);
+    `Block (List.map Indent.strip write_untagged_expr);
     `Line (sprintf ")%s" extra_args);
     `Line (sprintf "%s %s ob x =" let2 write);
     `Block [
@@ -1350,21 +1350,21 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
     deref is_rec let1 let2 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let get_reader = get_left_reader_name ~tagged:false name param in
   let read = get_left_reader_name ~tagged:true name param in
   let of_string = get_left_of_string_name name param in
   let type_annot =
-    match Ag_ox_emit.needs_type_annot x with
+    match Ox_emit.needs_type_annot x with
     | true -> Some type_constraint
     | false -> None
   in
   let get_reader_expr =
     make_reader deref ~tagged:false ~ocaml_version ?type_annot x in
   let read_expr = make_reader deref ~tagged:true ~ocaml_version ?type_annot x in
-  let eta_expand1 = is_rec && not (Ag_ox_emit.is_function get_reader_expr) in
-  let eta_expand2 = is_rec && not (Ag_ox_emit.is_function read_expr) in
+  let eta_expand1 = is_rec && not (Ox_emit.is_function get_reader_expr) in
+  let eta_expand2 = is_rec && not (Ox_emit.is_function read_expr) in
   let extra_param1, extra_args1 =
     if eta_expand1 then " tag", " tag"
     else "", ""
@@ -1375,10 +1375,10 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
   in
   [
     `Line (sprintf "%s %s%s = (" let1 get_reader extra_param1);
-    `Block (List.map Ag_indent.strip get_reader_expr);
+    `Block (List.map Indent.strip get_reader_expr);
     `Line (sprintf ")%s" extra_args1);
     `Line (sprintf "%s %s%s = (" let2 read extra_param2);
-    `Block (List.map Ag_indent.strip read_expr);
+    `Block (List.map Indent.strip read_expr);
     `Line (sprintf ")%s" extra_args2);
     `Line (sprintf "%s %s ?pos s =" let2 of_string);
     `Block [
@@ -1429,10 +1429,10 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
   if with_create then
     List.iter (
       fun (_, l) ->
-        let l = List.filter Ag_ox_emit.is_exportable l in
+        let l = List.filter Ox_emit.is_exportable l in
         List.iter (
           fun x ->
-            let _, impl = Ag_ox_emit.make_record_creator deref x in
+            let _, impl = Ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs
@@ -1516,8 +1516,8 @@ let make_ocaml_files
   in
   let m1 = tsort m0 in
   let defs1 = translate_mapping m1 in
-  if not name_overlap then Ag_ox_emit.check defs1;
-  Ag_xb_emit.check defs1;
+  if not name_overlap then Ox_emit.check defs1;
+  Xb_emit.check defs1;
   let (m1', original_types) =
     Atd_expand.expand_module_body ~keep_poly:true m0
   in
@@ -1526,7 +1526,7 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ag_ocaml.ocaml_of_atd ~pp_convs ~target:`Biniou ~type_aliases (head, m1) in
+    Ocaml.ocaml_of_atd ~pp_convs ~target:`Biniou ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
   let header =
     let src =
@@ -1539,11 +1539,11 @@ let make_ocaml_files
   in
   let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
+      ocaml_typedefs (Mapping.make_deref defs1) defs1
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~original_types ~ocaml_version ocaml_typedefs
-      (Ag_mapping.make_deref defs) defs
+      (Mapping.make_deref defs) defs
   in
-  Ag_ox_emit.write_ocaml out mli ml
+  Ox_emit.write_ocaml out mli ml

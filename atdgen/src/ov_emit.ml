@@ -5,36 +5,36 @@
 open Printf
 
 open Atd_ast
-open Ag_mapping
-open Ag_ov_mapping
+open Mapping
+open Ov_mapping
 
 let name_of_var s = "_" ^ s
 
 let make_ocaml_validate_intf ~with_create buf deref defs =
   List.iter (
     fun x ->
-      if with_create && Ag_ox_emit.is_exportable x then (
+      if with_create && Ox_emit.is_exportable x then (
         let create_record_intf, _ =
-          Ag_ox_emit.make_record_creator deref x
+          Ox_emit.make_record_creator deref x
         in
         bprintf buf "%s" create_record_intf;
       );
 
-      let full_name = Ag_ox_emit.get_full_type_name x in
+      let full_name = Ox_emit.get_full_type_name x in
       let validator_params =
         String.concat "" (
           List.map
             (fun s ->
-               sprintf "\n  (Ag_util.Validation.path -> '%s -> \
-                        Ag_util.Validation.error option) ->" s)
+               sprintf "\n  (Atdgen.Util.Validation.path -> '%s -> \
+                        Atdgen.Util.Validation.error option) ->" s)
             x.def_param
         )
       in
       let s = x.def_name in
-      if Ag_ox_emit.is_exportable x then (
+      if Ox_emit.is_exportable x then (
         bprintf buf "\
 val validate_%s :%s
-  Ag_util.Validation.path -> %s -> Ag_util.Validation.error option
+  Atdgen.Util.Validation.path -> %s -> Atdgen.Util.Validation.error option
   (** Validate a value of type {!%s}. *)
 
 "
@@ -54,7 +54,7 @@ let get_fields a =
     List.map (
       fun x ->
         match x.f_arepr with
-            `Field o -> (x, o.Ag_ocaml.ocaml_fname)
+            `Field o -> (x, o.Ocaml.ocaml_fname)
           | _ -> assert false
     )
       (Array.to_list a)
@@ -65,7 +65,7 @@ let get_fields a =
       | _ -> assert false
   ) all
 
-let rec forall : Ag_indent.t list -> Ag_indent.t list = function
+let rec forall : Indent.t list -> Indent.t list = function
   | [] -> []
   | [x] -> [x]
   | x :: l ->
@@ -196,7 +196,7 @@ let get_left_validator_name name param =
   let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
   get_validator_name (`Name (dummy_loc, name, args, None, None))
 
-let rec make_validator (x : ov_mapping) : Ag_indent.t list =
+let rec make_validator (x : ov_mapping) : Indent.t list =
   match x with
       `Unit _
     | `Bool _
@@ -216,7 +216,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
                 `Classic -> ""
               | `Poly -> "`"
           in
-          let body : Ag_indent.t list =
+          let body : Indent.t list =
             [
               `Line "match x with";
               `Block (
@@ -274,8 +274,8 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
         else
           let validate =
             match o with
-                `List -> "Ag_ov_run.validate_list ("
-              | `Array -> "Ag_ov_run.validate_array ("
+                `List -> "Atdgen.Ov_run.validate_list ("
+              | `Array -> "Atdgen.Ov_run.validate_array ("
           in
           prepend_validator_f v [
             `Line validate;
@@ -289,7 +289,7 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
           opt_validator v
         else
           prepend_validator_f v [
-            `Line "Ag_ov_run.validate_option (";
+            `Line "Atdgen.Ov_run.validate_option (";
             `Block (make_validator x);
             `Line ")";
           ]
@@ -305,13 +305,13 @@ let rec make_validator (x : ov_mapping) : Ag_indent.t list =
 
 
 and make_variant_validator tick x :
-    Ag_indent.t list =
+    Indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
         `Variant o, (None, _) -> o
       | _ -> assert false
   in
-  let ocaml_cons = o.Ag_ocaml.ocaml_cons in
+  let ocaml_cons = o.Ocaml.ocaml_cons in
   match x.var_arg with
       None ->
         [
@@ -335,12 +335,12 @@ and make_record_validator a record_kind =
   in
   let fields = get_fields a in
   assert (fields <> []);
-  let validate_fields : Ag_indent.t list =
+  let validate_fields : Indent.t list =
     List.map (
       fun (x, ocaml_fname) ->
         `Inline [
           `Line "(";
-          `Block (make_validator x.Ag_mapping.f_value);
+          `Block (make_validator x.Mapping.f_value);
           `Line (sprintf
                    ") (`Field %S :: path) x%s%s" ocaml_fname dot ocaml_fname);
         ]
@@ -351,12 +351,12 @@ and make_record_validator a record_kind =
 let make_ocaml_validator ~original_types is_rec let1 def =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
-  let type_constraint = Ag_ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let validate = get_left_validator_name name param in
   let validator_expr = make_validator x in
-  let eta_expand = is_rec && not (Ag_ox_emit.is_function validator_expr) in
-  let needs_annot = Ag_ox_emit.needs_type_annot x in
+  let eta_expand = is_rec && not (Ox_emit.is_function validator_expr) in
+  let needs_annot = Ox_emit.needs_type_annot x in
   let extra_param, extra_args, type_annot =
     match eta_expand, needs_annot with
     | true, false -> " path x", " path x", None
@@ -367,8 +367,8 @@ let make_ocaml_validator ~original_types is_rec let1 def =
   [
     `Line (sprintf "%s %s = ("
              let1
-             (Ag_ox_emit.opt_annot_def type_annot (validate ^ extra_param)));
-    `Block (List.map Ag_indent.strip validator_expr);
+             (Ox_emit.opt_annot_def type_annot (validate ^ extra_param)));
+    `Block (List.map Indent.strip validator_expr);
     `Line (sprintf ")%s" extra_args);
   ]
 
@@ -406,10 +406,10 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
   if with_create then
     List.iter (
       fun (_, l) ->
-        let l = List.filter Ag_ox_emit.is_exportable l in
+        let l = List.filter Ox_emit.is_exportable l in
         List.iter (
           fun x ->
-            let _, impl = Ag_ox_emit.make_record_creator deref x in
+            let _, impl = Ox_emit.make_record_creator deref x in
             Buffer.add_string buf impl
         ) l
     ) defs
@@ -420,7 +420,7 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
 *)
 
 let translate_mapping (l : (bool * Atd_ast.module_body) list) =
-  Ag_ov_mapping.defs_of_atd_modules l
+  Ov_mapping.defs_of_atd_modules l
 
 let write_opens buf l =
   List.iter (fun s -> bprintf buf "open %s\n" s) l;
@@ -490,7 +490,7 @@ let make_ocaml_files
   let m1 = tsort m0
   in
   let defs1 = translate_mapping m1 in
-  if not name_overlap then Ag_ox_emit.check defs1;
+  if not name_overlap then Ox_emit.check defs1;
   let (m1', original_types) =
     Atd_expand.expand_module_body ~keep_poly:true m0
   in
@@ -499,7 +499,7 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ag_ocaml.ocaml_of_atd ~pp_convs ~target:`Validate ~type_aliases (head, m1) in
+    Ocaml.ocaml_of_atd ~pp_convs ~target:`Validate ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
   let header =
     let src =
@@ -512,10 +512,10 @@ let make_ocaml_files
   in
   let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ocaml_typedefs (Ag_mapping.make_deref defs1) defs1
+      ocaml_typedefs (Mapping.make_deref defs1) defs1
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~original_types ocaml_typedefs (Ag_mapping.make_deref defs) defs
+      ~original_types ocaml_typedefs (Mapping.make_deref defs) defs
   in
-  Ag_ox_emit.write_ocaml out mli ml
+  Ox_emit.write_ocaml out mli ml

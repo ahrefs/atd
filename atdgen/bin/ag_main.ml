@@ -1,4 +1,5 @@
 open Atd_import
+open Atdgen
 
 open Printf
 
@@ -197,10 +198,10 @@ let main () =
     Arg.Unit (
       fun () ->
         set_once "unknown field handler" unknown_field_handler
-          "!Ag_util.Json.unknown_field_handler"
+          "!Atdgen.Util.Json.unknown_field_handler"
     ),
     "
-          Call !Ag_util.Json.unknown_field_handler for every unknown JSON field
+          Call !Atdgen.Util.Json.unknown_field_handler for every unknown JSON field
           found in the input instead of simply skipping them.
           The initial behavior is to raise an exception.";
 
@@ -219,7 +220,7 @@ let main () =
     Arg.Unit (
       fun () ->
         set_once "constructor mismatch handler" constr_mismatch_handler
-          "!Ag_util.Json.constr_mismatch_handler"
+          "!Atdgen.Util.Json.constr_mismatch_handler"
     ),
     "
           Given a record type of the form
@@ -230,7 +231,7 @@ let main () =
           A correct record might be { t = \"B\"; v = `B }
           or { t = \"A\"; v = `A 123 }.
 
-          With this option, !Ag_util.Json.constr_mismatch_handler is called
+          With this option, !Atdgen.Util.Json.constr_mismatch_handler is called
           for every mismatched constructor field value and value
           field constructor in the data structures to output instead
           of simply serializing them.
@@ -411,17 +412,17 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
         let make_ocaml_files =
           match mode with
               `T ->
-                Ag_ob_emit.make_ocaml_files
+                Ob_emit.make_ocaml_files
             | `B | `Biniou ->
-                Ag_ob_emit.make_ocaml_files
+                Ob_emit.make_ocaml_files
             | `J | `Json ->
-                Ag_oj_emit.make_ocaml_files
+                Oj_emit.make_ocaml_files
                   ~std: !std_json
                   ~unknown_field_handler: !unknown_field_handler
                   ~constr_mismatch_handler: !constr_mismatch_handler
                   ~preprocess_input: !j_preprocess_input
             | `V | `Validate ->
-                Ag_ov_emit.make_ocaml_files
+                Ov_emit.make_ocaml_files
             | _ -> assert false
         in
         let with_default default = function None -> default | Some x -> x in

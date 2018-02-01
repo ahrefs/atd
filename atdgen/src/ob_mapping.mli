@@ -3,7 +3,7 @@
     Please don't rely on them in any way.*)
 
 type ob_mapping =
-    (Ag_ocaml.atd_ocaml_repr, Ag_biniou.biniou_repr) Ag_mapping.mapping
+    (Ocaml.atd_ocaml_repr, Biniou.biniou_repr) Mapping.mapping
 
 
 val defs_of_atd_modules :
@@ -12,5 +12,5 @@ val defs_of_atd_modules :
         Atd_ast.loc * (string * string list * Atd_annot.t) * Atd_ast.type_expr ]
      list)
     list ->
-  ('a * (Ag_ocaml.atd_ocaml_repr, Ag_biniou.biniou_repr) Ag_mapping.def list)
+  ('a * (Ocaml.atd_ocaml_repr, Biniou.biniou_repr) Mapping.def list)
     list

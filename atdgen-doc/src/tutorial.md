@@ -255,7 +255,7 @@ let tree : Tree_t.tree =
 let () =
   (* write sample value to file *)
   let fname = "tree.dat" in
-  Ag_util.Biniou.to_file Tree_b.write_tree fname tree;
+  Atdgen.Util.Biniou.to_file Tree_b.write_tree fname tree;
 
   (* write sample value to string *)
   let s = Tree_b.string_of_tree tree in
@@ -801,7 +801,7 @@ let v = {
 }
 
 let () =
-  Ag_util.Json.to_channel Part3_j.write_t3 stdout v;
+  Atdgen.Util.Json.to_channel Part3_j.write_t3 stdout v;
   print_newline ()
 ```
 
@@ -998,7 +998,7 @@ let validate fname =
   let x =
     try
       (* Read config data structure from JSON file *)
-      let x = Ag_util.Json.from_file Config_j.read_config fname in
+      let x = Atdgen.Util.Json.from_file Config_j.read_config fname in
       (* Call the validators specified by <ocaml valid=...> *)
       if not (Config_v.validate_config x) then
         failwith "Some fields are invalid"
@@ -1300,7 +1300,7 @@ $ utop
 # #use "topfind";;
 # #require "atdgen";;
 # #load "untypable.cma";;
-# Ag_util.Json.from_channel Untypable_j.read_obj_list stdin;;
+# Atdgen.Util.Json.from_channel Untypable_j.read_obj_list stdin;;
 [
   {
     "label": "flower",

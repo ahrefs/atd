@@ -15,17 +15,17 @@ type atd_ocaml_field = {
   ocaml_default : string option;
   ocaml_fname : string;
   ocaml_mutable : bool;
-  ocaml_fdoc : Ag_doc.doc option;
+  ocaml_fdoc : Doc.doc option;
 }
 
 type atd_ocaml_variant = {
   ocaml_cons : string;
-  ocaml_vdoc : Ag_doc.doc option;
+  ocaml_vdoc : Doc.doc option;
 }
 
 type atd_ocaml_def = {
   ocaml_predef : bool;
-  ocaml_ddoc : Ag_doc.doc option;
+  ocaml_ddoc : Doc.doc option;
 }
 
 type atd_ocaml_repr =
@@ -98,9 +98,9 @@ val get_implicit_ocaml_default
   -> string option
 
 val unwrap_option
-  : ('a -> ('b, 'c) Ag_mapping.mapping)
+  : ('a -> ('b, 'c) Mapping.mapping)
   -> 'a
-  -> ('b, 'c) Ag_mapping.mapping
+  -> ('b, 'c) Mapping.mapping
 
 val ocaml_of_atd
   : ?pp_convs:[ `Camlp4 of string list | `Ppx of string list ]
@@ -111,7 +111,7 @@ val ocaml_of_atd
 
 
 val map_record_creator_field
-  : ((atd_ocaml_repr, 'a) Ag_mapping.mapping
-     -> (atd_ocaml_repr, 'b) Ag_mapping.mapping)
-  -> (atd_ocaml_repr, 'a) Ag_mapping.field_mapping
+  : ((atd_ocaml_repr, 'a) Mapping.mapping
+     -> (atd_ocaml_repr, 'b) Mapping.mapping)
+  -> (atd_ocaml_repr, 'a) Mapping.field_mapping
   -> string * string * string

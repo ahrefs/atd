@@ -4,11 +4,11 @@
 *)
 
 open Printf
-open Ag_error
-open Ag_mapping
+open Error
+open Mapping
 
-type 'a expr = ('a, Ag_biniou.biniou_repr) Ag_mapping.mapping
-type 'a def = ('a, Ag_biniou.biniou_repr) Ag_mapping.def
+type 'a expr = ('a, Biniou.biniou_repr) Mapping.mapping
+type 'a def = ('a, Biniou.biniou_repr) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type name = (loc * string)

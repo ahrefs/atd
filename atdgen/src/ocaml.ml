@@ -9,7 +9,7 @@ open Printf
 
 open Easy_format
 open Atd_ast
-open Ag_mapping
+open Mapping
 
 
 (* Type mapping from ATD to OCaml *)
@@ -30,17 +30,17 @@ type atd_ocaml_field = {
   ocaml_default : string option;
   ocaml_fname : string;
   ocaml_mutable : bool;
-  ocaml_fdoc : Ag_doc.doc option;
+  ocaml_fdoc : Doc.doc option;
 }
 
 type atd_ocaml_variant = {
   ocaml_cons : string;
-  ocaml_vdoc : Ag_doc.doc option;
+  ocaml_vdoc : Doc.doc option;
 }
 
 type atd_ocaml_def = {
   ocaml_predef : bool;
-  ocaml_ddoc : Ag_doc.doc option;
+  ocaml_ddoc : Doc.doc option;
 }
 
 type atd_ocaml_repr =
@@ -112,7 +112,7 @@ let ocaml_list_of_string s : atd_ocaml_list option =
 let string_of_ocaml_list (x : atd_ocaml_list) =
   match x with
       `List -> "list"
-    | `Array -> "Ag_util.ocaml_array"
+    | `Array -> "Atdgen.Util.ocaml_array"
 
 let get_ocaml_int an =
   Atd_annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
@@ -179,7 +179,7 @@ let get_ocaml_wrap loc an =
     | Some t, Some wrap, Some unwrap ->
         Some { ocaml_wrap_t = t; ocaml_wrap = wrap; ocaml_unwrap = unwrap }
     | _ ->
-        Ag_error.error loc "Incomplete annotation. Missing t, wrap or unwrap"
+        Error.error loc "Incomplete annotation. Missing t, wrap or unwrap"
 
 let get_ocaml_cons default an =
   Atd_annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
@@ -244,16 +244,16 @@ type ocaml_expr =
     ]
 
 and ocaml_variant =
-    string * ocaml_expr option * Ag_doc.doc option
+    string * ocaml_expr option * Doc.doc option
 
 and ocaml_field =
-    (string * bool (* is mutable? *)) * ocaml_expr * Ag_doc.doc option
+    (string * bool (* is mutable? *)) * ocaml_expr * Doc.doc option
 
 type ocaml_def = {
   o_def_name : (string * ocaml_type_param);
   o_def_alias : (string * ocaml_type_param) option;
   o_def_expr : ocaml_expr option;
-  o_def_doc : Ag_doc.doc option
+  o_def_doc : Doc.doc option
 }
 
 type ocaml_module_item =
@@ -278,7 +278,7 @@ let rec map_expr (x : type_expr) : ocaml_expr =
         let kind = get_ocaml_record an in
         let field_prefix = get_ocaml_field_prefix an in
         if l = [] then
-          Ag_error.error loc "Empty record (not valid in OCaml)"
+          Error.error loc "Empty record (not valid in OCaml)"
         else
           `Record (kind, List.map (map_field field_prefix) l)
     | `Tuple (_, l, _) ->
@@ -308,7 +308,7 @@ and map_variant (x : variant) : ocaml_variant =
       `Inherit _ -> assert false
     | `Variant (loc, (s, an), o) ->
         let s = get_ocaml_cons s an in
-        (s, omap map_expr o, Ag_doc.get_doc loc an)
+        (s, omap map_expr o, Doc.get_doc loc an)
 
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
@@ -321,14 +321,14 @@ and map_field ocaml_field_prefix (x : field) : ocaml_field =
           else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
         in
         let is_mutable = get_ocaml_mutable an in
-        ((fname, is_mutable), map_expr x, Ag_doc.get_doc loc an)
+        ((fname, is_mutable), map_expr x, Doc.get_doc loc an)
 
 let map_def
     ~(target : target)
     ~(type_aliases : string option)
     ((loc, (s, param, an1), x) : type_def) : ocaml_def option =
   let is_predef = get_ocaml_predef target an1 in
-  let is_abstract = Ag_mapping.is_abstract x in
+  let is_abstract = Mapping.is_abstract x in
   let define_alias =
     if is_predef || is_abstract || type_aliases <> None then
       match get_ocaml_module_and_t target s an1, type_aliases with
@@ -344,7 +344,7 @@ let map_def
   else
     let an2 = Atd_ast.annot_of_type_expr x in
     let an = an1 @ an2 in
-    let doc = Ag_doc.get_doc loc an in
+    let doc = Doc.get_doc loc an in
     let alias, x =
       match define_alias with
           None ->
@@ -387,7 +387,7 @@ let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
 
 
 (*
-  Mapping from Ag_mapping to OCaml
+  Mapping from Mapping to OCaml
 *)
 
 
@@ -550,7 +550,7 @@ let make_ocamldoc_block = function
       let atoms = List.map (fun s -> Atom (s, atom)) words in
       List (("", "", "", plist), atoms)
 
-let make_ocamldoc_blocks (l : Ag_doc.block list) =
+let make_ocamldoc_blocks (l : Doc.block list) =
   let l =
     insert2 (
       fun _ y ->
@@ -558,7 +558,7 @@ let make_ocamldoc_blocks (l : Ag_doc.block list) =
             `Paragraph _ -> [`Before_paragraph]
           | `Pre _ -> []
           | _ -> assert false
-    ) (l :> [ Ag_doc.block | `Before_paragraph ] list)
+    ) (l :> [ Doc.block | `Before_paragraph ] list)
   in
   List.map make_ocamldoc_block l
 
@@ -748,7 +748,7 @@ let format_module_bodies pp_conv (l : (bool * ocaml_module_body) list) =
   List.flatten (List.map (fun (_, x) -> format_module_items pp_conv x) l)
 
 let format_head (loc, an) =
-  match Ag_doc.get_doc loc an with
+  match Doc.get_doc loc an with
       None -> []
     | Some doc -> [make_ocamldoc_comment doc]
 
@@ -775,9 +775,9 @@ let unwrap_option deref x =
       `Option (_, x, _, _)
     | `Nullable (_, x, _, _) -> x
     | `Name (loc, s, _, _, _) ->
-        Ag_error.error loc ("Not an option type: " ^ s)
+        Error.error loc ("Not an option type: " ^ s)
     | x ->
-        Ag_error.error (loc_of_mapping x) "Not an option type"
+        Error.error (loc_of_mapping x) "Not an option type"
 
 
 
@@ -832,7 +832,7 @@ let map_record_creator_field deref x =
                 None ->
                   (match get_implicit_ocaml_default deref x.f_value with
                        None ->
-                         Ag_error.error x.f_loc "Missing default field value"
+                         Error.error x.f_loc "Missing default field value"
                      | Some s -> s
                   )
               | Some s -> s

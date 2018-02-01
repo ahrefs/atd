@@ -6,11 +6,11 @@
 open Printf
 
 open Atd_import
-open Ag_error
-open Ag_mapping
+open Error
+open Mapping
 
-type 'a expr = (Ag_ocaml.atd_ocaml_repr, 'a) Ag_mapping.mapping
-type 'a def = (Ag_ocaml.atd_ocaml_repr, 'a) Ag_mapping.def
+type 'a expr = (Ocaml.atd_ocaml_repr, 'a) Mapping.mapping
+type 'a def = (Ocaml.atd_ocaml_repr, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type name = (loc * loc * string)
@@ -78,7 +78,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
 and extract_names_from_variant root_loc (l, acc) x =
   let l =
     match x.var_arepr with
-        `Variant v -> (root_loc, x.var_loc, v.Ag_ocaml.ocaml_cons) :: l
+        `Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
       | _ -> assert false
   in
   match x.var_arg with
@@ -89,7 +89,7 @@ and extract_names_from_variant root_loc (l, acc) x =
 and extract_names_from_field root_loc (l, acc) x =
   let l =
     match x.f_arepr with
-        `Field f -> (root_loc, x.f_loc, f.Ag_ocaml.ocaml_fname) :: l
+        `Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
       | _ -> assert false
   in
   (l, extract_names_from_expr root_loc acc x.f_value)
@@ -255,7 +255,7 @@ let make_record_creator deref x =
         let full_name = get_full_type_name x in
         let l =
           Array.to_list
-            (Array.map (Ag_ocaml.map_record_creator_field deref) a) in
+            (Array.map (Ocaml.map_record_creator_field deref) a) in
         let intf_params = List.map (fun (x, _, _) -> x) l in
         let intf =
           sprintf "\
@@ -284,7 +284,7 @@ let create_%s %s
 
     | _ -> "", ""
 
-let rec is_function (l : Ag_indent.t list) =
+let rec is_function (l : Indent.t list) =
   match l with
       [] -> false
     | x :: _ ->

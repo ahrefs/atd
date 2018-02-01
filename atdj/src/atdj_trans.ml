@@ -3,6 +3,7 @@ open Printf
 open Atdj_names
 open Atdj_env
 open Atdj_util
+open Atdgen
 
 (* Calculate the JSON representation of an ATD type.
  *
@@ -258,7 +259,7 @@ let javadoc loc annots indent =
           )
           []
           blocks in
-  (match Ag_doc.get_doc loc annots with
+  (match Doc.get_doc loc annots with
      | Some doc ->
          let header = indent ^ "/**\n" in
          let footer = indent ^ " */\n" in

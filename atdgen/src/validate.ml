@@ -26,7 +26,7 @@ let make_full_validator s =
   sprintf "\
     fun path x -> \
       if ( %s ) x then None \
-      else Some (Ag_util.Validation.error path)"
+      else Some (Atdgen.Util.Validation.error path)"
     s
 
 let get_validator an =

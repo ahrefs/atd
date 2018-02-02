@@ -2,7 +2,7 @@
   Table of predefined types.
 *)
 
-open Atd_ast
+open Ast
 
 let list_def : type_def =
   let loc = dummy_loc in

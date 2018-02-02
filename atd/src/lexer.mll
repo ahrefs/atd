@@ -2,11 +2,11 @@
 {
   open Printf
   open Lexing
-  open Atd_parser
+  open Parser
 
   let lexing_error lexbuf msg =
     let loc = (lexeme_start_p lexbuf, lexeme_end_p lexbuf) in
-    Atd_ast.error (Atd_ast.string_of_loc loc ^ "\n" ^ msg)
+    Ast.error (Ast.string_of_loc loc ^ "\n" ^ msg)
 
   type accu = { mutable depth : int;
                 buf : Buffer.t }

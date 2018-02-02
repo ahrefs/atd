@@ -2,10 +2,10 @@
 
 open Printf
 
-type t = Atd_ast.annot
+type t = Ast.annot
 
 let error_at loc s =
-  failwith (sprintf "%s:\n%s" (Atd_ast.string_of_loc loc) s)
+  failwith (sprintf "%s:\n%s" (Ast.string_of_loc loc) s)
 
 let has_section k l =
   try ignore (List.assoc k l); true
@@ -88,7 +88,7 @@ let rec replace k v = function
   | [] ->
       []
 
-let set_field loc k k2 v l : Atd_ast.annot =
+let set_field loc k k2 v l : Ast.annot =
   try
     let section_loc, section = List.assoc k l in
     let section =
@@ -135,6 +135,6 @@ let create_id =
   fun () ->
     incr n;
     if !n < 0 then
-      failwith "Atd_annot.create_id: counter overflow"
+      failwith "Annot.create_id: counter overflow"
     else
       string_of_int !n

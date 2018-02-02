@@ -17,7 +17,7 @@ val expand_module_body :
   ?prefix:string ->
   ?keep_poly:bool ->
   ?debug:bool ->
-  Atd_ast.module_body -> Atd_ast.module_body * original_types
+  Ast.module_body -> Ast.module_body * original_types
 (**
    Monomorphization of type expressions.
 

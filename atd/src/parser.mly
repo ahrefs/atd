@@ -5,7 +5,7 @@
 */
 %{
   open Printf
-  open Atd_ast
+  open Ast
 
   let syntax_error s pos1 pos2 =
     let msg = sprintf "%s:\n%s" (string_of_loc (pos1, pos2)) s in
@@ -18,7 +18,7 @@
 %token < string > STRING LIDENT UIDENT TIDENT
 
 %start full_module
-%type < Atd_ast.full_module > full_module
+%type < Ast.full_module > full_module
 %%
 
 full_module:
@@ -110,12 +110,12 @@ type_expr:
          | "nullable", [x] -> `Nullable (loc, x, a)
          | "shared", [x] ->
              let a =
-               if Atd_annot.has_field ["share"] "id" a then
+               if Annot.has_field ["share"] "id" a then
                  (* may cause ID clashes if not used properly *)
                  a
                else
-                 Atd_annot.set_field loc
-                   "share" "id" (Some (Atd_annot.create_id ())) a
+                 Annot.set_field loc
+                   "share" "id" (Some (Annot.create_id ())) a
              in
              `Shared (loc, x, a)
          | "wrap", [x] -> `Wrap (loc, x, a)

@@ -3,13 +3,13 @@
 *)
 
 
-open Atd_ast
+open Ast
 
 module S = Set.Make (String)
 
 
 let load_defs l =
-  let tbl = Atd_predef.make_table () in
+  let tbl = Predef.make_table () in
   List.iter (
     fun ((_, (k, pl, _), _) as td) ->
       Hashtbl.add tbl k (List.length pl, Some td)
@@ -136,7 +136,7 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
 let expand_module_body
     ?inherit_fields
     ?inherit_variants
-    (l : Atd_ast.module_body) =
+    (l : Ast.module_body) =
   let td_list = List.map (function `Type td -> td) l in
   let tbl = load_defs td_list in
   let td_list =

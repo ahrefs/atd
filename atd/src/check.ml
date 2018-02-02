@@ -2,7 +2,7 @@
 
 open Printf
 
-open Atd_ast
+open Ast
 
 let add_name accu = function
     `Name (_, (_, k, _), _) -> k :: accu
@@ -86,7 +86,7 @@ let check_type_expr tbl tvars (t : type_expr) =
     | `Option (_, t, _) -> check t
     | `Nullable (_, t, _) -> check t
     | `Shared (loc, t, _) ->
-        if Atd_ast.is_parametrized t then
+        if Ast.is_parametrized t then
           error_at loc "Shared type cannot be polymorphic";
         check t
     | `Wrap (_, t, _) -> check t
@@ -144,8 +144,8 @@ let check_type_expr tbl tvars (t : type_expr) =
   check t
 
 
-let check (l : Atd_ast.module_body) =
-  let predef = Atd_predef.make_table () in
+let check (l : Ast.module_body) =
+  let predef = Predef.make_table () in
   let tbl = Hashtbl.copy predef in
 
   (* first pass: put all definitions in the table *)

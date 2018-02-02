@@ -6,17 +6,17 @@ let read_lexbuf
     ?(pos_lnum = 1)
     lexbuf =
 
-  Atd_lexer.init_fname lexbuf pos_fname pos_lnum;
-  let head, body = Atd_parser.full_module Atd_lexer.token lexbuf in
-  Atd_check.check body;
+  Lexer.init_fname lexbuf pos_fname pos_lnum;
+  let head, body = Parser.full_module Lexer.token lexbuf in
+  Check.check body;
   let body =
     if inherit_fields || inherit_variants then
-      Atd_inherit.expand_module_body ~inherit_fields ~inherit_variants body
+      Inherit.expand_module_body ~inherit_fields ~inherit_variants body
     else
       body
   in
   let (body, original_types) =
-    if expand then Atd_expand.expand_module_body ?keep_poly ~debug: xdebug body
+    if expand then Expand.expand_module_body ?keep_poly ~debug: xdebug body
     else (body, Hashtbl.create 0)
   in
   ((head, body), original_types)
@@ -65,9 +65,9 @@ let load_string
   read_lexbuf ?expand ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
 
-module Tsort = Atd_sort.Make (
+module Tsort = Sort.Make (
   struct
-    type t = Atd_ast.module_item
+    type t = Ast.module_item
     type id = string (* type name *)
 
     let id def =
@@ -84,7 +84,7 @@ let tsort l0 =
     List.map (
       fun def ->
         let `Type (_, (_, _, _), x) = def in
-        let deps = Atd_ast.extract_type_names ~ignorable x in
+        let deps = Ast.extract_type_names ~ignorable x in
         (def, deps)
     ) l0
   in

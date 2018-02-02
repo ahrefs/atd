@@ -9,7 +9,7 @@ exception Atd_error of string
 
 type annot = annot_section list
     (** An annotation, consisting of a sequence of sections.
-        {!Atd_annot} provides utilities for handling annotations. *)
+        {!Annot} provides utilities for handling annotations. *)
 
 and annot_section = string * (loc * annot_field list)
     (** represents a single annotation within edgy brackets.

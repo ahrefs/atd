@@ -1,10 +1,10 @@
 
 
 (**
-  Utilities for interpreting annotations of type {!Atd_ast.annot}
+  Utilities for interpreting annotations of type {!Ast.annot}
 *)
 
-type t = Atd_ast.annot
+type t = Ast.annot
     (**
        Sample annotation in ATD syntax with legend:
 {v
@@ -93,7 +93,7 @@ val get_field : (string -> 'a option) -> 'a -> string list -> string -> t -> 'a
       Each section should be unique.
   *)
 
-val set_field : Atd_ast.loc -> string -> string -> string option -> t -> t
+val set_field : Ast.loc -> string -> string -> string option -> t -> t
   (** [set_field loc section_name field_name value annotations]
       sets a field, reusing existing section [section_name]
       if it exists, preserving the position of field [field_name]

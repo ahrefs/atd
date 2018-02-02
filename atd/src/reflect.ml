@@ -34,7 +34,7 @@ let print_annot_list buf l =
   )
     buf l
 
-let rec print_type_expr buf (x : Atd_ast.type_expr) =
+let rec print_type_expr buf (x : Ast.type_expr) =
   match x with
       `Sum (loc, variant_list, annot_list) ->
         bprintf buf "`Sum (%a, %a, %a)"
@@ -146,8 +146,8 @@ let print_module_body buf l =
 
 let print_module_body_def buf name l =
   bprintf buf "\
-let %s_body : Atd_ast.module_body =
-  let loc = Atd_ast.dummy_loc in
+let %s_body : Ast.module_body =
+  let loc = Ast.dummy_loc in
 %a
 
 let %s = %s_body (* for backward compatibility with atd <= 1.0.1 *)
@@ -157,8 +157,8 @@ let %s = %s_body (* for backward compatibility with atd <= 1.0.1 *)
 
 let print_module_head_def buf name an =
   bprintf buf "\
-let %s_head : Atd_ast.module_head =
-  let loc = Atd_ast.dummy_loc in
+let %s_head : Ast.module_head =
+  let loc = Ast.dummy_loc in
   (loc, %a)
 "
     name print_annot_list an
@@ -167,7 +167,7 @@ let print_full_module_def buf name ((_, an), l) =
   print_module_head_def buf name an;
   print_module_body_def buf name l;
   bprintf buf "\
-let %s_full : Atd_ast.full_module =
+let %s_full : Ast.full_module =
   (%s_head, %s_body)
 "
     name name name

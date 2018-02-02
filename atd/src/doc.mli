@@ -47,10 +47,10 @@ type block = [ `Paragraph of inline list | `Pre of string ]
 type doc = [ `Text of block list ]
     (** A document is a list of paragraph-like blocks. *)
 
-val parse_text : Atd_ast.loc -> string -> doc
+val parse_text : Ast.loc -> string -> doc
   (** Parse the contents of a doc.text annotation. *)
 
-val get_doc : Atd_ast.loc -> Atd_ast.annot -> doc option
+val get_doc : Ast.loc -> Ast.annot -> doc option
   (** Get and parse doc data from annotations. *)
 
 val html_of_doc : doc -> string

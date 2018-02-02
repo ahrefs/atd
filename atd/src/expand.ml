@@ -55,7 +55,7 @@
 
 *)
 
-open Atd_ast
+open Ast
 
 module S = Set.Make (String)
 module M = Map.Make (String)
@@ -106,12 +106,12 @@ let init_table () =
     fun (k, n, opt_td) ->
       incr seqnum;
       Hashtbl.add tbl k (!seqnum, n, opt_td, None)
-  ) Atd_predef.list;
+  ) Predef.list;
   seqnum, tbl
 
 
 let rec mapvar_expr
-    (f : string -> string) (x : Atd_ast.type_expr) : Atd_ast.type_expr =
+    (f : string -> string) (x : Ast.type_expr) : Ast.type_expr =
   match x with
       `Sum (loc, vl, a) ->
         `Sum (loc, List.map (mapvar_variant f) vl, a)
@@ -217,7 +217,7 @@ let make_type_name loc orig_name args an =
   in
   let normalized_args = List.map (mapvar_expr assign_name) args in
   let new_name =
-    "@(" ^ Atd_print.string_of_type_name orig_name normalized_args an ^ ")" in
+    "@(" ^ Print.string_of_type_name orig_name normalized_args an ^ ")" in
   let mapping = List.rev !mapping in
   let new_args =
     List.map (fun (old_s, _) -> `Tvar (loc, old_s)) mapping in
@@ -247,7 +247,7 @@ let is_tvar = function
 
 
 let add_annot (x : type_expr) a : type_expr =
-  Atd_ast.map_annot (fun a0 -> Atd_annot.merge (a @ a0)) x
+  Ast.map_annot (fun a0 -> Annot.merge (a @ a0)) x
 
 
 let expand ?(keep_poly = false) (l : type_def list)
@@ -420,7 +420,7 @@ let expand ?(keep_poly = false) (l : type_def list)
                 *)
                 let t =
                   expr_of_lvalue loc orig_name pl
-                    (Atd_ast.annot_of_type_expr t)
+                    (Ast.annot_of_type_expr t)
                 in
                 subst_only_args env t
               else
@@ -558,7 +558,7 @@ let standardize_type_names
   in
 
   let tbl = Hashtbl.create 50 in
-  List.iter (fun (k, _, _) -> Hashtbl.add tbl k k) Atd_predef.list;
+  List.iter (fun (k, _, _) -> Hashtbl.add tbl k k) Predef.list;
   List.iter (
     fun (_, (k, _, _), _) ->
       if not (is_special k) then (

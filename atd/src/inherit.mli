@@ -5,7 +5,7 @@
 val expand_module_body :
   ?inherit_fields : bool ->
   ?inherit_variants : bool ->
-  Atd_ast.module_body -> Atd_ast.module_body
+  Ast.module_body -> Ast.module_body
   (**
      Expand [inherit] statements found in sum types and product types.
 

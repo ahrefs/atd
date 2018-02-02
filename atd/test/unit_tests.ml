@@ -1,4 +1,4 @@
 let main () =
-  Atd_sort.test ()
+  Atd.Sort.test ()
 
 let () = main ()

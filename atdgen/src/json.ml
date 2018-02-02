@@ -53,12 +53,12 @@ let json_precision_of_string s =
   with _ -> None
 
 let get_json_precision an =
-  Atd_annot.get_field
+  Atd.Annot.get_field
     json_precision_of_string None ["json"] "precision" an
 
 let get_json_float an : json_float =
   match
-    Atd_annot.get_field json_float_of_string `Float ["json"] "repr" an
+    Atd.Annot.get_field json_float_of_string `Float ["json"] "repr" an
   with
       `Float -> `Float (get_json_precision an)
     | `Int -> `Int
@@ -70,22 +70,22 @@ let json_list_of_string s : json_list option =
     | _ -> None
 
 let get_json_list an =
-  Atd_annot.get_field json_list_of_string `Array ["json"] "repr" an
+  Atd.Annot.get_field json_list_of_string `Array ["json"] "repr" an
 
 let get_json_cons default an =
-  Atd_annot.get_field (fun s -> Some s) default ["json"] "name" an
+  Atd.Annot.get_field (fun s -> Some s) default ["json"] "name" an
 
 let get_json_fname default an =
-  Atd_annot.get_field (fun s -> Some s) default ["json"] "name" an
+  Atd.Annot.get_field (fun s -> Some s) default ["json"] "name" an
 
 let get_json_tag_field an =
-  Atd_annot.get_field (fun s -> Some (Some s)) None ["json"] "tag_field" an
+  Atd.Annot.get_field (fun s -> Some (Some s)) None ["json"] "tag_field" an
 
 let get_json_untyped an =
-  Atd_annot.get_flag ["json"] "untyped" an
+  Atd.Annot.get_flag ["json"] "untyped" an
 
 let get_json_keep_nulls an =
-  Atd_annot.get_flag ["json"] "keep_nulls" an
+  Atd.Annot.get_flag ["json"] "keep_nulls" an
 
 let get_json_record an =
   {

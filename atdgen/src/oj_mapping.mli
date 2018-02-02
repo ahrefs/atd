@@ -11,7 +11,7 @@ type oj_mapping =
 val defs_of_atd_modules
   : ('a *
      [< `Type of
-          Atd_ast.loc * (string * string list * Atd_annot.t) * Atd_ast.type_expr ]
+          Atd.Ast.loc * (string * string list * Atd.Annot.t) * Atd.Ast.type_expr ]
        list
     ) list
   -> ('a * (Ocaml.atd_ocaml_repr, Json.json_repr) Mapping.def list) list

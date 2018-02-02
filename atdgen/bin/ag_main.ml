@@ -1,4 +1,4 @@
-open Atd_import
+open Atd.Import
 open Atdgen
 
 open Printf
@@ -445,7 +445,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
 let () =
   try main ()
   with
-      Atd_ast.Atd_error s
+      Atd.Ast.Atd_error s
     | Failure s ->
         flush stdout;
         eprintf "%s\n%!" s;

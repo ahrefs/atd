@@ -1,6 +1,6 @@
 
 (*
-  Atd_indent extended with annnotations allowing some postprocessing.
+  Atd.Indent extended with annnotations allowing some postprocessing.
 *)
 
 type t =
@@ -11,7 +11,7 @@ type t =
     | `Annot of (string * t) (* arbitrary annotation *)
     ]
 
-let rec strip : t -> Atd_indent.t = function
+let rec strip : t -> Atd.Indent.t = function
     `Line _ as x -> x
   | `Block l -> `Block (List.map strip l)
   | `Inline l -> `Inline (List.map strip l)

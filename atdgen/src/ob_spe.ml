@@ -7,4 +7,4 @@ let get_table_info deref x =
   match deref x with
       `Record y -> y
     | _ ->
-        Error.error (Atd_ast.loc_of_type_expr x) "Not a record type"
+        Error.error (Atd.Ast.loc_of_type_expr x) "Not a record type"

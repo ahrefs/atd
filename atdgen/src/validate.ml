@@ -31,14 +31,14 @@ let make_full_validator s =
 
 let get_validator an =
   let full =
-    Atd_annot.get_field (fun s -> Some (Some s)) None
+    Atd.Annot.get_field (fun s -> Some (Some s)) None
       ["ocaml"] "validator" an
   in
   match full with
   | Some _ -> full
   | None ->
       let shorthand =
-        Atd_annot.get_field (fun s -> Some (Some s)) None
+        Atd.Annot.get_field (fun s -> Some (Some s)) None
           ["ocaml"] "valid" an
       in
       match shorthand with

@@ -2,7 +2,7 @@ open Printf
 
 open Error
 
-type loc = Atd_ast.loc
+type loc = Atd.Ast.loc
 
 type loc_id = string
 
@@ -36,7 +36,7 @@ and ('a, 'b) cell_mapping = {
 and ('a, 'b) field_mapping = {
   f_loc : loc;
   f_name : string;
-  f_kind : Atd_ast.field_kind;
+  f_kind : Atd.Ast.field_kind;
   f_value : ('a, 'b) mapping;
   f_arepr : 'a;
   f_brepr : 'b

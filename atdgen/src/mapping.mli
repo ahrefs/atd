@@ -1,4 +1,4 @@
-type loc = Atd_ast.loc
+type loc = Atd.Ast.loc
 
 type loc_id = string
 
@@ -29,7 +29,7 @@ and ('a, 'b) cell_mapping = {
 and ('a, 'b) field_mapping = {
   f_loc : loc;
   f_name : string;
-  f_kind : Atd_ast.field_kind;
+  f_kind : Atd.Ast.field_kind;
   f_value : ('a, 'b) mapping;
   f_arepr : 'a;
   f_brepr : 'b
@@ -53,11 +53,11 @@ type ('a, 'b) def = {
 }
 
 val as_abstract
-  : [> `Name of 'a * (Atd_ast.loc * string * 'b list) * 'c ]
+  : [> `Name of 'a * (Atd.Ast.loc * string * 'b list) * 'c ]
   -> (loc * 'c) option
 
 val is_abstract :
-  [> `Name of 'a * (Atd_ast.loc * string * 'b list) * 'c ] -> bool
+  [> `Name of 'a * (Atd.Ast.loc * string * 'b list) * 'c ] -> bool
 
 val loc_of_mapping : ('a, 'b) mapping -> loc
 

@@ -30,6 +30,6 @@ type biniou_repr =
     | `Def
     ]
 
-val get_biniou_float : Atd_annot.t -> biniou_float
-val get_biniou_int : Atd_annot.t -> biniou_int
-val get_biniou_list : Atd_annot.t -> biniou_list
+val get_biniou_float : Atd.Annot.t -> biniou_float
+val get_biniou_int : Atd.Annot.t -> biniou_int
+val get_biniou_list : Atd.Annot.t -> biniou_list

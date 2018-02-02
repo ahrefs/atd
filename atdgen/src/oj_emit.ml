@@ -5,7 +5,7 @@
 
 open Printf
 
-open Atd_ast
+open Atd.Ast
 open Error
 open Mapping
 open Oj_mapping
@@ -1250,7 +1250,7 @@ and make_deconstructed_reader p loc fields set_bit =
                      None -> `Line "();"
                    | Some f ->
                        `Line (sprintf "(%s) %S %S;"
-                                f (Atd_ast.string_of_loc loc) mapping.f_name));
+                                f (Atd.Ast.string_of_loc loc) mapping.f_name));
                   `Line (sprintf "%s := %s%s"
                            payloadf.field_ref tick ocaml_cons);
                   `Line ") else (";
@@ -1444,7 +1444,7 @@ and make_record_reader p type_annot loc a json_options =
             None -> [ `Line "-1" ]
           | Some f ->
               [ `Line (sprintf "(%s) %S (String.sub s pos len); -1"
-                         f (Atd_ast.string_of_loc loc)) ]
+                         f (Atd.Ast.string_of_loc loc)) ]
       in
       String_match.make_ocaml_int_mapping
         ~exit_with: `Expr
@@ -1783,7 +1783,7 @@ let make_ocaml_json_impl
         List.flatten (writers @ readers)
   ) defs
   in
-  Atd_indent.to_buffer buf (List.flatten ll);
+  Atd.Indent.to_buffer buf (List.flatten ll);
 
   if with_create then
     List.iter (
@@ -1799,7 +1799,7 @@ let make_ocaml_json_impl
 let check_variant untypeds = function
   | `Inherit _ -> assert false (* inherits have been inlined by now *)
   | `Variant (loc, (cons, ann), arg) ->
-      if not (Atd_annot.get_flag ["json"] "untyped" ann)
+      if not (Atd.Annot.get_flag ["json"] "untyped" ann)
       then untypeds
       else match arg with
         | Some (`Tuple (_,[(_, `Name (_, (_, "string", _), _), _);
@@ -1808,16 +1808,16 @@ let check_variant untypeds = function
                         _)) -> cons::untypeds
         | Some typ ->
             let msg = sprintf "constructor is untyped but argument is %s\n%s"
-                (Atd_print.string_of_type_expr typ)
+                (Atd.Print.string_of_type_expr typ)
                 "Untyped constructors must be of (string * json option)"
             in
-            Atd_ast.error_at loc msg
+            Atd.Ast.error_at loc msg
         | None ->
             let msg =
               sprintf "constructor is untyped and nullary\n%s"
                 "Untyped constructors must be of (string * json option)"
             in
-            Atd_ast.error_at loc msg
+            Atd.Ast.error_at loc msg
 
 let error_too_many_untypeds name untypeds =
   sprintf "type %s has more than one untyped constructor: %s"
@@ -1829,7 +1829,7 @@ let check_atd (_head, body) =
         begin match List.fold_left check_variant [] conss with
           | [] | [_] -> ()
           | untypeds ->
-              Atd_ast.error_at loc (error_too_many_untypeds name untypeds)
+              Atd.Ast.error_at loc (error_too_many_untypeds name untypeds)
         end
     | _ -> ()
   ) body
@@ -1838,7 +1838,7 @@ let check_atd (_head, body) =
   Glue
 *)
 
-let translate_mapping (l : (bool * Atd_ast.module_body) list) =
+let translate_mapping (l : (bool * Atd.Ast.module_body) list) =
   defs_of_atd_modules l
 
 let write_opens buf l =
@@ -1901,12 +1901,12 @@ let make_ocaml_files
   let ((head, m0), _) =
     match atd_file with
         Some file ->
-          Atd_util.load_file
+          Atd.Util.load_file
             ~expand:false ~inherit_fields:true ~inherit_variants:true
             ?pos_fname ?pos_lnum
             file
       | None ->
-          Atd_util.read_channel
+          Atd.Util.read_channel
             ~expand:false ~inherit_fields:true ~inherit_variants:true
             ?pos_fname ?pos_lnum
             stdin
@@ -1918,13 +1918,13 @@ let make_ocaml_files
     if all_rec then
       function m -> [ (true, m) ]
     else
-      Atd_util.tsort
+      Atd.Util.tsort
   in
   let m1 = tsort m0 in
   let defs1 = translate_mapping m1 in
   if not name_overlap then Ox_emit.check defs1;
   let (m1', original_types) =
-    Atd_expand.expand_module_body ~keep_poly:true m0
+    Atd.Expand.expand_module_body ~keep_poly:true m0
   in
   let m2 = tsort m1' in
   (* m0 = original type definitions

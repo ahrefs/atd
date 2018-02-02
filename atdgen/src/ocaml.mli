@@ -54,32 +54,32 @@ type atd_ocaml_repr =
   | `Variant of atd_ocaml_variant
   | `Def of atd_ocaml_def ]
 
-val get_ocaml_sum : Atd_annot.t -> atd_ocaml_sum
+val get_ocaml_sum : Atd.Annot.t -> atd_ocaml_sum
 
-val get_ocaml_record : Atd_annot.t -> atd_ocaml_record
+val get_ocaml_record : Atd.Annot.t -> atd_ocaml_record
 
-val get_ocaml_field_prefix : Atd_annot.t -> string
+val get_ocaml_field_prefix : Atd.Annot.t -> string
 
-val get_ocaml_list : Atd_annot.t -> atd_ocaml_list
+val get_ocaml_list : Atd.Annot.t -> atd_ocaml_list
 
-val get_ocaml_wrap : Atd_ast.loc -> Atd_annot.t -> atd_ocaml_wrap option
+val get_ocaml_wrap : Atd.Ast.loc -> Atd.Annot.t -> atd_ocaml_wrap option
 
-val get_ocaml_int : Atd_annot.t -> atd_ocaml_int
+val get_ocaml_int : Atd.Annot.t -> atd_ocaml_int
 
-val get_ocaml_default : Atd_annot.t -> string option
+val get_ocaml_default : Atd.Annot.t -> string option
 
-val get_ocaml_cons : string -> Atd_annot.t -> string
+val get_ocaml_cons : string -> Atd.Annot.t -> string
 
-val get_ocaml_fname : string -> Atd_annot.t -> string
+val get_ocaml_fname : string -> Atd.Annot.t -> string
 
-val get_ocaml_mutable : Atd_annot.t -> bool
+val get_ocaml_mutable : Atd.Annot.t -> bool
 
-val get_ocaml_predef : target -> Atd_annot.t -> bool
+val get_ocaml_predef : target -> Atd.Annot.t -> bool
 
 val get_ocaml_module_and_t
   : target
   -> string
-  -> Atd_annot.t
+  -> Atd.Annot.t
   -> (string * string * string) option
 
 
@@ -106,7 +106,7 @@ val ocaml_of_atd
   : ?pp_convs:[ `Camlp4 of string list | `Ppx of string list ]
   -> target:target
   -> type_aliases:string option
-  -> (Atd_ast.loc * Atd_ast.annot) * (bool * Atd_ast.module_body) list
+  -> (Atd.Ast.loc * Atd.Ast.annot) * (bool * Atd.Ast.module_body) list
   -> string
 
 

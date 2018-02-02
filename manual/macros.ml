@@ -12,7 +12,7 @@ let print_ocaml s =
 (* Validate ATD syntax before printing *)
 let print_atd s =
   try 
-    ignore (Atd_util.load_string
+    ignore (Atd.Util.load_string
               ~expand:true ~keep_poly:true
               ~inherit_fields:true ~inherit_variants:true s);
     print_ocaml s
@@ -20,7 +20,7 @@ let print_atd s =
     let msg =
       match e with
           Failure s
-        | Atd_ast.Atd_error s -> s
+        | Atd.Ast.Atd_error s -> s
         | _ -> Printexc.to_string e
     in
     Printf.eprintf "\

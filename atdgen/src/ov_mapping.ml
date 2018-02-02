@@ -1,4 +1,4 @@
-open Atd_ast
+open Atd.Ast
 open Error
 open Mapping
 
@@ -22,7 +22,7 @@ let get_def defs name : type_expr option =
   with Not_found -> None
 
 let noval x =
-  let an = Atd_ast.annot_of_type_expr x in
+  let an = Atd.Ast.annot_of_type_expr x in
   Validate.get_validator an = None
 
 module H = Hashtbl.Make (
@@ -36,7 +36,7 @@ module H = Hashtbl.Make (
 let for_all_children f x0 =
   let is_root = ref true in
   try
-    Atd_ast.fold (
+    Atd.Ast.fold (
       fun x () ->
         if !is_root then (
           is_root := false;
@@ -109,7 +109,7 @@ and name_is_shallow defs visited results x =
 
 
 let iter f x =
-  Atd_ast.fold (fun x () -> f x) x ()
+  Atd.Ast.fold (fun x () -> f x) x ()
 
 let scan_top_expr
     (defs : (string, type_expr) Hashtbl.t)

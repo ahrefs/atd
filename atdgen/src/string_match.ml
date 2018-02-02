@@ -232,7 +232,7 @@ let test2 () =
       ~error_expr:[ `Line "None" ]
       cases
   in
-  Atd_indent.to_stdout (List.map Indent.strip expr)
+  Atd.Indent.to_stdout (List.map Indent.strip expr)
 
 
 let make_ocaml_expr_naive

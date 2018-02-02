@@ -35,7 +35,7 @@ and module_body = module_item list
     (** The body of an ATD file is a list of type definitions.
         Type definitions are implicitely mutually
         recursive. They can be sorted based on dependencies
-        using {!Atd_util.tsort}.
+        using {!Atd.Util.tsort}.
     *)
 
 and module_item =
@@ -98,7 +98,7 @@ and variant =
          [`Inherit] statements can be expanded into variants
          using {!Atd_inherit}
          or at loading time using the [inherit_variant] option
-         offered by the {!Atd_util} functions.
+         offered by the {!Atd.Util} functions.
       *)
 
 and cell = loc * type_expr * annot
@@ -156,7 +156,7 @@ and field =
          A single record field or an [inherit] statement.
          [`Inherit] statements can be expanded into fields using {!Atd_inherit}
          or at loading time using the [inherit_fields] option
-         offered by the {!Atd_util} functions.
+         offered by the {!Atd.Util} functions.
       *)
 
 

@@ -5,7 +5,7 @@
 
 open Printf
 
-open Atd_import
+open Atd.Import
 open Error
 open Mapping
 

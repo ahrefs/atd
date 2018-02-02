@@ -36,16 +36,16 @@ type json_repr =
   | `Wrap ]
 
 
-val get_json_list : Atd_annot.t -> json_list
+val get_json_list : Atd.Annot.t -> json_list
 
-val get_json_float : Atd_annot.t -> json_float
+val get_json_float : Atd.Annot.t -> json_float
 
-val get_json_cons : string -> Atd_annot.t -> string
+val get_json_cons : string -> Atd.Annot.t -> string
 
-val get_json_fname : string -> Atd_annot.t -> string
+val get_json_fname : string -> Atd.Annot.t -> string
 
-val get_json_tag_field : Atd_annot.t -> string option
+val get_json_tag_field : Atd.Annot.t -> string option
 
-val get_json_untyped : Atd_annot.t -> bool
+val get_json_untyped : Atd.Annot.t -> bool
 
-val get_json_record : Atd_annot.t -> json_record
+val get_json_record : Atd.Annot.t -> json_record

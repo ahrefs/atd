@@ -1,11 +1,11 @@
-val error : Atd_ast.loc -> string -> 'a
+val error : Atd.Ast.loc -> string -> 'a
 
-val error2 : Atd_ast.loc -> string -> Atd_ast.loc -> string -> 'a
+val error2 : Atd.Ast.loc -> string -> Atd.Ast.loc -> string -> 'a
 
 val error3
-  : Atd_ast.loc
+  : Atd.Ast.loc
   -> string
-  -> Atd_ast.loc
+  -> Atd.Ast.loc
   -> string
-  -> Atd_ast.loc
+  -> Atd.Ast.loc
   -> string -> 'a

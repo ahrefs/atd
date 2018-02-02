@@ -8,7 +8,7 @@
 open Printf
 
 open Easy_format
-open Atd_ast
+open Atd.Ast
 open Mapping
 
 
@@ -115,7 +115,7 @@ let string_of_ocaml_list (x : atd_ocaml_list) =
     | `Array -> "Atdgen.Util.ocaml_array"
 
 let get_ocaml_int an =
-  Atd_annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
 
 let get_ocaml_type_path atd_name an =
   let x =
@@ -143,35 +143,35 @@ let path_of_target (target : target) =
     | `Validate -> [ "ocaml_validate"; "ocaml" ]
 
 let get_ocaml_sum an =
-  Atd_annot.get_field ocaml_sum_of_string `Poly ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_sum_of_string `Poly ["ocaml"] "repr" an
 
 let get_ocaml_field_prefix an =
-  Atd_annot.get_field (fun s -> Some s) "" ["ocaml"] "field_prefix" an
+  Atd.Annot.get_field (fun s -> Some s) "" ["ocaml"] "field_prefix" an
 
 let get_ocaml_record an =
-  Atd_annot.get_field ocaml_record_of_string `Record ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_record_of_string `Record ["ocaml"] "repr" an
 
 let get_ocaml_list an =
-  Atd_annot.get_field ocaml_list_of_string `List ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_list_of_string `List ["ocaml"] "repr" an
 
 let get_ocaml_wrap loc an =
   let module_ =
-    Atd_annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "module" an in
+    Atd.Annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "module" an in
   let default field =
     match module_ with
         None -> None
       | Some s -> Some (sprintf "%s.%s" s field)
   in
   let t =
-    Atd_annot.get_field (fun s -> Some (Some s))
+    Atd.Annot.get_field (fun s -> Some (Some s))
       (default "t") ["ocaml"] "t" an
   in
   let wrap =
-    Atd_annot.get_field (fun s -> Some (Some s))
+    Atd.Annot.get_field (fun s -> Some (Some s))
       (default "wrap") ["ocaml"] "wrap" an
   in
   let unwrap =
-    Atd_annot.get_field (fun s -> Some (Some s))
+    Atd.Annot.get_field (fun s -> Some (Some s))
       (default "unwrap") ["ocaml"] "unwrap" an
   in
   match t, wrap, unwrap with
@@ -182,29 +182,29 @@ let get_ocaml_wrap loc an =
         Error.error loc "Incomplete annotation. Missing t, wrap or unwrap"
 
 let get_ocaml_cons default an =
-  Atd_annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
+  Atd.Annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
 
 let get_ocaml_fname default an =
-  Atd_annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
+  Atd.Annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
 
 let get_ocaml_default an =
-  Atd_annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "default" an
+  Atd.Annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "default" an
 
 let get_ocaml_mutable an =
-  Atd_annot.get_flag ["ocaml"] "mutable" an
+  Atd.Annot.get_flag ["ocaml"] "mutable" an
 
 let get_ocaml_predef target an =
   let path = path_of_target target in
-  Atd_annot.get_flag path "predef" an
+  Atd.Annot.get_flag path "predef" an
 
 let get_ocaml_module target an =
   let path = path_of_target target in
-  let o = Atd_annot.get_field (fun s -> Some (Some s)) None path "module" an in
+  let o = Atd.Annot.get_field (fun s -> Some (Some s)) None path "module" an in
   match o with
       Some s -> Some (s, s)
     | None ->
         let o =
-          Atd_annot.get_field (fun s -> Some (Some s)) None path "from" an
+          Atd.Annot.get_field (fun s -> Some (Some s)) None path "from" an
         in
         match o with
             None -> None
@@ -221,7 +221,7 @@ let get_ocaml_module target an =
 
 let get_ocaml_t target default an =
   let path = path_of_target target in
-  Atd_annot.get_field (fun s -> Some s) default path "t" an
+  Atd.Annot.get_field (fun s -> Some s) default path "t" an
 
 let get_ocaml_module_and_t target default_name an =
   match get_ocaml_module target an with
@@ -342,7 +342,7 @@ let map_def
   if is_predef && define_alias = None then
     None
   else
-    let an2 = Atd_ast.annot_of_type_expr x in
+    let an2 = Atd.Ast.annot_of_type_expr x in
     let an = an1 @ an2 in
     let doc = Doc.get_doc loc an in
     let alias, x =

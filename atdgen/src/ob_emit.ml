@@ -5,7 +5,7 @@
 
 open Printf
 
-open Atd_ast
+open Atd.Ast
 open Error
 open Mapping
 open Ob_mapping
@@ -1424,7 +1424,7 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
         List.flatten (writers @ readers)
   ) defs
   in
-  Atd_indent.to_buffer buf (List.flatten ll);
+  Atd.Indent.to_buffer buf (List.flatten ll);
 
   if with_create then
     List.iter (
@@ -1443,7 +1443,7 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
   Glue
 *)
 
-let translate_mapping (l : (bool * Atd_ast.module_body) list) =
+let translate_mapping (l : (bool * Atd.Ast.module_body) list) =
   defs_of_atd_modules l
 
 let write_opens buf l =
@@ -1498,12 +1498,12 @@ let make_ocaml_files
   let ((head, m0), _) =
     match atd_file with
         Some file ->
-          Atd_util.load_file
+          Atd.Util.load_file
             ~expand:false ~inherit_fields:true ~inherit_variants:true
             ?pos_fname ?pos_lnum
             file
       | None ->
-          Atd_util.read_channel
+          Atd.Util.read_channel
             ~expand:false ~inherit_fields:true ~inherit_variants:true
             ?pos_fname ?pos_lnum
             stdin
@@ -1512,14 +1512,14 @@ let make_ocaml_files
     if all_rec then
       function m -> [ (true, m) ]
     else
-      Atd_util.tsort
+      Atd.Util.tsort
   in
   let m1 = tsort m0 in
   let defs1 = translate_mapping m1 in
   if not name_overlap then Ox_emit.check defs1;
   Xb_emit.check defs1;
   let (m1', original_types) =
-    Atd_expand.expand_module_body ~keep_poly:true m0
+    Atd.Expand.expand_module_body ~keep_poly:true m0
   in
   let m2 = tsort m1' in
   (* m0 = original type definitions

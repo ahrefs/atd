@@ -1,8 +1,8 @@
 open Printf
 
 let html_of_doc loc s =
-  let doc = Atd_doc.parse_text loc s in
-  Atd_doc.html_of_doc doc
+  let doc = Atd.Doc.parse_text loc s in
+  Atd.Doc.html_of_doc doc
 
 let format_html_comments ((section, (_, l)) as x) =
   match section with
@@ -19,23 +19,23 @@ let format_html_comments ((section, (_, l)) as x) =
                  let comment = "(*html " ^ html_of_doc loc s ^ "*)" in
                  Easy_format.Atom (comment, Easy_format.atom)
              | _ ->
-                 Atd_print.default_annot x
+                 Atd.Print.default_annot x
         )
     | _ ->
-        Atd_print.default_annot x
+        Atd.Print.default_annot x
 
 let print_atd ~html_doc ast =
   let annot =
     if html_doc then Some format_html_comments
     else None
   in
-  let pp = Atd_print.format ?annot ast in
+  let pp = Atd.Print.format ?annot ast in
   Easy_format.Pretty.to_channel stdout pp;
   print_newline ()
 
 let print_ml ~name ast =
   let buf = Buffer.create 1000 in
-  Atd_reflect.print_full_module_def buf name ast;
+  Atd.Reflect.print_full_module_def buf name ast;
   print_string (Buffer.contents buf);
   print_newline ()
 
@@ -46,7 +46,7 @@ let strip all sections x =
     else
       List.filter (fun (name, _) -> not (List.mem name sections))
   in
-  Atd_ast.map_all_annot filter x
+  Atd.Ast.map_all_annot filter x
 
 let parse
     ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
@@ -55,7 +55,7 @@ let parse
     List.map (
       fun file ->
         fst (
-          Atd_util.load_file ~expand ~keep_poly ~xdebug
+          Atd.Util.load_file ~expand ~keep_poly ~xdebug
             ~inherit_fields ~inherit_variants file
         )
     ) files
@@ -65,7 +65,7 @@ let parse
     (* heads in other files than the first one are tolerated but ignored *)
     match heads with
         x :: _ -> x
-      | [] -> (Atd_ast.dummy_loc, [])
+      | [] -> (Atd.Ast.dummy_loc, [])
   in
   let m = first_head, List.flatten bodies in
   strip strip_all strip_sections m
@@ -146,7 +146,7 @@ let () =
 
     "-version",
     Arg.Unit (fun () ->
-                print_endline Atd_version.version;
+                print_endline Atd.Version.version;
                 exit 0),
     "
           print the version of atd and exit";
@@ -168,7 +168,7 @@ let () =
     in
     print ~html_doc: !html_doc ~out_format: !out_format ast
   with
-      Atd_ast.Atd_error s ->
+      Atd.Ast.Atd_error s ->
         flush stdout;
         eprintf "%s\n%!" s
     | e -> raise e

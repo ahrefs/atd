@@ -1,10 +1,10 @@
 (jbuild_version 1)
 
-(ocamllex (atd_lexer atd_doc_lexer))
-(menhir ((modules (atd_parser))))
+(ocamllex (lexer doc_lexer))
+(menhir ((modules (parser))))
 
 (rule
- ((targets (atd_version.ml))
+ ((targets (version.ml))
   (action
    (with-stdout-to ${@}
     (echo "let version = \"${version:atd}\"")))))
@@ -13,5 +13,4 @@
  ((name atd)
   (public_name atd)
   (flags (:include ${ROOT}/ocamlflags.sexp))
-  (wrapped false)
   (libraries (easy-format unix str))))

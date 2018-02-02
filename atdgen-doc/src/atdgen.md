@@ -417,7 +417,7 @@ type profile = Example_t.profile = {
 }
 
 val validate_gender :
-  Ag_util.Validation.path -> gender -> Ag_util.Validation.error option
+  Atdgen.Util.Validation.path -> gender -> Atdgen.Util.Validation.error option
   (** Validate a value of type {!gender}. *)
 
 val create_date :
@@ -428,7 +428,7 @@ val create_date :
   (** Create a record of type {!date}. *)
 
 val validate_date :
-  Ag_util.Validation.path -> date -> Ag_util.Validation.error option
+  Atdgen.Util.Validation.path -> date -> Atdgen.Util.Validation.error option
   (** Validate a value of type {!date}. *)
 
 val create_profile :
@@ -444,7 +444,7 @@ val create_profile :
   (** Create a record of type {!profile}. *)
 
 val validate_profile :
-  Ag_util.Validation.path -> profile -> Ag_util.Validation.error option
+  Atdgen.Util.Validation.path -> profile -> Atdgen.Util.Validation.error option
   (** Validate a value of type {!profile}. *)
 ```
 
@@ -1293,7 +1293,7 @@ Semantics: `atdgen -v` produces for each type named
 _t_ a function `validate_`_t_:
 
 ```ocaml
-val validate_t : Ag_util.Validation.path -> t -> Ag_util.Validation.error option
+val validate_t : Atdgen.Util.Validation.path -> t -> Atdgen.Util.Validation.error option
 ```
 
 Such a function returns `None` if and only if the value and all of its
@@ -1323,7 +1323,7 @@ match validate_point [] { x = 1; y = 0; z = 1 } with
 | None -> ()
 | Some e ->
     Printf.eprintf "Error: %s\n%!"
-      (Ag_util.Validation.string_of_error e)
+      (Atdgen.Util.Validation.string_of_error e)
 ```
 
 The above code prints the following error message:
@@ -1350,7 +1350,7 @@ Semantics: `atdgen -v` produces for each type named
 _t_ a function `validate_`_t_:
 
 ```ocaml
-val validate_t : Ag_util.Validation.path -> t -> Ag_util.Validation.error option
+val validate_t : Atdgen.Util.Validation.path -> t -> Atdgen.Util.Validation.error option
 ```
 
 Such a function returns `None` if and only if the value and all of its
@@ -1365,7 +1365,7 @@ type positive = int <ocaml validator="
     if x > 0 then None
     else
       Some (
-        Ag_util.Validation.error
+        Atdgen.Util.Validation.error
           ~msg: (\"Not a positive integer: \" ^ string_of_int x)
           path
       )
@@ -1387,7 +1387,7 @@ match Toto_v.validate_point [] { x = 1; y = 0; z = 1 } with
 | None -> ()
 | Some e ->
     Printf.eprintf "Error: %s\n%!"
-      (Ag_util.Validation.string_of_error e)
+      (Atdgen.Util.Validation.string_of_error e)
 ```
 
 results in printing:

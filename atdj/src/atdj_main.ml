@@ -63,7 +63,7 @@ let main () =
 
   (* Parse ATD file *)
   let (atd_head, atd_module), _original_types =
-    Atd_util.load_file
+    Atd.Util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in
   let env = {
@@ -89,6 +89,6 @@ let main () =
 
 let () =
   try main ()
-  with Atd_ast.Atd_error s as e ->
+  with Atd.Ast.Atd_error s as e ->
     eprintf "Error:\n%s\n" s;
     raise e

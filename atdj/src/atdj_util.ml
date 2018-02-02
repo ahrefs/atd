@@ -38,14 +38,14 @@ let rec norm_ty ?(unwrap_option = false) env atd_ty =
         atd_ty
 
 let not_supported loc =
-  Atd_ast.error_at loc "Construct not yet supported by atdj."
+  Atd.Ast.error_at loc "Construct not yet supported by atdj."
 
 let type_not_supported x =
-  let loc = Atd_ast.loc_of_type_expr x in
-  Atd_ast.error_at loc "Type not supported by atdj."
+  let loc = Atd.Ast.loc_of_type_expr x in
+  Atd.Ast.error_at loc "Type not supported by atdj."
 
 let warning loc msg =
-  let loc_s = Atd_ast.string_of_loc loc in
+  let loc_s = Atd.Ast.string_of_loc loc in
   eprintf "\
 Warning:
 %s

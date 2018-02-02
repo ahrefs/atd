@@ -1,6 +1,7 @@
 (* Helper classes *)
 
 open Printf
+open Atdgen
 open Atdj_env
 
 let output_atdj env =
@@ -141,7 +142,7 @@ let output_package_javadoc env (loc, annots) =
           )
           []
           blocks in
-  (match Ag_doc.get_doc loc annots with
+  (match Doc.get_doc loc annots with
      | Some doc ->
          let str = String.concat "\n<p>\n" (List.rev (from_doc doc)) in
          output_string out str

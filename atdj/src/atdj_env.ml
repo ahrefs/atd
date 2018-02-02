@@ -12,7 +12,7 @@ type ty =
   ]
 
 type env_t = {
-  module_items : (string * Atd_ast.type_expr) list;
+  module_items : (string * Atd.Ast.type_expr) list;
   package      : string;
   package_dir  : string;
   input_file   : string option;

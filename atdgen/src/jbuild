@@ -1,6 +1,6 @@
 (jbuild_version 1)
 
-(ocamllex (ag_doc_lexer))
+(ocamllex (doc_lexer))
 
 (rule
  ((targets (ag_version.ml))
@@ -12,5 +12,4 @@
  ((name atdgen)
   (public_name atdgen)
   (flags (:include ${ROOT}/ocamlflags.sexp))
-  (wrapped false)
   (libraries (atd str biniou yojson))))

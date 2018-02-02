@@ -34,7 +34,7 @@ let validate fname =
   let x =
     try
       (* Read config data structure from JSON file *)
-      let x = Ag_util.Json.from_file Config_j.read_config fname in
+      let x = Atdgen.Util.Json.from_file Config_j.read_config fname in
       (* Call the validators specified by <ocaml valid=...> *)
       if not (Config_v.validate_config x) then
         failwith "Some fields are invalid"

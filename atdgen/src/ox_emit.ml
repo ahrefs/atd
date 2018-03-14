@@ -14,9 +14,9 @@ type 'a def = (Ocaml.atd_ocaml_repr, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type name = (loc * loc * string)
-    (* location of the containing record or variant,
-       location of the field definition,
-       field/constructor name *)
+(* location of the containing record or variant,
+   location of the field definition,
+   field/constructor name *)
 
 type names = {
   field_names : name list list;
@@ -26,71 +26,71 @@ type names = {
 
 let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
   match x with
-      `Unit _
-    | `Bool _
-    | `Int _
-    | `Float  _
-    | `String _ -> acc
-    | `Sum (loc, va, o, _) ->
+    `Unit _
+  | `Bool _
+  | `Int _
+  | `Float  _
+  | `String _ -> acc
+  | `Sum (loc, va, o, _) ->
+      let l, (fn, pvn, cvn) =
+        Array.fold_left (extract_names_from_variant root_loc) ([], acc) va
+      in
+      (match o with
+         `Sum x ->
+           (match x with
+              `Poly -> (fn, l :: pvn, cvn)
+            | `Classic ->
+                if is_root then (fn, pvn, l :: cvn)
+                else
+                  error loc
+                    "Anonymous classic variant types are not allowed \
+                     by OCaml."
+           )
+       | _ -> assert false
+      )
+
+  | `Record (loc, fa, _, _) ->
+      if is_root then
         let l, (fn, pvn, cvn) =
-          Array.fold_left (extract_names_from_variant root_loc) ([], acc) va
+          Array.fold_left (extract_names_from_field root_loc) ([], acc) fa
         in
-        (match o with
-             `Sum x ->
-               (match x with
-                    `Poly -> (fn, l :: pvn, cvn)
-                  | `Classic ->
-                      if is_root then (fn, pvn, l :: cvn)
-                      else
-                        error loc
-                          "Anonymous classic variant types are not allowed \
-                           by OCaml."
-               )
-           | _ -> assert false
-        )
+        (l :: fn, pvn, cvn)
+      else
+        error loc "Anonymous record types are not allowed by OCaml."
 
-    | `Record (loc, fa, _, _) ->
-        if is_root then
-          let l, (fn, pvn, cvn) =
-            Array.fold_left (extract_names_from_field root_loc) ([], acc) fa
-          in
-          (l :: fn, pvn, cvn)
-        else
-          error loc "Anonymous record types are not allowed by OCaml."
+  | `Tuple (_, ca, _, _) ->
+      Array.fold_left (extract_names_from_cell root_loc) acc ca
 
-    | `Tuple (_, ca, _, _) ->
-        Array.fold_left (extract_names_from_cell root_loc) acc ca
+  | `List (_, x, _, _)
+  | `Option (_, x, _, _)
+  | `Nullable (_, x, _, _)
+  | `Wrap (_, x, _, _) ->
+      extract_names_from_expr root_loc acc x
 
-    | `List (_, x, _, _)
-    | `Option (_, x, _, _)
-    | `Nullable (_, x, _, _)
-    | `Wrap (_, x, _, _) ->
-        extract_names_from_expr root_loc acc x
+  | `Name (_, _, l, _, _) ->
+      List.fold_left (extract_names_from_expr root_loc) acc l
 
-    | `Name (_, _, l, _, _) ->
-        List.fold_left (extract_names_from_expr root_loc) acc l
+  | `External (_, _, l, _, _) ->
+      List.fold_left (extract_names_from_expr root_loc) acc l
 
-    | `External (_, _, l, _, _) ->
-        List.fold_left (extract_names_from_expr root_loc) acc l
-
-    | `Tvar _ -> acc
+  | `Tvar _ -> acc
 
 and extract_names_from_variant root_loc (l, acc) x =
   let l =
     match x.var_arepr with
-        `Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
-      | _ -> assert false
+      `Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
+    | _ -> assert false
   in
   match x.var_arg with
-      None -> (l, acc)
-    | Some x ->
-        (l, extract_names_from_expr root_loc acc x)
+    None -> (l, acc)
+  | Some x ->
+      (l, extract_names_from_expr root_loc acc x)
 
 and extract_names_from_field root_loc (l, acc) x =
   let l =
     match x.f_arepr with
-        `Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
-      | _ -> assert false
+      `Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
+    | _ -> assert false
   in
   (l, extract_names_from_expr root_loc acc x.f_value)
 
@@ -103,10 +103,10 @@ let extract_ocaml_names_from_defs l =
     List.fold_left (
       fun acc def ->
         match def.def_value with
-            None -> acc
-          | Some x ->
-              let root_loc = loc_of_mapping x in
-              extract_names_from_expr ~is_root:true root_loc acc x
+          None -> acc
+        | Some x ->
+            let root_loc = loc_of_mapping x in
+            extract_names_from_expr ~is_root:true root_loc acc x
     ) ([], [], []) l
   in
   {
@@ -138,7 +138,7 @@ Impossible second definition of %s %s.
 Use a different name, possibly by placing <ocaml name=\"NAME\">
 after the field name or variant name in the ATD type definition.
 <ocaml field_prefix=\"PREFIX\"> can also be used after a whole record."
-          field_kind s
+            field_kind s
         in
         if loc <> orig_loc then
           error3
@@ -169,11 +169,11 @@ let check grouped_defs =
 let get_full_type_name x =
   let s = x.def_name in
   match x.def_param with
-      [] -> s
-    | [x] -> sprintf "'%s %s" x s
-    | l ->
-        let l = List.map (fun s -> "'" ^ s) l in
-        sprintf "(%s) %s" (String.concat ", " l) s
+    [] -> s
+  | [x] -> sprintf "'%s %s" x s
+  | l ->
+      let l = List.map (fun s -> "'" ^ s) l in
+      sprintf "(%s) %s" (String.concat ", " l) s
 
 let anon_param_type_name s n_param =
   match n_param with
@@ -227,8 +227,8 @@ let write_file file s =
 
 let write_ocaml out mli ml =
   match out with
-      `Stdout ->
-        printf "\
+    `Stdout ->
+      printf "\
 struct
 %s
 end :
@@ -236,12 +236,12 @@ sig
 %s
 end
 "
-          ml mli;
-        flush stdout
+        ml mli;
+      flush stdout
 
-    | `Files prefix ->
-        write_file (prefix ^ ".mli") mli;
-        write_file (prefix ^ ".ml") ml
+  | `Files prefix ->
+      write_file (prefix ^ ".mli") mli;
+      write_file (prefix ^ ".ml") ml
 
 let is_exportable def =
   let s = def.def_name in
@@ -250,47 +250,47 @@ let is_exportable def =
 
 let make_record_creator deref x =
   match x.def_value with
-      Some (`Record (_, a, `Record `Record, _)) ->
-        let s = x.def_name in
-        let full_name = get_full_type_name x in
-        let l =
-          Array.to_list
-            (Array.map (Ocaml.map_record_creator_field deref) a) in
-        let intf_params = List.map (fun (x, _, _) -> x) l in
-        let intf =
-          sprintf "\
+    Some (`Record (_, a, `Record `Record, _)) ->
+      let s = x.def_name in
+      let full_name = get_full_type_name x in
+      let l =
+        Array.to_list
+          (Array.map (Ocaml.map_record_creator_field deref) a) in
+      let intf_params = List.map (fun (x, _, _) -> x) l in
+      let intf =
+        sprintf "\
 val create_%s :%s
   unit -> %s
   (** Create a record of type {!%s}. *)
 
 "
-            s (String.concat "" intf_params)
-            full_name
-            s
-        in
-        let impl_params = List.map (fun (_, x, _) -> x) l in
-        let impl_fields = List.map (fun (_, _, x) -> x) l in
-        let impl =
-          sprintf "\
+          s (String.concat "" intf_params)
+          full_name
+          s
+      in
+      let impl_params = List.map (fun (_, x, _) -> x) l in
+      let impl_fields = List.map (fun (_, _, x) -> x) l in
+      let impl =
+        sprintf "\
 let create_%s %s
   () : %s =
   {%s
   }
 "
-            s (String.concat "" impl_params) full_name
-            (String.concat "" impl_fields)
-        in
-        intf, impl
+          s (String.concat "" impl_params) full_name
+          (String.concat "" impl_fields)
+      in
+      intf, impl
 
-    | _ -> "", ""
+  | _ -> "", ""
 
 let rec is_function (l : Indent.t list) =
   match l with
-      [] -> false
-    | x :: _ ->
-        match x with
-            `Line _ -> false
-          | `Block l -> is_function l
-          | `Inline l -> is_function l
-          | `Annot ("fun", _) -> true
-          | `Annot (_, x) -> is_function [x]
+    [] -> false
+  | x :: _ ->
+      match x with
+        `Line _ -> false
+      | `Block l -> is_function l
+      | `Inline l -> is_function l
+      | `Annot ("fun", _) -> true
+      | `Annot (_, x) -> is_function [x]

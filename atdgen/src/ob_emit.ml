@@ -168,12 +168,6 @@ let rec get_biniou_tag (x : ob_mapping) =
     | `Tvar (_, s) -> sprintf "%s_tag" (Ox_emit.name_of_var s)
     | _ -> assert false
 
-let nth name i len =
-  let l =
-    Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
-  String.concat ", " l
-
-
 let get_fields deref a =
   List.map (
     fun x ->
@@ -460,7 +454,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
                 [
                   `Line "(";
                   `Block [
-                    `Line (sprintf "let %s = x in (" (nth "x" i len));
+                    `Line (sprintf "let %s = x in (" (Ox_emit.nth "x" i len));
                     `Block (make_writer ~tagged:true deref x.cel_value);
                     `Line ") ob x";
                   ];
@@ -1384,18 +1378,6 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
     ]
   ]
 
-let map f = function
-    [] -> []
-  | x :: l ->
-      let y = f true x in
-      y :: List.map (f false) l
-
-let get_let ~is_rec ~is_first =
-  if is_first then
-    if is_rec then "let rec", "and"
-    else "let", "let"
-  else "and", "and"
-
 let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
     buf deref defs =
 
@@ -1404,17 +1386,17 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
       fun (is_rec, l) ->
         let l = List.filter (fun x -> x.def_value <> None) l in
         let writers =
-          map (
+          Ox_emit.map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
+              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
               make_ocaml_biniou_writer
                 ~original_types deref is_rec let1 let2 def
           ) l
         in
         let readers =
-          map (
+          Ox_emit.map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
+              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
               make_ocaml_biniou_reader ~ocaml_version
                 ~original_types deref is_rec let1 let2 def
           ) l

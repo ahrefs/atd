@@ -134,11 +134,6 @@ let get_assoc_type deref loc x =
       error loc "Expected due to <json repr=\"object\">: (string * _) list"
 
 
-let nth name i len =
-  let l =
-    Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
-  String.concat ", " l
-
 type default_field =
 | Default of string
 | Checked of int
@@ -487,7 +482,7 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
           Array.mapi (
             fun i x ->
               `Inline [
-                `Line (sprintf "(let %s = x in" (nth "x" i len));
+                `Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
                 `Line "(";
                 `Block (make_writer p x.cel_value);
                 `Line ") ob x";
@@ -1734,18 +1729,6 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
   ]
 
 
-let map f = function
-    [] -> []
-  | x :: l ->
-      let y = f true x in
-      y :: List.map (f false) l
-
-let get_let ~is_rec ~is_first =
-  if is_first then
-    if is_rec then "let rec", "and"
-    else "let", "let"
-  else "and", "and"
-
 let make_ocaml_json_impl
     ~std ~unknown_field_handler ~constr_mismatch_handler
     ~with_create ~force_defaults ~preprocess_input ~original_types
@@ -1765,16 +1748,16 @@ let make_ocaml_json_impl
       fun (is_rec, l) ->
         let l = List.filter (fun x -> x.def_value <> None) l in
         let writers =
-          map (
+          Ox_emit.map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
+              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
               make_ocaml_json_writer p ~original_types is_rec let1 let2 def
           ) l
         in
         let readers =
-          map (
+          Ox_emit.map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
+              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
               make_ocaml_json_reader p ~original_types is_rec let1 let2 def
           ) l
         in

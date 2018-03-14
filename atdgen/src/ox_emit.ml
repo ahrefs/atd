@@ -296,3 +296,20 @@ let rec is_function (l : Indent.t list) =
       | `Annot (_, x) -> is_function [x]
 
 let name_of_var s = "_" ^ s
+
+let nth name i len =
+  let l =
+    Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
+  String.concat ", " l
+
+let map f = function
+    [] -> []
+  | x :: l ->
+      let y = f true x in
+      y :: List.map (f false) l
+
+let get_let ~is_rec ~is_first =
+  if is_first then
+    if is_rec then "let rec", "and"
+    else "let", "let"
+  else "and", "and"

@@ -42,11 +42,6 @@ val validate_%s :%s
       )
   ) (flatten defs)
 
-let nth name i len =
-  let l =
-    Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
-  String.concat ", " l
-
 let get_fields a =
   let all =
     List.map (
@@ -251,7 +246,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
             List.map (
               fun (i, x) ->
                 `Inline [
-                  `Line (sprintf "(let %s = x in" (nth "x" i len));
+                  `Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
                   `Line "(";
                   `Block (make_validator x.cel_value);
                   `Line (sprintf ") (`Index %i :: path) x" i);
@@ -371,28 +366,15 @@ let make_ocaml_validator ~original_types is_rec let1 def =
   ]
 
 
-
-let map f = function
-    [] -> []
-  | x :: l ->
-      let y = f true x in
-      y :: List.map (f false) l
-
-let get_let ~is_rec ~is_first =
-  if is_first then
-    if is_rec then "let rec", "and"
-    else "let", "let"
-  else "and", "and"
-
 let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
   let ll =
     List.map (
       fun (is_rec, l) ->
         let l = List.filter (fun x -> x.def_value <> None) l in
         let validators =
-          map (
+          Ox_emit.map (
             fun is_first def ->
-              let let1, _ = get_let ~is_rec ~is_first in
+              let let1, _ = Ox_emit.get_let ~is_rec ~is_first in
               make_ocaml_validator ~original_types is_rec let1 def
           ) l
         in

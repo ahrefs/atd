@@ -32,3 +32,9 @@ val check : _ grouped_defs -> unit
 val write_ocaml : [< `Files of string | `Stdout ] -> string -> string -> unit
 
 val name_of_var : string -> string
+
+val nth : Mapping.loc_id -> int -> int -> Mapping.loc_id
+
+val map : (bool -> 'a -> 'b) -> 'a list -> 'b list
+
+val get_let : is_rec:bool -> is_first:bool -> Mapping.loc_id * Mapping.loc_id

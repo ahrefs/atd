@@ -14,8 +14,6 @@ open Oj_mapping
   OCaml code generator (json readers and writers)
 *)
 
-let name_of_var s = "_" ^ s
-
 type param = {
   deref : (Ocaml.atd_ocaml_repr, Json.json_repr) Mapping.mapping ->
                (Ocaml.atd_ocaml_repr, Json.json_repr) Mapping.mapping;
@@ -312,7 +310,7 @@ let rec get_writer_name
     | `String (_, `String, `String) ->
         "Yojson.Safe.write_string"
 
-    | `Tvar (_, s) -> "write_" ^ name_of_var s
+    | `Tvar (_, s) -> "write_" ^ (Ox_emit.name_of_var s)
 
     | `Name (_, s, args, None, None) ->
         let l = List.map (get_writer_name ~paren:true p) args in
@@ -363,7 +361,7 @@ let rec get_reader_name
 
     | `String (_, `String, `String) -> "Atdgen.Oj_run.read_string"
 
-    | `Tvar (_, s) -> "read_" ^ name_of_var s
+    | `Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s
 
     | `Name (_, s, args, None, None) ->
         let l = List.map (get_reader_name ~paren:true p) args in

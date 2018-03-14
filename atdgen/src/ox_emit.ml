@@ -294,3 +294,5 @@ let rec is_function (l : Indent.t list) =
       | `Inline l -> is_function l
       | `Annot ("fun", _) -> true
       | `Annot (_, x) -> is_function [x]
+
+let name_of_var s = "_" ^ s

@@ -30,3 +30,5 @@ val needs_type_annot : _ expr -> bool
 val check : _ grouped_defs -> unit
 
 val write_ocaml : [< `Files of string | `Stdout ] -> string -> string -> unit
+
+val name_of_var : string -> string

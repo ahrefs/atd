@@ -14,8 +14,6 @@ open Ob_mapping
   OCaml code generator (biniou readers and writers)
 *)
 
-let name_of_var s = "_" ^ s
-
 
 let make_ocaml_biniou_intf ~with_create buf deref defs =
   List.iter (
@@ -167,7 +165,7 @@ let rec get_biniou_tag (x : ob_mapping) =
                  `External (_, main_module, ext_name),
                  `External) ->
         sprintf "%s.%s_tag" main_module ext_name
-    | `Tvar (_, s) -> sprintf "%s_tag" (name_of_var s)
+    | `Tvar (_, s) -> sprintf "%s_tag" (Ox_emit.name_of_var s)
     | _ -> assert false
 
 let nth name i len =
@@ -261,7 +259,7 @@ let rec get_writer_name
         sprintf "Bi_io.write_%sstring" un
 
     | `Tvar (_, s) ->
-        sprintf "write_%s%s" un (name_of_var s)
+        sprintf "write_%s%s" un (Ox_emit.name_of_var s)
 
     | `Name (_, s, args, None, None) ->
         let l = List.map get_writer_names args in
@@ -365,7 +363,7 @@ let rec get_reader_name
     | `String (_, `String, `String) -> xreader "string"
 
     | `Tvar (_, s) ->
-        let name = name_of_var s in
+        let name = Ox_emit.name_of_var s in
         if tagged then
           sprintf "read_%s" name
         else

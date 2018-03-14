@@ -8,8 +8,6 @@ open Atd.Ast
 open Mapping
 open Ov_mapping
 
-let name_of_var s = "_" ^ s
-
 let make_ocaml_validate_intf ~with_create buf deref defs =
   List.iter (
     fun x ->
@@ -158,7 +156,7 @@ let rec get_validator_name
            | (Some s, true) -> s
            | (_, false) -> assert false
         )
-    | `Tvar (_, s) -> "validate_" ^ name_of_var s
+    | `Tvar (_, s) -> "validate_" ^ (Ox_emit.name_of_var s)
 
     | `Name (_, s, args, None, opt) ->
         let v1 =

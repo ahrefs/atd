@@ -2,6 +2,10 @@ type 'a expr = (Ocaml.atd_ocaml_repr, 'a) Mapping.mapping
 type 'a def = (Ocaml.atd_ocaml_repr, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
+type target =
+  | Files of string
+  | Stdout
+
 val get_full_type_name : (_, _) Mapping.def -> string
 
 val is_exportable : (_, _) Mapping.def -> bool
@@ -29,7 +33,7 @@ val needs_type_annot : _ expr -> bool
 
 val check : _ grouped_defs -> unit
 
-val write_ocaml : [< `Files of string | `Stdout ] -> string -> string -> unit
+val write_ocaml : target -> string -> string -> unit
 
 val name_of_var : string -> string
 

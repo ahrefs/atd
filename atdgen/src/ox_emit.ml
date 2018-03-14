@@ -24,6 +24,10 @@ type names = {
   classic_variant_names : name list list;
 }
 
+type target =
+  | Files of string
+  | Stdout
+
 let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
   match x with
     `Unit _
@@ -227,7 +231,7 @@ let write_file file s =
 
 let write_ocaml out mli ml =
   match out with
-    `Stdout ->
+    Stdout ->
       printf "\
 struct
 %s
@@ -239,7 +243,7 @@ end
         ml mli;
       flush stdout
 
-  | `Files prefix ->
+  | Files prefix ->
       write_file (prefix ^ ".mli") mli;
       write_file (prefix ^ ".ml") ml
 

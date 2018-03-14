@@ -38,3 +38,5 @@ val nth : Mapping.loc_id -> int -> int -> Mapping.loc_id
 val map : (bool -> 'a -> 'b) -> 'a list -> 'b list
 
 val get_let : is_rec:bool -> is_first:bool -> Mapping.loc_id * Mapping.loc_id
+
+val write_opens : Buffer.t -> Mapping.loc_id list -> unit

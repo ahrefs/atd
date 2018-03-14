@@ -402,16 +402,12 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
 let translate_mapping (l : (bool * Atd.Ast.module_body) list) =
   Ov_mapping.defs_of_atd_modules l
 
-let write_opens buf l =
-  List.iter (fun s -> bprintf buf "open %s\n" s) l;
-  bprintf buf "\n"
-
 let make_mli
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
-  write_opens buf opens;
+  Ox_emit.write_opens buf opens;
   if with_typedefs then
     bprintf buf "%s\n" ocaml_typedefs;
   if with_typedefs && with_fundefs then
@@ -425,7 +421,7 @@ let make_ml
     ~original_types ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
-  write_opens buf opens;
+  Ox_emit.write_opens buf opens;
   if with_typedefs then
     bprintf buf "%s\n" ocaml_typedefs;
   if with_typedefs && with_fundefs then

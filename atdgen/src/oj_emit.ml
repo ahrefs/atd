@@ -1822,16 +1822,12 @@ let check_atd (_head, body) =
 let translate_mapping (l : (bool * Atd.Ast.module_body) list) =
   defs_of_atd_modules l
 
-let write_opens buf l =
-  List.iter (fun s -> bprintf buf "open %s\n" s) l;
-  bprintf buf "\n"
-
 let make_mli
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
-  write_opens buf opens;
+  Ox_emit.write_opens buf opens;
   if with_typedefs then
     bprintf buf "%s\n" ocaml_typedefs;
   if with_typedefs && with_fundefs then
@@ -1848,7 +1844,7 @@ let make_ml
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
-  write_opens buf opens;
+  Ox_emit.write_opens buf opens;
   if with_typedefs then
     bprintf buf "%s\n" ocaml_typedefs;
   if with_typedefs && with_fundefs then

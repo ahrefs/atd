@@ -313,3 +313,7 @@ let get_let ~is_rec ~is_first =
     if is_rec then "let rec", "and"
     else "let", "let"
   else "and", "and"
+
+let write_opens buf l =
+  List.iter (fun s -> bprintf buf "open %s\n" s) l;
+  bprintf buf "\n"

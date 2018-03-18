@@ -14,8 +14,6 @@ open Ob_mapping
   OCaml code generator (biniou readers and writers)
 *)
 
-let name_of_var s = "_" ^ s
-
 
 let make_ocaml_biniou_intf ~with_create buf deref defs =
   List.iter (
@@ -167,14 +165,8 @@ let rec get_biniou_tag (x : ob_mapping) =
                  `External (_, main_module, ext_name),
                  `External) ->
         sprintf "%s.%s_tag" main_module ext_name
-    | `Tvar (_, s) -> sprintf "%s_tag" (name_of_var s)
+    | `Tvar (_, s) -> sprintf "%s_tag" (Ox_emit.name_of_var s)
     | _ -> assert false
-
-let nth name i len =
-  let l =
-    Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
-  String.concat ", " l
-
 
 let get_fields deref a =
   List.map (
@@ -261,7 +253,7 @@ let rec get_writer_name
         sprintf "Bi_io.write_%sstring" un
 
     | `Tvar (_, s) ->
-        sprintf "write_%s%s" un (name_of_var s)
+        sprintf "write_%s%s" un (Ox_emit.name_of_var s)
 
     | `Name (_, s, args, None, None) ->
         let l = List.map get_writer_names args in
@@ -365,7 +357,7 @@ let rec get_reader_name
     | `String (_, `String, `String) -> xreader "string"
 
     | `Tvar (_, s) ->
-        let name = name_of_var s in
+        let name = Ox_emit.name_of_var s in
         if tagged then
           sprintf "read_%s" name
         else
@@ -462,7 +454,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
                 [
                   `Line "(";
                   `Block [
-                    `Line (sprintf "let %s = x in (" (nth "x" i len));
+                    `Line (sprintf "let %s = x in (" (Ox_emit.nth "x" i len));
                     `Block (make_writer ~tagged:true deref x.cel_value);
                     `Line ") ob x";
                   ];
@@ -1386,18 +1378,6 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
     ]
   ]
 
-let map f = function
-    [] -> []
-  | x :: l ->
-      let y = f true x in
-      y :: List.map (f false) l
-
-let get_let ~is_rec ~is_first =
-  if is_first then
-    if is_rec then "let rec", "and"
-    else "let", "let"
-  else "and", "and"
-
 let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
     buf deref defs =
 
@@ -1406,17 +1386,17 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
       fun (is_rec, l) ->
         let l = List.filter (fun x -> x.def_value <> None) l in
         let writers =
-          map (
+          Ox_emit.map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
+              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
               make_ocaml_biniou_writer
                 ~original_types deref is_rec let1 let2 def
           ) l
         in
         let readers =
-          map (
+          Ox_emit.map (
             fun is_first def ->
-              let let1, let2 = get_let ~is_rec ~is_first in
+              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
               make_ocaml_biniou_reader ~ocaml_version
                 ~original_types deref is_rec let1 let2 def
           ) l
@@ -1446,16 +1426,12 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
 let translate_mapping (l : (bool * Atd.Ast.module_body) list) =
   defs_of_atd_modules l
 
-let write_opens buf l =
-  List.iter (fun s -> bprintf buf "open %s\n" s) l;
-  bprintf buf "\n"
-
 let make_mli
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
-  write_opens buf opens;
+  Ox_emit.write_opens buf opens;
   if with_typedefs then
     bprintf buf "%s\n" ocaml_typedefs;
   if with_typedefs && with_fundefs then
@@ -1470,7 +1446,7 @@ let make_ml
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
-  write_opens buf opens;
+  Ox_emit.write_opens buf opens;
   if with_typedefs then
     bprintf buf "%s\n" ocaml_typedefs;
   if with_typedefs && with_fundefs then

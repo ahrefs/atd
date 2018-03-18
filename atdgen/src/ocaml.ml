@@ -11,6 +11,9 @@ open Easy_format
 open Atd.Ast
 open Mapping
 
+type pp_convs =
+  | Camlp4 of string list
+  | Ppx of string list
 
 (* Type mapping from ATD to OCaml *)
 
@@ -587,13 +590,13 @@ let append_ocamldoc_comment x doc =
         Label ((x, label), comment)
 
 let format_pp_conv_node node = function
-  | `Camlp4 []
-  | `Ppx [] -> node
+  | Camlp4 []
+  | Ppx [] -> node
   | converters ->
     let converters =
       match converters with
-      | `Ppx cs -> "[@@deriving " ^ (String.concat ", " cs) ^ "]"
-      | `Camlp4 cs -> "with " ^ (String.concat ", " cs) in
+      | Ppx cs -> "[@@deriving " ^ (String.concat ", " cs) ^ "]"
+      | Camlp4 cs -> "with " ^ (String.concat ", " cs) in
     Label ((node, label), make_atom converters)
 
 let rec format_module_item pp_convs
@@ -759,7 +762,7 @@ let format_all l =
 let ocaml_of_expr x : string =
   Easy_format.Pretty.to_string (format_type_expr x)
 
-let ocaml_of_atd ?(pp_convs=`Ppx []) ~target ~type_aliases
+let ocaml_of_atd ?(pp_convs=Ppx []) ~target ~type_aliases
     (head, (l : (bool * module_body) list)) : string =
   let head = format_head head in
   let bodies =

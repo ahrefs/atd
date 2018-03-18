@@ -1,3 +1,6 @@
+type pp_convs =
+  | Camlp4 of string list
+  | Ppx of string list
 
 type atd_ocaml_sum = [ `Classic | `Poly ]
 type atd_ocaml_record = [ `Record | `Object ]
@@ -103,7 +106,7 @@ val unwrap_option
   -> ('b, 'c) Mapping.mapping
 
 val ocaml_of_atd
-  : ?pp_convs:[ `Camlp4 of string list | `Ppx of string list ]
+  : ?pp_convs:pp_convs
   -> target:target
   -> type_aliases:string option
   -> (Atd.Ast.loc * Atd.Ast.annot) * (bool * Atd.Ast.module_body) list

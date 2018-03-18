@@ -15,7 +15,7 @@ val make_ocaml_files
   -> preprocess_input:string option
   -> name_overlap:bool
   -> ocaml_version:(int * int) option
-  -> pp_convs:[ `Camlp4 of string list | `Ppx of string list ]
+  -> pp_convs:Ocaml.pp_convs
   -> string option
-  -> [< `Files of string | `Stdout ]
+  -> Ox_emit.target
   -> unit

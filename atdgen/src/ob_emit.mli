@@ -11,5 +11,5 @@ val make_ocaml_files
   -> force_defaults:_ (* not used *)
   -> name_overlap:bool
   -> ocaml_version:(int * int) option
-  -> pp_convs:[ `Camlp4 of string list | `Ppx of string list ]
-  -> string option -> [< `Files of string | `Stdout ] -> unit
+  -> pp_convs:Ocaml.pp_convs
+  -> string option -> Ox_emit.target -> unit

@@ -43,10 +43,6 @@ type mode =
     | `Validate (* -validate (deprecated) *)
     ]
 
-type conv =
-  [ `Ppx of string list
-  | `Camlp4 of string list ]
-
 let parse_ocaml_version () =
   let re = Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
   if Str.string_match re Sys.ocaml_version 0 then
@@ -85,17 +81,17 @@ let main () =
     let l = Str.split (Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
   in
-  let pp_convs : conv ref = ref (`Ppx []) in
+  let pp_convs : Ocaml.pp_convs ref = ref (Ocaml.Ppx []) in
   let options = [
     "-type-conv", Arg.String (fun s ->
-      pp_convs := `Camlp4 (Str.split (Str.regexp ",") s)),
+      pp_convs := Camlp4 (Str.split (Str.regexp ",") s)),
     "
     GEN1,GEN2,...
          Insert 'with GEN1, GEN2, ...' after OCaml type definitions for the
          type-conv preprocessor
     ";
     "-deriving-conv", Arg.String (fun s ->
-      pp_convs := `Ppx (Str.split (Str.regexp ",") s)),
+      pp_convs := Ocaml.Ppx (Str.split (Str.regexp ",") s)),
     "
     GEN1,GEN2,...
          Insert 'with GEN1, GEN2, ...' after OCaml type definitions for the
@@ -139,8 +135,8 @@ let main () =
     "-o", Arg.String (fun s ->
                         let out =
                           match s with
-                              "-" -> `Stdout
-                            | s -> `Files s
+                              "-" -> Ox_emit.Stdout
+                            | s -> Ox_emit.Files s
                         in
                         set_once "output prefix" out_prefix out),
     "[ PREFIX | - ]
@@ -360,19 +356,19 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
     match !out_prefix, atd_file with
         Some x, _ -> x
       | None, Some file ->
-          `Files (
+          Ox_emit.Files (
               if Filename.check_suffix file ".atd" then
                 Filename.chop_extension file
               else
                 file
           )
-      | None, None -> `Stdout
+      | None, None -> Stdout
   in
   let base_prefix, ocaml_prefix =
     match base_ocaml_prefix with
-        `Stdout -> None, `Stdout
-      | `Files base ->
-          Some base, `Files
+        Ox_emit.Stdout -> None, Ox_emit.Stdout
+      | Files base ->
+          Some base, Ox_emit.Files
             (match mode with
                  `T -> base ^ "_t"
                | `B -> base ^ "_b"

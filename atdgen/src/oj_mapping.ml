@@ -16,7 +16,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
   match x with
       `Sum (loc, l, an) ->
         let ocaml_t = `Sum (Ocaml.get_ocaml_sum an) in
-        let json_t = `Sum in
+        let json_t = `Sum (Json.get_json_sum an) in
         `Sum (loc, Array.of_list (List.map mapping_of_variant l),
               ocaml_t, json_t)
 

@@ -1,3 +1,10 @@
+(*
+  Mapping from ATD to JSON
+*)
+
+(* Name of the json adapter, referencing a pair of functions
+   to convert to/from an atd-compatible json tree. *)
+type json_adapter = string
 
 type json_float = [ `Float of int option (* max decimal places *)
                   | `Int ]
@@ -29,12 +36,13 @@ type json_repr =
   | `Option
   | `Record of json_record
   | `String
-  | `Sum
+  | `Sum of json_adapter option
   | `Tuple
   | `Unit
   | `Variant of json_variant
   | `Wrap ]
 
+val get_json_sum : Atd.Annot.t -> json_adapter option
 
 val get_json_list : Atd.Annot.t -> json_list
 

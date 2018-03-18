@@ -5,6 +5,8 @@
 type json_float = [ `Float of int option (* max decimal places *)
                   | `Int ]
 
+type json_adapter = string
+
 type json_list = [ `Array | `Object ]
 
 type json_variant = { json_cons : string option }
@@ -27,7 +29,8 @@ type json_repr =
     | `Float of json_float
 
     | `String
-    | `Sum
+    | `Sum of json_adapter option
+         (* TODO: allow json adapters for other types *)
     | `Record of json_record
     | `Tuple
     | `List of json_list
@@ -63,11 +66,40 @@ let get_json_float an : json_float =
       `Float -> `Float (get_json_precision an)
     | `Int -> `Int
 
+let has_prefix s prefix =
+  String.length prefix <= String.length s
+  &&
+  try
+    for i = 0 to String.length prefix - 1 do
+      if s.[i] <> prefix.[i] then
+        raise Exit
+    done;
+    true
+  with Exit -> false
+
+let remove_prefix s len =
+  assert (String.length s >= len);
+  String.sub s len (String.length s - len)
+
+let adapter_prefix = "adapter:"
+
+(* <json repr="adapter:foo"> -> Some "foo" *)
+let json_adapter_of_string s : string option option =
+  if has_prefix s adapter_prefix then
+    Some (Some (remove_prefix s (String.length adapter_prefix)))
+  else (* error *)
+    None
+
 let json_list_of_string s : json_list option =
   match s with
-      "array" -> Some `Array
-    | "object" -> Some `Object
-    | _ -> None
+  | "array" -> Some `Array
+  | "object" -> Some `Object
+  | _ -> (* error *) None
+
+let get_json_adapter an =
+  Atd.Annot.get_field json_adapter_of_string None ["json"] "repr" an
+
+let get_json_sum = get_json_adapter
 
 let get_json_list an =
   Atd.Annot.get_field json_list_of_string `Array ["json"] "repr" an

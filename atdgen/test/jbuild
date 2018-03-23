@@ -57,7 +57,7 @@
   (action  (run ${bin:atdgen} -validate -extend Test test.atd -o testv))))
 
 (executables
- ((libraries (atd atdgen))
+ ((libraries (atd atdgen-runtime))
   (names (test_atdgen_main))
   (flags (:include ${ROOT}/ocamlflags.sexp))
   (modules
@@ -72,7 +72,7 @@
     test_lib))))
 
 (executables
- ((libraries (atd atdgen))
+ ((libraries (atd atdgen-runtime))
   (flags (:include ${ROOT}/ocamlflags.sexp))
   (names (github_j))
   (modules (github_t github_j))))

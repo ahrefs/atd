@@ -5,4 +5,4 @@
   (public_name atdj)
   (flags (:include ${ROOT}/ocamlflags.sexp))
   (package atdj)
-  (libraries (atd atdgen))))
+  (libraries (str atd atdgen.emit))))

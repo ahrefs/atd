@@ -9,7 +9,7 @@
     (echo "let version = \"${version:atd}\"")))))
 
 (library
- ((name atdgen)
-  (public_name atdgen)
+ ((name atdgen_emit)
+  (public_name atdgen.emit)
   (flags (:include ${ROOT}/ocamlflags.sexp))
-  (libraries (atd str biniou yojson))))
+  (libraries (atd yojson))))

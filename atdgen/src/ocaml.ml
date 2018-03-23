@@ -115,7 +115,7 @@ let ocaml_list_of_string s : atd_ocaml_list option =
 let string_of_ocaml_list (x : atd_ocaml_list) =
   match x with
       `List -> "list"
-    | `Array -> "Atdgen.Util.ocaml_array"
+    | `Array -> "Atdgen_runtime.Util.ocaml_array"
 
 let get_ocaml_int an =
   Atd.Annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an

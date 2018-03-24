@@ -2,10 +2,12 @@
   Mapping from ATD to JSON
 *)
 
+open Printf
+
 type json_float = [ `Float of int option (* max decimal places *)
                   | `Int ]
 
-type json_adapter = string
+type json_adapter = string list
 
 type json_list = [ `Array | `Object ]
 
@@ -66,29 +68,42 @@ let get_json_float an : json_float =
       `Float -> `Float (get_json_precision an)
     | `Int -> `Int
 
-let has_prefix s prefix =
-  String.length prefix <= String.length s
-  &&
-  try
-    for i = 0 to String.length prefix - 1 do
-      if s.[i] <> prefix.[i] then
-        raise Exit
-    done;
-    true
-  with Exit -> false
+let parse_adapter_name =
+  let component = "[a-z][a-z0-9_]*" in
+  let component_re = Str.regexp (sprintf "^%s$" component) in
+  let check_component s =
+    Str.string_match component_re s 0 && Str.match_end () = String.length s
+  in
+  fun s ->
+    let components = String.split_on_char '.' s in
+    if List.for_all check_component components then
+      Some components
+    else
+      None
 
-let remove_prefix s len =
-  assert (String.length s >= len);
-  String.sub s len (String.length s - len)
+let test_parse_adapter_name () =
+  let ok s components =
+    parse_adapter_name s = Some components
+  in
+  let not_ok s =
+    parse_adapter_name s = None
+  in
+  assert (ok "a" ["a"]);
+  assert (ok "a.b" ["a"; "b"]);
+  assert (ok "ab.cd" ["ab"; "cd"]);
+  assert (ok "ab.cd.e_5_" ["ab"; "cd"; "e_5_"]);
+  assert (not_ok "");
+  assert (not_ok "A");
+  assert (not_ok "a.");
+  assert (not_ok "a\n");
+  assert (not_ok "\na");
+  assert (not_ok "a._b");
+  assert (not_ok "a..b");
+  true
 
-let adapter_prefix = "adapter:"
-
-(* <json repr="adapter:foo"> -> Some "foo" *)
-let json_adapter_of_string s : string option option =
-  if has_prefix s adapter_prefix then
-    Some (Some (remove_prefix s (String.length adapter_prefix)))
-  else (* error *)
-    None
+(* <json adapter="foo.bar"> -> Some ["foo"; "bar"] *)
+let json_adapter_of_string s : json_adapter option option =
+  Some (parse_adapter_name s)
 
 let json_list_of_string s : json_list option =
   match s with
@@ -97,7 +112,7 @@ let json_list_of_string s : json_list option =
   | _ -> (* error *) None
 
 let get_json_adapter an =
-  Atd.Annot.get_field json_adapter_of_string None ["json"] "repr" an
+  Atd.Annot.get_field json_adapter_of_string None ["json"] "adapter" an
 
 let get_json_sum = get_json_adapter
 
@@ -123,3 +138,7 @@ let get_json_record an =
   {
     json_keep_nulls = get_json_keep_nulls an;
   }
+
+let tests = [
+  "parse adapter name", test_parse_adapter_name;
+]

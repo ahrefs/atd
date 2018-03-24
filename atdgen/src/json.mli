@@ -3,8 +3,9 @@
 *)
 
 (* Name of the json adapter, referencing a pair of functions
-   to convert to/from an atd-compatible json tree. *)
-type json_adapter = string
+   to convert to/from an atd-compatible json tree.
+   ["foo"; "bar"] represents "foo.bar". *)
+type json_adapter = string list
 
 type json_float = [ `Float of int option (* max decimal places *)
                   | `Int ]
@@ -57,3 +58,5 @@ val get_json_tag_field : Atd.Annot.t -> string option
 val get_json_untyped : Atd.Annot.t -> bool
 
 val get_json_record : Atd.Annot.t -> json_record
+
+val tests : (string * (unit -> bool)) list

@@ -1,7 +1,7 @@
 (* Helper classes *)
 
 open Printf
-open Atdgen
+open Atdgen_emit
 open Atdj_env
 
 let output_atdj env =

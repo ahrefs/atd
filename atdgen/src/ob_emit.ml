@@ -326,9 +326,9 @@ let rec get_reader_name
 
   let xreader s =
     if tagged then
-      sprintf "Atdgen.Ob_run.read_%s" s
+      sprintf "Atdgen_runtime.Ob_run.read_%s" s
     else
-      sprintf "Atdgen.Ob_run.get_%s_reader" s
+      sprintf "Atdgen_runtime.Ob_run.get_%s_reader" s
   in
   match x with
       `Unit (_, `Unit, `Unit) -> xreader "unit"
@@ -483,7 +483,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
              `List, `Array ->
                let tag = get_biniou_tag x in
                [
-                 `Line (sprintf "Atdgen.Ob_run.write_%slist" un);
+                 `Line (sprintf "Atdgen_runtime.Ob_run.write_%slist" un);
                  `Block [
                    `Line tag;
                    `Line "(";
@@ -494,7 +494,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
            | `Array, `Array ->
                let tag = get_biniou_tag x in
                [
-                 `Line (sprintf "Atdgen.Ob_run.write_%sarray" un);
+                 `Line (sprintf "Atdgen_runtime.Ob_run.write_%sarray" un);
                  `Block [
                    `Line tag;
                    `Line "(";
@@ -513,7 +513,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
     | `Option (_, x, `Option, `Option)
     | `Nullable (_, x, `Nullable, `Nullable) ->
         [
-          `Line (sprintf "Atdgen.Ob_run.write_%soption (" un);
+          `Line (sprintf "Atdgen_runtime.Ob_run.write_%soption (" un);
           `Block (make_writer ~tagged:true deref x);
           `Line ")";
         ]
@@ -674,8 +674,8 @@ and make_table_writer deref tagged list_kind x =
   in
   let iter2 =
     match list_kind with
-        `List -> "Atdgen.Ob_run.list_iter2"
-      | `Array -> "Atdgen.Ob_run.array_iter2"
+        `List -> "Atdgen_runtime.Ob_run.list_iter2"
+      | `Array -> "Atdgen_runtime.Ob_run.array_iter2"
   in
   let l = Array.to_list a in
   let write_header =
@@ -809,7 +809,7 @@ let study_record ~ocaml_version fields =
     in
     if k = 0 then []
     else
-      [ `Line (sprintf "if %s then Atdgen.Ob_run.missing_fields %s %s;"
+      [ `Line (sprintf "if %s then Atdgen_runtime.Ob_run.missing_fields %s %s;"
                  bool_expr bit_fields field_names) ]
   in
   init_fields, init_bits, set_bit, check_bits, create_record
@@ -821,7 +821,7 @@ let wrap_body ~tagged expected_tag body =
       `Annot ("fun", `Line "fun ib ->");
       `Block [
         `Line (sprintf "if Bi_io.read_tag ib <> %i then \
-                        Atdgen.Ob_run.read_error_at ib;"
+                        Atdgen_runtime.Ob_run.read_error_at ib;"
                  expected_tag);
         `Inline body;
       ]
@@ -831,7 +831,7 @@ let wrap_body ~tagged expected_tag body =
       `Annot ("fun", `Line "fun tag ->");
       `Block [
         `Line (sprintf "if tag <> %i then \
-                          Atdgen.Ob_run.read_error () else"
+                          Atdgen_runtime.Ob_run.read_error () else"
                  expected_tag);
         `Block [
           `Line "fun ib ->";
@@ -857,7 +857,7 @@ let wrap_bodies ~tagged l =
         `Line "match Bi_io.read_tag ib with";
         `Block [
           `Inline cases;
-          `Line "| _ -> Atdgen.Ob_run.read_error_at ib"
+          `Line "| _ -> Atdgen_runtime.Ob_run.read_error_at ib"
         ]
       ]
     ]
@@ -879,7 +879,7 @@ let wrap_bodies ~tagged l =
       `Line "function";
       `Block [
         `Inline cases;
-        `Line "| _ -> Atdgen.Ob_run.read_error ()"
+        `Line "| _ -> Atdgen_runtime.Ob_run.read_error ()"
       ]
     ]
 
@@ -919,7 +919,7 @@ let rec make_reader
                       a
                   )
                 );
-                `Line "| _ -> Atdgen.Ob_run.unsupported_variant h has_arg";
+                `Line "| _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg";
               ]
             ];
             `Line ")"
@@ -944,8 +944,8 @@ let rec make_reader
         (match o, b with
              `List, `Array ->
                let f =
-                 if tagged then "Atdgen.Ob_run.read_list"
-                 else "Atdgen.Ob_run.get_list_reader"
+                 if tagged then "Atdgen_runtime.Ob_run.read_list"
+                 else "Atdgen_runtime.Ob_run.get_list_reader"
                in
                [
                  `Line (f ^ " (");
@@ -954,8 +954,8 @@ let rec make_reader
                ]
            | `Array, `Array ->
                let f =
-                 if tagged then "Atdgen.Ob_run.read_array"
-                 else "Atdgen.Ob_run.get_array_reader"
+                 if tagged then "Atdgen_runtime.Ob_run.read_array"
+                 else "Atdgen_runtime.Ob_run.get_array_reader"
                in
                [
                  `Line (f ^ " (");
@@ -969,8 +969,8 @@ let rec make_reader
                let body2 =
                  let f =
                    match list_kind with
-                       `List -> "Atdgen.Ob_run.read_list_value"
-                     | `Array -> "Atdgen.Ob_run.read_array_value"
+                       `List -> "Atdgen_runtime.Ob_run.read_list_value"
+                     | `Array -> "Atdgen_runtime.Ob_run.read_array_value"
                  in
                  [
                    `Line (f ^ " (");
@@ -999,7 +999,7 @@ let rec make_reader
               ];
               `Line ")"
             ];
-            `Line "| _ -> Atdgen.Ob_run.read_error_at ib";
+            `Line "| _ -> Atdgen_runtime.Ob_run.read_error_at ib";
           ]
         ]
         in
@@ -1203,7 +1203,7 @@ and make_tuple_reader deref ~ocaml_version a =
   [
     `Line "let len = Bi_vint.read_uvint ib in";
     `Line (sprintf
-             "if len < %i then Atdgen.Ob_run.missing_tuple_fields len %s;"
+             "if len < %i then Atdgen_runtime.Ob_run.missing_tuple_fields len %s;"
              min_length req_fields);
     `Inline read_cells;
     `Line (sprintf "for i = %i to len - 1 do Bi_io.skip ib done;" tup_len);
@@ -1264,7 +1264,7 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
        `Inline init_bits;
        `Line "let readers =";
        `Block [
-         `Line "Atdgen.Ob_run.array_init2 col_num ib (";
+         `Line "Atdgen_runtime.Ob_run.array_init2 col_num ib (";
          `Block [
            `Line "fun col ib ->";
            `Block [

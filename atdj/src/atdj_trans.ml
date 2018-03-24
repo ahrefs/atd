@@ -3,7 +3,7 @@ open Printf
 open Atdj_names
 open Atdj_env
 open Atdj_util
-open Atdgen
+open Atdgen_emit
 
 (* Calculate the JSON representation of an ATD type.
  *

@@ -1,0 +1,15 @@
+(jbuild_version 1)
+
+(rule
+ ((targets (ag_version.ml))
+  (action
+   (with-stdout-to ${@}
+    (echo "let version = \"${version:atd}\"")))))
+
+;; this is a deprecated library whose only purpose is to re-export the runtime
+;; new users should be using atdgen_runtime
+(library
+ ((name atdgen)
+  (public_name atdgen)
+  (flags (:include ${ROOT}/ocamlflags.sexp))
+  (libraries (atdgen-runtime))))

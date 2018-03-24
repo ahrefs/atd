@@ -1,5 +1,4 @@
-open Atd.Import
-open Atdgen
+open Atdgen_emit
 
 open Printf
 
@@ -194,7 +193,7 @@ let main () =
     Arg.Unit (
       fun () ->
         set_once "unknown field handler" unknown_field_handler
-          "!Atdgen.Util.Json.unknown_field_handler"
+          "!Atdgen_runtime.Util.Json.unknown_field_handler"
     ),
     "
           Call !Atdgen.Util.Json.unknown_field_handler for every unknown JSON field
@@ -216,7 +215,7 @@ let main () =
     Arg.Unit (
       fun () ->
         set_once "constructor mismatch handler" constr_mismatch_handler
-          "!Atdgen.Util.Json.constr_mismatch_handler"
+          "!Atdgen_runtime.Util.Json.constr_mismatch_handler"
     ),
     "
           Given a record type of the form

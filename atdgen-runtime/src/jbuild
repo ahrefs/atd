@@ -1,7 +1,5 @@
 (jbuild_version 1)
 
-(ocamllex (doc_lexer))
-
 (rule
  ((targets (ag_version.ml))
   (action
@@ -9,6 +7,7 @@
     (echo "let version = \"${version:atd}\"")))))
 
 (library
- ((name atdgen_emit)
+ ((name atdgen_runtime)
+  (public_name atdgen-runtime)
   (flags (:include ${ROOT}/ocamlflags.sexp))
-  (libraries (atd yojson))))
+  (libraries (biniou yojson))))

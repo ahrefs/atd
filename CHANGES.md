@@ -10,3 +10,4 @@
 
 * Improve generated code to emit ppx attributes to ignore harmless warnings
 
+* `Ag_version` submodule has been replaced with `Version`.

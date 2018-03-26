@@ -219,6 +219,20 @@ let missing_fields p bit_fields field_names =
 let invalid_variant_tag p s =
   error_with_line p (sprintf "Unsupported variant %S" s)
 
+let read_with_adapter normalize reader p lb =
+  let ast = Yojson.Safe.read_json p lb in
+  let ast' = normalize ast in
+  let s' = Yojson.Safe.to_string ast' in
+  let lb' = Lexing.from_string s' in
+  reader p lb'
+
+let write_with_adapter restore writer ob x =
+  let ob_tmp = Bi_outbuf.create 1024 in
+  writer ob_tmp x;
+  let s_tmp = Bi_outbuf.contents ob_tmp in
+  let ast = Yojson.Safe.from_string s_tmp in
+  let ast' = restore ast in
+  Yojson.Safe.to_outbuf ob ast'
 
 (* We want an identity function that is not inlined *)
 type identity_t = { mutable _identity : 'a. 'a -> 'a }

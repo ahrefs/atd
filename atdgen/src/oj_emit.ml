@@ -457,6 +457,20 @@ let string_expr_of_constr_field p v_of_field field =
             ]
        ))@[ `Line (sprintf ") () %s" v)]
 
+let write_with_adapter opt_adapter writer =
+  match opt_adapter with
+  | None -> writer
+  | Some adapter_path ->
+      let restore =
+        Oj_mapping.json_restorer_of_adapter_path adapter_path in
+      [
+        `Annot ("fun", `Line (
+          sprintf "Atdgen.Oj_run.write_with_adapter %s (" restore
+        ));
+        `Block writer;
+        `Line ")";
+      ]
+
 let rec make_writer p (x : oj_mapping) : Indent.t list =
   match x with
       `Unit _
@@ -864,6 +878,20 @@ let study_record p fields =
   in
   init_fields, init_bits, set_bit, check_bits, create_record
 
+let read_with_adapter opt_adapter reader =
+  match opt_adapter with
+  | None -> reader
+  | Some adapter_path ->
+      let normalize =
+        Oj_mapping.json_normalizer_of_adapter_path adapter_path in
+      [
+        `Annot ("fun", `Line (
+          sprintf "Atdgen.Oj_run.read_with_adapter %s (" normalize
+        ));
+        `Block reader;
+        `Line ")";
+      ]
+
 let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
   match x with
       `Unit _
@@ -875,7 +903,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
     | `External _
     | `Tvar _ -> [ `Line (get_reader_name p x) ]
 
-    | `Sum (_, a, `Sum x, `Sum adapter) ->
+    | `Sum (_, a, `Sum x, `Sum opt_adapter) ->
         let tick =
           match x with
               `Classic -> ""

@@ -202,3 +202,14 @@ let defs_of_atd_module l =
 
 let defs_of_atd_modules l =
   List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l
+
+let module_of_adapter_path l =
+  String.concat "." (List.map String.capitalize_ascii l)
+
+let json_normalizer_of_adapter_path l =
+  let module_ = module_of_adapter_path l in
+  module_ ^ ".normalize"
+
+let json_restorer_of_adapter_path l =
+  let module_ = module_of_adapter_path l in
+  module_ ^ ".restore"

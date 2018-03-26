@@ -15,3 +15,6 @@ val defs_of_atd_modules
        list
     ) list
   -> ('a * (Ocaml.atd_ocaml_repr, Json.json_repr) Mapping.def list) list
+
+val json_normalizer_of_adapter_path : Json.json_adapter -> string
+val json_restorer_of_adapter_path : Json.json_adapter -> string

@@ -206,8 +206,8 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
         else
           let tick =
             match x with
-                `Classic -> ""
-              | `Poly -> "`"
+                Classic -> ""
+              | Poly -> "`"
           in
           let body : Indent.t list =
             [

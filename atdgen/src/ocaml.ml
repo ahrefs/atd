@@ -17,7 +17,7 @@ type pp_convs =
 
 (* Type mapping from ATD to OCaml *)
 
-type atd_ocaml_sum = [ `Classic | `Poly ]
+type atd_ocaml_sum = Classic | Poly
 type atd_ocaml_record = [ `Record | `Object ]
 
 type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
@@ -96,8 +96,8 @@ let string_of_ocaml_int (x : atd_ocaml_int) =
 
 let ocaml_sum_of_string s : atd_ocaml_sum option =
   match s with
-      "classic" -> Some `Classic
-    | "poly" -> Some `Poly
+      "classic" -> Some Classic
+    | "poly" -> Some Poly
     | _ -> None
 
 let ocaml_record_of_string s : atd_ocaml_record option =
@@ -146,7 +146,7 @@ let path_of_target (target : target) =
     | `Validate -> [ "ocaml_validate"; "ocaml" ]
 
 let get_ocaml_sum an =
-  Atd.Annot.get_field ocaml_sum_of_string `Poly ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_sum_of_string Poly ["ocaml"] "repr" an
 
 let get_ocaml_field_prefix an =
   Atd.Annot.get_field (fun s -> Some s) "" ["ocaml"] "field_prefix" an
@@ -357,7 +357,7 @@ let map_def
             let alias = Some (module_path ^ "." ^ ext_name, param) in
             let x =
               match map_expr x with
-                  `Sum (`Classic, _)
+                  `Sum (Classic, _)
                 | `Record (`Record, _) as x -> Some x
                 | _ -> None
             in
@@ -673,8 +673,8 @@ and format_type_expr x =
       `Sum (kind, l) ->
         let op, cl =
           match kind with
-              `Classic -> "", ""
-            | `Poly -> "[", "]"
+              Classic -> "", ""
+            | Poly -> "[", "]"
         in
         List (
             (op, "|", cl, llist),
@@ -722,8 +722,8 @@ and format_field ((s, is_mutable), t, doc) =
 and format_variant kind (s, o, doc) =
   let s =
     match kind with
-        `Classic -> s
-      | `Poly -> "`" ^ s
+        Classic -> s
+      | Poly -> "`" ^ s
   in
   let cons = make_atom s in
   let variant =

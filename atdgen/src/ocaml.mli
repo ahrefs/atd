@@ -2,7 +2,7 @@ type pp_convs =
   | Camlp4 of string list
   | Ppx of string list
 
-type atd_ocaml_sum = [ `Classic | `Poly ]
+type atd_ocaml_sum = Classic | Poly
 type atd_ocaml_record = [ `Record | `Object ]
 type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
 type atd_ocaml_list = [ `List | `Array ]

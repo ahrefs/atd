@@ -42,8 +42,8 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
       (match o with
          `Sum x ->
            (match x with
-              `Poly -> (fn, l :: pvn, cvn)
-            | `Classic ->
+              Poly -> (fn, l :: pvn, cvn)
+            | Classic ->
                 if is_root then (fn, pvn, l :: cvn)
                 else
                   error loc
@@ -202,7 +202,7 @@ let get_type_constraint ~original_types def =
 let needs_type_annot (x : _ expr) =
   match x with
   | `Record (_, _, `Record `Record, _)
-  | `Sum (_, _, `Sum `Classic, _) -> true
+  | `Sum (_, _, `Sum Classic, _) -> true
   | _ -> false
 
 let insert_annot type_annot =

@@ -388,7 +388,7 @@ let get_left_of_string_name p name param =
 let destruct_sum (x : oj_mapping) =
   match x with
       `Sum (_, a, `Sum x, `Sum) ->
-        let tick = match x with `Classic -> "" | `Poly -> "`" in
+        let tick = match x with Classic -> "" | Poly -> "`" in
         tick, a
     | `Unit _ -> error (loc_of_mapping x) "Cannot destruct unit"
     | `Bool _ -> error (loc_of_mapping x) "Cannot destruct bool"
@@ -878,8 +878,8 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
     | `Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
-              `Classic -> ""
-            | `Poly -> "`"
+              Classic -> ""
+            | Poly -> "`"
         in
 
         let invalid_variant_tag =
@@ -1060,7 +1060,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
           };
         |]
         in
-        make_reader p (Some "_ option") (`Sum (loc, a, `Sum `Classic, `Sum))
+        make_reader p (Some "_ option") (`Sum (loc, a, `Sum Classic, `Sum))
 
     | `Nullable (_, x, `Nullable, `Nullable) ->
         [
@@ -1196,8 +1196,8 @@ and make_deconstructed_reader p loc fields set_bit =
       let s = string_expr_of_constr_field p v_of_field constrf in
       let tick =
         match x with
-          `Classic -> ""
-        | `Poly -> "`"
+          Classic -> ""
+        | Poly -> "`"
       in
 
       let invalid_variant_tag =

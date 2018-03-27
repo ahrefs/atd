@@ -412,8 +412,8 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
     | `Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
-              `Classic -> ""
-            | `Poly -> "`"
+              Classic -> ""
+            | Poly -> "`"
         in
         let match_ =
           [
@@ -900,8 +900,8 @@ let rec make_reader
     | `Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
-              `Classic -> ""
-            | `Poly -> "`"
+              Classic -> ""
+            | Poly -> "`"
         in
         let body =
           [

@@ -74,7 +74,7 @@ type atd_ocaml_repr =
     | `Def of atd_ocaml_def
     ]
 
-type target = [ `Default | `Biniou | `Json | `Validate ]
+type target = Default | Biniou | Json | Validate
 
 
 let ocaml_int_of_string s : atd_ocaml_int option =
@@ -140,10 +140,10 @@ let get_ocaml_type_path atd_name an =
 
 let path_of_target (target : target) =
   match target with
-      `Default -> [ "ocaml" ]
-    | `Biniou -> [ "ocaml_biniou"; "ocaml" ]
-    | `Json -> [ "ocaml_json"; "ocaml" ]
-    | `Validate -> [ "ocaml_validate"; "ocaml" ]
+      Default -> [ "ocaml" ]
+    | Biniou -> [ "ocaml_biniou"; "ocaml" ]
+    | Json -> [ "ocaml_json"; "ocaml" ]
+    | Validate -> [ "ocaml_validate"; "ocaml" ]
 
 let get_ocaml_sum an =
   Atd.Annot.get_field ocaml_sum_of_string Poly ["ocaml"] "repr" an
@@ -215,10 +215,10 @@ let get_ocaml_module target an =
               let type_module = s ^ "_t" in
               let main_module =
                 match target with
-                    `Default -> type_module
-                  | `Biniou -> s ^ "_b"
-                  | `Json -> s ^ "_j"
-                  | `Validate -> s ^ "_v"
+                    Default -> type_module
+                  | Biniou -> s ^ "_b"
+                  | Json -> s ^ "_j"
+                  | Validate -> s ^ "_v"
               in
               Some (type_module, main_module)
 

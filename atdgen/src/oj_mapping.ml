@@ -171,12 +171,12 @@ and mapping_of_field ocaml_field_prefix = function
 
 
 let def_of_atd (loc, (name, param, an), x) =
-  let ocaml_predef = Ocaml.get_ocaml_predef `Json an in
+  let ocaml_predef = Ocaml.get_ocaml_predef Json an in
   let doc = Doc.get_doc loc an in
   let o =
     match as_abstract x with
         Some (_, _) ->
-          (match Ocaml.get_ocaml_module_and_t `Json name an with
+          (match Ocaml.get_ocaml_module_and_t Json name an with
                None -> None
              | Some (types_module, main_module, ext_name) ->
                  let args = List.map (fun s -> `Tvar (loc, s)) param in

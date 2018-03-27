@@ -1908,7 +1908,7 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs ~target:`Json ~type_aliases (head, m1) in
+    Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
   let header =
     let src =

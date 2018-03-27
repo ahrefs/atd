@@ -97,7 +97,7 @@ and mapping_of_cell (loc, x, an) =
 
 
 and mapping_of_variant = function
-    `Variant (loc, (s, an), o) ->
+    Variant (loc, (s, an), o) ->
       let ocaml_cons = Ocaml.get_ocaml_cons s an in
       let doc = Doc.get_doc loc an in
       let ocaml_t =
@@ -109,8 +109,8 @@ and mapping_of_variant = function
       let biniou_t = `Variant in
       let arg =
         match o with
-            None -> None
-          | Some x -> Some (mapping_of_expr x) in
+          None -> None
+        | Some x -> Some (mapping_of_expr x) in
       {
         var_loc = loc;
         var_cons = s;
@@ -119,7 +119,7 @@ and mapping_of_variant = function
         var_brepr = biniou_t
       }
 
-  | `Inherit _ -> assert false
+  | Inherit _ -> assert false
 
 and mapping_of_field ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->

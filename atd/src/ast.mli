@@ -91,15 +91,15 @@ and type_inst = loc * string * type_expr list
     (** A type name and its arguments *)
 
 and variant =
-    [ `Variant of (loc * (string * annot) * type_expr option)
-    | `Inherit of (loc * type_expr) ]
-      (**
-         A single variant or an [inherit] statement.
-         [`Inherit] statements can be expanded into variants
-         using {!Atd_inherit}
-         or at loading time using the [inherit_variant] option
-         offered by the {!Atd.Util} functions.
-      *)
+  | Variant of loc * (string * annot) * type_expr option
+  | Inherit of loc * type_expr
+  (**
+     A single variant or an [inherit] statement.
+     [Inherit] statements can be expanded into variants
+     using {!Atd_inherit}
+     or at loading time using the [inherit_variant] option
+     offered by the {!Atd.Util} functions.
+  *)
 
 and cell = loc * type_expr * annot
     (** Tuple cell. Note that annotations placed before the type

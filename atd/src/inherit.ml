@@ -32,8 +32,8 @@ let get_field_name : field -> string = function
   | `Inherit _ -> assert false
 
 let get_variant_name : variant -> string = function
-    `Variant (_, (k, _), _) -> k
-  | `Inherit _ -> assert false
+    Variant (_, (k, _), _) -> k
+  | Inherit _ -> assert false
 
 
 let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
@@ -117,17 +117,17 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
         )
 
   and subst_variant param = function
-      `Variant (loc, k, opt_t) as x ->
+      Variant (loc, k, opt_t) as x ->
         (match opt_t with
-             None -> [ x ]
-           | Some t -> [ `Variant (loc, k, Some (subst false param t)) ]
+           None -> [ x ]
+         | Some t -> [ Variant (loc, k, Some (subst false param t)) ]
         )
-    | `Inherit (_, t) as x ->
+    | Inherit (_, t) as x ->
         (match subst true param t with
-             `Sum (_, vl, _) ->
-               if inherit_variants then vl
-               else [ x ]
-           | _ -> failwith "Not a sum type"
+           `Sum (_, vl, _) ->
+             if inherit_variants then vl
+             else [ x ]
+         | _ -> failwith "Not a sum type"
         )
   in
   subst false [] t0

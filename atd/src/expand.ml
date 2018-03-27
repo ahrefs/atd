@@ -156,15 +156,15 @@ and mapvar_field f = function
   | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
 
 and mapvar_variant f = function
-    `Variant (loc, k, opt_t) ->
-      `Variant (
+    Variant (loc, k, opt_t) ->
+      Variant (
         loc, k,
         (match opt_t with
-             None -> None
-           | Some t -> Some (mapvar_expr f t)
+           None -> None
+         | Some t -> Some (mapvar_expr f t)
         )
       )
-  | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
+  | Inherit (loc, t) -> Inherit (loc, mapvar_expr f t)
 
 
 let var_of_int i =
@@ -439,12 +439,12 @@ let expand ?(keep_poly = false) (l : type_def list)
     | `Inherit (loc, t) -> `Inherit (loc, subst env t)
 
   and subst_variant env = function
-      `Variant (loc, k, opt_t) as x ->
+      Variant (loc, k, opt_t) as x ->
         (match opt_t with
-             None -> x
-           | Some t -> `Variant (loc, k, Some (subst env t))
+           None -> x
+         | Some t -> Variant (loc, k, Some (subst env t))
         )
-    | `Inherit (loc, t) -> `Inherit (loc, subst env t)
+    | Inherit (loc, t) -> Inherit (loc, subst env t)
 
   and subst_only_args env = function
       `List (loc, t, a)
@@ -533,12 +533,12 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
     | `Inherit (loc, t) -> `Inherit (loc, replace t)
 
   and replace_variant = function
-      `Variant (loc, k, opt_t) as x ->
+      Variant (loc, k, opt_t) as x ->
         (match opt_t with
-             None -> x
-           | Some t -> `Variant (loc, k, Some (replace t))
+           None -> x
+         | Some t -> Variant (loc, k, Some (replace t))
         )
-    | `Inherit (loc, t) -> `Inherit (loc, replace t)
+    | Inherit (loc, t) -> Inherit (loc, replace t)
   in
   replace t
 

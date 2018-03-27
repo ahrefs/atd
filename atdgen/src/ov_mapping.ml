@@ -239,7 +239,7 @@ and mapping_of_cell is_shallow (loc, x, an) =
 
 
 and mapping_of_variant is_shallow = function
-    `Variant (loc, (s, an), o) ->
+    Variant (loc, (s, an), o) ->
       let ocaml_cons = Ocaml.get_ocaml_cons s an in
       let doc = Doc.get_doc loc an in
       let ocaml_t =
@@ -250,11 +250,11 @@ and mapping_of_variant is_shallow = function
       in
       let arg, validate_t =
         match o with
-            None ->
-              None, (None, true)
-          | Some x ->
-              (Some (mapping_of_expr is_shallow x),
-               (None, noval x && is_shallow x))
+          None ->
+            None, (None, true)
+        | Some x ->
+            (Some (mapping_of_expr is_shallow x),
+             (None, noval x && is_shallow x))
       in
       {
         var_loc = loc;
@@ -264,7 +264,7 @@ and mapping_of_variant is_shallow = function
         var_brepr = validate_t;
       }
 
-  | `Inherit _ -> assert false
+  | Inherit _ -> assert false
 
 and mapping_of_field is_shallow ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->

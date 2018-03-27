@@ -330,7 +330,7 @@ and trans_sum my_name env (`Sum (_, vars, _)) =
   let class_name = Atdj_names.to_class_name my_name in
 
   let cases = List.map (function
-    | `Variant (_, (atd_name, an), opt_ty) ->
+    | Atd.Ast.Variant (_, (atd_name, an), opt_ty) ->
         let json_name = get_json_variant_name atd_name an in
         let func_name, enum_name, field_name =
           get_java_variant_names atd_name an in
@@ -342,7 +342,7 @@ and trans_sum my_name env (`Sum (_, vars, _)) =
               Some (ty, java_ty)
         in
         (json_name, func_name, enum_name, field_name, opt_java_ty)
-    | `Inherit _ -> assert false
+    | Inherit _ -> assert false
   ) vars
   in
 

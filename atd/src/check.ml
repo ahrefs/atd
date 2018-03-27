@@ -18,53 +18,53 @@ let check_inheritance tbl (t0 : type_expr) =
     let msg =
       sprintf "Cannot inherit from non-%s type"
         (match kind with
-             `Sum -> "variant"
-           | `Record -> "record"
-           | _ -> assert false)
+           `Sum -> "variant"
+         | `Record -> "record"
+         | _ -> assert false)
     in
     error_at (loc_of_type_expr t0) msg
   in
 
   let rec check kind inherited (t : type_expr) =
     match t with
-        `Sum (_, vl, _) when kind = `Sum ->
-          List.iter (
-            function
-                `Inherit (_, t) -> check kind inherited t
-              | `Variant _ -> ()
-          ) vl
-
-      | `Record (_, fl, _) when kind = `Record ->
-          List.iter (
+      `Sum (_, vl, _) when kind = `Sum ->
+        List.iter (
           function
-              `Inherit (_, t) -> check kind inherited t
-            | `Field _ -> ()
-          ) fl
+            Inherit (_, t) -> check kind inherited t
+          | Variant _ -> ()
+        ) vl
 
-      | `Sum _
-      | `Record _
-      | `Tuple _
-      | `List _
-      | `Option _
-      | `Nullable _
-      | `Shared _
-      | `Wrap _ as x -> not_a kind x
+    | `Record (_, fl, _) when kind = `Record ->
+        List.iter (
+          function
+            `Inherit (_, t) -> check kind inherited t
+          | `Field _ -> ()
+        ) fl
 
-      | `Name (_, (loc, k, _), _) ->
-          if List.mem k inherited then
-            error_at (loc_of_type_expr t0) "Cyclic inheritance"
-          else
-            let (_arity, opt_def) =
-              try Hashtbl.find tbl k
-              with Not_found -> error_at loc ("Undefined type " ^ k)
-            in
-            (match opt_def with
-                 None -> ()
-               | Some (_, _, t) -> check kind (k :: inherited) t
-            )
+    | `Sum _
+    | `Record _
+    | `Tuple _
+    | `List _
+    | `Option _
+    | `Nullable _
+    | `Shared _
+    | `Wrap _ as x -> not_a kind x
 
-      | `Tvar _ ->
-          error_at (loc_of_type_expr t0) "Cannot inherit from a type variable"
+    | `Name (_, (loc, k, _), _) ->
+        if List.mem k inherited then
+          error_at (loc_of_type_expr t0) "Cyclic inheritance"
+        else
+          let (_arity, opt_def) =
+            try Hashtbl.find tbl k
+            with Not_found -> error_at loc ("Undefined type " ^ k)
+          in
+          (match opt_def with
+             None -> ()
+           | Some (_, _, t) -> check kind (k :: inherited) t
+          )
+
+    | `Tvar _ ->
+        error_at (loc_of_type_expr t0) "Cannot inherit from a type variable"
 
   in
 
@@ -102,9 +102,9 @@ let check_type_expr tbl tvars (t : type_expr) =
         if arity <> n then
           error_at loc (sprintf "Type %s was defined to take %i parameters, \
                                  but %i argument%s."
-                       k arity n (if n > 1 then "s are given"
-                                  else " is given")
-                    );
+                          k arity n (if n > 1 then "s are given"
+                                     else " is given")
+                       );
 
         List.iter check tal
 
@@ -114,17 +114,17 @@ let check_type_expr tbl tvars (t : type_expr) =
 
 
   and check_variant accu = function
-      `Variant (loc, (k, _), opt_t) ->
+      Variant (loc, (k, _), opt_t) ->
         if Hashtbl.mem accu k then
           error_at loc
             (sprintf
                "Multiple definitions of the same variant constructor %s" k);
         Hashtbl.add accu k ();
         (match opt_t with
-             None -> ()
-           | Some t -> check t)
+           None -> ()
+         | Some t -> check t)
 
-    | `Inherit (_, t) ->
+    | Inherit (_, t) ->
         (* overriding is allowed, for now without a warning *)
         check t
 

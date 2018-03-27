@@ -1778,8 +1778,8 @@ let make_ocaml_json_impl
     ) defs
 
 let check_variant untypeds = function
-  | `Inherit _ -> assert false (* inherits have been inlined by now *)
-  | `Variant (loc, (cons, ann), arg) ->
+  | Inherit _ -> assert false (* inherits have been inlined by now *)
+  | Variant (loc, (cons, ann), arg) ->
       if not (Atd.Annot.get_flag ["json"] "untyped" ann)
       then untypeds
       else match arg with

@@ -308,23 +308,23 @@ let rec map_expr (x : type_expr) : ocaml_expr =
 
 and map_variant (x : variant) : ocaml_variant =
   match x with
-      `Inherit _ -> assert false
-    | `Variant (loc, (s, an), o) ->
-        let s = get_ocaml_cons s an in
-        (s, omap map_expr o, Doc.get_doc loc an)
+    Inherit _ -> assert false
+  | Variant (loc, (s, an), o) ->
+      let s = get_ocaml_cons s an in
+      (s, omap map_expr o, Doc.get_doc loc an)
 
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
-      `Inherit _ -> assert false
-    | `Field (loc, (atd_fname, _, an), x) ->
-        let ocaml_fname =
-          get_ocaml_fname (ocaml_field_prefix ^ atd_fname) an in
-        let fname =
-          if ocaml_fname = atd_fname then ocaml_fname
-          else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
-        in
-        let is_mutable = get_ocaml_mutable an in
-        ((fname, is_mutable), map_expr x, Doc.get_doc loc an)
+    `Inherit _ -> assert false
+  | `Field (loc, (atd_fname, _, an), x) ->
+      let ocaml_fname =
+        get_ocaml_fname (ocaml_field_prefix ^ atd_fname) an in
+      let fname =
+        if ocaml_fname = atd_fname then ocaml_fname
+        else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
+      in
+      let is_mutable = get_ocaml_mutable an in
+      ((fname, is_mutable), map_expr x, Doc.get_doc loc an)
 
 let map_def
     ~(target : target)

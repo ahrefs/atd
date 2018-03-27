@@ -94,15 +94,15 @@ and print_cell buf (loc, x, a) =
 
 and print_variant buf x =
   match x with
-      `Variant (loc, (s, a), o) ->
-        bprintf buf "`Variant (%a, (%S, %a), %a)"
-          print_loc loc
-          s print_annot_list a
-          (print_opt print_type_expr) o
-    | `Inherit (loc, x) ->
-        bprintf buf "`Inherit (%a, %a)"
-          print_loc loc
-          print_type_expr x
+    Variant (loc, (s, a), o) ->
+      bprintf buf "`Variant (%a, (%S, %a), %a)"
+        print_loc loc
+        s print_annot_list a
+        (print_opt print_type_expr) o
+  | Inherit (loc, x) ->
+      bprintf buf "`Inherit (%a, %a)"
+        print_loc loc
+        print_type_expr x
 
 and print_field buf x =
   match x with

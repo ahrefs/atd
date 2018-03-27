@@ -45,8 +45,8 @@ and type_expr =
 and type_inst = loc * string * type_expr list
 
 and variant =
-    [ `Variant of (loc * (string * annot) * type_expr option)
-    | `Inherit of (loc * type_expr) ]
+  | Variant of loc * (string * annot) * type_expr option
+  | Inherit of loc * type_expr
 
 and cell = loc * type_expr * annot
 
@@ -138,15 +138,15 @@ let rec amap_type_expr f (x : type_expr) =
         `Name (loc, (loc2, name, List.map (amap_type_expr f) args), f a)
 
 and amap_variant f = function
-    `Variant (loc, (name, a), o) ->
+    Variant (loc, (name, a), o) ->
       let o =
         match o with
-            None -> None
-          | Some x -> Some (amap_type_expr f x)
+          None -> None
+        | Some x -> Some (amap_type_expr f x)
       in
-      `Variant (loc, (name, f a), o)
-  | `Inherit (loc, x) ->
-      `Inherit (loc, amap_type_expr f x)
+      Variant (loc, (name, f a), o)
+  | Inherit (loc, x) ->
+      Inherit (loc, amap_type_expr f x)
 
 and amap_field f = function
     `Field (loc, (name, kind, a), x) ->
@@ -204,9 +204,9 @@ let rec fold (f : type_expr -> 'a -> 'a) (x : type_expr) acc =
 
 and fold_variant f x acc =
   match x with
-      `Variant (_, _, Some type_expr) -> fold f type_expr acc
-    | `Variant _ -> acc
-    | `Inherit (_, type_expr) -> fold f type_expr acc
+      Variant (_, _, Some type_expr) -> fold f type_expr acc
+    | Variant _ -> acc
+    | Inherit (_, type_expr) -> fold f type_expr acc
 
 and fold_field f x acc =
   match x with

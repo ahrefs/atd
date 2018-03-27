@@ -175,11 +175,11 @@ variant_list0:
 
 variant:
 | x = UIDENT a = annot OF t = type_expr
-     { `Variant (($startpos, $endpos), (x, a), Some t) }
+     { Variant (($startpos, $endpos), (x, a), Some t) }
 | x = UIDENT a = annot
-     { `Variant (($startpos, $endpos), (x, a), None) }
+     { Variant (($startpos, $endpos), (x, a), None) }
 | INHERIT t = type_expr
-     { `Inherit (($startpos, $endpos), t) }
+     { Inherit (($startpos, $endpos), t) }
 | UIDENT annot OF _e=error
      { syntax_error "Expecting type expression after 'of'"
          $startpos(_e) $endpos(_e) }

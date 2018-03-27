@@ -11,3 +11,7 @@
 * Improve generated code to emit ppx attributes to ignore harmless warnings
 
 * `Ag_version` submodule has been replaced with `Version`.
+
+* Transition `atd` liases using the `(wrapped true)` mode of jbuilder. This is a
+  breaking change for all of those who use `atd` the library. All modules are
+  now accessible under teh `Atd.` entry module.

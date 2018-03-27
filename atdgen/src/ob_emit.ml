@@ -233,13 +233,13 @@ let rec get_writer_name
         sprintf "Bi_io.write_%sbool" un
     | `Int (loc, `Int o, `Int b) ->
         (match o, b with
-             `Int, `Uvint -> sprintf "Bi_io.write_%suvint" un
-           | `Int, `Svint -> sprintf "Bi_io.write_%ssvint" un
-           | `Char, `Int8 -> sprintf "Bi_io.write_%schar" un
-           | `Int, `Int8 -> sprintf "Bi_io.write_%sint8" un
-           | `Int, `Int16 -> sprintf "Bi_io.write_%sint16" un
-           | `Int32, `Int32 -> sprintf "Bi_io.write_%sint32" un
-           | `Int64, `Int64 -> sprintf "Bi_io.write_%sint64" un
+             Int, `Uvint -> sprintf "Bi_io.write_%suvint" un
+           | Int, `Svint -> sprintf "Bi_io.write_%ssvint" un
+           | Char, `Int8 -> sprintf "Bi_io.write_%schar" un
+           | Int, `Int8 -> sprintf "Bi_io.write_%sint8" un
+           | Int, `Int16 -> sprintf "Bi_io.write_%sint16" un
+           | Int32, `Int32 -> sprintf "Bi_io.write_%sint32" un
+           | Int64, `Int64 -> sprintf "Bi_io.write_%sint64" un
            | _ ->
                error loc "Unsupported combination of OCaml/Biniou int types"
         )
@@ -337,13 +337,13 @@ let rec get_reader_name
 
     | `Int (loc, `Int o, `Int b) ->
         (match o, b with
-             `Int, `Uvint
-           | `Int, `Svint
-           | `Int, `Int8
-           | `Int, `Int16 -> xreader "int"
-           | `Char, `Int8 -> xreader "char"
-           | `Int32, `Int32 -> xreader "int32"
-           | `Int64, `Int64 -> xreader "int64"
+             Int, `Uvint
+           | Int, `Svint
+           | Int, `Int8
+           | Int, `Int16 -> xreader "int"
+           | Char, `Int8 -> xreader "char"
+           | Int32, `Int32 -> xreader "int32"
+           | Int64, `Int64 -> xreader "int64"
            | _ ->
                error loc "Unsupported combination of OCaml/Biniou int types"
         )

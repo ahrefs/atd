@@ -20,7 +20,7 @@ type pp_convs =
 type atd_ocaml_sum = Classic | Poly
 type atd_ocaml_record = [ `Record | `Object ]
 
-type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
+type atd_ocaml_int = Int | Char | Int32 | Int64 | Float
 type atd_ocaml_list = List | Array
 
 type atd_ocaml_wrap = {
@@ -79,20 +79,20 @@ type target = [ `Default | `Biniou | `Json | `Validate ]
 
 let ocaml_int_of_string s : atd_ocaml_int option =
   match s with
-      "int" -> Some `Int
-    | "char" -> Some `Char
-    | "int32" -> Some `Int32
-    | "int64" -> Some `Int64
-    | "float" -> Some `Float
+      "int" -> Some Int
+    | "char" -> Some Char
+    | "int32" -> Some Int32
+    | "int64" -> Some Int64
+    | "float" -> Some Float
     | _ -> None
 
 let string_of_ocaml_int (x : atd_ocaml_int) =
   match x with
-      `Int -> "int"
-    | `Char -> "Char.t"
-    | `Int32 -> "Int32.t"
-    | `Int64 -> "Int64.t"
-    | `Float -> "float"
+      Int -> "int"
+    | Char -> "Char.t"
+    | Int32 -> "Int32.t"
+    | Int64 -> "Int64.t"
+    | Float -> "float"
 
 let ocaml_sum_of_string s : atd_ocaml_sum option =
   match s with
@@ -118,7 +118,7 @@ let string_of_ocaml_list (x : atd_ocaml_list) =
     | Array -> "Atdgen_runtime.Util.ocaml_array"
 
 let get_ocaml_int an =
-  Atd.Annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_int_of_string Int ["ocaml"] "repr" an
 
 let get_ocaml_type_path atd_name an =
   let x =
@@ -790,11 +790,11 @@ let get_implicit_ocaml_default deref x =
     | `Bool (_, `Bool, _) -> Some "false"
     | `Int (_, `Int o, _) ->
         Some (match o with
-                  `Int -> "0"
-                | `Char -> "'\000'"
-                | `Int32 -> "0l"
-                | `Int64 -> "0L"
-                | `Float -> "0.")
+                  Int -> "0"
+                | Char -> "'\000'"
+                | Int32 -> "0l"
+                | Int64 -> "0L"
+                | Float -> "0.")
     | `Float (_, `Float, _) -> Some "0.0"
     | `String (_, `String, _) -> Some "\"\""
     | `List (_, _, `List List, _) -> Some "[]"

@@ -281,11 +281,11 @@ let rec get_writer_name
         "Yojson.Safe.write_bool"
     | `Int (_, `Int o, `Int) ->
         (match o with
-             `Int -> "Yojson.Safe.write_int"
-           | `Char ->  "Atdgen_runtime.Oj_run.write_int8"
-           | `Int32 -> "Atdgen_runtime.Oj_run.write_int32"
-           | `Int64 -> "Atdgen_runtime.Oj_run.write_int64"
-           | `Float -> "Atdgen_runtime.Oj_run.write_float_as_int"
+             Int -> "Yojson.Safe.write_int"
+           | Char ->  "Atdgen_runtime.Oj_run.write_int8"
+           | Int32 -> "Atdgen_runtime.Oj_run.write_int32"
+           | Int64 -> "Atdgen_runtime.Oj_run.write_int64"
+           | Float -> "Atdgen_runtime.Oj_run.write_float_as_int"
         )
 
     | `Float (_, `Float, `Float j) ->
@@ -345,11 +345,11 @@ let rec get_reader_name
     | `Bool (_, `Bool, `Bool) -> "Atdgen_runtime.Oj_run.read_bool"
     | `Int (_, `Int o, `Int) ->
         (match o with
-             `Int -> "Atdgen_runtime.Oj_run.read_int"
-           | `Char -> "Atdgen_runtime.Oj_run.read_int8"
-           | `Int32 -> "Atdgen_runtime.Oj_run.read_int32"
-           | `Int64 -> "Atdgen_runtime.Oj_run.read_int64"
-           | `Float -> "Atdgen_runtime.Oj_run.read_number"
+             Int -> "Atdgen_runtime.Oj_run.read_int"
+           | Char -> "Atdgen_runtime.Oj_run.read_int8"
+           | Int32 -> "Atdgen_runtime.Oj_run.read_int32"
+           | Int64 -> "Atdgen_runtime.Oj_run.read_int64"
+           | Float -> "Atdgen_runtime.Oj_run.read_number"
         )
 
     | `Float (_, `Float, `Float _) -> "Atdgen_runtime.Oj_run.read_number"

@@ -4,7 +4,7 @@ type pp_convs =
 
 type atd_ocaml_sum = Classic | Poly
 type atd_ocaml_record = [ `Record | `Object ]
-type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
+type atd_ocaml_int = Int | Char | Int32 | Int64 | Float
 type atd_ocaml_list = List | Array
 type target = [ `Default | `Biniou | `Json | `Validate ]
 

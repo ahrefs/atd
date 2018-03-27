@@ -321,3 +321,32 @@ let get_let ~is_rec ~is_first =
 let write_opens buf l =
   List.iter (fun s -> bprintf buf "open %s\n" s) l;
   bprintf buf "\n"
+
+let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
+    ~mapping_of_expr =
+  let ocaml_predef = Ocaml.get_ocaml_predef target an in
+  let doc = Doc.get_doc loc an in
+  let o =
+    match as_abstract x with
+      Some (_, _) ->
+        (match Ocaml.get_ocaml_module_and_t target name an with
+           None -> None
+         | Some (types_module, main_module, ext_name) ->
+             let args = List.map (fun s -> Tvar (loc, s)) param in
+             Some (External
+                     (loc, name, args,
+                      Ocaml.Repr.External (types_module, main_module, ext_name),
+                      external_))
+        )
+    | None -> Some (mapping_of_expr x)
+  in
+  {
+    def_loc = loc;
+    def_name = name;
+    def_param = param;
+    def_value = o;
+    def_arepr =
+      Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
+                       ocaml_ddoc = doc };
+    def_brepr = def;
+  }

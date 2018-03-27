@@ -166,33 +166,9 @@ and mapping_of_field ocaml_field_prefix = function
   | `Inherit _ -> assert false
 
 
-let def_of_atd (loc, (name, param, an), x) =
-  let ocaml_predef = Ocaml.get_ocaml_predef Json an in
-  let doc = Doc.get_doc loc an in
-  let o =
-    match as_abstract x with
-      Some (_, _) ->
-        (match Ocaml.get_ocaml_module_and_t Json name an with
-           None -> None
-         | Some (types_module, main_module, ext_name) ->
-             let args = List.map (fun s -> Tvar (loc, s)) param in
-             Some (External
-                     (loc, name, args,
-                      Ocaml.Repr.External (types_module, main_module, ext_name),
-                      Json.External))
-        )
-    | None -> Some (mapping_of_expr x)
-  in
-  {
-    def_loc = loc;
-    def_name = name;
-    def_param = param;
-    def_value = o;
-    def_arepr =
-      Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
-                       ocaml_ddoc = doc };
-    def_brepr = Def;
-  }
+let def_of_atd atd =
+  Ox_emit.def_of_atd atd ~target:Json ~external_:Json.External
+    ~mapping_of_expr ~def:Json.Def
 
 let defs_of_atd_module l =
   List.map (function Atd.Ast.Type def -> def_of_atd def) l

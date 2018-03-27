@@ -5,7 +5,7 @@
 type json_float = [ `Float of int option (* max decimal places *)
                   | `Int ]
 
-type json_list = [ `Array | `Object ]
+type json_list = Array | Object
 
 type json_variant = { json_cons : string option }
 
@@ -65,12 +65,12 @@ let get_json_float an : json_float =
 
 let json_list_of_string s : json_list option =
   match s with
-      "array" -> Some `Array
-    | "object" -> Some `Object
+      "array" -> Some Array
+    | "object" -> Some Object
     | _ -> None
 
 let get_json_list an =
-  Atd.Annot.get_field json_list_of_string `Array ["json"] "repr" an
+  Atd.Annot.get_field json_list_of_string Array ["json"] "repr" an
 
 let get_json_cons default an =
   Atd.Annot.get_field (fun s -> Some s) default ["json"] "name" an

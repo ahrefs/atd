@@ -508,7 +508,7 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
 
   | List (loc, x, `List o, `List j) ->
       (match j with
-         `Array ->
+         Array ->
            let write =
              match o with
                List -> "Atdgen_runtime.Oj_run.write_list ("
@@ -520,7 +520,7 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
              `Line ")";
            ]
 
-       | `Object ->
+       | Object ->
            let k, v = get_assoc_type p.deref loc x in
            let write =
              match o with
@@ -1011,7 +1011,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
 
     | List (loc, x, `List o, `List j) ->
         (match j with
-             `Array ->
+             Array ->
                let read =
                  match o with
                      List -> "Atdgen_runtime.Oj_run.read_list ("
@@ -1023,7 +1023,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
                  `Line ")";
                ]
 
-           | `Object ->
+           | Object ->
                let k, v = get_assoc_type p.deref loc x in
                let read =
                  match o with

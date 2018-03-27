@@ -12,27 +12,25 @@ type biniou_list = [ `Array | `Table ]
 type biniou_field = { biniou_unwrapped : bool }
 
 type biniou_repr =
-    [
-    | `Unit
-    | `Bool
-    | `Int of biniou_int
-    | `Float of biniou_float
+  | Unit
+  | Bool
+  | Int of biniou_int
+  | Float of biniou_float
 
-    | `String
-    | `Sum
-    | `Record
-    | `Tuple
-    | `List of biniou_list
-    | `Option
-    | `Nullable
-    | `Wrap
-    | `External
+  | String
+  | Sum
+  | Record
+  | Tuple
+  | List of biniou_list
+  | Option
+  | Nullable
+  | Wrap
+  | External
 
-    | `Cell
-    | `Field of biniou_field
-    | `Variant
-    | `Def
-    ]
+  | Cell
+  | Field of biniou_field
+  | Variant
+  | Def
 
 let biniou_int_of_string s : biniou_int option =
   match s with

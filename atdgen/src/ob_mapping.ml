@@ -13,14 +13,14 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
   match x with
     Sum (loc, l, an) ->
       let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
-      let biniou_t = `Sum in
+      let biniou_t = Biniou.Sum in
       Sum (loc, Array.of_list (List.map mapping_of_variant l),
            ocaml_t, biniou_t)
 
   | Record (loc, l, an) ->
       let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
       let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
-      let biniou_t = `Record in
+      let biniou_t = Biniou.Record in
       Record (loc,
               Array.of_list
                 (List.map (mapping_of_field ocaml_field_prefix) l),
@@ -28,23 +28,23 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
 
   | Tuple (loc, l, _) ->
       let ocaml_t = Ocaml.Repr.Tuple in
-      let biniou_t = `Tuple in
+      let biniou_t = Biniou.Tuple in
       Tuple (loc, Array.of_list (List.map mapping_of_cell l),
              ocaml_t, biniou_t)
 
   | List (loc, x, an) ->
       let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
-      let biniou_t = `List (Biniou.get_biniou_list an) in
+      let biniou_t = Biniou.List (Biniou.get_biniou_list an) in
       List (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
   | Option (loc, x, _) ->
       let ocaml_t = Ocaml.Repr.Option in
-      let biniou_t = `Option in
+      let biniou_t = Biniou.Option in
       Option (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
   | Nullable (loc, x, _) ->
       let ocaml_t = Ocaml.Repr.Nullable in
-      let biniou_t = `Nullable in
+      let biniou_t = Biniou.Nullable in
       Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
   | Shared (_, _, _) ->
@@ -52,24 +52,24 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
 
   | Wrap (loc, x, a) ->
       let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap loc a) in
-      let json_t = `Wrap in
+      let json_t = Biniou.Wrap in
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
   | Name (loc, (_, s, l), an) ->
       (match s with
          "unit" ->
-           Unit (loc, Unit, `Unit)
+           Unit (loc, Unit, Biniou.Unit)
        | "bool" ->
-           Bool (loc, Bool, `Bool)
+           Bool (loc, Bool, Biniou.Bool)
        | "int" ->
            let o = Ocaml.get_ocaml_int an in
            let b = Biniou.get_biniou_int an in
-           Int (loc, Int o, `Int b)
+           Int (loc, Int o, Biniou.Int b)
        | "float" ->
            let b = Biniou.get_biniou_float an in
-           Float (loc, Float, `Float b)
+           Float (loc, Float, Biniou.Float b)
        | "string" ->
-           String (loc, String, `String)
+           String (loc, String, Biniou.String)
        | s ->
            Name (loc, s, List.map mapping_of_expr l, None, None)
       )
@@ -87,7 +87,7 @@ and mapping_of_cell (loc, x, an) =
       ocaml_fdoc = doc;
     }
   in
-  let biniou_t = `Cell in
+  let biniou_t = Biniou.Cell in
   {
     cel_loc = loc;
     cel_value = mapping_of_expr x;
@@ -106,7 +106,7 @@ and mapping_of_variant = function
           ocaml_vdoc = doc;
         }
       in
-      let biniou_t = `Variant in
+      let biniou_t = Biniou.Variant in
       let arg =
         match o with
           None -> None
@@ -150,7 +150,7 @@ and mapping_of_field ocaml_field_prefix = function
           ocaml_fdoc = doc;
         };
 
-        f_brepr = `Field { Biniou.biniou_unwrapped = biniou_unwrapped };
+        f_brepr = Biniou.Field { Biniou.biniou_unwrapped = biniou_unwrapped };
       }
 
   | `Inherit _ -> assert false
@@ -169,7 +169,7 @@ let def_of_atd (loc, (name, param, an), x) =
              Some (External
                      (loc, name, args,
                       Ocaml.Repr.External (types_module, main_module, ext_name),
-                      `External)
+                      Biniou.External)
                   )
         )
     | None -> Some (mapping_of_expr x)
@@ -182,7 +182,7 @@ let def_of_atd (loc, (name, param, an), x) =
     def_arepr =
       Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
                        ocaml_ddoc = doc; };
-    def_brepr = `Def;
+    def_brepr = Biniou.Def;
   }
 
 let defs_of_atd_module l =

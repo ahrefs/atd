@@ -21,27 +21,23 @@ type json_record = {
 }
 
 type json_repr =
-    [
-    | `Unit
-    | `Bool
-    | `Int
-    | `Float of json_float
-
-    | `String
-    | `Sum
-    | `Record of json_record
-    | `Tuple
-    | `List of json_list
-    | `Option
-    | `Nullable
-    | `Wrap (* should we add support for Base64 encoding of binary data? *)
-    | `External
-
-    | `Cell
-    | `Field of json_field
-    | `Variant of json_variant
-    | `Def
-    ]
+  | Bool
+  | Cell
+  | Def
+  | External
+  | Field of json_field
+  | Float of json_float
+  | Int
+  | List of json_list
+  | Nullable
+  | Option
+  | Record of json_record
+  | String
+  | Sum
+  | Tuple
+  | Unit
+  | Variant of json_variant
+  | Wrap (* should we add support for Base64 encoding of binary data? *)
 
 let json_float_of_string s : [ `Float | `Int ] option =
   match s with

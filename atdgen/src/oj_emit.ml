@@ -126,7 +126,7 @@ let is_json_string deref x =
 
 let get_assoc_type deref loc x =
   match deref x with
-  | Tuple (_, [| k; v |], `Tuple, `Tuple) ->
+  | Tuple (_, [| k; v |], `Tuple, Json.Tuple) ->
       if not (is_json_string deref k.cel_value) then
         error loc "Due to <json repr=\"object\"> keys must be strings";
       (k.cel_value, v.cel_value)
@@ -156,7 +156,7 @@ let get_fields p a =
   let k, acc = Array.fold_left (fun (k,acc) (_, x) ->
     let ocamlf, default, jsonf, k =
       match x.f_arepr, x.f_brepr with
-        `Field o, `Field j ->
+        `Field o, Json.Field j ->
           (match x.f_kind with
             `With_default ->
               (match o.Ocaml.ocaml_default with
@@ -229,9 +229,9 @@ let get_fields p a =
           f_loc = synloc;
           f_name = f_name;
           f_kind = `Required;
-          f_value = String (synloc, `String, `String);
+          f_value = String (synloc, `String, Json.String);
           f_arepr = `Field ocamlf;
-          f_brepr = `Field jsonf;
+          f_brepr = Json.Field jsonf;
         } in
         let imp = {
           mapping = mapping;
@@ -275,11 +275,11 @@ let rec get_writer_name
     ?(name_f = fun s -> "write_" ^ s)
     p (x : oj_mapping) : string =
   match x with
-      Unit (_, `Unit, `Unit) ->
+      Unit (_, `Unit, Unit) ->
         "Yojson.Safe.write_null"
-    | Bool (_, `Bool, `Bool) ->
+    | Bool (_, `Bool, Bool) ->
         "Yojson.Safe.write_bool"
-    | Int (_, `Int o, `Int) ->
+    | Int (_, `Int o, Int) ->
         (match o with
              Int -> "Yojson.Safe.write_int"
            | Char ->  "Atdgen_runtime.Oj_run.write_int8"
@@ -288,7 +288,7 @@ let rec get_writer_name
            | Float -> "Atdgen_runtime.Oj_run.write_float_as_int"
         )
 
-    | Float (_, `Float, `Float j) ->
+    | Float (_, `Float, Float j) ->
         (match j with
            Float None ->
              if p.std then "Yojson.Safe.write_std_float"
@@ -302,7 +302,7 @@ let rec get_writer_name
              "Atdgen_runtime.Oj_run.write_float_as_int"
         )
 
-    | String (_, `String, `String) ->
+    | String (_, `String, String) ->
         "Yojson.Safe.write_string"
 
     | Tvar (_, s) -> "write_" ^ (Ox_emit.name_of_var s)
@@ -315,7 +315,7 @@ let rec get_writer_name
 
     | External (_, _, args,
                  `External (_, main_module, ext_name),
-                 `External) ->
+                 External) ->
         let f = main_module ^ "." ^ name_f ext_name in
         let l = List.map (get_writer_name ~paren:true p) args in
         let s = String.concat " " (f :: l) in
@@ -341,9 +341,9 @@ let rec get_reader_name
     p (x : oj_mapping) : string =
 
   match x with
-    Unit (_, `Unit, `Unit) -> "Atdgen_runtime.Oj_run.read_null"
-  | Bool (_, `Bool, `Bool) -> "Atdgen_runtime.Oj_run.read_bool"
-  | Int (_, `Int o, `Int) ->
+    Unit (_, `Unit, Unit) -> "Atdgen_runtime.Oj_run.read_null"
+  | Bool (_, `Bool, Bool) -> "Atdgen_runtime.Oj_run.read_bool"
+  | Int (_, `Int o, Int) ->
       (match o with
          Int -> "Atdgen_runtime.Oj_run.read_int"
        | Char -> "Atdgen_runtime.Oj_run.read_int8"
@@ -352,9 +352,9 @@ let rec get_reader_name
        | Float -> "Atdgen_runtime.Oj_run.read_number"
       )
 
-  | Float (_, `Float, `Float _) -> "Atdgen_runtime.Oj_run.read_number"
+  | Float (_, `Float, Float _) -> "Atdgen_runtime.Oj_run.read_number"
 
-  | String (_, `String, `String) -> "Atdgen_runtime.Oj_run.read_string"
+  | String (_, `String, String) -> "Atdgen_runtime.Oj_run.read_string"
 
   | Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s
 
@@ -366,7 +366,7 @@ let rec get_reader_name
 
   | External (_, _, args,
               `External (_, main_module, ext_name),
-              `External) ->
+              External) ->
       let f = main_module ^ "." ^ name_f ext_name in
       let l = List.map (get_reader_name ~paren:true p) args in
       let s = String.concat " " (f :: l) in
@@ -387,7 +387,7 @@ let get_left_of_string_name p name param =
 
 let destruct_sum (x : oj_mapping) =
   match x with
-    Sum (_, a, `Sum x, `Sum) ->
+    Sum (_, a, `Sum x, Sum) ->
       let tick = match x with Classic -> "" | Poly -> "`" in
       tick, a
   | Unit _ -> error (loc_of_mapping x) "Cannot destruct unit"
@@ -412,7 +412,7 @@ let make_sum_writer p sum f =
   let cases = Array.to_list (Array.map (fun x ->
     let o, j =
       match x.var_arepr, x.var_brepr with
-        `Variant o, `Variant j -> o, j
+        `Variant o, Json.Variant j -> o, j
       | _ -> assert false
     in
     `Inline (f p tick o j x)) a
@@ -470,13 +470,13 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
 
   | Sum _ -> make_sum_writer p x make_variant_writer
 
-  | Record (_, a, `Record o, `Record _) ->
+  | Record (_, a, `Record o, Record _) ->
       [
         `Annot ("fun", `Line "fun ob x ->");
         `Block (make_record_writer p a o);
       ]
 
-  | Tuple (_, a, `Tuple, `Tuple) ->
+  | Tuple (_, a, `Tuple, Tuple) ->
       let len = Array.length a in
       let a =
         Array.mapi (
@@ -506,7 +506,7 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
         ]
       ]
 
-  | List (loc, x, `List o, `List j) ->
+  | List (loc, x, `List o, List j) ->
       (match j with
          Array ->
            let write =
@@ -536,7 +536,7 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
            ]
       )
 
-  | Option (_, x, `Option, `Option) ->
+  | Option (_, x, `Option, Option) ->
       [
         `Line (sprintf "Atdgen_runtime.Oj_run.write_%soption ("
                  (if p.std then "std_" else ""));
@@ -544,14 +544,14 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
         `Line ")";
       ]
 
-  | Nullable (_, x, `Nullable, `Nullable) ->
+  | Nullable (_, x, `Nullable, Nullable) ->
       [
         `Line "Atdgen_runtime.Oj_run.write_nullable (";
         `Block (make_writer p x);
         `Line ")";
       ]
 
-  | Wrap (_, x, `Wrap o, `Wrap) ->
+  | Wrap (_, x, `Wrap o, Wrap) ->
       (match o with
          None -> make_writer p x
        | Some { Ocaml.ocaml_unwrap; _} ->
@@ -875,7 +875,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
     | External _
     | Tvar _ -> [ `Line (get_reader_name p x) ]
 
-    | Sum (_, a, `Sum x, `Sum) ->
+    | Sum (_, a, `Sum x, Sum) ->
         let tick =
           match x with
               Classic -> ""
@@ -992,7 +992,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
           ]
         ]
 
-    | Record (loc, a, `Record o, `Record j) ->
+    | Record (loc, a, `Record o, Record j) ->
         (match o with
              `Record -> ()
            | `Object ->
@@ -1003,13 +1003,13 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
           `Block (make_record_reader p type_annot loc a j)
         ]
 
-    | Tuple (_, a, `Tuple, `Tuple) ->
+    | Tuple (_, a, `Tuple, Tuple) ->
         [
           `Annot ("fun", `Line "fun p lb ->");
           `Block (make_tuple_reader p a);
         ]
 
-    | List (loc, x, `List o, `List j) ->
+    | List (loc, x, `List o, List j) ->
         (match j with
              Array ->
                let read =
@@ -1039,7 +1039,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
                ]
         )
 
-    | Option (loc, x, `Option, `Option) ->
+    | Option (loc, x, `Option, Option) ->
 
         let a = [|
           {
@@ -1048,7 +1048,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
             var_arg = None;
             var_arepr = `Variant { Ocaml.ocaml_cons = "None";
                                    ocaml_vdoc = None };
-            var_brepr = `Variant { Json.json_cons = Some "None" };
+            var_brepr = Json.Variant { Json.json_cons = Some "None" };
           };
           {
             var_loc = loc;
@@ -1056,13 +1056,13 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
             var_arg = Some x;
             var_arepr = `Variant { Ocaml.ocaml_cons = "Some";
                                    ocaml_vdoc = None };
-            var_brepr = `Variant { Json.json_cons = Some "Some" };
+            var_brepr = Json.Variant { Json.json_cons = Some "Some" };
           };
         |]
         in
-        make_reader p (Some "_ option") (Sum (loc, a, `Sum Classic, `Sum))
+        make_reader p (Some "_ option") (Sum (loc, a, `Sum Classic, Json.Sum))
 
-    | Nullable (_, x, `Nullable, `Nullable) ->
+    | Nullable (_, x, `Nullable, Nullable) ->
         [
           `Line "fun p lb ->";
           `Block [
@@ -1074,7 +1074,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
           ]
         ]
 
-    | Wrap (_, x, `Wrap o, `Wrap) ->
+    | Wrap (_, x, `Wrap o, Wrap) ->
         (match o with
             None -> make_reader p type_annot x
           | Some { Ocaml.ocaml_wrap; _ } ->
@@ -1096,7 +1096,7 @@ and make_variant_reader ?nullary p type_annot tick std x
   : (string option * Indent.t list) =
   let o, j =
     match x.var_arepr, x.var_brepr with
-        `Variant o, `Variant j -> o, j
+        `Variant o, Variant j -> o, j
       | _ -> assert false
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
@@ -1192,7 +1192,7 @@ and make_deconstructed_reader p loc fields set_bit =
       | Checked k -> [set_bit k]
     in
     match p.deref mapping.f_value with
-    | Sum (loc, a, `Sum x, `Sum) ->
+    | Sum (loc, a, `Sum x, Sum) ->
       let s = string_expr_of_constr_field p v_of_field constrf in
       let tick =
         match x with
@@ -1206,7 +1206,7 @@ and make_deconstructed_reader p loc fields set_bit =
       let cases, error_expr1 = Array.fold_left (fun (cases, error_expr1) x ->
         let o, j =
           match x.var_arepr, x.var_brepr with
-            `Variant o, `Variant j -> o, j
+            `Variant o, Json.Variant j -> o, j
           | _ -> assert false
         in
         let ocaml_cons = o.Ocaml.ocaml_cons in

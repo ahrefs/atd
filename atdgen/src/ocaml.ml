@@ -48,31 +48,30 @@ type atd_ocaml_def = {
 
 module Repr = struct
   type t =
-    [ `Unit
-    | `Bool
-    | `Int of atd_ocaml_int
-    | `Float
-    | `String
-    | `Sum of atd_ocaml_sum
-    | `Record of atd_ocaml_record
-    | `Tuple
-    | `List of atd_ocaml_list
-    | `Option
-    | `Nullable
-    | `Wrap of atd_ocaml_wrap option
-    | `Name of string
-    | `External of (string * string * string)
+    | Unit
+    | Bool
+    | Int of atd_ocaml_int
+    | Float
+    | String
+    | Sum of atd_ocaml_sum
+    | Record of atd_ocaml_record
+    | Tuple
+    | List of atd_ocaml_list
+    | Option
+    | Nullable
+    | Wrap of atd_ocaml_wrap option
+    | Name of string
+    | External of (string * string * string)
         (*
           (module providing the type,
            module providing everything else,
            type name)
         *)
 
-    | `Cell of atd_ocaml_field
-    | `Field of atd_ocaml_field
-    | `Variant of atd_ocaml_variant
-    | `Def of atd_ocaml_def
-    ]
+    | Cell of atd_ocaml_field
+    | Field of atd_ocaml_field
+    | Variant of atd_ocaml_variant
+    | Def of atd_ocaml_def
 end
 
 type target = Default | Biniou | Json | Validate
@@ -397,25 +396,25 @@ let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
 
 let rec ocaml_of_expr_mapping (x : (Repr.t, _) mapping) : ocaml_expr =
   match x with
-    Unit (_, `Unit, _) -> `Name ("unit", [])
-  | Bool (_, `Bool, _) -> `Name ("bool", [])
-  | Int (_, `Int x, _) -> `Name (string_of_ocaml_int x, [])
-  | Float (_, `Float, _) -> `Name ("float", [])
-  | String (_, `String, _) -> `Name ("string", [])
-  | Sum (_, a, `Sum kind, _) ->
+    Unit (_, Unit, _) -> `Name ("unit", [])
+  | Bool (_, Bool, _) -> `Name ("bool", [])
+  | Int (_, Int x, _) -> `Name (string_of_ocaml_int x, [])
+  | Float (_, Float, _) -> `Name ("float", [])
+  | String (_, String, _) -> `Name ("string", [])
+  | Sum (_, a, Sum kind, _) ->
       let l = Array.to_list a in
       `Sum (kind, List.map ocaml_of_variant_mapping l)
-  | Record (_, a, `Record _, _) ->
+  | Record (_, a, Record _, _) ->
       let l = Array.to_list a in
       `Record (Record, List.map ocaml_of_field_mapping l)
   | Tuple (_, a, _, _) ->
       let l = Array.to_list a in
       `Tuple (List.map (fun x -> ocaml_of_expr_mapping x.cel_value) l)
-  | List (_, x, `List kind, _) ->
+  | List (_, x, List kind, _) ->
       `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
-  | Option (_, x, `Option, _) ->
+  | Option (_, x, Option, _) ->
       `Name ("option", [ocaml_of_expr_mapping x])
-  | Nullable (_, x, `Nullable, _) ->
+  | Nullable (_, x, Nullable, _) ->
       `Name ("option", [ocaml_of_expr_mapping x])
   | Wrap _ ->
       assert false
@@ -428,7 +427,7 @@ let rec ocaml_of_expr_mapping (x : (Repr.t, _) mapping) : ocaml_expr =
 and ocaml_of_variant_mapping x =
   let o =
     match x.var_arepr with
-        `Variant o -> o
+        Variant o -> o
       | _ -> assert false
   in
   (o.ocaml_cons, omap ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc)
@@ -436,7 +435,7 @@ and ocaml_of_variant_mapping x =
 and ocaml_of_field_mapping x =
   let o =
     match x.f_arepr with
-        `Field o -> o
+        Field o -> o
       | _ -> assert false
   in
   let v = ocaml_of_expr_mapping x.f_value in
@@ -787,28 +786,28 @@ let unwrap_option deref x =
 
 let get_implicit_ocaml_default deref x =
   match deref x with
-    Unit (_, `Unit, _) -> Some "()"
-  | Bool (_, `Bool, _) -> Some "false"
-  | Int (_, `Int o, _) ->
+    Unit (_, Repr.Unit, _) -> Some "()"
+  | Bool (_, Bool, _) -> Some "false"
+  | Int (_, Int o, _) ->
       Some (match o with
           Int -> "0"
         | Char -> "'\000'"
         | Int32 -> "0l"
         | Int64 -> "0L"
         | Float -> "0.")
-  | Float (_, `Float, _) -> Some "0.0"
-  | String (_, `String, _) -> Some "\"\""
-  | List (_, _, `List List, _) -> Some "[]"
-  | List (_, _, `List Array, _) -> Some "[||]"
-  | Option (_, _, `Option, _) -> Some "None"
-  | Nullable (_, _, `Nullable, _) -> Some "None"
+  | Float (_, Float, _) -> Some "0.0"
+  | String (_, String, _) -> Some "\"\""
+  | List (_, _, List List, _) -> Some "[]"
+  | List (_, _, List Array, _) -> Some "[||]"
+  | Option (_, _, Option, _) -> Some "None"
+  | Nullable (_, _, Nullable, _) -> Some "None"
   | _ -> None
 
 
 let map_record_creator_field deref x =
   let o =
     match x.f_arepr with
-        `Field o -> o
+        Repr.Field o -> o
       | _ -> assert false
   in
   let fname = o.ocaml_fname in

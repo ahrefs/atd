@@ -33,31 +33,30 @@ type atd_ocaml_def = {
 
 module Repr : sig
   type t =
-    [ `Unit
-    | `Bool
-    | `Int of atd_ocaml_int
-    | `Float
-    | `String
-    | `Sum of atd_ocaml_sum
-    | `Record of atd_ocaml_record
-    | `Tuple
-    | `List of atd_ocaml_list
-    | `Option
-    | `Nullable
-    | `Wrap of atd_ocaml_wrap option
-    | `Name of string
-    | `External of (string * string * string)
+    | Unit
+    | Bool
+    | Int of atd_ocaml_int
+    | Float
+    | String
+    | Sum of atd_ocaml_sum
+    | Record of atd_ocaml_record
+    | Tuple
+    | List of atd_ocaml_list
+    | Option
+    | Nullable
+    | Wrap of atd_ocaml_wrap option
+    | Name of string
+    | External of (string * string * string)
         (*
           (module providing the type,
            module providing everything else,
            type name)
         *)
 
-    | `Cell of atd_ocaml_field
-    | `Field of atd_ocaml_field
-    | `Variant of atd_ocaml_variant
-    | `Def of atd_ocaml_def
-    ]
+    | Cell of atd_ocaml_field
+    | Field of atd_ocaml_field
+    | Variant of atd_ocaml_variant
+    | Def of atd_ocaml_def
 end
 val get_ocaml_sum : Atd.Annot.t -> atd_ocaml_sum
 
@@ -89,17 +88,7 @@ val get_ocaml_module_and_t
 
 
 val get_implicit_ocaml_default
-  : ('a ->
-     ([> `Bool
-      | `Float
-      | `Int of atd_ocaml_int
-      | `List of atd_ocaml_list
-      | `Nullable
-      | `Option
-      | `String
-      | `Unit ],
-      'b)
-       Atdgen_emit__Mapping.mapping)
+  : ('a -> (Repr.t, 'b) Atdgen_emit__Mapping.mapping)
   -> 'a
   -> string option
 

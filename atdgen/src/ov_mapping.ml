@@ -151,12 +151,12 @@ let rec mapping_of_expr
   let v2 an x = (Validate.get_validator an, is_shallow x) in
   match x0 with
       `Sum (loc, l, an) ->
-        let ocaml_t = `Sum (Ocaml.get_ocaml_sum an) in
+        let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
         Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
               ocaml_t, v2 an x0)
 
     | `Record (loc, l, an) ->
-        let ocaml_t = `Record (Ocaml.get_ocaml_record an) in
+        let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
         let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
         Record (loc,
                  Array.of_list
@@ -165,20 +165,20 @@ let rec mapping_of_expr
                  ocaml_t, v2 an x0)
 
     | `Tuple (loc, l, an) ->
-        let ocaml_t = `Tuple in
+        let ocaml_t = Ocaml.Repr.Tuple in
         Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
                 ocaml_t, v2 an x0)
 
     | `List (loc, x, an) ->
-        let ocaml_t = `List (Ocaml.get_ocaml_list an) in
+        let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
         List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Option (loc, x, an) ->
-        let ocaml_t = `Option in
+        let ocaml_t = Ocaml.Repr.Option in
         Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Nullable (loc, x, an) ->
-        let ocaml_t = `Nullable in
+        let ocaml_t = Ocaml.Repr.Nullable in
         Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Shared (_, _, _) ->
@@ -186,7 +186,7 @@ let rec mapping_of_expr
 
     | `Wrap (loc, x, an) ->
         let w = Ocaml.get_ocaml_wrap loc an in
-        let ocaml_t = `Wrap w in
+        let ocaml_t = Ocaml.Repr.Wrap w in
         let validator =
           match w with
               None -> v2 an x0
@@ -197,16 +197,16 @@ let rec mapping_of_expr
     | `Name (loc, (_, s, l), an) ->
         (match s with
            "unit" ->
-             Unit (loc, `Unit, (v an, true))
+             Unit (loc, Unit, (v an, true))
          | "bool" ->
-             Bool (loc, `Bool, (v an, true))
+             Bool (loc, Bool, (v an, true))
          | "int" ->
              let o = Ocaml.get_ocaml_int an in
-             Int (loc, `Int o, (v an, true))
+             Int (loc, Int o, (v an, true))
          | "float" ->
-             Float (loc, `Float, (v an, true))
+             Float (loc, Float, (v an, true))
          | "string" ->
-             String (loc, `String, (v an, true))
+             String (loc, String, (v an, true))
          | s ->
              let validator =
                match v2 an x0 with
@@ -223,7 +223,7 @@ and mapping_of_cell is_shallow (loc, x, an) =
   let default = Ocaml.get_ocaml_default an in
   let doc = Doc.get_doc loc an in
   let ocaml_t =
-    `Cell {
+    Ocaml.Repr.Cell {
       Ocaml.ocaml_default = default;
       ocaml_fname = "";
       ocaml_mutable = false;
@@ -243,7 +243,7 @@ and mapping_of_variant is_shallow = function
       let ocaml_cons = Ocaml.get_ocaml_cons s an in
       let doc = Doc.get_doc loc an in
       let ocaml_t =
-        `Variant {
+        Ocaml.Repr.Variant {
           Ocaml.ocaml_cons = ocaml_cons;
           ocaml_vdoc = doc;
         }
@@ -288,7 +288,7 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
         f_kind = fk;
         f_value = fvalue;
 
-        f_arepr = `Field {
+        f_arepr = Ocaml.Repr.Field {
           Ocaml.ocaml_default = ocaml_default;
           ocaml_fname = ocaml_fname;
           ocaml_mutable = ocaml_mutable;
@@ -306,25 +306,26 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
   let doc = Doc.get_doc loc an in
   let o =
     match as_abstract x with
-        Some (_, an2) ->
-          (match Ocaml.get_ocaml_module_and_t Validate name an with
-               None -> None
-             | Some (types_module, main_module, ext_name) ->
-                 let args = List.map (fun s -> Tvar (loc, s)) param in
-                 Some (External
-                         (loc, name, args,
-                          `External (types_module, main_module, ext_name),
-                          (Validate.get_validator an2, false))
-                      )
-          )
-      | None -> Some (mapping_of_expr is_shallow x)
+      Some (_, an2) ->
+        (match Ocaml.get_ocaml_module_and_t Validate name an with
+           None -> None
+         | Some (types_module, main_module, ext_name) ->
+             let args = List.map (fun s -> Tvar (loc, s)) param in
+             Some (External
+                     (loc, name, args,
+                      Ocaml.Repr.External (types_module, main_module, ext_name),
+                      (Validate.get_validator an2, false))
+                  )
+        )
+    | None -> Some (mapping_of_expr is_shallow x)
   in
   {
     def_loc = loc;
     def_name = name;
     def_param = param;
     def_value = o;
-    def_arepr = `Def { Ocaml.ocaml_predef = ocaml_predef;
+    def_arepr =
+      Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
                        ocaml_ddoc = doc; };
     def_brepr = (None, false);
   }

@@ -40,7 +40,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
         Array.fold_left (extract_names_from_variant root_loc) ([], acc) va
       in
       (match o with
-         `Sum x ->
+         Sum x ->
            (match x with
               Poly -> (fn, l :: pvn, cvn)
             | Classic ->
@@ -82,7 +82,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
 and extract_names_from_variant root_loc (l, acc) x =
   let l =
     match x.var_arepr with
-      `Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
+      Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
     | _ -> assert false
   in
   match x.var_arg with
@@ -93,7 +93,7 @@ and extract_names_from_variant root_loc (l, acc) x =
 and extract_names_from_field root_loc (l, acc) x =
   let l =
     match x.f_arepr with
-      `Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
+      Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
     | _ -> assert false
   in
   (l, extract_names_from_expr root_loc acc x.f_value)
@@ -201,8 +201,8 @@ let get_type_constraint ~original_types def =
    constructor/field name disambiguation *)
 let needs_type_annot (x : _ expr) =
   match x with
-  | Record (_, _, `Record Record, _)
-  | Sum (_, _, `Sum Classic, _) -> true
+  | Record (_, _, Record Record, _)
+  | Sum (_, _, Sum Classic, _) -> true
   | _ -> false
 
 let insert_annot type_annot =
@@ -254,7 +254,7 @@ let is_exportable def =
 
 let make_record_creator deref x =
   match x.def_value with
-    Some (Record (_, a, `Record Ocaml.Record, _)) ->
+    Some (Record (_, a, Ocaml.Repr.Record Ocaml.Record, _)) ->
       let s = x.def_name in
       let full_name = get_full_type_name x in
       let l =

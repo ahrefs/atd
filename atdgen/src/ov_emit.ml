@@ -47,15 +47,15 @@ let get_fields a =
     List.map (
       fun x ->
         match x.f_arepr with
-            `Field o -> (x, o.Ocaml.ocaml_fname)
-          | _ -> assert false
+          Ocaml.Repr.Field o -> (x, o.Ocaml.ocaml_fname)
+        | _ -> assert false
     )
       (Array.to_list a)
   in
   List.filter (
     function
-        { f_brepr = (None, shallow) ; _ }, _ -> not shallow
-      | _ -> assert false
+      { f_brepr = (None, shallow) ; _ }, _ -> not shallow
+    | _ -> assert false
   ) all
 
 let rec forall : Indent.t list -> Indent.t list = function
@@ -141,11 +141,11 @@ let rec get_validator_name
     (x : ov_mapping) : string =
 
   match x with
-    Unit (_, `Unit, v)
-  | Bool (_, `Bool, v)
-  | Int (_, `Int _, v)
-  | Float (_, `Float, v)
-  | String (_, `String, v) ->
+    Unit (_, Unit, v)
+  | Bool (_, Bool, v)
+  | Int (_, Int _, v)
+  | Float (_, Float, v)
+  | String (_, String, v) ->
       (match v with
          (None, true) -> return_true_paren
        | (Some s, true) -> s
@@ -168,7 +168,7 @@ let rec get_validator_name
       )
 
   | External (_, _, args,
-              `External (_, main_module, ext_name),
+              External (_, main_module, ext_name),
               v) ->
       (match v with
          (o, false) ->
@@ -200,7 +200,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
   | External _
   | Tvar _ -> [ `Line (get_validator_name x) ]
 
-  | Sum (_, a, `Sum x, (v, shallow)) ->
+  | Sum (_, a, Sum x, (v, shallow)) ->
       if shallow then
         opt_validator v
       else
@@ -226,7 +226,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
           `Block (prepend_validator v body);
         ]
 
-  | Record (_, a, `Record o, (v, shallow)) ->
+  | Record (_, a, Record o, (v, shallow)) ->
       if shallow then
         opt_validator v
       else
@@ -235,7 +235,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
           `Block (prepend_validator v (make_record_validator a o));
         ]
 
-  | Tuple (_, a, `Tuple, (v, shallow)) ->
+  | Tuple (_, a, Tuple, (v, shallow)) ->
       if shallow then
         opt_validator v
       else
@@ -261,7 +261,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
           `Block (prepend_validator v l);
         ]
 
-  | List (_, x, `List o, (v, shallow)) ->
+  | List (_, x, List o, (v, shallow)) ->
       if shallow then
         opt_validator v
       else
@@ -276,8 +276,8 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
           `Line ")";
         ]
 
-  | Option (_, x, `Option, (v, shallow))
-  | Nullable (_, x, `Nullable, (v, shallow)) ->
+  | Option (_, x, Option, (v, shallow))
+  | Nullable (_, x, Nullable, (v, shallow)) ->
       if shallow then
         opt_validator v
       else
@@ -287,7 +287,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
           `Line ")";
         ]
 
-  | Wrap (_, x, `Wrap _, (v, shallow)) ->
+  | Wrap (_, x, Wrap _, (v, shallow)) ->
       if shallow then
         opt_validator v
       else
@@ -301,7 +301,7 @@ and make_variant_validator tick x :
     Indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
-        `Variant o, (None, _) -> o
+        Variant o, (None, _) -> o
       | _ -> assert false
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in

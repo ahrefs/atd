@@ -31,32 +31,34 @@ type atd_ocaml_def = {
   ocaml_ddoc : Doc.doc option;
 }
 
-type atd_ocaml_repr =
-  [ `Unit
-  | `Bool
-  | `Int of atd_ocaml_int
-  | `Float
-  | `String
-  | `Sum of atd_ocaml_sum
-  | `Record of atd_ocaml_record
-  | `Tuple
-  | `List of atd_ocaml_list
-  | `Option
-  | `Nullable
-  | `Wrap of atd_ocaml_wrap option
-  | `Name of string
-  | `External of (string * string * string)
+module Repr : sig
+  type t =
+    [ `Unit
+    | `Bool
+    | `Int of atd_ocaml_int
+    | `Float
+    | `String
+    | `Sum of atd_ocaml_sum
+    | `Record of atd_ocaml_record
+    | `Tuple
+    | `List of atd_ocaml_list
+    | `Option
+    | `Nullable
+    | `Wrap of atd_ocaml_wrap option
+    | `Name of string
+    | `External of (string * string * string)
         (*
           (module providing the type,
            module providing everything else,
            type name)
         *)
 
-  | `Cell of atd_ocaml_field
-  | `Field of atd_ocaml_field
-  | `Variant of atd_ocaml_variant
-  | `Def of atd_ocaml_def ]
-
+    | `Cell of atd_ocaml_field
+    | `Field of atd_ocaml_field
+    | `Variant of atd_ocaml_variant
+    | `Def of atd_ocaml_def
+    ]
+end
 val get_ocaml_sum : Atd.Annot.t -> atd_ocaml_sum
 
 val get_ocaml_record : Atd.Annot.t -> atd_ocaml_record
@@ -115,7 +117,7 @@ val ocaml_of_atd
 
 
 val map_record_creator_field
-  : ((atd_ocaml_repr, 'a) Mapping.mapping
-     -> (atd_ocaml_repr, 'b) Mapping.mapping)
-  -> (atd_ocaml_repr, 'a) Mapping.field_mapping
+  : ((Repr.t, 'a) Mapping.mapping
+     -> (Repr.t, 'b) Mapping.mapping)
+  -> (Repr.t, 'a) Mapping.field_mapping
   -> string * string * string

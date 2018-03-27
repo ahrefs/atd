@@ -9,8 +9,8 @@ open Atd.Import
 open Error
 open Mapping
 
-type 'a expr = (Ocaml.atd_ocaml_repr, 'a) Mapping.mapping
-type 'a def = (Ocaml.atd_ocaml_repr, 'a) Mapping.def
+type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
+type 'a def = (Ocaml.Repr.t, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type name = (loc * loc * string)

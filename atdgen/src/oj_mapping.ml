@@ -2,11 +2,7 @@ open Atd.Ast
 open Error
 open Mapping
 
-type o = Ocaml.atd_ocaml_repr
-type j = Json.json_repr
-
-type oj_mapping =
-    (Ocaml.atd_ocaml_repr, Json.json_repr) Mapping.mapping
+type oj_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
 
 (*
   Translation of the types into the ocaml/json mapping.

@@ -3,7 +3,7 @@
     Please don't rely on them in any way.*)
 
 type ov_mapping =
-    (Ocaml.atd_ocaml_repr, Validate.validate_repr) Mapping.mapping
+    (Ocaml.Repr.t, Validate.validate_repr) Mapping.mapping
 
 val defs_of_atd_modules :
   ('a *
@@ -13,5 +13,5 @@ val defs_of_atd_modules :
      list)
     list ->
   ('a *
-   (Ocaml.atd_ocaml_repr, Validate.validate_repr) Mapping.def list)
+   (Ocaml.Repr.t, Validate.validate_repr) Mapping.def list)
     list

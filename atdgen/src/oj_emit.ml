@@ -15,8 +15,8 @@ open Oj_mapping
 *)
 
 type param = {
-  deref : (Ocaml.atd_ocaml_repr, Json.json_repr) Mapping.mapping ->
-               (Ocaml.atd_ocaml_repr, Json.json_repr) Mapping.mapping;
+  deref : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
+               (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
   std : bool;
   unknown_field_handler : string option;
     (* Optional handler that takes a field name as argument
@@ -135,11 +135,11 @@ let get_assoc_type deref loc x =
 
 
 type default_field =
-| Default of string
-| Checked of int
+  | Default of string
+  | Checked of int
 
 type parse_field = {
-  mapping     : (o, j) field_mapping;
+  mapping     : (Ocaml.Repr.t, Json.json_repr) field_mapping;
   default     : default_field;
   ocamlf      : Ocaml.atd_ocaml_field;
   jsonf       : Json.json_field;

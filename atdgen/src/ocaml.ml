@@ -46,9 +46,9 @@ type atd_ocaml_def = {
   ocaml_ddoc : Doc.doc option;
 }
 
-type atd_ocaml_repr =
-    [
-    | `Unit
+module Repr = struct
+  type t =
+    [ `Unit
     | `Bool
     | `Int of atd_ocaml_int
     | `Float
@@ -73,6 +73,7 @@ type atd_ocaml_repr =
     | `Variant of atd_ocaml_variant
     | `Def of atd_ocaml_def
     ]
+end
 
 type target = Default | Biniou | Json | Validate
 
@@ -394,7 +395,7 @@ let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
 *)
 
 
-let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
+let rec ocaml_of_expr_mapping (x : (Repr.t, _) mapping) : ocaml_expr =
   match x with
     Unit (_, `Unit, _) -> `Name ("unit", [])
   | Bool (_, `Bool, _) -> `Name ("bool", [])

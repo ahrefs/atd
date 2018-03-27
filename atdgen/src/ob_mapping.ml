@@ -3,7 +3,7 @@ open Error
 open Mapping
 
 type ob_mapping =
-    (Ocaml.atd_ocaml_repr, Biniou.biniou_repr) Mapping.mapping
+    (Ocaml.Repr.t, Biniou.biniou_repr) Mapping.mapping
 
 (*
   Translation of the types into the ocaml/biniou mapping.

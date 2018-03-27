@@ -90,8 +90,7 @@ val get_implicit_ocaml_default
   : ('a ->
      [> `Bool of 'b * [> `Bool ] * 'c
      | `Float of 'd * [> `Float ] * 'e
-     | `Int of
-          'f * [> `Int of [< `Char | `Float | `Int | `Int32 | `Int64 ] ] * 'g
+     | `Int of 'f * [> `Int of atd_ocaml_int ] * 'g
      | `List of 'h * 'i * [> `List of atd_ocaml_list] * 'j
      | `Nullable of 'k * 'l * [> `Nullable ] * 'm
      | `Option of 'n * 'o * [> `Option ] * 'p

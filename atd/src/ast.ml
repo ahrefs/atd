@@ -27,16 +27,16 @@ and module_item =
 and type_param = string list
 
 and type_expr =
-    [ `Sum of (loc * variant list * annot)
-    | `Record of (loc * field list * annot)
-    | `Tuple of (loc * cell list * annot)
-    | `List of (loc * type_expr * annot)
-    | `Option of (loc * type_expr * annot)
-    | `Nullable of (loc * type_expr * annot)
-    | `Shared of (loc * type_expr * annot)
-    | `Wrap of (loc * type_expr * annot)
-    | `Name of (loc * type_inst * annot)
-    | `Tvar of (loc * string)
+    [ `Sum of loc * variant list * annot
+    | `Record of loc * field list * annot
+    | `Tuple of loc * cell list * annot
+    | `List of loc * type_expr * annot
+    | `Option of loc * type_expr * annot
+    | `Nullable of loc * type_expr * annot
+    | `Shared of loc * type_expr * annot
+    | `Wrap of loc * type_expr * annot
+    | `Name of loc * type_inst * annot
+    | `Tvar of loc * string
     ]
       (* `List, `Option, `Nullable, `Shared and `Wrap are
          the only predefined types with a type
@@ -51,10 +51,9 @@ and variant =
 and cell = loc * type_expr * annot
 
 and field_kind =
-    [ `Required
-    | `Optional
-    | `With_default
-    ]
+  | Required
+  | Optional
+  | With_default
 
 and field =
     [ `Field of (loc * (string * field_kind * annot) * type_expr)

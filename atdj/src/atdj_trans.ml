@@ -136,8 +136,9 @@ let assign_field env
   (* Check whether the field is optional *)
   let is_opt =
     match kind with
-      | `Optional | `With_default -> true
-      | `Required -> false in
+      | Atd.Ast.Optional
+      | With_default -> true
+      | Required -> false in
   let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) json_field_name in
   if not is_opt then
     assign env (Some field_name) src java_ty atd_ty "    "
@@ -151,7 +152,7 @@ let assign_field env
     in
     let opt_set_default =
       match kind with
-      | `With_default ->
+      | Atd.Ast.With_default ->
           (match norm_ty ~unwrap_option:true env atd_ty with
            | `Name (_, (_, name, _), _) ->
                (match name with
@@ -223,8 +224,8 @@ let to_string_field env = function
       let else_part =
         let is_opt =
           match kind with
-            | `Optional | `With_default -> true
-            | `Required -> false in
+            | Atd.Ast.Optional | With_default -> true
+            | Required -> false in
         if is_opt then
           ""
         else

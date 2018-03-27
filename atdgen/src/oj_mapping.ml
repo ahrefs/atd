@@ -129,15 +129,15 @@ and mapping_of_field ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr x in
       let ocaml_default, json_unwrapped =
-       match fk, Ocaml.get_ocaml_default an with
-           `Required, None -> None, false
-         | `Optional, None -> Some "None", true
-         | (`Required | `Optional), Some _ ->
-             error loc "Superfluous default OCaml value"
-         | `With_default, Some s -> Some s, false
-         | `With_default, None ->
-             (* will try to determine implicit default value later *)
-             None, false
+        match fk, Ocaml.get_ocaml_default an with
+          Required, None -> None, false
+        | Optional, None -> Some "None", true
+        | (Required | Optional), Some _ ->
+            error loc "Superfluous default OCaml value"
+        | With_default, Some s -> Some s, false
+        | With_default, None ->
+            (* will try to determine implicit default value later *)
+            None, false
       in
       let ocaml_fname = Ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
       let ocaml_mutable = Ocaml.get_ocaml_mutable an in

@@ -158,19 +158,19 @@ let get_fields p a =
       match x.f_arepr, x.f_brepr with
         Ocaml.Repr.Field o, Json.Field j ->
           (match x.f_kind with
-            `With_default ->
-              (match o.Ocaml.ocaml_default with
-                None ->
-                  let d =
-                    Ocaml.get_implicit_ocaml_default
-                      p.deref x.f_value in
-                  (match d with
-                  | None -> error x.f_loc "Missing default field value"
-                  | Some d -> o, Default d, j, k)
-              | Some d -> o, Default d, j, k
-              )
-          | `Optional -> o, Default "None", j, k
-          | `Required -> o, Checked k, j, k+1
+             With_default ->
+               (match o.Ocaml.ocaml_default with
+                  None ->
+                    let d =
+                      Ocaml.get_implicit_ocaml_default
+                        p.deref x.f_value in
+                    (match d with
+                     | None -> error x.f_loc "Missing default field value"
+                     | Some d -> o, Default d, j, k)
+                | Some d -> o, Default d, j, k
+               )
+           | Optional -> o, Default "None", j, k
+           | Required -> o, Checked k, j, k+1
           )
       | _ -> assert false
     in
@@ -228,7 +228,7 @@ let get_fields p a =
         let mapping = {
           f_loc = synloc;
           f_name = f_name;
-          f_kind = `Required;
+          f_kind = Required;
           f_value = String (synloc, Ocaml.Repr.String, Json.String);
           f_arepr = Ocaml.Repr.Field ocamlf;
           f_brepr = Json.Field jsonf;

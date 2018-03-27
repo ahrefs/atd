@@ -813,20 +813,20 @@ let map_record_creator_field deref x =
   let fname = o.ocaml_fname in
   let impl2 = sprintf "\n    %s = %s;" fname fname in
   match x.f_kind with
-      `Required ->
+      Required ->
         let t = ocaml_of_expr (ocaml_of_expr_mapping x.f_value) in
         let intf = sprintf "\n  %s: %s ->" fname t in
         let impl1 = sprintf "\n  ~%s" fname in
         intf, impl1, impl2
 
-    | `Optional ->
+    | Optional ->
         let x = unwrap_option deref x.f_value in
         let t = ocaml_of_expr (ocaml_of_expr_mapping x) in
         let intf = sprintf "\n  ?%s: %s ->" fname t in
         let impl1 = sprintf "\n  ?%s" fname in
         intf, impl1, impl2
 
-    | `With_default ->
+    | With_default ->
         let t = ocaml_of_expr (ocaml_of_expr_mapping x.f_value) in
         let intf = sprintf "\n  ?%s: %s ->" fname t in
         let impl1 =

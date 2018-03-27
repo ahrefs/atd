@@ -70,11 +70,10 @@ let default_annot (s, (_, l)) =
         )
 
 
-let string_of_field k fk =
-  match fk with
-      `Required -> k
-    | `Optional -> "?" ^ k
-    | `With_default -> "~" ^ k
+let string_of_field k = function
+    Required -> k
+  | Optional -> "?" ^ k
+  | With_default -> "~" ^ k
 
 
 let make_closures format_annot =

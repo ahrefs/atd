@@ -119,9 +119,9 @@ and print_field buf x =
 and print_field_kind buf fk =
   Buffer.add_string buf
     (match fk with
-         `Required -> "`Required"
-       | `Optional -> "`Optional"
-       | `With_default -> "`With_default")
+       Required -> "`Required"
+     | Optional -> "`Optional"
+     | With_default -> "`With_default")
 
 and print_type_inst buf (loc, s, l) =
   bprintf buf "(%a, %S, %a)"

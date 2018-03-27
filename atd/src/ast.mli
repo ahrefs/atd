@@ -108,23 +108,22 @@ and cell = loc * type_expr * annot
         [(float * float * <ocaml default="0.0"> float)]. *)
 
 and field_kind =
-    [ `Required
-    | `Optional
-    | `With_default
-    ]
-      (**
-         Different kinds of record fields based on the
-         - [`Required]: required field, e.g. [id : string]
-         - [`Optional]: optional field without a default value, e.g.
-         [?name : string option].  The ATD type of the field
-         value must be an option type.
-         - [`With_default]: optional field with a default value, e.g.
-         [~websites : string list]. The default value may be implicit
-         or specified explicitely using annotations.
-         Each target language that cannot omit fields
-         may have to specify the default in its own syntax.
+  | Required
+  | Optional
+  | With_default
+  (**
+     Different kinds of record fields based on the
+     - [Required]: required field, e.g. [id : string]
+     - [Optional]: optional field without a default value, e.g.
+     [?name : string option].  The ATD type of the field
+     value must be an option type.
+     - [With_default]: optional field with a default value, e.g.
+     [~websites : string list]. The default value may be implicit
+     or specified explicitely using annotations.
+     Each target language that cannot omit fields
+     may have to specify the default in its own syntax.
 
-         Sample ATD file:
+     Sample ATD file:
 {v
 type level = [ Beginner | Advanced | Expert ]
 

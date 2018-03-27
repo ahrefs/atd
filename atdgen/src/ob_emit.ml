@@ -173,34 +173,34 @@ let get_fields deref a =
     fun x ->
       let ocaml_fname, ocaml_default, optional, unwrapped =
         match x.f_arepr, x.f_brepr with
-            Ocaml.Repr.Field o, `Field b ->
-              let ocaml_default =
-                match x.f_kind with
-                    `With_default ->
-                      (match o.Ocaml.ocaml_default with
-                           None ->
-                             let d =
-                               Ocaml.get_implicit_ocaml_default
-                                 deref x.f_value in
-                             if d = None then
-                               error x.f_loc "Missing default field value"
-                             else
-                               d
-                         | Some _ as default -> default
-                      )
-                  | `Optional -> Some "None"
-                  | `Required -> None
-              in
-              let optional =
-                match x.f_kind with
-                    `Optional | `With_default -> true
-                  | `Required -> false
-              in
-              o.Ocaml.ocaml_fname,
-              ocaml_default,
-              optional,
-              b.Biniou.biniou_unwrapped
-          | _ -> assert false
+          Ocaml.Repr.Field o, `Field b ->
+            let ocaml_default =
+              match x.f_kind with
+                With_default ->
+                  (match o.Ocaml.ocaml_default with
+                     None ->
+                       let d =
+                         Ocaml.get_implicit_ocaml_default
+                           deref x.f_value in
+                       if d = None then
+                         error x.f_loc "Missing default field value"
+                       else
+                         d
+                   | Some _ as default -> default
+                  )
+              | Optional -> Some "None"
+              | Required -> None
+            in
+            let optional =
+              match x.f_kind with
+                Optional | With_default -> true
+              | Required -> false
+            in
+            o.Ocaml.ocaml_fname,
+            ocaml_default,
+            optional,
+            b.Biniou.biniou_unwrapped
+        | _ -> assert false
       in
       (x, ocaml_fname, ocaml_default, optional, unwrapped)
   )

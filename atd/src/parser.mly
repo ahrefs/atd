@@ -205,7 +205,7 @@ field:
 ;
 
 field_name:
-| k = LIDENT             { (k, `Required) }
-| QUESTION k = LIDENT    { (k, `Optional) }
-| TILDE k = LIDENT       { (k, `With_default) }
+| k = LIDENT             { (k, Required) }
+| QUESTION k = LIDENT    { (k, Optional) }
+| TILDE k = LIDENT       { (k, With_default) }
 ;

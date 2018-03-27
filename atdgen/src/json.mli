@@ -1,6 +1,7 @@
 
-type json_float = [ `Float of int option (* max decimal places *)
-                  | `Int ]
+type json_float =
+  | Float of int option (* max decimal places *)
+  | Int
 
 type json_list = Array | Object
 

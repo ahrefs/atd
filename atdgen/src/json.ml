@@ -2,8 +2,9 @@
   Mapping from ATD to JSON
 *)
 
-type json_float = [ `Float of int option (* max decimal places *)
-                  | `Int ]
+type json_float =
+  | Float of int option (* max decimal places *)
+  | Int
 
 type json_list = Array | Object
 
@@ -60,8 +61,8 @@ let get_json_float an : json_float =
   match
     Atd.Annot.get_field json_float_of_string `Float ["json"] "repr" an
   with
-      `Float -> `Float (get_json_precision an)
-    | `Int -> `Int
+      `Float -> Float (get_json_precision an)
+    | `Int -> Int
 
 let json_list_of_string s : json_list option =
   match s with

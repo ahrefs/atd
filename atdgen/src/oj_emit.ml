@@ -290,16 +290,16 @@ let rec get_writer_name
 
     | Float (_, `Float, `Float j) ->
         (match j with
-            `Float None ->
-              if p.std then "Yojson.Safe.write_std_float"
-              else "Yojson.Safe.write_float"
-          | `Float (Some precision) ->
-              if p.std then
-                sprintf "Yojson.Safe.write_std_float_prec %i" precision
-              else
-                sprintf "Yojson.Safe.write_float_prec %i" precision
-          | `Int ->
-              "Atdgen_runtime.Oj_run.write_float_as_int"
+           Float None ->
+             if p.std then "Yojson.Safe.write_std_float"
+             else "Yojson.Safe.write_float"
+         | Float (Some precision) ->
+             if p.std then
+               sprintf "Yojson.Safe.write_std_float_prec %i" precision
+             else
+               sprintf "Yojson.Safe.write_float_prec %i" precision
+         | Int ->
+             "Atdgen_runtime.Oj_run.write_float_as_int"
         )
 
     | String (_, `String, `String) ->

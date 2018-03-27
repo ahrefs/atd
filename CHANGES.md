@@ -1,5 +1,5 @@
-1.13 (next)
------------
+1.13.0 (next)
+-------------
 
 * Introduce `atdgen-runtime` package. This package contains the runtime
   dependency introduced by the `atdgen` code generator. The old runtime

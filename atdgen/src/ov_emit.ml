@@ -267,8 +267,8 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
         else
           let validate =
             match o with
-                `List -> "Atdgen_runtime.Ov_run.validate_list ("
-              | `Array -> "Atdgen_runtime.Ov_run.validate_array ("
+                List -> "Atdgen_runtime.Ov_run.validate_list ("
+              | Array -> "Atdgen_runtime.Ov_run.validate_array ("
           in
           prepend_validator_f v [
             `Line validate;

@@ -5,7 +5,7 @@ type pp_convs =
 type atd_ocaml_sum = Classic | Poly
 type atd_ocaml_record = [ `Record | `Object ]
 type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
-type atd_ocaml_list = [ `List | `Array ]
+type atd_ocaml_list = List | Array
 type target = [ `Default | `Biniou | `Json | `Validate ]
 
 type atd_ocaml_wrap = {
@@ -92,7 +92,7 @@ val get_implicit_ocaml_default
      | `Float of 'd * [> `Float ] * 'e
      | `Int of
           'f * [> `Int of [< `Char | `Float | `Int | `Int32 | `Int64 ] ] * 'g
-     | `List of 'h * 'i * [> `List of [> `Array | `List ] ] * 'j
+     | `List of 'h * 'i * [> `List of atd_ocaml_list] * 'j
      | `Nullable of 'k * 'l * [> `Nullable ] * 'm
      | `Option of 'n * 'o * [> `Option ] * 'p
      | `String of 'q * [> `String ] * 'r

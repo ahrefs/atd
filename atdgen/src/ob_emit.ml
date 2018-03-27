@@ -480,7 +480,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
 
     | `List (_, x, `List o, `List b) ->
         (match o, b with
-             `List, `Array ->
+             List, `Array ->
                let tag = get_biniou_tag x in
                [
                  `Line (sprintf "Atdgen_runtime.Ob_run.write_%slist" un);
@@ -491,7 +491,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
                    `Line ")";
                  ]
                ]
-           | `Array, `Array ->
+           | Array, `Array ->
                let tag = get_biniou_tag x in
                [
                  `Line (sprintf "Atdgen_runtime.Ob_run.write_%sarray" un);
@@ -669,13 +669,13 @@ and make_table_writer deref tagged list_kind x =
   in
   let let_len =
     match list_kind with
-        `List -> `Line "let len = List.length x in"
-      | `Array -> `Line "let len = Array.length x in"
+        List -> `Line "let len = List.length x in"
+      | Array -> `Line "let len = Array.length x in"
   in
   let iter2 =
     match list_kind with
-        `List -> "Atdgen_runtime.Ob_run.list_iter2"
-      | `Array -> "Atdgen_runtime.Ob_run.array_iter2"
+        List -> "Atdgen_runtime.Ob_run.list_iter2"
+      | Array -> "Atdgen_runtime.Ob_run.array_iter2"
   in
   let l = Array.to_list a in
   let write_header =
@@ -942,7 +942,7 @@ let rec make_reader
 
     | `List (loc, x, `List o, `List b) ->
         (match o, b with
-             `List, `Array ->
+             List, `Array ->
                let f =
                  if tagged then "Atdgen_runtime.Ob_run.read_list"
                  else "Atdgen_runtime.Ob_run.get_list_reader"
@@ -952,7 +952,7 @@ let rec make_reader
                  `Block (make_reader deref ~ocaml_version ~tagged:false x);
                  `Line ")";
                ]
-           | `Array, `Array ->
+           | Array, `Array ->
                let f =
                  if tagged then "Atdgen_runtime.Ob_run.read_array"
                  else "Atdgen_runtime.Ob_run.get_array_reader"
@@ -969,8 +969,8 @@ let rec make_reader
                let body2 =
                  let f =
                    match list_kind with
-                       `List -> "Atdgen_runtime.Ob_run.read_list_value"
-                     | `Array -> "Atdgen_runtime.Ob_run.read_array_value"
+                       List -> "Atdgen_runtime.Ob_run.read_list_value"
+                     | Array -> "Atdgen_runtime.Ob_run.read_array_value"
                  in
                  [
                    `Line (f ^ " (");
@@ -1214,8 +1214,8 @@ and make_tuple_reader deref ~ocaml_version a =
 and make_table_reader deref ~ocaml_version loc list_kind x =
   let empty_list, to_list =
     match list_kind with
-        `List -> "[ ]", (fun s -> "Array.to_list " ^ s)
-      | `Array -> "[| |]", (fun s -> s)
+        List -> "[ ]", (fun s -> "Array.to_list " ^ s)
+      | Array -> "[| |]", (fun s -> s)
   in
   let fields =
     match deref x with

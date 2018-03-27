@@ -511,8 +511,8 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
              `Array ->
                let write =
                  match o with
-                     `List -> "Atdgen_runtime.Oj_run.write_list ("
-                   | `Array -> "Atdgen_runtime.Oj_run.write_array ("
+                     List -> "Atdgen_runtime.Oj_run.write_list ("
+                   | Array -> "Atdgen_runtime.Oj_run.write_array ("
                in
                [
                  `Line write;
@@ -524,8 +524,8 @@ let rec make_writer p (x : oj_mapping) : Indent.t list =
                let k, v = get_assoc_type p.deref loc x in
                let write =
                  match o with
-                     `List -> "Atdgen_runtime.Oj_run.write_assoc_list ("
-                   | `Array -> "Atdgen_runtime.Oj_run.write_assoc_array ("
+                     List -> "Atdgen_runtime.Oj_run.write_assoc_list ("
+                   | Array -> "Atdgen_runtime.Oj_run.write_assoc_array ("
                in
                [
                  `Line write;
@@ -1014,8 +1014,8 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
              `Array ->
                let read =
                  match o with
-                     `List -> "Atdgen_runtime.Oj_run.read_list ("
-                   | `Array -> "Atdgen_runtime.Oj_run.read_array ("
+                     List -> "Atdgen_runtime.Oj_run.read_list ("
+                   | Array -> "Atdgen_runtime.Oj_run.read_array ("
                in
                [
                  `Line read;
@@ -1027,8 +1027,8 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
                let k, v = get_assoc_type p.deref loc x in
                let read =
                  match o with
-                     `List -> "Atdgen_runtime.Oj_run.read_assoc_list ("
-                   | `Array -> "Atdgen_runtime.Oj_run.read_assoc_array ("
+                     List -> "Atdgen_runtime.Oj_run.read_assoc_list ("
+                   | Array -> "Atdgen_runtime.Oj_run.read_assoc_array ("
                in
                [
                  `Line read;

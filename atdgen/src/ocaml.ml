@@ -21,7 +21,7 @@ type atd_ocaml_sum = Classic | Poly
 type atd_ocaml_record = [ `Record | `Object ]
 
 type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
-type atd_ocaml_list = [ `List | `Array ]
+type atd_ocaml_list = List | Array
 
 type atd_ocaml_wrap = {
   ocaml_wrap_t : string;
@@ -108,14 +108,14 @@ let ocaml_record_of_string s : atd_ocaml_record option =
 
 let ocaml_list_of_string s : atd_ocaml_list option =
   match s with
-      "list" -> Some `List
-    | "array" -> Some `Array
+      "list" -> Some List
+    | "array" -> Some Array
     | _ -> None
 
 let string_of_ocaml_list (x : atd_ocaml_list) =
   match x with
-      `List -> "list"
-    | `Array -> "Atdgen_runtime.Util.ocaml_array"
+      List -> "list"
+    | Array -> "Atdgen_runtime.Util.ocaml_array"
 
 let get_ocaml_int an =
   Atd.Annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
@@ -155,7 +155,7 @@ let get_ocaml_record an =
   Atd.Annot.get_field ocaml_record_of_string `Record ["ocaml"] "repr" an
 
 let get_ocaml_list an =
-  Atd.Annot.get_field ocaml_list_of_string `List ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_list_of_string List ["ocaml"] "repr" an
 
 let get_ocaml_wrap loc an =
   let module_ =
@@ -490,7 +490,7 @@ let vlist = {
 
 let make_atom s = Atom (s, atom)
 
-let horizontal_sequence l = List (("", "", "", shlist), l)
+let horizontal_sequence l = Easy_format.List (("", "", "", shlist), l)
 
 let rec insert sep = function
     [] | [_] as l -> l
@@ -510,7 +510,7 @@ let vertical_sequence ?(skip_lines = 0) l =
       in
       insert sep l
   in
-  List (("", "", "", rlist), l)
+  Easy_format.List (("", "", "", rlist), l)
 
 let escape f s =
   let buf = Buffer.create (2 * String.length s) in
@@ -573,14 +573,14 @@ let make_ocamldoc_comment (`Text l) =
         [] | [_] -> vlist1
       | _ -> vlist
   in
-  List (("(**", "", "*)", xlist), blocks)
+  Easy_format.List (("(**", "", "*)", xlist), blocks)
 
 let prepend_ocamldoc_comment doc x =
   match doc with
       None -> x
     | Some y ->
         let comment = make_ocamldoc_comment y in
-        List (("", "", "", rlist), [comment;x])
+        Easy_format.List (("", "", "", rlist), [comment;x])
 
 let append_ocamldoc_comment x doc =
   match doc with
@@ -797,8 +797,8 @@ let get_implicit_ocaml_default deref x =
                 | `Float -> "0.")
     | `Float (_, `Float, _) -> Some "0.0"
     | `String (_, `String, _) -> Some "\"\""
-    | `List (_, _, `List `List, _) -> Some "[]"
-    | `List (_, _, `List `Array, _) -> Some "[||]"
+    | `List (_, _, `List List, _) -> Some "[]"
+    | `List (_, _, `List Array, _) -> Some "[||]"
     | `Option (_, _, `Option, _) -> Some "None"
     | `Nullable (_, _, `Nullable, _) -> Some "None"
     | _ -> None

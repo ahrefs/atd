@@ -137,11 +137,11 @@ let expand_module_body
     ?inherit_fields
     ?inherit_variants
     (l : Ast.module_body) =
-  let td_list = List.map (function `Type td -> td) l in
+  let td_list = List.map (function (Ast.Type td) -> td) l in
   let tbl = load_defs td_list in
   let td_list =
     List.map (
       fun (loc, name, t) ->
         (loc, name, expand ?inherit_fields ?inherit_variants tbl t)
     ) td_list in
-  List.map (fun td -> `Type td) td_list
+  List.map (fun td -> Ast.Type td) td_list

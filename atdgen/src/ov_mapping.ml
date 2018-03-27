@@ -332,7 +332,7 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
 
 let fill_def_tbl defs l =
   List.iter (
-    function `Type (_, (name, _, _), x) -> Hashtbl.add defs name x
+    function Atd.Ast.Type (_, (name, _, _), x) -> Hashtbl.add defs name x
   ) l
 
 let init_def_tbl () =
@@ -344,7 +344,7 @@ let make_def_tbl2 l =
   defs
 
 let defs_of_atd_module_gen is_shallow l =
-  List.map (function `Type def -> def_of_atd is_shallow def) l
+  List.map (function Atd.Ast.Type def -> def_of_atd is_shallow def) l
 
 let defs_of_atd_modules l =
   let defs = make_def_tbl2 l in

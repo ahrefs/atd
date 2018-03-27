@@ -307,7 +307,7 @@ import org.json.*;
 
 let rec trans_module env items = List.fold_left trans_outer env items
 
-and trans_outer env (`Type (_, (name, _, _), atd_ty)) =
+and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
   match unwrap atd_ty with
     | `Sum _ as s ->
         trans_sum name env s

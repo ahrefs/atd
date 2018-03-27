@@ -1,1 +1,1 @@
-val check : [ `Type of Ast.type_def ] list -> unit
+val check : Ast.module_body -> unit

@@ -130,7 +130,7 @@ and print_type_inst buf (loc, s, l) =
     (print_list print_type_expr) l
 
 
-let print_module_item buf (`Type (loc, (name, param, a), x)) =
+let print_module_item buf (Ast.Type (loc, (name, param, a), x)) =
   bprintf buf "`Type (%a, (%S, %a, %a), %a)"
     print_loc loc
     name (print_list print_qstring) param print_annot_list a

@@ -59,7 +59,7 @@ afield:
 module_item:
 
 | TYPE p = type_param s = LIDENT a = annot EQ t = type_expr
-                               { `Type (($startpos, $endpos), (s, p, a), t) }
+                               { Type (($startpos, $endpos), (s, p, a), t) }
 
 | TYPE type_param LIDENT annot EQ _e=error
     { syntax_error "Expecting type expression" $startpos(_e) $endpos(_e) }

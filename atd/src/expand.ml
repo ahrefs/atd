@@ -597,10 +597,10 @@ let standardize_type_names
 
 
 let expand_module_body ?(prefix = "_") ?keep_poly ?(debug = false) l =
-  let td_list = List.map (function `Type td -> td) l in
+  let td_list = List.map (function (Type td) -> td) l in
   let (td_list, original_types) = expand ?keep_poly td_list in
   let td_list =
     if debug then td_list
     else standardize_type_names ~prefix ~original_types td_list
   in
-  (List.map (fun td -> `Type td) td_list, original_types)
+  (List.map (fun td -> (Type td)) td_list, original_types)

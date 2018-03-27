@@ -22,7 +22,7 @@ and annot_field = string * (loc * string option)
 and type_def = loc * (string * type_param * annot) * type_expr
 
 and module_item =
-    [ `Type of type_def ]
+  | Type of type_def
 
 and type_param = string list
 
@@ -158,8 +158,8 @@ and amap_field f = function
 and amap_cell f (loc, x, a) =
   (loc, amap_type_expr f x, f a)
 
-let amap_module_item f (`Type (loc, (name, param, a), x)) =
-  `Type (loc, (name, param, f a), amap_type_expr f x)
+let amap_module_item f (Type (loc, (name, param, a), x)) =
+  Type (loc, (name, param, f a), amap_type_expr f x)
 
 let amap_head f (loc, a) = (loc, f a)
 

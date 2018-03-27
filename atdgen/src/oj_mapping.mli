@@ -6,9 +6,5 @@ type oj_mapping =
     (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
 
 val defs_of_atd_modules
-  : ('a *
-     [< `Type of
-          Atd.Ast.loc * (string * string list * Atd.Annot.t) * Atd.Ast.type_expr ]
-       list
-    ) list
+  : ('a * Atd.Ast.module_body) list
   -> ('a * (Ocaml.Repr.t, Json.json_repr) Mapping.def list) list

@@ -105,27 +105,27 @@ let make_closures format_annot =
 
   let rec format_module_item (x : module_item) =
     match x with
-        `Type (_, (s, param, a), t) ->
-          let left =
-            if a = [] then
-              let l =
-                make_atom "type" ::
-                  prepend_type_param param
-                  [ make_atom (s ^ " =") ]
-              in
-              horizontal_sequence l
-            else
-              let l =
-                make_atom "type"
-                :: prepend_type_param param [ make_atom s ]
-              in
-              let x = append_annots a (horizontal_sequence l) in
-              horizontal_sequence [ x; make_atom "=" ]
-          in
-          Label (
-            (left, label),
-            format_type_expr t
-          )
+      Type (_, (s, param, a), t) ->
+        let left =
+          if a = [] then
+            let l =
+              make_atom "type" ::
+              prepend_type_param param
+                [ make_atom (s ^ " =") ]
+            in
+            horizontal_sequence l
+          else
+            let l =
+              make_atom "type"
+              :: prepend_type_param param [ make_atom s ]
+            in
+            let x = append_annots a (horizontal_sequence l) in
+            horizontal_sequence [ x; make_atom "=" ]
+        in
+        Label (
+          (left, label),
+          format_type_expr t
+        )
 
 
 

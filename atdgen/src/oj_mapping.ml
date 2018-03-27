@@ -195,7 +195,7 @@ let def_of_atd (loc, (name, param, an), x) =
   }
 
 let defs_of_atd_module l =
-  List.map (function `Type def -> def_of_atd def) l
+  List.map (function Atd.Ast.Type def -> def_of_atd def) l
 
 let defs_of_atd_modules l =
   List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l

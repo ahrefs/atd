@@ -150,7 +150,7 @@ let check (l : Ast.module_body) =
 
   (* first pass: put all definitions in the table *)
   List.iter (
-    function `Type ((loc, (k, pl, _), _) as x) ->
+    function Type ((loc, (k, pl, _), _) as x) ->
       if Hashtbl.mem tbl k then
         if Hashtbl.mem predef k then
           error_at loc
@@ -165,6 +165,6 @@ let check (l : Ast.module_body) =
   (* second pass: check existence and arity of types in type expressions,
      check that inheritance is not cyclic *)
   List.iter (
-    function `Type (_, (_, tvars, _), t) ->
+    function (Ast.Type (_, (_, tvars, _), t)) ->
       check_type_expr tbl tvars t
   ) l;

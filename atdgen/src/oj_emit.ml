@@ -1806,7 +1806,7 @@ let error_too_many_untypeds name untypeds =
 
 let check_atd (_head, body) =
   List.iter (function
-    | (`Type (loc, (name, _, _), `Sum (_, conss, _))) ->
+    | (Atd.Ast.Type (loc, (name, _, _), `Sum (_, conss, _))) ->
         begin match List.fold_left check_variant [] conss with
           | [] | [_] -> ()
           | untypeds ->

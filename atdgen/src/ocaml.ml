@@ -382,7 +382,7 @@ let rec select f = function
 
 let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
   select (
-    fun (`Type td) ->
+    fun (Atd.Ast.Type td) ->
       match map_def ~target ~type_aliases td with
           None -> None
         | Some x -> Some (`Type x)

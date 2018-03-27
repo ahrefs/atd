@@ -39,7 +39,7 @@ and module_body = module_item list
     *)
 
 and module_item =
-    [ `Type of type_def ]
+  | Type of type_def
       (** There is currently only one kind of module items,
           that is single type definitions. *)
 

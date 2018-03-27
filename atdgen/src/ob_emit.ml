@@ -566,8 +566,8 @@ and make_variant_writer deref tick x : Indent.t list =
 and make_record_writer deref tagged a record_kind =
   let dot =
     match record_kind with
-        `Record -> "."
-      | `Object -> "#"
+        Record -> "."
+      | Object -> "#"
   in
   let fields = get_fields deref a in
   let write_length =
@@ -664,8 +664,8 @@ and make_table_writer deref tagged list_kind x =
   in
   let dot =
     match record_kind with
-        `Record -> "."
-      | `Object -> "#"
+        Record -> "."
+      | Object -> "#"
   in
   let let_len =
     match list_kind with
@@ -929,8 +929,8 @@ let rec make_reader
 
     | Record (loc, a, `Record o, `Record) ->
         (match o with
-             `Record -> ()
-           | `Object ->
+             Record -> ()
+           | Object ->
                error loc "Sorry, OCaml objects are not supported"
         );
         let body = make_record_reader deref ~ocaml_version type_annot a in
@@ -1221,8 +1221,8 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
     match deref x with
         Record (loc, a, `Record o, `Record) ->
           (match o with
-               `Record -> ()
-             | `Object ->
+               Record -> ()
+             | Object ->
                  error loc "Sorry, OCaml objects are not supported"
           );
           get_fields deref a

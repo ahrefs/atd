@@ -201,7 +201,7 @@ let get_type_constraint ~original_types def =
    constructor/field name disambiguation *)
 let needs_type_annot (x : _ expr) =
   match x with
-  | Record (_, _, `Record `Record, _)
+  | Record (_, _, `Record Record, _)
   | Sum (_, _, `Sum Classic, _) -> true
   | _ -> false
 
@@ -254,7 +254,7 @@ let is_exportable def =
 
 let make_record_creator deref x =
   match x.def_value with
-    Some (Record (_, a, `Record `Record, _)) ->
+    Some (Record (_, a, `Record Ocaml.Record, _)) ->
       let s = x.def_name in
       let full_name = get_full_type_name x in
       let l =

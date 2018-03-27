@@ -18,7 +18,7 @@ type pp_convs =
 (* Type mapping from ATD to OCaml *)
 
 type atd_ocaml_sum = Classic | Poly
-type atd_ocaml_record = [ `Record | `Object ]
+type atd_ocaml_record = Record | Object
 
 type atd_ocaml_int = Int | Char | Int32 | Int64 | Float
 type atd_ocaml_list = List | Array
@@ -102,8 +102,8 @@ let ocaml_sum_of_string s : atd_ocaml_sum option =
 
 let ocaml_record_of_string s : atd_ocaml_record option =
   match s with
-      "record" -> Some `Record
-    | "object" -> Some `Object
+      "record" -> Some Record
+    | "object" -> Some Object
     | _ -> None
 
 let ocaml_list_of_string s : atd_ocaml_list option =
@@ -152,7 +152,7 @@ let get_ocaml_field_prefix an =
   Atd.Annot.get_field (fun s -> Some s) "" ["ocaml"] "field_prefix" an
 
 let get_ocaml_record an =
-  Atd.Annot.get_field ocaml_record_of_string `Record ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_record_of_string Record ["ocaml"] "repr" an
 
 let get_ocaml_list an =
   Atd.Annot.get_field ocaml_list_of_string List ["ocaml"] "repr" an
@@ -358,7 +358,7 @@ let map_def
             let x =
               match map_expr x with
                   `Sum (Classic, _)
-                | `Record (`Record, _) as x -> Some x
+                | `Record (Record, _) as x -> Some x
                 | _ -> None
             in
             (alias, x)
@@ -406,7 +406,7 @@ let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
       `Sum (kind, List.map ocaml_of_variant_mapping l)
   | Record (_, a, `Record _, _) ->
       let l = Array.to_list a in
-      `Record (`Record, List.map ocaml_of_field_mapping l)
+      `Record (Record, List.map ocaml_of_field_mapping l)
   | Tuple (_, a, _, _) ->
       let l = Array.to_list a in
       `Tuple (List.map (fun x -> ocaml_of_expr_mapping x.cel_value) l)
@@ -683,8 +683,8 @@ and format_type_expr x =
     | `Record (kind, l) ->
         let op, cl =
           match kind with
-              `Record -> "{", "}"
-            | `Object -> "<", ">"
+              Record -> "{", "}"
+            | Object -> "<", ">"
         in
         List (
           (op, ";", cl, list),

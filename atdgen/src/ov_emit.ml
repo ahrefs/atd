@@ -323,8 +323,8 @@ and make_variant_validator tick x :
 and make_record_validator a record_kind =
   let dot =
     match record_kind with
-        `Record -> "."
-      | `Object -> "#"
+        Record -> "."
+      | Object -> "#"
   in
   let fields = get_fields a in
   assert (fields <> []);

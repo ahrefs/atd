@@ -670,8 +670,8 @@ and make_record_writer p a record_kind =
   in
   let v_of_field field =
     let dot = match record_kind with
-      | `Record -> "."
-      | `Object -> "#"
+      | Record -> "."
+      | Object -> "#"
     in
     let ocaml_fname = field.ocamlf.Ocaml.ocaml_fname in
     if is_optional field then
@@ -994,8 +994,8 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
 
     | Record (loc, a, `Record o, Record j) ->
         (match o with
-             `Record -> ()
-           | `Object ->
+             Record -> ()
+           | Object ->
                error loc "Sorry, OCaml objects are not supported"
         );
         [

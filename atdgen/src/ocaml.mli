@@ -88,7 +88,7 @@ val get_ocaml_module_and_t
 
 
 val get_implicit_ocaml_default
-  : ('a -> (Repr.t, 'b) Atdgen_emit__Mapping.mapping)
+  : ('a -> (Repr.t, 'b) Atdgen_emit.Mapping.mapping)
   -> 'a
   -> string option
 

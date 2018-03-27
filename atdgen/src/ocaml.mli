@@ -88,14 +88,16 @@ val get_ocaml_module_and_t
 
 val get_implicit_ocaml_default
   : ('a ->
-     [> `Bool of 'b * [> `Bool ] * 'c
-     | `Float of 'd * [> `Float ] * 'e
-     | `Int of 'f * [> `Int of atd_ocaml_int ] * 'g
-     | `List of 'h * 'i * [> `List of atd_ocaml_list] * 'j
-     | `Nullable of 'k * 'l * [> `Nullable ] * 'm
-     | `Option of 'n * 'o * [> `Option ] * 'p
-     | `String of 'q * [> `String ] * 'r
-     | `Unit of 's * [> `Unit ] * 't ])
+     ([> `Bool
+      | `Float
+      | `Int of atd_ocaml_int
+      | `List of atd_ocaml_list
+      | `Nullable
+      | `Option
+      | `String
+      | `Unit ],
+      'b)
+       Atdgen_emit__Mapping.mapping)
   -> 'a
   -> string option
 

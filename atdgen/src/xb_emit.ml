@@ -20,39 +20,39 @@ type names = {
 
 let rec extract_names_from_expr acc (x : 'a expr) =
   match x with
-      `Unit _
-    | `Bool _
-    | `Int _
-    | `Float  _
-    | `String _ -> acc
-    | `Sum (_, va, _, _) ->
-        let l, (fn, vn) =
-          Array.fold_left extract_names_from_variant ([], acc) va
-        in
-        (fn, List.rev l :: vn)
+    Unit _
+  | Bool _
+  | Int _
+  | Float  _
+  | String _ -> acc
+  | Sum (_, va, _, _) ->
+      let l, (fn, vn) =
+        Array.fold_left extract_names_from_variant ([], acc) va
+      in
+      (fn, List.rev l :: vn)
 
-    | `Record (_, fa, _, _) ->
-        let l, (fn, vn) =
-          Array.fold_left extract_names_from_field ([], acc) fa
-        in
-        (List.rev l :: fn, vn)
+  | Record (_, fa, _, _) ->
+      let l, (fn, vn) =
+        Array.fold_left extract_names_from_field ([], acc) fa
+      in
+      (List.rev l :: fn, vn)
 
-    | `Tuple (_, ca, _, _) ->
-        Array.fold_left extract_names_from_cell acc ca
+  | Tuple (_, ca, _, _) ->
+      Array.fold_left extract_names_from_cell acc ca
 
-    | `List (_, x, _, _)
-    | `Option (_, x, _, _)
-    | `Nullable (_, x, _, _)
-    | `Wrap (_, x, _, _) ->
-        extract_names_from_expr acc x
+  | List (_, x, _, _)
+  | Option (_, x, _, _)
+  | Nullable (_, x, _, _)
+  | Wrap (_, x, _, _) ->
+      extract_names_from_expr acc x
 
-    | `Name (_, _, l, _, _) ->
-        List.fold_left extract_names_from_expr acc l
+  | Name (_, _, l, _, _) ->
+      List.fold_left extract_names_from_expr acc l
 
-    | `External (_, _, l, _, _) ->
-        List.fold_left extract_names_from_expr acc l
+  | External (_, _, l, _, _) ->
+      List.fold_left extract_names_from_expr acc l
 
-    | `Tvar _ -> acc
+  | Tvar _ -> acc
 
 and extract_names_from_variant (l, acc) x =
   let l = (x.var_loc, x.var_cons) :: l in

@@ -11,70 +11,70 @@ type ob_mapping =
 
 let rec mapping_of_expr (x : type_expr) : ob_mapping =
   match x with
-      `Sum (loc, l, an) ->
-        let ocaml_t = `Sum (Ocaml.get_ocaml_sum an) in
-        let biniou_t = `Sum in
-        `Sum (loc, Array.of_list (List.map mapping_of_variant l),
+    `Sum (loc, l, an) ->
+      let ocaml_t = `Sum (Ocaml.get_ocaml_sum an) in
+      let biniou_t = `Sum in
+      Sum (loc, Array.of_list (List.map mapping_of_variant l),
+           ocaml_t, biniou_t)
+
+  | `Record (loc, l, an) ->
+      let ocaml_t = `Record (Ocaml.get_ocaml_record an) in
+      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
+      let biniou_t = `Record in
+      Record (loc,
+               Array.of_list
+                 (List.map (mapping_of_field ocaml_field_prefix) l),
+               ocaml_t, biniou_t)
+
+  | `Tuple (loc, l, _) ->
+      let ocaml_t = `Tuple in
+      let biniou_t = `Tuple in
+      Tuple (loc, Array.of_list (List.map mapping_of_cell l),
               ocaml_t, biniou_t)
 
-    | `Record (loc, l, an) ->
-        let ocaml_t = `Record (Ocaml.get_ocaml_record an) in
-        let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
-        let biniou_t = `Record in
-        `Record (loc,
-                 Array.of_list
-                   (List.map (mapping_of_field ocaml_field_prefix) l),
-                 ocaml_t, biniou_t)
+  | `List (loc, x, an) ->
+      let ocaml_t = `List (Ocaml.get_ocaml_list an) in
+      let biniou_t = `List (Biniou.get_biniou_list an) in
+      List (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
-    | `Tuple (loc, l, _) ->
-        let ocaml_t = `Tuple in
-        let biniou_t = `Tuple in
-        `Tuple (loc, Array.of_list (List.map mapping_of_cell l),
-                ocaml_t, biniou_t)
+  | `Option (loc, x, _) ->
+      let ocaml_t = `Option in
+      let biniou_t = `Option in
+      Option (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
-    | `List (loc, x, an) ->
-        let ocaml_t = `List (Ocaml.get_ocaml_list an) in
-        let biniou_t = `List (Biniou.get_biniou_list an) in
-        `List (loc, mapping_of_expr x, ocaml_t, biniou_t)
+  | `Nullable (loc, x, _) ->
+      let ocaml_t = `Nullable in
+      let biniou_t = `Nullable in
+      Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
-    | `Option (loc, x, _) ->
-        let ocaml_t = `Option in
-        let biniou_t = `Option in
-        `Option (loc, mapping_of_expr x, ocaml_t, biniou_t)
+  | `Shared (_, _, _) ->
+      failwith "Sharing is no longer supported"
 
-    | `Nullable (loc, x, _) ->
-        let ocaml_t = `Nullable in
-        let biniou_t = `Nullable in
-        `Nullable (loc, mapping_of_expr x, ocaml_t, biniou_t)
+  | `Wrap (loc, x, a) ->
+      let ocaml_t = `Wrap (Ocaml.get_ocaml_wrap loc a) in
+      let json_t = `Wrap in
+      Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
-    | `Shared (_, _, _) ->
-        failwith "Sharing is no longer supported"
-
-    | `Wrap (loc, x, a) ->
-        let ocaml_t = `Wrap (Ocaml.get_ocaml_wrap loc a) in
-        let json_t = `Wrap in
-        `Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
-
-    | `Name (loc, (_, s, l), an) ->
-        (match s with
-             "unit" ->
-               `Unit (loc, `Unit, `Unit)
-           | "bool" ->
-               `Bool (loc, `Bool, `Bool)
-           | "int" ->
-               let o = Ocaml.get_ocaml_int an in
-               let b = Biniou.get_biniou_int an in
-               `Int (loc, `Int o, `Int b)
-           | "float" ->
-               let b = Biniou.get_biniou_float an in
-               `Float (loc, `Float, `Float b)
-           | "string" ->
-               `String (loc, `String, `String)
-           | s ->
-               `Name (loc, s, List.map mapping_of_expr l, None, None)
-        )
-    | `Tvar (loc, s) ->
-        `Tvar (loc, s)
+  | `Name (loc, (_, s, l), an) ->
+      (match s with
+         "unit" ->
+           Unit (loc, `Unit, `Unit)
+       | "bool" ->
+           Bool (loc, `Bool, `Bool)
+       | "int" ->
+           let o = Ocaml.get_ocaml_int an in
+           let b = Biniou.get_biniou_int an in
+           Int (loc, `Int o, `Int b)
+       | "float" ->
+           let b = Biniou.get_biniou_float an in
+           Float (loc, `Float, `Float b)
+       | "string" ->
+           String (loc, `String, `String)
+       | s ->
+           Name (loc, s, List.map mapping_of_expr l, None, None)
+      )
+  | `Tvar (loc, s) ->
+      Tvar (loc, s)
 
 and mapping_of_cell (loc, x, an) =
   let default = Ocaml.get_ocaml_default an in
@@ -161,18 +161,18 @@ let def_of_atd (loc, (name, param, an), x) =
   let doc = Doc.get_doc loc an in
   let o =
     match as_abstract x with
-        Some (_, _) ->
-          (match Ocaml.get_ocaml_module_and_t Biniou name an with
-               None -> None
-             | Some (types_module, main_module, ext_name) ->
-                 let args = List.map (fun s -> `Tvar (loc, s)) param in
-                 Some (`External
-                         (loc, name, args,
-                          `External (types_module, main_module, ext_name),
-                          `External)
-                      )
-          )
-      | None -> Some (mapping_of_expr x)
+      Some (_, _) ->
+        (match Ocaml.get_ocaml_module_and_t Biniou name an with
+           None -> None
+         | Some (types_module, main_module, ext_name) ->
+             let args = List.map (fun s -> Tvar (loc, s)) param in
+             Some (External
+                     (loc, name, args,
+                      `External (types_module, main_module, ext_name),
+                      `External)
+                  )
+        )
+    | None -> Some (mapping_of_expr x)
   in
   {
     def_loc = loc;

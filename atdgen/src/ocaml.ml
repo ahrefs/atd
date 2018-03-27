@@ -396,33 +396,33 @@ let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
 
 let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
   match x with
-      `Unit (_, `Unit, _) -> `Name ("unit", [])
-    | `Bool (_, `Bool, _) -> `Name ("bool", [])
-    | `Int (_, `Int x, _) -> `Name (string_of_ocaml_int x, [])
-    | `Float (_, `Float, _) -> `Name ("float", [])
-    | `String (_, `String, _) -> `Name ("string", [])
-    | `Sum (_, a, `Sum kind, _) ->
-        let l = Array.to_list a in
-        `Sum (kind, List.map ocaml_of_variant_mapping l)
-    | `Record (_, a, `Record _, _) ->
-        let l = Array.to_list a in
-        `Record (`Record, List.map ocaml_of_field_mapping l)
-    | `Tuple (_, a, _, _) ->
-        let l = Array.to_list a in
-        `Tuple (List.map (fun x -> ocaml_of_expr_mapping x.cel_value) l)
-    | `List (_, x, `List kind, _) ->
-        `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
-    | `Option (_, x, `Option, _) ->
-        `Name ("option", [ocaml_of_expr_mapping x])
-    | `Nullable (_, x, `Nullable, _) ->
-        `Name ("option", [ocaml_of_expr_mapping x])
-    | `Wrap _ ->
-        assert false
-    | `Name (_, s, l, _, _) ->
-        `Name (s, List.map ocaml_of_expr_mapping l)
-    | `Tvar (_, s) ->
-        `Tvar s
-    | _ -> assert false
+    Unit (_, `Unit, _) -> `Name ("unit", [])
+  | Bool (_, `Bool, _) -> `Name ("bool", [])
+  | Int (_, `Int x, _) -> `Name (string_of_ocaml_int x, [])
+  | Float (_, `Float, _) -> `Name ("float", [])
+  | String (_, `String, _) -> `Name ("string", [])
+  | Sum (_, a, `Sum kind, _) ->
+      let l = Array.to_list a in
+      `Sum (kind, List.map ocaml_of_variant_mapping l)
+  | Record (_, a, `Record _, _) ->
+      let l = Array.to_list a in
+      `Record (`Record, List.map ocaml_of_field_mapping l)
+  | Tuple (_, a, _, _) ->
+      let l = Array.to_list a in
+      `Tuple (List.map (fun x -> ocaml_of_expr_mapping x.cel_value) l)
+  | List (_, x, `List kind, _) ->
+      `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
+  | Option (_, x, `Option, _) ->
+      `Name ("option", [ocaml_of_expr_mapping x])
+  | Nullable (_, x, `Nullable, _) ->
+      `Name ("option", [ocaml_of_expr_mapping x])
+  | Wrap _ ->
+      assert false
+  | Name (_, s, l, _, _) ->
+      `Name (s, List.map ocaml_of_expr_mapping l)
+  | Tvar (_, s) ->
+      `Tvar s
+  | _ -> assert false
 
 and ocaml_of_variant_mapping x =
   let o =
@@ -775,33 +775,33 @@ let ocaml_of_atd ?(pp_convs=Ppx []) ~target ~type_aliases
 
 let unwrap_option deref x =
   match deref x with
-      `Option (_, x, _, _)
-    | `Nullable (_, x, _, _) -> x
-    | `Name (loc, s, _, _, _) ->
-        Error.error loc ("Not an option type: " ^ s)
-    | x ->
-        Error.error (loc_of_mapping x) "Not an option type"
+    Option (_, x, _, _)
+  | Nullable (_, x, _, _) -> x
+  | Name (loc, s, _, _, _) ->
+      Error.error loc ("Not an option type: " ^ s)
+  | x ->
+      Error.error (loc_of_mapping x) "Not an option type"
 
 
 
 let get_implicit_ocaml_default deref x =
   match deref x with
-      `Unit (_, `Unit, _) -> Some "()"
-    | `Bool (_, `Bool, _) -> Some "false"
-    | `Int (_, `Int o, _) ->
-        Some (match o with
-                  Int -> "0"
-                | Char -> "'\000'"
-                | Int32 -> "0l"
-                | Int64 -> "0L"
-                | Float -> "0.")
-    | `Float (_, `Float, _) -> Some "0.0"
-    | `String (_, `String, _) -> Some "\"\""
-    | `List (_, _, `List List, _) -> Some "[]"
-    | `List (_, _, `List Array, _) -> Some "[||]"
-    | `Option (_, _, `Option, _) -> Some "None"
-    | `Nullable (_, _, `Nullable, _) -> Some "None"
-    | _ -> None
+    Unit (_, `Unit, _) -> Some "()"
+  | Bool (_, `Bool, _) -> Some "false"
+  | Int (_, `Int o, _) ->
+      Some (match o with
+          Int -> "0"
+        | Char -> "'\000'"
+        | Int32 -> "0l"
+        | Int64 -> "0L"
+        | Float -> "0.")
+  | Float (_, `Float, _) -> Some "0.0"
+  | String (_, `String, _) -> Some "\"\""
+  | List (_, _, `List List, _) -> Some "[]"
+  | List (_, _, `List Array, _) -> Some "[||]"
+  | Option (_, _, `Option, _) -> Some "None"
+  | Nullable (_, _, `Nullable, _) -> Some "None"
+  | _ -> None
 
 
 let map_record_creator_field deref x =

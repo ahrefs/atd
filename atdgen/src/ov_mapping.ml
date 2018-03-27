@@ -152,13 +152,13 @@ let rec mapping_of_expr
   match x0 with
       `Sum (loc, l, an) ->
         let ocaml_t = `Sum (Ocaml.get_ocaml_sum an) in
-        `Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
+        Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
               ocaml_t, v2 an x0)
 
     | `Record (loc, l, an) ->
         let ocaml_t = `Record (Ocaml.get_ocaml_record an) in
         let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
-        `Record (loc,
+        Record (loc,
                  Array.of_list
                    (List.map
                       (mapping_of_field is_shallow ocaml_field_prefix) l),
@@ -166,20 +166,20 @@ let rec mapping_of_expr
 
     | `Tuple (loc, l, an) ->
         let ocaml_t = `Tuple in
-        `Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
+        Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
                 ocaml_t, v2 an x0)
 
     | `List (loc, x, an) ->
         let ocaml_t = `List (Ocaml.get_ocaml_list an) in
-        `List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+        List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Option (loc, x, an) ->
         let ocaml_t = `Option in
-        `Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+        Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Nullable (loc, x, an) ->
         let ocaml_t = `Nullable in
-        `Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+        Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
     | `Shared (_, _, _) ->
         failwith "Sharing is not supported"
@@ -192,32 +192,32 @@ let rec mapping_of_expr
               None -> v2 an x0
             | Some _ -> v an, true
         in
-        `Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
+        Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
 
     | `Name (loc, (_, s, l), an) ->
         (match s with
-             "unit" ->
-               `Unit (loc, `Unit, (v an, true))
-           | "bool" ->
-               `Bool (loc, `Bool, (v an, true))
-           | "int" ->
-               let o = Ocaml.get_ocaml_int an in
-               `Int (loc, `Int o, (v an, true))
-           | "float" ->
-               `Float (loc, `Float, (v an, true))
-           | "string" ->
-               `String (loc, `String, (v an, true))
-           | s ->
-               let validator =
-                 match v2 an x0 with
-                     None, true -> None
-                   | x -> Some x
-               in
-               `Name (loc, s, List.map (mapping_of_expr is_shallow) l,
-                      None, validator)
+           "unit" ->
+             Unit (loc, `Unit, (v an, true))
+         | "bool" ->
+             Bool (loc, `Bool, (v an, true))
+         | "int" ->
+             let o = Ocaml.get_ocaml_int an in
+             Int (loc, `Int o, (v an, true))
+         | "float" ->
+             Float (loc, `Float, (v an, true))
+         | "string" ->
+             String (loc, `String, (v an, true))
+         | s ->
+             let validator =
+               match v2 an x0 with
+                 None, true -> None
+               | x -> Some x
+             in
+             Name (loc, s, List.map (mapping_of_expr is_shallow) l,
+                   None, validator)
         )
     | `Tvar (loc, s) ->
-        `Tvar (loc, s)
+        Tvar (loc, s)
 
 and mapping_of_cell is_shallow (loc, x, an) =
   let default = Ocaml.get_ocaml_default an in
@@ -310,8 +310,8 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
           (match Ocaml.get_ocaml_module_and_t Validate name an with
                None -> None
              | Some (types_module, main_module, ext_name) ->
-                 let args = List.map (fun s -> `Tvar (loc, s)) param in
-                 Some (`External
+                 let args = List.map (fun s -> Tvar (loc, s)) param in
+                 Some (External
                          (loc, name, args,
                           `External (types_module, main_module, ext_name),
                           (Validate.get_validator an2, false))

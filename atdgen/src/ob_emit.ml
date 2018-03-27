@@ -131,42 +131,42 @@ val %s_of_string :%s
 
 let rec get_biniou_tag (x : ob_mapping) =
   match x with
-      `Unit (_, `Unit, `Unit) -> "Bi_io.unit_tag"
-    | `Bool (_, `Bool, `Bool) -> "Bi_io.bool_tag"
-    | `Int (_, `Int _, `Int b) ->
-        (match b with
-             `Uvint -> "Bi_io.uvint_tag"
-           | `Svint -> "Bi_io.svint_tag"
-           | `Int8 -> "Bi_io.int8_tag"
-           | `Int16 -> "Bi_io.int16_tag"
-           | `Int32 -> "Bi_io.int32_tag"
-           | `Int64 -> "Bi_io.int64_tag"
-        )
-    | `Float (_, `Float, `Float b) ->
-        (match b with
-            `Float32 -> "Bi_io.float32_tag"
-          | `Float64 -> "Bi_io.float64_tag"
-        )
-    | `String (_, `String, `String) -> "Bi_io.string_tag"
-    | `Sum (_, _, `Sum _, `Sum) -> "Bi_io.variant_tag"
-    | `Record (_, _, `Record _, `Record) -> "Bi_io.record_tag"
-    | `Tuple (_, _, `Tuple, `Tuple) -> "Bi_io.tuple_tag"
-    | `List (_, _, `List _, `List b) ->
-        (match b with
-             `Array -> "Bi_io.array_tag"
-           | `Table -> "Bi_io.table_tag"
-        )
-    | `Option (_, _, `Option, `Option)
-    | `Nullable (_, _, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
-    | `Wrap (_, x, `Wrap _, `Wrap) -> get_biniou_tag x
+    Unit (_, `Unit, `Unit) -> "Bi_io.unit_tag"
+  | Bool (_, `Bool, `Bool) -> "Bi_io.bool_tag"
+  | Int (_, `Int _, `Int b) ->
+      (match b with
+         `Uvint -> "Bi_io.uvint_tag"
+       | `Svint -> "Bi_io.svint_tag"
+       | `Int8 -> "Bi_io.int8_tag"
+       | `Int16 -> "Bi_io.int16_tag"
+       | `Int32 -> "Bi_io.int32_tag"
+       | `Int64 -> "Bi_io.int64_tag"
+      )
+  | Float (_, `Float, `Float b) ->
+      (match b with
+         `Float32 -> "Bi_io.float32_tag"
+       | `Float64 -> "Bi_io.float64_tag"
+      )
+  | String (_, `String, `String) -> "Bi_io.string_tag"
+  | Sum (_, _, `Sum _, `Sum) -> "Bi_io.variant_tag"
+  | Record (_, _, `Record _, `Record) -> "Bi_io.record_tag"
+  | Tuple (_, _, `Tuple, `Tuple) -> "Bi_io.tuple_tag"
+  | List (_, _, `List _, `List b) ->
+      (match b with
+         `Array -> "Bi_io.array_tag"
+       | `Table -> "Bi_io.table_tag"
+      )
+  | Option (_, _, `Option, `Option)
+  | Nullable (_, _, `Nullable, `Nullable) -> "Bi_io.num_variant_tag"
+  | Wrap (_, x, `Wrap _, `Wrap) -> get_biniou_tag x
 
-    | `Name (_, s, _, None, None) -> sprintf "%s_tag" s
-    | `External (_, _, _,
-                 `External (_, main_module, ext_name),
-                 `External) ->
-        sprintf "%s.%s_tag" main_module ext_name
-    | `Tvar (_, s) -> sprintf "%s_tag" (Ox_emit.name_of_var s)
-    | _ -> assert false
+  | Name (_, s, _, None, None) -> sprintf "%s_tag" s
+  | External (_, _, _,
+              `External (_, main_module, ext_name),
+              `External) ->
+      sprintf "%s.%s_tag" main_module ext_name
+  | Tvar (_, s) -> sprintf "%s_tag" (Ox_emit.name_of_var s)
+  | _ -> assert false
 
 let get_fields deref a =
   List.map (
@@ -217,60 +217,60 @@ let rec get_writer_name
 
   let name_f =
     match name_f with
-        Some f -> f
-      | None ->
-          if tagged then
-            (fun s -> "write_" ^ s)
-          else
-            (fun s -> "write_untagged_" ^ s)
+      Some f -> f
+    | None ->
+        if tagged then
+          (fun s -> "write_" ^ s)
+        else
+          (fun s -> "write_untagged_" ^ s)
   in
 
   let un = if tagged then "" else "untagged_" in
   match x with
-      `Unit (_, `Unit, `Unit) ->
-        sprintf "Bi_io.write_%sunit" un
-    | `Bool (_, `Bool, `Bool) ->
-        sprintf "Bi_io.write_%sbool" un
-    | `Int (loc, `Int o, `Int b) ->
-        (match o, b with
-             Int, `Uvint -> sprintf "Bi_io.write_%suvint" un
-           | Int, `Svint -> sprintf "Bi_io.write_%ssvint" un
-           | Char, `Int8 -> sprintf "Bi_io.write_%schar" un
-           | Int, `Int8 -> sprintf "Bi_io.write_%sint8" un
-           | Int, `Int16 -> sprintf "Bi_io.write_%sint16" un
-           | Int32, `Int32 -> sprintf "Bi_io.write_%sint32" un
-           | Int64, `Int64 -> sprintf "Bi_io.write_%sint64" un
-           | _ ->
-               error loc "Unsupported combination of OCaml/Biniou int types"
-        )
+    Unit (_, `Unit, `Unit) ->
+      sprintf "Bi_io.write_%sunit" un
+  | Bool (_, `Bool, `Bool) ->
+      sprintf "Bi_io.write_%sbool" un
+  | Int (loc, `Int o, `Int b) ->
+      (match o, b with
+         Int, `Uvint -> sprintf "Bi_io.write_%suvint" un
+       | Int, `Svint -> sprintf "Bi_io.write_%ssvint" un
+       | Char, `Int8 -> sprintf "Bi_io.write_%schar" un
+       | Int, `Int8 -> sprintf "Bi_io.write_%sint8" un
+       | Int, `Int16 -> sprintf "Bi_io.write_%sint16" un
+       | Int32, `Int32 -> sprintf "Bi_io.write_%sint32" un
+       | Int64, `Int64 -> sprintf "Bi_io.write_%sint64" un
+       | _ ->
+           error loc "Unsupported combination of OCaml/Biniou int types"
+      )
 
-    | `Float (_, `Float, `Float b) ->
-        (match b with
-            `Float32 -> sprintf "Bi_io.write_%sfloat32" un
-          | `Float64 -> sprintf "Bi_io.write_%sfloat64" un
-        )
-    | `String (_, `String, `String) ->
-        sprintf "Bi_io.write_%sstring" un
+  | Float (_, `Float, `Float b) ->
+      (match b with
+         `Float32 -> sprintf "Bi_io.write_%sfloat32" un
+       | `Float64 -> sprintf "Bi_io.write_%sfloat64" un
+      )
+  | String (_, `String, `String) ->
+      sprintf "Bi_io.write_%sstring" un
 
-    | `Tvar (_, s) ->
-        sprintf "write_%s%s" un (Ox_emit.name_of_var s)
+  | Tvar (_, s) ->
+      sprintf "write_%s%s" un (Ox_emit.name_of_var s)
 
-    | `Name (_, s, args, None, None) ->
-        let l = List.map get_writer_names args in
-        let s = String.concat " " (name_f s :: l) in
-        if paren && l <> [] then "(" ^ s ^ ")"
-        else s
+  | Name (_, s, args, None, None) ->
+      let l = List.map get_writer_names args in
+      let s = String.concat " " (name_f s :: l) in
+      if paren && l <> [] then "(" ^ s ^ ")"
+      else s
 
-    | `External (_, _, args,
-                 `External (_, main_module, ext_name),
-                 `External) ->
-        let f = main_module ^ "." ^ name_f ext_name in
-        let l = List.map get_writer_names args in
-        let s = String.concat " " (f :: l) in
-        if paren && l <> [] then "(" ^ s ^ ")"
-        else s
+  | External (_, _, args,
+              `External (_, main_module, ext_name),
+              `External) ->
+      let f = main_module ^ "." ^ name_f ext_name in
+      let l = List.map get_writer_names args in
+      let s = String.concat " " (f :: l) in
+      if paren && l <> [] then "(" ^ s ^ ")"
+      else s
 
-    | _ -> assert false
+  | _ -> assert false
 
 and get_writer_names x =
   let tag = get_biniou_tag x in
@@ -280,15 +280,15 @@ and get_writer_names x =
 
 
 let get_left_writer_name ~tagged name param =
-  let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
+  let args = List.map (fun s -> Tvar (dummy_loc, s)) param in
   get_writer_name ~tagged
-    (`Name (dummy_loc, name, args, None, None))
+    (Name (dummy_loc, name, args, None, None))
 
 let get_left_to_string_name name param =
   let name_f s = "string_of_" ^ s in
-  let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
+  let args = List.map (fun s -> Tvar (dummy_loc, s)) param in
   get_writer_name ~tagged:true ~name_f
-    (`Name (dummy_loc, name, args, None, None))
+    (Name (dummy_loc, name, args, None, None))
 
 (*
 let make_writer_name tagged loc name args =
@@ -316,12 +316,12 @@ let rec get_reader_name
 
   let name_f =
     match name_f with
-        Some f -> f
-      | None ->
-          if tagged then
-            (fun s -> "read_" ^ s)
-          else
-            (fun s -> sprintf "get_%s_reader" s)
+      Some f -> f
+    | None ->
+        if tagged then
+          (fun s -> "read_" ^ s)
+        else
+          (fun s -> sprintf "get_%s_reader" s)
   in
 
   let xreader s =
@@ -331,54 +331,54 @@ let rec get_reader_name
       sprintf "Atdgen_runtime.Ob_run.get_%s_reader" s
   in
   match x with
-      `Unit (_, `Unit, `Unit) -> xreader "unit"
+    Unit (_, `Unit, `Unit) -> xreader "unit"
 
-    | `Bool (_, `Bool, `Bool) -> xreader "bool"
+  | Bool (_, `Bool, `Bool) -> xreader "bool"
 
-    | `Int (loc, `Int o, `Int b) ->
-        (match o, b with
-             Int, `Uvint
-           | Int, `Svint
-           | Int, `Int8
-           | Int, `Int16 -> xreader "int"
-           | Char, `Int8 -> xreader "char"
-           | Int32, `Int32 -> xreader "int32"
-           | Int64, `Int64 -> xreader "int64"
-           | _ ->
-               error loc "Unsupported combination of OCaml/Biniou int types"
-        )
+  | Int (loc, `Int o, `Int b) ->
+      (match o, b with
+         Int, `Uvint
+       | Int, `Svint
+       | Int, `Int8
+       | Int, `Int16 -> xreader "int"
+       | Char, `Int8 -> xreader "char"
+       | Int32, `Int32 -> xreader "int32"
+       | Int64, `Int64 -> xreader "int64"
+       | _ ->
+           error loc "Unsupported combination of OCaml/Biniou int types"
+      )
 
-    | `Float (_, `Float, `Float b) ->
-        (match b with
-            `Float32 -> xreader "float32"
-          | `Float64 -> xreader "float64"
-        )
+  | Float (_, `Float, `Float b) ->
+      (match b with
+         `Float32 -> xreader "float32"
+       | `Float64 -> xreader "float64"
+      )
 
-    | `String (_, `String, `String) -> xreader "string"
+  | String (_, `String, `String) -> xreader "string"
 
-    | `Tvar (_, s) ->
-        let name = Ox_emit.name_of_var s in
-        if tagged then
-          sprintf "read_%s" name
-        else
-          sprintf "get_%s_reader" name
+  | Tvar (_, s) ->
+      let name = Ox_emit.name_of_var s in
+      if tagged then
+        sprintf "read_%s" name
+      else
+        sprintf "get_%s_reader" name
 
-    | `Name (_, s, args, None, None) ->
-        let l = List.map get_reader_names args in
-        let s = String.concat " " (name_f s :: l) in
-        if paren && l <> [] then "(" ^ s ^ ")"
-        else s
+  | Name (_, s, args, None, None) ->
+      let l = List.map get_reader_names args in
+      let s = String.concat " " (name_f s :: l) in
+      if paren && l <> [] then "(" ^ s ^ ")"
+      else s
 
-    | `External (_, _, args,
-                 `External (_, main_module, ext_name),
-                 `External) ->
-        let f = main_module ^ "." ^ name_f ext_name in
-        let l = List.map get_reader_names args in
-        let s = String.concat " " (f :: l) in
-        if paren && l <> [] then "(" ^ s ^ ")"
-        else s
+  | External (_, _, args,
+              `External (_, main_module, ext_name),
+              `External) ->
+      let f = main_module ^ "." ^ name_f ext_name in
+      let l = List.map get_reader_names args in
+      let s = String.concat " " (f :: l) in
+      if paren && l <> [] then "(" ^ s ^ ")"
+      else s
 
-    | _ -> assert false
+  | _ -> assert false
 
 and get_reader_names x =
   let get_reader = get_reader_name ~paren:true ~tagged:false x in
@@ -387,29 +387,29 @@ and get_reader_names x =
 
 
 let get_left_reader_name ~tagged name param =
-  let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_reader_name ~tagged (`Name (dummy_loc, name, args, None, None))
+  let args = List.map (fun s -> Tvar (dummy_loc, s)) param in
+  get_reader_name ~tagged (Name (dummy_loc, name, args, None, None))
 
 let get_left_of_string_name name param =
   let name_f s = s ^ "_of_string" in
-  let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
+  let args = List.map (fun s -> Tvar (dummy_loc, s)) param in
   get_reader_name ~name_f ~tagged:true
-    (`Name (dummy_loc, name, args, None, None))
+    (Name (dummy_loc, name, args, None, None))
 
 
 let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
   let un = if tagged then "" else "untagged_" in
   match x with
-      `Unit _
-    | `Bool _
-    | `Int _
-    | `Float _
-    | `String _
-    | `Name _
-    | `External _
-    | `Tvar _ -> [ `Line (get_writer_name ~tagged x) ]
+    Unit _
+  | Bool _
+  | Int _
+  | Float _
+  | String _
+  | Name _
+  | External _
+  | Tvar _ -> [ `Line (get_writer_name ~tagged x) ]
 
-    | `Sum (_, a, `Sum x, `Sum) ->
+  | Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
               Classic -> ""
@@ -438,14 +438,14 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
           `Block body;
         ]
 
-    | `Record (_, a, `Record o, `Record) ->
+    | Record (_, a, `Record o, `Record) ->
         let body = make_record_writer deref tagged a o in
         [
           `Annot ("fun", `Line "fun ob x ->");
           `Block body;
         ]
 
-    | `Tuple (_, a, `Tuple, `Tuple) ->
+    | Tuple (_, a, `Tuple, `Tuple) ->
         let main =
           let len = Array.length a in
           let a =
@@ -478,7 +478,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
           `Block body;
         ]
 
-    | `List (_, x, `List o, `List b) ->
+    | List (_, x, `List o, `List b) ->
         (match o, b with
              List, `Array ->
                let tag = get_biniou_tag x in
@@ -510,15 +510,15 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
                ]
         )
 
-    | `Option (_, x, `Option, `Option)
-    | `Nullable (_, x, `Nullable, `Nullable) ->
+    | Option (_, x, `Option, `Option)
+    | Nullable (_, x, `Nullable, `Nullable) ->
         [
           `Line (sprintf "Atdgen_runtime.Ob_run.write_%soption (" un);
           `Block (make_writer ~tagged:true deref x);
           `Line ")";
         ]
 
-    | `Wrap (_, x, `Wrap o, `Wrap) ->
+    | Wrap (_, x, `Wrap o, `Wrap) ->
         let simple_writer = make_writer ~tagged deref x in
         (match o with
             None -> simple_writer
@@ -658,7 +658,7 @@ and make_record_writer deref tagged a record_kind =
 and make_table_writer deref tagged list_kind x =
   let a, record_kind =
     match deref x with
-        `Record (_, a, `Record record_kind, `Record) -> a, record_kind
+        Record (_, a, `Record record_kind, `Record) -> a, record_kind
       | _ ->
           error (loc_of_mapping x) "Not a record type"
   in
@@ -888,16 +888,16 @@ let rec make_reader
     deref ~tagged ~ocaml_version ?type_annot (x : ob_mapping)
     : Indent.t list =
   match x with
-      `Unit _
-    | `Bool _
-    | `Int _
-    | `Float _
-    | `String _
-    | `Name _
-    | `External _
-    | `Tvar _ -> [ `Line (get_reader_name ~tagged x) ]
+      Unit _
+    | Bool _
+    | Int _
+    | Float _
+    | String _
+    | Name _
+    | External _
+    | Tvar _ -> [ `Line (get_reader_name ~tagged x) ]
 
-    | `Sum (_, a, `Sum x, `Sum) ->
+    | Sum (_, a, `Sum x, `Sum) ->
         let tick =
           match x with
               Classic -> ""
@@ -927,7 +927,7 @@ let rec make_reader
         in
         wrap_body ~tagged Bi_io.variant_tag body
 
-    | `Record (loc, a, `Record o, `Record) ->
+    | Record (loc, a, `Record o, `Record) ->
         (match o with
              `Record -> ()
            | `Object ->
@@ -936,11 +936,11 @@ let rec make_reader
         let body = make_record_reader deref ~ocaml_version type_annot a in
         wrap_body ~tagged Bi_io.record_tag body
 
-    | `Tuple (_, a, `Tuple, `Tuple) ->
+    | Tuple (_, a, `Tuple, `Tuple) ->
         let body = make_tuple_reader deref ~ocaml_version a in
         wrap_body ~tagged Bi_io.tuple_tag body
 
-    | `List (loc, x, `List o, `List b) ->
+    | List (loc, x, `List o, `List b) ->
         (match o, b with
              List, `Array ->
                let f =
@@ -982,8 +982,8 @@ let rec make_reader
                                      Bi_io.array_tag, body2 ]
         )
 
-    | `Option (_, x, `Option, `Option)
-    | `Nullable (_, x, `Nullable, `Nullable) ->
+    | Option (_, x, `Option, `Option)
+    | Nullable (_, x, `Nullable, `Nullable) ->
         let body = [
           `Line "match Char.code (Bi_inbuf.read_char ib) with";
           `Block [
@@ -1005,7 +1005,7 @@ let rec make_reader
         in
         wrap_body ~tagged Bi_io.num_variant_tag body
 
-    | `Wrap (_, x, `Wrap o, `Wrap) ->
+    | Wrap (_, x, `Wrap o, `Wrap) ->
         let simple_reader = make_reader deref ~tagged ~ocaml_version x in
         (match o with
             None -> simple_reader
@@ -1219,7 +1219,7 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
   in
   let fields =
     match deref x with
-        `Record (loc, a, `Record o, `Record) ->
+        Record (loc, a, `Record o, `Record) ->
           (match o with
                `Record -> ()
              | `Object ->

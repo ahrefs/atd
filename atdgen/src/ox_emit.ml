@@ -30,12 +30,12 @@ type target =
 
 let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
   match x with
-    `Unit _
-  | `Bool _
-  | `Int _
-  | `Float  _
-  | `String _ -> acc
-  | `Sum (loc, va, o, _) ->
+    Unit _
+  | Bool _
+  | Int _
+  | Float  _
+  | String _ -> acc
+  | Sum (loc, va, o, _) ->
       let l, (fn, pvn, cvn) =
         Array.fold_left (extract_names_from_variant root_loc) ([], acc) va
       in
@@ -53,7 +53,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
        | _ -> assert false
       )
 
-  | `Record (loc, fa, _, _) ->
+  | Record (loc, fa, _, _) ->
       if is_root then
         let l, (fn, pvn, cvn) =
           Array.fold_left (extract_names_from_field root_loc) ([], acc) fa
@@ -62,22 +62,22 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
       else
         error loc "Anonymous record types are not allowed by OCaml."
 
-  | `Tuple (_, ca, _, _) ->
+  | Tuple (_, ca, _, _) ->
       Array.fold_left (extract_names_from_cell root_loc) acc ca
 
-  | `List (_, x, _, _)
-  | `Option (_, x, _, _)
-  | `Nullable (_, x, _, _)
-  | `Wrap (_, x, _, _) ->
+  | List (_, x, _, _)
+  | Option (_, x, _, _)
+  | Nullable (_, x, _, _)
+  | Wrap (_, x, _, _) ->
       extract_names_from_expr root_loc acc x
 
-  | `Name (_, _, l, _, _) ->
+  | Name (_, _, l, _, _) ->
       List.fold_left (extract_names_from_expr root_loc) acc l
 
-  | `External (_, _, l, _, _) ->
+  | External (_, _, l, _, _) ->
       List.fold_left (extract_names_from_expr root_loc) acc l
 
-  | `Tvar _ -> acc
+  | Tvar _ -> acc
 
 and extract_names_from_variant root_loc (l, acc) x =
   let l =
@@ -201,8 +201,8 @@ let get_type_constraint ~original_types def =
    constructor/field name disambiguation *)
 let needs_type_annot (x : _ expr) =
   match x with
-  | `Record (_, _, `Record `Record, _)
-  | `Sum (_, _, `Sum Classic, _) -> true
+  | Record (_, _, `Record `Record, _)
+  | Sum (_, _, `Sum Classic, _) -> true
   | _ -> false
 
 let insert_annot type_annot =
@@ -254,7 +254,7 @@ let is_exportable def =
 
 let make_record_creator deref x =
   match x.def_value with
-    Some (`Record (_, a, `Record `Record, _)) ->
+    Some (Record (_, a, `Record `Record, _)) ->
       let s = x.def_name in
       let full_name = get_full_type_name x in
       let l =

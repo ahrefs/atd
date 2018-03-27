@@ -10,13 +10,13 @@ type oj_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
 
 let rec mapping_of_expr (x : type_expr) : oj_mapping =
   match x with
-    `Sum (loc, l, an) ->
+    Sum (loc, l, an) ->
       let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
       let json_t = Json.Sum in
       Sum (loc, Array.of_list (List.map mapping_of_variant l),
            ocaml_t, json_t)
 
-  | `Record (loc, l, an) ->
+  | Record (loc, l, an) ->
       let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
       let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
       let json_t = Json.Record (Json.get_json_record an) in
@@ -25,36 +25,36 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
                 (List.map (mapping_of_field ocaml_field_prefix) l),
               ocaml_t, json_t)
 
-  | `Tuple (loc, l, _) ->
+  | Tuple (loc, l, _) ->
       let ocaml_t = Ocaml.Repr.Tuple in
       let json_t = Json.Tuple in
       Tuple (loc, Array.of_list (List.map mapping_of_cell l),
              ocaml_t, json_t)
 
-  | `List (loc, x, an) ->
+  | List (loc, x, an) ->
       let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
       let json_t = Json.List (Json.get_json_list an) in
       List (loc, mapping_of_expr x, ocaml_t, json_t)
 
-  | `Option (loc, x, _) ->
+  | Option (loc, x, _) ->
       let ocaml_t = Ocaml.Repr.Option in
       let json_t = Json.Option in
       Option (loc, mapping_of_expr x, ocaml_t, json_t)
 
-  | `Nullable (loc, x, _) ->
+  | Nullable (loc, x, _) ->
       let ocaml_t = Ocaml.Repr.Nullable in
       let json_t = Json.Nullable in
       Nullable (loc, mapping_of_expr x, ocaml_t, json_t)
 
-  | `Shared (loc, _, _) ->
+  | Shared (loc, _, _) ->
       error loc "Sharing is not supported by the JSON interface"
 
-  | `Wrap (loc, x, an) ->
+  | Wrap (loc, x, an) ->
       let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap loc an) in
       let json_t = Json.Wrap in
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
-  | `Name (loc, (_, s, l), an) ->
+  | Name (loc, (_, s, l), an) ->
       (match s with
          "unit" ->
            Unit (loc, Unit, Unit)
@@ -71,7 +71,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
        | s ->
            Name (loc, s, List.map mapping_of_expr l, None, None)
       )
-  | `Tvar (loc, s) ->
+  | Tvar (loc, s) ->
       Tvar (loc, s)
 
 and mapping_of_cell (loc, x, an) =

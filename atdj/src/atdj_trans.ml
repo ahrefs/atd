@@ -15,34 +15,34 @@ open Atdgen_emit
  *
  * Option types other than in optional fields (e.g. '?foo: int option')
  * are not supported.
- *)
+*)
 let json_of_atd env atd_ty =
   let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
   match atd_ty with
-    | `Sum    _ -> "Object" (* Either a String or a two element JSONArray *)
-    | `Record _ -> "JSONObject"
-    | `List   _ -> "JSONArray"
-    | `Name (_, (_, ty, _), _) ->
-        (match ty with
-           | "bool"   -> "boolean"
-           | "int"    -> "int"
-           | "float"  -> "double"
-           | "string" -> "String"
-           | _        -> type_not_supported atd_ty
-        )
-    | x -> type_not_supported x
+  | Sum    _ -> "Object" (* Either a String or a two element JSONArray *)
+  | Record _ -> "JSONObject"
+  | List   _ -> "JSONArray"
+  | Name (_, (_, ty, _), _) ->
+      (match ty with
+       | "bool"   -> "boolean"
+       | "int"    -> "int"
+       | "float"  -> "double"
+       | "string" -> "String"
+       | _        -> type_not_supported atd_ty
+      )
+  | x -> type_not_supported x
 
 (* Calculate the method name required to extract the JSON representation of an
  * ATD value from either a JSONObject or a JSONArray ("get", "opt",
  * "getInt", "optInt", ...)
- *)
+*)
 let get env atd_ty opt =
   let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
   let prefix = if opt then "opt" else "get" in
   let suffix =
     match atd_ty with
-      | `Sum _ -> ""
-      | _ -> String.capitalize_ascii (json_of_atd env atd_ty) in
+    | Sum _ -> ""
+    | _ -> String.capitalize_ascii (json_of_atd env atd_ty) in
   prefix ^ suffix
 
 let extract_from_edgy_brackets s =
@@ -57,17 +57,17 @@ extract_from_edgy_brackets "ab<cd<e>>f";;
  * corresponding Java and (Javafied) JSON types java_ty and json_ty. Then this
  * function assigns to a variable `dst' of type java_ty from a variable `src' of
  * type `json_ty'.
- *)
+*)
 let rec assign env opt_dst src java_ty atd_ty indent =
   let atd_ty = norm_ty env atd_ty in
   match opt_dst with
   | None ->
       (match atd_ty with
-       | `Sum _ ->
+       | Sum _ ->
            sprintf "new %s(%s)" java_ty src
-       | `Record _ ->
+       | Record _ ->
            sprintf "new %s(%s)" java_ty src
-       | `Name (_, (_, ty, _), _) ->
+       | Name (_, (_, ty, _), _) ->
            (match ty with
             | "bool" | "int" | "float" | "string" -> src
             | _  -> type_not_supported atd_ty
@@ -76,11 +76,11 @@ let rec assign env opt_dst src java_ty atd_ty indent =
       )
   | Some dst ->
       (match atd_ty with
-       | `Sum _ ->
+       | Sum _ ->
            sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
-       | `Record _ ->
+       | Record _ ->
            sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
-       | `List (_, sub_ty, _) ->
+       | List (_, sub_ty, _) ->
            let java_sub_ty = (*ahem*) extract_from_edgy_brackets java_ty in
            let sub_expr = assign env None "_tmp" java_sub_ty sub_ty "" in
 
@@ -94,7 +94,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
              dst sub_expr
            ^ sprintf "%s}\n" indent
 
-       | `Name (_, (_, ty, _), _) ->
+       | Name (_, (_, ty, _), _) ->
            (match ty with
             | "bool" | "int" | "float" | "string" ->
                 sprintf "%s%s = %s;\n" indent dst src
@@ -128,7 +128,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
  * the appropriate defaults if field is absent.  For option types, we manually
  * check for the field and manually create a default.  If the field is present,
  * then we wrap its values as necessary.
- *)
+*)
 let assign_field env
     (`Field (_, (atd_field_name, kind, annots), atd_ty)) java_ty =
   let json_field_name = get_json_field_name atd_field_name annots in
@@ -136,9 +136,9 @@ let assign_field env
   (* Check whether the field is optional *)
   let is_opt =
     match kind with
-      | Atd.Ast.Optional
-      | With_default -> true
-      | Required -> false in
+    | Atd.Ast.Optional
+    | With_default -> true
+    | Required -> false in
   let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) json_field_name in
   if not is_opt then
     assign env (Some field_name) src java_ty atd_ty "    "
@@ -154,7 +154,7 @@ let assign_field env
       match kind with
       | Atd.Ast.With_default ->
           (match norm_ty ~unwrap_option:true env atd_ty with
-           | `Name (_, (_, name, _), _) ->
+           | Name (_, (_, name, _), _) ->
                (match name with
                 | "bool" -> mk_else (Some "false")
                 | "int" -> mk_else (Some "0")
@@ -162,7 +162,7 @@ let assign_field env
                 | "string" -> mk_else (Some "\"\"")
                 | _ -> mk_else None (* TODO: fail if no default is provided *)
                )
-           | `List _ ->
+           | List _ ->
                (* java_ty is supposed to be of the form "ArrayList<...>" *)
                mk_else (Some (sprintf "new %s()" java_ty))
            | _ ->
@@ -181,23 +181,23 @@ let assign_field env
 let rec to_string env id atd_ty indent =
   let atd_ty = norm_ty env atd_ty in
   match atd_ty with
-    | `List (_, atd_sub_ty, _) ->
-          sprintf "%s_out.append(\"[\");\n" indent
-        ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
-        ^ to_string env (id ^ ".get(i)") atd_sub_ty (indent ^ "  ")
-        ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
-        ^ sprintf "%s    _out.append(\",\");\n" indent
-        ^ sprintf "%s}\n" indent
-        ^ sprintf "%s_out.append(\"]\");\n" indent
-    | `Name (_, (_, "string", _), _) ->
-        (* TODO Check that this is the correct behaviour *)
-        sprintf
-          "%sUtil.writeJsonString(_out, %s);\n"
-          indent id
-    | `Name _ ->
-        sprintf "%s_out.append(String.valueOf(%s));\n" indent id
-    | _ ->
-        sprintf "%s%s.toJsonBuffer(_out);\n" indent id
+  | List (_, atd_sub_ty, _) ->
+      sprintf "%s_out.append(\"[\");\n" indent
+      ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
+      ^ to_string env (id ^ ".get(i)") atd_sub_ty (indent ^ "  ")
+      ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
+      ^ sprintf "%s    _out.append(\",\");\n" indent
+      ^ sprintf "%s}\n" indent
+      ^ sprintf "%s_out.append(\"]\");\n" indent
+  | Name (_, (_, "string", _), _) ->
+      (* TODO Check that this is the correct behaviour *)
+      sprintf
+        "%sUtil.writeJsonString(_out, %s);\n"
+        indent id
+  | Name _ ->
+      sprintf "%s_out.append(String.valueOf(%s));\n" indent id
+  | _ ->
+      sprintf "%s%s.toJsonBuffer(_out);\n" indent id
 
 (* Generate a toJsonBuffer command for a record field. *)
 let to_string_field env = function
@@ -224,13 +224,13 @@ let to_string_field env = function
       let else_part =
         let is_opt =
           match kind with
-            | Atd.Ast.Optional | With_default -> true
-            | Required -> false in
+          | Atd.Ast.Optional | With_default -> true
+          | Required -> false in
         if is_opt then
           ""
         else
           sprintf "    \
-    else
+                   else
       throw new JSONException(\"Uninitialized field %s\");
 "
             field_name
@@ -261,13 +261,13 @@ let javadoc loc annots indent =
           []
           blocks in
   (match Doc.get_doc loc annots with
-     | Some doc ->
-         let header = indent ^ "/**\n" in
-         let footer = indent ^ " */\n" in
-         let body   =
-           String.concat "" (List.rev (from_doc doc)) in
-         header ^ body ^ footer
-     | None     -> ""
+   | Some doc ->
+       let header = indent ^ "/**\n" in
+       let footer = indent ^ " */\n" in
+       let body   =
+         String.concat "" (List.rev (from_doc doc)) in
+       header ^ body ^ footer
+   | None     -> ""
   )
 
 
@@ -293,7 +293,7 @@ let javadoc loc annots indent =
  * occur.  We do this so that the Java programmer can access such values
  * directly, thereby avoiding the overhead of having to manually unbox each such
  * value upon access.
- *)
+*)
 
 let open_class env cname =
   let out = open_out (env.package_dir ^ "/" ^ cname ^ ".java") in
@@ -310,14 +310,14 @@ let rec trans_module env items = List.fold_left trans_outer env items
 
 and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
   match unwrap atd_ty with
-    | `Sum _ as s ->
-        trans_sum name env s
-    | `Record _ as r ->
-        trans_record name env r
-    | `Name (_, (_, _name, _), _) ->
-        (* Don't translate primitive types at the top-level *)
-        env
-    | x -> type_not_supported x
+  | Sum _ as s ->
+      trans_sum name env s
+  | Record _ as r ->
+      trans_record name env r
+  | Name (_, (_, _name, _), _) ->
+      (* Don't translate primitive types at the top-level *)
+      env
+  | x -> type_not_supported x
 
 (* Translation of sum types.  For a sum type
  *
@@ -325,8 +325,8 @@ and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
  *
  * we generate a class Ty implemented in Ty.java and an enum TyEnum defined
  * in a separate file TyTag.java.
- *)
-and trans_sum my_name env (`Sum (_, vars, _)) =
+*)
+and trans_sum my_name env (Sum (_, vars, _)) =
   let class_name = Atdj_names.to_class_name my_name in
 
   let cases = List.map (function
@@ -393,7 +393,7 @@ public class %s {
          match opt_ty with
          | None ->
              fprintf out " \
-    if (tag.equals(\"%s\"))
+                          if (tag.equals(\"%s\"))
       t = Tag.%s;
     else"
                json_name (* TODO: java-string-escape this *)
@@ -407,7 +407,7 @@ public class %s {
                  java_ty atd_ty "      "
              in
              fprintf out " \
-    if (tag.equals(\"%s\")) {
+                          if (tag.equals(\"%s\")) {
 %s
       t = Tag.%s;
     }
@@ -416,7 +416,7 @@ public class %s {
                set_value
                enum_name
        ) l
-  ) cases;
+    ) cases;
 
   List.iter (fun (_, func_name, enum_name, field_name, opt_ty) ->
     match opt_ty with
@@ -489,9 +489,9 @@ public class %s {
          _out.append(\"[\\\"%s\\\",\");
 %s         _out.append(\"]\");
          break;"
-             enum_name
-             json_name
-             (to_string env ("field_" ^ field_name) atd_ty "         ")
+               enum_name
+               json_name
+               (to_string env ("field_" ^ field_name) atd_ty "         ")
        ) l
     ) cases;
 
@@ -501,24 +501,24 @@ public class %s {
 
 (* Translate a record into a Java class.  Each record field becomes a field
  * within the class.
- *)
-and trans_record my_name env (`Record (loc, fields, annots)) =
+*)
+and trans_record my_name env (Record (loc, fields, annots)) =
   (* Remove `Inherit values *)
   let fields = List.map
-    (function
-       | `Field _ as f -> f
-       | `Inherit _ -> assert false
-    )
-    fields in
+      (function
+        | `Field _ as f -> f
+        | `Inherit _ -> assert false
+      )
+      fields in
   (* Translate field types *)
   let (java_tys, env) = List.fold_left
-    (fun (java_tys, env) -> function
-       | `Field (_, (field_name, _, annots), atd_ty) ->
-           let field_name = get_java_field_name field_name annots in
-           let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
-           ((field_name, java_ty) :: java_tys, env)
-    )
-    ([], env) fields in
+      (fun (java_tys, env) -> function
+         | `Field (_, (field_name, _, annots), atd_ty) ->
+             let field_name = get_java_field_name field_name annots in
+             let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
+             ((field_name, java_ty) :: java_tys, env)
+      )
+      ([], env) fields in
   let java_tys = List.rev java_tys in
   (* Output Java class *)
   let class_name = Atdj_names.to_class_name my_name in
@@ -548,15 +548,15 @@ public class %s implements Atdj {
     class_name;
 
   let env = List.fold_left
-    (fun env (`Field (_, (field_name, _, annots), _) as field) ->
-      let field_name = get_java_field_name field_name annots in
-      let cmd = assign_field env field (List.assoc field_name java_tys) in
-      fprintf out "%s" cmd;
-      env
-    )
-    env fields in
+      (fun env (`Field (_, (field_name, _, annots), _) as field) ->
+         let field_name = get_java_field_name field_name annots in
+         let cmd = assign_field env field (List.assoc field_name java_tys) in
+         fprintf out "%s" cmd;
+         env
+      )
+      env fields in
   fprintf out "\n  \
-}
+               }
 
   public void toJsonBuffer(StringBuilder _out) throws JSONException {
     boolean _isFirst = true;
@@ -578,10 +578,10 @@ public class %s implements Atdj {
 
   List.iter
     (function `Field (loc, (field_name, _, annots), _) ->
-      let field_name = get_java_field_name field_name annots in
-      let java_ty = List.assoc field_name java_tys in
-      output_string out (javadoc loc annots "  ");
-      fprintf out "  public %s %s;\n" java_ty field_name)
+       let field_name = get_java_field_name field_name annots in
+       let java_ty = List.assoc field_name java_tys in
+       output_string out (javadoc loc annots "  ");
+       fprintf out "  public %s %s;\n" java_ty field_name)
     fields;
   fprintf out "}\n";
   close_out out;
@@ -590,15 +590,15 @@ public class %s implements Atdj {
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)
 and trans_inner env atd_ty =
   match atd_ty with
-  | `Name (_, (_, name1, _), _) ->
+  | Name (_, (_, name1, _), _) ->
       (match norm_ty env atd_ty with
-         | `Name (_, (_, name2, _), _) ->
-             (* It's a primitive type e.g. int *)
-             (Atdj_names.to_class_name name2, env)
-         | _ ->
-             (Atdj_names.to_class_name name1, env)
+       | Name (_, (_, name2, _), _) ->
+           (* It's a primitive type e.g. int *)
+           (Atdj_names.to_class_name name2, env)
+       | _ ->
+           (Atdj_names.to_class_name name1, env)
       )
-  | `List (_, sub_atd_ty, _)  ->
+  | List (_, sub_atd_ty, _)  ->
       let (ty', env) = trans_inner env sub_atd_ty in
       ("java.util.ArrayList<" ^ ty' ^ ">", env)
   | x -> type_not_supported x

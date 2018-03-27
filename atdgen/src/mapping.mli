@@ -52,12 +52,9 @@ type ('a, 'b) def = {
   def_brepr : 'b;
 }
 
-val as_abstract
-  : [> `Name of 'a * (Atd.Ast.loc * string * 'b list) * 'c ]
-  -> (loc * 'c) option
+val as_abstract : Atd.Ast.type_expr -> (loc * Atd.Ast.annot) option
 
-val is_abstract :
-  [> `Name of 'a * (Atd.Ast.loc * string * 'b list) * 'c ] -> bool
+val is_abstract : Atd.Ast.type_expr -> bool
 
 val loc_of_mapping : ('a, 'b) mapping -> loc
 

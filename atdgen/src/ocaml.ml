@@ -274,37 +274,37 @@ let omap f = function None -> None | Some x -> Some (f x)
 
 let rec map_expr (x : type_expr) : ocaml_expr =
   match x with
-      `Sum (_, l, an) ->
-        let kind = get_ocaml_sum an in
-        `Sum (kind, List.map map_variant l)
-    | `Record (loc, l, an) ->
-        let kind = get_ocaml_record an in
-        let field_prefix = get_ocaml_field_prefix an in
-        if l = [] then
-          Error.error loc "Empty record (not valid in OCaml)"
-        else
-          `Record (kind, List.map (map_field field_prefix) l)
-    | `Tuple (_, l, _) ->
-        `Tuple (List.map (fun (_, x, _) -> map_expr x) l)
-    | `List (_, x, an) ->
-        let s = string_of_ocaml_list (get_ocaml_list an) in
-        `Name (s, [map_expr x])
-    | `Option (_, x, _) ->
-        `Name ("option", [map_expr x])
-    | `Nullable (_, x, _) ->
-        `Name ("option", [map_expr x])
-    | `Shared (_, _, _) ->
-        failwith "Sharing is not supported"
-    | `Wrap (loc, x, a) ->
-        (match get_ocaml_wrap loc a with
-            None -> map_expr x
-          | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
-        )
-    | `Name (_, (_2, s, l), an) ->
-        let s = get_ocaml_type_path s an in
-        `Name (s, List.map map_expr l)
-    | `Tvar (_, s) ->
-        `Tvar s
+    Atd.Ast.Sum (_, l, an) ->
+      let kind = get_ocaml_sum an in
+      `Sum (kind, List.map map_variant l)
+  | Record (loc, l, an) ->
+      let kind = get_ocaml_record an in
+      let field_prefix = get_ocaml_field_prefix an in
+      if l = [] then
+        Error.error loc "Empty record (not valid in OCaml)"
+      else
+        `Record (kind, List.map (map_field field_prefix) l)
+  | Tuple (_, l, _) ->
+      `Tuple (List.map (fun (_, x, _) -> map_expr x) l)
+  | List (_, x, an) ->
+      let s = string_of_ocaml_list (get_ocaml_list an) in
+      `Name (s, [map_expr x])
+  | Option (_, x, _) ->
+      `Name ("option", [map_expr x])
+  | Nullable (_, x, _) ->
+      `Name ("option", [map_expr x])
+  | Shared (_, _, _) ->
+      failwith "Sharing is not supported"
+  | Wrap (loc, x, a) ->
+      (match get_ocaml_wrap loc a with
+         None -> map_expr x
+       | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
+      )
+  | Name (_, (_2, s, l), an) ->
+      let s = get_ocaml_type_path s an in
+      `Name (s, List.map map_expr l)
+  | Tvar (_, s) ->
+      `Tvar s
 
 and map_variant (x : variant) : ocaml_variant =
   match x with

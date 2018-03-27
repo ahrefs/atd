@@ -1783,10 +1783,10 @@ let check_variant untypeds = function
       if not (Atd.Annot.get_flag ["json"] "untyped" ann)
       then untypeds
       else match arg with
-        | Some (`Tuple (_,[(_, `Name (_, (_, "string", _), _), _);
-                           (_, `Option (_,
-                                        `Name (_, (_, "json", _), _), _), _)],
-                        _)) -> cons::untypeds
+        | Some (Tuple (_,[(_, Name (_, (_, "string", _), _), _);
+                          (_, Option (_,
+                                      Name (_, (_, "json", _), _), _), _)],
+                       _)) -> cons::untypeds
         | Some typ ->
             let msg = sprintf "constructor is untyped but argument is %s\n%s"
                 (Atd.Print.string_of_type_expr typ)
@@ -1806,7 +1806,7 @@ let error_too_many_untypeds name untypeds =
 
 let check_atd (_head, body) =
   List.iter (function
-    | (Atd.Ast.Type (loc, (name, _, _), `Sum (_, conss, _))) ->
+    | (Atd.Ast.Type (loc, (name, _, _), Sum (_, conss, _))) ->
         begin match List.fold_left check_variant [] conss with
           | [] | [_] -> ()
           | untypeds ->

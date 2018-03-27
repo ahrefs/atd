@@ -38,8 +38,8 @@ let label0 = { label with space_after_label = false }
 
 let make_atom s = Atom (s, atom)
 
-let horizontal_sequence l = List (("", "", "", shlist), l)
-let horizontal_sequence0 l = List (("", "", "", shlist0), l)
+let horizontal_sequence l = Easy_format.List (("", "", "", shlist), l)
+let horizontal_sequence0 l = Easy_format.List (("", "", "", shlist0), l)
 
 let quote_string s = Printf.sprintf "%S" s
 
@@ -153,21 +153,21 @@ let make_closures format_annot =
 
   and format_type_expr x =
     match x with
-      `Sum (_, l, a) ->
+      Sum (_, l, a) ->
         append_annots a (
           List (
             ("[", "|", "]", llist),
             List.map format_variant l
           )
         )
-    | `Record (_, l, a) ->
+    | Record (_, l, a) ->
         append_annots a (
           List (
             ("{", ";", "}", list),
             List.map format_field l
           )
         )
-    | `Tuple (_, l, a) ->
+    | Tuple (_, l, a) ->
         append_annots a (
           List (
             ("(", "*", ")", lplist),
@@ -175,25 +175,25 @@ let make_closures format_annot =
           )
         )
 
-    | `List (_, t, a) ->
+    | List (_, t, a) ->
         format_type_name "list" [t] a
 
-    | `Option (_, t, a) ->
+    | Option (_, t, a) ->
         format_type_name "option" [t] a
 
-    | `Nullable (_, t, a) ->
+    | Nullable (_, t, a) ->
         format_type_name "nullable" [t] a
 
-    | `Shared (_, t, a) ->
+    | Shared (_, t, a) ->
         format_type_name "shared" [t] a
 
-    | `Wrap (_, t, a) ->
+    | Wrap (_, t, a) ->
         format_type_name "wrap" [t] a
 
-    | `Name (_, (_, name, args), a) ->
+    | Name (_, (_, name, args), a) ->
         format_type_name name args a
 
-    | `Tvar (_, name) ->
+    | Tvar (_, name) ->
         make_atom ("'" ^ name)
 
   and format_type_name name args a =
@@ -238,7 +238,7 @@ let make_closures format_annot =
   in
 
   let format_full_module ((_, an), l) =
-    List (
+    Easy_format.List (
       ("", "", "", rlist),
       List.map format_annot an @ List.map format_module_item l
     )

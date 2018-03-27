@@ -50,41 +50,40 @@ and type_param = string list
     (** List of type variables without the tick. *)
 
 and type_expr =
-    [ `Sum of (loc * variant list * annot)
-    | `Record of (loc * field list * annot)
-    | `Tuple of (loc * cell list * annot)
-    | `List of (loc * type_expr * annot)
-    | `Option of (loc * type_expr * annot)
-    | `Nullable of (loc * type_expr * annot)
-    | `Shared of (loc * type_expr * annot)
-    | `Wrap of (loc * type_expr * annot)
-    | `Name of (loc * type_inst * annot)
-    | `Tvar of (loc * string)
-    ]
+    | Sum of loc * variant list * annot
+    | Record of loc * field list * annot
+    | Tuple of loc * cell list * annot
+    | List of loc * type_expr * annot
+    | Option of loc * type_expr * annot
+    | Nullable of loc * type_expr * annot
+    | Shared of loc * type_expr * annot
+    | Wrap of loc * type_expr * annot
+    | Name of loc * type_inst * annot
+    | Tvar of loc * string
       (**
          A type expression is one of the following:
-         - [`Sum]: a sum type (within square brackets)
-         - [`Record]: a record type (within curly braces)
-         - [`Tuple]: a tuple (within parentheses)
-         - [`List]: a list type written [list] with its parameter
+         - [Sum]: a sum type (within square brackets)
+         - [Record]: a record type (within curly braces)
+         - [Tuple]: a tuple (within parentheses)
+         - [List]: a list type written [list] with its parameter
          e.g. [int list]
-         - [`Option]: an option type written [option] with its parameter
+         - [Option]: an option type written [option] with its parameter
          e.g. [string option]
-         - [`Nullable]: adds a null value to a type.
-         [`Option] should be preferred over [`Nullable] since
+         - [Nullable]: adds a null value to a type.
+         [Option] should be preferred over [Nullable] since
          it makes it possible to distinguish [Some None] from [None].
-         - [`Shared]: values for which sharing must be preserved. Such
+         - [Shared]: values for which sharing must be preserved. Such
          type expressions may not be parametrized. Values may only
          be shared if the source location of the type expression is the same.
-         - [`Wrap]: optional wrapping of a type. For example, a timestamp
+         - [Wrap]: optional wrapping of a type. For example, a timestamp
          represented as a string can be wrapped within a proper time type.
          In that case, the wrapper would parse the timestamp and convert
          it into the internal representation of its choice. Unwrapping
          would consist in converting it back to a string.
-         - [`Name]: a type name other than [list] or [option], including
+         - [Name]: a type name other than [list] or [option], including
          the predefined types [unit], [bool], [int], [float], [string]
          and [abstract].
-         - [`Tvar]: a type variable identifier without the tick
+         - [Tvar]: a type variable identifier without the tick
       *)
 
 and type_inst = loc * string * type_expr list

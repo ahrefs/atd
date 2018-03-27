@@ -90,22 +90,22 @@ let rec scan_expr
 
 and name_is_shallow defs visited results x =
   match x with
-      `Name (_, (_, name, _), _) ->
-        (match get_def defs name with
-             None ->
-               (match name with
-                    "unit"
-                  | "bool"
-                  | "int"
-                  | "float"
-                  | "string" -> true
-                  | _ -> false
-               )
-           | Some x -> noval x && scan_expr defs visited results x
-        )
+    Name (_, (_, name, _), _) ->
+      (match get_def defs name with
+         None ->
+           (match name with
+              "unit"
+            | "bool"
+            | "int"
+            | "float"
+            | "string" -> true
+            | _ -> false
+           )
+       | Some x -> noval x && scan_expr defs visited results x
+      )
 
-    | `Tvar (_, _) -> false
-    | _ -> (* already verified in the call to scan_expr above *) true
+  | Tvar (_, _) -> false
+  | _ -> (* already verified in the call to scan_expr above *) true
 
 
 let iter f x =
@@ -150,74 +150,74 @@ let rec mapping_of_expr
   let v an = Validate.get_validator an in
   let v2 an x = (Validate.get_validator an, is_shallow x) in
   match x0 with
-      `Sum (loc, l, an) ->
-        let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
-        Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
+    Sum (loc, l, an) ->
+      let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
+      Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
+           ocaml_t, v2 an x0)
+
+  | Record (loc, l, an) ->
+      let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
+      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
+      Record (loc,
+              Array.of_list
+                (List.map
+                   (mapping_of_field is_shallow ocaml_field_prefix) l),
               ocaml_t, v2 an x0)
 
-    | `Record (loc, l, an) ->
-        let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
-        let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
-        Record (loc,
-                 Array.of_list
-                   (List.map
-                      (mapping_of_field is_shallow ocaml_field_prefix) l),
-                 ocaml_t, v2 an x0)
+  | Tuple (loc, l, an) ->
+      let ocaml_t = Ocaml.Repr.Tuple in
+      Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
+             ocaml_t, v2 an x0)
 
-    | `Tuple (loc, l, an) ->
-        let ocaml_t = Ocaml.Repr.Tuple in
-        Tuple (loc, Array.of_list (List.map (mapping_of_cell is_shallow) l),
-                ocaml_t, v2 an x0)
+  | List (loc, x, an) ->
+      let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
+      List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
-    | `List (loc, x, an) ->
-        let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
-        List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+  | Option (loc, x, an) ->
+      let ocaml_t = Ocaml.Repr.Option in
+      Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
-    | `Option (loc, x, an) ->
-        let ocaml_t = Ocaml.Repr.Option in
-        Option (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+  | Nullable (loc, x, an) ->
+      let ocaml_t = Ocaml.Repr.Nullable in
+      Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
-    | `Nullable (loc, x, an) ->
-        let ocaml_t = Ocaml.Repr.Nullable in
-        Nullable (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
+  | Shared (_, _, _) ->
+      failwith "Sharing is not supported"
 
-    | `Shared (_, _, _) ->
-        failwith "Sharing is not supported"
+  | Wrap (loc, x, an) ->
+      let w = Ocaml.get_ocaml_wrap loc an in
+      let ocaml_t = Ocaml.Repr.Wrap w in
+      let validator =
+        match w with
+          None -> v2 an x0
+        | Some _ -> v an, true
+      in
+      Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
 
-    | `Wrap (loc, x, an) ->
-        let w = Ocaml.get_ocaml_wrap loc an in
-        let ocaml_t = Ocaml.Repr.Wrap w in
-        let validator =
-          match w with
-              None -> v2 an x0
-            | Some _ -> v an, true
-        in
-        Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
-
-    | `Name (loc, (_, s, l), an) ->
-        (match s with
-           "unit" ->
-             Unit (loc, Unit, (v an, true))
-         | "bool" ->
-             Bool (loc, Bool, (v an, true))
-         | "int" ->
-             let o = Ocaml.get_ocaml_int an in
-             Int (loc, Int o, (v an, true))
-         | "float" ->
-             Float (loc, Float, (v an, true))
-         | "string" ->
-             String (loc, String, (v an, true))
-         | s ->
-             let validator =
-               match v2 an x0 with
-                 None, true -> None
-               | x -> Some x
-             in
-             Name (loc, s, List.map (mapping_of_expr is_shallow) l,
-                   None, validator)
-        )
-    | `Tvar (loc, s) ->
-        Tvar (loc, s)
+  | Name (loc, (_, s, l), an) ->
+      (match s with
+         "unit" ->
+           Unit (loc, Unit, (v an, true))
+       | "bool" ->
+           Bool (loc, Bool, (v an, true))
+       | "int" ->
+           let o = Ocaml.get_ocaml_int an in
+           Int (loc, Int o, (v an, true))
+       | "float" ->
+           Float (loc, Float, (v an, true))
+       | "string" ->
+           String (loc, String, (v an, true))
+       | s ->
+           let validator =
+             match v2 an x0 with
+               None, true -> None
+             | x -> Some x
+           in
+           Name (loc, s, List.map (mapping_of_expr is_shallow) l,
+                 None, validator)
+      )
+  | Tvar (loc, s) ->
+      Tvar (loc, s)
 
 and mapping_of_cell is_shallow (loc, x, an) =
   let default = Ocaml.get_ocaml_default an in

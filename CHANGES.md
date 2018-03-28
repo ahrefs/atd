@@ -1,5 +1,5 @@
-1.13.0 (next)
--------------
+1.13.0 (2018-03-27)
+-------------------
 
 * Introduce `atdgen-runtime` package. This package contains the runtime
   dependency introduced by the `atdgen` code generator. The old runtime
@@ -12,6 +12,6 @@
 
 * `Ag_version` submodule has been replaced with `Version`.
 
-* Transition `atd` liases using the `(wrapped true)` mode of jbuilder. This is a
-  breaking change for all of those who use `atd` the library. All modules are
-  now accessible under teh `Atd.` entry module.
+* Transition `atd` aliases using the `(wrapped true)` mode of
+  jbuilder. This is a breaking change for all of those who use `atd`
+  the library. All modules are now accessible under the `Atd.` entry module.

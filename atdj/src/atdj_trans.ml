@@ -310,10 +310,10 @@ let rec trans_module env items = List.fold_left trans_outer env items
 
 and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
   match unwrap atd_ty with
-  | Sum _ as s ->
-      trans_sum name env s
-  | Record _ as r ->
-      trans_record name env r
+  | Sum (loc, v, a) ->
+      trans_sum name env (loc, v, a)
+  | Record (loc, v, a) ->
+      trans_record name env (loc, v, a)
   | Name (_, (_, _name, _), _) ->
       (* Don't translate primitive types at the top-level *)
       env
@@ -326,7 +326,7 @@ and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
  * we generate a class Ty implemented in Ty.java and an enum TyEnum defined
  * in a separate file TyTag.java.
 *)
-and trans_sum my_name env (Sum (_, vars, _)) =
+and trans_sum my_name env (_, vars, _) =
   let class_name = Atdj_names.to_class_name my_name in
 
   let cases = List.map (function
@@ -502,7 +502,7 @@ public class %s {
 (* Translate a record into a Java class.  Each record field becomes a field
  * within the class.
 *)
-and trans_record my_name env (Record (loc, fields, annots)) =
+and trans_record my_name env (loc, fields, annots) =
   (* Remove `Inherit values *)
   let fields = List.map
       (function

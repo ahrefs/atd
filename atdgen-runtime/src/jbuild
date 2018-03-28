@@ -1,11 +1,5 @@
 (jbuild_version 1)
 
-(rule
- ((targets (ag_version.ml))
-  (action
-   (with-stdout-to ${@}
-    (echo "let version = \"${version:atd}\"")))))
-
 (library
  ((name atdgen_runtime)
   (public_name atdgen-runtime)

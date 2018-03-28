@@ -2,12 +2,6 @@
 
 (ocamllex (doc_lexer))
 
-(rule
- ((targets (ag_version.ml))
-  (action
-   (with-stdout-to ${@}
-    (echo "let version = \"${version:atd}\"")))))
-
 (library
  ((name atdgen_emit)
   (flags (:include ${ROOT}/ocamlflags.sexp))

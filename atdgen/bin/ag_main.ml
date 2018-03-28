@@ -295,7 +295,7 @@ let main () =
 
     "-version",
     Arg.Unit (fun () ->
-                print_endline Ag_version.version;
+                print_endline Version.version;
                 exit 0),
     "
           Print the version identifier of atdgen and exit.";

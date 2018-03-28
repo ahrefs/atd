@@ -3,12 +3,6 @@
 (ocamllex (lexer doc_lexer))
 (menhir ((modules (parser))))
 
-(rule
- ((targets (version.ml))
-  (action
-   (with-stdout-to ${@}
-    (echo "let version = \"${version:atd}\"")))))
-
 (library
  ((name atd)
   (public_name atd)

@@ -1,0 +1,7 @@
+
+type point = int * int
+
+type labeled = {
+  ; label: string
+  ; point: point
+}

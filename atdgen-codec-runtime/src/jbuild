@@ -1,0 +1,5 @@
+(jbuild_version 1)
+
+(library
+ ((name atdgen_codec_runtime)
+  (public_name atdgen-codec-runtime)))

@@ -555,11 +555,13 @@ and read_r = (
                   2
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 25, characters 9-123" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 25, characters 9-96" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 25, characters 9-123" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 25, characters 9-96" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -611,11 +613,13 @@ and read_r = (
                     2
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 25, characters 9-123" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 25, characters 9-96" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 25, characters 9-123" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 25, characters 9-96" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -842,7 +846,8 @@ and read_poly read__x read__y = (
                     0
                   )
                   else (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
                   )
                 )
               | 's' -> (
@@ -850,15 +855,18 @@ and read_poly read__x read__y = (
                     1
                   )
                   else (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
                   )
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -898,7 +906,8 @@ and read_poly read__x read__y = (
                       0
                     )
                     else (
-                      (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+                      (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
                     )
                   )
                 | 's' -> (
@@ -906,15 +915,18 @@ and read_poly read__x read__y = (
                       1
                     )
                     else (
-                      (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+                      (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
                     )
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 144, characters 21-71" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 143, characters 21-71" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -1409,7 +1421,8 @@ let read_val1 = (
             0
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 119, characters 12-161" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 118, characters 12-161" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -1439,7 +1452,8 @@ let read_val1 = (
               0
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 119, characters 12-161" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 118, characters 12-161" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -1654,11 +1668,13 @@ let read_val2 = (
                   1
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 122, characters 12-57" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 121, characters 12-57" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 122, characters 12-57" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 121, characters 12-57" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -1703,11 +1719,13 @@ let read_val2 = (
                     1
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 122, characters 12-57" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 121, characters 12-57" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 122, characters 12-57" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 121, characters 12-57" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -2718,11 +2736,13 @@ let read_mixed_record = (
                         9
                       )
                     | _ -> (
-                        (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                        (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                       )
                 )
                 else (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                 )
               )
             | 7 -> (
@@ -2744,15 +2764,18 @@ let read_mixed_record = (
                         14
                       )
                     | _ -> (
-                        (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                        (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                       )
                 )
                 else (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                 )
               )
             | _ -> (
-                (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
               )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -3009,11 +3032,13 @@ let read_mixed_record = (
                           9
                         )
                       | _ -> (
-                          (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                          (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                         )
                   )
                   else (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                   )
                 )
               | 7 -> (
@@ -3035,15 +3060,18 @@ let read_mixed_record = (
                           14
                         )
                       | _ -> (
-                          (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                          (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                         )
                   )
                   else (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                   )
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 60, characters 20-703" (String.sub s pos len); -1
                 )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -3509,11 +3537,13 @@ let read_test = (
                   4
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -3591,11 +3621,13 @@ let read_test = (
                     4
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 90, characters 12-152" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -3779,7 +3811,8 @@ let read__30 = (
             0
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 205, characters 18-33" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 204, characters 18-33" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -3809,7 +3842,8 @@ let read__30 = (
               0
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 205, characters 18-33" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 204, characters 18-33" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -3889,7 +3923,8 @@ let read_some_record = (
             0
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 191, characters 19-95" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 190, characters 19-95" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -3919,7 +3954,8 @@ let read_some_record = (
               0
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 191, characters 19-95" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 190, characters 19-95" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -4010,7 +4046,8 @@ let read_precision = (
                     2
                   )
                   else (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                   )
                 )
               | 's' -> (
@@ -4020,7 +4057,8 @@ let read_precision = (
                           1
                         )
                         else (
-                          (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                          (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                         )
                       )
                     | 'q' -> (
@@ -4028,19 +4066,23 @@ let read_precision = (
                           0
                         )
                         else (
-                          (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                          (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                         )
                       )
                     | _ -> (
-                        (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                        (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                       )
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -4087,7 +4129,8 @@ let read_precision = (
                       2
                     )
                     else (
-                      (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                      (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                     )
                   )
                 | 's' -> (
@@ -4097,7 +4140,8 @@ let read_precision = (
                             1
                           )
                           else (
-                            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                           )
                         )
                       | 'q' -> (
@@ -4105,19 +4149,23 @@ let read_precision = (
                             0
                           )
                           else (
-                            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                           )
                         )
                       | _ -> (
-                          (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                          (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                         )
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 198, characters 17-140" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 197, characters 17-140" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -4721,7 +4769,8 @@ let read_generic read__a = (
             0
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 204, characters 18-35" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 203, characters 18-35" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -4751,7 +4800,8 @@ let read_generic read__a = (
               0
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 204, characters 18-35" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 203, characters 18-35" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -4832,7 +4882,8 @@ let read_floats = (
                     0
                   )
                   else (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
                   )
                 )
               | '6' -> (
@@ -4840,15 +4891,18 @@ let read_floats = (
                     1
                   )
                   else (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
                   )
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -4888,7 +4942,8 @@ let read_floats = (
                       0
                     )
                     else (
-                      (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+                      (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
                     )
                   )
                 | '6' -> (
@@ -4896,15 +4951,18 @@ let read_floats = (
                       1
                     )
                     else (
-                      (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+                      (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
                     )
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 55, characters 14-71" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -5207,11 +5265,13 @@ let read_extended = (
                   5
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 103, characters 16-570" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 103, characters 16-508" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 103, characters 16-570" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 103, characters 16-508" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -5297,11 +5357,13 @@ let read_extended = (
                     5
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 103, characters 16-570" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 103, characters 16-508" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 103, characters 16-570" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 103, characters 16-508" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in
@@ -5549,11 +5611,13 @@ let read_base = (
                   1
                 )
               | _ -> (
-                  (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
+                  (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
                 )
           )
           else (
-            (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
+            (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
           )
       in
       let i = Yojson.Safe.map_ident p f lb in
@@ -5595,11 +5659,13 @@ let read_base = (
                     1
                   )
                 | _ -> (
-                    (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
+                    (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
                   )
             )
             else (
-              (fun loc s -> Printf.printf "Warning: skipping field %s (def: %s)" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
+              (fun loc s -> Printf.eprintf "Warning: skipping field %s (def: %s)
+" s loc) "File \"test.atd\", line 98, characters 12-40" (String.sub s pos len); -1
             )
         in
         let i = Yojson.Safe.map_ident p f lb in

@@ -58,7 +58,7 @@
   (action
    (run
     ${bin:atdgen} -json -extend Test -j-custom-fields
-    "fun loc s -> Printf.printf \"Warning: skipping field %s (def: %s)\" s loc"
+    "fun loc s -> Printf.eprintf \"Warning: skipping field %s (def: %s)\n\" s loc"
     ${<}
     -o testj))))
 

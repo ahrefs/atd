@@ -50,7 +50,7 @@ let rec get_reader_name
 
   | _ -> assert false
 
-let get_left_reader_name p name param =
+let get_left_reader_name _p _name _param =
   failwith ""
 
 let get_left_of_string_name p name param =
@@ -112,9 +112,9 @@ let make_ocaml_json_impl
   Atd.Indent.to_buffer buf (List.flatten ll)
 
 let make_ml
-    ~header
+    ~header:_
     ~original_types
-    ocaml_typedefs deref defs =
+    _ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   make_ocaml_json_impl ~original_types buf deref defs;
   Buffer.contents buf
@@ -171,3 +171,19 @@ let make_ocaml_files
       ocaml_typedefs (Mapping.make_deref defs) defs
   in
   Ox_emit.write_ocaml out "" ml
+
+let make_ocaml_files
+    ~opens:_
+    ~with_typedefs:_
+    ~with_create:_
+    ~with_fundefs:_
+    ~all_rec
+    ~pos_fname
+    ~pos_lnum
+    ~type_aliases
+    ~force_defaults:_
+    ~name_overlap:_
+    ~ocaml_version:_
+    ~pp_convs:_
+    atd_file out =
+  make_ocaml_files ~all_rec ~pos_fname ~pos_lnum ~type_aliases atd_file out

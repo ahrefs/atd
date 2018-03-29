@@ -39,6 +39,7 @@ type mode =
   | Biniou (* -biniou (deprecated) *)
   | Json (* -json (deprecated) *)
   | Validate (* -validate (deprecated) *)
+  | Bucklescript (* -bs (bucklescript) *)
 
 let parse_ocaml_version () =
   let re = Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
@@ -279,7 +280,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
         Some x -> x
       | None ->
           match mode with
-              T | B | J -> false
+              T | B | J | Bucklescript -> false
             | V -> true
             | Biniou | Json | Validate -> true
             | Dep | List -> true (* don't care *)
@@ -291,6 +292,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
       | T
       | B | Biniou
       | V | Validate
+      | Bucklescript
       | Dep | List -> false (* don't care *)
   in
 
@@ -352,6 +354,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
   match mode with
       Dep -> print_deps (get_base_prefix ())
     | List -> print_file_list (get_base_prefix ())
+    | Bucklescript
     | T | B | J | V | Biniou | Json | Validate ->
 
         let opens = List.rev !opens in
@@ -368,6 +371,8 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
                   ~preprocess_input: !j_preprocess_input
             | V | Validate ->
                 Ov_emit.make_ocaml_files
+            | Bucklescript ->
+                Obuckle_emit.make_ocaml_files
             | Dep | List -> assert false
         in
         let with_default default = function None -> default | Some x -> x in

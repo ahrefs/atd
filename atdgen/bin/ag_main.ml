@@ -106,6 +106,14 @@ let main () =
           containing OCaml serializers and deserializers for the JSON
           data format from the specifications in example.atd.";
 
+    "-bs", Arg.Unit (fun () -> set_once "output type" mode Bucklescript),
+    "
+          Produce files example_bs.mli and example_bs.ml
+          containing OCaml serializers and deserializers for the JSON
+          data format from the specifications in example.atd using
+          bucklescript's json api.";
+
+
     "-v", Arg.Unit (fun () -> set_once "output type" mode V),
     "
           Produce files example_v.mli and example_v.ml

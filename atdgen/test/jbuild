@@ -150,10 +150,10 @@
 
 
 (rule
- ((targets (bucklescpec_bs.ml))
+ ((targets (bucklespec_bs.ml))
   (deps (bucklespec.atd))
   (action (run atdgen ${<} -bs))))
 
 (alias
  ((name runtest)
-  (action (diff? bucklespec_bs.expected.ml bucklespec_bs.ml))))
+  (action (diff bucklespec_bs.expected.ml bucklespec_bs.ml))))

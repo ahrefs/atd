@@ -11,27 +11,19 @@ let make_ocaml_bs_intf ~original_types:_ _buf _deref _defs =
 
 let dummy_loc = (Lexing.dummy_pos, Lexing.dummy_pos)
 
+let runtime_module = "Atdgen_codec_runtime"
+
 let rec get_reader_name
     ?(paren = false)
     ?(name_f = fun s -> "read_" ^ s)
     p (x : Oj_mapping.oj_mapping) : string =
-
+  let ident = sprintf "%s.%s" runtime_module in
   match x with
-    Unit (_, Unit, Unit) -> "Atdgen_runtime.Oj_run.read_null"
-  | Bool (_, Bool, Bool) -> "Atdgen_runtime.Oj_run.read_bool"
-  | Int (_, Int o, Int) ->
-      (match o with
-         Int -> "Atdgen_runtime.Oj_run.read_int"
-       | Char -> "Atdgen_runtime.Oj_run.read_int8"
-       | Int32 -> "Atdgen_runtime.Oj_run.read_int32"
-       | Int64 -> "Atdgen_runtime.Oj_run.read_int64"
-       | Float -> "Atdgen_runtime.Oj_run.read_number"
-      )
-
-  | Float (_, Float, Float _) -> "Atdgen_runtime.Oj_run.read_number"
-
-  | String (_, String, String) -> "Atdgen_runtime.Oj_run.read_string"
-
+    Unit (_, Unit, Unit) -> ident "unit"
+  | Bool (_, Bool, Bool) -> ident "bool"
+  | Int (_, Int o, Int) -> ident "int"
+  | Float (_, Float, Float _) -> ident "float"
+  | String (_, String, String) -> ident "string"
   | Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s
 
   | Name (_, s, args, None, None) ->

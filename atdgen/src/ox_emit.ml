@@ -6,7 +6,6 @@
 open Printf
 
 open Atd.Import
-open Error
 open Mapping
 
 type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
@@ -46,7 +45,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
             | Classic ->
                 if is_root then (fn, pvn, l :: cvn)
                 else
-                  error loc
+                  Error.error loc
                     "Anonymous classic variant types are not allowed \
                      by OCaml."
            )
@@ -60,7 +59,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
         in
         (l :: fn, pvn, cvn)
       else
-        error loc "Anonymous record types are not allowed by OCaml."
+        Error.error loc "Anonymous record types are not allowed by OCaml."
 
   | Tuple (_, ca, _, _) ->
       Array.fold_left (extract_names_from_cell root_loc) acc ca
@@ -145,12 +144,12 @@ after the field name or variant name in the ATD type definition.
             field_kind s
         in
         if loc <> orig_loc then
-          error3
+          Error.error3
             root_loc msg1
             orig_loc msg2
             loc msg3
         else
-          error2
+          Error.error2
             root_loc msg1
             orig_loc msg2
 

@@ -1,5 +1,4 @@
 open Atd.Ast
-open Error
 open Mapping
 
 type oj_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
@@ -47,7 +46,7 @@ let rec mapping_of_expr (x : type_expr) : oj_mapping =
       Nullable (loc, mapping_of_expr x, ocaml_t, json_t)
 
   | Shared (loc, _, _) ->
-      error loc "Sharing is not supported by the JSON interface"
+      Error.error loc "Sharing is not supported by the JSON interface"
 
   | Wrap (loc, x, an) ->
       let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap loc an) in
@@ -133,7 +132,7 @@ and mapping_of_field ocaml_field_prefix = function
           Required, None -> None, false
         | Optional, None -> Some "None", true
         | (Required | Optional), Some _ ->
-            error loc "Superfluous default OCaml value"
+            Error.error loc "Superfluous default OCaml value"
         | With_default, Some s -> Some s, false
         | With_default, None ->
             (* will try to determine implicit default value later *)

@@ -6,7 +6,6 @@
 open Printf
 
 open Atd.Ast
-open Error
 open Mapping
 open Ob_mapping
 
@@ -183,7 +182,7 @@ let get_fields deref a =
                          Ocaml.get_implicit_ocaml_default
                            deref x.f_value in
                        if d = None then
-                         error x.f_loc "Missing default field value"
+                         Error.error x.f_loc "Missing default field value"
                        else
                          d
                    | Some _ as default -> default
@@ -241,7 +240,7 @@ let rec get_writer_name
        | Int32, `Int32 -> sprintf "Bi_io.write_%sint32" un
        | Int64, `Int64 -> sprintf "Bi_io.write_%sint64" un
        | _ ->
-           error loc "Unsupported combination of OCaml/Biniou int types"
+           Error.error loc "Unsupported combination of OCaml/Biniou int types"
       )
 
   | Float (_, Float, Float b) ->
@@ -345,7 +344,7 @@ let rec get_reader_name
        | Int32, `Int32 -> xreader "int32"
        | Int64, `Int64 -> xreader "int64"
        | _ ->
-           error loc "Unsupported combination of OCaml/Biniou int types"
+           Error.error loc "Unsupported combination of OCaml/Biniou int types"
       )
 
   | Float (_, Float, Float b) ->
@@ -660,7 +659,7 @@ and make_table_writer deref tagged list_kind x =
     match deref x with
         Record (_, a, Record record_kind, Record) -> a, record_kind
       | _ ->
-          error (loc_of_mapping x) "Not a record type"
+          Error.error (loc_of_mapping x) "Not a record type"
   in
   let dot =
     match record_kind with
@@ -931,7 +930,7 @@ let rec make_reader
         (match o with
              Record -> ()
            | Object ->
-               error loc "Sorry, OCaml objects are not supported"
+               Error.error loc "Sorry, OCaml objects are not supported"
         );
         let body = make_record_reader deref ~ocaml_version type_annot a in
         wrap_body ~tagged Bi_io.record_tag body
@@ -1223,11 +1222,11 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
           (match o with
                Record -> ()
              | Object ->
-                 error loc "Sorry, OCaml objects are not supported"
+                 Error.error loc "Sorry, OCaml objects are not supported"
           );
           get_fields deref a
       | _ ->
-          error loc "Not a list or array of records"
+          Error.error loc "Not a list or array of records"
   in
   let init_fields, init_bits, set_bit, check_bits, create_record =
     study_record ~ocaml_version fields

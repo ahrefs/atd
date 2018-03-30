@@ -78,7 +78,7 @@ let get_left_reader_name p name param =
   get_reader_name p (Mapping.Name (dummy_loc, name, args, None, None))
 
 let get_left_of_string_name p name param =
-  let name_f s = s ^ "_of_string" in
+  let name_f s = s ^ "_of_json" in
   let args = List.map (fun s -> Mapping.Tvar (dummy_loc, s)) param in
   get_reader_name ~name_f p (Mapping.Name (dummy_loc, name, args, None, None))
 

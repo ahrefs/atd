@@ -26,7 +26,7 @@ let read_point = (
     )
 )
 let read_param read__a = (
-  fun json ->
+  Atdgen_codec_runtime.make (fun json ->
     (
       {
           data =
@@ -43,12 +43,13 @@ let read_param read__a = (
             ) json;
       }
     )
+  )
 )
 let read_label = (
   Atdgen_codec_runtime.string
 )
 let read_labeled = (
-  fun json ->
+  Atdgen_codec_runtime.make (fun json ->
     (
       {
           flag =
@@ -71,4 +72,5 @@ let read_labeled = (
             ) json;
       }
     )
+  )
 )

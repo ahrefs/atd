@@ -7,12 +7,27 @@ type param =
       -> (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
   }
 
-let make_ocaml_bs_intf ~original_types:_ _buf _deref _defs =
-  ()
 
 let runtime_module = "Atdgen_codec_runtime"
 
 let ident = sprintf "%s.%s" runtime_module
+
+let codec_make = ident "make"
+
+let decoder_t s = sprintf "%s %s" s (ident "t")
+
+let make_ocaml_bs_intf buf _deref defs =
+  Mapping.flatten defs
+  |> List.iter (fun (x : (_, _) Mapping.def) ->
+    let s = x.def_name in
+    let full_name = Ox_emit.get_full_type_name x in
+    let read_params =
+      String.concat "" (
+        List.map (fun s -> sprintf "%s ->" (decoder_t ("'" ^ s))) x.def_param
+      ) in
+    bprintf buf "val read_%s : %s %s\n\n"
+      s read_params (decoder_t full_name)
+  )
 
 let rec get_reader_name
     ?(paren = false)
@@ -59,9 +74,9 @@ let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
        | Object ->
            Error.error loc "Sorry, OCaml objects are not supported"
       );
-      [
-        Annot ("fun", Line "fun json ->");
-        Block (make_record_reader p type_annot loc a j)
+      [ Annot ("fun", Line (sprintf "%s (fun json ->" codec_make))
+      ; Block (make_record_reader p type_annot loc a j)
+      ; Line ")"
       ]
 
   | Tuple (_, a, Tuple, Tuple) ->
@@ -180,10 +195,10 @@ let make_ml
 
 let make_mli
     ~header:_
-    ~original_types
+    ~original_types:_
     _ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
-  make_ocaml_bs_intf ~original_types buf deref defs;
+  make_ocaml_bs_intf buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files

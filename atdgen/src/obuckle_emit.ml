@@ -43,7 +43,7 @@ let rec get_reader_name
 
   | _ -> assert false
 
-let make_reader p _type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
+let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
   match x with
     Unit _
   | Bool _
@@ -53,7 +53,25 @@ let make_reader p _type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
   | Name _
   | External _
   | Tvar _ -> [ `Line (get_reader_name p x) ]
+  | Record (loc, a, Record o, Record j) ->
+      (match o with
+         Record -> ()
+       | Object ->
+           Error.error loc "Sorry, OCaml objects are not supported"
+      );
+      [
+        `Annot ("fun", `Line "fun p lb ->");
+        `Block (make_record_reader p type_annot loc a j)
+      ]
+
   | _ -> failwith "TODO: make_reader"
+
+and make_record_reader _p _type_annot _loc _a _json_options =
+  let create_record = [] in
+  [ `Line "("
+  ; `Block create_record
+  ; `Line ")"
+  ]
 
 let get_left_reader_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (dummy_loc, s)) param in

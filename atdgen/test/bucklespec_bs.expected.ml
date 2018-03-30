@@ -8,3 +8,10 @@ let read_label = (
 )
 let label_of_string s =
   read_label (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let read_labeled = (
+  fun p lb ->
+    (
+    )
+)
+let labeled_of_string s =
+  read_labeled (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

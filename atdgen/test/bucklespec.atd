@@ -2,3 +2,9 @@
 type label = string
 
 type valid = bool
+
+type labeled =
+  { flag: valid
+  ; lb: label
+  ; count: int
+  }

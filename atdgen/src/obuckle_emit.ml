@@ -87,10 +87,15 @@ and make_record_reader
         let oname = o.Ocaml.ocaml_fname in
         `Block
           [ `Line (sprintf "%s =" oname)
-          ; `Line (ident "decode")
-          ; `Line "("
-          ; `Block (make_reader p None x.f_value)
-          ; `Line ") json;"
+          ;  `Block
+              [ `Line (ident "decode")
+              ; `Line "("
+              ; `Block
+                  [ `Inline (make_reader p None x.f_value)
+                  ; `Line (sprintf "|> %s \"%s\"" (ident "field") x.f_name)
+                  ]
+              ; `Line ") json;"
+              ]
           ]
     | _ -> assert false
     ) a

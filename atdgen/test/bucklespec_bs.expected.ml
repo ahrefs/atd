@@ -15,15 +15,17 @@ let read_param read__a = (
     (
       {
           data =
-          Atdgen_codec_runtime.decode
-          (
-            read__a
-          ) json;
+            Atdgen_codec_runtime.decode
+            (
+              read__a
+              |> Atdgen_codec_runtime.field "data"
+            ) json;
           nothing =
-          Atdgen_codec_runtime.decode
-          (
-            Atdgen_codec_runtime.unit
-          ) json;
+            Atdgen_codec_runtime.decode
+            (
+              Atdgen_codec_runtime.unit
+              |> Atdgen_codec_runtime.field "nothing"
+            ) json;
       }
     )
 )
@@ -35,20 +37,23 @@ let read_labeled = (
     (
       {
           flag =
-          Atdgen_codec_runtime.decode
-          (
-            read_valid
-          ) json;
+            Atdgen_codec_runtime.decode
+            (
+              read_valid
+              |> Atdgen_codec_runtime.field "flag"
+            ) json;
           lb =
-          Atdgen_codec_runtime.decode
-          (
-            read_label
-          ) json;
+            Atdgen_codec_runtime.decode
+            (
+              read_label
+              |> Atdgen_codec_runtime.field "lb"
+            ) json;
           count =
-          Atdgen_codec_runtime.decode
-          (
-            Atdgen_codec_runtime.int
-          ) json;
+            Atdgen_codec_runtime.decode
+            (
+              Atdgen_codec_runtime.int
+              |> Atdgen_codec_runtime.field "count"
+            ) json;
       }
     )
 )

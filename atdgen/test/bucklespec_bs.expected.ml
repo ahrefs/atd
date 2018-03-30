@@ -7,5 +7,10 @@ let read_label = (
 let read_labeled = (
   fun p lb ->
     (
+      {
+        flag = failwith "TODO";
+        lb = failwith "TODO";
+        count = failwith "TODO";
+      }
     )
 )

@@ -66,10 +66,31 @@ let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
 
   | _ -> failwith "TODO: make_reader"
 
-and make_record_reader _p _type_annot _loc _a _json_options =
-  let create_record = [] in
+and make_record_reader
+    (p : param)
+    _type_annot
+    _loc
+    (a : (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping array)
+    _json_options
+  =
+  let create_record =
+    Array.map (function (x : (_, _) Mapping.field_mapping) ->
+    match x.f_arepr, x.f_brepr with
+    | Ocaml.Repr.Field o, Json.Field j ->
+        `Line (
+          let oname = o.Ocaml.ocaml_fname in
+          sprintf "%s = failwith \"TODO\";" oname
+        )
+    | _ -> assert false
+    ) a
+    |> Array.to_list
+  in
   [ `Line "("
-  ; `Block create_record
+  ; `Block
+      [ `Line "{"
+      ; `Block create_record
+      ; `Line "}"
+      ]
   ; `Line ")"
   ]
 

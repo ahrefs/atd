@@ -75,3 +75,15 @@ let fieldDefault s default f =
   |> map (function
     | None -> default
     | Some s -> s)
+
+let tuple2 a b = function
+  | `List [w ; x] -> (a w, b x)
+  | _ -> raise DecoderError
+
+let tuple3 a b c = function
+  | `List [w; x; y] -> (a w, b x, c y)
+  | _ -> raise DecoderError
+
+let tuple4 a b c d = function
+  | `List [w; x; y; z] -> (a x, b y, c y, d z)
+  | _ -> raise DecoderError

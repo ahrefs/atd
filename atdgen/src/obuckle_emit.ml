@@ -10,8 +10,6 @@ type param =
 let make_ocaml_bs_intf ~original_types:_ _buf _deref _defs =
   ()
 
-let dummy_loc = (Lexing.dummy_pos, Lexing.dummy_pos)
-
 let runtime_module = "Atdgen_codec_runtime"
 
 let ident = sprintf "%s.%s" runtime_module
@@ -117,13 +115,14 @@ and make_record_reader
   ]
 
 let get_left_reader_name p name param =
-  let args = List.map (fun s -> Mapping.Tvar (dummy_loc, s)) param in
-  get_reader_name p (Mapping.Name (dummy_loc, name, args, None, None))
+  let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
+  get_reader_name p (Mapping.Name (Atd.Ast.dummy_loc, name, args, None, None))
 
 let get_left_of_string_name p name param =
   let name_f s = s ^ "_of_json" in
-  let args = List.map (fun s -> Mapping.Tvar (dummy_loc, s)) param in
-  get_reader_name ~name_f p (Mapping.Name (dummy_loc, name, args, None, None))
+  let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
+  get_reader_name ~name_f p
+    (Mapping.Name (Atd.Ast.dummy_loc, name, args, None, None))
 
 let make_ocaml_bs_reader p ~original_types is_rec let1 let2
     (def : (_, _) Mapping.def) =

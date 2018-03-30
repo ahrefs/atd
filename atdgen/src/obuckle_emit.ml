@@ -6,7 +6,11 @@ type param =
       -> (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
   }
 
-let make_reader _ _ _ = failwith ""
+let make_ocaml_bs_intf ~original_types:_ _buf _deref _defs =
+  ()
+
+let make_reader _ _ _ =
+  failwith "TODO"
 
 let dummy_loc = (Lexing.dummy_pos, Lexing.dummy_pos)
 
@@ -51,14 +55,14 @@ let rec get_reader_name
   | _ -> assert false
 
 let get_left_reader_name _p _name _param =
-  failwith ""
+  failwith "failure get_left_reader_name"
 
 let get_left_of_string_name p name param =
   let name_f s = s ^ "_of_string" in
   let args = List.map (fun s -> Mapping.Tvar (dummy_loc, s)) param in
   get_reader_name ~name_f p (Mapping.Name (dummy_loc, name, args, None, None))
 
-let make_ocaml_json_reader p ~original_types is_rec let1 let2
+let make_ocaml_bs_reader p ~original_types is_rec let1 let2
     (def : (_, _) Mapping.def) =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
@@ -89,7 +93,7 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2
     ]
   ]
 
-let make_ocaml_json_impl
+let make_ocaml_bs_impl
     ~original_types
     buf deref defs =
   let p = {deref = deref;} in
@@ -103,7 +107,7 @@ let make_ocaml_json_impl
           Ox_emit.map (
             fun is_first def ->
               let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_json_reader p ~original_types is_rec let1 let2 def
+              make_ocaml_bs_reader p ~original_types is_rec let1 let2 def
           ) l
         in
         List.flatten readers
@@ -116,7 +120,15 @@ let make_ml
     ~original_types
     _ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
-  make_ocaml_json_impl ~original_types buf deref defs;
+  make_ocaml_bs_impl ~original_types buf deref defs;
+  Buffer.contents buf
+
+let make_mli
+    ~header:_
+    ~original_types
+    _ocaml_typedefs deref defs =
+  let buf = Buffer.create 1000 in
+  make_ocaml_bs_intf ~original_types buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -166,11 +178,14 @@ let make_ocaml_files
               [@@@ocaml.warning "-27-32-35-39"]|} src
   in
   let ml =
-    make_ml ~header
-      ~original_types
+    make_ml ~header ~original_types
       ocaml_typedefs (Mapping.make_deref defs) defs
   in
-  Ox_emit.write_ocaml out "" ml
+  let mli =
+    make_mli ~header ~original_types
+      ocaml_typedefs (Mapping.make_deref defs) defs
+  in
+  Ox_emit.write_ocaml out mli ml
 
 let make_ocaml_files
     ~opens:_

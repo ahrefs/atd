@@ -154,6 +154,22 @@
   (deps (bucklespec.atd))
   (action (run atdgen ${<} -bs))))
 
+(rule
+ ((targets (bucklespec_t.ml bucklespec_t.mli))
+  (deps (bucklespec.atd))
+  (action (run atdgen ${<} -t))))
+
+(library
+ ((name bucklespec_types)
+  (wrapped false)
+  (modules (bucklespec_t))))
+
+(executable
+ ((name bucklespec_bs)
+  (modules (bucklespec_bs))
+  (flags (-open Bucklespec_t))
+  (libraries (atdgen-codec-runtime bucklespec_types))))
+
 (alias
  ((name runtest)
   (action (diff bucklespec_bs.expected.ml bucklespec_bs.ml))))
@@ -161,3 +177,8 @@
 (alias
  ((name runtest)
   (action (diff bucklespec_bs.expected.mli bucklespec_bs.mli))))
+
+(alias
+ ((name runtest)
+  (deps (bucklespec_bs.exe))
+  (action (run ${<}))))

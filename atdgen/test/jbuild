@@ -159,6 +159,11 @@
   (deps (bucklespec.atd))
   (action (run atdgen ${<} -t))))
 
+(rule
+ ((targets (bucklespec_j.ml bucklespec_j.mli))
+  (deps (bucklespec.atd))
+  (action (run atdgen ${<} -j))))
+
 (library
  ((name bucklespec_types)
   (wrapped false)
@@ -177,6 +182,10 @@
 (alias
  ((name runtest)
   (action (diff bucklespec_bs.expected.mli bucklespec_bs.mli))))
+
+(alias
+ ((name runtest)
+  (action (diff bucklespec_j.expected.ml bucklespec_j.ml))))
 
 (alias
  ((name runtest)

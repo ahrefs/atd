@@ -5,12 +5,24 @@ let read_label = (
   Atdgen_codec_runtime.string
 )
 let read_labeled = (
-  fun p lb ->
+  fun json ->
     (
       {
-        flag = failwith "TODO";
-        lb = failwith "TODO";
-        count = failwith "TODO";
+          flag =
+          Atdgen_codec_runtime.decode
+          (
+            read_valid
+          ) json;
+          lb =
+          Atdgen_codec_runtime.decode
+          (
+            read_label
+          ) json;
+          count =
+          Atdgen_codec_runtime.decode
+          (
+            Atdgen_codec_runtime.int
+          ) json;
       }
     )
 )

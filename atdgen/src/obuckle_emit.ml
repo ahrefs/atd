@@ -13,11 +13,12 @@ let dummy_loc = (Lexing.dummy_pos, Lexing.dummy_pos)
 
 let runtime_module = "Atdgen_codec_runtime"
 
+let ident = sprintf "%s.%s" runtime_module
+
 let rec get_reader_name
     ?(paren = false)
     ?(name_f = fun s -> "read_" ^ s)
     p (x : Oj_mapping.oj_mapping) : string =
-  let ident = sprintf "%s.%s" runtime_module in
   match x with
     Unit (_, Unit, Unit) -> ident "unit"
   | Bool (_, Bool, Bool) -> ident "bool"
@@ -60,7 +61,7 @@ let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
            Error.error loc "Sorry, OCaml objects are not supported"
       );
       [
-        `Annot ("fun", `Line "fun p lb ->");
+        `Annot ("fun", `Line "fun json ->");
         `Block (make_record_reader p type_annot loc a j)
       ]
 
@@ -77,10 +78,14 @@ and make_record_reader
     Array.map (function (x : (_, _) Mapping.field_mapping) ->
     match x.f_arepr, x.f_brepr with
     | Ocaml.Repr.Field o, Json.Field j ->
-        `Line (
-          let oname = o.Ocaml.ocaml_fname in
-          sprintf "%s = failwith \"TODO\";" oname
-        )
+        let oname = o.Ocaml.ocaml_fname in
+        `Block
+          [ `Line (sprintf "%s =" oname)
+          ; `Line (ident "decode")
+          ; `Line "("
+          ; `Block (make_reader p None x.f_value)
+          ; `Line ") json;"
+          ]
     | _ -> assert false
     ) a
     |> Array.to_list
@@ -118,7 +123,7 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 let2
   let reader_expr = make_reader p type_annot x in
   let eta_expand = is_rec && not (Ox_emit.is_function reader_expr) in
   let extra_param, extra_args =
-    if eta_expand then " p lb", " p lb"
+    if eta_expand then " js", " js"
     else "", ""
   in
   [

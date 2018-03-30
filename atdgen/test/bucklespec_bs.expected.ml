@@ -45,6 +45,26 @@ let read_param read__a = (
     )
   )
 )
+let read_pair read__a read__b = (
+  Atdgen_codec_runtime.make (fun json ->
+    (
+      {
+          left =
+            Atdgen_codec_runtime.decode
+            (
+              read__a
+              |> Atdgen_codec_runtime.field "left"
+            ) json;
+          right =
+            Atdgen_codec_runtime.decode
+            (
+              read__b
+              |> Atdgen_codec_runtime.field "right"
+            ) json;
+      }
+    )
+  )
+)
 let read_label = (
   Atdgen_codec_runtime.string
 )

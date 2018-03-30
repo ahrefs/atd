@@ -17,3 +17,8 @@ type 'a param =
   }
 
 type 'a same_pair = ('a * 'a)
+
+type ('a, 'b) pair =
+  { left: 'a
+  ; right: 'b
+  }

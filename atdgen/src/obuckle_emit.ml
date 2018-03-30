@@ -9,9 +9,6 @@ type param =
 let make_ocaml_bs_intf ~original_types:_ _buf _deref _defs =
   ()
 
-let make_reader _ _ _ =
-  failwith "TODO"
-
 let dummy_loc = (Lexing.dummy_pos, Lexing.dummy_pos)
 
 let rec get_reader_name
@@ -54,8 +51,21 @@ let rec get_reader_name
 
   | _ -> assert false
 
-let get_left_reader_name _p _name _param =
-  failwith "failure get_left_reader_name"
+let make_reader p _type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
+  match x with
+    Unit _
+  | Bool _
+  | Int _
+  | Float _
+  | String _
+  | Name _
+  | External _
+  | Tvar _ -> [ `Line (get_reader_name p x) ]
+  | _ -> failwith "TODO: make_reader"
+
+let get_left_reader_name p name param =
+  let args = List.map (fun s -> Mapping.Tvar (dummy_loc, s)) param in
+  get_reader_name p (Mapping.Name (dummy_loc, name, args, None, None))
 
 let get_left_of_string_name p name param =
   let name_f s = s ^ "_of_string" in

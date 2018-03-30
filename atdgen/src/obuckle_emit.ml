@@ -89,7 +89,6 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 let2
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let read = get_left_reader_name p name param in
-  let of_string = get_left_of_string_name p name param in
   let type_annot =
     match Ox_emit.needs_type_annot x with
     | true -> Some type_constraint
@@ -105,12 +104,6 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 let2
     `Line (sprintf "%s %s%s = (" let1 read extra_param);
     `Block (List.map Indent.strip reader_expr);
     `Line (sprintf ")%s" extra_args);
-    `Line (sprintf "%s %s s =" let2 of_string);
-    `Block [
-      `Line (
-        sprintf "%s (Yojson.Safe.init_lexer ()) \
-                 (Lexing.from_string s)" read);
-    ]
   ]
 
 let make_ocaml_bs_impl

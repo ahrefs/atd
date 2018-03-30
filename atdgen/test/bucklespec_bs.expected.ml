@@ -1,17 +1,11 @@
 let read_valid = (
   Atdgen_codec_runtime.bool
 )
-let valid_of_json s =
-  read_valid (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let read_label = (
   Atdgen_codec_runtime.string
 )
-let label_of_json s =
-  read_label (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let read_labeled = (
   fun p lb ->
     (
     )
 )
-let labeled_of_json s =
-  read_labeled (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

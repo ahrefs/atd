@@ -292,11 +292,11 @@ let rec is_function (l : Indent.t list) =
     [] -> false
   | x :: _ ->
       match x with
-        `Line _ -> false
-      | `Block l -> is_function l
-      | `Inline l -> is_function l
-      | `Annot ("fun", _) -> true
-      | `Annot (_, x) -> is_function [x]
+        Line _ -> false
+      | Block l -> is_function l
+      | Inline l -> is_function l
+      | Annot ("fun", _) -> true
+      | Annot (_, x) -> is_function [x]
 
 let name_of_var s = "_" ^ s
 

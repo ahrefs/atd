@@ -67,11 +67,16 @@ let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
       ]
 
   | Tuple (_, a, Tuple, Tuple) ->
-      a
-      |> Array.to_list
-      |> List.map (fun (cm : (_, _) Mapping.cell_mapping) ->
-        Block (make_reader p None cm.cel_value))
-      |> Indent.concat (Line ",")
+      [ Line (ident (sprintf "tuple%d" (Array.length a)))
+      ; Block (
+          a
+          |> Array.to_list
+          |> List.map (fun (cm : (_, _) Mapping.cell_mapping) ->
+            Block (make_reader p None cm.cel_value)
+            |> Indent.paren
+          )
+        )
+      ]
   | _ -> failwith "TODO: make_reader"
 
 and make_record_reader

@@ -2,13 +2,19 @@ let read_valid = (
   Atdgen_codec_runtime.bool
 )
 let read_point = (
-    Atdgen_codec_runtime.int
-  ,
-    Atdgen_codec_runtime.int
-  ,
-    Atdgen_codec_runtime.string
-  ,
-    Atdgen_codec_runtime.unit
+  Atdgen_codec_runtime.tuple4
+    (
+      Atdgen_codec_runtime.int
+    )
+    (
+      Atdgen_codec_runtime.int
+    )
+    (
+      Atdgen_codec_runtime.string
+    )
+    (
+      Atdgen_codec_runtime.unit
+    )
 )
 let read_param read__a = (
   fun json ->

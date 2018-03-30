@@ -8,3 +8,5 @@ type labeled =
   ; lb: label
   ; count: int
   }
+
+type point = (int * int * string * unit)

@@ -65,6 +65,12 @@ let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
         `Block (make_record_reader p type_annot loc a j)
       ]
 
+  | Tuple (_, a, Tuple, Tuple) ->
+      a
+      |> Array.to_list
+      |> List.map (fun (cm : (_, _) Mapping.cell_mapping) ->
+        `Block (make_reader p None cm.cel_value))
+      |> Indent.concat (`Line ",")
   | _ -> failwith "TODO: make_reader"
 
 and make_record_reader

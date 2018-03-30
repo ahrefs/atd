@@ -3,6 +3,8 @@
 
 type valid = Bucklespec_t.valid
 
+type point = Bucklespec_t.point
+
 type label = Bucklespec_t.label
 
 type labeled = Bucklespec_t.labeled = { flag: valid; lb: label; count: int }
@@ -19,6 +21,106 @@ let read_valid = (
 )
 let valid_of_string s =
   read_valid (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_point = (
+  fun ob x ->
+    Bi_outbuf.add_char ob '(';
+    (let x, _, _, _ = x in
+    (
+      Yojson.Safe.write_int
+    ) ob x
+    );
+    Bi_outbuf.add_char ob ',';
+    (let _, x, _, _ = x in
+    (
+      Yojson.Safe.write_int
+    ) ob x
+    );
+    Bi_outbuf.add_char ob ',';
+    (let _, _, x, _ = x in
+    (
+      Yojson.Safe.write_string
+    ) ob x
+    );
+    Bi_outbuf.add_char ob ',';
+    (let _, _, _, x = x in
+    (
+      Yojson.Safe.write_null
+    ) ob x
+    );
+    Bi_outbuf.add_char ob ')';
+)
+let string_of_point ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_point ob x;
+  Bi_outbuf.contents ob
+let read_point = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+    let len = ref 0 in
+    let end_of_tuple = ref false in
+    (try
+      let x0 =
+        let x =
+          (
+            Atdgen_runtime.Oj_run.read_int
+          ) p lb
+        in
+        incr len;
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+        x
+      in
+      let x1 =
+        let x =
+          (
+            Atdgen_runtime.Oj_run.read_int
+          ) p lb
+        in
+        incr len;
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+        x
+      in
+      let x2 =
+        let x =
+          (
+            Atdgen_runtime.Oj_run.read_string
+          ) p lb
+        in
+        incr len;
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+        x
+      in
+      let x3 =
+        let x =
+          (
+            Atdgen_runtime.Oj_run.read_null
+          ) p lb
+        in
+        incr len;
+        (try
+          Yojson.Safe.read_space p lb;
+          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+        with Yojson.End_of_tuple -> end_of_tuple := true);
+        x
+      in
+      if not !end_of_tuple then (
+        try
+          while true do
+            Yojson.Safe.skip_json p lb;
+            Yojson.Safe.read_space p lb;
+            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+          done
+        with Yojson.End_of_tuple -> ()
+      );
+      (x0, x1, x2, x3)
+    with Yojson.End_of_tuple ->
+      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1; 2; 3 ]);
+)
+let point_of_string s =
+  read_point (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_label = (
   Yojson.Safe.write_string
 )

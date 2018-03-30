@@ -1,7 +1,4 @@
 
-type point = (int * int)
+type label = string
 
-type labeled =
-  { label: string
-  ; point: point
-  }
+type valid = bool

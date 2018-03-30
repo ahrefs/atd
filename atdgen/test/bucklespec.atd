@@ -15,3 +15,5 @@ type 'a param =
   { data: 'a
   ; nothing: unit
   }
+
+type 'a same_pair = ('a * 'a)

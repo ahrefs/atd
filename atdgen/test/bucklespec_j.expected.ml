@@ -3,6 +3,8 @@
 
 type valid = Bucklespec_t.valid
 
+type 'a same_pair = 'a Bucklespec_t.same_pair
+
 type point = Bucklespec_t.point
 
 type 'a param = 'a Bucklespec_t.param = { data: 'a; nothing: unit }
@@ -23,6 +25,72 @@ let read_valid = (
 )
 let valid_of_string s =
   read_valid (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_same_pair write__a = (
+  fun ob x ->
+    Bi_outbuf.add_char ob '(';
+    (let x, _ = x in
+    (
+      write__a
+    ) ob x
+    );
+    Bi_outbuf.add_char ob ',';
+    (let _, x = x in
+    (
+      write__a
+    ) ob x
+    );
+    Bi_outbuf.add_char ob ')';
+)
+let string_of_same_pair write__a ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_same_pair write__a ob x;
+  Bi_outbuf.contents ob
+let read_same_pair read__a = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+    let len = ref 0 in
+    let end_of_tuple = ref false in
+    (try
+      let x0 =
+        let x =
+          (
+            read__a
+          ) p lb
+        in
+        incr len;
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+        x
+      in
+      let x1 =
+        let x =
+          (
+            read__a
+          ) p lb
+        in
+        incr len;
+        (try
+          Yojson.Safe.read_space p lb;
+          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+        with Yojson.End_of_tuple -> end_of_tuple := true);
+        x
+      in
+      if not !end_of_tuple then (
+        try
+          while true do
+            Yojson.Safe.skip_json p lb;
+            Yojson.Safe.read_space p lb;
+            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+          done
+        with Yojson.End_of_tuple -> ()
+      );
+      (x0, x1)
+    with Yojson.End_of_tuple ->
+      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
+)
+let same_pair_of_string read__a s =
+  read_same_pair read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_point = (
   fun ob x ->
     Bi_outbuf.add_char ob '(';

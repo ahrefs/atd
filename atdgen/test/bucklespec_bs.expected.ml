@@ -1,6 +1,15 @@
 let read_valid = (
   Atdgen_codec_runtime.bool
 )
+let read_same_pair read__a = (
+  Atdgen_codec_runtime.tuple2
+    (
+      read__a
+    )
+    (
+      read__a
+    )
+)
 let read_point = (
   Atdgen_codec_runtime.tuple4
     (

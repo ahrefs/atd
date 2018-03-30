@@ -12,6 +12,8 @@ type json =
 
 type 'a t
 
+val make : (json -> 'a) -> 'a t
+
 val decode : 'a t -> json -> 'a
 
 val unit : unit t

@@ -13,6 +13,8 @@ type json =
 
 type 'a t = json -> 'a
 
+let make f = f
+
 exception DecoderError
 
 let decode f json = f json

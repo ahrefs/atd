@@ -37,6 +37,10 @@ let char = function
   | `String s when String.length s = 1 -> s.[0]
   | _ -> raise DecoderError
 
+let string = function
+  | `String s -> s
+  | _ -> raise DecoderError
+
 let list f = function
   | `List l -> List.map f l
   | _ -> raise DecoderError

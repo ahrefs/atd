@@ -19,6 +19,7 @@ val bool : bool t
 val int : int t
 val float : float t
 val char : char t
+val string : string t
 
 val optional : 'a t -> 'a option t
 val list : 'a t -> 'a list t

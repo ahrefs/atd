@@ -1,7 +1,7 @@
 
-type point = int * int
+type point = (int * int)
 
-type labeled = {
-  ; label: string
+type labeled =
+  { label: string
   ; point: point
-}
+  }

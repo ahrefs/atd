@@ -1767,17 +1767,7 @@ let make_ocaml_json_impl
     ) defs
   in
   Indent.to_buffer buf (List.flatten ll);
-
-  if with_create then
-    List.iter (
-      fun (_, l) ->
-        let l = List.filter Ox_emit.is_exportable l in
-        List.iter (
-          fun x ->
-            let _, impl = Ox_emit.make_record_creator deref x in
-            Buffer.add_string buf impl
-        ) l
-    ) defs
+  Ox_emit.maybe_write_creators ~with_create deref buf defs
 
 let check_variant untypeds = function
   | Inherit _ -> assert false (* inherits have been inlined by now *)

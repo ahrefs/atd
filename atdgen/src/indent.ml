@@ -4,15 +4,14 @@
 *)
 
 type t =
-    [
-    | `Line of string        (* single line (not indented) *)
-    | `Block of t list       (* indented sequence *)
-    | `Inline of t list      (* in-line sequence (not indented) *)
-    | `Annot of (string * t) (* arbitrary annotation *)
-    ]
+  [ `Line of string
+  | `Block of t list
+  | `Inline of t list
+  | `Annot of (string * t)
+  ]
 
-let rec strip : t -> Atd.Indent.t = function
-    `Line _ as x -> x
+let rec strip = function
+  | `Line _ as x -> x
   | `Block l -> `Block (List.map strip l)
   | `Inline l -> `Inline (List.map strip l)
   | `Annot (_, x) -> strip x

@@ -334,24 +334,32 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
                | B -> base ^ "_b"
                | J -> base ^ "_j"
                | V -> base ^ "_v"
-               | _ -> base
+               | Bucklescript -> base ^ "_bs"
+               | Dep
+               | List
+               | Biniou
+               | Validate
+               | Json -> base
             )
   in
   let type_aliases =
     match base_prefix with
         None ->
           (match mode with
-               B | J |  V -> Some "T"
-             | _ -> None
+               B | J |  V | Bucklescript -> Some "T"
+           | Biniou | Validate
+           | T | Dep | List
+           | Json -> None
           )
       | Some base ->
           match !type_aliases with
               Some _ as x -> x
             | None ->
                 (match mode with
-                     B | J | V ->
+                     B | J | V | Bucklescript ->
                        Some (String.capitalize_ascii (Filename.basename base) ^ "_t")
-                   | _ -> None
+                 | T | Json | Dep | List | Validate
+                   | Biniou -> None
           )
   in
   let get_base_prefix () =

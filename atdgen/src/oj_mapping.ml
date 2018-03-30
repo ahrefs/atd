@@ -1,13 +1,13 @@
 open Atd.Ast
 open Mapping
 
-type oj_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
+type t = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
 
 (*
   Translation of the types into the ocaml/json mapping.
 *)
 
-let rec mapping_of_expr (x : type_expr) : oj_mapping =
+let rec mapping_of_expr (x : type_expr) =
   match x with
     Sum (loc, l, an) ->
       let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in

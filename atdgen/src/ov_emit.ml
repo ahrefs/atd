@@ -383,7 +383,7 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
     ) defs
   in
   Indent.to_buffer buf (List.flatten ll);
-  Ox_emit.maybe_write_creators ~with_create deref buf defs
+  Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 
 (*

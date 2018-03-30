@@ -102,13 +102,7 @@ val %s_of_string :%s
           s reader_params
           full_name
           s;
-
-        if with_create && Ox_emit.is_exportable x then
-          let create_record_intf, _ =
-            Ox_emit.make_record_creator deref x
-          in
-          bprintf buf "%s" create_record_intf;
-          bprintf buf "\n";
+        Ox_emit.maybe_write_creator_intf ~with_create deref buf x
       )
   )
     (flatten defs)
@@ -1767,7 +1761,7 @@ let make_ocaml_json_impl
     ) defs
   in
   Indent.to_buffer buf (List.flatten ll);
-  Ox_emit.maybe_write_creators ~with_create deref buf defs
+  Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 let check_variant untypeds = function
   | Inherit _ -> assert false (* inherits have been inlined by now *)

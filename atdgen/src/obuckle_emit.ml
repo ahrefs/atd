@@ -32,7 +32,7 @@ let make_ocaml_bs_intf buf _deref defs =
 let rec get_reader_name
     ?(paren = false)
     ?(name_f = fun s -> "read_" ^ s)
-    p (x : Oj_mapping.oj_mapping) : string =
+    p (x : Oj_mapping.t) : string =
   match x with
     Unit (_, Unit, Unit) -> ident "unit"
   | Bool (_, Bool, Bool) -> ident "bool"
@@ -58,7 +58,7 @@ let rec get_reader_name
 
   | _ -> assert false
 
-let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
+let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
   | Bool _

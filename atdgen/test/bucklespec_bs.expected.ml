@@ -10,6 +10,23 @@ let read_point = (
   ,
     Atdgen_codec_runtime.unit
 )
+let read_param read__a = (
+  fun json ->
+    (
+      {
+          data =
+          Atdgen_codec_runtime.decode
+          (
+            read__a
+          ) json;
+          nothing =
+          Atdgen_codec_runtime.decode
+          (
+            Atdgen_codec_runtime.unit
+          ) json;
+      }
+    )
+)
 let read_label = (
   Atdgen_codec_runtime.string
 )

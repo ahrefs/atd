@@ -10,3 +10,8 @@ type labeled =
   }
 
 type point = (int * int * string * unit)
+
+type 'a param =
+  { data: 'a
+  ; nothing: unit
+  }

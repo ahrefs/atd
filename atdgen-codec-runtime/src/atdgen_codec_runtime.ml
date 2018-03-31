@@ -85,5 +85,5 @@ let tuple3 a b c = function
   | _ -> raise DecoderError
 
 let tuple4 a b c d = function
-  | `List [w; x; y; z] -> (a x, b y, c y, d z)
+  | `List [w; x; y; z] -> (a w, b x, c y, d z)
   | _ -> raise DecoderError

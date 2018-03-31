@@ -102,6 +102,14 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_reader p None x)
       ; Line ")"
       ]
+  | Wrap (_, x, Wrap o, Wrap) ->
+      (match o with
+       | None -> make_reader p type_annot x
+       | Some w ->
+           [ Line "("
+           ; Block (make_reader p type_annot x)
+           ; Line (sprintf ") |> (%s (%s))" (ident "map") w.ocaml_wrap)
+           ])
   | _ -> failwith "TODO: make_reader"
 
 and make_record_reader

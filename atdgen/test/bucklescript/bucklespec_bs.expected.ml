@@ -102,3 +102,11 @@ let read_labeled = (
     )
   )
 )
+let read__2 = (
+  (
+    Atdgen_codec_runtime.string
+  ) |> (Atdgen_codec_runtime.map (fun s -> `Id s))
+)
+let read_id = (
+  read__2
+)

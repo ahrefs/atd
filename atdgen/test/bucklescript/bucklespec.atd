@@ -25,3 +25,12 @@ type ('a, 'b) pair =
 
 
 type 'a pairs = ('a, 'a) pair list
+
+type id = string <ocaml validator="fun path x -> assert false"> wrap
+   <ocaml t="[ `Id of string ]"
+          wrap="fun s -> `Id s"
+          unwrap="function `Id s -> s"
+          validator="fun path x ->
+                       match x with
+                         `Id \"\" -> failwith \"empty\"
+                       | _ -> None">

@@ -14,3 +14,5 @@ val read_label :  label Atdgen_codec_runtime.t
 
 val read_labeled :  labeled Atdgen_codec_runtime.t
 
+val read_id :  id Atdgen_codec_runtime.t
+

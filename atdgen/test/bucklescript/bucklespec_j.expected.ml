@@ -17,6 +17,8 @@ type label = Bucklespec_t.label
 
 type labeled = Bucklespec_t.labeled = { flag: valid; lb: label; count: int }
 
+type id = Bucklespec_t.id
+
 let write_valid = (
   Yojson.Safe.write_bool
 )
@@ -729,3 +731,34 @@ let read_labeled = (
 )
 let labeled_of_string s =
   read_labeled (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__2 = (
+  fun ob x -> (
+    let x = ( function `Id s -> s ) x in (
+      Yojson.Safe.write_string
+    ) ob x)
+)
+let string_of__2 ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__2 ob x;
+  Bi_outbuf.contents ob
+let read__2 = (
+  fun p lb ->
+    let x = (
+      Atdgen_runtime.Oj_run.read_string
+    ) p lb in
+    ( fun s -> `Id s ) x
+)
+let _2_of_string s =
+  read__2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_id = (
+  write__2
+)
+let string_of_id ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_id ob x;
+  Bi_outbuf.contents ob
+let read_id = (
+  read__2
+)
+let id_of_string s =
+  read_id (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

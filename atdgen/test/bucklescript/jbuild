@@ -1,0 +1,50 @@
+(jbuild_version 1)
+
+(rule
+ ((targets (bucklespec_bs.ml bucklespec_bs.mli))
+  (deps (bucklespec.atd))
+  (action (run atdgen ${<} -bs))))
+
+(rule
+ ((targets (bucklespec_t.ml bucklespec_t.mli))
+  (deps (bucklespec.atd))
+  (action (run atdgen ${<} -t))))
+
+(rule
+ ((targets (bucklespec_j.ml bucklespec_j.mli))
+  (deps (bucklespec.atd))
+  (action (run atdgen ${<} -j))))
+
+(library
+ ((name bucklespec_types)
+  (wrapped false)
+  (modules (bucklespec_t))))
+
+(library
+ ((name bucklespec_bs)
+  (wrapped false)
+  (libraries (atdgen-codec-runtime bucklespec_types))
+  (flags (-open Bucklespec_t))
+  (modules (bucklespec_bs))))
+
+(executable
+ ((name bucklespec_roundtrip)
+  (modules (bucklespec_roundtrip bucklespec_j))
+  (libraries (bucklespec_types bucklespec_bs atdgen-runtime))))
+
+(alias
+ ((name runtest)
+  (action (diff bucklespec_bs.expected.ml bucklespec_bs.ml))))
+
+(alias
+ ((name runtest)
+  (action (diff bucklespec_bs.expected.mli bucklespec_bs.mli))))
+
+(alias
+ ((name runtest)
+  (action (diff bucklespec_j.expected.ml bucklespec_j.ml))))
+
+(alias
+ ((name runtest)
+  (deps (bucklespec_roundtrip.exe))
+  (action (run ${<}))))

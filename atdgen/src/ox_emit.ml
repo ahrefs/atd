@@ -383,3 +383,6 @@ let default_value x deref =
   | With_default, Some d -> Some d
   | Optional, _ -> Some "None"
   | Required, _ -> None
+
+let include_intf (x : (Ocaml.Repr.t, _) Mapping.def) =
+  x.def_name <> "" && x.def_name.[0] <> '_' && x.def_value <> None

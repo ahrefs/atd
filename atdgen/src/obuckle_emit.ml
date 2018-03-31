@@ -37,7 +37,7 @@ let rec get_reader_name
   match x with
     Unit (_, Unit, Unit) -> ident "unit"
   | Bool (_, Bool, Bool) -> ident "bool"
-  | Int (_, Int o, Int) -> ident "int"
+  | Int (_, Int _, Int) -> ident "int"
   | Float (_, Float, Float _) -> ident "float"
   | String (_, String, String) -> ident "string"
   | Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s
@@ -114,7 +114,7 @@ and make_record_reader
   let create_record =
     Array.map (function (x : (_, _) Mapping.field_mapping) ->
     match x.f_arepr, x.f_brepr with
-    | Ocaml.Repr.Field o, Json.Field j ->
+    | Ocaml.Repr.Field o, Json.Field _ ->
         let oname = o.Ocaml.ocaml_fname in
         Block
           [ Line (sprintf "%s =" oname)
@@ -145,13 +145,7 @@ let get_left_reader_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
   get_reader_name p (Mapping.Name (Atd.Ast.dummy_loc, name, args, None, None))
 
-let get_left_of_string_name p name param =
-  let name_f s = s ^ "_of_json" in
-  let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
-  get_reader_name ~name_f p
-    (Mapping.Name (Atd.Ast.dummy_loc, name, args, None, None))
-
-let make_ocaml_bs_reader p ~original_types is_rec let1 let2
+let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
     (def : (_, _) Mapping.def) =
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in

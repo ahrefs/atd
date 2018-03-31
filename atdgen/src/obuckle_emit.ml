@@ -25,7 +25,7 @@ let make_ocaml_bs_intf buf _deref defs =
     let s = x.def_name in
     let full_name = Ox_emit.get_full_type_name x in
     let read_params =
-      String.concat "" (
+      String.concat " " (
         List.map (fun s -> sprintf "%s ->" (decoder_t ("'" ^ s))) x.def_param
       ) in
     bprintf buf "val read_%s : %s %s\n\n"

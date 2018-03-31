@@ -6,7 +6,7 @@ val read_point :  point Atdgen_codec_runtime.t
 
 val read_param : 'a Atdgen_codec_runtime.t -> 'a param Atdgen_codec_runtime.t
 
-val read_pair : 'a Atdgen_codec_runtime.t ->'b Atdgen_codec_runtime.t -> ('a, 'b) pair Atdgen_codec_runtime.t
+val read_pair : 'a Atdgen_codec_runtime.t -> 'b Atdgen_codec_runtime.t -> ('a, 'b) pair Atdgen_codec_runtime.t
 
 val read_pairs : 'a Atdgen_codec_runtime.t -> 'a pairs Atdgen_codec_runtime.t
 

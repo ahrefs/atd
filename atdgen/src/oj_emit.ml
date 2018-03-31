@@ -37,7 +37,8 @@ type param = {
 
 
 let make_ocaml_json_intf ~with_create buf deref defs =
-  List.iter (fun x ->
+  flatten defs
+  |> List.iter (fun x ->
     let s = x.def_name in
     if s <> "" && s.[0] <> '_' && x.def_value <> None then (
       let full_name = Ox_emit.get_full_type_name x in
@@ -103,7 +104,6 @@ val %s_of_string :%s
       Ox_emit.maybe_write_creator_intf ~with_create deref buf x
     )
   )
-    (flatten defs)
 
 let is_json_string deref x =
   (*

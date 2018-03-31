@@ -170,13 +170,9 @@ let get_fields deref a =
       | Ocaml.Repr.Field o, Biniou.Field b -> o, b
       | _, _ -> assert false
     in
-    let optional =
-      match x.f_kind with
-        Optional | With_default -> true
-      | Required -> false
-    in
     let ocaml_default = Ox_emit.default_value x deref in
-    (x, ocamlf.Ocaml.ocaml_fname , ocaml_default, optional
+    (x, ocamlf.Ocaml.ocaml_fname , ocaml_default
+    , (not (Atd.Ast.is_required x.f_kind))
     , binf.Biniou.biniou_unwrapped)
   ) (Array.to_list a)
 

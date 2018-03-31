@@ -158,11 +158,10 @@ let get_fields p a =
       | Some d -> Default d
     in
     let k =
-      match x.f_kind with
-      | With_default
-      | Optional -> k
-      | Required -> k + 1
-    in
+      if Atd.Ast.is_required x.f_kind then
+        k + 1
+      else
+        k in
     let field_ref = "field_" ^ ocamlf.Ocaml.ocaml_fname in
     let constructor = None in
     let payloads = [] in

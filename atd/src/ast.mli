@@ -222,3 +222,5 @@ val is_parametrized : type_expr -> bool
   (**
      Test whether a type expression contains type variables ([`Tvar]).
   *)
+
+val is_required : field_kind -> bool

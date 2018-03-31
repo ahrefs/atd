@@ -233,3 +233,8 @@ let extract_type_names ?(ignorable = []) x =
 
 let is_parametrized x =
   fold (fun x b -> b || match x with Tvar _ -> true | _ -> false) x false
+
+let is_required = function
+  | Optional
+  | With_default -> false
+  | Required -> true

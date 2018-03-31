@@ -81,7 +81,6 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_record_reader p type_annot loc a j)
       ; Line ")"
       ]
-
   | Tuple (_, a, Tuple, Tuple) ->
       [ Line (ident (sprintf "tuple%d" (Array.length a)))
       ; Block (
@@ -92,6 +91,18 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
             |> Indent.paren
           )
         )
+      ]
+  | List (_, x, List o, List j) ->
+      let () =
+        match j with
+        | Object -> failwith "Unable to read objects into lists"
+        | Array -> () in
+      [ Line (sprintf "%s ("
+                (match o with
+                 | List -> ident "list"
+                 | Array -> ident "array"))
+      ; Block (make_reader p None x)
+      ; Line ")"
       ]
   | _ -> failwith "TODO: make_reader"
 

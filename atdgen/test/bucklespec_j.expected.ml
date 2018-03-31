@@ -11,6 +11,8 @@ type 'a param = 'a Bucklespec_t.param = { data: 'a; nothing: unit }
 
 type ('a, 'b) pair = ('a, 'b) Bucklespec_t.pair = { left: 'a; right: 'b }
 
+type 'a pairs = 'a Bucklespec_t.pairs
+
 type label = Bucklespec_t.label
 
 type labeled = Bucklespec_t.labeled = { flag: valid; lb: label; count: int }
@@ -495,6 +497,34 @@ let read_pair read__a read__b = (
 )
 let pair_of_string read__a read__b s =
   read_pair read__a read__b (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__1 write__a write__b = (
+  Atdgen_runtime.Oj_run.write_list (
+    write_pair write__a write__a
+  )
+)
+let string_of__1 write__a write__b ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__1 write__a write__b ob x;
+  Bi_outbuf.contents ob
+let read__1 read__a read__b = (
+  Atdgen_runtime.Oj_run.read_list (
+    read_pair read__a read__a
+  )
+)
+let _1_of_string read__a read__b s =
+  read__1 read__a read__b (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_pairs write__a = (
+  write__1 write__a write__a
+)
+let string_of_pairs write__a ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_pairs write__a ob x;
+  Bi_outbuf.contents ob
+let read_pairs read__a = (
+  read__1 read__a read__a
+)
+let pairs_of_string read__a s =
+  read_pairs read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_label = (
   Yojson.Safe.write_string
 )

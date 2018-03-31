@@ -65,6 +65,14 @@ let read_pair read__a read__b = (
     )
   )
 )
+let read__1 read__a read__b = (
+  Atdgen_codec_runtime.list (
+    read_pair read__a read__a
+  )
+)
+let read_pairs read__a = (
+  read__1 read__a read__a
+)
 let read_label = (
   Atdgen_codec_runtime.string
 )

@@ -22,3 +22,6 @@ type ('a, 'b) pair =
   { left: 'a
   ; right: 'b
   }
+
+
+type 'a pairs = ('a, 'a) pair list

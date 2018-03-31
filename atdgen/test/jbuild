@@ -169,11 +169,17 @@
   (wrapped false)
   (modules (bucklespec_t))))
 
-(executable
+(library
  ((name bucklespec_bs)
-  (modules (bucklespec_bs))
+  (wrapped false)
+  (libraries (atdgen-codec-runtime bucklespec_types))
   (flags (-open Bucklespec_t))
-  (libraries (atdgen-codec-runtime bucklespec_types))))
+  (modules (bucklespec_bs))))
+
+(executable
+ ((name bucklespec_roundtrip)
+  (modules (bucklespec_roundtrip bucklespec_j))
+  (libraries (bucklespec_types bucklespec_bs atdgen-runtime))))
 
 (alias
  ((name runtest)
@@ -189,5 +195,5 @@
 
 (alias
  ((name runtest)
-  (deps (bucklespec_bs.exe))
+  (deps (bucklespec_roundtrip.exe))
   (action (run ${<}))))

@@ -368,3 +368,18 @@ let maybe_write_creator_intf ~with_create deref buf x =
     bprintf buf "%s" create_record_intf;
     bprintf buf "\n"
   )
+
+let default_value x deref =
+  let ocamlf =
+    match x.f_arepr with
+    | Ocaml.Repr.Field o -> o
+    | _ -> failwith "Ox_emit.default_value" in
+  match x.f_kind, ocamlf.Ocaml.ocaml_default with
+  | With_default, None ->
+      begin match Ocaml.get_implicit_ocaml_default deref x.f_value with
+        | None -> Error.error x.f_loc "Missing default field value"
+        | Some d -> Some d
+      end
+  | With_default, Some d -> Some d
+  | Optional, _ -> Some "None"
+  | Required, _ -> None

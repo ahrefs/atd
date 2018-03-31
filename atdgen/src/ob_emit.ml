@@ -175,17 +175,7 @@ let get_fields deref a =
         Optional | With_default -> true
       | Required -> false
     in
-    let ocaml_default =
-      match x.f_kind, ocamlf.Ocaml.ocaml_default with
-      | With_default, None ->
-          begin match Ocaml.get_implicit_ocaml_default deref x.f_value with
-            | None -> Error.error x.f_loc "Missing default field value"
-            | Some _ as default -> default
-          end
-      | With_default, (Some _ as default) -> default
-      | Optional, _ -> Some "None"
-      | Required, _ -> None
-    in
+    let ocaml_default = Ox_emit.default_value x deref in
     (x, ocamlf.Ocaml.ocaml_fname , ocaml_default, optional
     , binf.Biniou.biniou_unwrapped)
   ) (Array.to_list a)

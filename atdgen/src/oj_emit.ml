@@ -153,15 +153,9 @@ let get_fields p a =
       | _, _ -> assert false
     in
     let default =
-      match x.f_kind, ocamlf.Ocaml.ocaml_default with
-      | With_default, None ->
-          begin match Ocaml.get_implicit_ocaml_default p.deref x.f_value with
-            | None -> Error.error x.f_loc "Missing default field value"
-            | Some d -> Default d
-          end
-      | With_default, Some d -> Default d
-      | Optional, _ -> Default "None"
-      | Required, _ -> Checked k
+      match Ox_emit.default_value x p.deref with
+      | None -> Checked k
+      | Some d -> Default d
     in
     let k =
       match x.f_kind with

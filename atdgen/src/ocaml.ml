@@ -274,8 +274,6 @@ type ocaml_module_body = ocaml_module_item list
   Mapping from ATD to OCaml
 *)
 
-let omap f = function None -> None | Some x -> Some (f x)
-
 let rec map_expr (x : type_expr) : ocaml_expr =
   match x with
     Atd.Ast.Sum (_, l, an) ->
@@ -315,7 +313,7 @@ and map_variant (x : variant) : ocaml_variant =
     Inherit _ -> assert false
   | Variant (loc, (s, an), o) ->
       let s = get_ocaml_cons s an in
-      (s, omap map_expr o, Atd.Doc.get_doc loc an)
+      (s, Option.map map_expr o, Atd.Doc.get_doc loc an)
 
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
@@ -428,7 +426,7 @@ and ocaml_of_variant_mapping x =
         Variant o -> o
       | _ -> assert false
   in
-  (o.ocaml_cons, omap ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc)
+  (o.ocaml_cons, Option.map ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc)
 
 and ocaml_of_field_mapping x =
   let o =

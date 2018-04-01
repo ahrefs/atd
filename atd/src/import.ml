@@ -27,6 +27,12 @@ module List = struct
     |> List.flatten
 end
 
+module Option = struct
+  let map f = function
+    | None -> None
+    | Some s -> Some (f s)
+end
+
 let sprintf = Printf.sprintf
 let printf = Printf.printf
 let eprintf = Printf.eprintf

@@ -59,7 +59,7 @@ afield:
 module_item:
 
 | TYPE p = type_param s = LIDENT a = annot EQ t = type_expr
-                               { `Type (($startpos, $endpos), (s, p, a), t) }
+                               { Type (($startpos, $endpos), (s, p, a), t) }
 
 | TYPE type_param LIDENT annot EQ _e=error
     { syntax_error "Expecting type expression" $startpos(_e) $endpos(_e) }
@@ -84,20 +84,20 @@ type_var_list:
 
 type_expr:
 | OP_BRACK l = variant_list CL_BRACK a = annot
-     { `Sum (($startpos, $endpos), l, a) }
+     { Sum (($startpos, $endpos), l, a) }
 | OP_BRACK CL_BRACK a = annot
-     { `Sum (($startpos, $endpos), [], a) }
+     { Sum (($startpos, $endpos), [], a) }
 
 | OP_CURL l = field_list CL_CURL a = annot
-     { `Record (($startpos, $endpos), l, a) }
+     { Record (($startpos, $endpos), l, a) }
 | OP_CURL CL_CURL a = annot
-     { `Record (($startpos, $endpos), [], a) }
+     { Record (($startpos, $endpos), [], a) }
 
 | OP_PAREN x = annot_expr CL_PAREN a = annot
-     { `Tuple (($startpos, $endpos), [x], a) }
+     { Tuple (($startpos, $endpos), [x], a) }
 
 | OP_PAREN l = cartesian_product CL_PAREN a = annot
-     { `Tuple (($startpos, $endpos), l, a) }
+     { Tuple (($startpos, $endpos), l, a) }
 
 | x = type_inst a = annot
      { let pos1 = $startpos in
@@ -105,9 +105,9 @@ type_expr:
        let loc = (pos1, pos2) in
        let _, name, args = x in
        match name, args with
-           "list", [x] -> `List (loc, x, a)
-         | "option", [x] -> `Option (loc, x, a)
-         | "nullable", [x] -> `Nullable (loc, x, a)
+           "list", [x] -> List (loc, x, a)
+         | "option", [x] -> Option (loc, x, a)
+         | "nullable", [x] -> Nullable (loc, x, a)
          | "shared", [x] ->
              let a =
                if Annot.has_field ["share"] "id" a then
@@ -117,16 +117,16 @@ type_expr:
                  Annot.set_field loc
                    "share" "id" (Some (Annot.create_id ())) a
              in
-             `Shared (loc, x, a)
-         | "wrap", [x] -> `Wrap (loc, x, a)
+             Shared (loc, x, a)
+         | "wrap", [x] -> Wrap (loc, x, a)
 
          | ("list"|"option"|"nullable"|"shared"|"wrap"), _ ->
              syntax_error (sprintf "%s expects one argument" name) pos1 pos2
 
-         | _ -> (`Name (loc, x, a) : type_expr) }
+         | _ -> (Name (loc, x, a) : type_expr) }
 
 | x = TIDENT
-     { `Tvar (($startpos, $endpos), x) }
+     { Tvar (($startpos, $endpos), x) }
 | OP_BRACK variant_list _e=error
      { syntax_error "Expecting ']'" $startpos(_e) $endpos(_e) }
 | OP_CURL field_list _e=error
@@ -175,11 +175,11 @@ variant_list0:
 
 variant:
 | x = UIDENT a = annot OF t = type_expr
-     { `Variant (($startpos, $endpos), (x, a), Some t) }
+     { Variant (($startpos, $endpos), (x, a), Some t) }
 | x = UIDENT a = annot
-     { `Variant (($startpos, $endpos), (x, a), None) }
+     { Variant (($startpos, $endpos), (x, a), None) }
 | INHERIT t = type_expr
-     { `Inherit (($startpos, $endpos), t) }
+     { Inherit (($startpos, $endpos), t) }
 | UIDENT annot OF _e=error
      { syntax_error "Expecting type expression after 'of'"
          $startpos(_e) $endpos(_e) }
@@ -205,7 +205,7 @@ field:
 ;
 
 field_name:
-| k = LIDENT             { (k, `Required) }
-| QUESTION k = LIDENT    { (k, `Optional) }
-| TILDE k = LIDENT       { (k, `With_default) }
+| k = LIDENT             { (k, Required) }
+| QUESTION k = LIDENT    { (k, Optional) }
+| TILDE k = LIDENT       { (k, With_default) }
 ;

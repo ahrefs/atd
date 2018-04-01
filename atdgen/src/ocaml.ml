@@ -17,11 +17,11 @@ type pp_convs =
 
 (* Type mapping from ATD to OCaml *)
 
-type atd_ocaml_sum = [ `Classic | `Poly ]
-type atd_ocaml_record = [ `Record | `Object ]
+type atd_ocaml_sum = Classic | Poly
+type atd_ocaml_record = Record | Object
 
-type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
-type atd_ocaml_list = [ `List | `Array ]
+type atd_ocaml_int = Int | Char | Int32 | Int64 | Float
+type atd_ocaml_list = List | Array
 
 type atd_ocaml_wrap = {
   ocaml_wrap_t : string;
@@ -46,79 +46,79 @@ type atd_ocaml_def = {
   ocaml_ddoc : Doc.doc option;
 }
 
-type atd_ocaml_repr =
-    [
-    | `Unit
-    | `Bool
-    | `Int of atd_ocaml_int
-    | `Float
-    | `String
-    | `Sum of atd_ocaml_sum
-    | `Record of atd_ocaml_record
-    | `Tuple
-    | `List of atd_ocaml_list
-    | `Option
-    | `Nullable
-    | `Wrap of atd_ocaml_wrap option
-    | `Name of string
-    | `External of (string * string * string)
+module Repr = struct
+  type t =
+    | Unit
+    | Bool
+    | Int of atd_ocaml_int
+    | Float
+    | String
+    | Sum of atd_ocaml_sum
+    | Record of atd_ocaml_record
+    | Tuple
+    | List of atd_ocaml_list
+    | Option
+    | Nullable
+    | Wrap of atd_ocaml_wrap option
+    | Name of string
+    | External of (string * string * string)
         (*
           (module providing the type,
            module providing everything else,
            type name)
         *)
 
-    | `Cell of atd_ocaml_field
-    | `Field of atd_ocaml_field
-    | `Variant of atd_ocaml_variant
-    | `Def of atd_ocaml_def
-    ]
+    | Cell of atd_ocaml_field
+    | Field of atd_ocaml_field
+    | Variant of atd_ocaml_variant
+    | Def of atd_ocaml_def
+end
 
-type target = [ `Default | `Biniou | `Json | `Validate ]
+type target = Default | Biniou | Json | Validate
 
 
 let ocaml_int_of_string s : atd_ocaml_int option =
   match s with
-      "int" -> Some `Int
-    | "char" -> Some `Char
-    | "int32" -> Some `Int32
-    | "int64" -> Some `Int64
-    | "float" -> Some `Float
+      "int" -> Some Int
+    | "char" -> Some Char
+    | "int32" -> Some Int32
+    | "int64" -> Some Int64
+    | "float" -> Some Float
     | _ -> None
 
 let string_of_ocaml_int (x : atd_ocaml_int) =
   match x with
-      `Int -> "int"
-    | `Char -> "Char.t"
-    | `Int32 -> "Int32.t"
-    | `Int64 -> "Int64.t"
-    | `Float -> "float"
+      Int -> "int"
+    | Char -> "Char.t"
+    | Int32 -> "Int32.t"
+    | Int64 -> "Int64.t"
+    | Float -> "float"
 
 let ocaml_sum_of_string s : atd_ocaml_sum option =
   match s with
-      "classic" -> Some `Classic
-    | "poly" -> Some `Poly
+      "classic" -> Some Classic
+    | "poly" -> Some Poly
     | _ -> None
 
 let ocaml_record_of_string s : atd_ocaml_record option =
   match s with
-      "record" -> Some `Record
-    | "object" -> Some `Object
+      "record" -> Some Record
+    | "object" -> Some Object
     | _ -> None
 
 let ocaml_list_of_string s : atd_ocaml_list option =
   match s with
-      "list" -> Some `List
-    | "array" -> Some `Array
+      "list" -> Some List
+    | "array" -> Some Array
     | _ -> None
 
 let string_of_ocaml_list (x : atd_ocaml_list) =
   match x with
-      `List -> "list"
-    | `Array -> "Atdgen_runtime.Util.ocaml_array"
+      List -> "list"
+    | Array -> "Atdgen_runtime.Util.ocaml_array"
 
 let get_ocaml_int an =
-  Atd.Annot.get_field ocaml_int_of_string `Int ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_int_of_string Int ["ocaml"] "repr" an
 
 let get_ocaml_type_path atd_name an =
   let x =
@@ -140,22 +140,22 @@ let get_ocaml_type_path atd_name an =
 
 let path_of_target (target : target) =
   match target with
-      `Default -> [ "ocaml" ]
-    | `Biniou -> [ "ocaml_biniou"; "ocaml" ]
-    | `Json -> [ "ocaml_json"; "ocaml" ]
-    | `Validate -> [ "ocaml_validate"; "ocaml" ]
+      Default -> [ "ocaml" ]
+    | Biniou -> [ "ocaml_biniou"; "ocaml" ]
+    | Json -> [ "ocaml_json"; "ocaml" ]
+    | Validate -> [ "ocaml_validate"; "ocaml" ]
 
 let get_ocaml_sum an =
-  Atd.Annot.get_field ocaml_sum_of_string `Poly ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_sum_of_string Poly ["ocaml"] "repr" an
 
 let get_ocaml_field_prefix an =
   Atd.Annot.get_field (fun s -> Some s) "" ["ocaml"] "field_prefix" an
 
 let get_ocaml_record an =
-  Atd.Annot.get_field ocaml_record_of_string `Record ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_record_of_string Record ["ocaml"] "repr" an
 
 let get_ocaml_list an =
-  Atd.Annot.get_field ocaml_list_of_string `List ["ocaml"] "repr" an
+  Atd.Annot.get_field ocaml_list_of_string List ["ocaml"] "repr" an
 
 let get_ocaml_wrap loc an =
   let module_ =
@@ -215,10 +215,10 @@ let get_ocaml_module target an =
               let type_module = s ^ "_t" in
               let main_module =
                 match target with
-                    `Default -> type_module
-                  | `Biniou -> s ^ "_b"
-                  | `Json -> s ^ "_j"
-                  | `Validate -> s ^ "_v"
+                    Default -> type_module
+                  | Biniou -> s ^ "_b"
+                  | Json -> s ^ "_j"
+                  | Validate -> s ^ "_v"
               in
               Some (type_module, main_module)
 
@@ -274,57 +274,57 @@ let omap f = function None -> None | Some x -> Some (f x)
 
 let rec map_expr (x : type_expr) : ocaml_expr =
   match x with
-      `Sum (_, l, an) ->
-        let kind = get_ocaml_sum an in
-        `Sum (kind, List.map map_variant l)
-    | `Record (loc, l, an) ->
-        let kind = get_ocaml_record an in
-        let field_prefix = get_ocaml_field_prefix an in
-        if l = [] then
-          Error.error loc "Empty record (not valid in OCaml)"
-        else
-          `Record (kind, List.map (map_field field_prefix) l)
-    | `Tuple (_, l, _) ->
-        `Tuple (List.map (fun (_, x, _) -> map_expr x) l)
-    | `List (_, x, an) ->
-        let s = string_of_ocaml_list (get_ocaml_list an) in
-        `Name (s, [map_expr x])
-    | `Option (_, x, _) ->
-        `Name ("option", [map_expr x])
-    | `Nullable (_, x, _) ->
-        `Name ("option", [map_expr x])
-    | `Shared (_, _, _) ->
-        failwith "Sharing is not supported"
-    | `Wrap (loc, x, a) ->
-        (match get_ocaml_wrap loc a with
-            None -> map_expr x
-          | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
-        )
-    | `Name (_, (_2, s, l), an) ->
-        let s = get_ocaml_type_path s an in
-        `Name (s, List.map map_expr l)
-    | `Tvar (_, s) ->
-        `Tvar s
+    Atd.Ast.Sum (_, l, an) ->
+      let kind = get_ocaml_sum an in
+      `Sum (kind, List.map map_variant l)
+  | Record (loc, l, an) ->
+      let kind = get_ocaml_record an in
+      let field_prefix = get_ocaml_field_prefix an in
+      if l = [] then
+        Error.error loc "Empty record (not valid in OCaml)"
+      else
+        `Record (kind, List.map (map_field field_prefix) l)
+  | Tuple (_, l, _) ->
+      `Tuple (List.map (fun (_, x, _) -> map_expr x) l)
+  | List (_, x, an) ->
+      let s = string_of_ocaml_list (get_ocaml_list an) in
+      `Name (s, [map_expr x])
+  | Option (_, x, _) ->
+      `Name ("option", [map_expr x])
+  | Nullable (_, x, _) ->
+      `Name ("option", [map_expr x])
+  | Shared (_, _, _) ->
+      failwith "Sharing is not supported"
+  | Wrap (loc, x, a) ->
+      (match get_ocaml_wrap loc a with
+         None -> map_expr x
+       | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
+      )
+  | Name (_, (_2, s, l), an) ->
+      let s = get_ocaml_type_path s an in
+      `Name (s, List.map map_expr l)
+  | Tvar (_, s) ->
+      `Tvar s
 
 and map_variant (x : variant) : ocaml_variant =
   match x with
-      `Inherit _ -> assert false
-    | `Variant (loc, (s, an), o) ->
-        let s = get_ocaml_cons s an in
-        (s, omap map_expr o, Doc.get_doc loc an)
+    Inherit _ -> assert false
+  | Variant (loc, (s, an), o) ->
+      let s = get_ocaml_cons s an in
+      (s, omap map_expr o, Doc.get_doc loc an)
 
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
-      `Inherit _ -> assert false
-    | `Field (loc, (atd_fname, _, an), x) ->
-        let ocaml_fname =
-          get_ocaml_fname (ocaml_field_prefix ^ atd_fname) an in
-        let fname =
-          if ocaml_fname = atd_fname then ocaml_fname
-          else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
-        in
-        let is_mutable = get_ocaml_mutable an in
-        ((fname, is_mutable), map_expr x, Doc.get_doc loc an)
+    `Inherit _ -> assert false
+  | `Field (loc, (atd_fname, _, an), x) ->
+      let ocaml_fname =
+        get_ocaml_fname (ocaml_field_prefix ^ atd_fname) an in
+      let fname =
+        if ocaml_fname = atd_fname then ocaml_fname
+        else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
+      in
+      let is_mutable = get_ocaml_mutable an in
+      ((fname, is_mutable), map_expr x, Doc.get_doc loc an)
 
 let map_def
     ~(target : target)
@@ -357,8 +357,8 @@ let map_def
             let alias = Some (module_path ^ "." ^ ext_name, param) in
             let x =
               match map_expr x with
-                  `Sum (`Classic, _)
-                | `Record (`Record, _) as x -> Some x
+                  `Sum (Classic, _)
+                | `Record (Record, _) as x -> Some x
                 | _ -> None
             in
             (alias, x)
@@ -382,7 +382,7 @@ let rec select f = function
 
 let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
   select (
-    fun (`Type td) ->
+    fun (Atd.Ast.Type td) ->
       match map_def ~target ~type_aliases td with
           None -> None
         | Some x -> Some (`Type x)
@@ -394,40 +394,40 @@ let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
 *)
 
 
-let rec ocaml_of_expr_mapping (x : (atd_ocaml_repr, _) mapping) : ocaml_expr =
+let rec ocaml_of_expr_mapping (x : (Repr.t, _) mapping) : ocaml_expr =
   match x with
-      `Unit (_, `Unit, _) -> `Name ("unit", [])
-    | `Bool (_, `Bool, _) -> `Name ("bool", [])
-    | `Int (_, `Int x, _) -> `Name (string_of_ocaml_int x, [])
-    | `Float (_, `Float, _) -> `Name ("float", [])
-    | `String (_, `String, _) -> `Name ("string", [])
-    | `Sum (_, a, `Sum kind, _) ->
-        let l = Array.to_list a in
-        `Sum (kind, List.map ocaml_of_variant_mapping l)
-    | `Record (_, a, `Record _, _) ->
-        let l = Array.to_list a in
-        `Record (`Record, List.map ocaml_of_field_mapping l)
-    | `Tuple (_, a, _, _) ->
-        let l = Array.to_list a in
-        `Tuple (List.map (fun x -> ocaml_of_expr_mapping x.cel_value) l)
-    | `List (_, x, `List kind, _) ->
-        `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
-    | `Option (_, x, `Option, _) ->
-        `Name ("option", [ocaml_of_expr_mapping x])
-    | `Nullable (_, x, `Nullable, _) ->
-        `Name ("option", [ocaml_of_expr_mapping x])
-    | `Wrap _ ->
-        assert false
-    | `Name (_, s, l, _, _) ->
-        `Name (s, List.map ocaml_of_expr_mapping l)
-    | `Tvar (_, s) ->
-        `Tvar s
-    | _ -> assert false
+    Unit (_, Unit, _) -> `Name ("unit", [])
+  | Bool (_, Bool, _) -> `Name ("bool", [])
+  | Int (_, Int x, _) -> `Name (string_of_ocaml_int x, [])
+  | Float (_, Float, _) -> `Name ("float", [])
+  | String (_, String, _) -> `Name ("string", [])
+  | Sum (_, a, Sum kind, _) ->
+      let l = Array.to_list a in
+      `Sum (kind, List.map ocaml_of_variant_mapping l)
+  | Record (_, a, Record _, _) ->
+      let l = Array.to_list a in
+      `Record (Record, List.map ocaml_of_field_mapping l)
+  | Tuple (_, a, _, _) ->
+      let l = Array.to_list a in
+      `Tuple (List.map (fun x -> ocaml_of_expr_mapping x.cel_value) l)
+  | List (_, x, List kind, _) ->
+      `Name (string_of_ocaml_list kind, [ocaml_of_expr_mapping x])
+  | Option (_, x, Option, _) ->
+      `Name ("option", [ocaml_of_expr_mapping x])
+  | Nullable (_, x, Nullable, _) ->
+      `Name ("option", [ocaml_of_expr_mapping x])
+  | Wrap _ ->
+      assert false
+  | Name (_, s, l, _, _) ->
+      `Name (s, List.map ocaml_of_expr_mapping l)
+  | Tvar (_, s) ->
+      `Tvar s
+  | _ -> assert false
 
 and ocaml_of_variant_mapping x =
   let o =
     match x.var_arepr with
-        `Variant o -> o
+        Variant o -> o
       | _ -> assert false
   in
   (o.ocaml_cons, omap ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc)
@@ -435,7 +435,7 @@ and ocaml_of_variant_mapping x =
 and ocaml_of_field_mapping x =
   let o =
     match x.f_arepr with
-        `Field o -> o
+        Field o -> o
       | _ -> assert false
   in
   let v = ocaml_of_expr_mapping x.f_value in
@@ -490,7 +490,7 @@ let vlist = {
 
 let make_atom s = Atom (s, atom)
 
-let horizontal_sequence l = List (("", "", "", shlist), l)
+let horizontal_sequence l = Easy_format.List (("", "", "", shlist), l)
 
 let rec insert sep = function
     [] | [_] as l -> l
@@ -510,7 +510,7 @@ let vertical_sequence ?(skip_lines = 0) l =
       in
       insert sep l
   in
-  List (("", "", "", rlist), l)
+  Easy_format.List (("", "", "", rlist), l)
 
 let escape f s =
   let buf = Buffer.create (2 * String.length s) in
@@ -573,14 +573,14 @@ let make_ocamldoc_comment (`Text l) =
         [] | [_] -> vlist1
       | _ -> vlist
   in
-  List (("(**", "", "*)", xlist), blocks)
+  Easy_format.List (("(**", "", "*)", xlist), blocks)
 
 let prepend_ocamldoc_comment doc x =
   match doc with
       None -> x
     | Some y ->
         let comment = make_ocamldoc_comment y in
-        List (("", "", "", rlist), [comment;x])
+        Easy_format.List (("", "", "", rlist), [comment;x])
 
 let append_ocamldoc_comment x doc =
   match doc with
@@ -673,8 +673,8 @@ and format_type_expr x =
       `Sum (kind, l) ->
         let op, cl =
           match kind with
-              `Classic -> "", ""
-            | `Poly -> "[", "]"
+              Classic -> "", ""
+            | Poly -> "[", "]"
         in
         List (
             (op, "|", cl, llist),
@@ -683,8 +683,8 @@ and format_type_expr x =
     | `Record (kind, l) ->
         let op, cl =
           match kind with
-              `Record -> "{", "}"
-            | `Object -> "<", ">"
+              Record -> "{", "}"
+            | Object -> "<", ">"
         in
         List (
           (op, ";", cl, list),
@@ -722,8 +722,8 @@ and format_field ((s, is_mutable), t, doc) =
 and format_variant kind (s, o, doc) =
   let s =
     match kind with
-        `Classic -> s
-      | `Poly -> "`" ^ s
+        Classic -> s
+      | Poly -> "`" ^ s
   in
   let cons = make_atom s in
   let variant =
@@ -775,58 +775,58 @@ let ocaml_of_atd ?(pp_convs=Ppx []) ~target ~type_aliases
 
 let unwrap_option deref x =
   match deref x with
-      `Option (_, x, _, _)
-    | `Nullable (_, x, _, _) -> x
-    | `Name (loc, s, _, _, _) ->
-        Error.error loc ("Not an option type: " ^ s)
-    | x ->
-        Error.error (loc_of_mapping x) "Not an option type"
+    Option (_, x, _, _)
+  | Nullable (_, x, _, _) -> x
+  | Name (loc, s, _, _, _) ->
+      Error.error loc ("Not an option type: " ^ s)
+  | x ->
+      Error.error (loc_of_mapping x) "Not an option type"
 
 
 
 let get_implicit_ocaml_default deref x =
   match deref x with
-      `Unit (_, `Unit, _) -> Some "()"
-    | `Bool (_, `Bool, _) -> Some "false"
-    | `Int (_, `Int o, _) ->
-        Some (match o with
-                  `Int -> "0"
-                | `Char -> "'\000'"
-                | `Int32 -> "0l"
-                | `Int64 -> "0L"
-                | `Float -> "0.")
-    | `Float (_, `Float, _) -> Some "0.0"
-    | `String (_, `String, _) -> Some "\"\""
-    | `List (_, _, `List `List, _) -> Some "[]"
-    | `List (_, _, `List `Array, _) -> Some "[||]"
-    | `Option (_, _, `Option, _) -> Some "None"
-    | `Nullable (_, _, `Nullable, _) -> Some "None"
-    | _ -> None
+    Unit (_, Repr.Unit, _) -> Some "()"
+  | Bool (_, Bool, _) -> Some "false"
+  | Int (_, Int o, _) ->
+      Some (match o with
+          Int -> "0"
+        | Char -> "'\000'"
+        | Int32 -> "0l"
+        | Int64 -> "0L"
+        | Float -> "0.")
+  | Float (_, Float, _) -> Some "0.0"
+  | String (_, String, _) -> Some "\"\""
+  | List (_, _, List List, _) -> Some "[]"
+  | List (_, _, List Array, _) -> Some "[||]"
+  | Option (_, _, Option, _) -> Some "None"
+  | Nullable (_, _, Nullable, _) -> Some "None"
+  | _ -> None
 
 
 let map_record_creator_field deref x =
   let o =
     match x.f_arepr with
-        `Field o -> o
+        Repr.Field o -> o
       | _ -> assert false
   in
   let fname = o.ocaml_fname in
   let impl2 = sprintf "\n    %s = %s;" fname fname in
   match x.f_kind with
-      `Required ->
+      Required ->
         let t = ocaml_of_expr (ocaml_of_expr_mapping x.f_value) in
         let intf = sprintf "\n  %s: %s ->" fname t in
         let impl1 = sprintf "\n  ~%s" fname in
         intf, impl1, impl2
 
-    | `Optional ->
+    | Optional ->
         let x = unwrap_option deref x.f_value in
         let t = ocaml_of_expr (ocaml_of_expr_mapping x) in
         let intf = sprintf "\n  ?%s: %s ->" fname t in
         let impl1 = sprintf "\n  ?%s" fname in
         intf, impl1, impl2
 
-    | `With_default ->
+    | With_default ->
         let t = ocaml_of_expr (ocaml_of_expr_mapping x.f_value) in
         let intf = sprintf "\n  ?%s: %s ->" fname t in
         let impl1 =

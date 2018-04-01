@@ -9,8 +9,8 @@ open Atd.Import
 open Error
 open Mapping
 
-type 'a expr = (Ocaml.atd_ocaml_repr, 'a) Mapping.mapping
-type 'a def = (Ocaml.atd_ocaml_repr, 'a) Mapping.def
+type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
+type 'a def = (Ocaml.Repr.t, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type name = (loc * loc * string)
@@ -30,20 +30,20 @@ type target =
 
 let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
   match x with
-    `Unit _
-  | `Bool _
-  | `Int _
-  | `Float  _
-  | `String _ -> acc
-  | `Sum (loc, va, o, _) ->
+    Unit _
+  | Bool _
+  | Int _
+  | Float  _
+  | String _ -> acc
+  | Sum (loc, va, o, _) ->
       let l, (fn, pvn, cvn) =
         Array.fold_left (extract_names_from_variant root_loc) ([], acc) va
       in
       (match o with
-         `Sum x ->
+         Sum x ->
            (match x with
-              `Poly -> (fn, l :: pvn, cvn)
-            | `Classic ->
+              Poly -> (fn, l :: pvn, cvn)
+            | Classic ->
                 if is_root then (fn, pvn, l :: cvn)
                 else
                   error loc
@@ -53,7 +53,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
        | _ -> assert false
       )
 
-  | `Record (loc, fa, _, _) ->
+  | Record (loc, fa, _, _) ->
       if is_root then
         let l, (fn, pvn, cvn) =
           Array.fold_left (extract_names_from_field root_loc) ([], acc) fa
@@ -62,27 +62,27 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
       else
         error loc "Anonymous record types are not allowed by OCaml."
 
-  | `Tuple (_, ca, _, _) ->
+  | Tuple (_, ca, _, _) ->
       Array.fold_left (extract_names_from_cell root_loc) acc ca
 
-  | `List (_, x, _, _)
-  | `Option (_, x, _, _)
-  | `Nullable (_, x, _, _)
-  | `Wrap (_, x, _, _) ->
+  | List (_, x, _, _)
+  | Option (_, x, _, _)
+  | Nullable (_, x, _, _)
+  | Wrap (_, x, _, _) ->
       extract_names_from_expr root_loc acc x
 
-  | `Name (_, _, l, _, _) ->
+  | Name (_, _, l, _, _) ->
       List.fold_left (extract_names_from_expr root_loc) acc l
 
-  | `External (_, _, l, _, _) ->
+  | External (_, _, l, _, _) ->
       List.fold_left (extract_names_from_expr root_loc) acc l
 
-  | `Tvar _ -> acc
+  | Tvar _ -> acc
 
 and extract_names_from_variant root_loc (l, acc) x =
   let l =
     match x.var_arepr with
-      `Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
+      Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
     | _ -> assert false
   in
   match x.var_arg with
@@ -93,7 +93,7 @@ and extract_names_from_variant root_loc (l, acc) x =
 and extract_names_from_field root_loc (l, acc) x =
   let l =
     match x.f_arepr with
-      `Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
+      Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
     | _ -> assert false
   in
   (l, extract_names_from_expr root_loc acc x.f_value)
@@ -201,8 +201,8 @@ let get_type_constraint ~original_types def =
    constructor/field name disambiguation *)
 let needs_type_annot (x : _ expr) =
   match x with
-  | `Record (_, _, `Record `Record, _)
-  | `Sum (_, _, `Sum `Classic, _) -> true
+  | Record (_, _, Record Record, _)
+  | Sum (_, _, Sum Classic, _) -> true
   | _ -> false
 
 let insert_annot type_annot =
@@ -254,7 +254,7 @@ let is_exportable def =
 
 let make_record_creator deref x =
   match x.def_value with
-    Some (`Record (_, a, `Record `Record, _)) ->
+    Some (Record (_, a, Ocaml.Repr.Record Ocaml.Record, _)) ->
       let s = x.def_name in
       let full_name = get_full_type_name x in
       let l =
@@ -321,3 +321,32 @@ let get_let ~is_rec ~is_first =
 let write_opens buf l =
   List.iter (fun s -> bprintf buf "open %s\n" s) l;
   bprintf buf "\n"
+
+let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
+    ~mapping_of_expr =
+  let ocaml_predef = Ocaml.get_ocaml_predef target an in
+  let doc = Doc.get_doc loc an in
+  let o =
+    match as_abstract x with
+      Some (_, _) ->
+        (match Ocaml.get_ocaml_module_and_t target name an with
+           None -> None
+         | Some (types_module, main_module, ext_name) ->
+             let args = List.map (fun s -> Tvar (loc, s)) param in
+             Some (External
+                     (loc, name, args,
+                      Ocaml.Repr.External (types_module, main_module, ext_name),
+                      external_))
+        )
+    | None -> Some (mapping_of_expr x)
+  in
+  {
+    def_loc = loc;
+    def_name = name;
+    def_param = param;
+    def_value = o;
+    def_arepr =
+      Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
+                       ocaml_ddoc = doc };
+    def_brepr = def;
+  }

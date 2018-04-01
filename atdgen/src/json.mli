@@ -1,8 +1,9 @@
 
-type json_float = [ `Float of int option (* max decimal places *)
-                  | `Int ]
+type json_float =
+  | Float of int option (* max decimal places *)
+  | Int
 
-type json_list = [ `Array | `Object ]
+type json_list = Array | Object
 
 type json_variant = { json_cons : string option }
 
@@ -17,23 +18,23 @@ type json_record = {
 }
 
 type json_repr =
-  [ `Bool
-  | `Cell
-  | `Def
-  | `External
-  | `Field of json_field
-  | `Float of json_float
-  | `Int
-  | `List of json_list
-  | `Nullable
-  | `Option
-  | `Record of json_record
-  | `String
-  | `Sum
-  | `Tuple
-  | `Unit
-  | `Variant of json_variant
-  | `Wrap ]
+  | Bool
+  | Cell
+  | Def
+  | External
+  | Field of json_field
+  | Float of json_float
+  | Int
+  | List of json_list
+  | Nullable
+  | Option
+  | Record of json_record
+  | String
+  | Sum
+  | Tuple
+  | Unit
+  | Variant of json_variant
+  | Wrap
 
 
 val get_json_list : Atd.Annot.t -> json_list

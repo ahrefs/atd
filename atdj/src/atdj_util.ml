@@ -7,35 +7,35 @@ open Atdj_env
    They could be useful for timestamps, though. *)
 let rec unwrap atd_ty =
   match atd_ty with
-  | `Wrap (_, x, _) -> unwrap x
+  | Atd.Ast.Wrap (_, x, _) -> unwrap x
   | x -> x
 
 let rec unwrap_option env atd_ty =
   match atd_ty with
-  | `Wrap (_, x, _) -> unwrap_option env x
-  | `Option (_, x, _) -> unwrap_option env x
+  | Atd.Ast.Wrap (_, x, _) -> unwrap_option env x
+  | Option (_, x, _) -> unwrap_option env x
   | x -> x
 
 (* Normalise an ATD type by expanding `top-level' type aliases *)
 let rec norm_ty ?(unwrap_option = false) env atd_ty =
   let atd_ty = unwrap atd_ty in
   match atd_ty with
-    | `Name (_, (_, name, _), _) ->
-        (match name with
-           | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
-           | _ ->
-               (try
-                  let x = List.assoc name env.module_items in
-                  norm_ty env x
-                with Not_found ->
-                  eprintf "Warning: unknown type %s\n%!" name;
-                  atd_ty
-               )
-        )
-    | `Option (_, atd_ty, _) when unwrap_option ->
-        norm_ty env atd_ty
-    | _ ->
-        atd_ty
+  | Atd.Ast.Name (_, (_, name, _), _) ->
+      (match name with
+       | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
+       | _ ->
+           (try
+              let x = List.assoc name env.module_items in
+              norm_ty env x
+            with Not_found ->
+              eprintf "Warning: unknown type %s\n%!" name;
+              atd_ty
+           )
+      )
+  | Option (_, atd_ty, _) when unwrap_option ->
+      norm_ty env atd_ty
+  | _ ->
+      atd_ty
 
 let not_supported loc =
   Atd.Ast.error_at loc "Construct not yet supported by atdj."

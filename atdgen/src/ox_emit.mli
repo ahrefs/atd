@@ -1,5 +1,5 @@
-type 'a expr = (Ocaml.atd_ocaml_repr, 'a) Mapping.mapping
-type 'a def = (Ocaml.atd_ocaml_repr, 'a) Mapping.def
+type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
+type 'a def = (Ocaml.Repr.t, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type target =
@@ -11,9 +11,9 @@ val get_full_type_name : (_, _) Mapping.def -> string
 val is_exportable : (_, _) Mapping.def -> bool
 
 val make_record_creator
-  : ((Ocaml.atd_ocaml_repr, 'a) Mapping.mapping
-     -> (Ocaml.atd_ocaml_repr, 'b) Mapping.mapping)
-  -> (Ocaml.atd_ocaml_repr, 'a) Mapping.def
+  : ((Ocaml.Repr.t, 'a) Mapping.mapping
+     -> (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> (Ocaml.Repr.t, 'a) Mapping.def
   -> string * string
 
 val opt_annot : string option -> string -> string
@@ -44,3 +44,13 @@ val map : (bool -> 'a -> 'b) -> 'a list -> 'b list
 val get_let : is_rec:bool -> is_first:bool -> Mapping.loc_id * Mapping.loc_id
 
 val write_opens : Buffer.t -> Mapping.loc_id list -> unit
+
+val def_of_atd
+  : Atd.Ast.loc
+    * (Mapping.loc_id * Mapping.loc_id list * Atd.Annot.t)
+    * Atd.Ast.type_expr
+  -> target:Ocaml.target
+  -> def:'a
+  -> external_:'a
+  -> mapping_of_expr:(Atd.Ast.type_expr -> (Ocaml.Repr.t, 'a) Mapping.mapping)
+  -> (Ocaml.Repr.t, 'a) Mapping.def

@@ -9,7 +9,7 @@ let list_def : type_def =
   (
     loc,
     ("list", ["a"], []),
-    `List (loc, `Tvar (loc, "a"), [])
+    List (loc, Tvar (loc, "a"), [])
   )
 
 let option_def : type_def =
@@ -17,7 +17,7 @@ let option_def : type_def =
   (
     loc,
     ("option", ["a"], []),
-    `Option (loc, `Tvar (loc, "a"), [])
+    Option (loc, Tvar (loc, "a"), [])
   )
 
 let nullable_def : type_def =
@@ -25,7 +25,7 @@ let nullable_def : type_def =
   (
     loc,
     ("nullable", ["a"], []),
-    `Nullable (loc, `Tvar (loc, "a"), [])
+    Nullable (loc, Tvar (loc, "a"), [])
   )
 
 let shared_def : type_def =
@@ -33,7 +33,7 @@ let shared_def : type_def =
   (
     loc,
     ("shared", ["a"], []),
-    `Shared (loc, `Tvar (loc, "a"), [])
+    Shared (loc, Tvar (loc, "a"), [])
   )
 
 let wrap_def : type_def =
@@ -41,7 +41,7 @@ let wrap_def : type_def =
   (
     loc,
     ("wrap", ["a"], []),
-    `Wrap (loc, `Tvar (loc, "a"), [])
+    Wrap (loc, Tvar (loc, "a"), [])
   )
 
 

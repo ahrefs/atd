@@ -47,15 +47,15 @@ let get_fields a =
     List.map (
       fun x ->
         match x.f_arepr with
-            `Field o -> (x, o.Ocaml.ocaml_fname)
-          | _ -> assert false
+          Ocaml.Repr.Field o -> (x, o.Ocaml.ocaml_fname)
+        | _ -> assert false
     )
       (Array.to_list a)
   in
   List.filter (
     function
-        { f_brepr = (None, shallow) ; _ }, _ -> not shallow
-      | _ -> assert false
+      { f_brepr = (None, shallow) ; _ }, _ -> not shallow
+    | _ -> assert false
   ) all
 
 let rec forall : Indent.t list -> Indent.t list = function
@@ -141,159 +141,159 @@ let rec get_validator_name
     (x : ov_mapping) : string =
 
   match x with
-      `Unit (_, `Unit, v)
-    | `Bool (_, `Bool, v)
-    | `Int (_, `Int _, v)
-    | `Float (_, `Float, v)
-    | `String (_, `String, v) ->
-        (match v with
-             (None, true) -> return_true_paren
-           | (Some s, true) -> s
-           | (_, false) -> assert false
-        )
-    | `Tvar (_, s) -> "validate_" ^ (Ox_emit.name_of_var s)
+    Unit (_, Unit, v)
+  | Bool (_, Bool, v)
+  | Int (_, Int _, v)
+  | Float (_, Float, v)
+  | String (_, String, v) ->
+      (match v with
+         (None, true) -> return_true_paren
+       | (Some s, true) -> s
+       | (_, false) -> assert false
+      )
+  | Tvar (_, s) -> "validate_" ^ (Ox_emit.name_of_var s)
 
-    | `Name (_, s, args, None, opt) ->
-        let v1 =
-          let l =
-            List.map (get_validator_name ~paren:true) args in
-          let s = String.concat " " (name_f s :: l) in
-          if paren && l <> [] then "(" ^ s ^ ")"
-          else s
-        in
-        (match opt with
-             None -> v1
-           | Some (o, false) -> prepend_validator_s o v1
-           | Some (o, true) -> opt_validator_s o
-        )
+  | Name (_, s, args, None, opt) ->
+      let v1 =
+        let l =
+          List.map (get_validator_name ~paren:true) args in
+        let s = String.concat " " (name_f s :: l) in
+        if paren && l <> [] then "(" ^ s ^ ")"
+        else s
+      in
+      (match opt with
+         None -> v1
+       | Some (o, false) -> prepend_validator_s o v1
+       | Some (o, true) -> opt_validator_s o
+      )
 
-    | `External (_, _, args,
-                 `External (_, main_module, ext_name),
-                 v) ->
-        (match v with
-             (o, false) ->
-               prepend_validator_s o (
-                 let f = main_module ^ "." ^ name_f ext_name in
-                 let l = List.map (get_validator_name ~paren:true) args in
-                 let s = String.concat " " (f :: l) in
-                 if paren && l <> [] then "(" ^ s ^ ")"
-                 else s
-               )
-           | (_, true) -> assert false
-        )
+  | External (_, _, args,
+              External (_, main_module, ext_name),
+              v) ->
+      (match v with
+         (o, false) ->
+           prepend_validator_s o (
+             let f = main_module ^ "." ^ name_f ext_name in
+             let l = List.map (get_validator_name ~paren:true) args in
+             let s = String.concat " " (f :: l) in
+             if paren && l <> [] then "(" ^ s ^ ")"
+             else s
+           )
+       | (_, true) -> assert false
+      )
 
-    | _ -> assert false
+  | _ -> assert false
 
 
 let get_left_validator_name name param =
-  let args = List.map (fun s -> `Tvar (dummy_loc, s)) param in
-  get_validator_name (`Name (dummy_loc, name, args, None, None))
+  let args = List.map (fun s -> Tvar (dummy_loc, s)) param in
+  get_validator_name (Name (dummy_loc, name, args, None, None))
 
 let rec make_validator (x : ov_mapping) : Indent.t list =
   match x with
-      `Unit _
-    | `Bool _
-    | `Int _
-    | `Float _
-    | `String _
-    | `Name _
-    | `External _
-    | `Tvar _ -> [ `Line (get_validator_name x) ]
+    Unit _
+  | Bool _
+  | Int _
+  | Float _
+  | String _
+  | Name _
+  | External _
+  | Tvar _ -> [ `Line (get_validator_name x) ]
 
-    | `Sum (_, a, `Sum x, (v, shallow)) ->
-        if shallow then
-          opt_validator v
-        else
-          let tick =
-            match x with
-                `Classic -> ""
-              | `Poly -> "`"
-          in
-          let body : Indent.t list =
-            [
-              `Line "match x with";
-              `Block (
-                Array.to_list (
-                  Array.map
-                    (fun x -> `Inline (make_variant_validator tick x))
-                    a
-                )
+  | Sum (_, a, Sum x, (v, shallow)) ->
+      if shallow then
+        opt_validator v
+      else
+        let tick =
+          match x with
+            Classic -> ""
+          | Poly -> "`"
+        in
+        let body : Indent.t list =
+          [
+            `Line "match x with";
+            `Block (
+              Array.to_list (
+                Array.map
+                  (fun x -> `Inline (make_variant_validator tick x))
+                  a
               )
-            ]
-          in
-          [
-            `Annot ("fun", `Line "fun path x ->");
-            `Block (prepend_validator v body);
+            )
           ]
+        in
+        [
+          `Annot ("fun", `Line "fun path x ->");
+          `Block (prepend_validator v body);
+        ]
 
-    | `Record (_, a, `Record o, (v, shallow)) ->
-        if shallow then
-          opt_validator v
-        else
-          [
-            `Annot ("fun", `Line "fun path x ->");
-            `Block (prepend_validator v (make_record_validator a o));
-          ]
+  | Record (_, a, Record o, (v, shallow)) ->
+      if shallow then
+        opt_validator v
+      else
+        [
+          `Annot ("fun", `Line "fun path x ->");
+          `Block (prepend_validator v (make_record_validator a o));
+        ]
 
-    | `Tuple (_, a, `Tuple, (v, shallow)) ->
-        if shallow then
-          opt_validator v
-        else
-          let len = Array.length a in
-          let l = Array.to_list (Array.mapi (fun i x -> (i, x)) a) in
-          let l = List.filter (fun (_, x) -> not (snd x.cel_brepr)) l in
-          let l =
-            List.map (
-              fun (i, x) ->
-                `Inline [
-                  `Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
-                  `Line "(";
-                  `Block (make_validator x.cel_value);
-                  `Line (sprintf ") (`Index %i :: path) x" i);
-                  `Line ")"
-                ]
-            ) l
-          in
-          let l = forall l
-          in
-          [
-            `Annot ("fun", `Line "fun path x ->");
-            `Block (prepend_validator v l);
-          ]
+  | Tuple (_, a, Tuple, (v, shallow)) ->
+      if shallow then
+        opt_validator v
+      else
+        let len = Array.length a in
+        let l = Array.to_list (Array.mapi (fun i x -> (i, x)) a) in
+        let l = List.filter (fun (_, x) -> not (snd x.cel_brepr)) l in
+        let l =
+          List.map (
+            fun (i, x) ->
+              `Inline [
+                `Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
+                `Line "(";
+                `Block (make_validator x.cel_value);
+                `Line (sprintf ") (`Index %i :: path) x" i);
+                `Line ")"
+              ]
+          ) l
+        in
+        let l = forall l
+        in
+        [
+          `Annot ("fun", `Line "fun path x ->");
+          `Block (prepend_validator v l);
+        ]
 
-    | `List (_, x, `List o, (v, shallow)) ->
-        if shallow then
-          opt_validator v
-        else
-          let validate =
-            match o with
-                `List -> "Atdgen_runtime.Ov_run.validate_list ("
-              | `Array -> "Atdgen_runtime.Ov_run.validate_array ("
-          in
-          prepend_validator_f v [
-            `Line validate;
-            `Block (make_validator x);
-            `Line ")";
-          ]
+  | List (_, x, List o, (v, shallow)) ->
+      if shallow then
+        opt_validator v
+      else
+        let validate =
+          match o with
+            List -> "Atdgen_runtime.Ov_run.validate_list ("
+          | Array -> "Atdgen_runtime.Ov_run.validate_array ("
+        in
+        prepend_validator_f v [
+          `Line validate;
+          `Block (make_validator x);
+          `Line ")";
+        ]
 
-    | `Option (_, x, `Option, (v, shallow))
-    | `Nullable (_, x, `Nullable, (v, shallow)) ->
-        if shallow then
-          opt_validator v
-        else
-          prepend_validator_f v [
-            `Line "Atdgen_runtime.Ov_run.validate_option (";
-            `Block (make_validator x);
-            `Line ")";
-          ]
+  | Option (_, x, Option, (v, shallow))
+  | Nullable (_, x, Nullable, (v, shallow)) ->
+      if shallow then
+        opt_validator v
+      else
+        prepend_validator_f v [
+          `Line "Atdgen_runtime.Ov_run.validate_option (";
+          `Block (make_validator x);
+          `Line ")";
+        ]
 
-    | `Wrap (_, x, `Wrap _, (v, shallow)) ->
-        if shallow then
-          opt_validator v
-        else
-          prepend_validator_f v (make_validator x)
+  | Wrap (_, x, Wrap _, (v, shallow)) ->
+      if shallow then
+        opt_validator v
+      else
+        prepend_validator_f v (make_validator x)
 
-    | _ -> assert false
+  | _ -> assert false
 
 
 
@@ -301,7 +301,7 @@ and make_variant_validator tick x :
     Indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
-        `Variant o, (None, _) -> o
+        Variant o, (None, _) -> o
       | _ -> assert false
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
@@ -323,8 +323,8 @@ and make_variant_validator tick x :
 and make_record_validator a record_kind =
   let dot =
     match record_kind with
-        `Record -> "."
-      | `Object -> "#"
+        Record -> "."
+      | Object -> "#"
   in
   let fields = get_fields a in
   assert (fields <> []);
@@ -475,7 +475,7 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs ~target:`Validate ~type_aliases (head, m1) in
+    Ocaml.ocaml_of_atd ~pp_convs ~target:Validate ~type_aliases (head, m1) in
   let defs = translate_mapping m2 in
   let header =
     let src =

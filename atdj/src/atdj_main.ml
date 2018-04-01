@@ -70,7 +70,7 @@ let main () =
     env with
     module_items =
       List.map
-        (function (`Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
+        (function (Atd.Ast.Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
         atd_module
   } in
 

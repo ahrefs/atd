@@ -41,3 +41,5 @@ val map : ('a -> 'b) -> 'a t -> 'b t
 val tuple2 : 'a t -> 'b t -> ('a * 'b) t
 val tuple3 : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
 val tuple4 : 'a t -> 'b t -> 'c t -> 'd t -> ('a * 'b * 'c * 'd) t
+
+val enum : (string * [`Single of 'a | `Decode of 'a t]) list -> 'a t

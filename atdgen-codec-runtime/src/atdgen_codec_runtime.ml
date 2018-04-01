@@ -87,3 +87,18 @@ let tuple3 a b c = function
 let tuple4 a b c d = function
   | `List [w; x; y; z] -> (a w, b x, c y, d z)
   | _ -> raise DecoderError
+
+let enum l = function
+  | `String s ->
+      begin match List.assoc s l with
+        | exception Not_found -> raise DecoderError
+        | `Single a -> a
+        | `Decode _ -> raise DecoderError
+      end
+  | `List [`String s; args] ->
+      begin match List.assoc s l with
+        | exception Not_found -> raise DecoderError
+        | `Single _ -> raise DecoderError
+        | `Decode d -> decode d args
+      end
+  | _ -> raise DecoderError

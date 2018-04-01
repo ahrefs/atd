@@ -3,7 +3,7 @@
   (xb means X-Biniou)
 *)
 
-open Printf
+open Atd.Import
 open Mapping
 
 type 'a expr = ('a, Biniou.biniou_repr) Mapping.mapping
@@ -82,9 +82,6 @@ let extract_ocaml_names_from_defs l =
     variant_names = List.rev vn;
   }
 
-let flatten_defs (grouped_defs : 'a grouped_defs) : 'a def list =
-  List.flatten (List.map snd grouped_defs)
-
 let check_duplicate_hashes kind l =
   let tbl = Hashtbl.create 100 in
   List.iter (
@@ -114,8 +111,8 @@ let check_hashes x =
   List.iter (check_duplicate_hashes "variant name") x.variant_names
 
 let check (l : 'a grouped_defs) =
-  let x = extract_ocaml_names_from_defs (flatten_defs l) in
-  check_hashes x
+  extract_ocaml_names_from_defs (List.concat_map snd l)
+  |> check_hashes
 
 (*
 let find_clashes () =

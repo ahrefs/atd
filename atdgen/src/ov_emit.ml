@@ -2,7 +2,7 @@
   Validators of OCaml data whose types are defined using ATD.
 *)
 
-open Printf
+open Atd.Import
 open Indent
 
 open Atd.Ast
@@ -10,38 +10,38 @@ open Mapping
 open Ov_mapping
 
 let make_ocaml_validate_intf ~with_create buf deref defs =
-  List.iter (
-    fun x ->
-      if with_create && Ox_emit.is_exportable x then (
-        let create_record_intf, _ =
-          Ox_emit.make_record_creator deref x
-        in
-        bprintf buf "%s" create_record_intf;
-      );
-
-      let full_name = Ox_emit.get_full_type_name x in
-      let validator_params =
-        String.concat "" (
-          List.map
-            (fun s ->
-               sprintf "\n  (Atdgen_runtime.Util.Validation.path -> '%s -> \
-                        Atdgen_runtime.Util.Validation.error option) ->" s)
-            x.def_param
-        )
+  List.concat_map snd defs
+  |> List.iter (fun x ->
+    if with_create && Ox_emit.is_exportable x then (
+      let create_record_intf, _ =
+        Ox_emit.make_record_creator deref x
       in
-      let s = x.def_name in
-      if Ox_emit.is_exportable x then (
-        bprintf buf "\
+      bprintf buf "%s" create_record_intf;
+    );
+
+    let full_name = Ox_emit.get_full_type_name x in
+    let validator_params =
+      String.concat "" (
+        List.map
+          (fun s ->
+             sprintf "\n  (Atdgen_runtime.Util.Validation.path -> '%s -> \
+                      Atdgen_runtime.Util.Validation.error option) ->" s)
+          x.def_param
+      )
+    in
+    let s = x.def_name in
+    if Ox_emit.is_exportable x then (
+      bprintf buf "\
 val validate_%s :%s
   Atdgen_runtime.Util.Validation.path -> %s -> Atdgen_runtime.Util.Validation.error option
   (** Validate a value of type {!%s}. *)
 
 "
-          s validator_params
-          full_name
-          s
-      )
-  ) (flatten defs)
+        s validator_params
+        full_name
+        s
+    )
+  )
 
 let get_fields a =
   let all =

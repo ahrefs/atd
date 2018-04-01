@@ -1,9 +1,8 @@
+open Atd.Import
 open Atdgen_emit
 
-open Printf
-
 let append l1 l2 =
-  List.flatten (List.map (fun s1 -> List.map (fun s2 -> s1 ^ s2) l2) l1)
+  List.concat_map (fun s1 -> List.map (fun s2 -> s1 ^ s2) l2) l1
 
 let get_file_list base =
   append (append [base] ["_t";"_b";"_j";"_v"]) [".mli";".ml"]

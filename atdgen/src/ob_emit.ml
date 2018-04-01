@@ -3,7 +3,7 @@
 *)
 
 
-open Printf
+open Atd.Import
 open Indent
 
 open Atd.Ast
@@ -16,7 +16,7 @@ open Ob_mapping
 
 
 let make_ocaml_biniou_intf ~with_create buf deref defs =
-  flatten defs
+  List.concat_map snd defs
   |> List.filter Ox_emit.include_intf
   |> List.iter (fun x ->
     let full_name = Ox_emit.get_full_type_name x in
@@ -623,26 +623,21 @@ and make_table_writer deref tagged list_kind x =
   let l = Array.to_list a in
   let write_header =
     Line (sprintf "Bi_vint.write_uvint ob %i;" (Array.length a)) ::
-    List.flatten (
-      List.map (
-        fun x ->
-          [ Line (sprintf "Bi_io.write_hashtag ob (%i) true;"
-                    (Bi_io.hash_name x.f_name));
-            Line (sprintf "Bi_io.write_tag ob %s;"
-                    (get_biniou_tag x.f_value)) ]
-      ) l
-    )
+    List.concat_map (
+      fun x ->
+        [ Line (sprintf "Bi_io.write_hashtag ob (%i) true;"
+                  (Bi_io.hash_name x.f_name));
+          Line (sprintf "Bi_io.write_tag ob %s;"
+                  (get_biniou_tag x.f_value)) ]
+    ) l
   in
   let write_record =
-    List.flatten (
-      List.map (
-        fun x ->
-          [ Line "(";
-            Block (make_writer ~tagged:false deref x.f_value);
-            Line ")";
-            Block [ Line (sprintf "ob x%s%s;" dot x.f_name) ] ]
-      ) l
-    )
+    List.concat_map (fun x ->
+      [ Line "(";
+        Block (make_writer ~tagged:false deref x.f_value);
+        Line ")";
+        Block [ Line (sprintf "ob x%s%s;" dot x.f_name) ] ]
+    ) l
   in
   let write_items =
     [ Line (iter2 ^ " (fun ob x ->");

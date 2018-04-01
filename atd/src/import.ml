@@ -11,3 +11,23 @@ module Char = struct
   let uppercase_ascii = Char.uppercase
   include Char
 end
+
+module List = struct
+  include List
+
+  let rec filter_map f = function
+      [] -> []
+    | x :: l ->
+        match f x with
+          None -> filter_map f l
+        | Some y -> y :: filter_map f l
+
+  let concat_map f l =
+    List.map f l
+    |> List.flatten
+end
+
+let sprintf = Printf.sprintf
+let printf = Printf.printf
+let eprintf = Printf.eprintf
+let bprintf = Printf.bprintf

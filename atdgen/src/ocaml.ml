@@ -33,17 +33,17 @@ type atd_ocaml_field = {
   ocaml_default : string option;
   ocaml_fname : string;
   ocaml_mutable : bool;
-  ocaml_fdoc : Doc.doc option;
+  ocaml_fdoc : Atd.Doc.doc option;
 }
 
 type atd_ocaml_variant = {
   ocaml_cons : string;
-  ocaml_vdoc : Doc.doc option;
+  ocaml_vdoc : Atd.Doc.doc option;
 }
 
 type atd_ocaml_def = {
   ocaml_predef : bool;
-  ocaml_ddoc : Doc.doc option;
+  ocaml_ddoc : Atd.Doc.doc option;
 }
 
 module Repr = struct
@@ -247,16 +247,16 @@ type ocaml_expr =
     ]
 
 and ocaml_variant =
-    string * ocaml_expr option * Doc.doc option
+    string * ocaml_expr option * Atd.Doc.doc option
 
 and ocaml_field =
-    (string * bool (* is mutable? *)) * ocaml_expr * Doc.doc option
+    (string * bool (* is mutable? *)) * ocaml_expr * Atd.Doc.doc option
 
 type ocaml_def = {
   o_def_name : (string * ocaml_type_param);
   o_def_alias : (string * ocaml_type_param) option;
   o_def_expr : ocaml_expr option;
-  o_def_doc : Doc.doc option
+  o_def_doc : Atd.Doc.doc option
 }
 
 type ocaml_module_item =
@@ -311,7 +311,7 @@ and map_variant (x : variant) : ocaml_variant =
     Inherit _ -> assert false
   | Variant (loc, (s, an), o) ->
       let s = get_ocaml_cons s an in
-      (s, omap map_expr o, Doc.get_doc loc an)
+      (s, omap map_expr o, Atd.Doc.get_doc loc an)
 
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
@@ -324,7 +324,7 @@ and map_field ocaml_field_prefix (x : field) : ocaml_field =
         else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
       in
       let is_mutable = get_ocaml_mutable an in
-      ((fname, is_mutable), map_expr x, Doc.get_doc loc an)
+      ((fname, is_mutable), map_expr x, Atd.Doc.get_doc loc an)
 
 let map_def
     ~(target : target)
@@ -347,7 +347,7 @@ let map_def
   else
     let an2 = Atd.Ast.annot_of_type_expr x in
     let an = an1 @ an2 in
-    let doc = Doc.get_doc loc an in
+    let doc = Atd.Doc.get_doc loc an in
     let alias, x =
       match define_alias with
           None ->
@@ -553,7 +553,7 @@ let make_ocamldoc_block = function
       let atoms = List.map (fun s -> Atom (s, atom)) words in
       List (("", "", "", plist), atoms)
 
-let make_ocamldoc_blocks (l : Doc.block list) =
+let make_ocamldoc_blocks (l : Atd.Doc.block list) =
   let l =
     insert2 (
       fun _ y ->
@@ -561,7 +561,7 @@ let make_ocamldoc_blocks (l : Doc.block list) =
             `Paragraph _ -> [`Before_paragraph]
           | `Pre _ -> []
           | _ -> assert false
-    ) (l :> [ Doc.block | `Before_paragraph ] list)
+    ) (l :> [ Atd.Doc.block | `Before_paragraph ] list)
   in
   List.map make_ocamldoc_block l
 
@@ -751,7 +751,7 @@ let format_module_bodies pp_conv (l : (bool * ocaml_module_body) list) =
   List.flatten (List.map (fun (_, x) -> format_module_items pp_conv x) l)
 
 let format_head (loc, an) =
-  match Doc.get_doc loc an with
+  match Atd.Doc.get_doc loc an with
       None -> []
     | Some doc -> [make_ocamldoc_comment doc]
 

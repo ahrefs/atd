@@ -325,7 +325,7 @@ let write_opens buf l =
 let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
     ~mapping_of_expr =
   let ocaml_predef = Ocaml.get_ocaml_predef target an in
-  let doc = Doc.get_doc loc an in
+  let doc = Atd.Doc.get_doc loc an in
   let o =
     match as_abstract x with
       Some (_, _) ->

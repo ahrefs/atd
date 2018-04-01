@@ -78,7 +78,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
 
 and mapping_of_cell (loc, x, an) =
   let default = Ocaml.get_ocaml_default an in
-  let doc = Doc.get_doc loc an in
+  let doc = Atd.Doc.get_doc loc an in
   let ocaml_t =
     Ocaml.Repr.Cell {
       Ocaml.ocaml_default = default;
@@ -99,7 +99,7 @@ and mapping_of_cell (loc, x, an) =
 and mapping_of_variant = function
     Variant (loc, (s, an), o) ->
       let ocaml_cons = Ocaml.get_ocaml_cons s an in
-      let doc = Doc.get_doc loc an in
+      let doc = Atd.Doc.get_doc loc an in
       let ocaml_t =
         Ocaml.Repr.Variant {
           Ocaml.ocaml_cons = ocaml_cons;
@@ -137,7 +137,7 @@ and mapping_of_field ocaml_field_prefix = function
       in
       let ocaml_fname = Ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
       let ocaml_mutable = Ocaml.get_ocaml_mutable an in
-      let doc = Doc.get_doc loc an in
+      let doc = Atd.Doc.get_doc loc an in
       { f_loc = loc;
         f_name = s;
         f_kind = fk;

@@ -18,17 +18,17 @@ type atd_ocaml_field = {
   ocaml_default : string option;
   ocaml_fname : string;
   ocaml_mutable : bool;
-  ocaml_fdoc : Doc.doc option;
+  ocaml_fdoc : Atd.Doc.doc option;
 }
 
 type atd_ocaml_variant = {
   ocaml_cons : string;
-  ocaml_vdoc : Doc.doc option;
+  ocaml_vdoc : Atd.Doc.doc option;
 }
 
 type atd_ocaml_def = {
   ocaml_predef : bool;
-  ocaml_ddoc : Doc.doc option;
+  ocaml_ddoc : Atd.Doc.doc option;
 }
 
 module Repr : sig

@@ -102,6 +102,11 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_reader p None x)
       ; Line ")"
       ]
+  | Sum (_, _, Sum _, Sum) ->
+      [Annot ("fun", Line (
+         sprintf "%s (fun _ -> failwith \"no variants so far\")"
+           codec_make))
+      ]
   | Wrap (_, x, Wrap o, Wrap) ->
       (match o with
        | None -> make_reader p type_annot x

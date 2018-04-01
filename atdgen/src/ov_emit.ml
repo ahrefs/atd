@@ -205,11 +205,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
       if shallow then
         opt_validator v
       else
-        let tick =
-          match x with
-            Classic -> ""
-          | Poly -> "`"
-        in
+        let tick = Ocaml.tick x in
         let body : Indent.t list =
           [
             Line "match x with";

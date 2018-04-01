@@ -374,7 +374,7 @@ let get_left_of_string_name p name param =
 let destruct_sum (x : Oj_mapping.t) =
   match x with
     Sum (_, a, Sum x, Sum) ->
-      let tick = match x with Classic -> "" | Poly -> "`" in
+      let tick = Ocaml.tick x in
       tick, a
   | Unit _ -> Error.error (loc_of_mapping x) "Cannot destruct unit"
   | Bool _ -> Error.error (loc_of_mapping x) "Cannot destruct bool"
@@ -862,11 +862,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   | Tvar _ -> [ Line (get_reader_name p x) ]
 
   | Sum (_, a, Sum x, Sum) ->
-      let tick =
-        match x with
-          Classic -> ""
-        | Poly -> "`"
-      in
+      let tick = Ocaml.tick x in
 
       let invalid_variant_tag =
         [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)" ]
@@ -1180,12 +1176,7 @@ and make_deconstructed_reader p loc fields set_bit =
     match p.deref mapping.f_value with
     | Sum (loc, a, Sum x, Sum) ->
         let s = string_expr_of_constr_field p v_of_field constrf in
-        let tick =
-          match x with
-            Classic -> ""
-          | Poly -> "`"
-        in
-
+        let tick = Ocaml.tick x in
         let invalid_variant_tag =
           [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag p s" ]
         in

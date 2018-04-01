@@ -18,7 +18,6 @@ build-test: [
 depends: [
   "jbuilder" {build}
   "atd" {>= "1.13.0"}
-  "atdgen" {>= "1.13.0"}
 ]
 
 available: [ocaml-version >= "4.02.3"]

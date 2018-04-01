@@ -49,5 +49,5 @@
    (AtdjTest.java
     json.jar
     junit-4.8.2.jar
-    (files_recursively_in com)))
+    (glob_files com/mylife/test/*.java)))
   (action (run ./run_test.sh))))

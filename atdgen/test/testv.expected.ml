@@ -188,7 +188,7 @@ and validate_r : _ -> r -> _ = (
   fun path x ->
     match
       (
-        fun _ _ -> print_endline "field a"; None
+        fun _ _ -> None
       ) (`Field "a" :: path) x.a
     with
       | Some _ as err -> err
@@ -428,7 +428,6 @@ let validate_extended_tuple = (
 let validate_extended : _ -> extended -> _ = (
   fun path x ->
     match ( fun path x ->
-      print_endline "Validating record of type 'extended'";
       if x.b0x >= 0 then None
       else Some (Atdgen_runtime.Util.Validation.error path) ) path x with
       | Some _ as err -> err

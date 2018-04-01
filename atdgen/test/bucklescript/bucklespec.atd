@@ -34,3 +34,12 @@ type id = string <ocaml validator="fun path x -> assert false"> wrap
                        match x with
                          `Id \"\" -> failwith \"empty\"
                        | _ -> None">
+
+type 'a simple_var =
+  [ Foo of (int * int)
+  | Bar
+  | Foobar of 'a
+  | Foo_id of id
+  ]
+
+type simple_vars = unit simple_var list

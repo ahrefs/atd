@@ -1,5 +1,11 @@
 val read_valid :  valid Atdgen_codec_runtime.t
 
+val read_id :  id Atdgen_codec_runtime.t
+
+val read_simple_vars :  simple_vars Atdgen_codec_runtime.t
+
+val read_simple_var : 'a Atdgen_codec_runtime.t -> 'a simple_var Atdgen_codec_runtime.t
+
 val read_same_pair : 'a Atdgen_codec_runtime.t -> 'a same_pair Atdgen_codec_runtime.t
 
 val read_point :  point Atdgen_codec_runtime.t
@@ -13,6 +19,4 @@ val read_pairs : 'a Atdgen_codec_runtime.t -> 'a pairs Atdgen_codec_runtime.t
 val read_label :  label Atdgen_codec_runtime.t
 
 val read_labeled :  labeled Atdgen_codec_runtime.t
-
-val read_id :  id Atdgen_codec_runtime.t
 

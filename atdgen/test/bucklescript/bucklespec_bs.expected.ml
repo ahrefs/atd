@@ -1,6 +1,28 @@
 let read_valid = (
   Atdgen_codec_runtime.bool
 )
+let read__2 = (
+  (
+    Atdgen_codec_runtime.string
+  ) |> (Atdgen_codec_runtime.map (fun s -> `Id s))
+)
+let read_id = (
+  read__2
+)
+let read__3 = (
+  Atdgen_codec_runtime.make (fun _ -> failwith "no variants so far")
+)
+let read__4 = (
+  Atdgen_codec_runtime.list (
+    read__3
+  )
+)
+let read_simple_vars = (
+  read__4
+)
+let read_simple_var read__a = (
+  Atdgen_codec_runtime.make (fun _ -> failwith "no variants so far")
+)
 let read_same_pair read__a = (
   Atdgen_codec_runtime.tuple2
     (
@@ -101,12 +123,4 @@ let read_labeled = (
       }
     )
   )
-)
-let read__2 = (
-  (
-    Atdgen_codec_runtime.string
-  ) |> (Atdgen_codec_runtime.map (fun s -> `Id s))
-)
-let read_id = (
-  read__2
 )

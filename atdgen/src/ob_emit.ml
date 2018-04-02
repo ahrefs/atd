@@ -847,11 +847,7 @@ let rec make_reader
       wrap_body ~tagged Bi_io.variant_tag body
 
   | Record (loc, a, Record o, Record) ->
-      (match o with
-         Record -> ()
-       | Object ->
-           Error.error loc "Sorry, OCaml objects are not supported"
-      );
+      Ocaml.obj_unimplemented loc o;
       let body = make_record_reader deref ~ocaml_version type_annot a in
       wrap_body ~tagged Bi_io.record_tag body
 
@@ -1139,11 +1135,7 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
   let fields =
     match deref x with
       Record (loc, a, Record o, Record) ->
-        (match o with
-           Record -> ()
-         | Object ->
-             Error.error loc "Sorry, OCaml objects are not supported"
-        );
+        Ocaml.obj_unimplemented loc o;
         get_fields deref a
     | _ ->
         Error.error loc "Not a list or array of records"

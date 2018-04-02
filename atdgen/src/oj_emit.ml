@@ -961,11 +961,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ]
 
   | Record (loc, a, Record o, Record j) ->
-      (match o with
-         Record -> ()
-       | Object ->
-           Error.error loc "Sorry, OCaml objects are not supported"
-      );
+      Ocaml.obj_unimplemented loc o;
       [
         Annot ("fun", Line "fun p lb ->");
         Block (make_record_reader p type_annot loc a j)

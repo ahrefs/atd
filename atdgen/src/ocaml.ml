@@ -833,3 +833,7 @@ let map_record_creator_field deref x =
           sprintf "\n  ?(%s = %s)" fname default
         in
         intf, impl1, impl2
+
+let obj_unimplemented loc = function
+   | Record -> ()
+   | Object -> Error.error loc "Sorry, OCaml objects are not supported"

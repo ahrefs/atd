@@ -1720,28 +1720,25 @@ let make_ocaml_json_impl
     preprocess_input;
     ocaml_version;
   } in
-  let ll =
-    List.map (
-      fun (is_rec, l) ->
-        let l = List.filter (fun x -> x.def_value <> None) l in
-        let writers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_json_writer p ~original_types is_rec let1 let2 def
-          ) l
-        in
-        let readers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_json_reader p ~original_types is_rec let1 let2 def
-          ) l
-        in
-        List.flatten (writers @ readers)
-    ) defs
-  in
-  Indent.to_buffer buf (List.flatten ll);
+  defs
+  |> List.concat_map (fun (is_rec, l) ->
+    let l = List.filter (fun x -> x.def_value <> None) l in
+    let writers =
+      Ox_emit.map (
+        fun is_first def ->
+          let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+          make_ocaml_json_writer p ~original_types is_rec let1 let2 def
+      ) l
+    in
+    let readers =
+      Ox_emit.map (
+        fun is_first def ->
+          let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+          make_ocaml_json_reader p ~original_types is_rec let1 let2 def
+      ) l
+    in
+    List.flatten (writers @ readers))
+  |> Indent.to_buffer buf;
   Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 let check_variant untypeds = function

@@ -694,12 +694,7 @@ let study_record ~ocaml_version fields =
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
   let init_bits =
-    Array.to_list (
-      Array.init k (
-        fun i -> Line (sprintf "let bits%i = ref 0 in" i)
-      )
-    )
-  in
+    List.init k (fun i -> Line (sprintf "let bits%i = ref 0 in" i)) in
   let final_bits = Array.make k 0 in
   for z0 = 0 to List.length fields - 1 do
     match mapping.(z0) with
@@ -719,13 +714,9 @@ let study_record ~ocaml_version fields =
   in
   let check_bits =
     let bool_expr =
-      String.concat " || " (
-        Array.to_list (
-          Array.mapi (
-            fun i x -> sprintf "!bits%i <> 0x%x" i x
-          ) final_bits
-        )
-      )
+      Array.mapi (fun i x -> sprintf "!bits%i <> 0x%x" i x) final_bits
+      |> Array.to_list
+      |> String.concat " || "
     in
     let bit_fields =
       let a = Array.init k (fun i -> sprintf "!bits%i" i) in

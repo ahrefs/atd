@@ -31,6 +31,13 @@ module List = struct
     | x :: l ->
         let y = f ~is_first:true x in
         y :: List.map (f ~is_first:false) l
+
+  let init n f = Array.to_list (Array.init n f)
+
+  let mapi l f =
+    Array.of_list l
+    |> Array.mapi f
+    |> Array.to_list
 end
 
 module Option = struct

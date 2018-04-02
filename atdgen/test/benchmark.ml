@@ -74,40 +74,36 @@ and mixed = (mixed_record array * mixed_record array) list
 (*** Creation of sample data for testing ***)
 
 let make_mixed_record_array n =
-  Array.init n (
-    fun i ->
-      {
-        field0 = Some i;
-        field1 = Some 0.555;
-        field2 = Some (String.copy "abcdefghijklmnopqrstuvwxyz");
-        field3 = 12345678L;
-        field4 = [| 1.23; 3.45; 4.56 |];
-        field5 = None;
-        field6 = None;
-        field7 = `Case4 [ `Case1; `Case2 999; `Case3 "abcdefghij"; `Case4 [] ];
-        field8 = [| "a"; "bc"; "def"; "ghij"; "klmno";
-                    "pqrstu"; "vwxyz01"; "23456789" |];
-        field9 = (
-          1_000_000,
-          0xff,
-          '\xff',
-          0xffff,
-          0xffffffffl,
-          0xffffffffffffffffL
-        );
-        field10 = true;
-        field11 = false;
-        field12 = [ (); () ];
-        field13 = [ Some "abcdefgh"; None; Some "qwerty" ]
-      }
+  Array.init n (fun i ->
+    {
+      field0 = Some i;
+      field1 = Some 0.555;
+      field2 = Some (String.copy "abcdefghijklmnopqrstuvwxyz");
+      field3 = 12345678L;
+      field4 = [| 1.23; 3.45; 4.56 |];
+      field5 = None;
+      field6 = None;
+      field7 = `Case4 [ `Case1; `Case2 999; `Case3 "abcdefghij"; `Case4 [] ];
+      field8 = [| "a"; "bc"; "def"; "ghij"; "klmno";
+                  "pqrstu"; "vwxyz01"; "23456789" |];
+      field9 = (
+        1_000_000,
+        0xff,
+        '\xff',
+        0xffff,
+        0xffffffffl,
+        0xffffffffffffffffL
+      );
+      field10 = true;
+      field11 = false;
+      field12 = [ (); () ];
+      field13 = [ Some "abcdefgh"; None; Some "qwerty" ]
+    }
   )
 
 let make_mixed ~top_len ~tab_len ~ar_len =
-  Array.to_list (
-    Array.init top_len (
-      fun _ ->
-        (make_mixed_record_array tab_len, make_mixed_record_array ar_len)
-    )
+  List.init top_len (fun _ ->
+    (make_mixed_record_array tab_len, make_mixed_record_array ar_len)
   )
 
 

@@ -501,9 +501,7 @@ let vertical_sequence ?(skip_lines = 0) l =
   let l =
     if skip_lines = 0 then l
     else
-      let sep =
-        Array.to_list (Array.init skip_lines (fun _ -> (Atom ("", atom))))
-      in
+      let sep = List.init skip_lines (fun _ -> (Atom ("", atom))) in
       insert sep l
   in
   Easy_format.List (("", "", "", rlist), l)

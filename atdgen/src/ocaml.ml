@@ -50,6 +50,10 @@ let tick = function
   | Poly -> "`"
   | Classic -> ""
 
+let dot = function
+  | Record -> "."
+  | Object -> "#"
+
 module Repr = struct
   type t =
     | Unit

@@ -507,11 +507,7 @@ and make_variant_writer deref tick x : Indent.t list =
       ]
 
 and make_record_writer deref tagged a record_kind =
-  let dot =
-    match record_kind with
-      Record -> "."
-    | Object -> "#"
-  in
+  let dot = Ocaml.dot record_kind in
   let fields = get_fields deref a in
   let write_length =
     (* count the number of defined optional fields in order
@@ -603,11 +599,7 @@ and make_table_writer deref tagged list_kind x =
     | _ ->
         Error.error (loc_of_mapping x) "Not a record type"
   in
-  let dot =
-    match record_kind with
-      Record -> "."
-    | Object -> "#"
-  in
+  let dot = Ocaml.dot record_kind in
   let let_len =
     match list_kind with
       List -> Line "let len = List.length x in"

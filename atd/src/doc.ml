@@ -1,4 +1,4 @@
-open Printf
+open Import
 
 type inline =
     [ `Text of string

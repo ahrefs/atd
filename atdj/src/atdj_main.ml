@@ -1,6 +1,6 @@
 (* Main *)
 
-open Printf
+open Atd.Import
 open Atdj_env
 
 let args_spec env = Arg.align

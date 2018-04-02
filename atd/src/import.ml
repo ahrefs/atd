@@ -37,3 +37,4 @@ let sprintf = Printf.sprintf
 let printf = Printf.printf
 let eprintf = Printf.eprintf
 let bprintf = Printf.bprintf
+let fprintf = Printf.fprintf

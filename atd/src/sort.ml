@@ -14,7 +14,7 @@
    http://scienceblogs.com/goodmath/2007/10/30/computing-strongly-connected-c/
 *)
 
-open Printf
+open Import
 
 module type Param =
 sig

@@ -368,10 +368,9 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in
     let validators =
-      Ox_emit.map (
-        fun is_first def ->
-          let let1, _ = Ox_emit.get_let ~is_rec ~is_first in
-          make_ocaml_validator ~original_types is_rec let1 def
+      List.map_first (fun ~is_first def ->
+        let let1, _ = Ox_emit.get_let ~is_rec ~is_first in
+        make_ocaml_validator ~original_types is_rec let1 def
       ) l
     in
     List.flatten validators)

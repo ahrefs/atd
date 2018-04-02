@@ -1320,16 +1320,14 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in
     let writers =
-      Ox_emit.map (
-        fun is_first def ->
+      List.map_first (fun ~is_first def ->
           let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
           make_ocaml_biniou_writer
             ~original_types deref is_rec let1 let2 def
       ) l
     in
     let readers =
-      Ox_emit.map (
-        fun is_first def ->
+      List.map_first (fun ~is_first def ->
           let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
           make_ocaml_biniou_reader ~ocaml_version
             ~original_types deref is_rec let1 let2 def

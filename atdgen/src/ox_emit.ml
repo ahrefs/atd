@@ -299,12 +299,6 @@ let nth name i len =
     Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
   String.concat ", " l
 
-let map f = function
-    [] -> []
-  | x :: l ->
-      let y = f true x in
-      y :: List.map (f false) l
-
 let get_let ~is_rec ~is_first =
   if is_first then
     if is_rec then "let rec", "and"

@@ -25,6 +25,12 @@ module List = struct
   let concat_map f l =
     List.map f l
     |> List.flatten
+
+  let map_first f = function
+    | [] -> []
+    | x :: l ->
+        let y = f ~is_first:true x in
+        y :: List.map (f ~is_first:false) l
 end
 
 module Option = struct

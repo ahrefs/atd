@@ -3,8 +3,6 @@ open Printf
 open Atdj_names
 open Atdj_env
 open Atdj_util
-open Atdgen_emit
-
 (* Calculate the JSON representation of an ATD type.
  *
  * Values of sum types t are encoded as either Strings or two-element
@@ -260,7 +258,7 @@ let javadoc loc annots indent =
           )
           []
           blocks in
-  (match Doc.get_doc loc annots with
+  (match Atd.Doc.get_doc loc annots with
    | Some doc ->
        let header = indent ^ "/**\n" in
        let footer = indent ^ " */\n" in

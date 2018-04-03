@@ -11,14 +11,16 @@ type test' = T : 'a test -> test'
 type failure =
   { name: string
   ; actual: Yojson.Safe.json
-  ; received: (Yojson.Safe.json, exn) result
+  ; received: (Yojson.Safe.json, (exn * string)) result
   }
 
 let pp_json fmt json =
   Format.pp_print_string fmt (Yojson.Safe.pretty_to_string ~std:true json)
 
 let pp_received fmt = function
-  | Error e -> Format.fprintf fmt "exn: %s" (Printexc.to_string e)
+  | Error (e, bt) ->
+      Format.fprintf fmt "exn: %s@.backtrace:@.%s"
+        (Printexc.to_string e) bt
   | Ok json -> pp_json fmt json
 
 let test ~name ~yojson ~buckle ~data =
@@ -34,7 +36,7 @@ let run_test (T t) =
     try
       Ok (t.of_yojson json)
     with e ->
-      Error e
+      Error (e, Printexc.get_backtrace ())
   in
   if Ok t.data = data' then (
     Ok ()

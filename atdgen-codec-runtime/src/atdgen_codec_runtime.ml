@@ -77,24 +77,29 @@ let fieldDefault s default f =
     | Some s -> s)
 
 let tuple2 a b = function
+  | `Tuple [w ; x]
   | `List [w ; x] -> (a w, b x)
   | _ -> raise DecoderError
 
 let tuple3 a b c = function
+  | `Tuple [w; x; y]
   | `List [w; x; y] -> (a w, b x, c y)
   | _ -> raise DecoderError
 
 let tuple4 a b c d = function
+  | `Tuple [w; x; y; z]
   | `List [w; x; y; z] -> (a w, b x, c y, d z)
   | _ -> raise DecoderError
 
 let enum l = function
+  | `Variant (s, None)
   | `String s ->
       begin match List.assoc s l with
         | exception Not_found -> raise DecoderError
         | `Single a -> a
         | `Decode _ -> raise DecoderError
       end
+  | `Variant (s, Some args)
   | `List [`String s; args] ->
       begin match List.assoc s l with
         | exception Not_found -> raise DecoderError

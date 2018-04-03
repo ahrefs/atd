@@ -98,10 +98,53 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_reader p None x)
       ; Line ")"
       ]
-  | Sum (_, _, Sum _, Sum) ->
-      [Annot ("fun", Line (
-         sprintf "%s (fun _ -> failwith \"no variants so far\")"
-           codec_make))
+  | Sum (_, a, Sum osum, Sum) ->
+      let cases =
+        Array.to_list a
+        |> List.map
+          (fun (r : (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping) ->
+             let (o, j) =
+               match r.var_arepr, r.var_brepr with
+               | Ocaml.Repr.Variant o, Json.Variant j -> o, j
+               | _ -> assert false in
+             ( r.var_arg
+             , (match j.json_cons with
+                | None -> o.ocaml_cons
+                | Some j -> j)
+             , o.ocaml_cons
+             )
+          ) in
+      let cases =
+        let tick = Ocaml.tick osum in
+        cases
+        |> List.concat_map (fun (arg, j, o) ->
+          let codec_cons =
+            match arg with
+            | None ->
+                [Line (sprintf "`Single (%s%s)" tick o)]
+            | Some v ->
+                [ Line "`Decode ("
+                ; Inline (make_reader p None v)
+                ; Line (
+                    sprintf "|> %s (fun x -> %s%s x)" (ident "map") tick o
+                  )
+                ; Line ")"
+                ]
+          in
+          [Block
+             [ Line "("
+             ; Line (sprintf "%S" j)
+             ; Line ","
+             ; Block codec_cons
+             ; Line ")"
+             ]
+          ])
+        |> Indent.concat (Line ";")
+      in
+      [ Line (ident "enum")
+      ; Line "["
+      ; Block cases
+      ; Line "]"
       ]
   | Wrap (_, x, Wrap o, Wrap) ->
       (match o with

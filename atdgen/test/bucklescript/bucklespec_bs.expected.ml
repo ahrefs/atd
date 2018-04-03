@@ -10,7 +10,47 @@ let read_id = (
   read__2
 )
 let read__3 = (
-  Atdgen_codec_runtime.make (fun _ -> failwith "no variants so far")
+  Atdgen_codec_runtime.enum
+  [
+      (
+      "Foo"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.tuple2
+          (
+            Atdgen_codec_runtime.int
+          )
+          (
+            Atdgen_codec_runtime.int
+          )
+        |> Atdgen_codec_runtime.map (fun x -> `Foo x)
+        )
+      )
+    ;
+      (
+      "Bar"
+      ,
+        `Single (`Bar)
+      )
+    ;
+      (
+      "Foobar"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.unit
+        |> Atdgen_codec_runtime.map (fun x -> `Foobar x)
+        )
+      )
+    ;
+      (
+      "Foo_id"
+      ,
+        `Decode (
+        read_id
+        |> Atdgen_codec_runtime.map (fun x -> `Foo_id x)
+        )
+      )
+  ]
 )
 let read__4 = (
   Atdgen_codec_runtime.list (
@@ -21,7 +61,47 @@ let read_simple_vars = (
   read__4
 )
 let read_simple_var read__a = (
-  Atdgen_codec_runtime.make (fun _ -> failwith "no variants so far")
+  Atdgen_codec_runtime.enum
+  [
+      (
+      "Foo"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.tuple2
+          (
+            Atdgen_codec_runtime.int
+          )
+          (
+            Atdgen_codec_runtime.int
+          )
+        |> Atdgen_codec_runtime.map (fun x -> `Foo x)
+        )
+      )
+    ;
+      (
+      "Bar"
+      ,
+        `Single (`Bar)
+      )
+    ;
+      (
+      "Foobar"
+      ,
+        `Decode (
+        read__a
+        |> Atdgen_codec_runtime.map (fun x -> `Foobar x)
+        )
+      )
+    ;
+      (
+      "Foo_id"
+      ,
+        `Decode (
+        read_id
+        |> Atdgen_codec_runtime.map (fun x -> `Foo_id x)
+        )
+      )
+  ]
 )
 let read_same_pair read__a = (
   Atdgen_codec_runtime.tuple2

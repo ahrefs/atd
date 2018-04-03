@@ -85,12 +85,12 @@ let () =
               ; lb = "foo bar"
               ; count = 123
               }
-    (* ; test ~name:"variant"
-     *     ~yojson:Bucklespec_j.string_of_simple_vars
-     *     ~buckle:Bucklespec_bs.read_simple_vars
-     *     ~data:[ `Foo (123, 456)
-     *           ; `Bar
-     *           ; `Foobar ()
-     *           ; `Foo_id (`Id "testing")
-     *           ] *)
+    ; test ~name:"variant"
+        ~yojson:Bucklespec_j.string_of_simple_vars
+        ~buckle:Bucklespec_bs.read_simple_vars
+        ~data:[ `Foo (123, 456)
+              ; `Bar
+              ; `Foobar ()
+              ; `Foo_id (`Id "testing")
+              ]
     ]

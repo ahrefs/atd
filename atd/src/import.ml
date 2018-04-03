@@ -45,6 +45,16 @@ module List = struct
         match f x with
           None -> find_map f l
         | Some _ as y -> y
+
+  (* replace first occurrence, if any *)
+  let rec assoc_update k v = function
+    |  (k', _) as x :: l ->
+        if k = k' then
+          (k, v) :: l
+        else
+          x :: assoc_update k v l
+    | [] ->
+        []
 end
 
 module Option = struct

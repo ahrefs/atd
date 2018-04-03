@@ -38,6 +38,13 @@ module List = struct
     Array.of_list l
     |> Array.mapi f
     |> Array.to_list
+
+  let rec find_map f = function
+    | [] -> None
+    | x :: l ->
+        match f x with
+          None -> find_map f l
+        | Some _ as y -> y
 end
 
 module Option = struct

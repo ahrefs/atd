@@ -22,17 +22,9 @@ let has_field k k2 l =
       with Not_found -> false
   ) k
 
-let rec find f = function
-    [] -> None
-  | x :: l ->
-      match f x with
-          None -> find f l
-        | Some _ as y -> y
-
 let get_flag k k2 l =
   let result =
-    find (
-      fun k1 ->
+    List.find_map (fun k1 ->
         try
           (* each section must be unique *)
           let _, l2 = List.assoc k1 l in
@@ -53,8 +45,7 @@ let get_flag k k2 l =
 
 let get_field parse default k k2 l =
   let result =
-    find (
-      fun k1 ->
+    List.find_map (fun k1 ->
         try
           (* each section must be unique *)
           let _, l2 = List.assoc k1 l in

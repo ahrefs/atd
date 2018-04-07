@@ -1,7 +1,5 @@
 type loc = Atd.Ast.loc
 
-type loc_id = string
-
 type ('a, 'b) mapping =
   | Unit of loc * 'a * 'b
   | Bool of loc * 'a * 'b

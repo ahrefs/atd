@@ -1819,9 +1819,6 @@ let check_atd (_head, body) =
   Glue
 *)
 
-let translate_mapping (l : (bool * Atd.Ast.module_body) list) =
-  defs_of_atd_modules l
-
 let make_mli
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ocaml_typedefs deref defs =
@@ -1898,7 +1895,7 @@ let make_ocaml_files
       Atd.Util.tsort
   in
   let m1 = tsort m0 in
-  let defs1 = translate_mapping m1 in
+  let defs1 = defs_of_atd_modules m1 in
   if not name_overlap then Ox_emit.check defs1;
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
@@ -1909,7 +1906,7 @@ let make_ocaml_files
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
     Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases (head, m1) in
-  let defs = translate_mapping m2 in
+  let defs = defs_of_atd_modules m2 in
   let header =
     let src =
       match atd_file with

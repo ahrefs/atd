@@ -4,8 +4,6 @@ open Error
 
 type loc = Atd.Ast.loc
 
-type loc_id = string
-
 (*
   Generic mapping, based on the core ATD types
 *)

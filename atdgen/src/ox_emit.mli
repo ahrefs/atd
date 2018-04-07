@@ -37,17 +37,17 @@ val write_ocaml : target -> string -> string -> unit
 
 val name_of_var : string -> string
 
-val nth : Mapping.loc_id -> int -> int -> Mapping.loc_id
+val nth : string -> int -> int -> string
 
 val map : (bool -> 'a -> 'b) -> 'a list -> 'b list
 
-val get_let : is_rec:bool -> is_first:bool -> Mapping.loc_id * Mapping.loc_id
+val get_let : is_rec:bool -> is_first:bool -> string * string
 
-val write_opens : Buffer.t -> Mapping.loc_id list -> unit
+val write_opens : Buffer.t -> string list -> unit
 
 val def_of_atd
   : Atd.Ast.loc
-    * (Mapping.loc_id * Mapping.loc_id list * Atd.Annot.t)
+    * (string * string list * Atd.Annot.t)
     * Atd.Ast.type_expr
   -> target:Ocaml.target
   -> def:'a

@@ -1,14 +1,16 @@
 (* $Id: ag_doc_lexer.mll 48186 2010-09-09 22:24:27Z martin $ *)
 {
+  open Doc_types
+
   let close_paragraph a1 a2 a3 =
     let a2 =
       match String.concat "" (List.rev a3) with
           "" -> a2
-        | s -> `Text s :: a2
+        | s -> Text s :: a2
     in
     match List.rev a2 with
         [] -> a1
-      | l -> `Paragraph l :: a1
+      | l -> Paragraph l :: a1
 }
 
 let space = [' ' '\t' '\r' '\n']
@@ -30,15 +32,15 @@ rule paragraph a1 a2 a3 = parse
                           let a2 =
                             match String.concat "" (List.rev a3) with
                                 "" -> a2
-                              | s -> `Text s :: a2
+                              | s -> Text s :: a2
                           in
-                          let a2 = `Code code :: a2 in
+                          let a2 = Code code :: a2 in
                           paragraph a1 a2 [] lexbuf
                         }
   | space* "{{{" (("\r"?) "\n")?
                         { let pre = verbatim [] lexbuf in
                           let a1 = close_paragraph a1 a2 a3 in
-                          let a1 = `Pre pre :: a1 in
+                          let a1 = Pre pre :: a1 in
                           paragraph a1 [] [] lexbuf
                         }
   | par_not_special+ as s

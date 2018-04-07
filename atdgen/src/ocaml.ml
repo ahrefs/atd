@@ -529,12 +529,11 @@ let split = Str.split (Str.regexp " ")
 
 
 let make_ocamldoc_block = function
-  | `Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
-  | `Paragraph l ->
-      let l = List.map (
-        function
-            `Text s -> ocamldoc_escape s
-          | `Code s -> "[" ^ ocamldoc_escape s ^ "]"
+  | Atd.Doc.Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
+  | Paragraph l ->
+      let l = List.map (function
+        | Atd.Doc.Text s -> ocamldoc_escape s
+        | Code s -> "[" ^ ocamldoc_escape s ^ "]"
       ) l
       in
       let words = split (String.concat "" l) in
@@ -548,16 +547,16 @@ let rec make_ocamldoc_blocks = function
       let rest = make_ocamldoc_blocks xs in
       let rest =
         match y with
-        | `Paragraph _ -> Atom ("", atom) :: rest
-        | `Pre _ -> rest in
+        | Atd.Doc.Paragraph _ -> Atom ("", atom) :: rest
+        | Pre _ -> rest in
       make_ocamldoc_block x :: rest
 
-let make_ocamldoc_comment (`Text l) =
+let make_ocamldoc_comment l =
   let blocks = make_ocamldoc_blocks l in
   let xlist =
     match l with
-        [] | [_] -> vlist1
-      | _ -> vlist
+      [] | [_] -> vlist1
+    | _ -> vlist
   in
   Easy_format.List (("(**", "", "*)", xlist), blocks)
 

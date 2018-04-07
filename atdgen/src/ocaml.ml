@@ -492,11 +492,6 @@ let make_atom s = Atom (s, atom)
 
 let horizontal_sequence l = Easy_format.List (("", "", "", shlist), l)
 
-let rec insert2 f = function
-    [] | [_] as l -> l
-  | x :: (y :: _ as l) -> x :: f x y @ insert2 f l
-
-
 let vertical_sequence ?(skip_lines = 0) l =
   let l =
     if skip_lines = 0 then l
@@ -534,8 +529,7 @@ let split = Str.split (Str.regexp " ")
 
 
 let make_ocamldoc_block = function
-    `Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
-  | `Before_paragraph -> Atom ("", atom)
+  | `Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
   | `Paragraph l ->
       let l = List.map (
         function
@@ -547,18 +541,16 @@ let make_ocamldoc_block = function
       let atoms = List.map (fun s -> Atom (s, atom)) words in
       List (("", "", "", plist), atoms)
 
-let make_ocamldoc_blocks (l : Atd.Doc.block list) =
-  let l =
-    insert2 (
-      fun _ y ->
+let rec make_ocamldoc_blocks = function
+  | []
+  | [_] as l -> List.map make_ocamldoc_block l
+  | x :: (y :: _ as xs) ->
+      let rest = make_ocamldoc_blocks xs in
+      let rest =
         match y with
-            `Paragraph _ -> [`Before_paragraph]
-          | `Pre _ -> []
-          | _ -> assert false
-    ) (l :> [ Atd.Doc.block | `Before_paragraph ] list)
-  in
-  List.map make_ocamldoc_block l
-
+        | `Paragraph _ -> Atom ("", atom) :: rest
+        | `Pre _ -> rest in
+      make_ocamldoc_block x :: rest
 
 let make_ocamldoc_comment (`Text l) =
   let blocks = make_ocamldoc_blocks l in

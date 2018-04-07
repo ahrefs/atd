@@ -55,6 +55,12 @@ module List = struct
           x :: assoc_update k v l
     | [] ->
         []
+
+  let rec insert_sep t ~sep =
+    match t with
+    | []
+    | [_] -> t
+    | x :: xs -> x :: sep @ (insert_sep xs ~sep)
 end
 
 module Option = struct

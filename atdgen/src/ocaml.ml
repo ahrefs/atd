@@ -488,10 +488,6 @@ let make_atom s = Atom (s, atom)
 
 let horizontal_sequence l = Easy_format.List (("", "", "", shlist), l)
 
-let rec insert sep = function
-    [] | [_] as l -> l
-  | x :: l -> x :: sep @ insert sep l
-
 let rec insert2 f = function
     [] | [_] as l -> l
   | x :: (y :: _ as l) -> x :: f x y @ insert2 f l
@@ -502,7 +498,7 @@ let vertical_sequence ?(skip_lines = 0) l =
     if skip_lines = 0 then l
     else
       let sep = List.init skip_lines (fun _ -> (Atom ("", atom))) in
-      insert sep l
+      List.insert_sep l ~sep
   in
   Easy_format.List (("", "", "", rlist), l)
 

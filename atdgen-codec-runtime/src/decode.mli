@@ -1,20 +1,8 @@
-type json =
-  [ `Assoc of (string * json) list
-  | `Bool of bool
-  | `Float of float
-  | `Int of int
-  | `Intlit of string
-  | `List of json list
-  | `Null
-  | `String of string
-  | `Tuple of json list
-  | `Variant of string * json option ]
-
 type 'a t
 
-val make : (json -> 'a) -> 'a t
+val make : (S.json -> 'a) -> 'a t
 
-val decode : 'a t -> json -> 'a
+val decode : 'a t -> S.json -> 'a
 
 val unit : unit t
 val bool : bool t

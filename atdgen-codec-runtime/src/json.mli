@@ -11,6 +11,5 @@ type t =
   | `Tuple of t list
   | `Variant of string * t option ]
 
-let constr0 s = `Variant (s, None)
-
-let constr1 s a = `Variant (s, Some a)
+val constr0 : string -> t
+val constr1 : string -> t -> t

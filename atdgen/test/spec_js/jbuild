@@ -1,0 +1,23 @@
+(jbuild_version 1)
+
+(rule
+ ((targets (spec_t.ml spec_t.mli))
+  (deps (spec.atd))
+  (action (run atdgen ${<} -t))))
+
+(rule
+ ((targets (spec_j.ml spec_j.mli))
+  (deps (spec.atd))
+  (action (run atdgen ${<} -j))))
+
+(executable
+ ((name spec_js)
+  (libraries (atdgen-runtime))))
+
+(rule
+ ((targets (spec.json))
+  (action (with-stdout-to ${@} (run ./spec_js.exe)))))
+
+(alias
+ ((name runtest)
+  (action (diff spec.expected.json spec.json))))

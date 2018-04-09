@@ -26,7 +26,7 @@ let pp_received fmt = function
 let test ~name ~yojson ~buckle ~data =
   T { name
     ; to_yojson = (fun a -> Yojson.Safe.from_string (yojson a))
-    ; of_yojson = (Atdgen_codec_runtime.decode buckle)
+    ; of_yojson = (Atdgen_codec_runtime.Decode.decode buckle)
     ; data
     }
 

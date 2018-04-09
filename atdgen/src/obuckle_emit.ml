@@ -10,11 +10,11 @@ type param =
 
 let runtime_module = "Atdgen_codec_runtime"
 
-let ident = sprintf "%s.%s" runtime_module
+let decoder_ident = sprintf "%s.Decode.%s" runtime_module
 
-let codec_make = ident "make"
+let decoder_make = decoder_ident "make"
 
-let decoder_t s = sprintf "%s %s" s (ident "t")
+let decoder_t s = sprintf "%s %s" s (decoder_ident "t")
 
 let make_ocaml_bs_intf buf _deref defs =
   List.concat_map snd defs
@@ -35,11 +35,11 @@ let rec get_reader_name
     ?(name_f = fun s -> "read_" ^ s)
     p (x : Oj_mapping.t) : string =
   match x with
-    Unit (_, Unit, Unit) -> ident "unit"
-  | Bool (_, Bool, Bool) -> ident "bool"
-  | Int (_, Int _, Int) -> ident "int"
-  | Float (_, Float, Float _) -> ident "float"
-  | String (_, String, String) -> ident "string"
+    Unit (_, Unit, Unit) -> decoder_ident "unit"
+  | Bool (_, Bool, Bool) -> decoder_ident "bool"
+  | Int (_, Int _, Int) -> decoder_ident "int"
+  | Float (_, Float, Float _) -> decoder_ident "float"
+  | String (_, String, String) -> decoder_ident "string"
   | Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s
 
   | Name (_, s, args, None, None) ->
@@ -71,12 +71,12 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   | Tvar _ -> [ Indent.Line (get_reader_name p x) ]
   | Record (loc, a, Record o, Record j) ->
       Ocaml.obj_unimplemented loc o;
-      [ Annot ("fun", Line (sprintf "%s (fun json ->" codec_make))
+      [ Annot ("fun", Line (sprintf "%s (fun json ->" decoder_make))
       ; Block (make_record_reader p type_annot loc a j)
       ; Line ")"
       ]
   | Tuple (_, a, Tuple, Tuple) ->
-      [ Line (ident (sprintf "tuple%d" (Array.length a)))
+      [ Line (decoder_ident (sprintf "tuple%d" (Array.length a)))
       ; Block (
           a
           |> Array.to_list
@@ -93,8 +93,8 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
         | Array -> () in
       [ Line (sprintf "%s ("
                 (match o with
-                 | List -> ident "list"
-                 | Array -> ident "array"))
+                 | List -> decoder_ident "list"
+                 | Array -> decoder_ident "array"))
       ; Block (make_reader p None x)
       ; Line ")"
       ]
@@ -126,7 +126,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
                 [ Line "`Decode ("
                 ; Inline (make_reader p None v)
                 ; Line (
-                    sprintf "|> %s (fun x -> %s%s x)" (ident "map") tick o
+                    sprintf "|> %s (fun x -> %s%s x)" (decoder_ident "map") tick o
                   )
                 ; Line ")"
                 ]
@@ -141,7 +141,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           ])
         |> Indent.concat (Line ";")
       in
-      [ Line (ident "enum")
+      [ Line (decoder_ident "enum")
       ; Line "["
       ; Block cases
       ; Line "]"
@@ -152,7 +152,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
        | Some w ->
            [ Line "("
            ; Block (make_reader p type_annot x)
-           ; Line (sprintf ") |> (%s (%s))" (ident "map") w.ocaml_wrap)
+           ; Line (sprintf ") |> (%s (%s))" (decoder_ident "map") w.ocaml_wrap)
            ])
   | _ -> failwith "TODO: make_reader"
 
@@ -171,11 +171,11 @@ and make_record_reader
         Block
           [ Line (sprintf "%s =" oname)
           ;  Block
-              [ Line (ident "decode")
+              [ Line (decoder_ident "decode")
               ; Line "("
               ; Block
                   [ Inline (make_reader p None x.f_value)
-                  ; Line (sprintf "|> %s \"%s\"" (ident "field") x.f_name)
+                  ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field") x.f_name)
                   ]
               ; Line ") json;"
               ]

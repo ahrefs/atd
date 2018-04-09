@@ -1,4 +1,3 @@
-
 type json =
   [ `Assoc of (string * json) list
   | `Bool of bool

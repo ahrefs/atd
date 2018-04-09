@@ -1,8 +1,8 @@
 type 'a t
 
-val make : (S.json -> 'a) -> 'a t
+val make : (Json.t -> 'a) -> 'a t
 
-val decode : 'a t -> S.json -> 'a
+val decode : 'a t -> Json.t -> 'a
 
 val unit : unit t
 val bool : bool t

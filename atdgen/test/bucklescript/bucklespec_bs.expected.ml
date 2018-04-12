@@ -1,3 +1,7 @@
+(* Auto-generated from "bucklespec.atd" *)
+              [@@@ocaml.warning "-27-32-35-39"]
+open Bucklespec_t
+
 let read_valid = (
   Atdgen_codec_runtime.Decode.bool
 )

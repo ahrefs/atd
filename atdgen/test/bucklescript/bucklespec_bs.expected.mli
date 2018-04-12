@@ -1,3 +1,7 @@
+(* Auto-generated from "bucklespec.atd" *)
+              [@@@ocaml.warning "-27-32-35-39"]
+open Bucklespec_t
+
 val read_valid :  valid Atdgen_codec_runtime.Decode.t
 
 val read_id :  id Atdgen_codec_runtime.Decode.t

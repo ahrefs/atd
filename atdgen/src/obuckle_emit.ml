@@ -240,22 +240,29 @@ let make_ocaml_bs_impl
   |> Indent.to_buffer buf
 
 let make_ml
-    ~header:_
+    ~opens
+    ~header
     ~original_types
     _ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
+  bprintf buf "%s\n" header;
+  Ox_emit.write_opens buf opens;
   make_ocaml_bs_impl ~original_types buf deref defs;
   Buffer.contents buf
 
 let make_mli
-    ~header:_
+    ~opens
+    ~header
     ~original_types:_
     _ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
+  bprintf buf "%s\n" header;
+  Ox_emit.write_opens buf opens;
   make_ocaml_bs_intf buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
+    ~opens
     ~all_rec
     ~pos_fname
     ~pos_lnum
@@ -302,17 +309,17 @@ let make_ocaml_files
               [@@@ocaml.warning "-27-32-35-39"]|} src
   in
   let ml =
-    make_ml ~header ~original_types
+    make_ml ~opens ~header ~original_types
       ocaml_typedefs (Mapping.make_deref defs) defs
   in
   let mli =
-    make_mli ~header ~original_types
+    make_mli ~opens ~header ~original_types
       ocaml_typedefs (Mapping.make_deref defs) defs
   in
   Ox_emit.write_ocaml out mli ml
 
 let make_ocaml_files
-    ~opens:_
+    ~opens
     ~with_typedefs:_
     ~with_create:_
     ~with_fundefs:_
@@ -325,4 +332,5 @@ let make_ocaml_files
     ~ocaml_version:_
     ~pp_convs:_
     atd_file out =
-  make_ocaml_files ~all_rec ~pos_fname ~pos_lnum ~type_aliases atd_file out
+  make_ocaml_files ~opens ~all_rec ~pos_fname ~pos_lnum ~type_aliases atd_file
+    out

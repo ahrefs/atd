@@ -1,7 +1,5 @@
 open Printf
 
-open Error
-
 type loc = Atd.Ast.loc
 
 (*
@@ -61,7 +59,7 @@ type ('a, 'b) def = {
 let as_abstract = function
     Atd.Ast.Name (_, (loc, "abstract", l), a) ->
       if l <> [] then
-        error loc "\"abstract\" takes no type parameters";
+        Error.error loc "\"abstract\" takes no type parameters";
       Some (loc, a)
   | _ ->
       None
@@ -147,7 +145,7 @@ let apply param x args =
 
 let rec find_name loc env visited name =
   if List.mem name visited then
-    error loc "Cyclic type definition"
+    Error.error loc "Cyclic type definition"
   else
     let param, x = Env.find name env in
     (param, deref_expr env (name :: visited) x)

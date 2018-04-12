@@ -1,5 +1,4 @@
 open Atd.Ast
-open Error
 open Mapping
 
 type ob_mapping =
@@ -129,7 +128,7 @@ and mapping_of_field ocaml_field_prefix = function
           Required, None -> None, false
         | Optional, None -> Some "None", true
         | (Required | Optional), Some _ ->
-            error loc "Superfluous default OCaml value"
+            Error.error loc "Superfluous default OCaml value"
         | With_default, Some s -> Some s, false
         | With_default, None ->
             (* will try to determine implicit default value later *)

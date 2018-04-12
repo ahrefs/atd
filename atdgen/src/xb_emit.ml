@@ -4,7 +4,6 @@
 *)
 
 open Printf
-open Error
 open Mapping
 
 type 'a expr = ('a, Biniou.biniou_repr) Mapping.mapping
@@ -93,7 +92,7 @@ let check_duplicate_hashes kind l =
       let h = Bi_io.hash_name s in
       try
         let loc0, s0 = Hashtbl.find tbl h in
-        error2
+        Error.error2
           loc0 (sprintf "Definition of %s %s." kind s0)
           loc (
             sprintf "\

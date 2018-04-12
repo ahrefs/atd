@@ -6,7 +6,6 @@
 open Printf
 
 open Atd.Ast
-open Error
 open Mapping
 open Oj_mapping
 
@@ -128,10 +127,10 @@ let get_assoc_type deref loc x =
   match deref x with
   | Tuple (_, [| k; v |], Ocaml.Repr.Tuple, Json.Tuple) ->
       if not (is_json_string deref k.cel_value) then
-        error loc "Due to <json repr=\"object\"> keys must be strings";
+        Error.error loc "Due to <json repr=\"object\"> keys must be strings";
       (k.cel_value, v.cel_value)
   | _ ->
-      error loc "Expected due to <json repr=\"object\">: (string * _) list"
+      Error.error loc "Expected due to <json repr=\"object\">: (string * _) list"
 
 
 type default_field =
@@ -165,7 +164,7 @@ let get_fields p a =
                       Ocaml.get_implicit_ocaml_default
                         p.deref x.f_value in
                     (match d with
-                     | None -> error x.f_loc "Missing default field value"
+                     | None -> Error.error x.f_loc "Missing default field value"
                      | Some d -> o, Default d, j, k)
                 | Some d -> o, Default d, j, k
                )
@@ -390,22 +389,22 @@ let destruct_sum (x : oj_mapping) =
     Sum (_, a, Sum x, Sum) ->
       let tick = match x with Classic -> "" | Poly -> "`" in
       tick, a
-  | Unit _ -> error (loc_of_mapping x) "Cannot destruct unit"
-  | Bool _ -> error (loc_of_mapping x) "Cannot destruct bool"
-  | Int _ -> error (loc_of_mapping x) "Cannot destruct int"
-  | Float _ -> error (loc_of_mapping x) "Cannot destruct float"
-  | String _ -> error (loc_of_mapping x) "Cannot destruct string"
+  | Unit _ -> Error.error (loc_of_mapping x) "Cannot destruct unit"
+  | Bool _ -> Error.error (loc_of_mapping x) "Cannot destruct bool"
+  | Int _ -> Error.error (loc_of_mapping x) "Cannot destruct int"
+  | Float _ -> Error.error (loc_of_mapping x) "Cannot destruct float"
+  | String _ -> Error.error (loc_of_mapping x) "Cannot destruct string"
   | Name (_,name,_,_,_) ->
-      error (loc_of_mapping x) ("Cannot destruct name " ^ name)
-  | External _ -> error (loc_of_mapping x) "Cannot destruct external"
-  | Tvar _ -> error (loc_of_mapping x) "Cannot destruct tvar"
-  | Record _ -> error (loc_of_mapping x) "Cannot destruct record"
-  | Tuple _ -> error (loc_of_mapping x) "Cannot destruct tuple"
-  | List _ -> error (loc_of_mapping x) "Cannot destruct list"
-  | Option _ -> error (loc_of_mapping x) "Cannot destruct option"
-  | Nullable _ -> error (loc_of_mapping x) "Cannot destruct nullable"
-  | Wrap _ -> error (loc_of_mapping x) "Cannot destruct wrap"
-  | _ -> error (loc_of_mapping x) "Cannot destruct unknown type"
+      Error.error (loc_of_mapping x) ("Cannot destruct name " ^ name)
+  | External _ -> Error.error (loc_of_mapping x) "Cannot destruct external"
+  | Tvar _ -> Error.error (loc_of_mapping x) "Cannot destruct tvar"
+  | Record _ -> Error.error (loc_of_mapping x) "Cannot destruct record"
+  | Tuple _ -> Error.error (loc_of_mapping x) "Cannot destruct tuple"
+  | List _ -> Error.error (loc_of_mapping x) "Cannot destruct list"
+  | Option _ -> Error.error (loc_of_mapping x) "Cannot destruct option"
+  | Nullable _ -> Error.error (loc_of_mapping x) "Cannot destruct nullable"
+  | Wrap _ -> Error.error (loc_of_mapping x) "Cannot destruct wrap"
+  | _ -> Error.error (loc_of_mapping x) "Cannot destruct unknown type"
 
 let make_sum_writer p sum f =
   let tick, a = destruct_sum (p.deref sum) in
@@ -996,7 +995,7 @@ let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
       (match o with
          Record -> ()
        | Object ->
-           error loc "Sorry, OCaml objects are not supported"
+           Error.error loc "Sorry, OCaml objects are not supported"
       );
       [
         `Annot ("fun", `Line "fun p lb ->");
@@ -1299,14 +1298,14 @@ and make_deconstructed_reader p loc fields set_bit =
                         mapping.f_name "constr"));
         ]
     | _ -> (* reconstructing a non-sum, undefined *)
-        error loc "can't reconstruct a non-sum"
+        Error.error loc "can't reconstruct a non-sum"
   in
 
   let rec toposort_fields order = function
     | [] ->
         if List.length order = Array.length fields
         then order
-        else error loc "recursive constructors not allowed"
+        else Error.error loc "recursive constructors not allowed"
     | n::s ->
         toposort_fields (n::order) (List.rev_append fields.(n).payloads s)
   in

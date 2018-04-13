@@ -153,27 +153,29 @@ let implicit_field_name jname = "0jic_"^jname
 
 let get_fields p a =
   let k, acc = Array.fold_left (fun (k,acc) (_, x) ->
-    let ocamlf, default, jsonf, k =
+    let (ocamlf, jsonf) =
       match x.f_arepr, x.f_brepr with
-        Ocaml.Repr.Field o, Json.Field j ->
-          (match x.f_kind with
-             With_default ->
-               (match o.Ocaml.ocaml_default with
-                  None ->
-                    let d =
-                      Ocaml.get_implicit_ocaml_default
-                        p.deref x.f_value in
-                    (match d with
-                     | None -> Error.error x.f_loc "Missing default field value"
-                     | Some d -> o, Default d, j, k)
-                | Some d -> o, Default d, j, k
-               )
-           | Optional -> o, Default "None", j, k
-           | Required -> o, Checked k, j, k+1
-          )
-      | _ -> assert false
+      | Ocaml.Repr.Field o, Json.Field j -> o, j
+      | _, _ -> assert false
     in
-    let field_ref = "field_"^ocamlf.Ocaml.ocaml_fname in
+    let default =
+      match x.f_kind, ocamlf.Ocaml.ocaml_default with
+      | With_default, None ->
+          begin match Ocaml.get_implicit_ocaml_default p.deref x.f_value with
+            | None -> Error.error x.f_loc "Missing default field value"
+            | Some d -> Default d
+          end
+      | With_default, Some d -> Default d
+      | Optional, _ -> Default "None"
+      | Required, _ -> Checked k
+    in
+    let k =
+      match x.f_kind with
+      | With_default
+      | Optional -> k
+      | Required -> k + 1
+    in
+    let field_ref = "field_" ^ ocamlf.Ocaml.ocaml_fname in
     let constructor = None in
     let payloads = [] in
     k, {

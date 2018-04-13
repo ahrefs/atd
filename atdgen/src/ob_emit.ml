@@ -168,43 +168,31 @@ let rec get_biniou_tag (x : ob_mapping) =
   | _ -> assert false
 
 let get_fields deref a =
-  List.map (
-    fun x ->
-      let ocaml_fname, ocaml_default, optional, unwrapped =
-        match x.f_arepr, x.f_brepr with
-          Ocaml.Repr.Field o, Biniou.Field b ->
-            let ocaml_default =
-              match x.f_kind with
-                With_default ->
-                  (match o.Ocaml.ocaml_default with
-                     None ->
-                       let d =
-                         Ocaml.get_implicit_ocaml_default
-                           deref x.f_value in
-                       if d = None then
-                         Error.error x.f_loc "Missing default field value"
-                       else
-                         d
-                   | Some _ as default -> default
-                  )
-              | Optional -> Some "None"
-              | Required -> None
-            in
-            let optional =
-              match x.f_kind with
-                Optional | With_default -> true
-              | Required -> false
-            in
-            o.Ocaml.ocaml_fname,
-            ocaml_default,
-            optional,
-            b.Biniou.biniou_unwrapped
-        | _ -> assert false
-      in
-      (x, ocaml_fname, ocaml_default, optional, unwrapped)
-  )
-    (Array.to_list a)
-
+  List.map (fun x ->
+    let (ocamlf, binf) =
+      match x.f_arepr, x.f_brepr with
+      | Ocaml.Repr.Field o, Biniou.Field b -> o, b
+      | _, _ -> assert false
+    in
+    let optional =
+      match x.f_kind with
+        Optional | With_default -> true
+      | Required -> false
+    in
+    let ocaml_default =
+      match x.f_kind, ocamlf.Ocaml.ocaml_default with
+      | With_default, None ->
+          begin match Ocaml.get_implicit_ocaml_default deref x.f_value with
+            | None -> Error.error x.f_loc "Missing default field value"
+            | Some _ as default -> default
+          end
+      | With_default, (Some _ as default) -> default
+      | Optional, _ -> Some "None"
+      | Required, _ -> None
+    in
+    (x, ocamlf.Ocaml.ocaml_fname , ocaml_default, optional
+    , binf.Biniou.biniou_unwrapped)
+  ) (Array.to_list a)
 
 let unopt = function None -> assert false | Some x -> x
 

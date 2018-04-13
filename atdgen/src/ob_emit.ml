@@ -1205,7 +1205,7 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
   ]
 
 let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
@@ -1251,7 +1251,7 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
 
 let make_ocaml_biniou_reader ~original_types ~ocaml_version
     deref is_rec let1 let2 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in

@@ -2,8 +2,7 @@
 
     Please don't rely on them in any way.*)
 
-type oj_mapping =
-    (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
+type t = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
 
 val defs_of_atd_modules
   : ('a * Atd.Ast.module_body) list

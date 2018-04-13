@@ -274,7 +274,7 @@ let make_json_string s = Yojson.Safe.to_string (`String s)
 let rec get_writer_name
     ?(paren = false)
     ?(name_f = fun s -> "write_" ^ s)
-    p (x : oj_mapping) : string =
+    p (x : Oj_mapping.t) : string =
   match x with
     Unit (_, Ocaml.Repr.Unit, Unit) ->
       "Yojson.Safe.write_null"
@@ -339,7 +339,7 @@ let get_left_to_string_name p name param =
 let rec get_reader_name
     ?(paren = false)
     ?(name_f = fun s -> "read_" ^ s)
-    p (x : oj_mapping) : string =
+    p (x : Oj_mapping.t) : string =
 
   match x with
     Unit (_, Unit, Unit) -> "Atdgen_runtime.Oj_run.read_null"
@@ -386,7 +386,7 @@ let get_left_of_string_name p name param =
   let args = List.map (fun s -> Tvar (dummy_loc, s)) param in
   get_reader_name ~name_f p (Name (dummy_loc, name, args, None, None))
 
-let destruct_sum (x : oj_mapping) =
+let destruct_sum (x : Oj_mapping.t) =
   match x with
     Sum (_, a, Sum x, Sum) ->
       let tick = match x with Classic -> "" | Poly -> "`" in
@@ -458,7 +458,7 @@ let string_expr_of_constr_field p v_of_field field =
              ]
        ))@[ `Line (sprintf ") () %s" v)]
 
-let rec make_writer p (x : oj_mapping) : Indent.t list =
+let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
   | Bool _
@@ -865,7 +865,7 @@ let study_record p fields =
   in
   init_fields, init_bits, set_bit, check_bits, create_record
 
-let rec make_reader p type_annot (x : oj_mapping) : Indent.t list =
+let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
   | Bool _

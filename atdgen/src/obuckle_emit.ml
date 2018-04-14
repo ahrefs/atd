@@ -12,7 +12,11 @@ let runtime_module = "Atdgen_codec_runtime"
 
 let decoder_ident = sprintf "%s.Decode.%s" runtime_module
 
+let encoder_ident = sprintf "%s.Encode.%s" runtime_module
+
 let decoder_make = decoder_ident "make"
+
+let encoder_make = encoder_ident "make"
 
 let decoder_t s = sprintf "%s %s" s (decoder_ident "t")
 
@@ -221,6 +225,126 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
     Line (sprintf ")%s" extra_args);
   ]
 
+let rec get_writer_name
+    ?(paren = false)
+    ?(name_f = fun s -> "write_" ^ s)
+    (p : param) (x : Oj_mapping.t) : string =
+  match x with
+  | Unit (_, Ocaml.Repr.Unit, Unit) ->
+      encoder_ident "unit"
+  | Bool (_, Bool, Bool) ->
+      encoder_ident "bool"
+  | Int (_, Int o, Int) ->
+      encoder_ident (
+        match o with
+        | Int -> "int"
+        | Char ->  "char"
+        | Int32 -> "int32"
+        | Int64 -> "int64"
+        | Float -> "float"
+      )
+  | Float (_, Float, Float j) ->
+      encoder_ident (
+        match j with
+        | Float None -> "float"
+          (* TODO *)
+        | Float (Some _precision) -> sprintf "float"
+        | Int -> "float"
+      )
+
+  | String (_, String, String) -> encoder_ident "string"
+
+  | Tvar (_, s) -> "write_" ^ (Ox_emit.name_of_var s)
+
+  | Name (_, s, args, None, None) ->
+      let l = List.map (get_writer_name ~paren:true p) args in
+      let s = String.concat " " (name_f s :: l) in
+      if paren && l <> [] then "(" ^ s ^ ")"
+      else s
+
+  | External (_, _, args,
+              External (_, main_module, ext_name),
+              External) ->
+      let f = main_module ^ "." ^ name_f ext_name in
+      let l = List.map (get_writer_name ~paren:true p) args in
+      let s = String.concat " " (f :: l) in
+      if paren && l <> [] then "(" ^ s ^ ")"
+      else s
+
+  | _ -> assert false
+
+let get_left_writer_name p name param =
+  let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
+  get_writer_name p (Name (Atd.Ast.dummy_loc, name, args, None, None))
+
+let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
+  match x with
+    Unit _
+  | Bool _
+  | Int _
+  | Float _
+  | String _
+  | Name _
+  | External _
+  | Tvar _ -> [ Line (get_writer_name p x) ]
+  | Tuple (_, _a, Tuple, Tuple) ->
+      []
+  | Record (_, a, Record o, Record _) ->
+      [ Annot ("fun", Line (sprintf "%s (fun t ->" encoder_make))
+      ; Block (make_record_writer p a o)
+      ; Line ")"
+      ]
+  | _ -> []
+
+and make_record_writer p a _record_kind =
+  let write_record =
+    a
+    |> Array.map (fun (x : (_, _) Mapping.field_mapping) ->
+      match x.f_arepr, x.f_brepr with
+      | Ocaml.Repr.Field o, Json.Field _ ->
+          let oname = o.Ocaml.ocaml_fname in
+          Block
+            [ Line (sprintf "%S,"  x.f_name)
+            ; Block
+                [ Line (sprintf "%s" (encoder_ident "encode"))
+                ; Line "("
+                ; Inline (make_writer p x.f_value)
+                ; Line ")"
+                ; Line (sprintf "t.%s" oname)
+                ]
+            ]
+      | _ -> assert false
+    )
+    |> Array.to_list
+    |> Indent.concat (Line ";") in
+  [ Line "("
+  ; Line (encoder_ident "obj")
+  ; Block
+      [ Line "["
+      ; Block write_record
+      ; Line "]"
+      ]
+  ; Line ")"
+  ]
+
+let make_ocaml_bs_writer p ~original_types:_ is_rec let1 _let2
+    (def : (_, _) Mapping.def) =
+  let x = match def.def_value with None -> assert false | Some x -> x in
+  let name = def.def_name in
+  let param = def.def_param in
+  let read = get_left_writer_name p name param in
+  let writer_expr = make_writer p x in
+  let eta_expand = is_rec && not (Ox_emit.is_function writer_expr) in
+  let extra_param, extra_args =
+    if eta_expand then " js", " js"
+    else "", ""
+  in
+  [
+    Line (sprintf "%s %s%s = (" let1 read extra_param);
+    Block (List.map Indent.strip writer_expr);
+    Line (sprintf ")%s" extra_args);
+  ]
+
 let make_ocaml_bs_impl
     ~original_types
     buf deref defs =
@@ -230,13 +354,18 @@ let make_ocaml_bs_impl
     let l = List.filter
         (fun (x : (Ocaml.Repr.t, Json.json_repr) Mapping.def) ->
            x.def_value <> None) l in
+    let writers =
+      List.map_first (fun ~is_first def ->
+        let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+        make_ocaml_bs_writer p ~original_types is_rec let1 let2 def
+      ) l in
     let readers =
       List.map_first (fun ~is_first def ->
         let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
         make_ocaml_bs_reader p ~original_types is_rec let1 let2 def
       ) l
     in
-    List.flatten readers)
+    List.flatten (writers @ readers))
   |> Indent.to_buffer buf
 
 let make_ml

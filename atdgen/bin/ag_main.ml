@@ -1,5 +1,4 @@
-open Atd.Import
-open Atdgen
+open Atdgen_emit
 
 open Printf
 
@@ -31,17 +30,16 @@ to incompatible values."
         var := Some x
 
 type mode =
-    [ `T (* -t (type defs and create_* functions) *)
-    | `B (* -b (biniou serialization) *)
-    | `J (* -j (json serialization) *)
-    | `V (* -v (validators) *)
-    | `Dep (* -dep (print all file dependencies produced by -t -b -j -v) *)
-    | `List (* -list (list all files produced by -t -b -j -v) *)
+  | T (* -t (type defs and create_* functions) *)
+  | B (* -b (biniou serialization) *)
+  | J (* -j (json serialization) *)
+  | V (* -v (validators) *)
+  | Dep (* -dep (print all file dependencies produced by -t -b -j -v) *)
+  | List (* -list (list all files produced by -t -b -j -v) *)
 
-    | `Biniou (* -biniou (deprecated) *)
-    | `Json (* -json (deprecated) *)
-    | `Validate (* -validate (deprecated) *)
-    ]
+  | Biniou (* -biniou (deprecated) *)
+  | Json (* -json (deprecated) *)
+  | Validate (* -validate (deprecated) *)
 
 let parse_ocaml_version () =
   let re = Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
@@ -98,36 +96,36 @@ let main () =
          ppx_deriving preprocessor
     ";
     "-t", Arg.Unit (fun () ->
-                      set_once "output type" mode `T;
+                      set_once "output type" mode T;
                       set_once "no function definitions" with_fundefs false),
     "
           Produce files example_t.mli and example_t.ml
           containing OCaml type definitions derived from example.atd.";
 
-    "-b", Arg.Unit (fun () -> set_once "output type" mode `B),
+    "-b", Arg.Unit (fun () -> set_once "output type" mode B),
     "
           Produce files example_b.mli and example_b.ml
           containing OCaml serializers and deserializers for the Biniou
           data format from the specifications in example.atd.";
 
-    "-j", Arg.Unit (fun () -> set_once "output type" mode `J),
+    "-j", Arg.Unit (fun () -> set_once "output type" mode J),
     "
           Produce files example_j.mli and example_j.ml
           containing OCaml serializers and deserializers for the JSON
           data format from the specifications in example.atd.";
 
-    "-v", Arg.Unit (fun () -> set_once "output type" mode `V),
+    "-v", Arg.Unit (fun () -> set_once "output type" mode V),
     "
           Produce files example_v.mli and example_v.ml
           containing OCaml functions for creating records and
           validators from the specifications in example.atd.";
 
-    "-dep", Arg.Unit (fun () -> set_once "output type" mode `Dep),
+    "-dep", Arg.Unit (fun () -> set_once "output type" mode Dep),
     "
           Output Make-compatible dependencies for all possible
           products of atdgen -t, -b, -j and -v, and exit.";
 
-    "-list", Arg.Unit (fun () -> set_once "output type" mode `List),
+    "-list", Arg.Unit (fun () -> set_once "output type" mode List),
     "
           Output a space-separated list of all possible products of
           atdgen -t, -b, -j and -v, and exit.";
@@ -147,7 +145,7 @@ let main () =
 
     "-biniou",
     Arg.Unit (fun () ->
-                set_once "output type" mode `Biniou),
+                set_once "output type" mode Biniou),
     "
           [deprecated in favor of -t and -b]
           Produce serializers and deserializers for Biniou
@@ -155,7 +153,7 @@ let main () =
 
     "-json",
     Arg.Unit (fun () ->
-                set_once "output type" mode `Json),
+                set_once "output type" mode Json),
     "
           [deprecated in favor of -t and -j]
           Produce serializers and deserializers for JSON
@@ -194,7 +192,7 @@ let main () =
     Arg.Unit (
       fun () ->
         set_once "unknown field handler" unknown_field_handler
-          "!Atdgen.Util.Json.unknown_field_handler"
+          "!Atdgen_runtime.Util.Json.unknown_field_handler"
     ),
     "
           Call !Atdgen.Util.Json.unknown_field_handler for every unknown JSON field
@@ -216,7 +214,7 @@ let main () =
     Arg.Unit (
       fun () ->
         set_once "constructor mismatch handler" constr_mismatch_handler
-          "!Atdgen.Util.Json.constr_mismatch_handler"
+          "!Atdgen_runtime.Util.Json.constr_mismatch_handler"
     ),
     "
           Given a record type of the form
@@ -235,7 +233,7 @@ let main () =
 
     "-validate",
     Arg.Unit (fun () ->
-                set_once "output type" mode `Validate),
+                set_once "output type" mode Validate),
     "
           [deprecated in favor of -t and -v]
           Produce data validators from <ocaml validator=\"x\"> annotations
@@ -296,7 +294,7 @@ let main () =
 
     "-version",
     Arg.Unit (fun () ->
-                print_endline Ag_version.version;
+                print_endline Version.version;
                 exit 0),
     "
           Print the version identifier of atdgen and exit.";
@@ -310,17 +308,17 @@ Generate OCaml code offering:
   * record-creating functions supporting default fields (-v)
   * user-specified data validators (-v)
 
-Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
+Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
   if (!std_json
       || !unknown_field_handler <> None
       || !constr_mismatch_handler <> None) && !mode = None then
-    set_once "output mode" mode `Json;
+    set_once "output mode" mode Json;
 
   let mode =
     match !mode with
-        None -> `Biniou
+        None -> Biniou
       | Some x -> x
   in
 
@@ -329,19 +327,19 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
         Some x -> x
       | None ->
           match mode with
-              `T | `B | `J -> false
-            | `V -> true
-            | `Biniou | `Json | `Validate -> true
-            | `Dep | `List -> true (* don't care *)
+              T | B | J -> false
+            | V -> true
+            | Biniou | Json | Validate -> true
+            | Dep | List -> true (* don't care *)
   in
 
   let force_defaults =
     match mode with
-        `J | `Json -> !j_defaults
-      | `T
-      | `B | `Biniou
-      | `V | `Validate
-      | `Dep | `List -> false (* don't care *)
+        J | Json -> !j_defaults
+      | T
+      | B | Biniou
+      | V | Validate
+      | Dep | List -> false (* don't care *)
   in
 
   let atd_file =
@@ -370,10 +368,10 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
       | Files base ->
           Some base, Ox_emit.Files
             (match mode with
-                 `T -> base ^ "_t"
-               | `B -> base ^ "_b"
-               | `J -> base ^ "_j"
-               | `V -> base ^ "_v"
+                 T -> base ^ "_t"
+               | B -> base ^ "_b"
+               | J -> base ^ "_j"
+               | V -> base ^ "_v"
                | _ -> base
             )
   in
@@ -381,7 +379,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
     match base_prefix with
         None ->
           (match mode with
-               `B | `J | `V -> Some "T"
+               B | J |  V -> Some "T"
              | _ -> None
           )
       | Some base ->
@@ -389,7 +387,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
               Some _ as x -> x
             | None ->
                 (match mode with
-                     `B | `J | `V ->
+                     B | J | V ->
                        Some (String.capitalize_ascii (Filename.basename base) ^ "_t")
                    | _ -> None
           )
@@ -400,26 +398,26 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list) example.atd" Sys.argv.(0) in
       | Some s -> s
   in
   match mode with
-      `Dep -> print_deps (get_base_prefix ())
-    | `List -> print_file_list (get_base_prefix ())
-    | `T | `B | `J | `V | `Biniou | `Json | `Validate ->
+      Dep -> print_deps (get_base_prefix ())
+    | List -> print_file_list (get_base_prefix ())
+    | T | B | J | V | Biniou | Json | Validate ->
 
         let opens = List.rev !opens in
         let make_ocaml_files =
           match mode with
-              `T ->
+              T ->
                 Ob_emit.make_ocaml_files
-            | `B | `Biniou ->
+            | B | Biniou ->
                 Ob_emit.make_ocaml_files
-            | `J | `Json ->
+            | J | Json ->
                 Oj_emit.make_ocaml_files
                   ~std: !std_json
                   ~unknown_field_handler: !unknown_field_handler
                   ~constr_mismatch_handler: !constr_mismatch_handler
                   ~preprocess_input: !j_preprocess_input
-            | `V | `Validate ->
+            | V | Validate ->
                 Ov_emit.make_ocaml_files
-            | _ -> assert false
+            | Dep | List -> assert false
         in
         let with_default default = function None -> default | Some x -> x in
 

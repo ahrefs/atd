@@ -71,7 +71,7 @@ module Tsort = Sort.Make (
     type id = string (* type name *)
 
     let id def =
-      let `Type (_, (name, _, _), _) = def in
+      let Ast.Type (_, (name, _, _), _) = def in
       name
 
     let to_string name = name
@@ -83,7 +83,7 @@ let tsort l0 =
   let l =
     List.map (
       fun def ->
-        let `Type (_, (_, _, _), x) = def in
+        let Ast.Type (_, (_, _, _), x) = def in
         let deps = Ast.extract_type_names ~ignorable x in
         (def, deps)
     ) l0

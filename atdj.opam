@@ -7,6 +7,7 @@ bug-reports: "https://github.com/mjambon/atd/issues"
 dev-repo: "https://github.com/mjambon/atd.git"
 
 build: [
+  ["jbuilder" "subst" "-n" name] {pinned}
   ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 
@@ -16,7 +17,7 @@ build-test: [
 
 depends: [
   "jbuilder" {build}
-  "atd" {>= "1.1.0"}
+  "atd" {>= "1.13.0"}
 ]
 
 available: [ocaml-version >= "4.02.3"]

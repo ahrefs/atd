@@ -23,7 +23,7 @@ j  *  j
       ">
 
 type r = {
-  a : int <ocaml validator="fun _ _ -> print_endline \"field a\"; None">;
+  a : int <ocaml validator="fun _ _ -> None">;
   b <ocaml mutable> : bool;
   c : p;
 }
@@ -33,7 +33,7 @@ type p =
     <ocaml validator="\
       fun path x ->
          match x with
-           `A -> Some (Atdgen.Util.Validation.error path)
+           `A -> Some (Atdgen_runtime.Util.Validation.error path)
          | _ -> None">
 
 type star_rating = int <ocaml valid="fun x -> x >= 1 && x <= 5">
@@ -105,20 +105,19 @@ type extended = {
   b1 <ocaml name="b1x"> : bool
     <ocaml validator="\
       fun path x ->
-        if x = false then None else Some (Atdgen.Util.Validation.error path)">;
+        if x = false then None else Some (Atdgen_runtime.Util.Validation.error path)">;
   b2 <ocaml name="b2x"> : string;
   ?b3 <ocaml name="b3x"> : string option;
   b4 <ocaml name="b4x"> : string option;
   ~b5 <ocaml name="b5x" default="0.5"> : float;
 } <ocaml validator="\
     fun path x ->
-      print_endline \"Validating record of type 'extended'\";
       if x.b0x >= 0 then None
-      else Some (Atdgen.Util.Validation.error path)">
+      else Some (Atdgen_runtime.Util.Validation.error path)">
 
 type val1 = { val1_x : int
               <ocaml validator="fun path _ -> \
-                                  Some (Atdgen.Util.Validation.error path)"> }
+                                  Some (Atdgen_runtime.Util.Validation.error path)"> }
 type val2 = {
   val2_x : val1;
   ?val2_y : val1 option;
@@ -128,7 +127,7 @@ type base_tuple = (int * float)
     <ocaml validator="\
       fun path (i, f) -> \
         if float i < f then None \
-        else Some (Atdgen.Util.Validation.error ~msg:\"i < f\" path)">
+        else Some (Atdgen_runtime.Util.Validation.error ~msg:\"i < f\" path)">
 type extended_tuple =
     (int
      * float
@@ -138,7 +137,7 @@ type extended_tuple =
      * <ocaml default="[]"> : string list)
 
 type option_validation =
-    int <ocaml validator="fun path _ -> Some (Atdgen.Util.Validation.error path)">
+    int <ocaml validator="fun path _ -> Some (Atdgen_runtime.Util.Validation.error path)">
       option
 
 type ('x, 'y) poly = {

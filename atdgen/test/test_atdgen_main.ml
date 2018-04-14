@@ -7,8 +7,7 @@ let section =
   fun name ->
     current_section := name;
     if !first_section then
-      first_section := false;
-    printf "----- %s -----\n%!" name
+      first_section := false
 
 let errors = ref []
 
@@ -23,25 +22,20 @@ let check b =
 
 let check_valid = function
   | None -> ()
-  | Some error ->
-      printf "%s\n%!" (Atdgen.Util.Validation.string_of_error error);
-      fail ()
+  | Some _ -> fail ()
 
 let check_invalid = function
   | None -> fail ()
-  | Some error ->
-      printf "%s\n%!" (Atdgen.Util.Validation.string_of_error error)
-
+  | Some _ -> ()
 
 let expect_error f x =
   try
     ignore (f x);
-    printf "Did not get expected error\n%!";
+    eprintf "Did not get expected error\n%!";
     fail ()
   with
-      Atdgen.Ob_run.Error s
-    | Atdgen.Oj_run.Error s ->
-        printf "Got expected error:\n%s\n%!" s
+    Atdgen_runtime.Ob_run.Error _
+  | Atdgen_runtime.Oj_run.Error _ -> ()
 
 let test_missing_record = {
   Test.b0 = 123;
@@ -83,7 +77,7 @@ type extended = {
 
 let get_extended_reader = (
   fun tag ->
-    if tag <> 21 then Atdgen.Ob_run.read_error () else
+    if tag <> 21 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
         let field_b0x = ref (Obj.magic (Sys.opaque_identity 0.0)) in
         let field_b1x = ref (Obj.magic (Sys.opaque_identity 0.0)) in
@@ -98,14 +92,14 @@ let get_extended_reader = (
             | 21902 ->
               field_b0x := (
                 (
-                  Atdgen.Ob_run.read_int
+                  Atdgen_runtime.Ob_run.read_int
                 ) ib
               );
               bits0 := !bits0 lor 0x1;
             | 21903 ->
               field_b1x := (
                 (
-                  Atdgen.Ob_run.read_bool
+                  Atdgen_runtime.Ob_run.read_bool
                 ) ib
               );
               bits0 := !bits0 lor 0x2;
@@ -113,12 +107,12 @@ let get_extended_reader = (
             | 21907 ->
               field_b5x := (
                 (
-                  Atdgen.Ob_run.read_float64
+                  Atdgen_runtime.Ob_run.read_float64
                 ) ib
               );
             | _ -> Bi_io.skip ib
         done;
-        if !bits0 <> 0xf then Atdgen.Ob_run.missing_fields
+        if !bits0 <> 0xf then Atdgen_runtime.Ob_run.missing_fields
           [| !bits0 |] [| "b0"; "b1"; "b2"; "b4" |];
         (
           {
@@ -234,7 +228,6 @@ let test_json_assoc_list () =
   section "json association list";
   let f l =
     let s = Testj.string_of_int_assoc_list l in
-    print_endline s;
     check (Testj.int_assoc_list_of_string s = l)
   in
   f [];
@@ -245,7 +238,6 @@ let test_json_assoc_array () =
   section "json association array";
   let f a =
     let s = Testj.string_of_int_assoc_array a in
-    print_endline s;
     check (Testj.int_assoc_array_of_string s = a)
   in
   f [| |];
@@ -364,16 +356,16 @@ let test_biniou_correctness () =
   let x'' = Test.test_of_string s' in
   save "test-2.bin" s';
   if x <> x' then (
-    print_endline (Bi_io.view s);
-    print_endline "Data don't match";
+    eprintf "%s\n" (Bi_io.view s);
+    eprintf "Data don't match\n";
     if s = s' then
-      print_endline "Strings match"
+      eprintf "Strings match\n"
     else
-      print_endline "Strings don't match either";
+      eprintf "Strings don't match either\n";
     if x' = x'' then
-      print_endline "2nd and 3rd generation data match"
+      eprintf "2nd and 3rd generation data match\n"
     else
-      print_endline "2nd and 3rd generation data differ";
+      eprintf "2nd and 3rd generation data differ\n";
     fail ()
   )
 
@@ -391,16 +383,16 @@ let test_json_correctness () =
   let std_x'' = Testjstd.test_of_string std_s' in
   save "test-std.json" std_s';
   if x <> x' then (
-    print_endline (Yojson.Safe.prettify s);
-    print_endline "Data don't match";
+    eprintf "%s\n" (Yojson.Safe.prettify s);
+    eprintf "Data don't match\n";
     if s = s' then
-      print_endline "Strings match"
+      eprintf "Strings match\n"
     else
-      print_endline "Strings don't match either";
+      eprintf "Strings don't match either\n";
     if x' = x'' then
-      print_endline "2nd and 3rd generation data match"
+      eprintf "2nd and 3rd generation data match\n"
     else
-      print_endline "2nd and 3rd generation data differ";
+      eprintf "2nd and 3rd generation data differ\n";
     fail ()
   );
   check (std_x' = std_x'');
@@ -460,24 +452,22 @@ let test_validators4 () =
 let test_json_files () =
   section "json files";
   let x = Some 123 in
-  let s = Atdgen.Util.Json.to_string Testj.write_intopt x in
-  print_endline s;
-  let x' = Atdgen.Util.Json.from_string Testj.read_intopt s in
+  let s = Atdgen_runtime.Util.Json.to_string Testj.write_intopt x in
+  let x' = Atdgen_runtime.Util.Json.from_string Testj.read_intopt s in
   check (x = x');
-  Atdgen.Util.Json.to_file Testj.write_intopt "test-json-files.json" x;
-  let x'' = Atdgen.Util.Json.from_file Testj.read_intopt "test-json-files.json" in
+  Atdgen_runtime.Util.Json.to_file Testj.write_intopt "test-json-files.json" x;
+  let x'' = Atdgen_runtime.Util.Json.from_file Testj.read_intopt "test-json-files.json" in
   check (x = x'')
 
 let test_json_streams () =
   section "json streams";
   let l = [ Some 1; None; Some 2; Some 3 ] in
-  let s = Atdgen.Util.Json.list_to_string Testj.write_intopt l in
-  print_endline s;
-  let l' = Atdgen.Util.Json.list_from_string Testj.read_intopt s in
+  let s = Atdgen_runtime.Util.Json.list_to_string Testj.write_intopt l in
+  let l' = Atdgen_runtime.Util.Json.list_from_string Testj.read_intopt s in
   check (l = l');
-  Atdgen.Util.Json.list_to_file Testj.write_intopt "test-json-streams.json" l;
+  Atdgen_runtime.Util.Json.list_to_file Testj.write_intopt "test-json-streams.json" l;
   let l'' =
-    Atdgen.Util.Json.list_from_file Testj.read_intopt "test-json-streams.json"
+    Atdgen_runtime.Util.Json.list_from_file Testj.read_intopt "test-json-streams.json"
   in
   check (l = l'')
 
@@ -936,7 +926,6 @@ let test_json_float_decimals () =
     large_2 = 1234567890123.;
   } in
   let s = Testj.string_of_precision x in
-  print_endline s;
   check (s = "{\"sqrt2_5\":1.4142,\"small_2\":0.00012,\"large_2\":1.2e+12}")
 
 let test_patch () =
@@ -993,14 +982,17 @@ let all_tests = [
 
 let quality_test () =
   List.iter (fun f ->
-               try f (); print_endline "Passed."
-               with Failed -> ())
+    try f ()
+    with Failed -> ())
     all_tests;
   match List.rev !errors with
-      [] -> printf "\nSUCCESS\n"
-    | l ->
-        printf "\nThe following tests failed:\n%s\n"
+  | [] -> ()
+  | l ->
+      begin
+        eprintf "\nThe following tests failed:\n%s\n"
           (String.concat "\n" l);
-        printf "*** FAILURE ***\n"
+        eprintf "*** FAILURE ***\n";
+        exit 1
+      end
 
 let () = quality_test ()

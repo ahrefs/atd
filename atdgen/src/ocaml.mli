@@ -2,11 +2,11 @@ type pp_convs =
   | Camlp4 of string list
   | Ppx of string list
 
-type atd_ocaml_sum = [ `Classic | `Poly ]
-type atd_ocaml_record = [ `Record | `Object ]
-type atd_ocaml_int = [ `Int | `Char | `Int32 | `Int64 | `Float ]
-type atd_ocaml_list = [ `List | `Array ]
-type target = [ `Default | `Biniou | `Json | `Validate ]
+type atd_ocaml_sum = Classic | Poly
+type atd_ocaml_record = Record | Object
+type atd_ocaml_int = Int | Char | Int32 | Int64 | Float
+type atd_ocaml_list = List | Array
+type target = Default | Biniou | Json | Validate
 
 type atd_ocaml_wrap = {
   ocaml_wrap_t : string;
@@ -18,45 +18,46 @@ type atd_ocaml_field = {
   ocaml_default : string option;
   ocaml_fname : string;
   ocaml_mutable : bool;
-  ocaml_fdoc : Doc.doc option;
+  ocaml_fdoc : Atd.Doc.doc option;
 }
 
 type atd_ocaml_variant = {
   ocaml_cons : string;
-  ocaml_vdoc : Doc.doc option;
+  ocaml_vdoc : Atd.Doc.doc option;
 }
 
 type atd_ocaml_def = {
   ocaml_predef : bool;
-  ocaml_ddoc : Doc.doc option;
+  ocaml_ddoc : Atd.Doc.doc option;
 }
 
-type atd_ocaml_repr =
-  [ `Unit
-  | `Bool
-  | `Int of atd_ocaml_int
-  | `Float
-  | `String
-  | `Sum of atd_ocaml_sum
-  | `Record of atd_ocaml_record
-  | `Tuple
-  | `List of atd_ocaml_list
-  | `Option
-  | `Nullable
-  | `Wrap of atd_ocaml_wrap option
-  | `Name of string
-  | `External of (string * string * string)
+module Repr : sig
+  type t =
+    | Unit
+    | Bool
+    | Int of atd_ocaml_int
+    | Float
+    | String
+    | Sum of atd_ocaml_sum
+    | Record of atd_ocaml_record
+    | Tuple
+    | List of atd_ocaml_list
+    | Option
+    | Nullable
+    | Wrap of atd_ocaml_wrap option
+    | Name of string
+    | External of (string * string * string)
         (*
           (module providing the type,
            module providing everything else,
            type name)
         *)
 
-  | `Cell of atd_ocaml_field
-  | `Field of atd_ocaml_field
-  | `Variant of atd_ocaml_variant
-  | `Def of atd_ocaml_def ]
-
+    | Cell of atd_ocaml_field
+    | Field of atd_ocaml_field
+    | Variant of atd_ocaml_variant
+    | Def of atd_ocaml_def
+end
 val get_ocaml_sum : Atd.Annot.t -> atd_ocaml_sum
 
 val get_ocaml_record : Atd.Annot.t -> atd_ocaml_record
@@ -87,16 +88,7 @@ val get_ocaml_module_and_t
 
 
 val get_implicit_ocaml_default
-  : ('a ->
-     [> `Bool of 'b * [> `Bool ] * 'c
-     | `Float of 'd * [> `Float ] * 'e
-     | `Int of
-          'f * [> `Int of [< `Char | `Float | `Int | `Int32 | `Int64 ] ] * 'g
-     | `List of 'h * 'i * [> `List of [> `Array | `List ] ] * 'j
-     | `Nullable of 'k * 'l * [> `Nullable ] * 'm
-     | `Option of 'n * 'o * [> `Option ] * 'p
-     | `String of 'q * [> `String ] * 'r
-     | `Unit of 's * [> `Unit ] * 't ])
+  : ('a -> (Repr.t, 'b) Mapping.mapping)
   -> 'a
   -> string option
 
@@ -114,7 +106,7 @@ val ocaml_of_atd
 
 
 val map_record_creator_field
-  : ((atd_ocaml_repr, 'a) Mapping.mapping
-     -> (atd_ocaml_repr, 'b) Mapping.mapping)
-  -> (atd_ocaml_repr, 'a) Mapping.field_mapping
+  : ((Repr.t, 'a) Mapping.mapping
+     -> (Repr.t, 'b) Mapping.mapping)
+  -> (Repr.t, 'a) Mapping.field_mapping
   -> string * string * string

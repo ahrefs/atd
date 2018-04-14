@@ -4,12 +4,13 @@
 
 open Printf
 
-type json_float = [ `Float of int option (* max decimal places *)
-                  | `Int ]
+type json_float =
+  | Float of int option (* max decimal places *)
+  | Int
 
 type json_adapter = string list
 
-type json_list = [ `Array | `Object ]
+type json_list = Array | Object
 
 type json_variant = { json_cons : string option }
 
@@ -24,28 +25,23 @@ type json_record = {
 }
 
 type json_repr =
-    [
-    | `Unit
-    | `Bool
-    | `Int
-    | `Float of json_float
-
-    | `String
-    | `Sum of json_adapter option
-         (* TODO: allow json adapters for other types *)
-    | `Record of json_record
-    | `Tuple
-    | `List of json_list
-    | `Option
-    | `Nullable
-    | `Wrap (* should we add support for Base64 encoding of binary data? *)
-    | `External
-
-    | `Cell
-    | `Field of json_field
-    | `Variant of json_variant
-    | `Def
-    ]
+  | Bool
+  | Cell
+  | Def
+  | External
+  | Field of json_field
+  | Float of json_float
+  | Int
+  | List of json_list
+  | Nullable
+  | Option
+  | Record of json_record
+  | String
+  | Sum of json_adapter option
+  | Tuple
+  | Unit
+  | Variant of json_variant
+  | Wrap (* should we add support for Base64 encoding of binary data? *)
 
 let json_float_of_string s : [ `Float | `Int ] option =
   match s with
@@ -65,8 +61,8 @@ let get_json_float an : json_float =
   match
     Atd.Annot.get_field json_float_of_string `Float ["json"] "repr" an
   with
-      `Float -> `Float (get_json_precision an)
-    | `Int -> `Int
+      `Float -> Float (get_json_precision an)
+    | `Int -> Int
 
 let parse_adapter_name =
   let component = "[a-z][a-z0-9_]*" in
@@ -107,8 +103,8 @@ let json_adapter_of_string s : json_adapter option option =
 
 let json_list_of_string s : json_list option =
   match s with
-  | "array" -> Some `Array
-  | "object" -> Some `Object
+  | "array" -> Some Array
+  | "object" -> Some Object
   | _ -> (* error *) None
 
 let get_json_adapter an =
@@ -117,7 +113,7 @@ let get_json_adapter an =
 let get_json_sum = get_json_adapter
 
 let get_json_list an =
-  Atd.Annot.get_field json_list_of_string `Array ["json"] "repr" an
+  Atd.Annot.get_field json_list_of_string Array ["json"] "repr" an
 
 let get_json_cons default an =
   Atd.Annot.get_field (fun s -> Some s) default ["json"] "name" an

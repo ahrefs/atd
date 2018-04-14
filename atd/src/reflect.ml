@@ -36,55 +36,55 @@ let print_annot_list buf l =
 
 let rec print_type_expr buf (x : Ast.type_expr) =
   match x with
-      `Sum (loc, variant_list, annot_list) ->
-        bprintf buf "`Sum (%a, %a, %a)"
-          print_loc loc
-          (print_list print_variant) variant_list
-          print_annot_list annot_list
-    | `Record (loc, field_list, annot_list) ->
-        bprintf buf "`Record (%a, %a, %a)"
-          print_loc loc
-          (print_list print_field) field_list
-          print_annot_list annot_list
-    | `Tuple (loc, cell_list, annot_list) ->
-        bprintf buf "`Tuple (%a, %a, %a)"
-          print_loc loc
-          (print_list print_cell) cell_list
-          print_annot_list annot_list
-    | `List (loc, type_expr, annot_list) ->
-        bprintf buf "`List (%a, %a, %a)"
-          print_loc loc
-          print_type_expr type_expr
-          print_annot_list annot_list
-    | `Option (loc, type_expr, annot_list) ->
-        bprintf buf "`Option (%a, %a, %a)"
-          print_loc loc
-          print_type_expr type_expr
-          print_annot_list annot_list
-    | `Nullable (loc, type_expr, annot_list) ->
-        bprintf buf "`Nullable (%a, %a, %a)"
-          print_loc loc
-          print_type_expr type_expr
-          print_annot_list annot_list
-    | `Shared (loc, type_expr, annot_list) ->
-        bprintf buf "`Shared (%a, %a, %a)"
-          print_loc loc
-          print_type_expr type_expr
-          print_annot_list annot_list
-    | `Wrap (loc, type_expr, annot_list) ->
-        bprintf buf "`Wrap (%a, %a, %a)"
-          print_loc loc
-          print_type_expr type_expr
-          print_annot_list annot_list
-    | `Name (loc, type_inst, annot_list) ->
-        bprintf buf "`Name (%a, %a, %a)"
-          print_loc loc
-          print_type_inst type_inst
-          print_annot_list annot_list
-    | `Tvar (loc, string) ->
-        bprintf buf "`Tvar (%a, %S)"
-          print_loc loc
-          string
+  | Sum (loc, variant_list, annot_list) ->
+      bprintf buf "`Sum (%a, %a, %a)"
+        print_loc loc
+        (print_list print_variant) variant_list
+        print_annot_list annot_list
+  | Record (loc, field_list, annot_list) ->
+      bprintf buf "`Record (%a, %a, %a)"
+        print_loc loc
+        (print_list print_field) field_list
+        print_annot_list annot_list
+  | Tuple (loc, cell_list, annot_list) ->
+      bprintf buf "`Tuple (%a, %a, %a)"
+        print_loc loc
+        (print_list print_cell) cell_list
+        print_annot_list annot_list
+  | List (loc, type_expr, annot_list) ->
+      bprintf buf "`List (%a, %a, %a)"
+        print_loc loc
+        print_type_expr type_expr
+        print_annot_list annot_list
+  | Option (loc, type_expr, annot_list) ->
+      bprintf buf "`Option (%a, %a, %a)"
+        print_loc loc
+        print_type_expr type_expr
+        print_annot_list annot_list
+  | Nullable (loc, type_expr, annot_list) ->
+      bprintf buf "`Nullable (%a, %a, %a)"
+        print_loc loc
+        print_type_expr type_expr
+        print_annot_list annot_list
+  | Shared (loc, type_expr, annot_list) ->
+      bprintf buf "`Shared (%a, %a, %a)"
+        print_loc loc
+        print_type_expr type_expr
+        print_annot_list annot_list
+  | Wrap (loc, type_expr, annot_list) ->
+      bprintf buf "`Wrap (%a, %a, %a)"
+        print_loc loc
+        print_type_expr type_expr
+        print_annot_list annot_list
+  | Name (loc, type_inst, annot_list) ->
+      bprintf buf "`Name (%a, %a, %a)"
+        print_loc loc
+        print_type_inst type_inst
+        print_annot_list annot_list
+  | Tvar (loc, string) ->
+      bprintf buf "`Tvar (%a, %S)"
+        print_loc loc
+        string
 
 and print_cell buf (loc, x, a) =
   bprintf buf "(%a, %a, %a)"
@@ -94,15 +94,15 @@ and print_cell buf (loc, x, a) =
 
 and print_variant buf x =
   match x with
-      `Variant (loc, (s, a), o) ->
-        bprintf buf "`Variant (%a, (%S, %a), %a)"
-          print_loc loc
-          s print_annot_list a
-          (print_opt print_type_expr) o
-    | `Inherit (loc, x) ->
-        bprintf buf "`Inherit (%a, %a)"
-          print_loc loc
-          print_type_expr x
+    Variant (loc, (s, a), o) ->
+      bprintf buf "`Variant (%a, (%S, %a), %a)"
+        print_loc loc
+        s print_annot_list a
+        (print_opt print_type_expr) o
+  | Inherit (loc, x) ->
+      bprintf buf "`Inherit (%a, %a)"
+        print_loc loc
+        print_type_expr x
 
 and print_field buf x =
   match x with
@@ -119,9 +119,9 @@ and print_field buf x =
 and print_field_kind buf fk =
   Buffer.add_string buf
     (match fk with
-         `Required -> "`Required"
-       | `Optional -> "`Optional"
-       | `With_default -> "`With_default")
+       Required -> "`Required"
+     | Optional -> "`Optional"
+     | With_default -> "`With_default")
 
 and print_type_inst buf (loc, s, l) =
   bprintf buf "(%a, %S, %a)"
@@ -130,7 +130,7 @@ and print_type_inst buf (loc, s, l) =
     (print_list print_type_expr) l
 
 
-let print_module_item buf (`Type (loc, (name, param, a), x)) =
+let print_module_item buf (Ast.Type (loc, (name, param, a), x)) =
   bprintf buf "`Type (%a, (%S, %a, %a), %a)"
     print_loc loc
     name (print_list print_qstring) param print_annot_list a

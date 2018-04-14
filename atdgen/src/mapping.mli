@@ -1,23 +1,21 @@
 type loc = Atd.Ast.loc
 
-type loc_id = string
-
 type ('a, 'b) mapping =
-    [ `Unit of loc * 'a * 'b
-    | `Bool of loc * 'a * 'b
-    | `Int of loc * 'a * 'b
-    | `Float of loc * 'a * 'b
-    | `String of loc * 'a * 'b
-    | `Sum of loc * ('a, 'b) variant_mapping array * 'a * 'b
-    | `Record of loc * ('a, 'b) field_mapping array * 'a * 'b
-    | `Tuple of loc * ('a, 'b) cell_mapping array * 'a * 'b
-    | `List of loc * ('a, 'b) mapping * 'a * 'b
-    | `Option of loc * ('a, 'b) mapping * 'a * 'b
-    | `Nullable of loc * ('a, 'b) mapping * 'a * 'b
-    | `Wrap of loc * ('a, 'b) mapping * 'a * 'b
-    | `Name of loc * string * ('a, 'b) mapping list * 'a option * 'b option
-    | `External of loc * string * ('a, 'b) mapping list * 'a * 'b
-    | `Tvar of loc * string ]
+  | Unit of loc * 'a * 'b
+  | Bool of loc * 'a * 'b
+  | Int of loc * 'a * 'b
+  | Float of loc * 'a * 'b
+  | String of loc * 'a * 'b
+  | Sum of loc * ('a, 'b) variant_mapping array * 'a * 'b
+  | Record of loc * ('a, 'b) field_mapping array * 'a * 'b
+  | Tuple of loc * ('a, 'b) cell_mapping array * 'a * 'b
+  | List of loc * ('a, 'b) mapping * 'a * 'b
+  | Option of loc * ('a, 'b) mapping * 'a * 'b
+  | Nullable of loc * ('a, 'b) mapping * 'a * 'b
+  | Wrap of loc * ('a, 'b) mapping * 'a * 'b
+  | Name of loc * string * ('a, 'b) mapping list * 'a option * 'b option
+  | External of loc * string * ('a, 'b) mapping list * 'a * 'b
+  | Tvar of loc * string
 
 and ('a, 'b) cell_mapping = {
   cel_loc : loc;
@@ -52,12 +50,9 @@ type ('a, 'b) def = {
   def_brepr : 'b;
 }
 
-val as_abstract
-  : [> `Name of 'a * (Atd.Ast.loc * string * 'b list) * 'c ]
-  -> (loc * 'c) option
+val as_abstract : Atd.Ast.type_expr -> (loc * Atd.Ast.annot) option
 
-val is_abstract :
-  [> `Name of 'a * (Atd.Ast.loc * string * 'b list) * 'c ] -> bool
+val is_abstract : Atd.Ast.type_expr -> bool
 
 val loc_of_mapping : ('a, 'b) mapping -> loc
 

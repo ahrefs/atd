@@ -113,58 +113,58 @@ let init_table () =
 let rec mapvar_expr
     (f : string -> string) (x : Ast.type_expr) : Ast.type_expr =
   match x with
-      `Sum (loc, vl, a) ->
-        `Sum (loc, List.map (mapvar_variant f) vl, a)
-    | `Record (loc, fl, a) ->
-        `Record (loc, List.map (mapvar_field f) fl, a)
-    | `Tuple (loc, tl, a) ->
-        `Tuple (loc,
-                List.map (fun (loc, x, a) -> (loc, mapvar_expr f x, a)) tl,
-                a)
-    | `List (loc, t, a) ->
-        `List (loc, mapvar_expr f t, a)
-    | `Name (loc, (loc2, "list", [t]), a) ->
-        `Name (loc, (loc2, "list", [mapvar_expr f t]), a)
+    Sum (loc, vl, a) ->
+      Sum (loc, List.map (mapvar_variant f) vl, a)
+  | Record (loc, fl, a) ->
+      Record (loc, List.map (mapvar_field f) fl, a)
+  | Tuple (loc, tl, a) ->
+      Tuple (loc,
+             List.map (fun (loc, x, a) -> (loc, mapvar_expr f x, a)) tl,
+             a)
+  | List (loc, t, a) ->
+      List (loc, mapvar_expr f t, a)
+  | Name (loc, (loc2, "list", [t]), a) ->
+      Name (loc, (loc2, "list", [mapvar_expr f t]), a)
 
-    | `Option (loc, t, a) ->
-        `Option (loc, mapvar_expr f t, a)
-    | `Name (loc, (loc2, "option", [t]), a) ->
-        `Name (loc, (loc2, "option", [mapvar_expr f t]), a)
+  | Option (loc, t, a) ->
+      Option (loc, mapvar_expr f t, a)
+  | Name (loc, (loc2, "option", [t]), a) ->
+      Name (loc, (loc2, "option", [mapvar_expr f t]), a)
 
-    | `Nullable (loc, t, a) ->
-        `Nullable (loc, mapvar_expr f t, a)
-    | `Name (loc, (loc2, "nullable", [t]), a) ->
-        `Name (loc, (loc2, "nullable", [mapvar_expr f t]), a)
+  | Nullable (loc, t, a) ->
+      Nullable (loc, mapvar_expr f t, a)
+  | Name (loc, (loc2, "nullable", [t]), a) ->
+      Name (loc, (loc2, "nullable", [mapvar_expr f t]), a)
 
-    | `Shared (loc, t, a) ->
-        `Shared (loc, mapvar_expr f t, a)
-    | `Name (loc, (loc2, "shared", [t]), a) ->
-        `Name (loc, (loc2, "shared", [mapvar_expr f t]), a)
+  | Shared (loc, t, a) ->
+      Shared (loc, mapvar_expr f t, a)
+  | Name (loc, (loc2, "shared", [t]), a) ->
+      Name (loc, (loc2, "shared", [mapvar_expr f t]), a)
 
-    | `Wrap (loc, t, a) ->
-        `Wrap (loc, mapvar_expr f t, a)
-    | `Name (loc, (loc2, "wrap", [t]), a) ->
-        `Name (loc, (loc2, "wrap", [mapvar_expr f t]), a)
+  | Wrap (loc, t, a) ->
+      Wrap (loc, mapvar_expr f t, a)
+  | Name (loc, (loc2, "wrap", [t]), a) ->
+      Name (loc, (loc2, "wrap", [mapvar_expr f t]), a)
 
-    | `Tvar (loc, s) -> `Tvar (loc, f s)
+  | Tvar (loc, s) -> Tvar (loc, f s)
 
-    | `Name (loc, (loc2, k, args), a) ->
-        `Name (loc, (loc2, k, List.map (mapvar_expr f) args), a)
+  | Name (loc, (loc2, k, args), a) ->
+      Name (loc, (loc2, k, List.map (mapvar_expr f) args), a)
 
 and mapvar_field f = function
     `Field (loc, k, t) -> `Field (loc, k, mapvar_expr f t)
   | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
 
 and mapvar_variant f = function
-    `Variant (loc, k, opt_t) ->
-      `Variant (
+    Variant (loc, k, opt_t) ->
+      Variant (
         loc, k,
         (match opt_t with
-             None -> None
-           | Some t -> Some (mapvar_expr f t)
+           None -> None
+         | Some t -> Some (mapvar_expr f t)
         )
       )
-  | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
+  | Inherit (loc, t) -> Inherit (loc, mapvar_expr f t)
 
 
 let var_of_int i =
@@ -220,28 +220,28 @@ let make_type_name loc orig_name args an =
     "@(" ^ Print.string_of_type_name orig_name normalized_args an ^ ")" in
   let mapping = List.rev !mapping in
   let new_args =
-    List.map (fun (old_s, _) -> `Tvar (loc, old_s)) mapping in
+    List.map (fun (old_s, _) -> Tvar (loc, old_s)) mapping in
   let new_env =
-    List.map (fun (old_s, new_s) -> old_s, `Tvar (loc, new_s)) mapping
+    List.map (fun (old_s, new_s) -> old_s, Tvar (loc, new_s)) mapping
   in
   new_name, new_args, new_env
 
 let is_abstract (x : type_expr) =
   match x with
-      `Name (_, (_, "abstract", _), _) -> true
-    | _ -> false
+    Name (_, (_, "abstract", _), _) -> true
+  | _ -> false
 
 let expr_of_lvalue loc name param annot =
-  `Name (loc, (loc, name, List.map (fun s -> `Tvar (loc, s)) param), annot)
+  Name (loc, (loc, name, List.map (fun s -> Tvar (loc, s)) param), annot)
 
 
 let is_cyclic lname t =
   match t with
-      `Name (_, (_, rname, _), _) -> lname = rname
-    | _ -> false
+    Name (_, (_, rname, _), _) -> lname = rname
+  | _ -> false
 
 let is_tvar = function
-    `Tvar _ -> true
+    Tvar _ -> true
   | _ -> false
 
 
@@ -251,7 +251,7 @@ let add_annot (x : type_expr) a : type_expr =
 
 
 let expand ?(keep_poly = false) (l : type_def list)
-    : type_def list * original_types =
+  : type_def list * original_types =
 
   let seqnum, tbl = init_table () in
 
@@ -259,49 +259,49 @@ let expand ?(keep_poly = false) (l : type_def list)
 
   let rec subst env (t : type_expr) : type_expr =
     match t with
-        `Sum (loc, vl, a) ->
-          `Sum (loc, List.map (subst_variant env) vl, a)
-      | `Record (loc, fl, a) ->
-          `Record (loc, List.map (subst_field env) fl, a)
-      | `Tuple (loc, tl, a) ->
-          `Tuple (loc,
-                  List.map (fun (loc, x, a) -> (loc, subst env x, a)) tl, a)
+      Sum (loc, vl, a) ->
+        Sum (loc, List.map (subst_variant env) vl, a)
+    | Record (loc, fl, a) ->
+        Record (loc, List.map (subst_field env) fl, a)
+    | Tuple (loc, tl, a) ->
+        Tuple (loc,
+               List.map (fun (loc, x, a) -> (loc, subst env x, a)) tl, a)
 
-      | `List (loc as loc2, t, a)
-      | `Name (loc, (loc2, "list", [t]), a) ->
-          let t' = subst env t in
-          subst_type_name loc loc2 "list" [t'] a
+    | List (loc as loc2, t, a)
+    | Name (loc, (loc2, "list", [t]), a) ->
+        let t' = subst env t in
+        subst_type_name loc loc2 "list" [t'] a
 
-      | `Option (loc as loc2, t, a)
-      | `Name (loc, (loc2, "option", [t]), a) ->
-          let t' = subst env t in
-          subst_type_name loc loc2 "option" [t'] a
+    | Option (loc as loc2, t, a)
+    | Name (loc, (loc2, "option", [t]), a) ->
+        let t' = subst env t in
+        subst_type_name loc loc2 "option" [t'] a
 
-      | `Nullable (loc as loc2, t, a)
-      | `Name (loc, (loc2, "nullable", [t]), a) ->
-          let t' = subst env t in
-          subst_type_name loc loc2 "nullable" [t'] a
+    | Nullable (loc as loc2, t, a)
+    | Name (loc, (loc2, "nullable", [t]), a) ->
+        let t' = subst env t in
+        subst_type_name loc loc2 "nullable" [t'] a
 
-      | `Shared (loc as loc2, t, a)
-      | `Name (loc, (loc2, "shared", [t]), a) ->
-          let t' = subst env t in
-          subst_type_name loc loc2 "shared" [t'] a
+    | Shared (loc as loc2, t, a)
+    | Name (loc, (loc2, "shared", [t]), a) ->
+        let t' = subst env t in
+        subst_type_name loc loc2 "shared" [t'] a
 
-      | `Wrap (loc as loc2, t, a)
-      | `Name (loc, (loc2, "wrap", [t]), a) ->
-          let t' = subst env t in
-          subst_type_name loc loc2 "wrap" [t'] a
+    | Wrap (loc as loc2, t, a)
+    | Name (loc, (loc2, "wrap", [t]), a) ->
+        let t' = subst env t in
+        subst_type_name loc loc2 "wrap" [t'] a
 
-      | `Tvar (_, s) as x ->
-          (try List.assoc s env
-           with Not_found -> x)
+    | Tvar (_, s) as x ->
+        (try List.assoc s env
+         with Not_found -> x)
 
-      | `Name (loc, (loc2, name, args), a) ->
-          let args' = List.map (subst env) args in
-          if List.for_all is_tvar args' then
-            `Name (loc, (loc2, name, args'), a)
-          else
-            subst_type_name loc loc2 name args' a
+    | Name (loc, (loc2, name, args), a) ->
+        let args' = List.map (subst env) args in
+        if List.for_all is_tvar args' then
+          Name (loc, (loc2, name, args'), a)
+        else
+          subst_type_name loc loc2 name args' a
 
   and subst_type_name loc loc2 name args an =
     (*
@@ -332,7 +332,7 @@ let expand ?(keep_poly = false) (l : type_def list)
       The annotation has been transferred to the right-hand
       expression of the new type definition.
     *)
-    `Name (loc, (loc2, new_name, new_args), [])
+    Name (loc, (loc2, new_name, new_args), [])
 
 
   and create_type_def loc orig_name orig_args env name n_param an0 =
@@ -369,14 +369,14 @@ let expand ?(keep_poly = false) (l : type_def list)
     in
     let ((_, _, _) as td') =
       match orig_opt_td with
-          None ->
-            assert false (* Original type definitions must all exist,
-                            even for predefined types and abstract types. *)
-        | Some (_, (k, pl, def_an), t) ->
-            assert (k = orig_name);
-            let new_params = vars_of_int n_param in
-            let t = add_annot t an0 in
-            let t = set_type_expr_loc loc t in
+        None ->
+          assert false (* Original type definitions must all exist,
+                          even for predefined types and abstract types. *)
+      | Some (_, (k, pl, def_an), t) ->
+          assert (k = orig_name);
+          let new_params = vars_of_int n_param in
+          let t = add_annot t an0 in
+          let t = set_type_expr_loc loc t in
 
             (*
                First replace the type expression being specialized
@@ -385,7 +385,7 @@ let expand ?(keep_poly = false) (l : type_def list)
 
                (int, 'b) foo  -->  (int, 'a) foo
             *)
-            let args = List.map (subst env) orig_args in
+          let args = List.map (subst env) orig_args in
 
             (*
               Then expand the expression into its definition,
@@ -410,27 +410,27 @@ let expand ?(keep_poly = false) (l : type_def list)
               'y -> 'a
 
             *)
-            let env = List.map2 (fun var value -> (var, value)) pl args in
+          let env = List.map2 (fun var value -> (var, value)) pl args in
 
-            let t' =
-              if is_abstract t then
+          let t' =
+            if is_abstract t then
                 (*
                   e.g.: type 'a t = abstract
                   use 'a t and preserve "t"
                 *)
-                let t =
-                  expr_of_lvalue loc orig_name pl
-                    (Ast.annot_of_type_expr t)
-                in
+              let t =
+                expr_of_lvalue loc orig_name pl
+                  (Ast.annot_of_type_expr t)
+              in
+              subst_only_args env t
+            else
+              let t' = subst env t in
+              if is_cyclic name t' then
                 subst_only_args env t
               else
-                let t' = subst env t in
-                if is_cyclic name t' then
-                  subst_only_args env t
-                else
-                  t'
-            in
-            (loc, (name, new_params, def_an), t')
+                t'
+          in
+          (loc, (name, new_params, def_an), t')
     in
     Hashtbl.replace tbl name (i, n_param, None, Some td')
 
@@ -439,36 +439,36 @@ let expand ?(keep_poly = false) (l : type_def list)
     | `Inherit (loc, t) -> `Inherit (loc, subst env t)
 
   and subst_variant env = function
-      `Variant (loc, k, opt_t) as x ->
+      Variant (loc, k, opt_t) as x ->
         (match opt_t with
-             None -> x
-           | Some t -> `Variant (loc, k, Some (subst env t))
+           None -> x
+         | Some t -> Variant (loc, k, Some (subst env t))
         )
-    | `Inherit (loc, t) -> `Inherit (loc, subst env t)
+    | Inherit (loc, t) -> Inherit (loc, subst env t)
 
   and subst_only_args env = function
-      `List (loc, t, a)
-    | `Name (loc, (_, "list", [t]), a) ->
-        `List (loc, subst env t, a)
+      List (loc, t, a)
+    | Name (loc, (_, "list", [t]), a) ->
+        List (loc, subst env t, a)
 
-    | `Option (loc, t, a)
-    | `Name (loc, (_, "option", [t]), a) ->
-        `Option (loc, subst env t, a)
+    | Option (loc, t, a)
+    | Name (loc, (_, "option", [t]), a) ->
+        Option (loc, subst env t, a)
 
-    | `Nullable (loc, t, a)
-    | `Name (loc, (_, "nullable", [t]), a) ->
-        `Nullable (loc, subst env t, a)
+    | Nullable (loc, t, a)
+    | Name (loc, (_, "nullable", [t]), a) ->
+        Nullable (loc, subst env t, a)
 
-    | `Shared (loc, t, a)
-    | `Name (loc, (_, "shared", [t]), a) ->
-        `Shared (loc, subst env t, a)
+    | Shared (loc, t, a)
+    | Name (loc, (_, "shared", [t]), a) ->
+        Shared (loc, subst env t, a)
 
-    | `Wrap (loc, t, a)
-    | `Name (loc, (_, "wrap", [t]), a) ->
-        `Wrap (loc, subst env t, a)
+    | Wrap (loc, t, a)
+    | Name (loc, (_, "wrap", [t]), a) ->
+        Wrap (loc, subst env t, a)
 
-    | `Name (loc, (loc2, name, args), an) ->
-        `Name (loc, (loc2, name, List.map (subst env) args), an)
+    | Name (loc, (loc2, name, args), an) ->
+        Name (loc, (loc2, name, List.map (subst env) args), an)
 
     | _ -> assert false
   in
@@ -501,10 +501,10 @@ let expand ?(keep_poly = false) (l : type_def list)
     Hashtbl.fold (
       fun _ (i, n, _, opt_td') l ->
         match opt_td' with
-            None -> l
-          | Some td' ->
-              if n = 0 || keep_poly then (i, td') :: l
-              else l
+          None -> l
+        | Some td' ->
+            if n = 0 || keep_poly then (i, td') :: l
+            else l
     ) tbl []
   in
   let l = List.sort (fun (i, _) (j, _) -> compare i j) l in
@@ -515,30 +515,30 @@ let expand ?(keep_poly = false) (l : type_def list)
 let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
   let rec replace (t : type_expr) : type_expr =
     match t with
-        `Sum (loc, vl, a) -> `Sum (loc, List.map replace_variant vl, a)
-      | `Record (loc, fl, a) -> `Record (loc, List.map replace_field fl, a)
-      | `Tuple (loc, tl, a) ->
-          `Tuple (loc, List.map (fun (loc, x, a) -> loc, replace x, a) tl, a)
-      | `List (loc, t, a) -> `List (loc, replace t, a)
-      | `Option (loc, t, a) -> `Option (loc, replace t, a)
-      | `Nullable (loc, t, a) -> `Nullable (loc, replace t, a)
-      | `Shared (loc, t, a) -> `Shared (loc, replace t, a)
-      | `Wrap (loc, t, a) -> `Wrap (loc, replace t, a)
-      | `Tvar (_, _) as t -> t
-      | `Name (loc, (loc2, k, l), a) ->
-          `Name (loc, (loc2, subst k, List.map replace l), a)
+      Sum (loc, vl, a) -> Sum (loc, List.map replace_variant vl, a)
+    | Record (loc, fl, a) -> Record (loc, List.map replace_field fl, a)
+    | Tuple (loc, tl, a) ->
+        Tuple (loc, List.map (fun (loc, x, a) -> loc, replace x, a) tl, a)
+    | List (loc, t, a) -> List (loc, replace t, a)
+    | Option (loc, t, a) -> Option (loc, replace t, a)
+    | Nullable (loc, t, a) -> Nullable (loc, replace t, a)
+    | Shared (loc, t, a) -> Shared (loc, replace t, a)
+    | Wrap (loc, t, a) -> Wrap (loc, replace t, a)
+    | Tvar (_, _) as t -> t
+    | Name (loc, (loc2, k, l), a) ->
+        Name (loc, (loc2, subst k, List.map replace l), a)
 
   and replace_field = function
       `Field (loc, k, t) -> `Field (loc, k, replace t)
     | `Inherit (loc, t) -> `Inherit (loc, replace t)
 
   and replace_variant = function
-      `Variant (loc, k, opt_t) as x ->
+      Variant (loc, k, opt_t) as x ->
         (match opt_t with
-             None -> x
-           | Some t -> `Variant (loc, k, Some (replace t))
+           None -> x
+         | Some t -> Variant (loc, k, Some (replace t))
         )
-    | `Inherit (loc, t) -> `Inherit (loc, replace t)
+    | Inherit (loc, t) -> Inherit (loc, replace t)
   in
   replace t
 
@@ -572,11 +572,11 @@ let standardize_type_names
       let k' = new_id tbl in
       Hashtbl.add tbl k k';
       begin try
-        let orig_info = Hashtbl.find original_types k in
-        Hashtbl.remove original_types k;
-        Hashtbl.add original_types k' orig_info
-      with Not_found ->
-        assert false (* Must have been added during expand *)
+          let orig_info = Hashtbl.find original_types k in
+          Hashtbl.remove original_types k;
+          Hashtbl.add original_types k' orig_info
+        with Not_found ->
+          assert false (* Must have been added during expand *)
       end;
       k'
   in
@@ -597,10 +597,10 @@ let standardize_type_names
 
 
 let expand_module_body ?(prefix = "_") ?keep_poly ?(debug = false) l =
-  let td_list = List.map (function `Type td -> td) l in
+  let td_list = List.map (function (Type td) -> td) l in
   let (td_list, original_types) = expand ?keep_poly td_list in
   let td_list =
     if debug then td_list
     else standardize_type_names ~prefix ~original_types td_list
   in
-  (List.map (fun td -> `Type td) td_list, original_types)
+  (List.map (fun td -> (Type td)) td_list, original_types)

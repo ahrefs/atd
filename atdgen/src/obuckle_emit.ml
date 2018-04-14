@@ -20,6 +20,30 @@ let encoder_make = encoder_ident "make"
 
 let decoder_t s = sprintf "%s %s" s (decoder_ident "t")
 
+let destruct_sum (x : Oj_mapping.t) =
+  let open Mapping in
+  match x with
+  | Sum (_, a, Sum x, Sum) ->
+      let tick = Ocaml.tick x in
+      tick, a
+  | Unit _ -> Error.error (loc_of_mapping x) "Cannot destruct unit"
+  | Bool _ -> Error.error (loc_of_mapping x) "Cannot destruct bool"
+  | Int _ -> Error.error (loc_of_mapping x) "Cannot destruct int"
+  | Float _ -> Error.error (loc_of_mapping x) "Cannot destruct float"
+  | String _ -> Error.error (loc_of_mapping x) "Cannot destruct string"
+  | Name (_,name,_,_,_) ->
+      Error.error (loc_of_mapping x) ("Cannot destruct name " ^ name)
+  | External _ -> Error.error (loc_of_mapping x) "Cannot destruct external"
+  | Tvar _ -> Error.error (loc_of_mapping x) "Cannot destruct tvar"
+  | Record _ -> Error.error (loc_of_mapping x) "Cannot destruct record"
+  | Tuple _ -> Error.error (loc_of_mapping x) "Cannot destruct tuple"
+  | List _ -> Error.error (loc_of_mapping x) "Cannot destruct list"
+  | Option _ -> Error.error (loc_of_mapping x) "Cannot destruct option"
+  | Nullable _ -> Error.error (loc_of_mapping x) "Cannot destruct nullable"
+  | Wrap _ -> Error.error (loc_of_mapping x) "Cannot destruct wrap"
+  | _ -> Error.error (loc_of_mapping x) "Cannot destruct unknown type"
+
+
 let make_ocaml_bs_intf buf _deref defs =
   List.concat_map snd defs
   |> List.filter Ox_emit.include_intf
@@ -311,7 +335,7 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       ; Line ")"
       ]
   | Sum (_, _a, Sum _osum, Sum) ->
-      [ Line (encoder_ident "make (fun x -> failwith \"TODO\")") ]
+      make_sum_writer p x
   | _ -> []
 
 and make_record_writer p a _record_kind =
@@ -344,6 +368,23 @@ and make_record_writer p a _record_kind =
       ]
   ; Line ")"
   ]
+
+and make_sum_writer (p : param)
+    (sum : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping) =
+  let _tick, a = destruct_sum (p.deref sum) in
+  let _cases =
+    a
+    |> Array.map (
+      fun (x : (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping) ->
+        let _o, _j =
+          match x.var_arepr, x.var_brepr with
+          | Ocaml.Repr.Variant o, Json.Variant j -> o, j
+          | _ -> assert false in
+        Line "")
+    |> Array.to_list in
+  [ Line (encoder_ident "make (function _ -> `Null")
+  ; Block []
+  ; Line ")"]
 
 let make_ocaml_bs_writer p ~original_types:_ is_rec let1 _let2
     (def : (_, _) Mapping.def) =

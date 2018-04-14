@@ -287,8 +287,16 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   | Name _
   | External _
   | Tvar _ -> [ Line (get_writer_name p x) ]
-  | Tuple (_, _a, Tuple, Tuple) ->
-      []
+  | Tuple (_, a, Tuple, Tuple) ->
+      [ Line (encoder_ident (sprintf "tuple%d" (Array.length a)))
+      ; Block (
+          Array.to_list a
+          |> List.map (fun (cm : (_, _) Mapping.cell_mapping) ->
+            Block (make_writer p cm.cel_value)
+            |> Indent.paren
+          )
+        )
+      ]
   | Record (_, a, Record o, Record _) ->
       [ Annot ("fun", Line (sprintf "%s (fun t ->" encoder_make))
       ; Block (make_record_writer p a o)

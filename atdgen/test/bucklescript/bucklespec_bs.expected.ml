@@ -125,6 +125,13 @@ let read_simple_var read__a = (
   ]
 )
 let write_same_pair write__a = (
+  Atdgen_codec_runtime.Encode.tuple2
+    (
+      write__a
+    )
+    (
+      write__a
+    )
 )
 let read_same_pair read__a = (
   Atdgen_codec_runtime.Decode.tuple2
@@ -136,6 +143,19 @@ let read_same_pair read__a = (
     )
 )
 let write_point = (
+  Atdgen_codec_runtime.Encode.tuple4
+    (
+      Atdgen_codec_runtime.Encode.int
+    )
+    (
+      Atdgen_codec_runtime.Encode.int
+    )
+    (
+      Atdgen_codec_runtime.Encode.string
+    )
+    (
+      Atdgen_codec_runtime.Encode.unit
+    )
 )
 let read_point = (
   Atdgen_codec_runtime.Decode.tuple4

@@ -8,7 +8,7 @@
 (rule
  ((targets (spec_j.ml spec_j.mli))
   (deps (spec.atd))
-  (action (run atdgen ${<} -j))))
+  (action (run atdgen ${<} -j -j-std))))
 
 (executable
  ((name spec_js)

@@ -70,10 +70,10 @@ let write__3 = (
   fun ob sum ->
     match sum with
       | `Foo x ->
-        Bi_outbuf.add_string ob "<\"Foo\":";
+        Bi_outbuf.add_string ob "[\"Foo\",";
         (
           fun ob x ->
-            Bi_outbuf.add_char ob '(';
+            Bi_outbuf.add_char ob '[';
             (let x, _ = x in
             (
               Yojson.Safe.write_int
@@ -85,22 +85,22 @@ let write__3 = (
               Yojson.Safe.write_int
             ) ob x
             );
-            Bi_outbuf.add_char ob ')';
+            Bi_outbuf.add_char ob ']';
         ) ob x;
-        Bi_outbuf.add_char ob '>'
-      | `Bar -> Bi_outbuf.add_string ob "<\"Bar\">"
+        Bi_outbuf.add_char ob ']'
+      | `Bar -> Bi_outbuf.add_string ob "\"Bar\""
       | `Foobar x ->
-        Bi_outbuf.add_string ob "<\"Foobar\":";
+        Bi_outbuf.add_string ob "[\"Foobar\",";
         (
           Yojson.Safe.write_null
         ) ob x;
-        Bi_outbuf.add_char ob '>'
+        Bi_outbuf.add_char ob ']'
       | `Foo_id x ->
-        Bi_outbuf.add_string ob "<\"Foo_id\":";
+        Bi_outbuf.add_string ob "[\"Foo_id\",";
         (
           write_id
         ) ob x;
-        Bi_outbuf.add_char ob '>'
+        Bi_outbuf.add_char ob ']'
 )
 let string_of__3 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
@@ -442,10 +442,10 @@ let write_simple_var write__a = (
   fun ob sum ->
     match sum with
       | `Foo x ->
-        Bi_outbuf.add_string ob "<\"Foo\":";
+        Bi_outbuf.add_string ob "[\"Foo\",";
         (
           fun ob x ->
-            Bi_outbuf.add_char ob '(';
+            Bi_outbuf.add_char ob '[';
             (let x, _ = x in
             (
               Yojson.Safe.write_int
@@ -457,22 +457,22 @@ let write_simple_var write__a = (
               Yojson.Safe.write_int
             ) ob x
             );
-            Bi_outbuf.add_char ob ')';
+            Bi_outbuf.add_char ob ']';
         ) ob x;
-        Bi_outbuf.add_char ob '>'
-      | `Bar -> Bi_outbuf.add_string ob "<\"Bar\">"
+        Bi_outbuf.add_char ob ']'
+      | `Bar -> Bi_outbuf.add_string ob "\"Bar\""
       | `Foobar x ->
-        Bi_outbuf.add_string ob "<\"Foobar\":";
+        Bi_outbuf.add_string ob "[\"Foobar\",";
         (
           write__a
         ) ob x;
-        Bi_outbuf.add_char ob '>'
+        Bi_outbuf.add_char ob ']'
       | `Foo_id x ->
-        Bi_outbuf.add_string ob "<\"Foo_id\":";
+        Bi_outbuf.add_string ob "[\"Foo_id\",";
         (
           write_id
         ) ob x;
-        Bi_outbuf.add_char ob '>'
+        Bi_outbuf.add_char ob ']'
 )
 let string_of_simple_var write__a ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
@@ -784,7 +784,7 @@ let simple_var_of_string read__a s =
   read_simple_var read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_same_pair write__a = (
   fun ob x ->
-    Bi_outbuf.add_char ob '(';
+    Bi_outbuf.add_char ob '[';
     (let x, _ = x in
     (
       write__a
@@ -796,7 +796,7 @@ let write_same_pair write__a = (
       write__a
     ) ob x
     );
-    Bi_outbuf.add_char ob ')';
+    Bi_outbuf.add_char ob ']';
 )
 let string_of_same_pair write__a ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
@@ -850,7 +850,7 @@ let same_pair_of_string read__a s =
   read_same_pair read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_point = (
   fun ob x ->
-    Bi_outbuf.add_char ob '(';
+    Bi_outbuf.add_char ob '[';
     (let x, _, _, _ = x in
     (
       Yojson.Safe.write_int
@@ -874,7 +874,7 @@ let write_point = (
       Yojson.Safe.write_null
     ) ob x
     );
-    Bi_outbuf.add_char ob ')';
+    Bi_outbuf.add_char ob ']';
 )
 let string_of_point ?(len = 1024) x =
   let ob = Bi_outbuf.create len in

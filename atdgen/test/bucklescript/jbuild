@@ -13,7 +13,7 @@
 (rule
  ((targets (bucklespec_j.ml bucklespec_j.mli))
   (deps (bucklespec.atd))
-  (action (run atdgen ${<} -j))))
+  (action (run atdgen ${<} -j -j-std))))
 
 (library
  ((name bucklespec_types)

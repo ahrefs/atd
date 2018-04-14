@@ -297,11 +297,21 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
           )
         )
       ]
+  | List (_, x, List o, List _) ->
+      [ Line (sprintf "%s ("
+                (match o with
+                 | List -> encoder_ident "list"
+                 | Array -> encoder_ident "array"))
+      ; Block (make_writer p x)
+      ; Line ")"
+      ]
   | Record (_, a, Record o, Record _) ->
       [ Annot ("fun", Line (sprintf "%s (fun t ->" encoder_make))
       ; Block (make_record_writer p a o)
       ; Line ")"
       ]
+  | Sum (_, _a, Sum _osum, Sum) ->
+      [ Line (encoder_ident "make (fun x -> failwith \"TODO\")") ]
   | _ -> []
 
 and make_record_writer p a _record_kind =

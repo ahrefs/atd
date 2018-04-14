@@ -22,6 +22,7 @@ let read_id = (
   read__2
 )
 let write__3 = (
+  Atdgen_codec_runtime.Encode.make (fun x -> failwith "TODO")
 )
 let read__3 = (
   Atdgen_codec_runtime.Decode.enum
@@ -67,6 +68,9 @@ let read__3 = (
   ]
 )
 let write__4 = (
+  Atdgen_codec_runtime.Encode.list (
+    write__3
+  )
 )
 let read__4 = (
   Atdgen_codec_runtime.Decode.list (
@@ -80,6 +84,7 @@ let read_simple_vars = (
   read__4
 )
 let write_simple_var write__a = (
+  Atdgen_codec_runtime.Encode.make (fun x -> failwith "TODO")
 )
 let read_simple_var read__a = (
   Atdgen_codec_runtime.Decode.enum
@@ -257,6 +262,9 @@ let read_pair read__a read__b = (
   )
 )
 let write__1 write__a write__b = (
+  Atdgen_codec_runtime.Encode.list (
+    write_pair write__a write__a
+  )
 )
 let read__1 read__a read__b = (
   Atdgen_codec_runtime.Decode.list (

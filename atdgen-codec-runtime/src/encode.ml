@@ -17,3 +17,7 @@ let int32 s = `String (Int32.to_string s)
 let int64 s = `String (Int64.to_string s)
 
 let obj s = `Assoc s
+
+let tuple2 f g (w, x) = `Tuple [f w; g x]
+let tuple3 f g h (w, x, y) = `Tuple [f w; g x; h y]
+let tuple4 f g h i (w, x, y, z) = `Tuple [f w; g x; h y;i z]

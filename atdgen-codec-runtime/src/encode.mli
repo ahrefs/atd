@@ -10,3 +10,6 @@ val bool : bool t
 val char : char t
 
 val list : 'a t -> 'a list t
+
+val int32 : int32 t
+val int64 : int64 t

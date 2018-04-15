@@ -9,6 +9,7 @@ let read_valid = (
   Atdgen_codec_runtime.Decode.bool
 )
 let write__2 = (
+  Atdgen_codec_runtime.Encode.make (fun _ -> failwith "")
 )
 let read__2 = (
   (
@@ -22,7 +23,27 @@ let read_id = (
   read__2
 )
 let write__3 = (
-  Atdgen_codec_runtime.Encode.make (function _ -> `Null
+  Atdgen_codec_runtime.Encode.make (function
+    | `Foo x ->
+    Atdgen_codec_runtime.Encode.constr1 "Foo" (
+      Atdgen_codec_runtime.Encode.tuple2
+        (
+          Atdgen_codec_runtime.Encode.int
+        )
+        (
+          Atdgen_codec_runtime.Encode.int
+        )
+    ) x
+    | `Bar ->
+    Atdgen_codec_runtime.Encode.constr0 "Bar"
+    | `Foobar x ->
+    Atdgen_codec_runtime.Encode.constr1 "Foobar" (
+      Atdgen_codec_runtime.Encode.unit
+    ) x
+    | `Foo_id x ->
+    Atdgen_codec_runtime.Encode.constr1 "Foo_id" (
+      write_id
+    ) x
   )
 )
 let read__3 = (
@@ -85,7 +106,27 @@ let read_simple_vars = (
   read__4
 )
 let write_simple_var write__a = (
-  Atdgen_codec_runtime.Encode.make (function _ -> `Null
+  Atdgen_codec_runtime.Encode.make (function
+    | `Foo x ->
+    Atdgen_codec_runtime.Encode.constr1 "Foo" (
+      Atdgen_codec_runtime.Encode.tuple2
+        (
+          Atdgen_codec_runtime.Encode.int
+        )
+        (
+          Atdgen_codec_runtime.Encode.int
+        )
+    ) x
+    | `Bar ->
+    Atdgen_codec_runtime.Encode.constr0 "Bar"
+    | `Foobar x ->
+    Atdgen_codec_runtime.Encode.constr1 "Foobar" (
+      write__a
+    ) x
+    | `Foo_id x ->
+    Atdgen_codec_runtime.Encode.constr1 "Foo_id" (
+      write_id
+    ) x
   )
 )
 let read_simple_var read__a = (

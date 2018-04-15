@@ -20,6 +20,8 @@ let encoder_make = encoder_ident "make"
 
 let decoder_t s = sprintf "%s %s" s (decoder_ident "t")
 
+let make_json_string s = Yojson.Safe.to_string (`String s)
+
 let destruct_sum (x : Oj_mapping.t) =
   let open Mapping in
   match x with
@@ -336,6 +338,9 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       ]
   | Sum (_, _a, Sum _osum, Sum) ->
       make_sum_writer p x
+  | Wrap (_, _x, Wrap _o, Wrap) ->
+      [ Annot ("fun", Line (sprintf "%s (fun _ -> failwith \"\")" encoder_make))
+      ]
   | _ -> []
 
 and make_record_writer p a _record_kind =
@@ -371,19 +376,40 @@ and make_record_writer p a _record_kind =
 
 and make_sum_writer (p : param)
     (sum : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping) =
-  let _tick, a = destruct_sum (p.deref sum) in
-  let _cases =
+  let tick, a = destruct_sum (p.deref sum) in
+  let cases =
     a
     |> Array.map (
       fun (x : (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping) ->
-        let _o, _j =
+        let o, j =
           match x.var_arepr, x.var_brepr with
           | Ocaml.Repr.Variant o, Json.Variant j -> o, j
           | _ -> assert false in
-        Line "")
-    |> Array.to_list in
-  [ Line (encoder_ident "make (function _ -> `Null")
-  ; Block []
+        let ocaml_cons = o.Ocaml.ocaml_cons in
+        let json_cons =
+          match j.Json.json_cons with
+          | None -> failwith "TODO"
+          | Some json_cons -> json_cons in
+        Inline (
+          begin match x.var_arg with
+            | None ->
+                [ Line (sprintf "| %s%s ->" tick ocaml_cons)
+                ; Line (sprintf "%s %s" (encoder_ident "constr0")
+                          (make_json_string json_cons))
+                ]
+            | Some v ->
+                [ Line (sprintf "| %s%s x ->" tick ocaml_cons)
+                ; Line (sprintf "%s %s (" (encoder_ident "constr1")
+                          (make_json_string json_cons))
+                ; Block (make_writer p v)
+                ; Line ") x"
+                ]
+          end)
+    )
+    |> Array.to_list
+  in
+  [ Line (encoder_ident "make (function")
+  ; Block cases
   ; Line ")"]
 
 let make_ocaml_bs_writer p ~original_types:_ is_rec let1 _let2

@@ -24,3 +24,5 @@ let tuple4 f g h i (w, x, y, z) = `Tuple [f w; g x; h y;i z]
 
 let constr0 s = `Variant (s, None)
 let constr1 s f x = `Variant (s, Some (f x))
+
+let contramap f g b = g (f b)

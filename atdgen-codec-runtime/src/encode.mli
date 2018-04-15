@@ -24,3 +24,5 @@ val tuple4 : 'a t -> 'b t -> 'c t -> 'd t -> ('a * 'b * 'c * 'd) t
 
 val constr0 : string -> Json.t
 val constr1 : string -> 'a t -> 'a -> Json.t
+
+val contramap : ('b -> 'a) -> 'a t -> 'b t

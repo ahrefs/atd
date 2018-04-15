@@ -388,8 +388,10 @@ let get_left_of_string_name p name param =
 
 let destruct_sum (x : Oj_mapping.t) =
   match x with
-    Sum (_, a, Sum x, Sum adapter) ->
-      let tick = match x with Classic -> "" | Poly -> "`" in
+    Sum (_, a, Sum s, Sum opt_adapter) ->
+      if opt_adapter <> None then
+        Error.error (loc_of_mapping x) "adapter not supported";
+      let tick = match s with Classic -> "" | Poly -> "`" in
       tick, a
   | Unit _ -> Error.error (loc_of_mapping x) "Cannot destruct unit"
   | Bool _ -> Error.error (loc_of_mapping x) "Cannot destruct bool"
@@ -1014,12 +1016,13 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           ];
         ]
       in
-      [
+      let standard_reader = [
         `Annot ("fun", `Line "fun p lb ->");
         `Block [
           `Inline read_tag;
         ]
-      ]
+      ] in
+      read_with_adapter opt_adapter standard_reader
 
   | Record (loc, a, Record o, Record j) ->
       (match o with

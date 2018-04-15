@@ -9,7 +9,8 @@ let read_valid = (
   Atdgen_codec_runtime.Decode.bool
 )
 let write__2 = (
-  Atdgen_codec_runtime.Encode.make (fun _ -> failwith "")
+    Atdgen_codec_runtime.Encode.string
+  |> Atdgen_codec_runtime.Encode.contramap (function `Id s -> s)
 )
 let read__2 = (
   (

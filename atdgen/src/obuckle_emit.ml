@@ -338,9 +338,15 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       ]
   | Sum (_, _a, Sum _osum, Sum) ->
       make_sum_writer p x
-  | Wrap (_, _x, Wrap _o, Wrap) ->
-      [ Annot ("fun", Line (sprintf "%s (fun _ -> failwith \"\")" encoder_make))
-      ]
+  | Wrap (_, x, Wrap o, Wrap) ->
+      begin match o with
+        | None -> make_writer p x
+        | Some { Ocaml.ocaml_unwrap ; _ } ->
+            [ Block (make_writer p x)
+            ; Line (sprintf "|> %s (%s)" (encoder_ident "contramap")
+                      ocaml_unwrap)
+            ]
+      end
   | _ -> []
 
 and make_record_writer p a _record_kind =

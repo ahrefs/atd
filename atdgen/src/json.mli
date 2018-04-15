@@ -13,7 +13,7 @@ type json_float =
 
 type json_list = Array | Object
 
-type json_variant = { json_cons : string option }
+type json_variant = { json_cons : string }
 
 type json_field = {
   json_fname  : string;           (* <json name=...> *)
@@ -55,8 +55,6 @@ val get_json_cons : string -> Atd.Annot.t -> string
 val get_json_fname : string -> Atd.Annot.t -> string
 
 val get_json_tag_field : Atd.Annot.t -> string option
-
-val get_json_untyped : Atd.Annot.t -> bool
 
 val get_json_record : Atd.Annot.t -> json_record
 

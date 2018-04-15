@@ -107,20 +107,10 @@ type chained_constr_record = {
   chained_constr <json tag_field="second_tag"> : constr;
 }
 
-type fallback_constr = [
-| A <json name="a">
-| Other <json untyped> of (string * json option)
-]
-
 type fallback_constr_record = {
   ~tag <ocaml default="\"unknown\"">: string;
   fallback_constr <json tag_field="tag"> : fallback_constr;
 }
-
-type empty_constr = [
-  | A <json name="">
-  | Other <json untyped> of (string * json option)
-]
 
 type empty_constr_record = {
   empty : empty_constr;

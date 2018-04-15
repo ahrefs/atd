@@ -32,12 +32,12 @@ val make_ocaml_expr_factored :
   ?pos_id: string ->
   ?exit_with: exit_with ->
   error_expr: Indent.t list ->
-  (string option * Indent.t list) list -> Indent.t list
+  (string * Indent.t list) list -> Indent.t list
 
 val make_ocaml_expr_naive :
   ?string_id: string ->
   error_expr: Indent.t list ->
-  (string option * Indent.t list) list -> Indent.t list
+  (string * Indent.t list) list -> Indent.t list
 
 val make_ocaml_expr :
   optimized: bool ->
@@ -45,7 +45,7 @@ val make_ocaml_expr :
   ?pos_id: string ->
   ?exit_with: exit_with ->
   error_expr: Indent.t list ->
-  (string option * Indent.t list) list -> Indent.t list
+  (string * Indent.t list) list -> Indent.t list
 
 
 val make_ocaml_int_mapping :
@@ -56,7 +56,7 @@ val make_ocaml_int_mapping :
   error_expr1: Indent.t list ->
   ?error_expr2: Indent.t list ->
   ?int_id: string ->
-  (string option * Indent.t list) list ->
+  (string * Indent.t list) list ->
 
   (Indent.t list * Indent.t list)
     (*

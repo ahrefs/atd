@@ -204,10 +204,6 @@ let make_ocaml_expr_factored
           in
           exit_expr, catch
   in
-  let cases = List.(rev (fold_left (fun list -> function
-    | (Some s, x) -> (s, x)::list
-    | (None, _) -> list
-  ) [] cases)) in
   match cases with
       [] -> error_expr
     | _ ->
@@ -224,7 +220,7 @@ let test2 () =
   in
   let cases =
     List.map
-      (fun s -> (Some s, [ `Line (sprintf "Some `Case_%s" s) ]))
+      (fun s -> (s, [ `Line (sprintf "Some `Case_%s" s) ]))
       l
   in
   let expr =
@@ -239,13 +235,11 @@ let make_ocaml_expr_naive
     ?(string_id = "s")
     ~error_expr
     cases =
-  let map = function
-    | (Some s, expr) ->
-        `Inline [
-          `Line (sprintf "| %S ->" s);
-          `Block expr;
-        ]
-    | (None, _expr) -> `Inline []
+  let map (s, expr) =
+    `Inline [
+      `Line (sprintf "| %S ->" s);
+      `Block expr;
+    ]
   in
   [
     `Line (sprintf "match %s with" string_id);

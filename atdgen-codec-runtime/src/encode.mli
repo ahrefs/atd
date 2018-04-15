@@ -26,3 +26,5 @@ val constr0 : string -> Json.t
 val constr1 : string -> 'a t -> 'a -> Json.t
 
 val contramap : ('b -> 'a) -> 'a t -> 'b t
+
+val nullable : 'a t -> 'a option t

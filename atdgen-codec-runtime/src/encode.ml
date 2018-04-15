@@ -26,3 +26,7 @@ let constr0 s = `Variant (s, None)
 let constr1 s f x = `Variant (s, Some (f x))
 
 let contramap f g b = g (f b)
+
+let nullable f = function
+  | None -> `Null
+  | Some s -> f s

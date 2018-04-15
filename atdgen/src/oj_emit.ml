@@ -329,7 +329,7 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ `Line (get_writer_name p x) ]
 
-  | Sum (loc, a, Sum x, Sum opt_adapter) ->
+  | Sum (_, a, Sum x, Sum opt_adapter) ->
       let tick =
         match x with
         | Classic -> ""
@@ -347,10 +347,11 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
           )
         ]
       in
-      [
+      let standard_writer = [
         `Annot ("fun", `Line "fun ob x ->");
         `Block body
-      ]
+      ] in
+      write_with_adapter opt_adapter standard_writer
 
   | Record (_, a, Record o, Record _) ->
       [
@@ -558,7 +559,7 @@ and make_record_writer p a record_kind =
     `Line "Bi_outbuf.add_char ob '}';";
   ]
 
-let study_record p fields =
+let study_record fields =
   let field_assignments =
     List.fold_right (
       fun (x, oname, default, jname, opt, unwrap) field_assignments ->
@@ -929,7 +930,7 @@ and make_record_reader p type_annot loc a json_options =
   let keep_nulls = json_options.json_keep_nulls in
   let fields = get_fields p a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record p fields
+    study_record fields
   in
 
   let read_field =

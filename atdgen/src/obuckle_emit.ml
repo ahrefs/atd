@@ -20,6 +20,8 @@ let encoder_make = encoder_ident "make"
 
 let decoder_t s = sprintf "%s %s" s (decoder_ident "t")
 
+let encoder_t s = sprintf "%s %s" s (encoder_ident "t")
+
 let make_json_string s = Yojson.Safe.to_string (`String s)
 
 let destruct_sum (x : Oj_mapping.t) =
@@ -52,12 +54,16 @@ let make_ocaml_bs_intf buf _deref defs =
   |> List.iter (fun (x : (_, _) Mapping.def) ->
     let s = x.def_name in
     let full_name = Ox_emit.get_full_type_name x in
-    let read_params =
+    let params t =
       String.concat " " (
-        List.map (fun s -> sprintf "%s ->" (decoder_t ("'" ^ s))) x.def_param
+        List.map (fun s -> sprintf "%s ->" (t ("'" ^ s))) x.def_param
       ) in
+    let read_params = params decoder_t in
+    let write_params = params encoder_t in
     bprintf buf "val read_%s : %s %s\n\n"
-      s read_params (decoder_t full_name)
+      s read_params (decoder_t full_name);
+    bprintf buf "val write_%s : %s %s\n\n"
+      s write_params (encoder_t full_name)
   )
 
 let rec get_reader_name

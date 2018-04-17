@@ -198,7 +198,13 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
            ; Block (make_reader p type_annot x)
            ; Line (sprintf ") |> (%s (%s))" (decoder_ident "map") w.ocaml_wrap)
            ])
-  | _ -> failwith "TODO: make_reader"
+  | Option (_, x, Option, Option) ->
+      [ Line (sprintf "%s (" (decoder_ident "option_as_constr"))
+      ; Block (make_reader p type_annot x)
+      ; Line ")"
+      ]
+  | Nullable (_, _, Nullable, Nullable) -> failwith "TODO: Nullable"
+  | _ -> failwith "TODO: make reader"
 
 and make_record_reader
     (p : param)

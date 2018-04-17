@@ -12,6 +12,7 @@ let float f = `Float f
 let int i = `Int i
 
 let list f xs = `List (List.map f xs)
+let array f xs = `List (Array.to_list (Array.map f xs))
 
 let int32 s = `String (Int32.to_string s)
 let int64 s = `String (Int64.to_string s)
@@ -30,3 +31,7 @@ let contramap f g b = g (f b)
 let nullable f = function
   | None -> `Null
   | Some s -> f s
+
+let option_as_constr f = function
+  | None -> `Variant ("None", None)
+  | Some s -> `Variant ("Some", Some (f s))

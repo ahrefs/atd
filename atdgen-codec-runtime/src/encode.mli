@@ -12,6 +12,7 @@ val bool : bool t
 val char : char t
 
 val list : 'a t -> 'a list t
+val array : 'a t -> 'a array t
 
 val int32 : int32 t
 val int64 : int64 t
@@ -28,3 +29,5 @@ val constr1 : string -> 'a t -> 'a -> Json.t
 val contramap : ('b -> 'a) -> 'a t -> 'b t
 
 val nullable : 'a t -> 'a option t
+
+val option_as_constr : 'a t -> 'a option t

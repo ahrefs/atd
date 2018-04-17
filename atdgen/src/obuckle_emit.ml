@@ -372,6 +372,11 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_writer p x)
       ; Line ")"
       ]
+  | Option (_, x, Option, Option) ->
+      [ Line (sprintf "%s (" (encoder_ident "option_as_constr"))
+      ; Block (make_writer p x)
+      ; Line ")"
+      ]
   | _ -> []
 
 and make_record_writer p a _record_kind =

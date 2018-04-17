@@ -23,10 +23,17 @@ let pp_received fmt = function
         (Printexc.to_string e) bt
   | Ok json -> pp_json fmt json
 
-let test ~name ~yojson ~buckle ~data =
+let test_decode ~name ~yojson ~buckle ~data =
   T { name
     ; to_yojson = (fun a -> Yojson.Safe.from_string (yojson a))
-    ; of_yojson = (Atdgen_codec_runtime.Decode.decode buckle)
+    ; of_yojson = Atdgen_codec_runtime.Decode.decode buckle
+    ; data
+    }
+
+let test_encode ~name ~yojson ~buckle ~data =
+  T { name
+    ; to_yojson = Atdgen_codec_runtime.Encode.encode buckle
+    ; of_yojson = (fun j -> yojson (Yojson.Safe.to_string ~std:true j))
     ; data
     }
 
@@ -77,7 +84,7 @@ let run_tests tests =
 
 let () =
   run_tests
-    [ test ~name:"record"
+    [ test_decode ~name:"decode record"
         ~yojson:Bucklespec_j.string_of_labeled
         ~buckle:Bucklespec_bs.read_labeled
         ~data:{ Bucklespec_t.
@@ -85,9 +92,25 @@ let () =
               ; lb = "foo bar"
               ; count = 123
               }
-    ; test ~name:"variant"
+    ; test_encode ~name:"encode record"
+        ~yojson:Bucklespec_j.labeled_of_string
+        ~buckle:Bucklespec_bs.write_labeled
+        ~data:{ Bucklespec_t.
+                flag = false
+              ; lb = "foo bar"
+              ; count = 123
+              }
+    ; test_decode ~name:"decode variant"
         ~yojson:Bucklespec_j.string_of_simple_vars
         ~buckle:Bucklespec_bs.read_simple_vars
+        ~data:[ `Foo (123, 456)
+              ; `Bar
+              ; `Foobar ()
+              ; `Foo_id (`Id "testing")
+              ]
+    ; test_encode ~name:"encode variant"
+        ~yojson:Bucklespec_j.simple_vars_of_string
+        ~buckle:Bucklespec_bs.write_simple_vars
         ~data:[ `Foo (123, 456)
               ; `Bar
               ; `Foobar ()

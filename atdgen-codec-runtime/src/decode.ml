@@ -94,3 +94,9 @@ let enum l = function
         | `Decode d -> decode d args
       end
   | _ -> raise DecoderError
+
+let option_as_constr f =
+  enum
+    [ "None", `Single None
+    ; "Some", `Decode (map (fun x -> Some x) f)
+    ]

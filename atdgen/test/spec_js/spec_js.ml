@@ -1,38 +1,65 @@
-open Spec_j
+module Bs = Spec_bs
+module J = Spec_j
 
-let json conv e = Yojson.Safe.from_string (conv e)
+open Spec_t
 
-let massive_json =
-  `List
-    [ json string_of_r1 { r1 = "testing"}
-    ; json string_of_r2 { r2 = Some 2 }
-    ; json string_of_r2 { r2 = None }
-    ; json string_of_r3 { r3 = Some 3 }
-    ; json string_of_r3 { r3 = None }
-    ; json string_of_r4 { r4 = true }
-    ; json string_of_r5 { r5 = Some 5 }
-    ; json string_of_r5 { r5 = None }
-    ; json string_of_r6 { r6 = 6 }
-    ; json string_of_r6 { r6 = 42 }
-    ; json string_of_r7 { r7 = -1_000 }
-    ; json string_of_r8 { r888 = [1; 2; 3] }
-    ; json string_of_j1 ["foo"; "bar"]
-    ; json string_of_j1 []
-    ; json string_of_j2 ()
-    ; json string_of_j3 [|1; 2; 3|]
-    ; json string_of_j4 'c'
-    ; json string_of_t1 (100, "foo")
-    ; json string_of_t2 (100, 200, 42)
-    ; json string_of_t2 (100, 200, -1)
-    ; json string_of_v1list [ `V1; `V2; `V3 "testing";
-                              `V4 255; `V5 None; `V5 (Some true)]
-    ; json string_of_v2 { v2 = `A }
-    ; json string_of_v2 { v2 = `B 100 }
-    ; json string_of_v3list [C1 ; C2 true; C2 false]
-    ; json string_of_ages [ `Age 50; `Age 30; `Age (-1); `Age 400]
-    ]
+type 'a j = 'a -> Yojson.Safe.json
 
-let pp_json fmt json =
-  Format.pp_print_string fmt (Yojson.Safe.pretty_to_string ~std:true json)
+module type Json = sig
+  val r1     : r1 j
+  val r2     : r2 j
+  val r3     : r3 j
+  val r4     : r4 j
+  val r5     : r5 j
+  val r6     : r6 j
+  val r7     : r7 j
+  val r8     : r8 j
+  val j1     : j1 j
+  val j2     : j2 j
+  val j3     : j3 j
+  val j4     : j4 j
+  val t1     : t1 j
+  val t2     : t2 j
+  val v1list : v1list j
+  val v2     : v2 j
+  val v3list : v3list j
+  val ages   : ages j
+end
 
-let () = pp_json Format.std_formatter massive_json
+module Make (J : Json) = struct
+  open J
+  let massive_json =
+    `List
+      [ r1 { r1 = "testing"}
+      ; r2 { r2 = Some 2 }
+      ; r2 { r2 = None }
+      ; r3 { r3 = Some 3 }
+      ; r3 { r3 = None }
+      ; r4 { r4 = true }
+      ; r5 { r5 = Some 5 }
+      ; r5 { r5 = None }
+      ; r6 { r6 = 6 }
+      ; r6 { r6 = 42 }
+      ; r7 { r7 = -1_000 }
+      ; r8 { r888 = [1; 2; 3] }
+      ; j1 ["foo"; "bar"]
+      ; j1 []
+      ; j2 ()
+      ; j3 [|1; 2; 3|]
+      ; j4 'c'
+      ; t1 (100, "foo")
+      ; t2 (100, 200, 42)
+      ; t2 (100, 200, -1)
+      ; v1list [ `V1; `V2; `V3 "testing";
+                      `V4 255; `V5 None; `V5 (Some true)]
+      ; v2 { v2 = `A }
+      ; v2 { v2 = `B 100 }
+      ; v3list [C1 ; C2 true; C2 false]
+      ; ages [ `Age 50; `Age 30; `Age (-1); `Age 400]
+      ]
+
+  let pp_json fmt json =
+    Format.pp_print_string fmt (Yojson.Safe.pretty_to_string ~std:true json)
+
+  let run () = pp_json Format.std_formatter massive_json
+end

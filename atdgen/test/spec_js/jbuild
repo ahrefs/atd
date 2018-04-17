@@ -1,5 +1,10 @@
 (jbuild_version 1)
 
+(library
+ ((name spec_js)
+  (modules (spec_t spec_j spec_js spec_bs))
+  (libraries (atdgen-runtime atdgen-codec-runtime))))
+
 (rule
  ((targets (spec_t.ml spec_t.mli))
   (deps (spec.atd))
@@ -10,14 +15,33 @@
   (deps (spec.atd))
   (action (run atdgen ${<} -j -j-std))))
 
+(rule
+ ((targets (spec_bs.ml spec_bs.mli))
+  (deps (spec.atd))
+  (action (run atdgen ${<} -bs -open Spec_t))))
+
 (executable
- ((name spec_js)
-  (libraries (atdgen-runtime))))
+ ((name test_j)
+  (modules (test_j))
+  (libraries (spec_js atdgen-runtime))))
+
+(executable
+ ((name test_bs)
+  (modules (test_bs))
+  (libraries (spec_js atdgen-codec-runtime))))
 
 (rule
- ((targets (spec.json))
-  (action (with-stdout-to ${@} (run ./spec_js.exe)))))
+ ((targets (spec_j.json))
+  (action (with-stdout-to ${@} (run ./test_j.exe)))))
 
 (alias
  ((name runtest)
-  (action (diff spec.expected.json spec.json))))
+  (action (diff spec_j.expected.json spec_j.json))))
+
+(rule
+ ((targets (spec_bs.json))
+  (action (with-stdout-to ${@} (run ./test_bs.exe)))))
+
+(alias
+ ((name runtest)
+  (action (diff spec_bs.expected.json spec_bs.json))))

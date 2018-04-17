@@ -73,7 +73,15 @@ let rec get_reader_name
   match x with
     Unit (_, Unit, Unit) -> decoder_ident "unit"
   | Bool (_, Bool, Bool) -> decoder_ident "bool"
-  | Int (_, Int _, Int) -> decoder_ident "int"
+  | Int (_, Int o, Int) ->
+      decoder_ident (
+        match o with
+        | Int -> "int"
+        | Char ->  "char"
+        | Int32 -> "int32"
+        | Int64 -> "int64"
+        | Float -> "float"
+      )
   | Float (_, Float, Float _) -> decoder_ident "float"
   | String (_, String, String) -> decoder_ident "string"
   | Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s

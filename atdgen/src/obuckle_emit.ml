@@ -18,9 +18,7 @@ let decoder_t s = sprintf "%s %s" s (ident "t")
 
 let make_ocaml_bs_intf buf _deref defs =
   Mapping.flatten defs
-  |> List.filter (fun (x : (_, _) Mapping.def) ->
-    let s = x.def_name in
-    s <> "" && s.[0] <> '_' && x.def_value <> None)
+  |> List.filter Ox_emit.include_intf
   |> List.iter (fun (x : (_, _) Mapping.def) ->
     let s = x.def_name in
     let full_name = Ox_emit.get_full_type_name x in

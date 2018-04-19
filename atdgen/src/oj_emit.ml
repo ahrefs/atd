@@ -8,7 +8,6 @@ open Indent
 
 open Atd.Ast
 open Mapping
-open Oj_mapping
 
 (*
   OCaml code generator (json readers and writers)
@@ -154,22 +153,15 @@ let get_fields p a =
       | _, _ -> assert false
     in
     let default =
-      match x.f_kind, ocamlf.Ocaml.ocaml_default with
-      | With_default, None ->
-          begin match Ocaml.get_implicit_ocaml_default p.deref x.f_value with
-            | None -> Error.error x.f_loc "Missing default field value"
-            | Some d -> Default d
-          end
-      | With_default, Some d -> Default d
-      | Optional, _ -> Default "None"
-      | Required, _ -> Checked k
+      match Ox_emit.default_value x p.deref with
+      | None -> Checked k
+      | Some d -> Default d
     in
     let k =
-      match x.f_kind with
-      | With_default
-      | Optional -> k
-      | Required -> k + 1
-    in
+      if Atd.Ast.is_required x.f_kind then
+        k + 1
+      else
+        k in
     let field_ref = "field_" ^ ocamlf.Ocaml.ocaml_fname in
     let constructor = None in
     let payloads = [] in
@@ -1881,7 +1873,7 @@ let make_ocaml_files
       Atd.Util.tsort
   in
   let m1 = tsort m0 in
-  let defs1 = defs_of_atd_modules m1 in
+  let defs1 = Oj_mapping.defs_of_atd_modules m1 in
   if not name_overlap then Ox_emit.check defs1;
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
@@ -1892,7 +1884,7 @@ let make_ocaml_files
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
     Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases (head, m1) in
-  let defs = defs_of_atd_modules m2 in
+  let defs = Oj_mapping.defs_of_atd_modules m2 in
   let header =
     let src =
       match atd_file with

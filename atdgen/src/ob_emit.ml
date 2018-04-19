@@ -16,98 +16,98 @@ open Ob_mapping
 
 
 let make_ocaml_biniou_intf ~with_create buf deref defs =
-  List.iter (
-    fun x ->
-      let s = x.def_name in
-      if s <> "" && s.[0] <> '_' && x.def_value <> None then (
-        let full_name = Ox_emit.get_full_type_name x in
-        let writer_params =
-          String.concat "" (
-            List.map
-              (fun s ->
-                 sprintf "\n  Bi_io.node_tag ->\
-                          \n  (Bi_outbuf.t -> '%s -> unit) ->\
-                          \n  (Bi_outbuf.t -> '%s -> unit) ->" s s)
-              x.def_param
+  flatten defs
+  |> List.iter (fun x ->
+    let s = x.def_name in
+    if s <> "" && s.[0] <> '_' && x.def_value <> None then (
+      let full_name = Ox_emit.get_full_type_name x in
+      let writer_params =
+        String.concat "" (
+          List.map
+            (fun s ->
+               sprintf "\n  Bi_io.node_tag ->\
+                        \n  (Bi_outbuf.t -> '%s -> unit) ->\
+                        \n  (Bi_outbuf.t -> '%s -> unit) ->" s s)
+            x.def_param
+        )
+      in
+      let reader_params =
+        String.concat "" (
+          List.map (
+            fun s ->
+              sprintf
+                "\n  (Bi_io.node_tag -> (Bi_inbuf.t -> '%s)) ->\
+                 \n  (Bi_inbuf.t -> '%s) ->" s s
           )
-        in
-        let reader_params =
-          String.concat "" (
-            List.map (
-              fun s ->
-                sprintf
-                  "\n  (Bi_io.node_tag -> (Bi_inbuf.t -> '%s)) ->\
-                   \n  (Bi_inbuf.t -> '%s) ->" s s
-            )
-              x.def_param
-          )
-        in
-        bprintf buf "(* Writers for type %s *)\n\n" s;
+            x.def_param
+        )
+      in
+      bprintf buf "(* Writers for type %s *)\n\n" s;
 
-        bprintf buf "\
+      bprintf buf "\
 val %s_tag : Bi_io.node_tag
   (** Tag used by the writers for type {!%s}.
       Readers may support more than just this tag. *)
 
 "
-          s
-          s;
+        s
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val write_untagged_%s :%s
   Bi_outbuf.t -> %s -> unit
   (** Output an untagged biniou value of type {!%s}. *)
 
 "
-          s writer_params
-          full_name
-          s;
+        s writer_params
+        full_name
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val write_%s :%s
   Bi_outbuf.t -> %s -> unit
   (** Output a biniou value of type {!%s}. *)
 
 "
-          s writer_params
-          full_name
-          s;
+        s writer_params
+        full_name
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val string_of_%s :%s
   ?len:int -> %s -> string
   (** Serialize a value of type {!%s} into
       a biniou string. *)
 
 "
-          s writer_params
-          full_name
-          s;
+        s writer_params
+        full_name
+        s;
 
-        bprintf buf "(* Readers for type %s *)\n\n" s;
+      bprintf buf "(* Readers for type %s *)\n\n" s;
 
-        bprintf buf "\
+      bprintf buf "\
 val get_%s_reader :%s
   Bi_io.node_tag -> (Bi_inbuf.t -> %s)
   (** Return a function that reads an untagged
       biniou value of type {!%s}. *)
 
 "
-          s reader_params
-          full_name
-          s;
+        s reader_params
+        full_name
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val read_%s :%s
   Bi_inbuf.t -> %s
   (** Input a tagged biniou value of type {!%s}. *)
 
 "
-          s reader_params
-          full_name
-          s;
+        s reader_params
+        full_name
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val %s_of_string :%s
   ?pos:int -> string -> %s
   (** Deserialize a biniou value of type {!%s}.
@@ -115,13 +115,13 @@ val %s_of_string :%s
                  reading starts. Default: 0. *)
 
 "
-          s reader_params
-          full_name
-          s;
+        s reader_params
+        full_name
+        s;
 
-        Ox_emit.maybe_write_creator_intf ~with_create deref buf x
-      )
-  ) (flatten defs)
+      Ox_emit.maybe_write_creator_intf ~with_create deref buf x
+    )
+  )
 
 
 let rec get_biniou_tag (x : ob_mapping) =

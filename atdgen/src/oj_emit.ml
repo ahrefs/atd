@@ -37,38 +37,38 @@ type param = {
 
 
 let make_ocaml_json_intf ~with_create buf deref defs =
-  List.iter (
-    fun x ->
-      let s = x.def_name in
-      if s <> "" && s.[0] <> '_' && x.def_value <> None then (
-        let full_name = Ox_emit.get_full_type_name x in
-        let writer_params =
-          String.concat "" (
-            List.map
-              (fun s -> sprintf "\n  (Bi_outbuf.t -> '%s -> unit) ->" s)
-              x.def_param
-          )
-        in
-        let reader_params =
-          String.concat "" (
-            List.map
-              (fun s ->
-                 sprintf "\n  (Yojson.Safe.lexer_state -> \
-                          Lexing.lexbuf -> '%s) ->" s)
-              x.def_param
-          )
-        in
-        bprintf buf "\
+  flatten defs
+  |> List.iter (fun x ->
+    let s = x.def_name in
+    if s <> "" && s.[0] <> '_' && x.def_value <> None then (
+      let full_name = Ox_emit.get_full_type_name x in
+      let writer_params =
+        String.concat "" (
+          List.map
+            (fun s -> sprintf "\n  (Bi_outbuf.t -> '%s -> unit) ->" s)
+            x.def_param
+        )
+      in
+      let reader_params =
+        String.concat "" (
+          List.map
+            (fun s ->
+               sprintf "\n  (Yojson.Safe.lexer_state -> \
+                        Lexing.lexbuf -> '%s) ->" s)
+            x.def_param
+        )
+      in
+      bprintf buf "\
 val write_%s :%s
   Bi_outbuf.t -> %s -> unit
   (** Output a JSON value of type {!%s}. *)
 
 "
-          s writer_params
-          full_name
-          s;
+        s writer_params
+        full_name
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val string_of_%s :%s
   ?len:int -> %s -> string
   (** Serialize a value of type {!%s}
@@ -78,33 +78,32 @@ val string_of_%s :%s
                  Default: 1024. *)
 
 "
-          s writer_params
-          full_name
-          s;
+        s writer_params
+        full_name
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val read_%s :%s
   Yojson.Safe.lexer_state -> Lexing.lexbuf -> %s
   (** Input JSON data of type {!%s}. *)
 
 "
-          s reader_params
-          full_name
-          s;
+        s reader_params
+        full_name
+        s;
 
-        bprintf buf "\
+      bprintf buf "\
 val %s_of_string :%s
   string -> %s
   (** Deserialize JSON data of type {!%s}. *)
 
 "
-          s reader_params
-          full_name
-          s;
-        Ox_emit.maybe_write_creator_intf ~with_create deref buf x
-      )
+        s reader_params
+        full_name
+        s;
+      Ox_emit.maybe_write_creator_intf ~with_create deref buf x
+    )
   )
-    (flatten defs)
 
 let is_json_string deref x =
   (*

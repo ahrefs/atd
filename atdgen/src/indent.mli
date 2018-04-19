@@ -1,54 +1,14 @@
-
-
-(**
-  Simple indentation utility for code generators
-*)
+(** Simple indentation utility for code generators *)
 
 type t =
-    [
-    | `Line of string
-    | `Block of t list
-    | `Inline of t list
-    ]
-(**
-   [t] is the type of the data to be printed.
+  | Line of string        (** single line (not indented) **)
+  | Block of t list       (** indented sequence **)
+  | Inline of t list      (** in-line sequence (not indented) **)
+  | Annot of string * t (** arbitrary annotation **)
 
-   - [`Line]: single line (not indented)
-   - [`Block]: indented sequence
-   - [`Inline]: in-line sequence (not indented)
+val strip : t -> t
 
-  Example:
-
-{v
-let l =
-  [
-    `Line "d";
-    `Line "e";
-  ]
-in
-[
-  `Line "a";
-  `Block [
-    `Line "b";
-    `Line "c";
-  ];
-  `Inline l;
-  `Line "f";
-]
-v}
-
-gives:
-
-{v
-a
-  b
-  c
-d
-e
-f
-v}
-*)
-
+val concat : 'a -> 'a list -> 'a list
 
 val to_buffer : ?offset:int -> ?indent:int -> Buffer.t -> t list -> unit
   (** Write to a buffer.

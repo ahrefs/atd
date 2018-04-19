@@ -70,11 +70,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ Indent.Line (get_reader_name p x) ]
   | Record (loc, a, Record o, Record j) ->
-      (match o with
-         Record -> ()
-       | Object ->
-           Error.error loc "Sorry, OCaml objects are not supported"
-      );
+      Ocaml.obj_unimplemented loc o;
       [ Annot ("fun", Line (sprintf "%s (fun json ->" codec_make))
       ; Block (make_record_reader p type_annot loc a j)
       ; Line ")"

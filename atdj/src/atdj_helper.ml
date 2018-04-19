@@ -122,30 +122,23 @@ class Util {
 let output_package_javadoc env (loc, annots) =
   let out = open_out (env.package_dir ^ "/" ^ "package.html") in
   output_string out "<body>\n";
-  let from_doc_para acc para =
-    List.fold_left
-      (fun acc -> function
-         | `Text text -> text :: acc
-         | `Code _ -> failwith "Not yet implemented: code in javadoc comments"
-      )
-      acc
-      para in
-  let from_doc = function
-    | `Text blocks ->
-        List.fold_left
-          (fun acc -> function
-             | `Paragraph para -> from_doc_para acc para
-             | `Pre _ ->
-                 failwith "Not yet implemented: \
-                           preformatted text in javadoc comments"
-          )
-          []
-          blocks in
+  let from_doc_para =
+    List.fold_left (fun acc -> function
+      | Atd.Doc.Text text -> text :: acc
+      | Code _ -> failwith "Not yet implemented: code in javadoc comments"
+    ) in
+  let from_doc =
+    List.fold_left (fun acc -> function
+      | Atd.Doc.Paragraph para -> from_doc_para acc para
+      | Pre _ ->
+          failwith "Not yet implemented: \
+                    preformatted text in javadoc comments"
+    ) [] in
   (match Atd.Doc.get_doc loc annots with
-     | Some doc ->
-         let str = String.concat "\n<p>\n" (List.rev (from_doc doc)) in
-         output_string out str
-     | _ -> ()
+   | Some doc ->
+       let str = String.concat "\n<p>\n" (List.rev (from_doc doc)) in
+       output_string out str
+   | _ -> ()
   );
   output_string out "\n</body>";
   close_out out

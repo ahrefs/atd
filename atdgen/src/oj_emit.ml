@@ -655,10 +655,7 @@ and make_record_writer p a record_kind =
       (make_json_string json_fname ^ ":")
   in
   let v_of_field field =
-    let dot = match record_kind with
-      | Record -> "."
-      | Object -> "#"
-    in
+    let dot = Ocaml.dot record_kind in
     let ocaml_fname = field.ocamlf.Ocaml.ocaml_fname in
     if is_optional field then
       sprintf "x.%s" ocaml_fname
@@ -964,11 +961,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ]
 
   | Record (loc, a, Record o, Record j) ->
-      (match o with
-         Record -> ()
-       | Object ->
-           Error.error loc "Sorry, OCaml objects are not supported"
-      );
+      Ocaml.obj_unimplemented loc o;
       [
         Annot ("fun", Line "fun p lb ->");
         Block (make_record_reader p type_annot loc a j)

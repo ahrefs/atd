@@ -1,13 +1,17 @@
 open Import
 
-type inline =
-    [ `Text of string
-    | `Code of string ]
-type block = [ `Paragraph of inline list | `Pre of string ]
-type doc = [ `Text of block list ]
+type inline = Doc_types.inline =
+  | Text of string
+  | Code of string
+
+type block = Doc_types.block =
+  | Paragraph of inline list
+  | Pre of string
+
+type doc = block list
 
 let parse_text loc s =
-  try `Text (Doc_lexer.parse_string s : block list)
+  try (Doc_lexer.parse_string s : block list)
   with e ->
     failwith (Printf.sprintf "%s:\nInvalid format for doc.text %S:\n%s"
                 (Ast.string_of_loc loc) s (Printexc.to_string e))
@@ -30,22 +34,21 @@ let html_escape buf s =
   ) s
 
 let print_inline buf = function
-    `Text s -> html_escape buf s
-  | `Code s -> bprintf buf "<code>%a</code>" html_escape s
+  | Text s -> html_escape buf s
+  | Code s -> bprintf buf "<code>%a</code>" html_escape s
 
-let html_of_doc (`Text blocks) =
+let html_of_doc blocks =
   let buf = Buffer.create 300 in
   bprintf buf "\n<div class=\"atd-doc\">\n";
-  List.iter (
-    function
-        `Paragraph l ->
-          Buffer.add_string buf "<p>\n";
-          List.iter (print_inline buf) l;
-          Buffer.add_string buf "\n</p>\n"
-      | `Pre s ->
-          Buffer.add_string buf "<pre>\n";
-          html_escape buf s;
-          Buffer.add_string buf "</pre>\n"
+  List.iter (function
+    | Paragraph l ->
+        Buffer.add_string buf "<p>\n";
+        List.iter (print_inline buf) l;
+        Buffer.add_string buf "\n</p>\n"
+    | Pre s ->
+        Buffer.add_string buf "<pre>\n";
+        html_escape buf s;
+        Buffer.add_string buf "</pre>\n"
   ) blocks;
   bprintf buf "\n</div>\n";
   Buffer.contents buf

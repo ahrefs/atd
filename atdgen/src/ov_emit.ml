@@ -318,11 +318,7 @@ and make_variant_validator tick x :
       ]
 
 and make_record_validator a record_kind =
-  let dot =
-    match record_kind with
-      Record -> "."
-    | Object -> "#"
-  in
+  let dot = Ocaml.dot record_kind in
   let fields = get_fields a in
   assert (fields <> []);
   let validate_fields : Indent.t list =

@@ -507,11 +507,7 @@ and make_variant_writer deref tick x : Indent.t list =
       ]
 
 and make_record_writer deref tagged a record_kind =
-  let dot =
-    match record_kind with
-      Record -> "."
-    | Object -> "#"
-  in
+  let dot = Ocaml.dot record_kind in
   let fields = get_fields deref a in
   let write_length =
     (* count the number of defined optional fields in order
@@ -603,11 +599,7 @@ and make_table_writer deref tagged list_kind x =
     | _ ->
         Error.error (loc_of_mapping x) "Not a record type"
   in
-  let dot =
-    match record_kind with
-      Record -> "."
-    | Object -> "#"
-  in
+  let dot = Ocaml.dot record_kind in
   let let_len =
     match list_kind with
       List -> Line "let len = List.length x in"
@@ -855,11 +847,7 @@ let rec make_reader
       wrap_body ~tagged Bi_io.variant_tag body
 
   | Record (loc, a, Record o, Record) ->
-      (match o with
-         Record -> ()
-       | Object ->
-           Error.error loc "Sorry, OCaml objects are not supported"
-      );
+      Ocaml.obj_unimplemented loc o;
       let body = make_record_reader deref ~ocaml_version type_annot a in
       wrap_body ~tagged Bi_io.record_tag body
 
@@ -1147,11 +1135,7 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
   let fields =
     match deref x with
       Record (loc, a, Record o, Record) ->
-        (match o with
-           Record -> ()
-         | Object ->
-             Error.error loc "Sorry, OCaml objects are not supported"
-        );
+        Ocaml.obj_unimplemented loc o;
         get_fields deref a
     | _ ->
         Error.error loc "Not a list or array of records"

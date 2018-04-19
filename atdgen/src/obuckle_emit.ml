@@ -186,23 +186,20 @@ let make_ocaml_bs_impl
     ~original_types
     buf deref defs =
   let p = {deref = deref;} in
-  let ll =
-    List.map (
-      fun (is_rec, l) ->
-        let l = List.filter
-            (fun (x : (Ocaml.Repr.t, Json.json_repr) Mapping.def) ->
-               x.def_value <> None) l in
-        let readers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_bs_reader p ~original_types is_rec let1 let2 def
-          ) l
-        in
-        List.flatten readers
-    ) defs
-  in
-  Indent.to_buffer buf (List.flatten ll)
+  defs
+  |> List.concat_map (fun (is_rec, l) ->
+    let l = List.filter
+        (fun (x : (Ocaml.Repr.t, Json.json_repr) Mapping.def) ->
+           x.def_value <> None) l in
+    let readers =
+      Ox_emit.map (
+        fun is_first def ->
+          let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+          make_ocaml_bs_reader p ~original_types is_rec let1 let2 def
+      ) l
+    in
+    List.flatten readers)
+  |> Indent.to_buffer buf
 
 let make_ml
     ~header:_

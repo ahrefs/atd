@@ -6,6 +6,8 @@ type t =
   | Inline of t list      (** in-line sequence (not indented) **)
   | Annot of string * t (** arbitrary annotation **)
 
+val paren : t -> t
+
 val strip : t -> t
 
 val concat : 'a -> 'a list -> 'a list

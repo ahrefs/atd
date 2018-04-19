@@ -15,6 +15,13 @@ let rec strip = function
   | Inline l -> Inline (List.map strip l)
   | Annot (_, x) -> strip x
 
+let paren l =
+  Inline
+    [ Line "("
+    ; l
+    ; Line ")"
+    ]
+
 let rec concat t = function
   | [] -> []
   | [x] -> [x]

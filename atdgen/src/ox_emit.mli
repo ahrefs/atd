@@ -39,8 +39,6 @@ val name_of_var : string -> string
 
 val nth : string -> int -> int -> string
 
-val map : (bool -> 'a -> 'b) -> 'a list -> 'b list
-
 val get_let : is_rec:bool -> is_first:bool -> string * string
 
 val write_opens : Buffer.t -> string list -> unit

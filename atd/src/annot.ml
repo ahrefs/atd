@@ -22,17 +22,9 @@ let has_field k k2 l =
       with Not_found -> false
   ) k
 
-let rec find f = function
-    [] -> None
-  | x :: l ->
-      match f x with
-          None -> find f l
-        | Some _ as y -> y
-
 let get_flag k k2 l =
   let result =
-    find (
-      fun k1 ->
+    List.find_map (fun k1 ->
         try
           (* each section must be unique *)
           let _, l2 = List.assoc k1 l in
@@ -53,8 +45,7 @@ let get_flag k k2 l =
 
 let get_field parse default k k2 l =
   let result =
-    find (
-      fun k1 ->
+    List.find_map (fun k1 ->
         try
           (* each section must be unique *)
           let _, l2 = List.assoc k1 l in
@@ -78,27 +69,17 @@ let get_field parse default k k2 l =
       None -> default
     | Some x -> x
 
-(* replace first occurrence, if any *)
-let rec replace k v = function
-    (k', _) as x :: l ->
-      if k = k' then
-        (k, v) :: l
-      else
-        x :: replace k v l
-  | [] ->
-      []
-
 let set_field loc k k2 v l : Ast.annot =
   try
     let section_loc, section = List.assoc k l in
     let section =
       try
         let _field = List.assoc k2 section in
-        replace k2 (loc, v) section
+        List.assoc_update k2 (loc, v) section
       with Not_found ->
         (k2, (loc, v)) :: section
     in
-    replace k (section_loc, section) l
+    List.assoc_update k (section_loc, section) l
 
   with Not_found ->
     (k, (loc, [ k2, (loc, v) ])) :: l

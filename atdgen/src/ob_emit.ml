@@ -547,49 +547,47 @@ and make_record_writer deref tagged a record_kind =
   in
 
   let write_fields =
-    List.map (
-      fun (x, ocaml_fname, ocaml_default, optional, unwrapped) ->
-        let f_value =
-          if unwrapped then Ocaml.unwrap_option deref x.f_value
-          else x.f_value
-        in
-        let write_field_tag =
-          let s = Bi_io.string_of_hashtag (Bi_io.hash_name x.f_name) true in
-          sprintf "Bi_outbuf.add_char4 ob %C %C %C %C;"
-            s.[0] s.[1] s.[2] s.[3]
-        in
-        let app v =
-          [
-            Line write_field_tag;
-            Line "(";
-            Block (make_writer ~tagged:true deref f_value);
-            Line (sprintf ") ob %s;" v);
-          ]
-        in
-        let v =
-          if optional then
-            sprintf "x_%s" ocaml_fname
-          else
-            sprintf "x%s%s" dot ocaml_fname
-        in
-        if unwrapped then
-          [
-            Line (sprintf "(match %s with None -> () | Some x ->" v);
-            Block (app "x");
-            Line ");"
-          ]
-        else if optional then
-          [
-            Line (sprintf "if %s != %s then (" v (unopt ocaml_default));
-            Block (app v);
-            Line ");"
-          ]
+    List.concat_map (fun (x, ocaml_fname, ocaml_default, optional, unwrapped) ->
+      let f_value =
+        if unwrapped then Ocaml.unwrap_option deref x.f_value
+        else x.f_value
+      in
+      let write_field_tag =
+        let s = Bi_io.string_of_hashtag (Bi_io.hash_name x.f_name) true in
+        sprintf "Bi_outbuf.add_char4 ob %C %C %C %C;"
+          s.[0] s.[1] s.[2] s.[3]
+      in
+      let app v =
+        [
+          Line write_field_tag;
+          Line "(";
+          Block (make_writer ~tagged:true deref f_value);
+          Line (sprintf ") ob %s;" v);
+        ]
+      in
+      let v =
+        if optional then
+          sprintf "x_%s" ocaml_fname
         else
-          app v
-    ) fields
-  in
+          sprintf "x%s%s" dot ocaml_fname
+      in
+      if unwrapped then
+        [
+          Line (sprintf "(match %s with None -> () | Some x ->" v);
+          Block (app "x");
+          Line ");"
+        ]
+      else if optional then
+        [
+          Line (sprintf "if %s != %s then (" v (unopt ocaml_default));
+          Block (app v);
+          Line ");"
+        ]
+      else
+        app v
+    ) fields in
 
-  let main = write_length @ List.flatten write_fields in
+  let main = write_length @ write_fields in
 
   if tagged then
     Line "Bi_io.write_tag ob Bi_io.record_tag;" :: main
@@ -696,12 +694,7 @@ let study_record ~ocaml_version fields =
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
   let init_bits =
-    Array.to_list (
-      Array.init k (
-        fun i -> Line (sprintf "let bits%i = ref 0 in" i)
-      )
-    )
-  in
+    List.init k (fun i -> Line (sprintf "let bits%i = ref 0 in" i)) in
   let final_bits = Array.make k 0 in
   for z0 = 0 to List.length fields - 1 do
     match mapping.(z0) with
@@ -721,13 +714,9 @@ let study_record ~ocaml_version fields =
   in
   let check_bits =
     let bool_expr =
-      String.concat " || " (
-        Array.to_list (
-          Array.mapi (
-            fun i x -> sprintf "!bits%i <> 0x%x" i x
-          ) final_bits
-        )
-      )
+      Array.mapi (fun i x -> sprintf "!bits%i <> 0x%x" i x) final_bits
+      |> Array.to_list
+      |> String.concat " || "
     in
     let bit_fields =
       let a = Array.init k (fun i -> sprintf "!bits%i" i) in
@@ -1318,31 +1307,25 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
 
 let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
     buf deref defs =
-
-  let ll =
-    List.map (
-      fun (is_rec, l) ->
-        let l = List.filter (fun x -> x.def_value <> None) l in
-        let writers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_biniou_writer
-                ~original_types deref is_rec let1 let2 def
-          ) l
-        in
-        let readers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_biniou_reader ~ocaml_version
-                ~original_types deref is_rec let1 let2 def
-          ) l
-        in
-        List.flatten (writers @ readers)
-    ) defs
-  in
-  Indent.to_buffer buf (List.flatten ll);
+  defs
+  |> List.concat_map (fun (is_rec, l) ->
+    let l = List.filter (fun x -> x.def_value <> None) l in
+    let writers =
+      List.map_first (fun ~is_first def ->
+          let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+          make_ocaml_biniou_writer
+            ~original_types deref is_rec let1 let2 def
+      ) l
+    in
+    let readers =
+      List.map_first (fun ~is_first def ->
+          let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+          make_ocaml_biniou_reader ~ocaml_version
+            ~original_types deref is_rec let1 let2 def
+      ) l
+    in
+    List.flatten (writers @ readers))
+  |> Indent.to_buffer buf;
   Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 

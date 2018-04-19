@@ -798,13 +798,7 @@ let study_record p fields =
   ) 0 fields in
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
-  let init_bits =
-    Array.to_list (
-      Array.init k (
-        fun i -> Line (sprintf "let bits%i = ref 0 in" i)
-      )
-    )
-  in
+  let init_bits = List.init k (fun i -> Line (sprintf "let bits%i = ref 0 in" i)) in
   let final_bits = Array.make k 0 in
   for z = 0 to n - 1 do
     let i = z / 31 in
@@ -819,14 +813,9 @@ let study_record p fields =
 
   let check_bits =
     let bool_expr =
-      String.concat " || " (
-        Array.to_list (
-          Array.mapi (
-            fun i x -> sprintf "!bits%i <> 0x%x" i x
-          ) final_bits
-        )
-      )
-    in
+      Array.mapi (fun i x -> sprintf "!bits%i <> 0x%x" i x) final_bits
+      |> Array.to_list
+      |> String.concat " || " in
     let bit_fields =
       let a = Array.init k (fun i -> sprintf "!bits%i" i) in
       sprintf "[| %s |]" (String.concat "; " (Array.to_list a))
@@ -1720,28 +1709,23 @@ let make_ocaml_json_impl
     preprocess_input;
     ocaml_version;
   } in
-  let ll =
-    List.map (
-      fun (is_rec, l) ->
-        let l = List.filter (fun x -> x.def_value <> None) l in
-        let writers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_json_writer p ~original_types is_rec let1 let2 def
-          ) l
-        in
-        let readers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_json_reader p ~original_types is_rec let1 let2 def
-          ) l
-        in
-        List.flatten (writers @ readers)
-    ) defs
-  in
-  Indent.to_buffer buf (List.flatten ll);
+  defs
+  |> List.concat_map (fun (is_rec, l) ->
+    let l = List.filter (fun x -> x.def_value <> None) l in
+    let writers =
+      List.map_first (fun ~is_first def ->
+        let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+        make_ocaml_json_writer p ~original_types is_rec let1 let2 def
+      ) l
+    in
+    let readers =
+      List.map_first (fun ~is_first def ->
+        let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+        make_ocaml_json_reader p ~original_types is_rec let1 let2 def
+      ) l
+    in
+    List.flatten (writers @ readers))
+  |> Indent.to_buffer buf;
   Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 let check_variant untypeds = function

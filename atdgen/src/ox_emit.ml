@@ -295,15 +295,9 @@ let rec is_function (l : Indent.t list) =
 let name_of_var s = "_" ^ s
 
 let nth name i len =
-  let l =
-    Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
-  String.concat ", " l
-
-let map f = function
-    [] -> []
-  | x :: l ->
-      let y = f true x in
-      y :: List.map (f false) l
+  Array.init len (fun j -> if i = j then name else "_")
+  |> Array.to_list
+  |> String.concat ", "
 
 let get_let ~is_rec ~is_first =
   if is_first then

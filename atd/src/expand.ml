@@ -55,6 +55,8 @@
 
 *)
 
+open Import
+
 open Ast
 
 module S = Set.Make (String)
@@ -174,8 +176,7 @@ let var_of_int i =
   if number = 0 then prefix
   else prefix ^ string_of_int number
 
-let vars_of_int n =
-  Array.to_list (Array.init n var_of_int)
+let vars_of_int n = List.init n var_of_int
 
 let is_special s = String.length s > 0 && s.[0] = '@'
 

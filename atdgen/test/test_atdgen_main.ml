@@ -1,4 +1,4 @@
-open Printf
+open Atd.Import
 
 let current_section = ref ""
 
@@ -300,11 +300,8 @@ let make_mixed_record_array n =
   )
 
 let make_mixed ~top_len ~tab_len ~ar_len =
-  Array.to_list (
-    Array.init top_len (
-      fun _ ->
-        (make_mixed_record_array tab_len, make_mixed_record_array ar_len)
-    )
+  List.init top_len (fun _ ->
+    (make_mixed_record_array tab_len, make_mixed_record_array ar_len)
   )
 
 

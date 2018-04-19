@@ -25,6 +25,42 @@ module List = struct
   let concat_map f l =
     List.map f l
     |> List.flatten
+
+  let map_first f = function
+    | [] -> []
+    | x :: l ->
+        let y = f ~is_first:true x in
+        y :: List.map (f ~is_first:false) l
+
+  let init n f = Array.to_list (Array.init n f)
+
+  let mapi l f =
+    Array.of_list l
+    |> Array.mapi f
+    |> Array.to_list
+
+  let rec find_map f = function
+    | [] -> None
+    | x :: l ->
+        match f x with
+          None -> find_map f l
+        | Some _ as y -> y
+
+  (* replace first occurrence, if any *)
+  let rec assoc_update k v = function
+    |  (k', _) as x :: l ->
+        if k = k' then
+          (k, v) :: l
+        else
+          x :: assoc_update k v l
+    | [] ->
+        []
+
+  let rec insert_sep t ~sep =
+    match t with
+    | []
+    | [_] -> t
+    | x :: xs -> x :: sep @ (insert_sep xs ~sep)
 end
 
 module Option = struct

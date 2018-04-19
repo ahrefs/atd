@@ -203,7 +203,11 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_reader p type_annot x)
       ; Line ")"
       ]
-  | Nullable (_, _, Nullable, Nullable) -> failwith "TODO: Nullable"
+  | Nullable (_, x, Nullable, Nullable) ->
+      [ Line (sprintf "%s (" (decoder_ident "nullable"))
+      ; Block (make_reader p type_annot x)
+      ; Line ")"
+      ]
   | _ -> failwith "TODO: make reader"
 
 and make_record_reader

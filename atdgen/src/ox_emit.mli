@@ -54,3 +54,19 @@ val def_of_atd
   -> external_:'a
   -> mapping_of_expr:(Atd.Ast.type_expr -> (Ocaml.Repr.t, 'a) Mapping.mapping)
   -> (Ocaml.Repr.t, 'a) Mapping.def
+
+val maybe_write_creator_impl
+  : with_create:bool
+  -> ((Ocaml.Repr.t, 'a) Mapping.mapping ->
+      (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> Buffer.t
+  -> ('c * (Ocaml.Repr.t, 'a) Mapping.def list) list
+  -> unit
+
+val maybe_write_creator_intf
+  : with_create:bool
+  -> ((Ocaml.Repr.t, 'a) Mapping.mapping ->
+      (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> Buffer.t
+  -> (Ocaml.Repr.t, 'a) Mapping.def
+  -> unit

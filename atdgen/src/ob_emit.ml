@@ -119,12 +119,7 @@ val %s_of_string :%s
           full_name
           s;
 
-        if with_create && Ox_emit.is_exportable x then
-          let create_record_intf, _create_record_impl =
-            Ox_emit.make_record_creator deref x
-          in
-          bprintf buf "%s" create_record_intf;
-          bprintf buf "\n";
+        Ox_emit.maybe_write_creator_intf ~with_create deref buf x
       )
   ) (flatten defs)
 
@@ -1393,18 +1388,7 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
     ) defs
   in
   Indent.to_buffer buf (List.flatten ll);
-
-  if with_create then
-    List.iter (
-      fun (_, l) ->
-        let l = List.filter Ox_emit.is_exportable l in
-        List.iter (
-          fun x ->
-            let _, impl = Ox_emit.make_record_creator deref x in
-            Buffer.add_string buf impl
-        ) l
-    ) defs
-
+  Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 
 (*

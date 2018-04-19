@@ -349,3 +349,22 @@ let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
                        ocaml_ddoc = doc };
     def_brepr = def;
   }
+
+let maybe_write_creator_impl ~with_create deref buf defs =
+  if with_create then
+    List.iter (
+      fun (_, l) ->
+        let l = List.filter is_exportable l in
+        List.iter (
+          fun x ->
+            let _, impl = make_record_creator deref x in
+            Buffer.add_string buf impl
+        ) l
+    ) defs
+
+let maybe_write_creator_intf ~with_create deref buf x =
+  if with_create && is_exportable x then (
+    let create_record_intf, _ = make_record_creator deref x in
+    bprintf buf "%s" create_record_intf;
+    bprintf buf "\n"
+  )

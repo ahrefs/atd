@@ -1622,7 +1622,7 @@ and make_tuple_reader p a =
   ]
 
 let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
@@ -1652,7 +1652,7 @@ let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
   ]
 
 let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in

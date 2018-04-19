@@ -335,7 +335,7 @@ and make_record_validator a record_kind =
   forall validate_fields
 
 let make_ocaml_validator ~original_types is_rec let1 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in

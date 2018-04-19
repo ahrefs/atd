@@ -67,6 +67,10 @@ module Option = struct
   let map f = function
     | None -> None
     | Some s -> Some (f s)
+
+  let value_exn = function
+    | None -> failwith "Option.value_exn"
+    | Some s -> s
 end
 
 let sprintf = Printf.sprintf

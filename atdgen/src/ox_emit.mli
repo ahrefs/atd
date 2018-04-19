@@ -75,3 +75,5 @@ val default_value
   : (Ocaml.Repr.t, 'a) Mapping.field_mapping
   -> ((Ocaml.Repr.t, 'a) Mapping.mapping -> (Ocaml.Repr.t, 'b) Mapping.mapping)
   -> string option
+
+val include_intf : (Ocaml.Repr.t, 'a) Mapping.def -> bool

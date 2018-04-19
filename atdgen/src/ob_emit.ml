@@ -357,11 +357,7 @@ let rec make_writer ~tagged deref (x : ob_mapping) : Indent.t list =
   | Tvar _ -> [ Line (get_writer_name ~tagged x) ]
 
   | Sum (_, a, Sum x, Sum) ->
-      let tick =
-        match x with
-          Classic -> ""
-        | Poly -> "`"
-      in
+      let tick = Ocaml.tick x in
       let match_ =
         [
           Line "match x with";

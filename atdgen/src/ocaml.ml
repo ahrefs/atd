@@ -46,6 +46,10 @@ type atd_ocaml_def = {
   ocaml_ddoc : Atd.Doc.doc option;
 }
 
+let tick = function
+  | Poly -> "`"
+  | Classic -> ""
+
 module Repr = struct
   type t =
     | Unit
@@ -720,11 +724,7 @@ and format_field ((s, is_mutable), t, doc) =
   append_ocamldoc_comment field doc
 
 and format_variant kind (s, o, doc) =
-  let s =
-    match kind with
-        Classic -> s
-      | Poly -> "`" ^ s
-  in
+  let s = tick kind ^ s in
   let cons = make_atom s in
   let variant =
     match o with

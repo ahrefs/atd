@@ -100,3 +100,7 @@ let option_as_constr f =
     [ "None", `Single None
     ; "Some", `Decode (map (fun x -> Some x) f)
     ]
+
+let nullable f = function
+  | `Null -> None
+  | x -> Some (f x)

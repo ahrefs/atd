@@ -33,3 +33,5 @@ val tuple4 : 'a t -> 'b t -> 'c t -> 'd t -> ('a * 'b * 'c * 'd) t
 val enum : (string * [`Single of 'a | `Decode of 'a t]) list -> 'a t
 
 val option_as_constr : 'a t -> 'a option t
+
+val nullable : 'a t -> 'a option t

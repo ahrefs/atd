@@ -586,13 +586,5 @@ let make_ocaml_files
     ~ocaml_version:_
     ~pp_convs:_
     atd_file out =
-  let opens =
-    match opens, atd_file with
-    | [], Some f ->
-        [ Filename.chop_extension f
-          |> String.capitalize_ascii
-          |> sprintf "%s_t"
-        ]
-    | opens, _ -> opens in
   make_ocaml_files ~opens ~all_rec ~pos_fname ~pos_lnum ~type_aliases atd_file
     out

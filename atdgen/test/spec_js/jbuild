@@ -18,7 +18,7 @@
 (rule
  ((targets (spec_bs.ml spec_bs.mli))
   (deps (spec.atd))
-  (action (run atdgen ${<} -bs))))
+  (action (run atdgen ${<} -bs -open Spec_t))))
 
 (executable
  ((name test_j)

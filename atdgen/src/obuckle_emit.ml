@@ -1,4 +1,5 @@
 open Printf
+open Indent
 
 type param =
   { deref
@@ -53,7 +54,7 @@ let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
   | String _
   | Name _
   | External _
-  | Tvar _ -> [ `Line (get_reader_name p x) ]
+  | Tvar _ -> [ Indent.Line (get_reader_name p x) ]
   | Record (loc, a, Record o, Record j) ->
       (match o with
          Record -> ()
@@ -61,16 +62,16 @@ let rec make_reader p type_annot (x : Oj_mapping.oj_mapping) : Indent.t list =
            Error.error loc "Sorry, OCaml objects are not supported"
       );
       [
-        `Annot ("fun", `Line "fun json ->");
-        `Block (make_record_reader p type_annot loc a j)
+        Annot ("fun", Line "fun json ->");
+        Block (make_record_reader p type_annot loc a j)
       ]
 
   | Tuple (_, a, Tuple, Tuple) ->
       a
       |> Array.to_list
       |> List.map (fun (cm : (_, _) Mapping.cell_mapping) ->
-        `Block (make_reader p None cm.cel_value))
-      |> Indent.concat (`Line ",")
+        Block (make_reader p None cm.cel_value))
+      |> Indent.concat (Line ",")
   | _ -> failwith "TODO: make_reader"
 
 and make_record_reader
@@ -85,29 +86,29 @@ and make_record_reader
     match x.f_arepr, x.f_brepr with
     | Ocaml.Repr.Field o, Json.Field j ->
         let oname = o.Ocaml.ocaml_fname in
-        `Block
-          [ `Line (sprintf "%s =" oname)
-          ;  `Block
-              [ `Line (ident "decode")
-              ; `Line "("
-              ; `Block
-                  [ `Inline (make_reader p None x.f_value)
-                  ; `Line (sprintf "|> %s \"%s\"" (ident "field") x.f_name)
+        Block
+          [ Line (sprintf "%s =" oname)
+          ;  Block
+              [ Line (ident "decode")
+              ; Line "("
+              ; Block
+                  [ Inline (make_reader p None x.f_value)
+                  ; Line (sprintf "|> %s \"%s\"" (ident "field") x.f_name)
                   ]
-              ; `Line ") json;"
+              ; Line ") json;"
               ]
           ]
     | _ -> assert false
     ) a
     |> Array.to_list
   in
-  [ `Line "("
-  ; `Block
-      [ `Line "{"
-      ; `Block create_record
-      ; `Line "}"
+  [ Line "("
+  ; Block
+      [ Line "{"
+      ; Block create_record
+      ; Line "}"
       ]
-  ; `Line ")"
+  ; Line ")"
   ]
 
 let get_left_reader_name p name param =
@@ -138,9 +139,9 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 let2
     else "", ""
   in
   [
-    `Line (sprintf "%s %s%s = (" let1 read extra_param);
-    `Block (List.map Indent.strip reader_expr);
-    `Line (sprintf ")%s" extra_args);
+    Line (sprintf "%s %s%s = (" let1 read extra_param);
+    Block (List.map Indent.strip reader_expr);
+    Line (sprintf ")%s" extra_args);
   ]
 
 let make_ocaml_bs_impl
@@ -163,7 +164,7 @@ let make_ocaml_bs_impl
         List.flatten readers
     ) defs
   in
-  Atd.Indent.to_buffer buf (List.flatten ll)
+  Indent.to_buffer buf (List.flatten ll)
 
 let make_ml
     ~header:_

@@ -3,8 +3,6 @@
   (ox means OCaml-X)
 *)
 
-open Printf
-
 open Atd.Import
 open Mapping
 
@@ -118,10 +116,6 @@ let extract_ocaml_names_from_defs l =
     classic_variant_names = List.rev cvn;
   }
 
-let flatten_defs (grouped_defs : 'a grouped_defs) : 'a def list =
-  List.flatten (List.map snd grouped_defs)
-
-
 let check_duplicate_names container_kind field_kind l =
   let tbl = Hashtbl.create 200 in
   List.iter (
@@ -165,7 +159,7 @@ let check_names x =
 
 
 let check grouped_defs =
-  let x = extract_ocaml_names_from_defs (flatten_defs grouped_defs) in
+  let x = extract_ocaml_names_from_defs (List.concat_map snd grouped_defs) in
   check_names x
 
 

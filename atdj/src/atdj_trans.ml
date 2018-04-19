@@ -1,5 +1,4 @@
 open Atd.Import
-open Printf
 open Atdj_names
 open Atdj_env
 open Atdj_util

@@ -3,7 +3,7 @@
 *)
 
 
-open Printf
+open Atd.Import
 open Indent
 
 open Atd.Ast
@@ -37,7 +37,7 @@ type param = {
 
 
 let make_ocaml_json_intf ~with_create buf deref defs =
-  flatten defs
+  List.concat_map snd defs
   |> List.filter Ox_emit.include_intf
   |> List.iter (fun x ->
     let s = x.def_name in

@@ -3,6 +3,7 @@
 *)
 
 
+open Import
 open Ast
 
 module S = Set.Make (String)
@@ -41,7 +42,7 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
   let rec subst deref param (t : type_expr) : type_expr =
     match t with
       Sum (loc, vl, a) ->
-        let vl = List.flatten (List.map (subst_variant param) vl) in
+        let vl = List.concat_map (subst_variant param) vl in
         let vl =
           if inherit_variants then
             keep_last_defined get_variant_name vl
@@ -51,7 +52,7 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
         Sum (loc, vl, a)
 
     | Record (loc, fl, a) ->
-        let fl = List.flatten (List.map (subst_field param) fl) in
+        let fl = List.concat_map (subst_field param) fl in
         let fl =
           if inherit_fields then
             keep_last_defined get_field_name fl

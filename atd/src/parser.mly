@@ -4,7 +4,7 @@
    requires menhir.
 */
 %{
-  open Printf
+  open Import
   open Ast
 
   let syntax_error s pos1 pos2 =

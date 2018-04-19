@@ -1,6 +1,6 @@
 
 
-open Printf
+open Import
 
 type t = Ast.annot
 

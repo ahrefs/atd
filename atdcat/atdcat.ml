@@ -1,4 +1,4 @@
-open Printf
+open Atd.Import
 
 let html_of_doc loc s =
   let doc = Atd.Doc.parse_text loc s in

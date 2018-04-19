@@ -1,4 +1,4 @@
-open Printf
+open Atd.Import
 open Indent
 
 type param =
@@ -17,7 +17,7 @@ let codec_make = ident "make"
 let decoder_t s = sprintf "%s %s" s (ident "t")
 
 let make_ocaml_bs_intf buf _deref defs =
-  Mapping.flatten defs
+  List.concat_map snd defs
   |> List.filter Ox_emit.include_intf
   |> List.iter (fun (x : (_, _) Mapping.def) ->
     let s = x.def_name in

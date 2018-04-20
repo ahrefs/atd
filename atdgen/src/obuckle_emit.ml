@@ -457,7 +457,7 @@ let make_ocaml_bs_writer p ~original_types:_ is_rec let1 _let2
   let x = match def.def_value with None -> assert false | Some x -> x in
   let name = def.def_name in
   let param = def.def_param in
-  let read = get_left_writer_name p name param in
+  let write = get_left_writer_name p name param in
   let writer_expr = make_writer p x in
   let eta_expand = is_rec && not (Ox_emit.is_function writer_expr) in
   let extra_param, extra_args =
@@ -465,7 +465,7 @@ let make_ocaml_bs_writer p ~original_types:_ is_rec let1 _let2
     else "", ""
   in
   [
-    Line (sprintf "%s %s%s = (" let1 read extra_param);
+    Line (sprintf "%s %s%s = (" let1 write extra_param);
     Block (List.map Indent.strip writer_expr);
     Line (sprintf ")%s" extra_args);
   ]

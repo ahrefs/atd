@@ -158,14 +158,8 @@ and mapvar_field f = function
   | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
 
 and mapvar_variant f = function
-    Variant (loc, k, opt_t) ->
-      Variant (
-        loc, k,
-        (match opt_t with
-           None -> None
-         | Some t -> Some (mapvar_expr f t)
-        )
-      )
+  | Variant (loc, k, opt_t) ->
+      Variant (loc, k, (Option.map (mapvar_expr f) opt_t))
   | Inherit (loc, t) -> Inherit (loc, mapvar_expr f t)
 
 

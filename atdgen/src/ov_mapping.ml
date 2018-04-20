@@ -1,3 +1,4 @@
+open Atd.Import
 open Atd.Ast
 open Mapping
 
@@ -305,16 +306,13 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
   let doc = Atd.Doc.get_doc loc an in
   let o =
     match as_abstract x with
-      Some (_, an2) ->
-        (match Ocaml.get_ocaml_module_and_t Validate name an with
-           None -> None
-         | Some (types_module, main_module, ext_name) ->
-             let args = List.map (fun s -> Tvar (loc, s)) param in
-             Some (External
-                     (loc, name, args,
-                      Ocaml.Repr.External (types_module, main_module, ext_name),
-                      (Validate.get_validator an2, false))
-                  )
+    | Some (_, an2) ->
+        Ocaml.get_ocaml_module_and_t Validate name an
+        |> Option.map (fun (types_module, main_module, ext_name) ->
+          let args = List.map (fun s -> Tvar (loc, s)) param in
+          External (loc, name, args,
+                    Ocaml.Repr.External (types_module, main_module, ext_name),
+                    (Validate.get_validator an2, false))
         )
     | None -> Some (mapping_of_expr is_shallow x)
   in

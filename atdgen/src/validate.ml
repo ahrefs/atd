@@ -2,7 +2,7 @@
   Mapping from ATD to "validate"
 *)
 
-open Printf
+open Atd.Import
 
 type validate_repr = (string option * bool)
     (* (opt_v, b)
@@ -37,10 +37,6 @@ let get_validator an =
   match full with
   | Some _ -> full
   | None ->
-      let shorthand =
-        Atd.Annot.get_field (fun s -> Some (Some s)) None
-          ["ocaml"] "valid" an
-      in
-      match shorthand with
-      | None -> None
-      | Some s -> Some (make_full_validator s)
+      Atd.Annot.get_field (fun s -> Some (Some s)) None
+        ["ocaml"] "valid" an
+      |> Option.map make_full_validator

@@ -326,12 +326,10 @@ and trans_sum my_name env (_, vars, _) =
         let func_name, enum_name, field_name =
           get_java_variant_names atd_name an in
         let opt_java_ty =
-          match opt_ty with
-          | None -> None
-          | Some ty ->
-              let (java_ty, _) = trans_inner env (unwrap_option env ty) in
-              Some (ty, java_ty)
-        in
+          opt_ty |> Option.map (fun ty ->
+            let (java_ty, _) = trans_inner env (unwrap_option env ty) in
+            (ty, java_ty)
+          ) in
         (json_name, func_name, enum_name, field_name, opt_java_ty)
     | Inherit _ -> assert false
   ) vars

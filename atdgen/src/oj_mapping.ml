@@ -1,3 +1,4 @@
+open Atd.Import
 open Atd.Ast
 open Mapping
 
@@ -110,10 +111,7 @@ and mapping_of_variant = function
           let json_cons = Json.get_json_cons s an in
           Json.Variant { Json.json_cons = Some json_cons; }
       in
-      let arg =
-        match o with
-          None -> None
-        | Some x -> Some (mapping_of_expr x) in
+      let arg = Option.map mapping_of_expr o in
       {
         var_loc = loc;
         var_cons = s;

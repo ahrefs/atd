@@ -169,9 +169,7 @@ let get_ocaml_wrap loc an =
   let module_ =
     Atd.Annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "module" an in
   let default field =
-    match module_ with
-        None -> None
-      | Some s -> Some (sprintf "%s.%s" s field)
+    Option.map (fun s -> sprintf "%s.%s" s field) module_
   in
   let t =
     Atd.Annot.get_field (fun s -> Some (Some s))
@@ -212,33 +210,28 @@ let get_ocaml_module target an =
   let path = path_of_target target in
   let o = Atd.Annot.get_field (fun s -> Some (Some s)) None path "module" an in
   match o with
-      Some s -> Some (s, s)
-    | None ->
-        let o =
-          Atd.Annot.get_field (fun s -> Some (Some s)) None path "from" an
+    Some s -> Some (s, s)
+  | None ->
+      Atd.Annot.get_field (fun s -> Some (Some s)) None path "from" an
+      |> Option.map (fun s ->
+        let type_module = s ^ "_t" in
+        let main_module =
+          match target with
+            Default -> type_module
+          | Biniou -> s ^ "_b"
+          | Json -> s ^ "_j"
+          | Validate -> s ^ "_v"
         in
-        match o with
-            None -> None
-          | Some s ->
-              let type_module = s ^ "_t" in
-              let main_module =
-                match target with
-                    Default -> type_module
-                  | Biniou -> s ^ "_b"
-                  | Json -> s ^ "_j"
-                  | Validate -> s ^ "_v"
-              in
-              Some (type_module, main_module)
+        (type_module, main_module))
 
 let get_ocaml_t target default an =
   let path = path_of_target target in
   Atd.Annot.get_field (fun s -> Some s) default path "t" an
 
 let get_ocaml_module_and_t target default_name an =
-  match get_ocaml_module target an with
-      None -> None
-    | Some (type_module, main_module) ->
-        Some (type_module, main_module, get_ocaml_t target default_name an)
+  get_ocaml_module target an
+  |> Option.map (fun (type_module, main_module) ->
+  (type_module, main_module, get_ocaml_t target default_name an))
 
 
 (*
@@ -383,9 +376,7 @@ let map_def
 let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
   List.filter_map (
     fun (Atd.Ast.Type td) ->
-      match map_def ~target ~type_aliases td with
-          None -> None
-        | Some x -> Some (`Type x)
+      Option.map (fun x -> `Type x) (map_def ~target ~type_aliases td)
   ) l
 
 

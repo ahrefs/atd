@@ -26,6 +26,10 @@ val read_point :  point Atdgen_codec_runtime.Decode.t
 
 val write_point :  point Atdgen_codec_runtime.Encode.t
 
+val read_param_similar : 'a Atdgen_codec_runtime.Decode.t -> 'a param_similar Atdgen_codec_runtime.Decode.t
+
+val write_param_similar : 'a Atdgen_codec_runtime.Encode.t -> 'a param_similar Atdgen_codec_runtime.Encode.t
+
 val read_param : 'a Atdgen_codec_runtime.Decode.t -> 'a param Atdgen_codec_runtime.Decode.t
 
 val write_param : 'a Atdgen_codec_runtime.Encode.t -> 'a param Atdgen_codec_runtime.Encode.t

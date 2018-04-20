@@ -13,6 +13,11 @@ type 'a same_pair = 'a Bucklespec_t.same_pair
 
 type point = Bucklespec_t.point
 
+type 'a param_similar = 'a Bucklespec_t.param_similar = {
+  data: 'a;
+  something: int
+}
+
 type 'a param = 'a Bucklespec_t.param = { data: 'a; nothing: unit }
 
 type ('a, 'b) pair = ('a, 'b) Bucklespec_t.pair = { left: 'a; right: 'b }
@@ -948,6 +953,157 @@ let read_point = (
 )
 let point_of_string s =
   read_point (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_param_similar write__a : _ -> 'a param_similar -> _ = (
+  fun ob x ->
+    Bi_outbuf.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Bi_outbuf.add_char ob ',';
+    Bi_outbuf.add_string ob "\"data\":";
+    (
+      write__a
+    )
+      ob x.data;
+    if !is_first then
+      is_first := false
+    else
+      Bi_outbuf.add_char ob ',';
+    Bi_outbuf.add_string ob "\"something\":";
+    (
+      Yojson.Safe.write_int
+    )
+      ob x.something;
+    Bi_outbuf.add_char ob '}';
+)
+let string_of_param_similar write__a ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_param_similar write__a ob x;
+  Bi_outbuf.contents ob
+let read_param_similar read__a = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_data = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+    let field_something = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+    let bits0 = ref 0 in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg "out-of-bounds substring position or length";
+          match len with
+            | 4 -> (
+                if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'a' then (
+                  0
+                )
+                else (
+                  -1
+                )
+              )
+            | 9 -> (
+                if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'n' && String.unsafe_get s (pos+8) = 'g' then (
+                  1
+                )
+                else (
+                  -1
+                )
+              )
+            | _ -> (
+                -1
+              )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_data := (
+              (
+                read__a
+              ) p lb
+            );
+            bits0 := !bits0 lor 0x1;
+          | 1 ->
+            field_something := (
+              (
+                Atdgen_runtime.Oj_run.read_int
+              ) p lb
+            );
+            bits0 := !bits0 lor 0x2;
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg "out-of-bounds substring position or length";
+            match len with
+              | 4 -> (
+                  if String.unsafe_get s pos = 'd' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 't' && String.unsafe_get s (pos+3) = 'a' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 9 -> (
+                  if String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = 't' && String.unsafe_get s (pos+5) = 'h' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'n' && String.unsafe_get s (pos+8) = 'g' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | _ -> (
+                  -1
+                )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_data := (
+                (
+                  read__a
+                ) p lb
+              );
+              bits0 := !bits0 lor 0x1;
+            | 1 ->
+              field_something := (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              );
+              bits0 := !bits0 lor 0x2;
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        if !bits0 <> 0x3 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "data"; "something" |];
+        (
+          {
+            data = !field_data;
+            something = !field_something;
+          }
+         : 'a param_similar)
+      )
+)
+let param_similar_of_string read__a s =
+  read_param_similar read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_param write__a : _ -> 'a param -> _ = (
   fun ob x ->
     Bi_outbuf.add_char ob '{';

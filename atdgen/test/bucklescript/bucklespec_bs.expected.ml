@@ -221,6 +221,48 @@ let read_point = (
       Atdgen_codec_runtime.Decode.unit
     )
 )
+let write_param_similar write__a = (
+  Atdgen_codec_runtime.Encode.make (fun t ->
+    (
+    Atdgen_codec_runtime.Encode.obj
+      [
+          "data",
+            Atdgen_codec_runtime.Encode.encode
+            (
+            write__a
+            )
+            t.data
+        ;
+          "something",
+            Atdgen_codec_runtime.Encode.encode
+            (
+            Atdgen_codec_runtime.Encode.int
+            )
+            t.something
+      ]
+    )
+  )
+)
+let read_param_similar read__a = (
+  Atdgen_codec_runtime.Decode.make (fun json ->
+    (
+      {
+          data =
+            Atdgen_codec_runtime.Decode.decode
+            (
+              read__a
+              |> Atdgen_codec_runtime.Decode.field "data"
+            ) json;
+          something =
+            Atdgen_codec_runtime.Decode.decode
+            (
+              Atdgen_codec_runtime.Decode.int
+              |> Atdgen_codec_runtime.Decode.field "something"
+            ) json;
+      }
+    )
+  )
+)
 let write_param write__a = (
   Atdgen_codec_runtime.Encode.make (fun t ->
     (

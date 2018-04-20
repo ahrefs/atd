@@ -16,6 +16,11 @@ type 'a param =
   ; nothing: unit
   }
 
+type 'a param_similar =
+  { data: 'a
+  ; something: int
+  }
+
 type 'a same_pair = ('a * 'a)
 
 type ('a, 'b) pair =

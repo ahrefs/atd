@@ -154,8 +154,6 @@ let get_fields deref a =
     , binf.Biniou.biniou_unwrapped)
   ) (Array.to_list a)
 
-let unopt = function None -> assert false | Some x -> x
-
 let rec get_writer_name
     ?(paren = false)
     ?name_f
@@ -532,7 +530,7 @@ and make_record_writer deref tagged a record_kind =
                   sprintf "let x_%s = x%s%s in" ocaml_fname dot ocaml_fname in
                 let setlen =
                   sprintf "if x_%s != %s then incr len;"
-                    ocaml_fname (unopt default)
+                    ocaml_fname (Option.value_exn default)
                 in
                 Line getfield :: Line setlen :: l
               else l
@@ -575,7 +573,7 @@ and make_record_writer deref tagged a record_kind =
         ]
       else if optional then
         [
-          Line (sprintf "if %s != %s then (" v (unopt ocaml_default));
+          Line (sprintf "if %s != %s then (" v (Option.value_exn ocaml_default));
           Block (app v);
           Line ");"
         ]

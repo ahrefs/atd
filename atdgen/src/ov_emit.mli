@@ -9,7 +9,6 @@ val make_ocaml_files
   -> pos_lnum:int option
   -> type_aliases:string option
   -> force_defaults:_ (* TODO unused *)
-  -> name_overlap:bool
   -> ocaml_version:_ (* TODO unused *)
   -> pp_convs:Ocaml.pp_convs
   -> string option -> Ox_emit.target -> unit

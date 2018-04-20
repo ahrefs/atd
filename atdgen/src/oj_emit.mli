@@ -13,7 +13,6 @@ val make_ocaml_files
   -> type_aliases:string option
   -> force_defaults:bool
   -> preprocess_input:string option
-  -> name_overlap:bool
   -> ocaml_version:(int * int) option
   -> pp_convs:Ocaml.pp_convs
   -> string option

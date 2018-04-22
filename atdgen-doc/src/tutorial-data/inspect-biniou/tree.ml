@@ -15,7 +15,7 @@ let tree : Tree_t.tree =
 let () =
   (* write sample value to file *)
   let fname = "tree.dat" in
-  Atdgen.Util.Biniou.to_file Tree_b.write_tree fname tree;
+  Atdgen_runtime.Util.Biniou.to_file Tree_b.write_tree fname tree;
 
   (* write sample value to string *)
   let s = Tree_b.string_of_tree tree in

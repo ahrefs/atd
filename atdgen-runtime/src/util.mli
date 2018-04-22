@@ -361,7 +361,7 @@ sig
         Its preset behavior is to call [preset_unknown_field_handler]
         which raises a [Failure] exception.
 
-        Usage: [!Atdgen.Util.Json.unknown_field_handler src_loc field_name]
+        Usage: [!Atdgen_runtime.Util.Json.unknown_field_handler src_loc field_name]
         where [src_loc] is the location of the type definition
         in the source ATD file and [field_name] is the unknown
         JSON field name.
@@ -386,7 +386,7 @@ sig
         [preset_unknown_field_handler] which raises a [Oj_run.Error]
         exception.
 
-        Usage: [!Atdgen.Util.Json.constr_mismatch_handler
+        Usage: [!Atdgen_runtime.Util.Json.constr_mismatch_handler
         constr_field constr_constr value_field value_constr]
         where [constr_field] is the name of the constructor field,
         [constr_constr] is the constructor field value, [value_field] is the

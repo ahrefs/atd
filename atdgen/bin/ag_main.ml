@@ -195,7 +195,7 @@ let main () =
           "!Atdgen_runtime.Util.Json.unknown_field_handler"
     ),
     "
-          Call !Atdgen.Util.Json.unknown_field_handler for every unknown JSON field
+          Call !Atdgen_runtime.Util.Json.unknown_field_handler for every unknown JSON field
           found in the input instead of simply skipping them.
           The initial behavior is to raise an exception.";
 
@@ -225,7 +225,7 @@ let main () =
           A correct record might be { t = \"B\"; v = `B }
           or { t = \"A\"; v = `A 123 }.
 
-          With this option, !Atdgen.Util.Json.constr_mismatch_handler is called
+          With this option, !Atdgen_runtime.Util.Json.constr_mismatch_handler is called
           for every mismatched constructor field value and value
           field constructor in the data structures to output instead
           of simply serializing them.

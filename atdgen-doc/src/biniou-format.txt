@@ -174,36 +174,3 @@ small numbers:
 5. Field and variant name hashing
 
 
-Record field names and variant names are represented by a
-31-bit tag which must be a hash of the name.  The following
-hash function must be used:
-
-  hash(s):
-    h <- 0
-    for i = 0 to length(s) - 1 do
-      h <- 223 * h + s[i]
-    done
-    h <- h mod 2^31
-    return h
-
-For example, hash("Hello") is 0x37eea2f2.
-
-A full field tag or variant tag is made of 32 bits.
-The first bit is 0 for variants without an argument, and 1 for
-variants with an argument or record fields.
-The remaining 31 bits are the hash of field or variant name described above.
-
-
-
-6. Numeric variants
-
-
-Numeric variants are a more compact alternative to variants using
-32-bit hash-based tags since the tag of numeric variants
-takes only one byte.
-
-The most common use of numeric variants is for an option type.
-A value of type option is either None or Some value,
-e.g. None, Some 123 or Some 0.
-This allows to represent undefined values without
-reserving a special value called null or undefined.

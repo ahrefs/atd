@@ -559,15 +559,19 @@ and make_record_writer p a record_kind =
     `Line "Bi_outbuf.add_char ob '}';";
   ]
 
-let study_record fields =
+let study_record ~ocaml_version fields =
   let field_assignments =
     List.fold_right (
       fun (x, oname, default, jname, opt, unwrap) field_assignments ->
         let v =
           match default with
-            None ->
+          | None ->
               assert (not opt);
-              "Obj.magic 0.0"
+              begin match ocaml_version with
+                | Some (maj, min) when (maj > 4 || maj = 4 && min >= 3) ->
+                    "Obj.magic (Sys.opaque_identity 0.0)"
+                | _ -> "Obj.magic 0.0"
+              end
           | Some s ->
               s
         in
@@ -930,7 +934,7 @@ and make_record_reader p type_annot loc a json_options =
   let keep_nulls = json_options.json_keep_nulls in
   let fields = get_fields p a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
-    study_record fields
+    study_record ~ocaml_version:p.ocaml_version fields
   in
 
   let read_field =

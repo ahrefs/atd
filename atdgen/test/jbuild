@@ -1,32 +1,6 @@
 (jbuild_version 1)
 
 (rule
- ((targets (github_t.ml github_t.mli))
-  (deps    (github.atd))
-  (action  (run atdgen -t ${<}))))
-
-(alias
- ((name runtest)
-  (action (diff github_t.expected.ml github_t.ml))))
-
-(alias
- ((name runtest)
-  (action (diff github_t.expected.mli github_t.mli))))
-
-(rule
- ((targets (github_j.ml github_j.mli))
-  (deps    (github.atd))
-  (action  (run atdgen -j -j-std ${<}))))
-
-(alias
- ((name runtest)
-  (action (diff github_j.expected.ml github_j.ml))))
-
-(alias
- ((name runtest)
-  (action (diff github_j.expected.mli github_j.mli))))
-
-(rule
  ((targets (test.ml test.mli))
   (deps    (test.atd))
   (action  (run ${bin:atdgen} ${<}))))
@@ -142,6 +116,7 @@
   (flags (:include ${ROOT}/ocamlflags.sexp))
   (modules
    (test
+    adapter
     test3j_j
     test3j_t
     testjstd
@@ -150,18 +125,6 @@
     test_atdgen_main
     test_atdgen_type_conv
     test_lib))))
-
-(executables
- ((libraries (atd atdgen-runtime))
-  (flags (:include ${ROOT}/ocamlflags.sexp))
-  (names (github_j))
-  (modules (github_t github_j))))
-
-(alias
- ((name runtest)
-  (package atdgen)
-  (deps (github_j.exe))
-  (action (run ${<}))))
 
 (alias
  ((name   runtest)

@@ -34,92 +34,31 @@ type integer_or_string = [
   | String <json name="string"> of string
 ]
 
-
-(* More complex cases *)
-
-type tag = [
-| A <json name="a">
-| B <json name="b">
-| C <json name="c">
-]
-
-type constr = [
-| A <json name="a">
-| B <json name="b"> of int
-| C <json name="c"> of string
-]
-
-type inter_constr = [
-| A <json name="a"> of constr
-| B <json name="b"> of constr
-| C <json name="c"> of constr
-]
-
-type constr_record = {
-  int_field : int;
-  tag_field : string;
-  constr_field <json tag_field="tag_field"> : constr;
-  string_field : string;
-}
-
-type implicit_constr_record = {
-  implicit_constr_field1 <json tag_field="implicit_tag_field"> : constr;
-  implicit_constr_field2 <json tag_field="implicit_tag_field"> : constr;
-}
-
-type tag_record = {
-  tag : tag;
-  constr <json tag_field="tag"> : constr;
-}
-
-type multi_constr_record = {
-  multi_tag : tag;
-  first_constr <json tag_field="multi_tag"> : constr;
-  second_constr <json tag_field="multi_tag"> : inter_constr;
-}
-
-type default_tag_record = {
-  ~default_tag <ocaml default="`B"> : tag;
-  default_tag_constr <json tag_field="default_tag"> : constr;
-}
-
-type default_constr_record = {
-  default_constr_tag : tag;
-  ~default_constr
-  <ocaml default="`B 12">
-  <json tag_field="default_constr_tag"> : constr;
-}
-
-type default_record = {
-  ~default2_tag <ocaml default="`B"> : tag;
-  ~default2_tag_constr
-  <ocaml default="`B 12">
-  <json tag_field="default2_tag"> : constr;
-}
-
-type default_implicit = {
-  ~def_imp_constr <json tag_field="tag"> <ocaml default="`B 12"> : constr;
-}
-
-type chained_constr_record = {
-  first_tag : tag;
-  second_tag <json tag_field="first_tag"> : inter_constr;
-  chained_constr <json tag_field="second_tag"> : constr;
-}
-
-type fallback_constr_record = {
-  ~tag <ocaml default="\"unknown\"">: string;
-  fallback_constr <json tag_field="tag"> : fallback_constr;
-}
-
-type empty_constr_record = {
-  empty : empty_constr;
-  empty_constr <json tag_field="tag"> : empty_constr;
-}
-
 type patch = {
   ?patch1: int nullable option;
   ?patch2: int nullable option;
   ?patch3: int nullable option;
 } <json keep_nulls>
 
+(* Test json adapters *)
+
+(*
+   The real json representation uses an object with a `"type"` field
+   equal to `"a"` or `"b"`. Types `a` and `b` are incompatible
+   with one another.
+
+   See normalize/restore functions in `adapter.ml`.
+*)
+type adapted = [
+  | A of a
+  | B of b
+] <json adapter="adapter.type_field">
+
+type a = {
+  thing: string;
+  other_thing: bool;
+}
+
+type b = {
+  thing: int; (* field name found in `a` with another type! *)
+}

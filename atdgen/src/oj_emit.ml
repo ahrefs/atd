@@ -542,7 +542,7 @@ and make_record_writer p a record_kind =
             ]
           else if optional && not p.force_defaults then
             [
-              `Line (sprintf "if %s != %s then (" v (unopt ocaml_default));
+              `Line (sprintf "if %s <> %s then (" v (unopt ocaml_default));
               `Block (app v);
               `Line ");"
             ]

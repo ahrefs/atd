@@ -49,12 +49,6 @@ let parse_ocaml_version () =
   else
     None
 
-let get_default_name_overlap ocaml_version =
-  match ocaml_version with
-  | Some (major, _) when major < 4 -> false
-  | Some (4, 0) -> false
-  | _ -> true
-
 let main () =
   let pos_fname = ref None in
   let pos_lnum = ref None in
@@ -73,7 +67,6 @@ let main () =
   let constr_mismatch_handler = ref None in
   let type_aliases = ref None in
   let ocaml_version = parse_ocaml_version () in
-  let name_overlap = ref (get_default_name_overlap ocaml_version) in
   let set_opens s =
     let l = Str.split (Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
@@ -274,23 +267,6 @@ let main () =
     "-rec", Arg.Set all_rec,
     "
           Keep OCaml type definitions mutually recursive";
-
-    "-o-name-overlap", Arg.Set name_overlap,
-    "
-          Accept records and classic (non-polymorphic) variants with identical
-          field or constructor names in the same module. Overlapping names are
-          supported in OCaml since version 4.01.
-
-          Duplicate name checking will be skipped, and type annotations will
-          be included in the implementation to disambiguate names.
-          This is the default if atdgen was compiled for OCaml >= 4.01.0";
-
-    "-o-no-name-overlap", Arg.Clear name_overlap,
-    "
-          Disallow records and classic (non-polymorphic) variants
-          with identical field or constructor names in the same module.
-          This is the default if atdgen was compiled for OCaml < 4.01.0";
-
     "-version",
     Arg.Unit (fun () ->
                 print_endline Version.version;
@@ -432,7 +408,6 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
           ~type_aliases
           ~force_defaults
           ~ocaml_version
-          ~name_overlap: !name_overlap
           atd_file ocaml_prefix
 
 let () =

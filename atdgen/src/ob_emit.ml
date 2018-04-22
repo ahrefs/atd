@@ -1356,7 +1356,6 @@ let make_ocaml_files
     ~pos_lnum
     ~type_aliases
     ~force_defaults:_
-    ~name_overlap
     ~ocaml_version
     ~pp_convs
     atd_file out =
@@ -1381,7 +1380,6 @@ let make_ocaml_files
   in
   let m1 = tsort m0 in
   let defs1 = defs_of_atd_modules m1 in
-  if not name_overlap then Ox_emit.check defs1;
   Xb_emit.check defs1;
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0

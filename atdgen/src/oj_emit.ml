@@ -312,7 +312,7 @@ let write_with_adapter opt_adapter writer =
         Oj_mapping.json_restorer_of_adapter_path adapter_path in
       [
         `Annot ("fun", `Line (
-          sprintf "Atdgen.Oj_run.write_with_adapter %s (" restore
+          sprintf "Atdgen_runtime.Oj_run.write_with_adapter %s (" restore
         ));
         `Block writer;
         `Line ")";
@@ -658,7 +658,7 @@ let read_with_adapter opt_adapter reader =
         Oj_mapping.json_normalizer_of_adapter_path adapter_path in
       [
         `Annot ("fun", `Line (
-          sprintf "Atdgen.Oj_run.read_with_adapter %s (" normalize
+          sprintf "Atdgen_runtime.Oj_run.read_with_adapter %s (" normalize
         ));
         `Block reader;
         `Line ")";
@@ -911,7 +911,7 @@ and make_variant_reader p type_annot tick std x : (string * Indent.t list) =
             ]
           else
             [
-              `Line "Atdgen.Oj_run.read_until_field_value p lb;";
+              `Line "Atdgen_runtime.Oj_run.read_until_field_value p lb;";
               `Line "let x = (";
               `Block [
                 `Block (make_reader p None v);

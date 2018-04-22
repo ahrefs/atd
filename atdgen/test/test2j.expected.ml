@@ -52,7 +52,6 @@ let string_of__3 ?(len = 1024) x =
 let read__3 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;

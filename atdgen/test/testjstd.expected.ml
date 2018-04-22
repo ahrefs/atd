@@ -167,8 +167,8 @@ let read__19 read__a = (
 let _19_of_string read__a s =
   read__19 read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let rec write_p' write__a : _ -> 'a p' -> _ = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | A -> Bi_outbuf.add_string ob "\"A\""
       | Bb x ->
         Bi_outbuf.add_string ob "[\"Bb\",";
@@ -190,7 +190,6 @@ and string_of_p' write__a ?(len = 1024) x =
 let rec read_p' read__a = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -346,8 +345,8 @@ let rec read_p' read__a = (
 and p'_of_string read__a s =
   read_p' read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let rec write_p = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | `A -> Bi_outbuf.add_string ob "\"A\""
       | `B x ->
         Bi_outbuf.add_string ob "[\"B\",";
@@ -401,7 +400,6 @@ and string_of_r ?(len = 1024) x =
 let rec read_p = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -702,7 +700,6 @@ and string_of_poly write__x write__y ?(len = 1024) x =
 let rec read__20 read__a read__b = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -963,8 +960,8 @@ and string_of__2 ?(len = 1024) x =
   write__2 ob x;
   Bi_outbuf.contents ob
 and write_test_variant = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | `Case1 -> Bi_outbuf.add_string ob "\"Case1\""
       | `Case2 x ->
         Bi_outbuf.add_string ob "[\"Case2\",";
@@ -999,7 +996,6 @@ and _2_of_string s =
 and read_test_variant = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -1166,8 +1162,8 @@ and read_test_variant = (
 and test_variant_of_string s =
   read_test_variant (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let rec write__1 : _ -> _ p' -> _ = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | A -> Bi_outbuf.add_string ob "\"A\""
       | Bb x ->
         Bi_outbuf.add_string ob "[\"Bb\",";
@@ -1189,7 +1185,6 @@ and string_of__1 ?(len = 1024) x =
 let rec read__1 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -1482,7 +1477,6 @@ let string_of__16 ?(len = 1024) x =
 let read__16 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -1907,7 +1901,6 @@ let string_of__8 ?(len = 1024) x =
 let read__8 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -2053,7 +2046,6 @@ let string_of__6 ?(len = 1024) x =
 let read__6 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -2183,7 +2175,6 @@ let string_of__5 ?(len = 1024) x =
 let read__5 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -2313,7 +2304,6 @@ let string_of__4 ?(len = 1024) x =
 let read__4 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -4188,7 +4178,6 @@ let string_of__18 ?(len = 1024) x =
 let read__18 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;
@@ -4549,8 +4538,8 @@ let read_int32 = (
 let int32_of_string s =
   read_int32 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_hello = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | `Hello x ->
         Bi_outbuf.add_string ob "[\"Hello\",";
         (
@@ -4566,7 +4555,6 @@ let string_of_hello ?(len = 1024) x =
 let read_hello = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
           Yojson.Safe.read_space p lb;

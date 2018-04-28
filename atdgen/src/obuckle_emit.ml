@@ -255,12 +255,11 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
     (def : (_, _) Mapping.def) =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
   let read = get_left_reader_name p name param in
   let type_annot =
     match Ox_emit.needs_type_annot x with
-    | true -> Some type_constraint
+    | true -> Some (Ox_emit.get_type_constraint ~original_types def)
     | false -> None
   in
   let reader_expr = make_reader p type_annot x in
@@ -327,7 +326,7 @@ let get_left_writer_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
   get_writer_name p (Name (Atd.Ast.dummy_loc, name, args, None, None))
 
-let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
+let rec make_writer ?type_name p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
   | Bool _
@@ -356,7 +355,13 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       ; Line ")"
       ]
   | Record (_, a, Record o, Record _) ->
-      [ Annot ("fun", Line (sprintf "%s (fun t ->" encoder_make))
+      [ Annot
+          ("fun", Line
+             (sprintf "%s (fun %s ->"
+                encoder_make
+                (match type_name with
+                 | None -> "t"
+                 | Some tn -> sprintf "(t : %s)" tn)))
       ; Block (make_record_writer p a o)
       ; Line ")"
       ]
@@ -452,13 +457,21 @@ and make_sum_writer (p : param)
   ; Block cases
   ; Line ")"]
 
-let make_ocaml_bs_writer p ~original_types:_ is_rec let1 _let2
+let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
     (def : (_, _) Mapping.def) =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
+  let type_name =
+    let needs_annot = Ox_emit.needs_type_annot x in
+    if needs_annot then (
+      Some (Ox_emit.get_type_constraint ~original_types def)
+    ) else (
+      None
+    )
+  in
   let param = def.def_param in
   let write = get_left_writer_name p name param in
-  let writer_expr = make_writer p x in
+  let writer_expr = make_writer ?type_name p x in
   let eta_expand = is_rec && not (Ox_emit.is_function writer_expr) in
   let extra_param, extra_args =
     if eta_expand then " js", " js"

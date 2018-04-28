@@ -24,6 +24,8 @@ let encoder_t s = sprintf "%s %s" s (encoder_ident "t")
 
 let make_json_string s = Yojson.Safe.to_string (`String s)
 
+let type_annot_str = Option.value ~default:"_"
+
 let destruct_sum (x : Oj_mapping.t) =
   let open Mapping in
   match x with
@@ -172,10 +174,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
                 ; Line (
                     sprintf "|> %s (fun x -> ((%s%s x) : %s))"
                       (decoder_ident "map")
-                      tick o
-                      (match type_annot with
-                       | None -> "_"
-                       | Some tn -> tn))
+                      tick o (type_annot_str type_annot))
                 ; Line ")"
                 ]
           in
@@ -245,10 +244,7 @@ and make_record_reader ?type_annot
   ; Block
       [ Line "({"
       ; Block create_record
-      ; Line (sprintf "} : %s)"
-                (match type_annot with
-                 | None -> "_"
-                 | Some ta -> ta))
+      ; Line (sprintf "} : %s)" (type_annot_str type_annot))
       ]
   ; Line ")"
   ]
@@ -364,12 +360,8 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       ]
   | Record (_, a, Record o, Record _) ->
       [ Annot
-          ("fun", Line
-             (sprintf "%s (fun %s ->"
-                encoder_make
-                (match type_annot with
-                 | None -> "t"
-                 | Some tn -> sprintf "(t : %s)" tn)))
+          ("fun", Line (sprintf "%s (fun (t : %s) ->"
+                          encoder_make (type_annot_str type_annot)))
       ; Block (make_record_writer p a o)
       ; Line ")"
       ]
@@ -462,10 +454,7 @@ and make_sum_writer ?type_annot (p : param)
     |> Array.to_list
   in
   [ Line (sprintf "%s (fun (x : %s) -> match x with"
-            (encoder_ident "make")
-            (match type_annot with
-             | None -> "_"
-             | Some s -> s))
+            (encoder_ident "make") (type_annot_str type_annot))
   ; Block cases
   ; Line ")"]
 

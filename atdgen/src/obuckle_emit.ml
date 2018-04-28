@@ -253,7 +253,7 @@ let get_left_reader_name p name param =
 
 let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
     (def : (_, _) Mapping.def) =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
@@ -454,7 +454,7 @@ and make_sum_writer (p : param)
 
 let make_ocaml_bs_writer p ~original_types:_ is_rec let1 _let2
     (def : (_, _) Mapping.def) =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let param = def.def_param in
   let write = get_left_writer_name p name param in

@@ -116,7 +116,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   | Record (loc, a, Record o, Record j) ->
       Ocaml.obj_unimplemented loc o;
       [ Annot ("fun", Line (sprintf "%s (fun json ->" decoder_make))
-      ; Block (make_record_reader p type_annot loc a j)
+      ; Block (make_record_reader ?type_annot p loc a j)
       ; Line ")"
       ]
   | Tuple (_, a, Tuple, Tuple) ->
@@ -214,9 +214,8 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       ]
   | _ -> failwith "TODO: make reader"
 
-and make_record_reader
+and make_record_reader ?type_annot
     (p : param)
-    _type_annot
     _loc
     (a : (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping array)
     _json_options
@@ -244,9 +243,12 @@ and make_record_reader
   in
   [ Line "("
   ; Block
-      [ Line "{"
+      [ Line "({"
       ; Block create_record
-      ; Line "}"
+      ; Line (sprintf "} : %s)"
+                (match type_annot with
+                 | None -> "_"
+                 | Some ta -> ta))
       ]
   ; Line ")"
   ]

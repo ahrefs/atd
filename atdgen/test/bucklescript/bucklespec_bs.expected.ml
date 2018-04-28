@@ -314,7 +314,7 @@ let write_param_similar write__a = (
 let read_param_similar read__a = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
-      {
+      ({
           data =
             Atdgen_codec_runtime.Decode.decode
             (
@@ -327,7 +327,7 @@ let read_param_similar read__a = (
               Atdgen_codec_runtime.Decode.int
               |> Atdgen_codec_runtime.Decode.field "something"
             ) json;
-      }
+      } : 'a param_similar)
     )
   )
 )
@@ -356,7 +356,7 @@ let write_param write__a = (
 let read_param read__a = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
-      {
+      ({
           data =
             Atdgen_codec_runtime.Decode.decode
             (
@@ -369,7 +369,7 @@ let read_param read__a = (
               Atdgen_codec_runtime.Decode.unit
               |> Atdgen_codec_runtime.Decode.field "nothing"
             ) json;
-      }
+      } : 'a param)
     )
   )
 )
@@ -398,7 +398,7 @@ let write_pair write__a write__b = (
 let read_pair read__a read__b = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
-      {
+      ({
           left =
             Atdgen_codec_runtime.Decode.decode
             (
@@ -411,7 +411,7 @@ let read_pair read__a read__b = (
               read__b
               |> Atdgen_codec_runtime.Decode.field "right"
             ) json;
-      }
+      } : ('a, 'b) pair)
     )
   )
 )
@@ -469,7 +469,7 @@ let write_labeled = (
 let read_labeled = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
-      {
+      ({
           flag =
             Atdgen_codec_runtime.Decode.decode
             (
@@ -488,7 +488,7 @@ let read_labeled = (
               Atdgen_codec_runtime.Decode.int
               |> Atdgen_codec_runtime.Decode.field "count"
             ) json;
-      }
+      } : labeled)
     )
   )
 )

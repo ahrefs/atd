@@ -6,6 +6,14 @@ val read_valid :  valid Atdgen_codec_runtime.Decode.t
 
 val write_valid :  valid Atdgen_codec_runtime.Encode.t
 
+val read_v2 :  v2 Atdgen_codec_runtime.Decode.t
+
+val write_v2 :  v2 Atdgen_codec_runtime.Encode.t
+
+val read_v1 :  v1 Atdgen_codec_runtime.Decode.t
+
+val write_v1 :  v1 Atdgen_codec_runtime.Encode.t
+
 val read_id :  id Atdgen_codec_runtime.Decode.t
 
 val write_id :  id Atdgen_codec_runtime.Encode.t

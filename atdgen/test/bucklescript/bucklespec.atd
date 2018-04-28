@@ -48,3 +48,13 @@ type 'a simple_var =
   ]
 
 type simple_vars = unit simple_var list
+
+type v1 =
+ [ V1_foo of bool
+ | V2_bar of int
+ ] <ocaml repr="classic">
+
+type v2 =
+ [ V1_foo of int
+ | V2_bar of bool
+ ] <ocaml repr="classic">

@@ -8,6 +8,74 @@ let write_valid = (
 let read_valid = (
   Atdgen_codec_runtime.Decode.bool
 )
+let write_v2 = (
+  Atdgen_codec_runtime.Encode.make (fun (x : v2) -> match x with
+    | V1_foo x ->
+    Atdgen_codec_runtime.Encode.constr1 "V1_foo" (
+      Atdgen_codec_runtime.Encode.int
+    ) x
+    | V2_bar x ->
+    Atdgen_codec_runtime.Encode.constr1 "V2_bar" (
+      Atdgen_codec_runtime.Encode.bool
+    ) x
+  )
+)
+let read_v2 = (
+  Atdgen_codec_runtime.Decode.enum
+  [
+      (
+      "V1_foo"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.int
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((V1_foo x) : v2))
+        )
+      )
+    ;
+      (
+      "V2_bar"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.bool
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((V2_bar x) : v2))
+        )
+      )
+  ]
+)
+let write_v1 = (
+  Atdgen_codec_runtime.Encode.make (fun (x : v1) -> match x with
+    | V1_foo x ->
+    Atdgen_codec_runtime.Encode.constr1 "V1_foo" (
+      Atdgen_codec_runtime.Encode.bool
+    ) x
+    | V2_bar x ->
+    Atdgen_codec_runtime.Encode.constr1 "V2_bar" (
+      Atdgen_codec_runtime.Encode.int
+    ) x
+  )
+)
+let read_v1 = (
+  Atdgen_codec_runtime.Decode.enum
+  [
+      (
+      "V1_foo"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.bool
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((V1_foo x) : v1))
+        )
+      )
+    ;
+      (
+      "V2_bar"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.int
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((V2_bar x) : v1))
+        )
+      )
+  ]
+)
 let write__2 = (
     Atdgen_codec_runtime.Encode.string
   |> Atdgen_codec_runtime.Encode.contramap (function `Id s -> s)
@@ -24,7 +92,7 @@ let read_id = (
   read__2
 )
 let write__3 = (
-  Atdgen_codec_runtime.Encode.make (function
+  Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
     | `Foo x ->
     Atdgen_codec_runtime.Encode.constr1 "Foo" (
       Atdgen_codec_runtime.Encode.tuple2
@@ -61,7 +129,7 @@ let read__3 = (
           (
             Atdgen_codec_runtime.Decode.int
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> `Foo x)
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foo x) : _))
         )
       )
     ;
@@ -76,7 +144,7 @@ let read__3 = (
       ,
         `Decode (
         Atdgen_codec_runtime.Decode.unit
-        |> Atdgen_codec_runtime.Decode.map (fun x -> `Foobar x)
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foobar x) : _))
         )
       )
     ;
@@ -85,7 +153,7 @@ let read__3 = (
       ,
         `Decode (
         read_id
-        |> Atdgen_codec_runtime.Decode.map (fun x -> `Foo_id x)
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foo_id x) : _))
         )
       )
   ]
@@ -107,7 +175,7 @@ let read_simple_vars = (
   read__4
 )
 let write_simple_var write__a = (
-  Atdgen_codec_runtime.Encode.make (function
+  Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
     | `Foo x ->
     Atdgen_codec_runtime.Encode.constr1 "Foo" (
       Atdgen_codec_runtime.Encode.tuple2
@@ -144,7 +212,7 @@ let read_simple_var read__a = (
           (
             Atdgen_codec_runtime.Decode.int
           )
-        |> Atdgen_codec_runtime.Decode.map (fun x -> `Foo x)
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foo x) : _))
         )
       )
     ;
@@ -159,7 +227,7 @@ let read_simple_var read__a = (
       ,
         `Decode (
         read__a
-        |> Atdgen_codec_runtime.Decode.map (fun x -> `Foobar x)
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foobar x) : _))
         )
       )
     ;
@@ -168,7 +236,7 @@ let read_simple_var read__a = (
       ,
         `Decode (
         read_id
-        |> Atdgen_codec_runtime.Decode.map (fun x -> `Foo_id x)
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foo_id x) : _))
         )
       )
   ]

@@ -103,7 +103,7 @@ let rec get_reader_name
 
   | _ -> assert false
 
-let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
+let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
   | Bool _
@@ -125,7 +125,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           a
           |> Array.to_list
           |> List.map (fun (cm : (_, _) Mapping.cell_mapping) ->
-            Block (make_reader p None cm.cel_value)
+            Block (make_reader p cm.cel_value)
             |> Indent.paren
           )
         )
@@ -139,7 +139,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
                 (match o with
                  | List -> decoder_ident "list"
                  | Array -> decoder_ident "array"))
-      ; Block (make_reader p None x)
+      ; Block (make_reader p x)
       ; Line ")"
       ]
   | Sum (_, a, Sum osum, Sum) ->
@@ -168,10 +168,14 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
                 [Line (sprintf "`Single (%s%s)" tick o)]
             | Some v ->
                 [ Line "`Decode ("
-                ; Inline (make_reader p None v)
+                ; Inline (make_reader p v)
                 ; Line (
-                    sprintf "|> %s (fun x -> %s%s x)" (decoder_ident "map") tick o
-                  )
+                    sprintf "|> %s (fun x -> ((%s%s x) : %s))"
+                      (decoder_ident "map")
+                      tick o
+                      (match type_annot with
+                       | None -> "_"
+                       | Some tn -> tn))
                 ; Line ")"
                 ]
           in
@@ -192,20 +196,20 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       ]
   | Wrap (_, x, Wrap o, Wrap) ->
       (match o with
-       | None -> make_reader p type_annot x
+       | None -> make_reader p x
        | Some w ->
            [ Line "("
-           ; Block (make_reader p type_annot x)
+           ; Block (make_reader p x)
            ; Line (sprintf ") |> (%s (%s))" (decoder_ident "map") w.ocaml_wrap)
            ])
   | Option (_, x, Option, Option) ->
       [ Line (sprintf "%s (" (decoder_ident "option_as_constr"))
-      ; Block (make_reader p type_annot x)
+      ; Block (make_reader p x)
       ; Line ")"
       ]
   | Nullable (_, x, Nullable, Nullable) ->
       [ Line (sprintf "%s (" (decoder_ident "nullable"))
-      ; Block (make_reader p type_annot x)
+      ; Block (make_reader p x)
       ; Line ")"
       ]
   | _ -> failwith "TODO: make reader"
@@ -228,7 +232,7 @@ and make_record_reader
               [ Line (decoder_ident "decode")
               ; Line "("
               ; Block
-                  [ Inline (make_reader p None x.f_value)
+                  [ Inline (make_reader p x.f_value)
                   ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field") x.f_name)
                   ]
               ; Line ") json;"
@@ -258,11 +262,13 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
   let param = def.def_param in
   let read = get_left_reader_name p name param in
   let type_annot =
-    match Ox_emit.needs_type_annot x with
-    | true -> Some (Ox_emit.get_type_constraint ~original_types def)
-    | false -> None
+    if Ox_emit.needs_type_annot x then (
+      Some (Ox_emit.get_type_constraint ~original_types def)
+    ) else (
+      None
+    )
   in
-  let reader_expr = make_reader p type_annot x in
+  let reader_expr = make_reader ?type_annot p x in
   let eta_expand = is_rec && not (Ox_emit.is_function reader_expr) in
   let extra_param, extra_args =
     if eta_expand then " js", " js"
@@ -326,7 +332,7 @@ let get_left_writer_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
   get_writer_name p (Name (Atd.Ast.dummy_loc, name, args, None, None))
 
-let rec make_writer ?type_name p (x : Oj_mapping.t) : Indent.t list =
+let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
   | Bool _
@@ -359,14 +365,14 @@ let rec make_writer ?type_name p (x : Oj_mapping.t) : Indent.t list =
           ("fun", Line
              (sprintf "%s (fun %s ->"
                 encoder_make
-                (match type_name with
+                (match type_annot with
                  | None -> "t"
                  | Some tn -> sprintf "(t : %s)" tn)))
       ; Block (make_record_writer p a o)
       ; Line ")"
       ]
   | Sum (_, _a, Sum _osum, Sum) ->
-      make_sum_writer p x
+      make_sum_writer ?type_annot p x
   | Wrap (_, x, Wrap o, Wrap) ->
       begin match o with
         | None -> make_writer p x
@@ -419,7 +425,7 @@ and make_record_writer p a _record_kind =
   ; Line ")"
   ]
 
-and make_sum_writer (p : param)
+and make_sum_writer ?type_annot (p : param)
     (sum : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping) =
   let tick, a = destruct_sum (p.deref sum) in
   let cases =
@@ -453,7 +459,11 @@ and make_sum_writer (p : param)
     )
     |> Array.to_list
   in
-  [ Line (encoder_ident "make (function")
+  [ Line (sprintf "%s (fun (x : %s) -> match x with"
+            (encoder_ident "make")
+            (match type_annot with
+             | None -> "_"
+             | Some s -> s))
   ; Block cases
   ; Line ")"]
 
@@ -461,9 +471,8 @@ let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
     (def : (_, _) Mapping.def) =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_name =
-    let needs_annot = Ox_emit.needs_type_annot x in
-    if needs_annot then (
+  let type_annot =
+    if Ox_emit.needs_type_annot x then (
       Some (Ox_emit.get_type_constraint ~original_types def)
     ) else (
       None
@@ -471,7 +480,7 @@ let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
   in
   let param = def.def_param in
   let write = get_left_writer_name p name param in
-  let writer_expr = make_writer ?type_name p x in
+  let writer_expr = make_writer ?type_annot p x in
   let eta_expand = is_rec && not (Ox_emit.is_function writer_expr) in
   let extra_param, extra_args =
     if eta_expand then " js", " js"

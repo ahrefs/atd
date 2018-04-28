@@ -582,7 +582,6 @@ let make_ocaml_files
     ~pos_lnum
     ~type_aliases
     ~force_defaults:_
-    ~name_overlap:_
     ~ocaml_version:_
     ~pp_convs:_
     atd_file out =

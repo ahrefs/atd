@@ -9,7 +9,6 @@ val make_ocaml_files
   -> pos_lnum:int option
   -> type_aliases:string option
   -> force_defaults:'e
-  -> name_overlap:'f
   -> ocaml_version:'g
   -> pp_convs:'h
   -> string option

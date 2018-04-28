@@ -815,11 +815,7 @@ let rec make_reader
   | Tvar _ -> [ Line (get_reader_name ~tagged x) ]
 
   | Sum (_, a, Sum x, Sum) ->
-      let tick =
-        match x with
-          Classic -> ""
-        | Poly -> "`"
-      in
+      let tick = Ocaml.tick x in
       let body =
         [
           Line "Bi_io.read_hashtag ib (fun ib h has_arg ->";

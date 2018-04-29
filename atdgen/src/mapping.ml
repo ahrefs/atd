@@ -1,4 +1,4 @@
-open Printf
+open Atd.Import
 
 type loc = Atd.Ast.loc
 
@@ -159,8 +159,6 @@ and deref_expr env visited x =
        with Not_found -> x)
   | _ -> x
 
-let flatten l = List.flatten (List.map snd l)
-
 let make_deref
     (l : (bool * ('a, 'b) def list) list) :
     (('a, 'b) mapping -> ('a, 'b) mapping) =
@@ -171,7 +169,7 @@ let make_deref
          match d.def_value with
              None -> env
            | Some v -> Env.add d.def_name (d.def_param, v) env)
-      Env.empty (flatten l) in
+      Env.empty (List.concat_map snd l) in
 
   fun x -> deref_expr defs [] x
 

@@ -1,6 +1,6 @@
 (* Semantic verification *)
 
-open Printf
+open Import
 
 open Ast
 

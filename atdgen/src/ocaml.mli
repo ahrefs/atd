@@ -110,3 +110,9 @@ val map_record_creator_field
      -> (Repr.t, 'b) Mapping.mapping)
   -> (Repr.t, 'a) Mapping.field_mapping
   -> string * string * string
+
+val tick : atd_ocaml_sum -> string
+
+val dot : atd_ocaml_record -> string
+
+val obj_unimplemented : Atd.Ast.loc -> atd_ocaml_record -> unit

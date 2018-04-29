@@ -3,8 +3,6 @@
   (ox means OCaml-X)
 *)
 
-open Printf
-
 open Atd.Import
 open Mapping
 
@@ -118,10 +116,6 @@ let extract_ocaml_names_from_defs l =
     classic_variant_names = List.rev cvn;
   }
 
-let flatten_defs (grouped_defs : 'a grouped_defs) : 'a def list =
-  List.flatten (List.map snd grouped_defs)
-
-
 let check_duplicate_names container_kind field_kind l =
   let tbl = Hashtbl.create 200 in
   List.iter (
@@ -165,7 +159,7 @@ let check_names x =
 
 
 let check grouped_defs =
-  let x = extract_ocaml_names_from_defs (flatten_defs grouped_defs) in
+  let x = extract_ocaml_names_from_defs (List.concat_map snd grouped_defs) in
   check_names x
 
 
@@ -292,24 +286,18 @@ let rec is_function (l : Indent.t list) =
     [] -> false
   | x :: _ ->
       match x with
-        `Line _ -> false
-      | `Block l -> is_function l
-      | `Inline l -> is_function l
-      | `Annot ("fun", _) -> true
-      | `Annot (_, x) -> is_function [x]
+        Line _ -> false
+      | Block l -> is_function l
+      | Inline l -> is_function l
+      | Annot ("fun", _) -> true
+      | Annot (_, x) -> is_function [x]
 
 let name_of_var s = "_" ^ s
 
 let nth name i len =
-  let l =
-    Array.to_list (Array.init len (fun j -> if i = j then name else "_")) in
-  String.concat ", " l
-
-let map f = function
-    [] -> []
-  | x :: l ->
-      let y = f true x in
-      y :: List.map (f false) l
+  Array.init len (fun j -> if i = j then name else "_")
+  |> Array.to_list
+  |> String.concat ", "
 
 let get_let ~is_rec ~is_first =
   if is_first then
@@ -328,15 +316,13 @@ let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
   let o =
     match as_abstract x with
       Some (_, _) ->
-        (match Ocaml.get_ocaml_module_and_t target name an with
-           None -> None
-         | Some (types_module, main_module, ext_name) ->
-             let args = List.map (fun s -> Tvar (loc, s)) param in
-             Some (External
-                     (loc, name, args,
-                      Ocaml.Repr.External (types_module, main_module, ext_name),
-                      external_))
-        )
+        Ocaml.get_ocaml_module_and_t target name an
+        |> Option.map (fun (types_module, main_module, ext_name) ->
+          let args = List.map (fun s -> Tvar (loc, s)) param in
+          External
+            (loc, name, args,
+             Ocaml.Repr.External (types_module, main_module, ext_name),
+             external_))
     | None -> Some (mapping_of_expr x)
   in
   {
@@ -349,3 +335,40 @@ let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
                        ocaml_ddoc = doc };
     def_brepr = def;
   }
+
+let maybe_write_creator_impl ~with_create deref buf defs =
+  if with_create then
+    List.iter (
+      fun (_, l) ->
+        let l = List.filter is_exportable l in
+        List.iter (
+          fun x ->
+            let _, impl = make_record_creator deref x in
+            Buffer.add_string buf impl
+        ) l
+    ) defs
+
+let maybe_write_creator_intf ~with_create deref buf x =
+  if with_create && is_exportable x then (
+    let create_record_intf, _ = make_record_creator deref x in
+    bprintf buf "%s" create_record_intf;
+    bprintf buf "\n"
+  )
+
+let default_value x deref =
+  let ocamlf =
+    match x.f_arepr with
+    | Ocaml.Repr.Field o -> o
+    | _ -> failwith "Ox_emit.default_value" in
+  match x.f_kind, ocamlf.Ocaml.ocaml_default with
+  | With_default, None ->
+      begin match Ocaml.get_implicit_ocaml_default deref x.f_value with
+        | None -> Error.error x.f_loc "Missing default field value"
+        | Some d -> Some d
+      end
+  | With_default, Some d -> Some d
+  | Optional, _ -> Some "None"
+  | Required, _ -> None
+
+let include_intf (x : (Ocaml.Repr.t, _) Mapping.def) =
+  x.def_name <> "" && x.def_name.[0] <> '_' && x.def_value <> None

@@ -5,7 +5,7 @@
   This is derived from the ATD pretty-printer (atd_print.ml).
 *)
 
-open Printf
+open Atd.Import
 
 open Easy_format
 open Atd.Ast
@@ -45,6 +45,14 @@ type atd_ocaml_def = {
   ocaml_predef : bool;
   ocaml_ddoc : Atd.Doc.doc option;
 }
+
+let tick = function
+  | Poly -> "`"
+  | Classic -> ""
+
+let dot = function
+  | Record -> "."
+  | Object -> "#"
 
 module Repr = struct
   type t =
@@ -161,9 +169,7 @@ let get_ocaml_wrap loc an =
   let module_ =
     Atd.Annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "module" an in
   let default field =
-    match module_ with
-        None -> None
-      | Some s -> Some (sprintf "%s.%s" s field)
+    Option.map (fun s -> sprintf "%s.%s" s field) module_
   in
   let t =
     Atd.Annot.get_field (fun s -> Some (Some s))
@@ -204,33 +210,28 @@ let get_ocaml_module target an =
   let path = path_of_target target in
   let o = Atd.Annot.get_field (fun s -> Some (Some s)) None path "module" an in
   match o with
-      Some s -> Some (s, s)
-    | None ->
-        let o =
-          Atd.Annot.get_field (fun s -> Some (Some s)) None path "from" an
+    Some s -> Some (s, s)
+  | None ->
+      Atd.Annot.get_field (fun s -> Some (Some s)) None path "from" an
+      |> Option.map (fun s ->
+        let type_module = s ^ "_t" in
+        let main_module =
+          match target with
+            Default -> type_module
+          | Biniou -> s ^ "_b"
+          | Json -> s ^ "_j"
+          | Validate -> s ^ "_v"
         in
-        match o with
-            None -> None
-          | Some s ->
-              let type_module = s ^ "_t" in
-              let main_module =
-                match target with
-                    Default -> type_module
-                  | Biniou -> s ^ "_b"
-                  | Json -> s ^ "_j"
-                  | Validate -> s ^ "_v"
-              in
-              Some (type_module, main_module)
+        (type_module, main_module))
 
 let get_ocaml_t target default an =
   let path = path_of_target target in
   Atd.Annot.get_field (fun s -> Some s) default path "t" an
 
 let get_ocaml_module_and_t target default_name an =
-  match get_ocaml_module target an with
-      None -> None
-    | Some (type_module, main_module) ->
-        Some (type_module, main_module, get_ocaml_t target default_name an)
+  get_ocaml_module target an
+  |> Option.map (fun (type_module, main_module) ->
+  (type_module, main_module, get_ocaml_t target default_name an))
 
 
 (*
@@ -269,8 +270,6 @@ type ocaml_module_body = ocaml_module_item list
 (*
   Mapping from ATD to OCaml
 *)
-
-let omap f = function None -> None | Some x -> Some (f x)
 
 let rec map_expr (x : type_expr) : ocaml_expr =
   match x with
@@ -311,7 +310,7 @@ and map_variant (x : variant) : ocaml_variant =
     Inherit _ -> assert false
   | Variant (loc, (s, an), o) ->
       let s = get_ocaml_cons s an in
-      (s, omap map_expr o, Atd.Doc.get_doc loc an)
+      (s, Option.map map_expr o, Atd.Doc.get_doc loc an)
 
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
@@ -373,19 +372,11 @@ let map_def
         o_def_doc = doc
       }
 
-let rec select f = function
-    [] -> []
-  | x :: l ->
-      match f x with
-          None -> select f l
-        | Some y -> y :: select f l
 
 let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
-  select (
+  List.filter_map (
     fun (Atd.Ast.Type td) ->
-      match map_def ~target ~type_aliases td with
-          None -> None
-        | Some x -> Some (`Type x)
+      Option.map (fun x -> `Type x) (map_def ~target ~type_aliases td)
   ) l
 
 
@@ -430,7 +421,7 @@ and ocaml_of_variant_mapping x =
         Variant o -> o
       | _ -> assert false
   in
-  (o.ocaml_cons, omap ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc)
+  (o.ocaml_cons, Option.map ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc)
 
 and ocaml_of_field_mapping x =
   let o =
@@ -492,23 +483,12 @@ let make_atom s = Atom (s, atom)
 
 let horizontal_sequence l = Easy_format.List (("", "", "", shlist), l)
 
-let rec insert sep = function
-    [] | [_] as l -> l
-  | x :: l -> x :: sep @ insert sep l
-
-let rec insert2 f = function
-    [] | [_] as l -> l
-  | x :: (y :: _ as l) -> x :: f x y @ insert2 f l
-
-
 let vertical_sequence ?(skip_lines = 0) l =
   let l =
     if skip_lines = 0 then l
     else
-      let sep =
-        Array.to_list (Array.init skip_lines (fun _ -> (Atom ("", atom))))
-      in
-      insert sep l
+      let sep = List.init skip_lines (fun _ -> (Atom ("", atom))) in
+      List.insert_sep l ~sep
   in
   Easy_format.List (("", "", "", rlist), l)
 
@@ -540,38 +520,34 @@ let split = Str.split (Str.regexp " ")
 
 
 let make_ocamldoc_block = function
-    `Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
-  | `Before_paragraph -> Atom ("", atom)
-  | `Paragraph l ->
-      let l = List.map (
-        function
-            `Text s -> ocamldoc_escape s
-          | `Code s -> "[" ^ ocamldoc_escape s ^ "]"
+  | Atd.Doc.Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
+  | Paragraph l ->
+      let l = List.map (function
+        | Atd.Doc.Text s -> ocamldoc_escape s
+        | Code s -> "[" ^ ocamldoc_escape s ^ "]"
       ) l
       in
       let words = split (String.concat "" l) in
       let atoms = List.map (fun s -> Atom (s, atom)) words in
       List (("", "", "", plist), atoms)
 
-let make_ocamldoc_blocks (l : Atd.Doc.block list) =
-  let l =
-    insert2 (
-      fun _ y ->
+let rec make_ocamldoc_blocks = function
+  | []
+  | [_] as l -> List.map make_ocamldoc_block l
+  | x :: (y :: _ as xs) ->
+      let rest = make_ocamldoc_blocks xs in
+      let rest =
         match y with
-            `Paragraph _ -> [`Before_paragraph]
-          | `Pre _ -> []
-          | _ -> assert false
-    ) (l :> [ Atd.Doc.block | `Before_paragraph ] list)
-  in
-  List.map make_ocamldoc_block l
+        | Atd.Doc.Paragraph _ -> Atom ("", atom) :: rest
+        | Pre _ -> rest in
+      make_ocamldoc_block x :: rest
 
-
-let make_ocamldoc_comment (`Text l) =
+let make_ocamldoc_comment l =
   let blocks = make_ocamldoc_blocks l in
   let xlist =
     match l with
-        [] | [_] -> vlist1
-      | _ -> vlist
+      [] | [_] -> vlist1
+    | _ -> vlist
   in
   Easy_format.List (("(**", "", "*)", xlist), blocks)
 
@@ -720,11 +696,7 @@ and format_field ((s, is_mutable), t, doc) =
   append_ocamldoc_comment field doc
 
 and format_variant kind (s, o, doc) =
-  let s =
-    match kind with
-        Classic -> s
-      | Poly -> "`" ^ s
-  in
+  let s = tick kind ^ s in
   let cons = make_atom s in
   let variant =
     match o with
@@ -748,7 +720,7 @@ let format_module_items pp_convs (l : ocaml_module_body) =
     | [] -> []
 
 let format_module_bodies pp_conv (l : (bool * ocaml_module_body) list) =
-  List.flatten (List.map (fun (_, x) -> format_module_items pp_conv x) l)
+  List.concat_map (fun (_, x) -> format_module_items pp_conv x) l
 
 let format_head (loc, an) =
   match Atd.Doc.get_doc loc an with
@@ -843,3 +815,7 @@ let map_record_creator_field deref x =
           sprintf "\n  ?(%s = %s)" fname default
         in
         intf, impl1, impl2
+
+let obj_unimplemented loc = function
+   | Record -> ()
+   | Object -> Error.error loc "Sorry, OCaml objects are not supported"

@@ -3,11 +3,11 @@
 *)
 
 
-open Printf
+open Atd.Import
+open Indent
 
 open Atd.Ast
 open Mapping
-open Oj_mapping
 
 (*
   OCaml code generator (json readers and writers)
@@ -38,38 +38,38 @@ type param = {
 let unopt = function None -> assert false | Some x -> x
 
 let make_ocaml_json_intf ~with_create buf deref defs =
-  List.iter (
-    fun x ->
-      let s = x.def_name in
-      if s <> "" && s.[0] <> '_' && x.def_value <> None then (
-        let full_name = Ox_emit.get_full_type_name x in
-        let writer_params =
-          String.concat "" (
-            List.map
-              (fun s -> sprintf "\n  (Bi_outbuf.t -> '%s -> unit) ->" s)
-              x.def_param
-          )
-        in
-        let reader_params =
-          String.concat "" (
-            List.map
-              (fun s ->
-                 sprintf "\n  (Yojson.Safe.lexer_state -> \
-                          Lexing.lexbuf -> '%s) ->" s)
-              x.def_param
-          )
-        in
-        bprintf buf "\
+  List.concat_map snd defs
+  |> List.filter Ox_emit.include_intf
+  |> List.iter (fun x ->
+    let s = x.def_name in
+    let full_name = Ox_emit.get_full_type_name x in
+    let writer_params =
+      String.concat "" (
+        List.map
+          (fun s -> sprintf "\n  (Bi_outbuf.t -> '%s -> unit) ->" s)
+          x.def_param
+      )
+    in
+    let reader_params =
+      String.concat "" (
+        List.map
+          (fun s ->
+             sprintf "\n  (Yojson.Safe.lexer_state -> \
+                      Lexing.lexbuf -> '%s) ->" s)
+          x.def_param
+      )
+    in
+    bprintf buf "\
 val write_%s :%s
   Bi_outbuf.t -> %s -> unit
   (** Output a JSON value of type {!%s}. *)
 
 "
-          s writer_params
-          full_name
-          s;
+      s writer_params
+      full_name
+      s;
 
-        bprintf buf "\
+    bprintf buf "\
 val string_of_%s :%s
   ?len:int -> %s -> string
   (** Serialize a value of type {!%s}
@@ -79,39 +79,31 @@ val string_of_%s :%s
                  Default: 1024. *)
 
 "
-          s writer_params
-          full_name
-          s;
+      s writer_params
+      full_name
+      s;
 
-        bprintf buf "\
+    bprintf buf "\
 val read_%s :%s
   Yojson.Safe.lexer_state -> Lexing.lexbuf -> %s
   (** Input JSON data of type {!%s}. *)
 
 "
-          s reader_params
-          full_name
-          s;
+      s reader_params
+      full_name
+      s;
 
-        bprintf buf "\
+    bprintf buf "\
 val %s_of_string :%s
   string -> %s
   (** Deserialize JSON data of type {!%s}. *)
 
 "
-          s reader_params
-          full_name
-          s;
-
-        if with_create && Ox_emit.is_exportable x then
-          let create_record_intf, _ =
-            Ox_emit.make_record_creator deref x
-          in
-          bprintf buf "%s" create_record_intf;
-          bprintf buf "\n";
-      )
+      s reader_params
+      full_name
+      s;
+    Ox_emit.maybe_write_creator_intf ~with_create deref buf x
   )
-    (flatten defs)
 
 let is_json_string deref x =
   (*
@@ -311,11 +303,11 @@ let write_with_adapter opt_adapter writer =
       let restore =
         Oj_mapping.json_restorer_of_adapter_path adapter_path in
       [
-        `Annot ("fun", `Line (
+        Annot ("fun", Line (
           sprintf "Atdgen_runtime.Oj_run.write_with_adapter %s (" restore
         ));
-        `Block writer;
-        `Line ")";
+        Block writer;
+        Line ")";
       ]
 
 let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
@@ -327,36 +319,32 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   | String _
   | Name _
   | External _
-  | Tvar _ -> [ `Line (get_writer_name p x) ]
+  | Tvar _ -> [ Line (get_writer_name p x) ]
 
   | Sum (_, a, Sum x, Sum opt_adapter) ->
-      let tick =
-        match x with
-        | Classic -> ""
-        | Poly -> "`"
-      in
+      let tick = Ocaml.tick x in
       let body : Indent.t list =
         [
-          `Line "match x with";
-          `Block (
+          Line "match x with";
+          Block (
             Array.to_list (
               Array.map
-                (fun x -> `Inline (make_variant_writer p tick x))
+                (fun x -> Inline (make_variant_writer p tick x))
                 a
             )
           )
         ]
       in
       let standard_writer = [
-        `Annot ("fun", `Line "fun ob x ->");
-        `Block body
+        Annot ("fun", Line "fun ob x ->");
+        Block body
       ] in
       write_with_adapter opt_adapter standard_writer
 
   | Record (_, a, Record o, Record _) ->
       [
-        `Annot ("fun", `Line "fun ob x ->");
-        `Block (make_record_writer p a o);
+        Annot ("fun", Line "fun ob x ->");
+        Block (make_record_writer p a o);
       ]
 
   | Tuple (_, a, Tuple, Tuple) ->
@@ -364,28 +352,28 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       let a =
         Array.mapi (
           fun i x ->
-            `Inline [
-              `Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
-              `Line "(";
-              `Block (make_writer p x.cel_value);
-              `Line ") ob x";
-              `Line ");"
+            Inline [
+              Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
+              Line "(";
+              Block (make_writer p x.cel_value);
+              Line ") ob x";
+              Line ");"
             ]
         ) a
       in
       let l =
-        insert (`Line "Bi_outbuf.add_char ob ',';") (Array.to_list a)
+        insert (Line "Bi_outbuf.add_char ob ',';") (Array.to_list a)
       in
       let op, cl =
         if p.std then '[', ']'
         else '(', ')'
       in
       [
-        `Annot ("fun", `Line "fun ob x ->");
-        `Block [
-          `Line (sprintf "Bi_outbuf.add_char ob %C;" op);
-          `Inline l;
-          `Line (sprintf "Bi_outbuf.add_char ob %C;" cl);
+        Annot ("fun", Line "fun ob x ->");
+        Block [
+          Line (sprintf "Bi_outbuf.add_char ob %C;" op);
+          Inline l;
+          Line (sprintf "Bi_outbuf.add_char ob %C;" cl);
         ]
       ]
 
@@ -398,9 +386,9 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
              | Array -> "Atdgen_runtime.Oj_run.write_array ("
            in
            [
-             `Line write;
-             `Block (make_writer p x);
-             `Line ")";
+             Line write;
+             Block (make_writer p x);
+             Line ")";
            ]
 
        | Object ->
@@ -411,27 +399,27 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
              | Array -> "Atdgen_runtime.Oj_run.write_assoc_array ("
            in
            [
-             `Line write;
-             `Block (make_writer p k);
-             `Line ") (";
-             `Block (make_writer p v);
-             `Line ")";
+             Line write;
+             Block (make_writer p k);
+             Line ") (";
+             Block (make_writer p v);
+             Line ")";
            ]
       )
 
   | Option (_, x, Option, Option) ->
       [
-        `Line (sprintf "Atdgen_runtime.Oj_run.write_%soption ("
-                 (if p.std then "std_" else ""));
-        `Block (make_writer p x);
-        `Line ")";
+        Line (sprintf "Atdgen_runtime.Oj_run.write_%soption ("
+                (if p.std then "std_" else ""));
+        Block (make_writer p x);
+        Line ")";
       ]
 
   | Nullable (_, x, Nullable, Nullable) ->
       [
-        `Line "Atdgen_runtime.Oj_run.write_nullable (";
-        `Block (make_writer p x);
-        `Line ")";
+        Line "Atdgen_runtime.Oj_run.write_nullable (";
+        Block (make_writer p x);
+        Line ")";
       ]
 
   | Wrap (_, x, Wrap o, Wrap) ->
@@ -439,11 +427,11 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
          None -> make_writer p x
        | Some { Ocaml.ocaml_unwrap; _} ->
            [
-             `Line "fun ob x -> (";
-             `Block [
-               `Line (sprintf "let x = ( %s ) x in (" ocaml_unwrap);
-               `Block (make_writer p x);
-               `Line ") ob x)";
+             Line "fun ob x -> (";
+             Block [
+               Line (sprintf "let x = ( %s ) x in (" ocaml_unwrap);
+               Block (make_writer p x);
+               Line ") ob x)";
              ]
            ]
       )
@@ -466,7 +454,7 @@ and make_variant_writer p tick x : Indent.t list =
         else "<" ^ s ^ ">"
       in
       [
-        `Line (sprintf "| %s%s -> Bi_outbuf.add_string ob %S"
+        Line (sprintf "| %s%s -> Bi_outbuf.add_string ob %S"
                  tick ocaml_cons
                  (enclose (make_json_string json_cons)))
       ]
@@ -476,14 +464,14 @@ and make_variant_writer p tick x : Indent.t list =
         else "<", ":", '>'
       in
       [
-        `Line (sprintf "| %s%s x ->" tick ocaml_cons);
-        `Block [
-          `Line (sprintf "Bi_outbuf.add_string ob %S;"
+        Line (sprintf "| %s%s x ->" tick ocaml_cons);
+        Block [
+          Line (sprintf "Bi_outbuf.add_string ob %S;"
                    (op ^ make_json_string json_cons ^ sep));
-          `Line "(";
-          `Block (make_writer p v);
-          `Line ") ob x;";
-          `Line (sprintf "Bi_outbuf.add_char ob %C" cl);
+          Line "(";
+          Block (make_writer p v);
+          Line ") ob x;";
+          Line (sprintf "Bi_outbuf.add_char ob %C" cl);
         ]
       ]
 
@@ -496,16 +484,17 @@ and make_record_writer p a record_kind =
   let fields = get_fields p a in
   let sep =
     [
-      `Line "if !is_first then";
-      `Block [
-        `Line "is_first := false"
+      Line "if !is_first then";
+      Block [
+        Line "is_first := false"
       ];
-      `Line "else";
-      `Block [
-        `Line "Bi_outbuf.add_char ob ',';";
+      Line "else";
+      Block [
+        Line "Bi_outbuf.add_char ob ',';";
       ];
     ]
   in
+
   let write_fields =
     List.map (
       fun (x, ocaml_fname, ocaml_default, json_fname, optional, unwrapped) ->
@@ -519,12 +508,12 @@ and make_record_writer p a record_kind =
         in
         let app v =
           [
-            `Inline sep;
-            `Line write_field_tag;
-            `Line "(";
-            `Block (make_writer p f_value);
-            `Line ")";
-            `Block [`Line (sprintf "ob %s;" v)]
+            Inline sep;
+            Line write_field_tag;
+            Line "(";
+            Block (make_writer p f_value);
+            Line ")";
+            Block [Line (sprintf "ob %s;" v)]
           ]
         in
         let v =
@@ -536,27 +525,27 @@ and make_record_writer p a record_kind =
         let l =
           if unwrapped then
             [
-              `Line (sprintf "(match %s with None -> () | Some x ->" v);
-              `Block (app "x");
-              `Line ");"
+              Line (sprintf "(match %s with None -> () | Some x ->" v);
+              Block (app "x");
+              Line ");"
             ]
           else if optional && not p.force_defaults then
             [
-              `Line (sprintf "if %s <> %s then (" v (unopt ocaml_default));
-              `Block (app v);
-              `Line ");"
+              Line (sprintf "if %s <> %s then (" v (unopt ocaml_default));
+              Block (app v);
+              Line ");"
             ]
           else
             app v
         in
-        `Inline l
+        Inline l
     ) fields
   in
   [
-    `Line "Bi_outbuf.add_char ob '{';";
-    `Line "let is_first = ref true in";
-    `Inline write_fields;
-    `Line "Bi_outbuf.add_char ob '}';";
+    Line "Bi_outbuf.add_char ob '{';";
+    Line "let is_first = ref true in";
+    Inline write_fields;
+    Line "Bi_outbuf.add_char ob '}';";
   ]
 
 let study_record ~ocaml_version fields =
@@ -575,8 +564,8 @@ let study_record ~ocaml_version fields =
           | Some s ->
               s
         in
-        let init = `Line (sprintf "let field_%s = ref (%s) in" oname v) in
-        let create = `Line (sprintf "%s = !field_%s;" oname oname) in
+        let init = Line (sprintf "let field_%s = ref (%s) in" oname v) in
+        let create = Line (sprintf "%s = !field_%s;" oname oname) in
         (init, create) :: field_assignments
     ) fields []
   in
@@ -592,16 +581,10 @@ let study_record ~ocaml_version fields =
   in
   let mapping = Array.of_list (List.rev mapping) in
 
-  let create_record = [ `Line "{"; `Block create_record_fields; `Line "}" ] in
+  let create_record = [ Line "{"; Block create_record_fields; Line "}" ] in
 
   let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
-  let init_bits =
-    Array.to_list (
-      Array.init k (
-        fun i -> `Line (sprintf "let bits%i = ref 0 in" i)
-      )
-    )
-  in
+  let init_bits = List.init k (fun i -> Line (sprintf "let bits%i = ref 0 in" i)) in
   let final_bits = Array.make k 0 in
   for z0 = 0 to List.length fields - 1 do
     match mapping.(z0) with
@@ -617,19 +600,14 @@ let study_record ~ocaml_version fields =
       | Some z ->
           let i = z / 31 in
           let j = z mod 31 in
-          [ `Line (sprintf "bits%i := !bits%i lor 0x%x;" i i (1 lsl j)) ]
+          [ Line (sprintf "bits%i := !bits%i lor 0x%x;" i i (1 lsl j)) ]
   in
 
   let check_bits =
     let bool_expr =
-      String.concat " || " (
-        Array.to_list (
-          Array.mapi (
-            fun i x -> sprintf "!bits%i <> 0x%x" i x
-          ) final_bits
-        )
-      )
-    in
+      Array.mapi (fun i x -> sprintf "!bits%i <> 0x%x" i x) final_bits
+      |> Array.to_list
+      |> String.concat " || " in
     let bit_fields =
       let a = Array.init k (fun i -> sprintf "!bits%i" i) in
       sprintf "[| %s |]" (String.concat "; " (Array.to_list a))
@@ -648,7 +626,7 @@ let study_record ~ocaml_version fields =
     in
     if k = 0 then []
     else
-      [ `Line (sprintf
+      [ Line (sprintf
                  "if %s then Atdgen_runtime.Oj_run.missing_fields p %s %s;"
                  bool_expr bit_fields field_names) ]
   in
@@ -661,11 +639,11 @@ let read_with_adapter opt_adapter reader =
       let normalize =
         Oj_mapping.json_normalizer_of_adapter_path adapter_path in
       [
-        `Annot ("fun", `Line (
+        Annot ("fun", Line (
           sprintf "Atdgen_runtime.Oj_run.read_with_adapter %s (" normalize
         ));
-        `Block reader;
-        `Line ")";
+        Block reader;
+        Line ")";
       ]
 
 let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
@@ -677,14 +655,10 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   | String _
   | Name _
   | External _
-  | Tvar _ -> [ `Line (get_reader_name p x) ]
+  | Tvar _ -> [ Line (get_reader_name p x) ]
 
   | Sum (_, a, Sum x, Sum opt_adapter) ->
-      let tick =
-        match x with
-          Classic -> ""
-        | Poly -> "`"
-      in
+      let tick = Ocaml.tick x in
       let cases =
         Array.to_list (
           Array.map
@@ -699,7 +673,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       let cases1 = List.map (make_variant_reader p type_annot tick true) l1 in
 
       let error_expr1 =
-        [ `Line "Atdgen_runtime.Oj_run.invalid_variant_tag \
+        [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag \
                    p (String.sub s pos len)" ]
       in
 
@@ -722,70 +696,69 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
 
       let read_tag =
         [
-          `Line "Yojson.Safe.read_space p lb;";
-          `Line "match Yojson.Safe.start_any_variant p lb with";
-          `Block [
-            `Line "| `Edgy_bracket -> (";
-            `Block [
-              `Block [
-                `Line "Yojson.Safe.read_space p lb;";
-                `Line "let f =";
-                `Block int_mapping_function;
-                `Line "in";
-                `Line "let i = Yojson.Safe.map_ident p f lb in";
-                `Inline int_matching;
+          Line "Yojson.Safe.read_space p lb;";
+          if error_expr1 <> invalid_variant_tag
+          then Line "let ident_ref = ref \"\" in"
+          else Line "";
+          Line "match Yojson.Safe.start_any_variant p lb with";
+          Block [
+            Line "| `Edgy_bracket -> (";
+            Block [
+              Block [
+                Line "Yojson.Safe.read_space p lb;";
+                Line "let f =";
+                Block int_mapping_function;
+                Line "in";
+                Line "let i = Yojson.Safe.map_ident p f lb in";
+                Inline int_matching;
               ];
-              `Line ")";
+              Line ")";
             ];
-            `Line "| `Double_quote -> (";
-            `Block [
-              `Block [
-                `Line "let f =";
-                `Block std_int_mapping_function0;
-                `Line "in";
-                `Line "let i = Yojson.Safe.map_string p f lb in";
-                `Inline std_int_matching0;
+            Line "| `Double_quote -> (";
+            Block [
+              Block [
+                Line "let f =";
+                Block std_int_mapping_function0;
+                Line "in";
+                Line "let i = Yojson.Safe.map_string p f lb in";
+                Inline std_int_matching0;
               ];
-              `Line ")";
+              Line ")";
             ];
-            `Line "| `Square_bracket -> (";
-            `Block [
-              `Block [
-                `Line "Yojson.Safe.read_space p lb;";
-                `Line "let f =";
-                `Block std_int_mapping_function1;
-                `Line "in";
-                `Line "let i = Yojson.Safe.map_ident p f lb in";
-                `Inline std_int_matching1;
+            Line "| `Square_bracket -> (";
+            Block [
+              Block [
+                Line "Yojson.Safe.read_space p lb;";
+                Line "let f =";
+                Block std_int_mapping_function1;
+                Line "in";
+                Line "let i = Yojson.Safe.map_ident p f lb in";
+                Inline std_int_matching1;
               ];
-              `Line ")";
+              Line ")";
             ];
           ];
         ]
       in
       let standard_reader = [
-        `Annot ("fun", `Line "fun p lb ->");
-        `Block [
-          `Inline read_tag;
+        Annot ("fun", Line "fun p lb ->");
+        Block [
+          Inline read_tag;
         ]
       ] in
       read_with_adapter opt_adapter standard_reader
 
   | Record (loc, a, Record o, Record j) ->
-      (match o with
-         Record -> ()
-       | Object ->
-           Error.error loc "Sorry, OCaml objects are not supported"
-      );
+      Ocaml.obj_unimplemented loc o;
       [
-        `Annot ("fun", `Line "fun p lb ->");
-        `Block (make_record_reader p type_annot loc a j)
+        Annot ("fun", Line "fun p lb ->");
+        Block (make_record_reader p type_annot loc a j)
       ]
 
   | Tuple (_, a, Tuple, Tuple) ->
       [
-        `Annot ("fun", `Line "fun p lb ->");
-        `Block (make_tuple_reader p a);
+        Annot ("fun", Line "fun p lb ->");
+        Block (make_tuple_reader p a);
       ]
 
   | List (loc, x, List o, List j) ->
@@ -797,9 +770,9 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
              | Array -> "Atdgen_runtime.Oj_run.read_array ("
            in
            [
-             `Line read;
-             `Block (make_reader p None x);
-             `Line ")";
+             Line read;
+             Block (make_reader p None x);
+             Line ")";
            ]
 
        | Object ->
@@ -810,11 +783,11 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
              | Array -> "Atdgen_runtime.Oj_run.read_assoc_array ("
            in
            [
-             `Line read;
-             `Block (make_reader p None k);
-             `Line ") (";
-             `Block (make_reader p None v);
-             `Line ")";
+             Line read;
+             Block (make_reader p None k);
+             Line ") (";
+             Block (make_reader p None v);
+             Line ")";
            ]
       )
 
@@ -845,13 +818,13 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
 
   | Nullable (_, x, Nullable, Nullable) ->
       [
-        `Line "fun p lb ->";
-        `Block [
-          `Line "Yojson.Safe.read_space p lb;";
-          `Line "(if Yojson.Safe.read_null_if_possible p lb then None";
-          `Line "else Some ((";
-          `Block (make_reader p None x);
-          `Line ") p lb) : _ option)"
+        Line "fun p lb ->";
+        Block [
+          Line "Yojson.Safe.read_space p lb;";
+          Line "(if Yojson.Safe.read_null_if_possible p lb then None";
+          Line "else Some ((";
+          Block (make_reader p None x);
+          Line ") p lb) : _ option)"
         ]
       ]
 
@@ -860,12 +833,12 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
          None -> make_reader p type_annot x
        | Some { Ocaml.ocaml_wrap; _ } ->
            [
-             `Line "fun p lb ->";
-             `Block [
-               `Line "let x = (";
-               `Block (make_reader p type_annot x);
-               `Line ") p lb in";
-               `Line (sprintf "( %s ) x" ocaml_wrap);
+             Line "fun p lb ->";
+             Block [
+               Line "let x = (";
+               Block (make_reader p type_annot x);
+               Line ") p lb in";
+               Line (sprintf "( %s ) x" ocaml_wrap);
              ]
            ]
       )
@@ -886,45 +859,45 @@ and make_variant_reader p type_annot tick std x : (string * Indent.t list) =
        | None ->
           if std then
             [
-              `Line (Ox_emit.opt_annot
+              Line (Ox_emit.opt_annot
                 type_annot (sprintf "%s%s" tick ocaml_cons));
             ]
           else
             [
-              `Line "Yojson.Safe.read_space p lb;";
-              `Line "Yojson.Safe.read_gt p lb;";
-              `Line (Ox_emit.opt_annot
+              Line "Yojson.Safe.read_space p lb;";
+              Line "Yojson.Safe.read_gt p lb;";
+              Line (Ox_emit.opt_annot
                 type_annot (sprintf "%s%s" tick ocaml_cons));
             ]
       | Some v ->
           if std then
             [
-              `Line "Yojson.Safe.read_space p lb;";
-              `Line "Yojson.Safe.read_comma p lb;";
-              `Line "Yojson.Safe.read_space p lb;";
-              `Line "let x = (";
-              `Block [
-                `Block (make_reader p None v);
-                `Line ") p lb";
+              Line "Yojson.Safe.read_space p lb;";
+              Line "Yojson.Safe.read_comma p lb;";
+              Line "Yojson.Safe.read_space p lb;";
+              Line "let x = (";
+              Block [
+                Block (make_reader p None v);
+                Line ") p lb";
               ];
-              `Line "in";
-              `Line "Yojson.Safe.read_space p lb;";
-              `Line "Yojson.Safe.read_rbr p lb;";
-              `Line (Ox_emit.opt_annot
+              Line "in";
+              Line "Yojson.Safe.read_space p lb;";
+              Line "Yojson.Safe.read_rbr p lb;";
+              Line (Ox_emit.opt_annot
                 type_annot (sprintf "%s%s x" tick ocaml_cons));
             ]
           else
             [
-              `Line "Atdgen_runtime.Oj_run.read_until_field_value p lb;";
-              `Line "let x = (";
-              `Block [
-                `Block (make_reader p None v);
-                `Line ") p lb";
+              Line "Atdgen_runtime.Oj_run.read_until_field_value p lb;";
+              Line "let x = (";
+              Block [
+                Block (make_reader p None v);
+                Line ") p lb";
               ];
-              `Line "in";
-              `Line "Yojson.Safe.read_space p lb;";
-              `Line "Yojson.Safe.read_gt p lb;";
-              `Line (Ox_emit.opt_annot
+              Line "in";
+              Line "Yojson.Safe.read_space p lb;";
+              Line "Yojson.Safe.read_gt p lb;";
+              Line (Ox_emit.opt_annot
                 type_annot (sprintf "%s%s x" tick ocaml_cons));
             ]
   in
@@ -949,26 +922,26 @@ and make_record_reader p type_annot loc a json_options =
         let wrap l =
           if unwrapped then
             [
-              `Line "Some (";
-              `Block l;
-              `Line ")"
+              Line "Some (";
+              Block l;
+              Line ")"
             ]
           else l
         in
         let read_value =
           [
-            `Line "(";
-            `Block (make_reader p None f_value);
-            `Line ") p lb";
+            Line "(";
+            Block (make_reader p None f_value);
+            Line ") p lb";
           ]
         in
-          let expr =
-            [
-              `Line (sprintf "field_%s := (" ocaml_fname);
-              `Block (wrap read_value);
-              `Line ");";
-              `Inline (set_bit i);
-            ]
+        let expr =
+          [
+            Line (sprintf "field_%s := (" ocaml_fname);
+            Block (wrap read_value);
+            Line ");";
+            Inline (set_bit i);
+          ]
         in
         let opt_expr =
           if opt then
@@ -978,10 +951,10 @@ and make_record_reader p type_annot loc a json_options =
               (* treat fields with null values as missing fields
                  (atdgen's default) *)
               [
-                `Line "if not (Yojson.Safe.read_null_if_possible p lb) \
+                Line "if not (Yojson.Safe.read_null_if_possible p lb) \
                        then (";
-                `Block expr;
-                `Line ")"
+                Block expr;
+                Line ")"
               ]
           else
             expr
@@ -992,58 +965,58 @@ and make_record_reader p type_annot loc a json_options =
     let int_mapping_function, int_matching =
       let error_expr1 =
         match p.unknown_field_handler with
-          None -> [ `Line "-1" ]
+          None -> [ Line "-1" ]
         | Some f ->
-            [ `Line (sprintf "(%s) %S (String.sub s pos len); -1"
-                       f (Atd.Ast.string_of_loc loc)) ]
+            [ Line (sprintf "(%s) %S (String.sub s pos len); -1"
+                      f (Atd.Ast.string_of_loc loc)) ]
       in
       String_match.make_ocaml_int_mapping
         ~exit_with: `Expr
         ~error_expr1
-        ~error_expr2: [ `Line "Yojson.Safe.skip_json p lb" ]
+        ~error_expr2: [ Line "Yojson.Safe.skip_json p lb" ]
         (Array.to_list cases)
     in
     [
-      `Line "Yojson.Safe.read_space p lb;";
-      `Line "let f =";
-      `Block int_mapping_function;
-      `Line "in";
-      `Line "let i = Yojson.Safe.map_ident p f lb in";
-      `Line "Atdgen_runtime.Oj_run.read_until_field_value p lb;";
-      `Line "(";
-      `Block int_matching;
-      `Line ");";
+      Line "Yojson.Safe.read_space p lb;";
+      Line "let f =";
+      Block int_mapping_function;
+      Line "in";
+      Line "let i = Yojson.Safe.map_ident p f lb in";
+      Line "Atdgen_runtime.Oj_run.read_until_field_value p lb;";
+      Line "(";
+      Block int_matching;
+      Line ");";
     ]
   in
 
   [
-    `Line "Yojson.Safe.read_space p lb;";
-    `Line "Yojson.Safe.read_lcurl p lb;";
-    `Inline init_fields;
-    `Inline init_bits;
-    `Line "try";
-    `Block [
-      `Line "Yojson.Safe.read_space p lb;";
-      `Line "Yojson.Safe.read_object_end lb;";
-      `Inline read_field;
-      `Line "while true do";
-      `Block [
-        `Line "Yojson.Safe.read_space p lb;";
-        `Line "Yojson.Safe.read_object_sep p lb;";
-        `Inline read_field;
+    Line "Yojson.Safe.read_space p lb;";
+    Line "Yojson.Safe.read_lcurl p lb;";
+    Inline init_fields;
+    Inline init_bits;
+    Line "try";
+    Block [
+      Line "Yojson.Safe.read_space p lb;";
+      Line "Yojson.Safe.read_object_end lb;";
+      Inline read_field;
+      Line "while true do";
+      Block [
+        Line "Yojson.Safe.read_space p lb;";
+        Line "Yojson.Safe.read_object_sep p lb;";
+        Inline read_field;
       ];
-      `Line "done;";
-      `Line "assert false;";
+      Line "done;";
+      Line "assert false;";
     ];
-    `Line "with Yojson.End_of_object -> (";
-    `Block [
-      `Block [
-        `Inline check_bits;
-        `Line "(";
-        `Block create_record;
-        `Line (sprintf "%s)" (Ox_emit.insert_annot type_annot));
+    Line "with Yojson.End_of_object -> (";
+    Block [
+      Block [
+        Inline check_bits;
+        Line "(";
+        Block create_record;
+        Line (sprintf "%s)" (Ox_emit.insert_annot type_annot));
       ];
-      `Line ")";
+      Line ")";
     ];
   ]
 
@@ -1078,35 +1051,35 @@ and make_tuple_reader p a =
           fun i (x, default) ->
             let read_value =
               [
-                `Line "(";
-                `Block (make_reader p None x.cel_value);
-                `Line ") p lb";
+                Line "(";
+                Block (make_reader p None x.cel_value);
+                Line ") p lb";
               ]
             in
             let get_value =
               if i < min_length - 1 then
                 [
-                  `Line "let x =";
-                  `Block read_value;
-                  `Line "in";
-                  `Line "incr len;";
-                  `Line "Yojson.Safe.read_space p lb;";
-                  `Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
-                  `Line "x"
+                  Line "let x =";
+                  Block read_value;
+                  Line "in";
+                  Line "incr len;";
+                  Line "Yojson.Safe.read_space p lb;";
+                  Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+                  Line "x"
                 ]
               else if i = min_length - 1 then
                 [
-                  `Line "let x =";
-                  `Block read_value;
-                  `Line "in";
-                  `Line "incr len;";
-                  `Line "(try";
-                  `Block [
-                    `Line "Yojson.Safe.read_space p lb;";
-                    `Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+                  Line "let x =";
+                  Block read_value;
+                  Line "in";
+                  Line "incr len;";
+                  Line "(try";
+                  Block [
+                    Line "Yojson.Safe.read_space p lb;";
+                    Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
                   ];
-                  `Line "with Yojson.End_of_tuple -> end_of_tuple := true);";
-                  `Line "x"
+                  Line "with Yojson.End_of_tuple -> end_of_tuple := true);";
+                  Line "x"
                 ]
               else
                 let default_value =
@@ -1115,31 +1088,31 @@ and make_tuple_reader p a =
                   | Some s -> s
                 in
                 [
-                  `Line (sprintf "if !end_of_tuple then (%s)" default_value);
-                  `Line "else (";
-                  `Block [
-                    `Line "let x = (";
-                    `Block read_value;
-                    `Line ") in";
-                    `Line "incr len;";
-                    `Line "(try";
-                    `Block [
-                      `Line "Yojson.Safe.read_space p lb;";
-                      `Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+                  Line (sprintf "if !end_of_tuple then (%s)" default_value);
+                  Line "else (";
+                  Block [
+                    Line "let x = (";
+                    Block read_value;
+                    Line ") in";
+                    Line "incr len;";
+                    Line "(try";
+                    Block [
+                      Line "Yojson.Safe.read_space p lb;";
+                      Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
                     ];
-                    `Line "with Yojson.End_of_tuple ->";
-                    `Block [
-                      `Line "end_of_tuple := true);";
+                    Line "with Yojson.End_of_tuple ->";
+                    Block [
+                      Line "end_of_tuple := true);";
                     ];
-                    `Line "x";
+                    Line "x";
                   ];
-                  `Line ")";
+                  Line ")";
                 ]
             in
             [
-              `Line (sprintf "let x%i =" i);
-              `Block get_value;
-              `Line "in";
+              Line (sprintf "let x%i =" i);
+              Block get_value;
+              Line "in";
             ]
         ) cells
       )
@@ -1164,54 +1137,54 @@ and make_tuple_reader p a =
   let finish_empty_tuple =
     if min_length = 0 then
       [
-        `Line "(try Yojson.Safe.read_tuple_end2 p std_tuple lb";
-        `Line "with Yojson.End_of_tuple -> end_of_tuple := true)";
+        Line "(try Yojson.Safe.read_tuple_end2 p std_tuple lb";
+        Line "with Yojson.End_of_tuple -> end_of_tuple := true)";
       ]
     else []
   in
 
   let skip_remaining_cells =
     [
-      `Line "if not !end_of_tuple then (";
-      `Block [
-        `Line "try";
-        `Block [
-          `Line "while true do";
-          `Block [
-            `Line "Yojson.Safe.skip_json p lb;";
-            `Line "Yojson.Safe.read_space p lb;";
-            `Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+      Line "if not !end_of_tuple then (";
+      Block [
+        Line "try";
+        Block [
+          Line "while true do";
+          Block [
+            Line "Yojson.Safe.skip_json p lb;";
+            Line "Yojson.Safe.read_space p lb;";
+            Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
           ];
-          `Line "done";
+          Line "done";
         ];
-        `Line "with Yojson.End_of_tuple -> ()";
+        Line "with Yojson.End_of_tuple -> ()";
       ];
-      `Line ");"
+      Line ");"
     ]
   in
 
   [
-    `Line "Yojson.Safe.read_space p lb;";
-    `Line "let std_tuple = Yojson.Safe.start_any_tuple p lb in";
-    `Line "let len = ref 0 in";
-    `Line "let end_of_tuple = ref false in";
-    `Inline finish_empty_tuple;
-    `Line "(try";
-    `Block [
-      `Inline read_cells;
-      `Inline skip_remaining_cells;
-      `Line make_tuple;
+    Line "Yojson.Safe.read_space p lb;";
+    Line "let std_tuple = Yojson.Safe.start_any_tuple p lb in";
+    Line "let len = ref 0 in";
+    Line "let end_of_tuple = ref false in";
+    Inline finish_empty_tuple;
+    Line "(try";
+    Block [
+      Inline read_cells;
+      Inline skip_remaining_cells;
+      Line make_tuple;
     ];
-    `Line "with Yojson.End_of_tuple ->";
-    `Block [
-      `Line (sprintf
-               "Atdgen_runtime.Oj_run.missing_tuple_fields p !len %s);"
-               req_fields);
+    Line "with Yojson.End_of_tuple ->";
+    Block [
+      Line (sprintf
+              "Atdgen_runtime.Oj_run.missing_tuple_fields p !len %s);"
+              req_fields);
     ];
   ]
 
 let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
@@ -1228,20 +1201,20 @@ let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
     | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
   in
   [
-    `Line (sprintf "%s %s = ("
-             let1 (Ox_emit.opt_annot_def type_annot (write ^ extra_param)));
-    `Block (List.map Indent.strip writer_expr);
-    `Line (sprintf ")%s" extra_args);
-    `Line (sprintf "%s %s ?(len = 1024) x =" let2 to_string);
-    `Block [
-      `Line "let ob = Bi_outbuf.create len in";
-      `Line (sprintf "%s ob x;" write);
-      `Line "Bi_outbuf.contents ob"
+    Line (sprintf "%s %s = ("
+            let1 (Ox_emit.opt_annot_def type_annot (write ^ extra_param)));
+    Block (List.map Indent.strip writer_expr);
+    Line (sprintf ")%s" extra_args);
+    Line (sprintf "%s %s ?(len = 1024) x =" let2 to_string);
+    Block [
+      Line "let ob = Bi_outbuf.create len in";
+      Line (sprintf "%s ob x;" write);
+      Line "Bi_outbuf.contents ob"
     ]
   ]
 
 let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
@@ -1261,16 +1234,16 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
   let pp =
     match p.preprocess_input with
       None -> []
-    | Some f -> [ `Line (sprintf "let s = ( %s ) s in" f) ]
+    | Some f -> [ Line (sprintf "let s = ( %s ) s in" f) ]
   in
   [
-    `Line (sprintf "%s %s%s = (" let1 read extra_param);
-    `Block (List.map Indent.strip reader_expr);
-    `Line (sprintf ")%s" extra_args);
-    `Line (sprintf "%s %s s =" let2 of_string);
-    `Block [
-      `Inline pp;
-      `Line (
+    Line (sprintf "%s %s%s = (" let1 read extra_param);
+    Block (List.map Indent.strip reader_expr);
+    Line (sprintf ")%s" extra_args);
+    Line (sprintf "%s %s s =" let2 of_string);
+    Block [
+      Inline pp;
+      Line (
         sprintf "%s (Yojson.Safe.init_lexer ()) \
                  (Lexing.from_string s)" read);
     ]
@@ -1291,39 +1264,24 @@ let make_ocaml_json_impl
     preprocess_input;
     ocaml_version;
   } in
-  let ll =
-    List.map (
-      fun (is_rec, l) ->
-        let l = List.filter (fun x -> x.def_value <> None) l in
-        let writers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_json_writer p ~original_types is_rec let1 let2 def
-          ) l
-        in
-        let readers =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_json_reader p ~original_types is_rec let1 let2 def
-          ) l
-        in
-        List.flatten (writers @ readers)
-    ) defs
-  in
-  Atd.Indent.to_buffer buf (List.flatten ll);
-
-  if with_create then
-    List.iter (
-      fun (_, l) ->
-        let l = List.filter Ox_emit.is_exportable l in
-        List.iter (
-          fun x ->
-            let _, impl = Ox_emit.make_record_creator deref x in
-            Buffer.add_string buf impl
-        ) l
-    ) defs
+  defs
+  |> List.concat_map (fun (is_rec, l) ->
+    let l = List.filter (fun x -> x.def_value <> None) l in
+    let writers =
+      List.map_first (fun ~is_first def ->
+        let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+        make_ocaml_json_writer p ~original_types is_rec let1 let2 def
+      ) l
+    in
+    let readers =
+      List.map_first (fun ~is_first def ->
+        let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
+        make_ocaml_json_reader p ~original_types is_rec let1 let2 def
+      ) l
+    in
+    List.flatten (writers @ readers))
+  |> Indent.to_buffer buf;
+  Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 (*
   Glue
@@ -1378,7 +1336,6 @@ let make_ocaml_files
     ~type_aliases
     ~force_defaults
     ~preprocess_input
-    ~name_overlap
     ~ocaml_version
     ~pp_convs
     atd_file out =
@@ -1403,8 +1360,7 @@ let make_ocaml_files
       Atd.Util.tsort
   in
   let m1 = tsort m0 in
-  let defs1 = defs_of_atd_modules m1 in
-  if not name_overlap then Ox_emit.check defs1;
+  let defs1 = Oj_mapping.defs_of_atd_modules m1 in
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
   in
@@ -1414,7 +1370,7 @@ let make_ocaml_files
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
     Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases (head, m1) in
-  let defs = defs_of_atd_modules m2 in
+  let defs = Oj_mapping.defs_of_atd_modules m2 in
   let header =
     let src =
       match atd_file with

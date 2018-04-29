@@ -56,8 +56,6 @@ val is_abstract : Atd.Ast.type_expr -> bool
 
 val loc_of_mapping : ('a, 'b) mapping -> loc
 
-val flatten : ('a * 'b list) list -> 'b list
-
 val make_deref
   : (bool * ('a, 'b) def list) list
   -> ('a, 'b) mapping

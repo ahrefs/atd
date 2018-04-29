@@ -39,8 +39,6 @@ val name_of_var : string -> string
 
 val nth : string -> int -> int -> string
 
-val map : (bool -> 'a -> 'b) -> 'a list -> 'b list
-
 val get_let : is_rec:bool -> is_first:bool -> string * string
 
 val write_opens : Buffer.t -> string list -> unit
@@ -54,3 +52,26 @@ val def_of_atd
   -> external_:'a
   -> mapping_of_expr:(Atd.Ast.type_expr -> (Ocaml.Repr.t, 'a) Mapping.mapping)
   -> (Ocaml.Repr.t, 'a) Mapping.def
+
+val maybe_write_creator_impl
+  : with_create:bool
+  -> ((Ocaml.Repr.t, 'a) Mapping.mapping ->
+      (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> Buffer.t
+  -> ('c * (Ocaml.Repr.t, 'a) Mapping.def list) list
+  -> unit
+
+val maybe_write_creator_intf
+  : with_create:bool
+  -> ((Ocaml.Repr.t, 'a) Mapping.mapping ->
+      (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> Buffer.t
+  -> (Ocaml.Repr.t, 'a) Mapping.def
+  -> unit
+
+val default_value
+  : (Ocaml.Repr.t, 'a) Mapping.field_mapping
+  -> ((Ocaml.Repr.t, 'a) Mapping.mapping -> (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> string option
+
+val include_intf : (Ocaml.Repr.t, 'a) Mapping.def -> bool

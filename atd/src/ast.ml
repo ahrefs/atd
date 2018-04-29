@@ -1,3 +1,4 @@
+open Import
 open Lexing
 
 
@@ -135,11 +136,7 @@ let rec amap_type_expr f = function
 
 and amap_variant f = function
     Variant (loc, (name, a), o) ->
-      let o =
-        match o with
-          None -> None
-        | Some x -> Some (amap_type_expr f x)
-      in
+      let o = Option.map (amap_type_expr f) o in
       Variant (loc, (name, f a), o)
   | Inherit (loc, x) ->
       Inherit (loc, amap_type_expr f x)
@@ -233,3 +230,8 @@ let extract_type_names ?(ignorable = []) x =
 
 let is_parametrized x =
   fold (fun x b -> b || match x with Tvar _ -> true | _ -> false) x false
+
+let is_required = function
+  | Optional
+  | With_default -> false
+  | Required -> true

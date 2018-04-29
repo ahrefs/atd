@@ -2,45 +2,46 @@
   Validators of OCaml data whose types are defined using ATD.
 *)
 
-open Printf
+open Atd.Import
+open Indent
 
 open Atd.Ast
 open Mapping
 open Ov_mapping
 
 let make_ocaml_validate_intf ~with_create buf deref defs =
-  List.iter (
-    fun x ->
-      if with_create && Ox_emit.is_exportable x then (
-        let create_record_intf, _ =
-          Ox_emit.make_record_creator deref x
-        in
-        bprintf buf "%s" create_record_intf;
-      );
-
-      let full_name = Ox_emit.get_full_type_name x in
-      let validator_params =
-        String.concat "" (
-          List.map
-            (fun s ->
-               sprintf "\n  (Atdgen_runtime.Util.Validation.path -> '%s -> \
-                        Atdgen_runtime.Util.Validation.error option) ->" s)
-            x.def_param
-        )
+  List.concat_map snd defs
+  |> List.iter (fun x ->
+    if with_create && Ox_emit.is_exportable x then (
+      let create_record_intf, _ =
+        Ox_emit.make_record_creator deref x
       in
-      let s = x.def_name in
-      if Ox_emit.is_exportable x then (
-        bprintf buf "\
+      bprintf buf "%s" create_record_intf;
+    );
+
+    let full_name = Ox_emit.get_full_type_name x in
+    let validator_params =
+      String.concat "" (
+        List.map
+          (fun s ->
+             sprintf "\n  (Atdgen_runtime.Util.Validation.path -> '%s -> \
+                      Atdgen_runtime.Util.Validation.error option) ->" s)
+          x.def_param
+      )
+    in
+    let s = x.def_name in
+    if Ox_emit.is_exportable x then (
+      bprintf buf "\
 val validate_%s :%s
   Atdgen_runtime.Util.Validation.path -> %s -> Atdgen_runtime.Util.Validation.error option
   (** Validate a value of type {!%s}. *)
 
 "
-          s validator_params
-          full_name
-          s
-      )
-  ) (flatten defs)
+        s validator_params
+        full_name
+        s
+    )
+  )
 
 let get_fields a =
   let all =
@@ -63,21 +64,21 @@ let rec forall : Indent.t list -> Indent.t list = function
   | [x] -> [x]
   | x :: l ->
       [
-        `Line "match";
-        `Block [x];
-        `Line "with";
-        `Block [
-          `Line "| Some _ as err -> err";
-          `Line "| None ->";
-          `Block (forall l);
+        Line "match";
+        Block [x];
+        Line "with";
+        Block [
+          Line "| Some _ as err -> err";
+          Line "| None ->";
+          Block (forall l);
         ]
       ]
 
 let return_true_paren = "(fun _ _ -> None)"
 
 let opt_validator = function
-    None -> [ `Line "fun _ _ -> None" ]
-  | Some s -> [ `Line s ]
+    None -> [ Line "fun _ _ -> None" ]
+  | Some s -> [ Line s ]
 
 let opt_validator_s = function
     None -> "(fun _ _ -> None)"
@@ -86,46 +87,46 @@ let opt_validator_s = function
 
 let prepend_validator opt l =
   match opt with
-      None -> l
-    | Some s ->
-        [
-          `Line (sprintf "match ( %s ) path x with" s);
-          `Block [
-            `Line "| Some _ as err -> err";
-            `Line "| None ->";
-            `Block l;
-          ]
+    None -> l
+  | Some s ->
+      [
+        Line (sprintf "match ( %s ) path x with" s);
+        Block [
+          Line "| Some _ as err -> err";
+          Line "| None ->";
+          Block l;
         ]
+      ]
 
 let prepend_validator_s v s2 =
   match v with
-      None -> s2
-    | Some s1 ->
-        sprintf "(fun path x -> \
-                    match ( %s ) path x with \
-                      | Some _ as err -> err \
-                      | None -> (%s) path x)" s1 s2
+    None -> s2
+  | Some s1 ->
+      sprintf "(fun path x -> \
+               match ( %s ) path x with \
+               | Some _ as err -> err \
+               | None -> (%s) path x)" s1 s2
 
 let prepend_validator_f v l =
   match v with
-      None -> l
-    | Some s ->
-        [
-          `Line "(fun path x ->";
-          `Block [
-            `Line (sprintf "(match ( %s ) path x with" s);
-            `Block [
-              `Line "| Some _ as err -> err";
-              `Line "| None -> (";
-              `Block [
-                `Block l;
-                `Line ") path x";
-              ]
-            ];
-            `Line ")";
+    None -> l
+  | Some s ->
+      [
+        Line "(fun path x ->";
+        Block [
+          Line (sprintf "(match ( %s ) path x with" s);
+          Block [
+            Line "| Some _ as err -> err";
+            Line "| None -> (";
+            Block [
+              Block l;
+              Line ") path x";
+            ]
           ];
-          `Line ")";
-        ]
+          Line ")";
+        ];
+        Line ")";
+      ]
 
 (*
   ('a, 'b) t ->
@@ -198,32 +199,28 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
   | String _
   | Name _
   | External _
-  | Tvar _ -> [ `Line (get_validator_name x) ]
+  | Tvar _ -> [ Line (get_validator_name x) ]
 
   | Sum (_, a, Sum x, (v, shallow)) ->
       if shallow then
         opt_validator v
       else
-        let tick =
-          match x with
-            Classic -> ""
-          | Poly -> "`"
-        in
+        let tick = Ocaml.tick x in
         let body : Indent.t list =
           [
-            `Line "match x with";
-            `Block (
+            Line "match x with";
+            Block (
               Array.to_list (
                 Array.map
-                  (fun x -> `Inline (make_variant_validator tick x))
+                  (fun x -> Inline (make_variant_validator tick x))
                   a
               )
             )
           ]
         in
         [
-          `Annot ("fun", `Line "fun path x ->");
-          `Block (prepend_validator v body);
+          Annot ("fun", Line "fun path x ->");
+          Block (prepend_validator v body);
         ]
 
   | Record (_, a, Record o, (v, shallow)) ->
@@ -231,8 +228,8 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
         opt_validator v
       else
         [
-          `Annot ("fun", `Line "fun path x ->");
-          `Block (prepend_validator v (make_record_validator a o));
+          Annot ("fun", Line "fun path x ->");
+          Block (prepend_validator v (make_record_validator a o));
         ]
 
   | Tuple (_, a, Tuple, (v, shallow)) ->
@@ -245,20 +242,20 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
         let l =
           List.map (
             fun (i, x) ->
-              `Inline [
-                `Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
-                `Line "(";
-                `Block (make_validator x.cel_value);
-                `Line (sprintf ") (`Index %i :: path) x" i);
-                `Line ")"
+              Inline [
+                Line (sprintf "(let %s = x in" (Ox_emit.nth "x" i len));
+                Line "(";
+                Block (make_validator x.cel_value);
+                Line (sprintf ") (`Index %i :: path) x" i);
+                Line ")"
               ]
           ) l
         in
         let l = forall l
         in
         [
-          `Annot ("fun", `Line "fun path x ->");
-          `Block (prepend_validator v l);
+          Annot ("fun", Line "fun path x ->");
+          Block (prepend_validator v l);
         ]
 
   | List (_, x, List o, (v, shallow)) ->
@@ -271,9 +268,9 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
           | Array -> "Atdgen_runtime.Ov_run.validate_array ("
         in
         prepend_validator_f v [
-          `Line validate;
-          `Block (make_validator x);
-          `Line ")";
+          Line validate;
+          Block (make_validator x);
+          Line ")";
         ]
 
   | Option (_, x, Option, (v, shallow))
@@ -282,9 +279,9 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
         opt_validator v
       else
         prepend_validator_f v [
-          `Line "Atdgen_runtime.Ov_run.validate_option (";
-          `Block (make_validator x);
-          `Line ")";
+          Line "Atdgen_runtime.Ov_run.validate_option (";
+          Block (make_validator x);
+          Line ")";
         ]
 
   | Wrap (_, x, Wrap _, (v, shallow)) ->
@@ -298,51 +295,47 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
 
 
 and make_variant_validator tick x :
-    Indent.t list =
+  Indent.t list =
   let o =
     match x.var_arepr, x.var_brepr with
-        Variant o, (None, _) -> o
-      | _ -> assert false
+      Variant o, (None, _) -> o
+    | _ -> assert false
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
   match x.var_arg with
-      None ->
-        [
-          `Line (sprintf "| %s%s -> None" tick ocaml_cons)
+    None ->
+      [
+        Line (sprintf "| %s%s -> None" tick ocaml_cons)
+      ]
+  | Some v ->
+      [
+        Line (sprintf "| %s%s x ->" tick ocaml_cons);
+        Block [
+          Line "(";
+          Block (make_validator v);
+          Line ") path x"
         ]
-    | Some v ->
-        [
-          `Line (sprintf "| %s%s x ->" tick ocaml_cons);
-          `Block [
-            `Line "(";
-            `Block (make_validator v);
-            `Line ") path x"
-          ]
-        ]
+      ]
 
 and make_record_validator a record_kind =
-  let dot =
-    match record_kind with
-        Record -> "."
-      | Object -> "#"
-  in
+  let dot = Ocaml.dot record_kind in
   let fields = get_fields a in
   assert (fields <> []);
   let validate_fields : Indent.t list =
     List.map (
       fun (x, ocaml_fname) ->
-        `Inline [
-          `Line "(";
-          `Block (make_validator x.Mapping.f_value);
-          `Line (sprintf
-                   ") (`Field %S :: path) x%s%s" ocaml_fname dot ocaml_fname);
+        Inline [
+          Line "(";
+          Block (make_validator x.Mapping.f_value);
+          Line (sprintf
+                  ") (`Field %S :: path) x%s%s" ocaml_fname dot ocaml_fname);
         ]
     ) fields
   in
   forall validate_fields
 
 let make_ocaml_validator ~original_types is_rec let1 def =
-  let x = match def.def_value with None -> assert false | Some x -> x in
+  let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_constraint = Ox_emit.get_type_constraint ~original_types def in
   let param = def.def_param in
@@ -358,41 +351,27 @@ let make_ocaml_validator ~original_types is_rec let1 def =
     | false, true -> "", "", Some (sprintf "_ -> %s -> _" type_constraint)
   in
   [
-    `Line (sprintf "%s %s = ("
-             let1
-             (Ox_emit.opt_annot_def type_annot (validate ^ extra_param)));
-    `Block (List.map Indent.strip validator_expr);
-    `Line (sprintf ")%s" extra_args);
+    Line (sprintf "%s %s = ("
+            let1
+            (Ox_emit.opt_annot_def type_annot (validate ^ extra_param)));
+    Block (List.map Indent.strip validator_expr);
+    Line (sprintf ")%s" extra_args);
   ]
 
 
 let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
-  let ll =
-    List.map (
-      fun (is_rec, l) ->
-        let l = List.filter (fun x -> x.def_value <> None) l in
-        let validators =
-          Ox_emit.map (
-            fun is_first def ->
-              let let1, _ = Ox_emit.get_let ~is_rec ~is_first in
-              make_ocaml_validator ~original_types is_rec let1 def
-          ) l
-        in
-        List.flatten validators
-  ) defs
-  in
-  Atd.Indent.to_buffer buf (List.flatten ll);
-
-  if with_create then
-    List.iter (
-      fun (_, l) ->
-        let l = List.filter Ox_emit.is_exportable l in
-        List.iter (
-          fun x ->
-            let _, impl = Ox_emit.make_record_creator deref x in
-            Buffer.add_string buf impl
-        ) l
-    ) defs
+  defs
+  |> List.concat_map (fun (is_rec, l) ->
+    let l = List.filter (fun x -> x.def_value <> None) l in
+    let validators =
+      List.map_first (fun ~is_first def ->
+        let let1, _ = Ox_emit.get_let ~is_rec ~is_first in
+        make_ocaml_validator ~original_types is_rec let1 def
+      ) l
+    in
+    List.flatten validators)
+  |> Indent.to_buffer buf;
+  Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 
 (*
@@ -437,22 +416,21 @@ let make_ocaml_files
     ~pos_lnum
     ~type_aliases
     ~force_defaults:_
-    ~name_overlap
     ~ocaml_version:_
     ~pp_convs
     atd_file out =
   let ((head, m0), _) =
     match atd_file with
-        Some file ->
-          Atd.Util.load_file
-            ~expand:false ~inherit_fields:true ~inherit_variants:true
-            ?pos_fname ?pos_lnum
-            file
-      | None ->
-          Atd.Util.read_channel
-            ~expand:false ~inherit_fields:true ~inherit_variants:true
-            ?pos_fname ?pos_lnum
-            stdin
+      Some file ->
+        Atd.Util.load_file
+          ~expand:false ~inherit_fields:true ~inherit_variants:true
+          ?pos_fname ?pos_lnum
+          file
+    | None ->
+        Atd.Util.read_channel
+          ~expand:false ~inherit_fields:true ~inherit_variants:true
+          ?pos_fname ?pos_lnum
+          stdin
   in
   let tsort =
     if all_rec then
@@ -463,7 +441,6 @@ let make_ocaml_files
   let m1 = tsort m0
   in
   let defs1 = Ov_mapping.defs_of_atd_modules m1 in
-  if not name_overlap then Ox_emit.check defs1;
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
   in
@@ -477,8 +454,8 @@ let make_ocaml_files
   let header =
     let src =
       match atd_file with
-          None -> "stdin"
-        | Some path -> sprintf "%S" (Filename.basename path)
+        None -> "stdin"
+      | Some path -> sprintf "%S" (Filename.basename path)
     in
     sprintf {|(* Auto-generated from %s *)
               [@@@ocaml.warning "-27-32-35-39"]|} src

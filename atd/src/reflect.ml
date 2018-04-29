@@ -2,7 +2,7 @@
   Conversion of an ATD tree to OCaml source code for that value.
 *)
 
-open Printf
+open Import
 
 let print_loc buf (_, _) =
   bprintf buf "loc"

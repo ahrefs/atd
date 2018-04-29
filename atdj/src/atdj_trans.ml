@@ -1,5 +1,4 @@
 open Atd.Import
-open Printf
 open Atdj_names
 open Atdj_env
 open Atdj_util
@@ -241,23 +240,17 @@ let javadoc loc annots indent =
   (* Assume that code is the name of a field that is defined
      in the same class *)
   let from_inline_code code = indent ^ " * {@link #" ^ code ^ "}\n" in
-  let from_doc_para acc para =
-    List.fold_left
-      (fun acc -> function
-         | `Text text -> (from_inline_text text) :: acc
-         | `Code code -> (from_inline_code code) :: acc
-      )
-      acc
-      para in
-  let from_doc = function
-    | `Text blocks ->
-        List.fold_left
-          (fun acc -> function
-             | `Paragraph para -> from_doc_para acc para
-             | `Pre _ -> failwith "Preformatted doc blocks are not supported"
-          )
-          []
-          blocks in
+  let from_doc_para =
+    List.fold_left (fun acc -> function
+      | Atd.Doc.Text text -> (from_inline_text text) :: acc
+      | Code code -> (from_inline_code code) :: acc
+    ) in
+  let from_doc =
+    List.fold_left (fun acc -> function
+      | Atd.Doc.Paragraph para -> from_doc_para acc para
+      | Pre _ -> failwith "Preformatted doc blocks are not supported"
+    ) []
+  in
   (match Atd.Doc.get_doc loc annots with
    | Some doc ->
        let header = indent ^ "/**\n" in
@@ -333,12 +326,10 @@ and trans_sum my_name env (_, vars, _) =
         let func_name, enum_name, field_name =
           get_java_variant_names atd_name an in
         let opt_java_ty =
-          match opt_ty with
-          | None -> None
-          | Some ty ->
-              let (java_ty, _) = trans_inner env (unwrap_option env ty) in
-              Some (ty, java_ty)
-        in
+          opt_ty |> Option.map (fun ty ->
+            let (java_ty, _) = trans_inner env (unwrap_option env ty) in
+            (ty, java_ty)
+          ) in
         (json_name, func_name, enum_name, field_name, opt_java_ty)
     | Inherit _ -> assert false
   ) vars

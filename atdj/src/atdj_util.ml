@@ -1,6 +1,6 @@
 (* Utilities *)
 
-open Printf
+open Atd.Import
 open Atdj_env
 
 (* Get rid of `wrap' constructors that we don't support on the Java side yet.

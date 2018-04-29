@@ -697,9 +697,6 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       let read_tag =
         [
           Line "Yojson.Safe.read_space p lb;";
-          if error_expr1 <> invalid_variant_tag
-          then Line "let ident_ref = ref \"\" in"
-          else Line "";
           Line "match Yojson.Safe.start_any_variant p lb with";
           Block [
             Line "| `Edgy_bracket -> (";

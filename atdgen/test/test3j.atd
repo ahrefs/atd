@@ -30,8 +30,8 @@ type patch = {
    See normalize/restore functions in `adapter.ml`.
 *)
 type adapted = [
-  | A of a <json name="a">
-  | B of b <json name="b">
+  | A <json name="a"> of a
+  | B <json name="b"> of b
 ] <json adapter="atdgen_runtime.util.json.adapter.type_field.default">
 
 type a = {

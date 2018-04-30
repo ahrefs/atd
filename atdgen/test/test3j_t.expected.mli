@@ -9,10 +9,6 @@ type dyn = Yojson.Safe.json
 
 type t = { foo: int; bar: json; baz: dyn }
 
-type integer_or_string = [ `Integer of int | `String of string ]
-
-type simple = { data: integer_or_string }
-
 type patch = {
   patch1: int option option;
   patch2: int option option;

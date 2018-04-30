@@ -9,10 +9,6 @@ type dyn = Yojson.Safe.json
 
 type t = Test3j_t.t = { foo: int; bar: json; baz: dyn }
 
-type integer_or_string = Test3j_t.integer_or_string
-
-type simple = Test3j_t.simple = { data: integer_or_string }
-
 type patch = Test3j_t.patch = {
   patch1: int option option;
   patch2: int option option;
@@ -104,46 +100,6 @@ val read_t :
 val t_of_string :
   string -> t
   (** Deserialize JSON data of type {!t}. *)
-
-val write_integer_or_string :
-  Bi_outbuf.t -> integer_or_string -> unit
-  (** Output a JSON value of type {!integer_or_string}. *)
-
-val string_of_integer_or_string :
-  ?len:int -> integer_or_string -> string
-  (** Serialize a value of type {!integer_or_string}
-      into a JSON string.
-      @param len specifies the initial length
-                 of the buffer used internally.
-                 Default: 1024. *)
-
-val read_integer_or_string :
-  Yojson.Safe.lexer_state -> Lexing.lexbuf -> integer_or_string
-  (** Input JSON data of type {!integer_or_string}. *)
-
-val integer_or_string_of_string :
-  string -> integer_or_string
-  (** Deserialize JSON data of type {!integer_or_string}. *)
-
-val write_simple :
-  Bi_outbuf.t -> simple -> unit
-  (** Output a JSON value of type {!simple}. *)
-
-val string_of_simple :
-  ?len:int -> simple -> string
-  (** Serialize a value of type {!simple}
-      into a JSON string.
-      @param len specifies the initial length
-                 of the buffer used internally.
-                 Default: 1024. *)
-
-val read_simple :
-  Yojson.Safe.lexer_state -> Lexing.lexbuf -> simple
-  (** Input JSON data of type {!simple}. *)
-
-val simple_of_string :
-  string -> simple
-  (** Deserialize JSON data of type {!simple}. *)
 
 val write_patch :
   Bi_outbuf.t -> patch -> unit

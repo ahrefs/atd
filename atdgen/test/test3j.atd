@@ -14,26 +14,6 @@ type unixtime_list = int <ocaml repr="float"> list
 
 (*** JSON records using one field to indicate the type of other fields ***)
 
-(*
-   Support for the following JSON records:
-   { "type": "integer", data: 123 }    -> { data = `Integer 123 }
-   { "type": "string", data: "abc" }   -> { data = `String "abc" }
-*)
-type simple = {
-  data <json tag_field="type">: integer_or_string;
-    (* JSON object has one extra field "type" that must
-       contain the constructor for the OCaml variant.
-
-       integer_or_string is a variant type, broken into 2 fields in the
-       JSON representation.
-    *)
-}
-
-type integer_or_string = [
-  | Integer <json name="integer"> of int
-  | String <json name="string"> of string
-]
-
 type patch = {
   ?patch1: int nullable option;
   ?patch2: int nullable option;
@@ -50,9 +30,9 @@ type patch = {
    See normalize/restore functions in `adapter.ml`.
 *)
 type adapted = [
-  | A of a
-  | B of b
-] <json adapter="adapter.type_field">
+  | A of a <json name="a">
+  | B of b <json name="b">
+] <json adapter="atdgen_runtime.util.json.adapter.type_field.default">
 
 type a = {
   thing: string;

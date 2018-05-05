@@ -13,10 +13,13 @@ type annot = annot_section list
 
 and annot_section = string * (loc * annot_field list)
     (** represents a single annotation within edgy brackets.
-        [<"foo" bar baz="123">] in ATD syntax translates to:
+        [<"foo" bar baz="123" path.to
+                                .thing="abc">] in ATD syntax
+        translates to:
 {v
 ("foo", (loc1, [ ("bar", (loc2, None));
-                 ("baz", (loc3, Some "123")) ] ))
+                 ("baz", (loc3, Some "123"));
+                 ("path.to.thing", (loc4, Some "abc")) ] ))
 v}
     *)
 

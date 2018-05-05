@@ -397,7 +397,8 @@ sig
 
     (** Module signature required of any json adapter.
         For example, an ATD annotation
-        [<json adapter="atdgen_runtime.util.json.adapter.type_field.default"]
+        [<json
+           adapter.ocaml="Atdgen_runtime.Util.Json.Adapter.Type_field.Default"]
         refers to the OCaml module
         [Atdgen_runtime.Util.Json.Adapter.Type_field.Default].
     *)
@@ -435,7 +436,7 @@ sig
 type obj = [
   | User of user
   | ...
-] <json adapter="atdgen_runtime.util.json.adapter.type_field.default">
+] <json adapter.ocaml="Atdgen_runtime.Util.Json.Adapter.Type_field.Default">
 
 type user = {
   id: string;
@@ -491,7 +492,7 @@ module Kind = Type_field.Make (struct type_field_name = "kind" end)
 type obj = [
   | User of user
   | ...
-] <json adapter="atdgen_runtime.util.json.adapter.one_field">
+] <json adapter.ocaml="Atdgen_runtime.Util.Json.Adapter.One_field">
 
 type user = {
   id: string;

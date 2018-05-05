@@ -2,13 +2,19 @@
   Mapping from ATD to JSON
 *)
 
-open Printf
-
 type json_float =
   | Float of int option (* max decimal places *)
   | Int
 
-type json_adapter = string list
+type json_adapter = {
+  ocaml_adapter : string option;
+  java_adapter : string option;
+}
+
+let no_adapter = {
+  ocaml_adapter = None;
+  java_adapter = None;
+}
 
 type json_list = Array | Object
 
@@ -37,7 +43,7 @@ type json_repr =
   | Option
   | Record of json_record
   | String
-  | Sum of json_adapter option
+  | Sum of json_adapter
   | Tuple
   | Unit
   | Variant of json_variant
@@ -64,51 +70,28 @@ let get_json_float an : json_float =
       `Float -> Float (get_json_precision an)
     | `Int -> Int
 
-let parse_adapter_name =
-  let component = "[a-z][a-z0-9_]*" in
-  let component_re = Str.regexp (sprintf "^%s$" component) in
-  let check_component s =
-    Str.string_match component_re s 0 && Str.match_end () = String.length s
-  in
-  fun s ->
-    let components = String.split_on_char '.' s in
-    if List.for_all check_component components then
-      Some components
-    else
-      None
-
-let test_parse_adapter_name () =
-  let ok s components =
-    parse_adapter_name s = Some components
-  in
-  let not_ok s =
-    parse_adapter_name s = None
-  in
-  assert (ok "a" ["a"]);
-  assert (ok "a.b" ["a"; "b"]);
-  assert (ok "ab.cd" ["ab"; "cd"]);
-  assert (ok "ab.cd.e_5_" ["ab"; "cd"; "e_5_"]);
-  assert (not_ok "");
-  assert (not_ok "A");
-  assert (not_ok "a.");
-  assert (not_ok "a\n");
-  assert (not_ok "\na");
-  assert (not_ok "a._b");
-  assert (not_ok "a..b");
-  true
-
-(* <json adapter="foo.bar"> -> Some ["foo"; "bar"] *)
-let json_adapter_of_string s : json_adapter option option =
-  Some (parse_adapter_name s)
-
 let json_list_of_string s : json_list option =
   match s with
   | "array" -> Some Array
   | "object" -> Some Object
   | _ -> (* error *) None
 
+(*
+   <json adapter.ocaml="Foo.Bar">
+   --> { ocaml_adapter = Some "Foo.Bar";
+         java_adapter = None; }
+*)
 let get_json_adapter an =
-  Atd.Annot.get_field json_adapter_of_string None ["json"] "adapter" an
+  let ocaml_adapter =
+    Atd.Annot.get_field (fun s -> Some (Some s))
+      None ["json"] "adapter.ocaml" an
+  in
+  let java_adapter =
+    Atd.Annot.get_field (fun s -> Some (Some s))
+      None ["json"] "adapter.java" an
+  in
+  { ocaml_adapter;
+    java_adapter }
 
 let get_json_sum = get_json_adapter
 
@@ -133,5 +116,4 @@ let get_json_record an =
   }
 
 let tests = [
-  "parse adapter name", test_parse_adapter_name;
 ]

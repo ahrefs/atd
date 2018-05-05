@@ -296,8 +296,8 @@ let get_left_of_string_name p name param =
   let args = List.map (fun s -> Tvar (dummy_loc, s)) param in
   get_reader_name ~name_f p (Name (dummy_loc, name, args, None, None))
 
-let write_with_adapter opt_adapter writer =
-  match opt_adapter with
+let write_with_adapter adapter writer =
+  match adapter.Json.ocaml_adapter with
   | None -> writer
   | Some adapter_path ->
       let restore =
@@ -321,7 +321,7 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ Line (get_writer_name p x) ]
 
-  | Sum (_, a, Sum x, Sum opt_adapter) ->
+  | Sum (_, a, Sum x, Sum adapter) ->
       let tick = Ocaml.tick x in
       let body : Indent.t list =
         [
@@ -339,7 +339,7 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
         Annot ("fun", Line "fun ob x ->");
         Block body
       ] in
-      write_with_adapter opt_adapter standard_writer
+      write_with_adapter adapter standard_writer
 
   | Record (_, a, Record o, Record _) ->
       [
@@ -632,8 +632,8 @@ let study_record ~ocaml_version fields =
   in
   init_fields, init_bits, set_bit, check_bits, create_record
 
-let read_with_adapter opt_adapter reader =
-  match opt_adapter with
+let read_with_adapter adapter reader =
+  match adapter.Json.ocaml_adapter with
   | None -> reader
   | Some adapter_path ->
       let normalize =
@@ -657,7 +657,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ Line (get_reader_name p x) ]
 
-  | Sum (_, a, Sum x, Sum opt_adapter) ->
+  | Sum (_, a, Sum x, Sum adapter) ->
       let tick = Ocaml.tick x in
       let cases =
         Array.to_list (
@@ -743,7 +743,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           Inline read_tag;
         ]
       ] in
-      read_with_adapter opt_adapter standard_reader
+      read_with_adapter adapter standard_reader
 
   | Record (loc, a, Record o, Record j) ->
       Ocaml.obj_unimplemented loc o;
@@ -811,7 +811,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       in
       make_reader p
         (Some "_ option")
-        (Sum (loc, a, Sum Classic, Json.Sum None))
+        (Sum (loc, a, Sum Classic, Json.Sum Json.no_adapter))
 
   | Nullable (_, x, Nullable, Nullable) ->
       [

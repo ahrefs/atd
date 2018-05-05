@@ -1,11 +1,18 @@
-(*
+(**
   Mapping from ATD to JSON
 *)
 
-(* Name of the json adapter, referencing a pair of functions
-   to convert to/from an atd-compatible json tree.
-   ["foo"; "bar"] represents "foo.bar". *)
-type json_adapter = string list
+(** Association between languages and json adapter for that language.
+    The specification of each json adapter is language-specific. *)
+type json_adapter = {
+  ocaml_adapter : string option;
+    (** A module implementing [normalize] and [restore]. *)
+
+  java_adapter : string option;
+    (** tbd *)
+}
+
+val no_adapter : json_adapter
 
 type json_float =
   | Float of int option (* max decimal places *)
@@ -38,13 +45,13 @@ type json_repr =
   | Option
   | Record of json_record
   | String
-  | Sum of json_adapter option
+  | Sum of json_adapter
   | Tuple
   | Unit
   | Variant of json_variant
   | Wrap
 
-val get_json_sum : Atd.Annot.t -> json_adapter option
+val get_json_sum : Atd.Annot.t -> json_adapter
 
 val get_json_list : Atd.Annot.t -> json_list
 

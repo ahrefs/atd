@@ -35,8 +35,6 @@ type param = {
 
 }
 
-let unopt = function None -> assert false | Some x -> x
-
 let make_ocaml_json_intf ~with_create buf deref defs =
   List.concat_map snd defs
   |> List.filter Ox_emit.include_intf
@@ -476,11 +474,7 @@ and make_variant_writer p tick x : Indent.t list =
       ]
 
 and make_record_writer p a record_kind =
-  let dot =
-    match record_kind with
-        Record -> "."
-      | Object -> "#"
-  in
+  let dot = Ocaml.dot record_kind in
   let fields = get_fields p a in
   let sep =
     [
@@ -531,7 +525,8 @@ and make_record_writer p a record_kind =
             ]
           else if optional && not p.force_defaults then
             [
-              Line (sprintf "if %s <> %s then (" v (unopt ocaml_default));
+              Line (sprintf "if %s <> %s then ("
+                      v (Option.value_exn ocaml_default));
               Block (app v);
               Line ");"
             ]

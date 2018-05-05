@@ -602,7 +602,7 @@ let quality_test () =
     all_tests;
   match List.rev !errors with
   | [] ->
-      printf "Success.\n%!"
+      ()
   | l ->
       eprintf "\nThe following tests failed:\n%s\n"
         (String.concat "\n" l);

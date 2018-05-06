@@ -31,6 +31,23 @@ type adapted = [
   | B <json name="b"> of b
 ] <json adapter.ocaml="Atdgen_runtime.Util.Json.Adapter.Type_field.Default">
 
+type a = {
+  thing: string;
+  other_thing: bool;
+}
+
+type b = {
+  thing: int; (* field name found in `a` with another type! *)
+}
+
+(*
+   Test variants represented as single-field json objects.
+*)
+type sf_adapted = [
+  | A <json name="a"> of bool
+  | B <json name="b"> of int
+] <json adapter.ocaml="Atdgen_runtime.Util.Json.Adapter.One_field">
+
 (*
    Test substitute for the retired tag_field feature.
 *)
@@ -50,14 +67,3 @@ type tf_record = {
   the_value : tf_variant;
   etc : string;
 } <json adapter.ocaml="Test_lib.Tag_field_example">
-
-(* Test record field shadowing and disambiguation. *)
-
-type a = {
-  thing: string;
-  other_thing: bool;
-}
-
-type b = {
-  thing: int; (* field name found in `a` with another type! *)
-}

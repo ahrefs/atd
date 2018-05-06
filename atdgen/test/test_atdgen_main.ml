@@ -563,6 +563,19 @@ let test_adapted () =
   check (expected_a = rewritten_a);
   check (expected_b = rewritten_b)
 
+let test_one_field () =
+  section "test variants represented with single-field json objects";
+  let a_json = {| {"a": true} |} in
+  let b_json = {| {"b": 17 } |} in
+  let a = Test3j_j.sf_adapted_of_string a_json in
+  let b = Test3j_j.sf_adapted_of_string b_json in
+  check (a = `A true);
+  check (b = `B 17);
+  let a_json2 = Test3j_j.string_of_sf_adapted a in
+  let b_json2 = Test3j_j.string_of_sf_adapted b in
+  check (Test3j_j.sf_adapted_of_string a_json2 = a);
+  check (Test3j_j.sf_adapted_of_string b_json2 = b)
+
 let test_tag_field_emulation () =
   section "emulate the retired tag_field feature";
   let json_in = {| { "the_type": "a", "the_value": 123, "etc": "blah" } |} in
@@ -601,6 +614,7 @@ let all_tests = [
   test_json_float_decimals;
   test_patch;
   test_adapted;
+  test_one_field;
   test_tag_field_emulation;
 ]
 

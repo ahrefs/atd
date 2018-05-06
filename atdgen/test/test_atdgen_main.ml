@@ -563,6 +563,15 @@ let test_adapted () =
   check (expected_a = rewritten_a);
   check (expected_b = rewritten_b)
 
+let test_tag_field_emulation () =
+  section "emulate the retired tag_field feature";
+  let json_in = {| { "the_type": "a", "the_value": 123, "etc": "blah" } |} in
+  let x = Test3j_j.tf_record_of_string json_in in
+  check (x = { the_value = `A 123; etc = "blah" });
+  let json_out = Test3j_j.string_of_tf_record x in
+  let x2 = Test3j_j.tf_record_of_string json_out in
+  check (x2 = x)
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -592,6 +601,7 @@ let all_tests = [
   test_json_float_decimals;
   test_patch;
   test_adapted;
+  test_tag_field_emulation;
 ]
 
 (* TODO: use Alcotest to run the test suite. *)

@@ -54,3 +54,9 @@ struct
       x
   let unwrap x = x
 end
+
+module Tag_field_example =
+  Atdgen_runtime.Util.Json.Adapter.Type_and_value_fields.Make (struct
+    let type_field_name = "the_type"
+    let value_field_name = "the_value"
+  end)

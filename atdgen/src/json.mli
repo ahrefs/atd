@@ -30,8 +30,10 @@ type json_field = {
 
 type json_record = {
   json_keep_nulls : bool; (* { ... } <json keep_nulls> *)
+  json_record_adapter : json_adapter;
 }
 
+(** The different kinds of ATD nodes with their json-specific options. *)
 type json_repr =
   | Bool
   | Cell

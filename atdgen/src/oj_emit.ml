@@ -339,11 +339,13 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       ] in
       write_with_adapter adapter standard_writer
 
-  | Record (_, a, Record o, Record _) ->
-      [
+  | Record (_, a, Record o, Record j) ->
+      let standard_writer = [
         Annot ("fun", Line "fun ob x ->");
         Block (make_record_writer p a o);
-      ]
+      ] in
+      let adapter = j.json_record_adapter in
+      write_with_adapter adapter standard_writer
 
   | Tuple (_, a, Tuple, Tuple) ->
       let len = Array.length a in
@@ -742,10 +744,12 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
 
   | Record (loc, a, Record o, Record j) ->
       Ocaml.obj_unimplemented loc o;
-      [
+      let standard_reader = [
         Annot ("fun", Line "fun p lb ->");
         Block (make_record_reader p type_annot loc a j)
-      ]
+      ] in
+      let adapter = j.json_record_adapter in
+      read_with_adapter adapter standard_reader
 
   | Tuple (_, a, Tuple, Tuple) ->
       [

@@ -28,8 +28,17 @@ type json_field = {
 
 type json_record = {
   json_keep_nulls : bool; (* { ... } <json keep_nulls> *)
+  json_record_adapter : json_adapter;
 }
 
+(*
+   Note that json adapters are supported only by records and sums
+   at this time.
+   TODO: Support json adapters for all kinds of nodes rather than just
+   sums and records, preferably without major code duplication.
+   Maybe this can be achieved by turning json_repr
+   into (json_repr * json_adapter).
+*)
 type json_repr =
   | Bool
   | Cell
@@ -113,6 +122,7 @@ let get_json_keep_nulls an =
 let get_json_record an =
   {
     json_keep_nulls = get_json_keep_nulls an;
+    json_record_adapter = get_json_adapter an;
   }
 
 let tests = [

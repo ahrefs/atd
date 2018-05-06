@@ -3,11 +3,17 @@
 
 type unixtime_list = Test3j_t.unixtime_list
 
+type tf_variant = Test3j_t.tf_variant
+
+type tf_record = Test3j_t.tf_record = { the_value: tf_variant; etc: string }
+
 type json = Yojson.Safe.json
 
 type dyn = Yojson.Safe.json
 
 type t = Test3j_t.t = { foo: int; bar: json; baz: dyn }
+
+type sf_adapted = Test3j_t.sf_adapted
 
 type patch = Test3j_t.patch = {
   patch1: int option option;
@@ -40,6 +46,46 @@ val read_unixtime_list :
 val unixtime_list_of_string :
   string -> unixtime_list
   (** Deserialize JSON data of type {!unixtime_list}. *)
+
+val write_tf_variant :
+  Bi_outbuf.t -> tf_variant -> unit
+  (** Output a JSON value of type {!tf_variant}. *)
+
+val string_of_tf_variant :
+  ?len:int -> tf_variant -> string
+  (** Serialize a value of type {!tf_variant}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_tf_variant :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> tf_variant
+  (** Input JSON data of type {!tf_variant}. *)
+
+val tf_variant_of_string :
+  string -> tf_variant
+  (** Deserialize JSON data of type {!tf_variant}. *)
+
+val write_tf_record :
+  Bi_outbuf.t -> tf_record -> unit
+  (** Output a JSON value of type {!tf_record}. *)
+
+val string_of_tf_record :
+  ?len:int -> tf_record -> string
+  (** Serialize a value of type {!tf_record}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_tf_record :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> tf_record
+  (** Input JSON data of type {!tf_record}. *)
+
+val tf_record_of_string :
+  string -> tf_record
+  (** Deserialize JSON data of type {!tf_record}. *)
 
 val write_json :
   Bi_outbuf.t -> json -> unit
@@ -100,6 +146,26 @@ val read_t :
 val t_of_string :
   string -> t
   (** Deserialize JSON data of type {!t}. *)
+
+val write_sf_adapted :
+  Bi_outbuf.t -> sf_adapted -> unit
+  (** Output a JSON value of type {!sf_adapted}. *)
+
+val string_of_sf_adapted :
+  ?len:int -> sf_adapted -> string
+  (** Serialize a value of type {!sf_adapted}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_sf_adapted :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> sf_adapted
+  (** Input JSON data of type {!sf_adapted}. *)
+
+val sf_adapted_of_string :
+  string -> sf_adapted
+  (** Deserialize JSON data of type {!sf_adapted}. *)
 
 val write_patch :
   Bi_outbuf.t -> patch -> unit

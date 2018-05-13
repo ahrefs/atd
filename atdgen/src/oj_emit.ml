@@ -443,6 +443,7 @@ and make_variant_writer p tick x : Indent.t list =
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
   let json_cons = j.Json.json_cons in
+  let json_open_enum = j.Json.json_open_enum in
   match x.var_arg with
   | None ->
       let enclose s =
@@ -453,6 +454,12 @@ and make_variant_writer p tick x : Indent.t list =
         Line (sprintf "| %s%s -> Bi_outbuf.add_string ob %S"
                  tick ocaml_cons
                  (enclose (make_json_string json_cons)))
+      ]
+  | Some v when json_open_enum ->
+      (* v should resolve to type string. *)
+      [
+        Line (sprintf "| %s%s x ->" tick ocaml_cons);
+        Block (make_writer p v);
       ]
   | Some v ->
       let op, sep, cl =
@@ -680,7 +687,6 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           ~error_expr1
           cases0
       in
-
       let std_int_mapping_function1, std_int_matching1 =
         String_match.make_ocaml_int_mapping
           ~error_expr1

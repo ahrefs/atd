@@ -20,11 +20,6 @@ type param = {
   unknown_field_handler : string option;
   (* Optional handler that takes a field name as argument
      and does something with it such as displaying a warning message. *)
-  constr_mismatch_handler : string option;
-  (* Optional handler that takes a constructor field name, a
-     constructor field value, a value field name, and a value field
-     value as arguments and does something with it such as displaying a
-     warning message. *)
 
   force_defaults : bool;
 
@@ -1247,7 +1242,7 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
 
 
 let make_ocaml_json_impl
-    ~std ~unknown_field_handler ~constr_mismatch_handler
+    ~std ~unknown_field_handler
     ~with_create ~force_defaults ~preprocess_input ~original_types
     ~ocaml_version
     buf deref defs =
@@ -1255,7 +1250,6 @@ let make_ocaml_json_impl
     deref = deref;
     std = std;
     unknown_field_handler = unknown_field_handler;
-    constr_mismatch_handler = constr_mismatch_handler;
     force_defaults = force_defaults;
     preprocess_input;
     ocaml_version;
@@ -1299,7 +1293,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ~std ~unknown_field_handler ~constr_mismatch_handler
+    ~std ~unknown_field_handler
     ~force_defaults ~preprocess_input ~original_types
     ~ocaml_version
     ocaml_typedefs deref defs =
@@ -1312,7 +1306,7 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then
     make_ocaml_json_impl
-      ~std ~unknown_field_handler ~constr_mismatch_handler
+      ~std ~unknown_field_handler
       ~with_create ~force_defaults ~preprocess_input ~original_types
       ~ocaml_version
       buf deref defs;
@@ -1326,7 +1320,6 @@ let make_ocaml_files
     ~all_rec
     ~std
     ~unknown_field_handler
-    ~constr_mismatch_handler
     ~pos_fname
     ~pos_lnum
     ~type_aliases
@@ -1382,7 +1375,7 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~std ~unknown_field_handler ~constr_mismatch_handler
+      ~std ~unknown_field_handler
       ~force_defaults ~preprocess_input ~original_types
       ~ocaml_version
       ocaml_typedefs (Mapping.make_deref defs) defs

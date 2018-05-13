@@ -139,7 +139,6 @@ and mapping_of_field ocaml_field_prefix = function
       let ocaml_mutable = Ocaml.get_ocaml_mutable an in
       let doc = Atd.Doc.get_doc loc an in
       let json_fname = Json.get_json_fname s an in
-      let json_tag_field = Json.get_json_tag_field an in
       { f_loc = loc;
         f_name = s;
         f_kind = fk;
@@ -154,7 +153,6 @@ and mapping_of_field ocaml_field_prefix = function
 
         f_brepr = Json.Field {
           Json.json_fname;
-          json_tag_field;
           json_unwrapped;
         };
       }

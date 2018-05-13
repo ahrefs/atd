@@ -24,7 +24,6 @@ type json_variant = { json_cons : string }
 
 type json_field = {
   json_fname  : string;           (* <json name=...> *)
-  json_tag_field : string option; (* <json tag_field=...> *)
   json_unwrapped : bool;
 }
 
@@ -62,8 +61,6 @@ val get_json_float : Atd.Annot.t -> json_float
 val get_json_cons : string -> Atd.Annot.t -> string
 
 val get_json_fname : string -> Atd.Annot.t -> string
-
-val get_json_tag_field : Atd.Annot.t -> string option
 
 val get_json_record : Atd.Annot.t -> json_record
 

@@ -22,7 +22,6 @@ type json_variant = { json_cons : string }
 
 type json_field = {
   json_fname  : string;           (* <json name=...> *)
-  json_tag_field : string option; (* <json tag_field=...> *)
   json_unwrapped : bool;
 }
 
@@ -112,9 +111,6 @@ let get_json_cons default an =
 
 let get_json_fname default an =
   Atd.Annot.get_field (fun s -> Some s) default ["json"] "name" an
-
-let get_json_tag_field an =
-  Atd.Annot.get_field (fun s -> Some (Some s)) None ["json"] "tag_field" an
 
 let get_json_keep_nulls an =
   Atd.Annot.get_flag ["json"] "keep_nulls" an

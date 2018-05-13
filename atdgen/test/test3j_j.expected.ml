@@ -583,7 +583,7 @@ let read_t = (
 let t_of_string s =
   read_t (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_sf_adapted = (
-  Atdgen_runtime.Oj_run.write_with_adapter Atdgen_runtime.Util.Json.Adapter.One_field.restore (
+  Atdgen_runtime.Oj_run.write_with_adapter Atdgen_runtime.Json_adapter.One_field.restore (
     fun ob x ->
       match x with
         | `A x ->
@@ -605,7 +605,7 @@ let string_of_sf_adapted ?(len = 1024) x =
   write_sf_adapted ob x;
   Bi_outbuf.contents ob
 let read_sf_adapted = (
-  Atdgen_runtime.Oj_run.read_with_adapter Atdgen_runtime.Util.Json.Adapter.One_field.normalize (
+  Atdgen_runtime.Oj_run.read_with_adapter Atdgen_runtime.Json_adapter.One_field.normalize (
     fun p lb ->
       Yojson.Safe.read_space p lb;
       match Yojson.Safe.start_any_variant p lb with
@@ -1310,7 +1310,7 @@ let read_a = (
 let a_of_string s =
   read_a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_adapted = (
-  Atdgen_runtime.Oj_run.write_with_adapter Atdgen_runtime.Util.Json.Adapter.Type_field.Default.restore (
+  Atdgen_runtime.Oj_run.write_with_adapter Atdgen_runtime.Json_adapter.Type_field.restore (
     fun ob x ->
       match x with
         | `A x ->
@@ -1332,7 +1332,7 @@ let string_of_adapted ?(len = 1024) x =
   write_adapted ob x;
   Bi_outbuf.contents ob
 let read_adapted = (
-  Atdgen_runtime.Oj_run.read_with_adapter Atdgen_runtime.Util.Json.Adapter.Type_field.Default.normalize (
+  Atdgen_runtime.Oj_run.read_with_adapter Atdgen_runtime.Json_adapter.Type_field.normalize (
     fun p lb ->
       Yojson.Safe.read_space p lb;
       match Yojson.Safe.start_any_variant p lb with

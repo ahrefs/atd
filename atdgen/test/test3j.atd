@@ -29,7 +29,7 @@ type patch = {
 type adapted = [
   | A <json name="a"> of a
   | B <json name="b"> of b
-] <json adapter.ocaml="Atdgen_runtime.Util.Json.Adapter.Type_field.Default">
+] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
 
 type a = {
   thing: string;
@@ -46,7 +46,7 @@ type b = {
 type sf_adapted = [
   | A <json name="a"> of bool
   | B <json name="b"> of int
-] <json adapter.ocaml="Atdgen_runtime.Util.Json.Adapter.One_field">
+] <json adapter.ocaml="Atdgen_runtime.Json_adapter.One_field">
 
 (*
    Test substitute for the retired tag_field feature.

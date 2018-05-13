@@ -3,17 +3,41 @@ open Atd.Ast
 open Mapping
 
 type t = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
+type variant_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping
 
 (*
   Translation of the types into the ocaml/json mapping.
 *)
 
+let check_json_sum loc json_sum_param variants =
+  if json_sum_param.Json.json_open_enum then (
+    let variants_with_arg =
+      List.filter (function {var_arg = Some _} -> true | _ -> false) variants
+    in
+    match variants_with_arg with
+    | [] ->
+        Error.error loc
+          "Missing catch-all case of the form `| Other of string`, \
+           required by <json open_enum>."
+    | [_] ->
+        (* Should we check that the type of the argument resolves to
+           `string`? *)
+        ()
+    | _ ->
+        Error.error loc
+          "More than one variant have arguments, which is incompatible \
+           with <json open_enum>."
+  )
+
 let rec mapping_of_expr (x : type_expr) =
   match x with
-    Sum (loc, l, an) ->
+  | Sum (loc, l, an) ->
       let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
+      let json_sum_param = Json.get_json_sum an in
       let json_t = Json.Sum (Json.get_json_sum an) in
-      Sum (loc, Array.of_list (List.map mapping_of_variant l),
+      let variants = List.map mapping_of_variant l in
+      check_json_sum loc json_sum_param variants;
+      Sum (loc, Array.of_list variants,
            ocaml_t, json_t)
 
   | Record (loc, l, an) ->
@@ -93,9 +117,8 @@ and mapping_of_cell (loc, x, an) =
     cel_brepr = json_t
   }
 
-
 and mapping_of_variant = function
-    Variant (loc, (s, an), o) ->
+  | Variant (loc, (s, an), o) ->
       let ocaml_cons = Ocaml.get_ocaml_cons s an in
       let doc = Atd.Doc.get_doc loc an in
       let ocaml_t =

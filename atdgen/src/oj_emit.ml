@@ -316,13 +316,14 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
 
   | Sum (_, a, Sum o, Sum j) ->
       let tick = Ocaml.tick o in
+      let open_enum = j.Json.json_open_enum in
       let body : Indent.t list =
         [
           Line "match x with";
           Block (
             Array.to_list (
               Array.map
-                (fun x -> Inline (make_variant_writer p tick x))
+                (fun x -> Inline (make_variant_writer p ~tick ~open_enum x))
                 a
             )
           )
@@ -435,7 +436,7 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   | _ -> assert false
 
 
-and make_variant_writer p tick x : Indent.t list =
+and make_variant_writer p ~tick ~open_enum x : Indent.t list =
   let o, j =
     match x.var_arepr, x.var_brepr with
         Variant o, Variant j -> o, j
@@ -443,7 +444,6 @@ and make_variant_writer p tick x : Indent.t list =
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
   let json_cons = j.Json.json_cons in
-  let json_open_enum = j.Json.json_open_enum in
   match x.var_arg with
   | None ->
       let enclose s =
@@ -455,7 +455,7 @@ and make_variant_writer p tick x : Indent.t list =
                  tick ocaml_cons
                  (enclose (make_json_string json_cons)))
       ]
-  | Some v when json_open_enum ->
+  | Some v when open_enum ->
       (* v should resolve to type string. *)
       [
         Line (sprintf "| %s%s x ->" tick ocaml_cons);
@@ -659,40 +659,26 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
 
   | Sum (_, a, Sum o, Sum j) ->
       let tick = Ocaml.tick o in
+      let open_enum = j.Json.json_open_enum in
+      let l = Array.to_list a in
+      let fallback_expr =
+        [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag p s" ]
+      in
       let cases =
-        Array.to_list (
-          Array.map
-            (make_variant_reader p type_annot tick false)
-            a
-        )
+        make_cases_reader p type_annot
+          ~tick ~open_enum ~std:false ~fallback_expr l
       in
       let l0, l1 =
-        List.partition (fun x -> x.var_arg = None) (Array.to_list a)
+        List.partition (fun x -> x.var_arg = None) l
       in
-      let cases0 = List.map (make_variant_reader p type_annot tick true) l0 in
-      let cases1 = List.map (make_variant_reader p type_annot tick true) l1 in
-
-      let error_expr1 =
-        [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag \
-                   p (String.sub s pos len)" ]
+      let cases0 =
+        make_cases_reader p type_annot
+          ~tick ~open_enum ~std:true ~fallback_expr l0
       in
-
-      let int_mapping_function, int_matching =
-        String_match.make_ocaml_int_mapping
-          ~error_expr1
-          cases
+      let cases1 =
+        make_cases_reader p type_annot
+          ~tick ~open_enum ~std:true ~fallback_expr l1
       in
-      let std_int_mapping_function0, std_int_matching0 =
-        String_match.make_ocaml_int_mapping
-          ~error_expr1
-          cases0
-      in
-      let std_int_mapping_function1, std_int_matching1 =
-        String_match.make_ocaml_int_mapping
-          ~error_expr1
-          cases1
-      in
-
       let read_tag =
         [
           Line "Yojson.Safe.read_space p lb;";
@@ -701,35 +687,24 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
             Line "| `Edgy_bracket -> (";
             Block [
               Block [
-                Line "Yojson.Safe.read_space p lb;";
-                Line "let f =";
-                Block int_mapping_function;
-                Line "in";
-                Line "let i = Yojson.Safe.map_ident p f lb in";
-                Inline int_matching;
+                Line "match Yojson.Safe.read_ident p lb with";
+                Block cases;
               ];
               Line ")";
             ];
             Line "| `Double_quote -> (";
             Block [
               Block [
-                Line "let f =";
-                Block std_int_mapping_function0;
-                Line "in";
-                Line "let i = Yojson.Safe.map_string p f lb in";
-                Inline std_int_matching0;
+                Line "match Yojson.Safe.finish_string p lb with";
+                Block cases0;
               ];
               Line ")";
             ];
             Line "| `Square_bracket -> (";
             Block [
               Block [
-                Line "Yojson.Safe.read_space p lb;";
-                Line "let f =";
-                Block std_int_mapping_function1;
-                Line "in";
-                Line "let i = Yojson.Safe.map_ident p f lb in";
-                Inline std_int_matching1;
+                Line "match Atdgen_runtime.Oj_run.read_string p lb with";
+                Block cases1;
               ];
               Line ")";
             ];
@@ -849,31 +824,48 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
 
   | _ -> assert false
 
-
-and make_variant_reader p type_annot tick std x : (string * Indent.t list) =
+(*
+   Return a pair (optional json constructor, expression) to be converted
+   into a match case.
+   If the json constructor is missing, this indicates a catch-all
+   pattern (_).
+*)
+and make_case_reader
+    p type_annot ~tick ~open_enum ~std
+    (x : Oj_mapping.variant_mapping) : (string option * Indent.t list) =
   let o, j =
     match x.var_arepr, x.var_brepr with
-      Variant o, Variant j -> o, j
+    | Variant o, Variant j -> o, j
     | _ -> assert false
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
   let json_cons = j.Json.json_cons in
-  let expr =
+  let catch_all, expr =
     match x.var_arg with
-       | None ->
+    | None ->
+        let expr =
           if std then
             [
               Line (Ox_emit.opt_annot
-                type_annot (sprintf "%s%s" tick ocaml_cons));
+                      type_annot (sprintf "%s%s" tick ocaml_cons));
             ]
           else
             [
               Line "Yojson.Safe.read_space p lb;";
               Line "Yojson.Safe.read_gt p lb;";
               Line (Ox_emit.opt_annot
-                type_annot (sprintf "%s%s" tick ocaml_cons));
+                      type_annot (sprintf "%s%s" tick ocaml_cons));
             ]
-      | Some v ->
+        in
+        false, expr
+    | Some v when open_enum ->
+        let expr = [
+          Line (Ox_emit.opt_annot
+                  type_annot (sprintf "%s%s x" tick ocaml_cons));
+        ] in
+        true, expr
+    | Some v ->
+        let expr =
           if std then
             [
               Line "Yojson.Safe.read_space p lb;";
@@ -888,7 +880,7 @@ and make_variant_reader p type_annot tick std x : (string * Indent.t list) =
               Line "Yojson.Safe.read_space p lb;";
               Line "Yojson.Safe.read_rbr p lb;";
               Line (Ox_emit.opt_annot
-                type_annot (sprintf "%s%s x" tick ocaml_cons));
+                      type_annot (sprintf "%s%s x" tick ocaml_cons));
             ]
           else
             [
@@ -902,10 +894,52 @@ and make_variant_reader p type_annot tick std x : (string * Indent.t list) =
               Line "Yojson.Safe.read_space p lb;";
               Line "Yojson.Safe.read_gt p lb;";
               Line (Ox_emit.opt_annot
-                type_annot (sprintf "%s%s x" tick ocaml_cons));
+                      type_annot (sprintf "%s%s x" tick ocaml_cons));
             ]
+        in
+        false, expr
   in
-  (json_cons, expr)
+  let opt_json_cons =
+    if catch_all then None
+    else Some json_cons
+  in
+  (opt_json_cons, expr)
+
+and make_cases_reader p type_annot ~tick ~open_enum ~std ~fallback_expr l =
+  let cases =
+    List.map
+      (make_case_reader p type_annot ~tick ~open_enum ~std)
+      l
+  in
+  let specific_cases, catch_alls =
+    List.partition (function (None, _) -> false | _ -> true) cases
+  in
+  let catch_all =
+    match catch_alls with
+    | [] ->
+        [
+          Line "| s ->";
+          Block fallback_expr;
+        ]
+    | [(_, expr)] ->
+        [
+          Line "| s ->";
+          Block expr;
+        ]
+    | _ ->
+        assert false
+  in
+  let all_cases =
+    List.map (function
+      | Some json_cons, expr ->
+          Inline [
+            Line (sprintf "| %S ->" json_cons);
+            Block expr;
+          ]
+      | _ -> assert false
+    ) specific_cases
+  in
+  all_cases @ catch_all
 
 and make_record_reader p type_annot loc a json_options =
   let keep_nulls = json_options.json_keep_nulls in

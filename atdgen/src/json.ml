@@ -30,6 +30,12 @@ type json_record = {
   json_record_adapter : json_adapter;
 }
 
+type json_sum = {
+  json_sum_adapter : json_adapter;
+  json_open_enum : bool;
+  json_lowercase_tags : bool;
+}
+
 (*
    Note that json adapters are supported only by records and sums
    at this time.
@@ -51,7 +57,7 @@ type json_repr =
   | Option
   | Record of json_record
   | String
-  | Sum of json_adapter
+  | Sum of json_sum
   | Tuple
   | Unit
   | Variant of json_variant
@@ -101,7 +107,17 @@ let get_json_adapter an =
   { ocaml_adapter;
     java_adapter }
 
-let get_json_sum = get_json_adapter
+let get_json_open_enum an =
+  Atd.Annot.get_flag ["json"] "open_enum" an
+
+let get_json_lowercase_tags an =
+  Atd.Annot.get_flag ["json"] "lowercase_tags" an
+
+let get_json_sum an = {
+  json_sum_adapter = get_json_adapter an;
+  json_open_enum = get_json_open_enum an;
+  json_lowercase_tags = get_json_lowercase_tags an;
+}
 
 let get_json_list an =
   Atd.Annot.get_field json_list_of_string Array ["json"] "repr" an

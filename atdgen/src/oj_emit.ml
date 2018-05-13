@@ -314,8 +314,8 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ Line (get_writer_name p x) ]
 
-  | Sum (_, a, Sum x, Sum adapter) ->
-      let tick = Ocaml.tick x in
+  | Sum (_, a, Sum o, Sum j) ->
+      let tick = Ocaml.tick o in
       let body : Indent.t list =
         [
           Line "match x with";
@@ -332,6 +332,7 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
         Annot ("fun", Line "fun ob x ->");
         Block body
       ] in
+      let adapter = j.json_sum_adapter in
       write_with_adapter adapter standard_writer
 
   | Record (_, a, Record o, Record j) ->
@@ -649,8 +650,8 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ Line (get_reader_name p x) ]
 
-  | Sum (_, a, Sum x, Sum adapter) ->
-      let tick = Ocaml.tick x in
+  | Sum (_, a, Sum o, Sum j) ->
+      let tick = Ocaml.tick o in
       let cases =
         Array.to_list (
           Array.map
@@ -735,6 +736,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           Inline read_tag;
         ]
       ] in
+      let adapter = j.json_sum_adapter in
       read_with_adapter adapter standard_reader
 
   | Record (loc, a, Record o, Record j) ->
@@ -803,9 +805,14 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
         };
       |]
       in
+      let json_options = {
+        Json.json_sum_adapter = Json.no_adapter;
+        json_open_enum = false;
+        json_lowercase_tags = false;
+      } in
       make_reader p
         (Some "_ option")
-        (Sum (loc, a, Sum Classic, Json.Sum Json.no_adapter))
+        (Sum (loc, a, Sum Classic, Json.Sum json_options))
 
   | Nullable (_, x, Nullable, Nullable) ->
       [

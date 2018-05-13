@@ -32,6 +32,12 @@ type json_record = {
   json_record_adapter : json_adapter;
 }
 
+type json_sum = {
+  json_sum_adapter : json_adapter;
+  json_open_enum : bool;
+  json_lowercase_tags : bool;
+}
+
 (** The different kinds of ATD nodes with their json-specific options. *)
 type json_repr =
   | Bool
@@ -46,7 +52,7 @@ type json_repr =
   | Option
   | Record of json_record
   | String
-  | Sum of json_adapter
+  | Sum of json_sum
   | Tuple
   | Unit
   | Variant of json_variant
@@ -63,5 +69,7 @@ val get_json_cons : string -> Atd.Annot.t -> string
 val get_json_fname : string -> Atd.Annot.t -> string
 
 val get_json_record : Atd.Annot.t -> json_record
+
+val get_json_sum : Atd.Annot.t -> json_sum
 
 val tests : (string * (unit -> bool)) list

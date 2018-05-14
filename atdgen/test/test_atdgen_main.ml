@@ -585,6 +585,15 @@ let test_tag_field_emulation () =
   let x2 = Test3j_j.tf_record_of_string json_out in
   check (x2 = x)
 
+let test_json_open_enum () =
+  section "test <json open_enum>";
+  let json_in = {| ["Alpha", "Gamma"] |} in
+  let x = Test3j_j.sample_open_enums_of_string json_in in
+  check (x = [`Alpha; `Other "Gamma"]);
+  let json_out = Test3j_j.string_of_sample_open_enums x in
+  let x2 = Test3j_j.sample_open_enums_of_string json_out in
+  check (x2 = x)
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -616,6 +625,7 @@ let all_tests = [
   test_adapted;
   test_one_field;
   test_tag_field_emulation;
+  test_json_open_enum;
 ]
 
 (* TODO: use Alcotest to run the test suite. *)

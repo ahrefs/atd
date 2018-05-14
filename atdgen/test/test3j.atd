@@ -76,3 +76,5 @@ type sample_open_enum = [
   | Beta
   | Other of string
 ] <json open_enum>
+
+type sample_open_enums = sample_open_enum list

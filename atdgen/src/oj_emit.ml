@@ -458,8 +458,11 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
   | Some v when open_enum ->
       (* v should resolve to type string. *)
       [
-        Line (sprintf "| %s%s x ->" tick ocaml_cons);
-        Block (make_writer p v);
+        Line (sprintf "| %s%s x -> (" tick ocaml_cons);
+        Block [
+          Block (make_writer p v);
+          Line ") ob x;";
+        ];
       ]
   | Some v ->
       let op, sep, cl =
@@ -662,14 +665,14 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       let open_enum = j.Json.json_open_enum in
       let l = Array.to_list a in
       let fallback_expr =
-        [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag p s" ]
+        [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag p x" ]
       in
       let cases =
         make_cases_reader p type_annot
           ~tick ~open_enum ~std:false ~fallback_expr l
       in
       let l0, l1 =
-        List.partition (fun x -> x.var_arg = None) l
+        List.partition (fun x -> x.var_arg = None || open_enum) l
       in
       let cases0 =
         make_cases_reader p type_annot
@@ -918,12 +921,12 @@ and make_cases_reader p type_annot ~tick ~open_enum ~std ~fallback_expr l =
     match catch_alls with
     | [] ->
         [
-          Line "| s ->";
+          Line "| x ->";
           Block fallback_expr;
         ]
     | [(_, expr)] ->
         [
-          Line "| s ->";
+          Line "| x ->";
           Block expr;
         ]
     | _ ->

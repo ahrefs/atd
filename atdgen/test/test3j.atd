@@ -67,3 +67,12 @@ type tf_record = {
   the_value : tf_variant;
   etc : string;
 } <json adapter.ocaml="Test_lib.Tag_field_example">
+
+(*
+   Test open_enum feature.
+*)
+type sample_open_enum = [
+  | Alpha
+  | Beta
+  | Other of string
+] <json open_enum>

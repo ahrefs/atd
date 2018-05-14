@@ -19,14 +19,20 @@ let check_json_sum loc json_sum_param variants =
         Error.error loc
           "Missing catch-all case of the form `| Other of string`, \
            required by <json open_enum>."
-    | [_] ->
-        (* Should we check that the type of the argument resolves to
-           `string`? *)
-        ()
+    | [x] -> (
+        match x.var_arg with
+        | None -> assert false
+        | Some (String _) -> ()
+        | Some mapping ->
+            let loc = Mapping.loc_of_mapping mapping in
+            Error.error loc
+              "The argument of this variant must be of type string \
+               as imposed by <json open_enum>."
+      )
     | _ ->
         Error.error loc
-          "More than one variant have arguments, which is incompatible \
-           with <json open_enum>."
+          "Multiple variants have arguments, which doesn't make sense \
+           when combined with <json open_enum>."
   )
 
 let rec mapping_of_expr (x : type_expr) =

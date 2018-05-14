@@ -15,6 +15,10 @@ type t = Test3j_t.t = { foo: int; bar: json; baz: dyn }
 
 type sf_adapted = Test3j_t.sf_adapted
 
+type sample_open_enum = Test3j_t.sample_open_enum
+
+type sample_open_enums = Test3j_t.sample_open_enums
+
 type patch = Test3j_t.patch = {
   patch1: int option option;
   patch2: int option option;
@@ -166,6 +170,46 @@ val read_sf_adapted :
 val sf_adapted_of_string :
   string -> sf_adapted
   (** Deserialize JSON data of type {!sf_adapted}. *)
+
+val write_sample_open_enum :
+  Bi_outbuf.t -> sample_open_enum -> unit
+  (** Output a JSON value of type {!sample_open_enum}. *)
+
+val string_of_sample_open_enum :
+  ?len:int -> sample_open_enum -> string
+  (** Serialize a value of type {!sample_open_enum}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_sample_open_enum :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> sample_open_enum
+  (** Input JSON data of type {!sample_open_enum}. *)
+
+val sample_open_enum_of_string :
+  string -> sample_open_enum
+  (** Deserialize JSON data of type {!sample_open_enum}. *)
+
+val write_sample_open_enums :
+  Bi_outbuf.t -> sample_open_enums -> unit
+  (** Output a JSON value of type {!sample_open_enums}. *)
+
+val string_of_sample_open_enums :
+  ?len:int -> sample_open_enums -> string
+  (** Serialize a value of type {!sample_open_enums}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_sample_open_enums :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> sample_open_enums
+  (** Input JSON data of type {!sample_open_enums}. *)
+
+val sample_open_enums_of_string :
+  string -> sample_open_enums
+  (** Deserialize JSON data of type {!sample_open_enums}. *)
 
 val write_patch :
   Bi_outbuf.t -> patch -> unit

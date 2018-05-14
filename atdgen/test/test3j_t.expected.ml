@@ -15,6 +15,10 @@ type t = { foo: int; bar: json; baz: dyn }
 
 type sf_adapted = [ `A of bool | `B of int ]
 
+type sample_open_enum = [ `Alpha | `Beta | `Other of string ]
+
+type sample_open_enums = sample_open_enum list
+
 type patch = {
   patch1: int option option;
   patch2: int option option;

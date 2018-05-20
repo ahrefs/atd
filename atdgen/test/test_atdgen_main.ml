@@ -585,6 +585,16 @@ let test_tag_field_emulation () =
   let x2 = Test3j_j.tf_record_of_string json_out in
   check (x2 = x)
 
+let test_tag_field_emulation_with_catchall () =
+  section "emulate the retired tag_field feature, with a catch-all \
+           for unknown tags";
+  let json_in = {| { "the_type": "x", "the_value2": 3, "etc2": "blah" } |} in
+  let x = Test3j_j.tf_record2_of_string json_in in
+  check (x = { the_value2 = `Unknown ("x", Some (`Int 3)); etc2 = "blah" });
+  let json_out = Test3j_j.string_of_tf_record2 x in
+  let x2 = Test3j_j.tf_record2_of_string json_out in
+  check (x2 = x)
+
 let test_json_open_enum () =
   section "test <json open_enum>";
   let json_in = {| ["Alpha", "Gamma"] |} in
@@ -625,6 +635,7 @@ let all_tests = [
   test_adapted;
   test_one_field;
   test_tag_field_emulation;
+  test_tag_field_emulation_with_catchall;
   test_json_open_enum;
 ]
 

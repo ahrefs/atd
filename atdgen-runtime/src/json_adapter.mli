@@ -151,6 +151,62 @@ module One_field : S
   "payload": "Event"
 }
 ]}
+    Additionally, a catch-all case is supported if [known_tags] is specified.
+    Given the following ATD type definitions:
+{[
+type t = {
+  id: string;
+  payload: payload;
+} <json adapter.ocaml="My_adapter">
+
+type payload = [
+  | User of int
+  | Event
+
+  (* catch-all *)
+  | Unknown of (string * json nullable)
+]
+]}
+    and the module [My_adapter] defined as follows:
+{[
+module My_adapter = Atdgen_runtime.Json_adapter.Type_and_value_fields.Make(
+  struct
+    let type_field_name = "type"
+    let value_field_name = "payload"
+    let known_tags = Some ["User"; "Event"]
+  end
+)
+]}
+    and given the following json input:
+{[
+{
+  "id": "abc124",
+  "type": "Group",
+  "payload": {}
+}
+]}
+    we obtain this normalized json, compatible with the type definitions:
+{[
+{
+  "id": "abc124",
+  "payload": ["Unknown", ["Group", {}]]
+}
+]}
+    If there's no payload, it is treated as if it were [null].
+    Given the following:
+{[
+{
+  "id": "abc124",
+  "type": "Thing"
+}
+]}
+    we get this normalized json:
+{[
+{
+  "id": "abc124",
+  "payload": ["Unknown", ["Thing", null]]
+}
+]}
 *)
 module Type_and_value_fields : sig
   module type Param = sig
@@ -160,6 +216,11 @@ module Type_and_value_fields : sig
 
     (** The name of the json field containing the value. *)
     val value_field_name : string
+
+    (** Optionally indicate a set of known tags and a catch-all tag.
+        This allows unknown tags/values coming from the original json
+        to be wrapped under a catch-all tag. *)
+    val known_tags : (string list * string) option
   end
 
   (** Functor needed to produce a module using the correct parameters. *)

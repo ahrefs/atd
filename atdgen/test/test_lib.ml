@@ -59,4 +59,12 @@ module Tag_field_example =
   Atdgen_runtime.Json_adapter.Type_and_value_fields.Make (struct
     let type_field_name = "the_type"
     let value_field_name = "the_value"
+    let known_tags = None
+  end)
+
+module Tag_field_with_catchall =
+  Atdgen_runtime.Json_adapter.Type_and_value_fields.Make (struct
+    let type_field_name = "the_type"
+    let value_field_name = "the_value2"
+    let known_tags = Some (["a";"b"], "Unknown")
   end)

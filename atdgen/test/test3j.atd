@@ -68,6 +68,17 @@ type tf_record = {
   etc : string;
 } <json adapter.ocaml="Test_lib.Tag_field_example">
 
+type tf_variant2 = [
+  | A <json name="a"> of int
+  | B <json name="b"> of int
+  | Unknown of (string * json nullable)
+]
+
+type tf_record2 = {
+  the_value2 : tf_variant2;
+  etc2 : string;
+} <json adapter.ocaml="Test_lib.Tag_field_with_catchall">
+
 (*
    Test open_enum feature.
 *)

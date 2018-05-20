@@ -67,23 +67,55 @@ module Type_and_value_fields = struct
   module type Param = sig
     val type_field_name : string
     val value_field_name : string
+    val known_tags : (string list * string) option
   end
 
   module Make (Param : Param) : S = struct
     open Yojson.Safe
     open Param
 
+    let is_known_tag =
+      match known_tags with
+      | None -> (fun _ -> true)
+      | Some (l, _) ->
+          let tbl = Hashtbl.create (2 * List.length l) in
+          List.iter (fun x -> Hashtbl.add tbl x ()) l;
+          Hashtbl.mem tbl
+
+    let is_catch_all_tag =
+      match known_tags with
+      | None -> (fun _ -> false)
+      | Some (_, s) -> ((=) s)
+
+    let catch_all_tag () =
+      match known_tags with
+      | None -> assert false
+      | Some (_, s) -> s
+
+    let wrap_variant type_ value =
+      let variant = `List [`String type_; value] in
+      if is_known_tag type_ then
+        variant
+      else
+        `List [ `String (catch_all_tag ()); variant ]
+
+    let wrap_enum type_ =
+      if is_known_tag type_ then
+        `String type_
+      else
+        `List [ `String (catch_all_tag ()); `Null ]
+
     let normalize (x : json) : json =
       let open Yojson.Safe.Util in
       match x with
       | `Assoc fields ->
-          let type_ = member type_field_name x in
+          let type_ = member type_field_name x |> to_string in
           let found = ref false in
           let fields =
             List.map (fun ((k, v) as field) ->
               if k = value_field_name then (
                 found := true;
-                (k, `List [type_; v])
+                (k, wrap_variant type_ v)
               )
               else
                 field
@@ -93,7 +125,7 @@ module Type_and_value_fields = struct
             if !found then
               fields
             else
-              (value_field_name, type_) :: fields
+              (value_field_name, wrap_enum type_) :: fields
           in
           `Assoc fields
       | malformed -> malformed
@@ -101,7 +133,15 @@ module Type_and_value_fields = struct
     let unwrap_value (x : json) =
       match x with
       | `String tag -> (tag, None)
-      | `List [`String tag; v] -> (tag, Some v)
+      | `List [`String tag; v] ->
+          if is_catch_all_tag tag then (
+            match v with
+            | `List [`String real_tag; `Null] -> (real_tag, None)
+            | `List [`String real_tag; real_v] -> (real_tag, Some real_v)
+            | _ -> failwith ("Malformed json field " ^ value_field_name)
+          )
+          else
+            (tag, Some v)
       | malformed -> failwith ("Malformed json field " ^ value_field_name)
 
     let restore (x : json) : json =

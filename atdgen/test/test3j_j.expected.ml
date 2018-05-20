@@ -3,11 +3,18 @@
 
 type unixtime_list = Test3j_t.unixtime_list
 
+type json = Yojson.Safe.json
+
+type tf_variant2 = Test3j_t.tf_variant2
+
 type tf_variant = Test3j_t.tf_variant
 
-type tf_record = Test3j_t.tf_record = { the_value: tf_variant; etc: string }
+type tf_record2 = Test3j_t.tf_record2 = {
+  the_value2: tf_variant2;
+  etc2: string
+}
 
-type json = Yojson.Safe.json
+type tf_record = Test3j_t.tf_record = { the_value: tf_variant; etc: string }
 
 type dyn = Yojson.Safe.json
 
@@ -59,6 +66,240 @@ let read_unixtime_list = (
 )
 let unixtime_list_of_string s =
   read_unixtime_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_json = (
+  Yojson.Safe.write_json
+)
+let string_of_json ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_json ob x;
+  Bi_outbuf.contents ob
+let read_json = (
+  Yojson.Safe.read_json
+)
+let json_of_string s =
+  read_json (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__4 = (
+  Atdgen_runtime.Oj_run.write_nullable (
+    write_json
+  )
+)
+let string_of__4 ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__4 ob x;
+  Bi_outbuf.contents ob
+let read__4 = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    (if Yojson.Safe.read_null_if_possible p lb then None
+    else Some ((
+      read_json
+    ) p lb) : _ option)
+)
+let _4_of_string s =
+  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_tf_variant2 = (
+  fun ob x ->
+    match x with
+      | `A x ->
+        Bi_outbuf.add_string ob "[\"a\",";
+        (
+          Yojson.Safe.write_int
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+      | `B x ->
+        Bi_outbuf.add_string ob "[\"b\",";
+        (
+          Yojson.Safe.write_int
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+      | `Unknown x ->
+        Bi_outbuf.add_string ob "[\"Unknown\",";
+        (
+          fun ob x ->
+            Bi_outbuf.add_char ob '[';
+            (let x, _ = x in
+            (
+              Yojson.Safe.write_string
+            ) ob x
+            );
+            Bi_outbuf.add_char ob ',';
+            (let _, x = x in
+            (
+              write__4
+            ) ob x
+            );
+            Bi_outbuf.add_char ob ']';
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+)
+let string_of_tf_variant2 ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_tf_variant2 ob x;
+  Bi_outbuf.contents ob
+let read_tf_variant2 = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    match Yojson.Safe.start_any_variant p lb with
+      | `Edgy_bracket -> (
+          match Yojson.Safe.read_ident p lb with
+            | "a" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `A x
+            | "b" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `B x
+            | "Unknown" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  fun p lb ->
+                    Yojson.Safe.read_space p lb;
+                    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+                    let len = ref 0 in
+                    let end_of_tuple = ref false in
+                    (try
+                      let x0 =
+                        let x =
+                          (
+                            Atdgen_runtime.Oj_run.read_string
+                          ) p lb
+                        in
+                        incr len;
+                        Yojson.Safe.read_space p lb;
+                        Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        x
+                      in
+                      let x1 =
+                        let x =
+                          (
+                            read__4
+                          ) p lb
+                        in
+                        incr len;
+                        (try
+                          Yojson.Safe.read_space p lb;
+                          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        with Yojson.End_of_tuple -> end_of_tuple := true);
+                        x
+                      in
+                      if not !end_of_tuple then (
+                        try
+                          while true do
+                            Yojson.Safe.skip_json p lb;
+                            Yojson.Safe.read_space p lb;
+                            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                          done
+                        with Yojson.End_of_tuple -> ()
+                      );
+                      (x0, x1)
+                    with Yojson.End_of_tuple ->
+                      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Unknown x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Double_quote -> (
+          match Yojson.Safe.finish_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Square_bracket -> (
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "a" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `A x
+            | "b" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `B x
+            | "Unknown" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  fun p lb ->
+                    Yojson.Safe.read_space p lb;
+                    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+                    let len = ref 0 in
+                    let end_of_tuple = ref false in
+                    (try
+                      let x0 =
+                        let x =
+                          (
+                            Atdgen_runtime.Oj_run.read_string
+                          ) p lb
+                        in
+                        incr len;
+                        Yojson.Safe.read_space p lb;
+                        Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        x
+                      in
+                      let x1 =
+                        let x =
+                          (
+                            read__4
+                          ) p lb
+                        in
+                        incr len;
+                        (try
+                          Yojson.Safe.read_space p lb;
+                          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        with Yojson.End_of_tuple -> end_of_tuple := true);
+                        x
+                      in
+                      if not !end_of_tuple then (
+                        try
+                          while true do
+                            Yojson.Safe.skip_json p lb;
+                            Yojson.Safe.read_space p lb;
+                            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                          done
+                        with Yojson.End_of_tuple -> ()
+                      );
+                      (x0, x1)
+                    with Yojson.End_of_tuple ->
+                      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0; 1 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `Unknown x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+)
+let tf_variant2_of_string s =
+  read_tf_variant2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tf_variant = (
   fun ob x ->
     match x with
@@ -141,6 +382,161 @@ let read_tf_variant = (
 )
 let tf_variant_of_string s =
   read_tf_variant (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_tf_record2 : _ -> tf_record2 -> _ = (
+  Atdgen_runtime.Oj_run.write_with_adapter Test_lib.Tag_field_with_catchall.restore (
+    fun ob x ->
+      Bi_outbuf.add_char ob '{';
+      let is_first = ref true in
+      if !is_first then
+        is_first := false
+      else
+        Bi_outbuf.add_char ob ',';
+      Bi_outbuf.add_string ob "\"the_value2\":";
+      (
+        write_tf_variant2
+      )
+        ob x.the_value2;
+      if !is_first then
+        is_first := false
+      else
+        Bi_outbuf.add_char ob ',';
+      Bi_outbuf.add_string ob "\"etc2\":";
+      (
+        Yojson.Safe.write_string
+      )
+        ob x.etc2;
+      Bi_outbuf.add_char ob '}';
+  )
+)
+let string_of_tf_record2 ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_tf_record2 ob x;
+  Bi_outbuf.contents ob
+let read_tf_record2 = (
+  Atdgen_runtime.Oj_run.read_with_adapter Test_lib.Tag_field_with_catchall.normalize (
+    fun p lb ->
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_lcurl p lb;
+      let field_the_value2 = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+      let field_etc2 = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+      let bits0 = ref 0 in
+      try
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_end lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg "out-of-bounds substring position or length";
+            match len with
+              | 4 -> (
+                  if String.unsafe_get s pos = 'e' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = '2' then (
+                    1
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | 10 -> (
+                  if String.unsafe_get s pos = 't' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = '_' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 'l' && String.unsafe_get s (pos+7) = 'u' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = '2' then (
+                    0
+                  )
+                  else (
+                    -1
+                  )
+                )
+              | _ -> (
+                  -1
+                )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_the_value2 := (
+                (
+                  read_tf_variant2
+                ) p lb
+              );
+              bits0 := !bits0 lor 0x1;
+            | 1 ->
+              field_etc2 := (
+                (
+                  Atdgen_runtime.Oj_run.read_string
+                ) p lb
+              );
+              bits0 := !bits0 lor 0x2;
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+        while true do
+          Yojson.Safe.read_space p lb;
+          Yojson.Safe.read_object_sep p lb;
+          Yojson.Safe.read_space p lb;
+          let f =
+            fun s pos len ->
+              if pos < 0 || len < 0 || pos + len > String.length s then
+                invalid_arg "out-of-bounds substring position or length";
+              match len with
+                | 4 -> (
+                    if String.unsafe_get s pos = 'e' && String.unsafe_get s (pos+1) = 't' && String.unsafe_get s (pos+2) = 'c' && String.unsafe_get s (pos+3) = '2' then (
+                      1
+                    )
+                    else (
+                      -1
+                    )
+                  )
+                | 10 -> (
+                    if String.unsafe_get s pos = 't' && String.unsafe_get s (pos+1) = 'h' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = '_' && String.unsafe_get s (pos+4) = 'v' && String.unsafe_get s (pos+5) = 'a' && String.unsafe_get s (pos+6) = 'l' && String.unsafe_get s (pos+7) = 'u' && String.unsafe_get s (pos+8) = 'e' && String.unsafe_get s (pos+9) = '2' then (
+                      0
+                    )
+                    else (
+                      -1
+                    )
+                  )
+                | _ -> (
+                    -1
+                  )
+          in
+          let i = Yojson.Safe.map_ident p f lb in
+          Atdgen_runtime.Oj_run.read_until_field_value p lb;
+          (
+            match i with
+              | 0 ->
+                field_the_value2 := (
+                  (
+                    read_tf_variant2
+                  ) p lb
+                );
+                bits0 := !bits0 lor 0x1;
+              | 1 ->
+                field_etc2 := (
+                  (
+                    Atdgen_runtime.Oj_run.read_string
+                  ) p lb
+                );
+                bits0 := !bits0 lor 0x2;
+              | _ -> (
+                  Yojson.Safe.skip_json p lb
+                )
+          );
+        done;
+        assert false;
+      with Yojson.End_of_object -> (
+          if !bits0 <> 0x3 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "the_value2"; "etc2" |];
+          (
+            {
+              the_value2 = !field_the_value2;
+              etc2 = !field_etc2;
+            }
+           : tf_record2)
+        )
+  )
+)
+let tf_record2_of_string s =
+  read_tf_record2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tf_record : _ -> tf_record -> _ = (
   Atdgen_runtime.Oj_run.write_with_adapter Test_lib.Tag_field_example.restore (
     fun ob x ->
@@ -296,18 +692,6 @@ let read_tf_record = (
 )
 let tf_record_of_string s =
   read_tf_record (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write_json = (
-  Yojson.Safe.write_json
-)
-let string_of_json ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write_json ob x;
-  Bi_outbuf.contents ob
-let read_json = (
-  Yojson.Safe.read_json
-)
-let json_of_string s =
-  read_json (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_dyn = (
   Yojson.Safe.write_json
 )
@@ -657,31 +1041,31 @@ let read_sample_open_enum = (
 )
 let sample_open_enum_of_string s =
   read_sample_open_enum (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__4 = (
+let write__5 = (
   Atdgen_runtime.Oj_run.write_list (
     write_sample_open_enum
   )
 )
-let string_of__4 ?(len = 1024) x =
+let string_of__5 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__4 ob x;
+  write__5 ob x;
   Bi_outbuf.contents ob
-let read__4 = (
+let read__5 = (
   Atdgen_runtime.Oj_run.read_list (
     read_sample_open_enum
   )
 )
-let _4_of_string s =
-  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _5_of_string s =
+  read__5 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_sample_open_enums = (
-  write__4
+  write__5
 )
 let string_of_sample_open_enums ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_sample_open_enums ob x;
   Bi_outbuf.contents ob
 let read_sample_open_enums = (
-  read__4
+  read__5
 )
 let sample_open_enums_of_string s =
   read_sample_open_enums (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

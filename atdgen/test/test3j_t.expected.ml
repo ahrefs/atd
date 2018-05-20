@@ -3,11 +3,19 @@
 
 type unixtime_list = float list
 
+type json = Yojson.Safe.json
+
+type tf_variant2 = [
+    `A of int
+  | `B of int
+  | `Unknown of (string * json option)
+]
+
 type tf_variant = [ `A of int | `B of int ]
 
-type tf_record = { the_value: tf_variant; etc: string }
+type tf_record2 = { the_value2: tf_variant2; etc2: string }
 
-type json = Yojson.Safe.json
+type tf_record = { the_value: tf_variant; etc: string }
 
 type dyn = Yojson.Safe.json
 

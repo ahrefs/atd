@@ -33,7 +33,7 @@ Authors
 The ATD language and atdgen were originally created at MyLife by
 Martin Jambon in 2010. Atdj was created at MyLife by John
 Billings in 2010. Multiple volunteers contributed to the project after that.
-Other prominent contributors have included Jeff Meister, David
+Other prominent contributors include Jeff Meister, David
 Sheets, and Rudi Grinberg.
 
 We distribute the source code under the terms of a BSD license.

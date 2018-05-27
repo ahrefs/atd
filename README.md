@@ -18,7 +18,8 @@ The following opam packages are provided by the atd project:
 Help wanted
 --
 
-The ATD suite of tools is developed and maintained by volunteers.
+The ATD suite of tools is developed and maintained by
+volunteers&mdash;&users like you.
 [Various issues](https://github.com/mjambon/atd/issues) are in need
 of attention. If you'd like to contribute, please leave a comment on the
 issue you're interested in, or create a new issue. Experienced

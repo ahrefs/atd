@@ -1,3 +1,5 @@
+(** Utilities for writing OCaml code generators from a decorated ATD AST. *)
+
 type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
 type 'a def = (Ocaml.Repr.t, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list

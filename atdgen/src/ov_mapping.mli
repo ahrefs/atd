@@ -1,6 +1,4 @@
-(** The type signatures in this module are not yet for public consumption.
-
-    Please don't rely on them in any way.*)
+(** Decorated ATD AST for OCaml validators. *)
 
 type ov_mapping =
     (Ocaml.Repr.t, Validate.validate_repr) Mapping.mapping

@@ -1,6 +1,4 @@
-(** The type signatures in this module are not yet for public consumption.
-
-    Please don't rely on them in any way.*)
+(** OCaml-Json decorated ATD AST. *)
 
 type t = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
 type variant_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping

@@ -1,3 +1,14 @@
+(** Generic decorated ATD AST.
+
+    Decorating a tree means adding extra information to the nodes
+    of an existing tree.
+
+    The generic types provided here take two type parameters.
+    They are meant to accommodate options relevant to two data representations
+    (e.g. ocaml and json), so that we can produce code that converts
+    between those two representations.
+*)
+
 type loc = Atd.Ast.loc
 
 type ('a, 'b) mapping =

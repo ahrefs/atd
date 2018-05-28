@@ -1,4 +1,16 @@
 {
+  type inline_element = [
+    | `Text of string
+    | `Code of string
+  ]
+
+  type block = [
+    | `Paragraph of inline_element list
+    | `Pre of string
+  ]
+
+  type document = block list
+
   let close_paragraph a1 a2 a3 =
     let a2 =
       match String.concat "" (List.rev a3) with

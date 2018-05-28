@@ -1,3 +1,4 @@
+(** Code generator for OCaml validators. *)
 
 val make_ocaml_files
   : opens:string list

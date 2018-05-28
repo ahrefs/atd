@@ -1,7 +1,6 @@
-
-(*
-  Compilation of string pattern matching into something
-  supposedly faster than what ocamlopt does.
+(**
+   Compilation of string pattern matching into something faster than
+   what ocamlopt does.
 *)
 
 type position = [ `Length | `Position of int | `End ]

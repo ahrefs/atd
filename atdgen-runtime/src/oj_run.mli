@@ -1,3 +1,5 @@
+(** OCaml-Json runtime library. *)
+
 exception Error of string
 
 type 'a write = Bi_outbuf.t -> 'a -> unit

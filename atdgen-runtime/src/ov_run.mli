@@ -1,3 +1,4 @@
+(** Runtime library for OCaml validators. *)
 
 val validate_list
   : (([> `Index of int ] as 'a) list -> 'b -> 'c option)

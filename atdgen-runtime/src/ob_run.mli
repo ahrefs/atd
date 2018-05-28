@@ -1,3 +1,5 @@
+(** OCaml-Biniou runtime library. *)
+
 [@@@ocaml.warning "-32"]
 
 exception Error of string

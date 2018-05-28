@@ -1,6 +1,4 @@
-(**
-  Utilities for interpreting annotations of type {!Ast.annot}
-*)
+(** Utilities for interpreting annotations of type {!Ast.annot} *)
 
 type t = Ast.annot
     (**

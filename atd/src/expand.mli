@@ -1,5 +1,3 @@
-
-
 (** Monomorphization of type definitions *)
 
 type original_types = (string, string * int) Hashtbl.t

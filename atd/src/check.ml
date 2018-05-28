@@ -167,4 +167,4 @@ let check (l : Ast.module_body) =
   List.iter (
     function (Ast.Type (_, (_, tvars, _), t)) ->
       check_type_expr tbl tvars t
-  ) l;
+  ) l

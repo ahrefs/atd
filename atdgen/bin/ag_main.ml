@@ -64,7 +64,6 @@ let main () =
   let j_preprocess_input = ref None in
   let j_defaults = ref false in
   let unknown_field_handler = ref None in
-  let constr_mismatch_handler = ref None in
   let type_aliases = ref None in
   let ocaml_version = parse_ocaml_version () in
   let set_opens s =
@@ -187,7 +186,7 @@ let main () =
           "!Atdgen_runtime.Util.Json.unknown_field_handler"
     ),
     "
-          Call !Atdgen.Util.Json.unknown_field_handler for every unknown JSON field
+          Call !Atdgen_runtime.Util.Json.unknown_field_handler for every unknown JSON field
           found in the input instead of simply skipping them.
           The initial behavior is to raise an exception.";
 
@@ -201,27 +200,6 @@ let main () =
           for every unknown JSON field found in the input
           instead of simply skipping them.
           See also -j-strict-fields.";
-
-    "-j-strict-constrs",
-    Arg.Unit (
-      fun () ->
-        set_once "constructor mismatch handler" constr_mismatch_handler
-          "!Atdgen_runtime.Util.Json.constr_mismatch_handler"
-    ),
-    "
-          Given a record type of the form
-          { t: string; v <json tag_field=\"t\">: v },
-          this option allows the user to define a runtime conflict handler.
-          A conflict occurs when trying to serialize an OCaml record
-          such as { t = \"A\"; v = `B } into JSON.
-          A correct record might be { t = \"B\"; v = `B }
-          or { t = \"A\"; v = `A 123 }.
-
-          With this option, !Atdgen.Util.Json.constr_mismatch_handler is called
-          for every mismatched constructor field value and value
-          field constructor in the data structures to output instead
-          of simply serializing them.
-          The initial behavior is to raise an exception.";
 
     "-validate",
     Arg.Unit (fun () ->
@@ -287,8 +265,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
   if (!std_json
-      || !unknown_field_handler <> None
-      || !constr_mismatch_handler <> None) && !mode = None then
+      || !unknown_field_handler <> None) && !mode = None then
     set_once "output mode" mode Json;
 
   let mode =
@@ -388,7 +365,6 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
                 Oj_emit.make_ocaml_files
                   ~std: !std_json
                   ~unknown_field_handler: !unknown_field_handler
-                  ~constr_mismatch_handler: !constr_mismatch_handler
                   ~preprocess_input: !j_preprocess_input
             | V | Validate ->
                 Ov_emit.make_ocaml_files

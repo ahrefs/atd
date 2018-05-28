@@ -55,10 +55,25 @@ let biniou_list_of_string s : biniou_list option =
     | _ -> None
 
 let get_biniou_int an =
-  Atd.Annot.get_field biniou_int_of_string `Svint ["biniou"] "repr" an
+  Atd.Annot.get_field
+    ~parse:biniou_int_of_string
+    ~default:`Svint
+    ~sections:["biniou"]
+    ~field:"repr"
+    an
 
 let get_biniou_float an =
-  Atd.Annot.get_field biniou_float_of_string `Float64 ["biniou"] "repr" an
+  Atd.Annot.get_field
+    ~parse:biniou_float_of_string
+    ~default:`Float64
+    ~sections:["biniou"]
+    ~field:"repr"
+    an
 
 let get_biniou_list an =
-  Atd.Annot.get_field biniou_list_of_string `Array ["biniou"] "repr" an
+  Atd.Annot.get_field
+    ~parse:biniou_list_of_string
+    ~default:`Array
+    ~sections:["biniou"]
+    ~field:"repr"
+    an

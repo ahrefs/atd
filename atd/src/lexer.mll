@@ -102,6 +102,7 @@ rule token = parse
   | "="      { EQ }
   | "?"      { QUESTION }
   | "~"      { TILDE }
+  | "."      { DOT }
   | "type"   { TYPE }
   | "of"     { OF }
   | "inherit"   { INHERIT }

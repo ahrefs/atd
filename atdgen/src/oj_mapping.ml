@@ -3,17 +3,47 @@ open Atd.Ast
 open Mapping
 
 type t = (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
+type variant_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping
 
 (*
   Translation of the types into the ocaml/json mapping.
 *)
 
+let check_json_sum loc json_sum_param variants =
+  if json_sum_param.Json.json_open_enum then (
+    let variants_with_arg =
+      List.filter (function {var_arg = Some _} -> true | _ -> false) variants
+    in
+    match variants_with_arg with
+    | [] ->
+        Error.error loc
+          "Missing catch-all case of the form `| Other of string`, \
+           required by <json open_enum>."
+    | [x] -> (
+        match x.var_arg with
+        | None -> assert false
+        | Some (String _) -> ()
+        | Some mapping ->
+            let loc = Mapping.loc_of_mapping mapping in
+            Error.error loc
+              "The argument of this variant must be of type string \
+               as imposed by <json open_enum>."
+      )
+    | _ ->
+        Error.error loc
+          "Multiple variants have arguments, which doesn't make sense \
+           when combined with <json open_enum>."
+  )
+
 let rec mapping_of_expr (x : type_expr) =
   match x with
-    Sum (loc, l, an) ->
+  | Sum (loc, l, an) ->
       let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
-      let json_t = Json.Sum in
-      Sum (loc, Array.of_list (List.map mapping_of_variant l),
+      let json_sum_param = Json.get_json_sum an in
+      let json_t = Json.Sum (Json.get_json_sum an) in
+      let variants = List.map mapping_of_variant l in
+      check_json_sum loc json_sum_param variants;
+      Sum (loc, Array.of_list variants,
            ocaml_t, json_t)
 
   | Record (loc, l, an) ->
@@ -93,9 +123,8 @@ and mapping_of_cell (loc, x, an) =
     cel_brepr = json_t
   }
 
-
 and mapping_of_variant = function
-    Variant (loc, (s, an), o) ->
+  | Variant (loc, (s, an), o) ->
       let ocaml_cons = Ocaml.get_ocaml_cons s an in
       let doc = Atd.Doc.get_doc loc an in
       let ocaml_t =
@@ -104,12 +133,11 @@ and mapping_of_variant = function
           ocaml_vdoc = doc;
         }
       in
+      let json_cons = Json.get_json_cons s an in
       let json_t =
-        if Json.get_json_untyped an
-        then Json.Variant { Json.json_cons = None; }
-        else
-          let json_cons = Json.get_json_cons s an in
-          Json.Variant { Json.json_cons = Some json_cons; }
+        Json.Variant {
+          Json.json_cons = json_cons;
+        }
       in
       let arg = Option.map mapping_of_expr o in
       {
@@ -140,7 +168,6 @@ and mapping_of_field ocaml_field_prefix = function
       let ocaml_mutable = Ocaml.get_ocaml_mutable an in
       let doc = Atd.Doc.get_doc loc an in
       let json_fname = Json.get_json_fname s an in
-      let json_tag_field = Json.get_json_tag_field an in
       { f_loc = loc;
         f_name = s;
         f_kind = fk;
@@ -155,7 +182,6 @@ and mapping_of_field ocaml_field_prefix = function
 
         f_brepr = Json.Field {
           Json.json_fname;
-          json_tag_field;
           json_unwrapped;
         };
       }
@@ -172,3 +198,9 @@ let defs_of_atd_module l =
 
 let defs_of_atd_modules l =
   List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l
+
+let json_normalizer_of_adapter_path module_ =
+  module_ ^ ".normalize"
+
+let json_restorer_of_adapter_path module_ =
+  module_ ^ ".restore"

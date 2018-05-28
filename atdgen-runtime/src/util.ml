@@ -179,17 +179,6 @@ struct
     failwith msg
 
   let unknown_field_handler = ref preset_unknown_field_handler
-
-  let preset_constr_mismatch_handler
-      constr_field constr_constr value_field value_constr =
-    let msg =
-      Printf.sprintf
-        "Field %s has constructor %s but field %s expects constructor %s"
-        value_field value_constr constr_field constr_constr
-    in
-    Oj_run.error msg
-
-  let constr_mismatch_handler = ref preset_constr_mismatch_handler
 end
 
 module Validation =

@@ -11,125 +11,81 @@ type t = {
 
 type unixtime_list = int <ocaml repr="float"> list
 
-
-(*** JSON records using one field to indicate the type of other fields ***)
-
-(*
-   Support for the following JSON records:
-   { "type": "integer", data: 123 }    -> { data = `Integer 123 }
-   { "type": "string", data: "abc" }   -> { data = `String "abc" }
-*)
-type simple = {
-  data <json tag_field="type">: integer_or_string;
-    (* JSON object has one extra field "type" that must
-       contain the constructor for the OCaml variant.
-
-       integer_or_string is a variant type, broken into 2 fields in the
-       JSON representation.
-    *)
-}
-
-type integer_or_string = [
-  | Integer <json name="integer"> of int
-  | String <json name="string"> of string
-]
-
-
-(* More complex cases *)
-
-type tag = [
-| A <json name="a">
-| B <json name="b">
-| C <json name="c">
-]
-
-type constr = [
-| A <json name="a">
-| B <json name="b"> of int
-| C <json name="c"> of string
-]
-
-type inter_constr = [
-| A <json name="a"> of constr
-| B <json name="b"> of constr
-| C <json name="c"> of constr
-]
-
-type constr_record = {
-  int_field : int;
-  tag_field : string;
-  constr_field <json tag_field="tag_field"> : constr;
-  string_field : string;
-}
-
-type implicit_constr_record = {
-  implicit_constr_field1 <json tag_field="implicit_tag_field"> : constr;
-  implicit_constr_field2 <json tag_field="implicit_tag_field"> : constr;
-}
-
-type tag_record = {
-  tag : tag;
-  constr <json tag_field="tag"> : constr;
-}
-
-type multi_constr_record = {
-  multi_tag : tag;
-  first_constr <json tag_field="multi_tag"> : constr;
-  second_constr <json tag_field="multi_tag"> : inter_constr;
-}
-
-type default_tag_record = {
-  ~default_tag <ocaml default="`B"> : tag;
-  default_tag_constr <json tag_field="default_tag"> : constr;
-}
-
-type default_constr_record = {
-  default_constr_tag : tag;
-  ~default_constr
-  <ocaml default="`B 12">
-  <json tag_field="default_constr_tag"> : constr;
-}
-
-type default_record = {
-  ~default2_tag <ocaml default="`B"> : tag;
-  ~default2_tag_constr
-  <ocaml default="`B 12">
-  <json tag_field="default2_tag"> : constr;
-}
-
-type default_implicit = {
-  ~def_imp_constr <json tag_field="tag"> <ocaml default="`B 12"> : constr;
-}
-
-type chained_constr_record = {
-  first_tag : tag;
-  second_tag <json tag_field="first_tag"> : inter_constr;
-  chained_constr <json tag_field="second_tag"> : constr;
-}
-
-type fallback_constr = [
-| A <json name="a">
-| Other <json untyped> of (string * json option)
-]
-
-type fallback_constr_record = {
-  ~tag <ocaml default="\"unknown\"">: string;
-  fallback_constr <json tag_field="tag"> : fallback_constr;
-}
-
-type empty_constr = [
-  | A <json name="">
-  | Other <json untyped> of (string * json option)
-]
-
-type empty_constr_record = {
-  empty : empty_constr;
-  empty_constr <json tag_field="tag"> : empty_constr;
-}
-
 type patch = {
   ?patch1: int nullable option;
   ?patch2: int nullable option;
   ?patch3: int nullable option;
 } <json keep_nulls>
 
+(*** Test json adapters ***)
+
+(*
+   The real json representation uses an object with a `"type"` field
+   equal to `"a"` or `"b"`. Types `a` and `b` are incompatible
+   with one another.
+
+   See normalize/restore functions in `adapter.ml`.
+*)
+type adapted = [
+  | A <json name="a"> of a
+  | B <json name="b"> of b
+] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
+
+type a = {
+  thing: string;
+  other_thing: bool;
+}
+
+type b = {
+  thing: int; (* field name found in `a` with another type! *)
+}
+
+(*
+   Test variants represented as single-field json objects.
+*)
+type sf_adapted = [
+  | A <json name="a"> of bool
+  | B <json name="b"> of int
+] <json adapter.ocaml="Atdgen_runtime.Json_adapter.One_field">
+
+(*
+   Test substitute for the retired tag_field feature.
+*)
+
+type tf_variant = [
+  | A <json name="a"> of int
+  | B <json name="b"> of int
+]
+
+(*
+   Sample raw json: { "the_type": "a", "the_value": 123, "etc": "blah" }
+   Sample normalized json: { "the_value": ["a", 123], "etc": "blah" }
+   Test_lib.Tag_field_example takes care of the conversion
+   between the two forms.
+*)
+type tf_record = {
+  the_value : tf_variant;
+  etc : string;
+} <json adapter.ocaml="Test_lib.Tag_field_example">
+
+type tf_variant2 = [
+  | A <json name="a"> of int
+  | B <json name="b"> of int
+  | Unknown of (string * json nullable)
+]
+
+type tf_record2 = {
+  the_value2 : tf_variant2;
+  etc2 : string;
+} <json adapter.ocaml="Test_lib.Tag_field_with_catchall">
+
+(*
+   Test open_enum feature.
+*)
+type sample_open_enum = [
+  | Alpha
+  | Beta
+  | Other of string
+] <json open_enum>
+
+type sample_open_enums = sample_open_enum list

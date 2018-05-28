@@ -1,4 +1,6 @@
-
+(*
+   Utilities for interpreting annotations of type Ast.annot.
+*)
 
 open Import
 
@@ -11,7 +13,7 @@ let has_section k l =
   try ignore (List.assoc k l); true
   with Not_found -> false
 
-let has_field k k2 l =
+let has_field ~sections:k ~field:k2 l =
   List.exists (
     fun k1 ->
       try
@@ -22,7 +24,7 @@ let has_field k k2 l =
       with Not_found -> false
   ) k
 
-let get_flag k k2 l =
+let get_flag ~sections:k ~field:k2 l =
   let result =
     List.find_map (fun k1 ->
         try
@@ -43,7 +45,7 @@ let get_flag k k2 l =
       None -> false
     | Some x -> x
 
-let get_field parse default k k2 l =
+let get_field ~parse ~default ~sections:k ~field:k2 l =
   let result =
     List.find_map (fun k1 ->
         try
@@ -69,7 +71,15 @@ let get_field parse default k k2 l =
       None -> default
     | Some x -> x
 
-let set_field loc k k2 v l : Ast.annot =
+let get_opt_field ~parse ~sections ~field l =
+  let parse s =
+    match parse s with
+    | None -> None (* indicates parse error *)
+    | Some v -> Some (Some v)
+  in
+  get_field ~parse ~default:None ~sections ~field l
+
+let set_field ~loc ~section:k ~field:k2 v l : Ast.annot =
   try
     let section_loc, section = List.assoc k l in
     let section =

@@ -478,400 +478,6 @@ let test_raw_json () =
   let x' = Test3j_j.t_of_string s in
   check (x = x')
 
-let test_json_constr_mismatch () =
-  section "json constructors mismatch";
-  let x = { Test3j_t.int_field = 1;
-            string_field = "it's mismatch";
-            tag_field = "a";
-            constr_field = `B 52;
-          }
-  in
-  expect_error Test3j_j.string_of_constr_record x
-
-let test_json_constr_nullary () =
-  section "json constructors nullary";
-  let x = { Test3j_t.int_field = 0;
-            string_field = "it's a";
-            tag_field = "a";
-            constr_field = `A;
-          }
-  in
-  let s = Test3j_j.string_of_constr_record x in
-  let x' = Test3j_j.constr_record_of_string s in
-  check (x = x')
-
-let test_json_constr_unary () =
-  section "json constructors unary";
-  let x = { Test3j_t.int_field = 2;
-            string_field = "it's c";
-            tag_field = "c";
-            constr_field = `C "see the sea";
-          }
-  in
-  let s = Test3j_j.string_of_constr_record x in
-  let x' = Test3j_j.constr_record_of_string s in
-  check (x = x')
-
-let test_json_constr_implicit () =
-  section "json constructors implicit";
-  let x = {
-    Test3j_t.implicit_constr_field1 = `A;
-    Test3j_t.implicit_constr_field2 = `A;
-  } in
-  let s = Test3j_j.string_of_implicit_constr_record x in
-  let x'= Test3j_j.implicit_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["implicit_tag_field", `String "a"] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.implicit_constr_field1 = `B 12;
-    Test3j_t.implicit_constr_field2 = `B 13;
-  } in
-  let s = Test3j_j.string_of_implicit_constr_record x in
-  let x'= Test3j_j.implicit_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [
-    "implicit_constr_field1", `Int 12;
-    "implicit_constr_field2", `Int 13;
-    "implicit_tag_field", `String "b";
-  ] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.implicit_constr_field1 = `B 12;
-    Test3j_t.implicit_constr_field2 = `C "muahaha";
-  } in
-  expect_error Test3j_j.string_of_implicit_constr_record x
-
-let test_json_constr_tag () =
-  section "json constructors tag roundtrip";
-  let x = { Test3j_t.tag = `B; constr = `B 6 } in
-  let s = Test3j_j.string_of_tag_record x in
-  let x'= Test3j_j.tag_record_of_string s in
-  check (x = x');
-
-  section "json constructors tag repr";
-  let j = `Assoc [
-    "tag", `String "b";
-    "constr", `Int 6
-  ] in
-  let s = Yojson.Safe.to_string j in
-  let s'= Test3j_j.string_of_tag_record x in
-  check (s = s');
-
-  (* TODO: should this be an error? *)
-  let j = `Assoc [
-    "constr", `String "what";
-    "tag", `String "a";
-  ] in
-  let s = Yojson.Safe.to_string j in
-  let x = Test3j_j.tag_record_of_string s in
-  let x'= { Test3j_t.tag = `A; constr = `A } in
-  check (x = x')
-
-let test_json_constr_multi () =
-  section "json constructors multi";
-  let x = {
-    Test3j_t.multi_tag = `B;
-    Test3j_t.first_constr = `B 52;
-    Test3j_t.second_constr = `B `A;
-  } in
-  let s = Test3j_j.string_of_multi_constr_record x in
-  let x'= Test3j_j.multi_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [
-    "multi_tag",     `String "b";
-    "first_constr",  `Int 52;
-    "second_constr", `String "a";
-  ] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.multi_tag = `C;
-    Test3j_t.first_constr = `C "hel10";
-    Test3j_t.second_constr = `B (`C "goodbyte");
-  } in
-  expect_error Test3j_j.string_of_multi_constr_record x
-
-let test_json_constr_default_tag () =
-  section "json constructors default tag";
-  let x = {
-    Test3j_t.default_tag = `B;
-    Test3j_t.default_tag_constr = `B 12;
-  } in
-  let s = Test3j_j.string_of_default_tag_record x in
-  let x'= Test3j_j.default_tag_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["default_tag_constr", `Int 12] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.default_tag = `A;
-    Test3j_t.default_tag_constr = `A;
-  } in
-  let s = Test3j_j.string_of_default_tag_record x in
-  let x'= Test3j_j.default_tag_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["default_tag", `String "a"] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let j = `Assoc [] in
-  let s = Yojson.Safe.to_string j in
-  expect_error Test3j_j.default_tag_record_of_string s
-
-let test_json_constr_default_constr () =
-  section "json constructors default constr";
-  let x = {
-    Test3j_t.default_constr_tag = `B;
-    Test3j_t.default_constr = `B 12;
-  } in
-  let s = Test3j_j.string_of_default_constr_record x in
-  let x'= Test3j_j.default_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["default_constr_tag", `String "b"] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.default_constr_tag = `B;
-    Test3j_t.default_constr = `B 13;
-  } in
-  let s = Test3j_j.string_of_default_constr_record x in
-  let x'= Test3j_j.default_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [
-    "default_constr_tag", `String "b";
-    "default_constr",     `Int 13;
-  ] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.default_constr_tag = `A;
-    Test3j_t.default_constr = `A;
-  } in
-  let s = Test3j_j.string_of_default_constr_record x in
-  let x'= Test3j_j.default_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["default_constr_tag", `String "a"] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let j = `Assoc ["default_constr_tag", `String "c"] in
-  let s = Yojson.Safe.to_string j in
-  expect_error Test3j_j.default_constr_record_of_string s
-
-let test_json_constr_default () =
-  section "json constructors default both";
-  let x = {
-    Test3j_t.default2_tag = `B;
-    Test3j_t.default2_tag_constr = `B 12;
-  } in
-  let s = Test3j_j.string_of_default_record x in
-  let x'= Test3j_j.default_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [] in
-  let s'= Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.default2_tag = `A;
-    Test3j_t.default2_tag_constr = `A;
-  } in
-  let s = Test3j_j.string_of_default_record x in
-  let x'= Test3j_j.default_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["default2_tag", `String "a"] in
-  let s'= Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.default2_tag = `B;
-    Test3j_t.default2_tag_constr = `B 0;
-  } in
-  let s = Test3j_j.string_of_default_record x in
-  let x'= Test3j_j.default_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["default2_tag_constr", `Int 0] in
-  let s'= Yojson.Safe.to_string j in
-  check (s = s');
-
-  let j = `Assoc ["default2_tag", `String "c"] in
-  let s = Yojson.Safe.to_string j in
-  expect_error Test3j_j.default_record_of_string s
-
-let test_json_constr_default_implicit () =
-  section "json constructors default implicit";
-  let x = {
-    Test3j_t.def_imp_constr = `B 12;
-  } in
-  let s = Test3j_j.string_of_default_implicit x in
-  let x'= Test3j_j.default_implicit_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["tag", `String "b"] in
-  let s'= Yojson.Safe.to_string j in
-  check (s = s');
-
-  let j = `Assoc [] in
-  let s'= Yojson.Safe.to_string j in
-  let x'= Test3j_j.default_implicit_of_string s' in
-  check (x = x');
-
-  let x = {
-    Test3j_t.def_imp_constr = `A;
-  } in
-  let s = Test3j_j.string_of_default_implicit x in
-  let x'= Test3j_j.default_implicit_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["tag", `String "a"] in
-  let s'= Yojson.Safe.to_string j in
-  check (s = s')
-
-let test_json_constr_chained () =
-  section "json constructors chained";
-  let x = {
-    Test3j_t.first_tag = `A;
-    Test3j_t.second_tag = `A (`B 6);
-    Test3j_t.chained_constr = `A;
-  } in
-  let s = Test3j_j.string_of_chained_constr_record x in
-  let x'= Test3j_j.chained_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [
-    "first_tag",      `String "a";
-    "second_tag",     `List [`String "b"; `Int 6];
-  ] in
-  let s'= Yojson.Safe.to_string j in
-  check (s = s')
-
-let test_json_constr_fallback_tag () =
-  section "json constructors fallback tag";
-  let x = {
-    Test3j_t.tag = "a";
-    Test3j_t.fallback_constr = `A;
-  } in
-  let s = Test3j_j.string_of_fallback_constr_record x in
-  let x'= Test3j_j.fallback_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["tag", `String "a"] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let s' = Test3j_j.string_of_fallback_constr_record x' in
-  check (s = s');
-
-  let x = {
-    Test3j_t.tag = "b";
-    Test3j_t.fallback_constr = `Other ("b", None);
-  } in
-  let s = Test3j_j.string_of_fallback_constr_record x in
-  let x'= Test3j_j.fallback_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["tag", `String "b"] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let s' = Test3j_j.string_of_fallback_constr_record x' in
-  check (s = s');
-
-  let x = {
-    Test3j_t.tag = "b";
-    Test3j_t.fallback_constr = `Other ("b", Some (`Assoc []));
-  } in
-  let s = Test3j_j.string_of_fallback_constr_record x in
-  let x'= Test3j_j.fallback_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [
-    "tag", `String "b";
-    "fallback_constr", `Assoc [];
-  ] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let s' = Test3j_j.string_of_fallback_constr_record x' in
-  check (s = s');
-
-  let j = `Assoc [
-    "fallback_constr", `Int 123;
-  ] in
-  let s = Yojson.Safe.to_string j in
-  let x = Test3j_j.fallback_constr_record_of_string s in
-  let s'= Test3j_j.string_of_fallback_constr_record x in
-  check (s = s');
-
-  let x'= {
-    Test3j_t.tag = "unknown";
-    Test3j_t.fallback_constr = `Other ("unknown", Some (`Int 123));
-  } in
-  check (x = x')
-
-let test_json_constr_fallback_empty () =
-  section "json constructors fallback empty";
-  let x = {
-    Test3j_t.empty = `A;
-    empty_constr = `Other ("foo", None);
-  } in
-  let s = Test3j_j.string_of_empty_constr_record x in
-  let x'= Test3j_j.empty_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc ["empty", `String ""; "tag", `String "foo"] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.empty = `Other ("baz", Some `Null);
-    empty_constr = `A;
-  } in
-  let s = Test3j_j.string_of_empty_constr_record x in
-  let x'= Test3j_j.empty_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [
-    "empty", `List [`String "baz"; `Null];
-    "tag", `String "";
-  ] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s');
-
-  let x = {
-    Test3j_t.empty = `Other ("baz", None);
-    empty_constr = `A;
-  } in
-  let s = Test3j_j.string_of_empty_constr_record x in
-  let x'= Test3j_j.empty_constr_record_of_string s in
-  check (x = x');
-
-  let j = `Assoc [
-    "empty", `String "baz";
-    "tag", `String "";
-  ] in
-  let s' = Yojson.Safe.to_string j in
-  check (s = s')
-
 let test_wrapping_ints () =
   section "ocaml wrapping - ints";
   let x = Test_lib.Natural.wrap 7 in
@@ -934,6 +540,70 @@ let test_patch () =
   check (x.patch2 = Some None);
   check (x.patch3 = None)
 
+let test_adapted () =
+  section "read and write a variant represented as a json object \
+           with a `type` field";
+  let json_a = {| {
+    "type": "a",
+    "thing": "abc",
+    "other_thing": true,
+    "ignored": 555
+  } |} in
+  let json_b =  {| {
+    "thing": 123,
+    "type": "b",
+    "other_thing": true
+  } |} in
+  let expected_a = {|{"type":"a","thing":"abc","other_thing":true}|} in
+  let expected_b = {|{"type":"b","thing":123}|} in
+  let a = Test3j_j.adapted_of_string json_a in
+  let b = Test3j_j.adapted_of_string json_b in
+  let rewritten_a = Test3j_j.string_of_adapted a in
+  let rewritten_b = Test3j_j.string_of_adapted b in
+  check (expected_a = rewritten_a);
+  check (expected_b = rewritten_b)
+
+let test_one_field () =
+  section "test variants represented with single-field json objects";
+  let a_json = {| {"a": true} |} in
+  let b_json = {| {"b": 17 } |} in
+  let a = Test3j_j.sf_adapted_of_string a_json in
+  let b = Test3j_j.sf_adapted_of_string b_json in
+  check (a = `A true);
+  check (b = `B 17);
+  let a_json2 = Test3j_j.string_of_sf_adapted a in
+  let b_json2 = Test3j_j.string_of_sf_adapted b in
+  check (Test3j_j.sf_adapted_of_string a_json2 = a);
+  check (Test3j_j.sf_adapted_of_string b_json2 = b)
+
+let test_tag_field_emulation () =
+  section "emulate the retired tag_field feature";
+  let json_in = {| { "the_type": "a", "the_value": 123, "etc": "blah" } |} in
+  let x = Test3j_j.tf_record_of_string json_in in
+  check (x = { the_value = `A 123; etc = "blah" });
+  let json_out = Test3j_j.string_of_tf_record x in
+  let x2 = Test3j_j.tf_record_of_string json_out in
+  check (x2 = x)
+
+let test_tag_field_emulation_with_catchall () =
+  section "emulate the retired tag_field feature, with a catch-all \
+           for unknown tags";
+  let json_in = {| { "the_type": "x", "the_value2": 3, "etc2": "blah" } |} in
+  let x = Test3j_j.tf_record2_of_string json_in in
+  check (x = { the_value2 = `Unknown ("x", Some (`Int 3)); etc2 = "blah" });
+  let json_out = Test3j_j.string_of_tf_record2 x in
+  let x2 = Test3j_j.tf_record2_of_string json_out in
+  check (x2 = x)
+
+let test_json_open_enum () =
+  section "test <json open_enum>";
+  let json_in = {| ["Alpha", "Gamma"] |} in
+  let x = Test3j_j.sample_open_enums_of_string json_in in
+  check (x = [`Alpha; `Other "Gamma"]);
+  let json_out = Test3j_j.string_of_sample_open_enums x in
+  let x2 = Test3j_j.sample_open_enums_of_string json_out in
+  check (x2 = x)
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -955,19 +625,6 @@ let all_tests = [
   test_json_files;
   test_json_streams;
   test_raw_json;
-  test_json_constr_mismatch;
-  test_json_constr_nullary;
-  test_json_constr_unary;
-  test_json_constr_implicit;
-  test_json_constr_tag;
-  test_json_constr_multi;
-  test_json_constr_default_tag;
-  test_json_constr_default_constr;
-  test_json_constr_default;
-  test_json_constr_default_implicit;
-  test_json_constr_chained;
-  test_json_constr_fallback_tag;
-  test_json_constr_fallback_empty;
   test_wrapping_ints;
   test_double_wrapping;
   test_wrapping_with_validation;
@@ -975,21 +632,26 @@ let all_tests = [
   test_biniou_float32;
   test_json_float_decimals;
   test_patch;
+  test_adapted;
+  test_one_field;
+  test_tag_field_emulation;
+  test_tag_field_emulation_with_catchall;
+  test_json_open_enum;
 ]
 
+(* TODO: use Alcotest to run the test suite. *)
 let quality_test () =
   List.iter (fun f ->
     try f ()
     with Failed -> ())
     all_tests;
   match List.rev !errors with
-  | [] -> ()
+  | [] ->
+      ()
   | l ->
-      begin
-        eprintf "\nThe following tests failed:\n%s\n"
-          (String.concat "\n" l);
-        eprintf "*** FAILURE ***\n";
-        exit 1
-      end
+      eprintf "\nThe following tests failed:\n%s\n"
+        (String.concat "\n" l);
+      eprintf "*** FAILURE ***\n";
+      exit 1
 
 let () = quality_test ()

@@ -33,7 +33,11 @@ val read_list : 'a read -> 'a list read
 val read_number : float read
 val invalid_variant_tag : Yojson.Lexer_state.t -> string -> _
 
-
 val missing_tuple_fields : Yojson.lexer_state -> int -> int list -> _
 val missing_fields : Yojson.lexer_state -> int array -> string array -> _
 
+val write_with_adapter :
+  (Yojson.Safe.json -> Yojson.Safe.json) -> ('a write) -> ('a write)
+
+val read_with_adapter :
+  (Yojson.Safe.json -> Yojson.Safe.json) -> ('a read) -> ('a read)

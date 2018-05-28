@@ -14,7 +14,7 @@
 
 %token TYPE EQ OP_PAREN CL_PAREN OP_BRACK CL_BRACK OP_CURL CL_CURL
        SEMICOLON COMMA COLON STAR OF EOF BAR LT GT INHERIT
-       QUESTION TILDE
+       QUESTION TILDE DOT
 %token < string > STRING LIDENT UIDENT TIDENT
 
 %start full_module
@@ -52,8 +52,15 @@ afield_list:
 ;
 
 afield:
-| LIDENT EQ STRING  { ($1, (($startpos, $endpos), Some $3)) }
-| LIDENT            { ($1, (($startpos, $endpos), None)) }
+| lident_path EQ STRING  { (String.concat "." $1,
+                           (($startpos, $endpos), Some $3)) }
+| lident_path            { (String.concat "." $1,
+                           (($startpos, $endpos), None)) }
+;
+
+lident_path:
+| LIDENT DOT lident_path { $1 :: $3 }
+| LIDENT                 { [$1] }
 ;
 
 module_item:

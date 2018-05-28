@@ -1404,8 +1404,9 @@ let make_ocaml_files
         None -> "stdin"
       | Some path -> sprintf "%S" (Filename.basename path)
     in
-    sprintf {|(* Auto-generated from %s *)
-              [@@@ocaml.warning "-27-32-35-39"]|} src
+    sprintf "\
+(* Auto-generated from %s *)
+[@@@ocaml.warning \"-27-32-35-39\"]" src
   in
   let mli =
     make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs

@@ -121,38 +121,26 @@ let get_assoc_type deref loc x =
 let get_fields p a =
   List.map (
     fun x ->
-      let ocaml_fname, ocaml_default, json_fname, optional, unwrapped =
+      let ocamlf, jsonf =
         match x.f_arepr, x.f_brepr with
-        | Ocaml.Repr.Field o, Json.Field j ->
-            let ocaml_default =
-              match x.f_kind with
-                With_default ->
-                  (match o.Ocaml.ocaml_default with
-                     None ->
-                       let d =
-                         Ocaml.get_implicit_ocaml_default
-                           p.deref x.f_value in
-                       if d = None then
-                         Error.error x.f_loc "Missing default field value"
-                       else
-                         d
-                   | Some _ as default -> default
-                  )
-              | Optional -> Some "None"
-              | Required -> None
-            in
-            let optional =
-              match x.f_kind with
-                Optional | With_default -> true
-              | Required -> false
-            in
-            o.Ocaml.ocaml_fname,
-            ocaml_default,
-            j.Json.json_fname,
-            optional,
-            j.Json.json_unwrapped
+        | Ocaml.Repr.Field o, Json.Field j -> o, j
         | _ -> assert false
       in
+      let ocaml_fname = ocamlf.Ocaml.ocaml_fname in
+      let ocaml_default =
+        match x.f_kind, ocamlf.Ocaml.ocaml_default with
+        | With_default, None ->
+            (match Ocaml.get_implicit_ocaml_default p.deref x.f_value with
+             | None -> Error.error x.f_loc "Missing default field value"
+             | Some d -> Some d
+            )
+        | With_default, Some d -> Some d
+        | Optional, _ -> Some "None"
+        | Required, _ -> None
+      in
+      let json_fname = jsonf.Json.json_fname in
+      let optional = not (Atd.Ast.is_required x.f_kind) in
+      let unwrapped = jsonf.Json.json_unwrapped in
       (x, ocaml_fname, ocaml_default, json_fname, optional, unwrapped)
   )
     (Array.to_list a)

@@ -1,5 +1,5 @@
 (* Auto-generated from "test3j.atd" *)
-              [@@@ocaml.warning "-27-32-35-39"]
+[@@@ocaml.warning "-27-32-35-39"]
 
 type unixtime_list = Test3j_t.unixtime_list
 

@@ -1,5 +1,5 @@
 (* Auto-generated from "test.atd" *)
-              [@@@ocaml.warning "-27-32-35-39"]
+[@@@ocaml.warning "-27-32-35-39"]
 
 (** This is just a test. *)
 

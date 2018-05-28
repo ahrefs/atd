@@ -27,7 +27,7 @@ contributors will guide you as needed.
 
 Check out in particular
 [good first time issues](https://github.com/mjambon/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+time+issue%22)
-and issues with which
+and other issues with which
 [we could use some help](https://github.com/mjambon/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 
 See our [contribution guidelines](https://github.com/mjambon/documents/blob/master/how-to-contribute.md).

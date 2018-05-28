@@ -70,16 +70,24 @@ let json_float_of_string s : [ `Float | `Int ] option =
     | _ -> None
 
 let json_precision_of_string s =
-  try Some (Some (int_of_string s))
+  try Some (int_of_string s)
   with _ -> None
 
 let get_json_precision an =
-  Atd.Annot.get_field
-    json_precision_of_string None ["json"] "precision" an
+  Atd.Annot.get_opt_field
+    ~parse:json_precision_of_string
+    ~sections:["json"]
+    ~field:"precision"
+    an
 
 let get_json_float an : json_float =
   match
-    Atd.Annot.get_field json_float_of_string `Float ["json"] "repr" an
+    Atd.Annot.get_field
+      ~parse:json_float_of_string
+      ~default:`Float
+      ~sections:["json"]
+      ~field:"repr"
+      an
   with
       `Float -> Float (get_json_precision an)
     | `Int -> Int
@@ -97,21 +105,27 @@ let json_list_of_string s : json_list option =
 *)
 let get_json_adapter an =
   let ocaml_adapter =
-    Atd.Annot.get_field (fun s -> Some (Some s))
-      None ["json"] "adapter.ocaml" an
+    Atd.Annot.get_opt_field
+      ~parse:(fun s -> Some s)
+      ~sections:["json"]
+      ~field:"adapter.ocaml"
+      an
   in
   let java_adapter =
-    Atd.Annot.get_field (fun s -> Some (Some s))
-      None ["json"] "adapter.java" an
+    Atd.Annot.get_opt_field
+      ~parse:(fun s -> Some s)
+      ~sections:["json"]
+      ~field:"adapter.java"
+      an
   in
   { ocaml_adapter;
     java_adapter }
 
 let get_json_open_enum an =
-  Atd.Annot.get_flag ["json"] "open_enum" an
+  Atd.Annot.get_flag ~sections:["json"] ~field:"open_enum" an
 
 let get_json_lowercase_tags an =
-  Atd.Annot.get_flag ["json"] "lowercase_tags" an
+  Atd.Annot.get_flag ~sections:["json"] ~field:"lowercase_tags" an
 
 let get_json_sum an = {
   json_sum_adapter = get_json_adapter an;
@@ -120,16 +134,34 @@ let get_json_sum an = {
 }
 
 let get_json_list an =
-  Atd.Annot.get_field json_list_of_string Array ["json"] "repr" an
+  Atd.Annot.get_field
+    ~parse:json_list_of_string
+    ~default:Array
+    ~sections:["json"]
+    ~field:"repr"
+    an
 
 let get_json_cons default an =
-  Atd.Annot.get_field (fun s -> Some s) default ["json"] "name" an
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default
+    ~sections:["json"]
+    ~field:"name"
+    an
 
 let get_json_fname default an =
-  Atd.Annot.get_field (fun s -> Some s) default ["json"] "name" an
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default
+    ~sections:["json"]
+    ~field:"name"
+    an
 
 let get_json_keep_nulls an =
-  Atd.Annot.get_flag ["json"] "keep_nulls" an
+  Atd.Annot.get_flag
+    ~sections:["json"]
+    ~field:"keep_nulls"
+    an
 
 let get_json_record an =
   {

@@ -31,12 +31,18 @@ let make_full_validator s =
 
 let get_validator an =
   let full =
-    Atd.Annot.get_field (fun s -> Some (Some s)) None
-      ["ocaml"] "validator" an
+    Atd.Annot.get_opt_field
+      ~parse:(fun s -> Some s)
+      ~sections:["ocaml"]
+      ~field:"validator"
+      an
   in
   match full with
   | Some _ -> full
   | None ->
-      Atd.Annot.get_field (fun s -> Some (Some s)) None
-        ["ocaml"] "valid" an
+      Atd.Annot.get_opt_field
+        ~parse:(fun s -> Some s)
+        ~sections:["ocaml"]
+        ~field:"valid"
+        an
       |> Option.map make_full_validator

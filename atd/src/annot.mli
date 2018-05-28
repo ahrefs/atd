@@ -1,5 +1,3 @@
-
-
 (**
   Utilities for interpreting annotations of type {!Ast.annot}
 *)
@@ -35,7 +33,7 @@ v}
 val has_section : string -> t -> bool
   (** Return true if such a section (first-level key) exists. *)
 
-val has_field : string list -> string -> t -> bool
+val has_field : sections:string list -> field:string -> t -> bool
   (** [has_field section_names field_name annotations]
       returns true if at least one section exists with
       a name in [section_names] and one of its fields named
@@ -44,7 +42,7 @@ val has_field : string list -> string -> t -> bool
       Each section should be unique.
   *)
 
-val get_flag : string list -> string -> t -> bool
+val get_flag : sections:string list -> field:string -> t -> bool
   (** [get_flag section_names field_name]
       looks sequentially into the sections specified by [section_names]
       for a field named [field_name].
@@ -79,7 +77,12 @@ v}
 v}
   *)
 
-val get_field : (string -> 'a option) -> 'a -> string list -> string -> t -> 'a
+val get_field :
+  parse:(string -> 'a option) ->
+  default:'a ->
+  sections:string list ->
+  field:string ->
+  t -> 'a
   (** [get_field parse default section_names field_name annotations]
       looks sequentially into the sections specified by [section_names]
       for a field named [field_name].
@@ -93,7 +96,19 @@ val get_field : (string -> 'a option) -> 'a -> string list -> string -> t -> 'a
       Each section should be unique.
   *)
 
-val set_field : Ast.loc -> string -> string -> string option -> t -> t
+val get_opt_field :
+  parse:(string -> 'a option) ->
+  sections:string list ->
+  field:string ->
+  t -> 'a option
+  (** This is the same as [get_field] except that no default value
+      for the field exists. *)
+
+val set_field :
+  loc:Ast.loc ->
+  section:string ->
+  field:string ->
+  string option -> t -> t
   (** [set_field loc section_name field_name value annotations]
       sets a field, reusing existing section [section_name]
       if it exists, preserving the position of field [field_name]

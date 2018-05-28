@@ -17,8 +17,8 @@ let parse_text loc s =
                 (Ast.string_of_loc loc) s (Printexc.to_string e))
 
 let get_doc loc an : doc option =
-  Annot.get_field
-    (fun s -> Some (Some (parse_text loc s))) None ["doc"] "text" an
+  Annot.get_opt_field
+    (fun s -> Some (parse_text loc s)) ["doc"] "text" an
 
 
 (* Conversion to HTML *)

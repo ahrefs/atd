@@ -112,7 +112,12 @@ let get_java_field_name field_name annot =
     else
       field_name
   in
-  Atd.Annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:field_name
+    ~sections:["java"]
+    ~field:"name"
+    annot
 
 let get_java_variant_names field_name annot =
   let lower_field_name = String.lowercase_ascii field_name in
@@ -123,7 +128,12 @@ let get_java_variant_names field_name annot =
       field_name
   in
   let field_name =
-    Atd.Annot.get_field (fun s -> Some s) field_name ["java"] "name" annot
+    Atd.Annot.get_field
+      ~parse:(fun s -> Some s)
+      ~default:field_name
+      ~sections:["java"]
+      ~field:"name"
+      annot
   in
   let func_name = to_camel_case field_name in
   let enum_name = String.uppercase_ascii field_name in
@@ -131,7 +141,17 @@ let get_java_variant_names field_name annot =
   func_name, enum_name, private_field_name
 
 let get_json_field_name field_name annot =
-  Atd.Annot.get_field (fun s -> Some s) field_name ["json"] "name" annot
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:field_name
+    ~sections:["json"]
+    ~field:"name"
+    annot
 
 let get_json_variant_name field_name annot =
-  Atd.Annot.get_field (fun s -> Some s) field_name ["json"] "name" annot
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:field_name
+    ~sections:["json"]
+    ~field:"name"
+    annot

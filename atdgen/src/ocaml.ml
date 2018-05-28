@@ -126,7 +126,12 @@ let string_of_ocaml_list (x : atd_ocaml_list) =
     | Array -> "Atdgen_runtime.Util.ocaml_array"
 
 let get_ocaml_int an =
-  Atd.Annot.get_field ocaml_int_of_string Int ["ocaml"] "repr" an
+  Atd.Annot.get_field
+    ~parse:ocaml_int_of_string
+    ~default:Int
+    ~sections:["ocaml"]
+    ~field:"repr"
+    an
 
 let get_ocaml_type_path atd_name an =
   let x =
@@ -154,34 +159,71 @@ let path_of_target (target : target) =
     | Validate -> [ "ocaml_validate"; "ocaml" ]
 
 let get_ocaml_sum an =
-  Atd.Annot.get_field ocaml_sum_of_string Poly ["ocaml"] "repr" an
+  Atd.Annot.get_field
+    ~parse:ocaml_sum_of_string
+    ~default:Poly
+    ~sections:["ocaml"]
+    ~field:"repr"
+    an
 
 let get_ocaml_field_prefix an =
-  Atd.Annot.get_field (fun s -> Some s) "" ["ocaml"] "field_prefix" an
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:""
+    ~sections:["ocaml"]
+    ~field:"field_prefix"
+    an
 
 let get_ocaml_record an =
-  Atd.Annot.get_field ocaml_record_of_string Record ["ocaml"] "repr" an
+  Atd.Annot.get_field
+    ~parse:ocaml_record_of_string
+    ~default:Record
+    ~sections:["ocaml"]
+    ~field:"repr"
+    an
 
 let get_ocaml_list an =
-  Atd.Annot.get_field ocaml_list_of_string List ["ocaml"] "repr" an
+  Atd.Annot.get_field
+    ~parse:ocaml_list_of_string
+    ~default:List
+    ~sections:["ocaml"]
+    ~field:"repr"
+    an
 
 let get_ocaml_wrap loc an =
   let module_ =
-    Atd.Annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "module" an in
+    Atd.Annot.get_opt_field
+      ~parse:(fun s -> Some s)
+      ~sections:["ocaml"]
+      ~field:"module"
+      an
+  in
   let default field =
     Option.map (fun s -> sprintf "%s.%s" s field) module_
   in
   let t =
-    Atd.Annot.get_field (fun s -> Some (Some s))
-      (default "t") ["ocaml"] "t" an
+    Atd.Annot.get_field
+      ~parse:(fun s -> Some (Some s))
+      ~default:(default "t")
+      ~sections:["ocaml"]
+      ~field:"t"
+      an
   in
   let wrap =
-    Atd.Annot.get_field (fun s -> Some (Some s))
-      (default "wrap") ["ocaml"] "wrap" an
+    Atd.Annot.get_field
+      ~parse:(fun s -> Some (Some s))
+      ~default:(default "wrap")
+      ~sections:["ocaml"]
+      ~field:"wrap"
+      an
   in
   let unwrap =
-    Atd.Annot.get_field (fun s -> Some (Some s))
-      (default "unwrap") ["ocaml"] "unwrap" an
+    Atd.Annot.get_field
+      ~parse:(fun s -> Some (Some s))
+      ~default:(default "unwrap")
+      ~sections:["ocaml"]
+      ~field:"unwrap"
+      an
   in
   match t, wrap, unwrap with
       None, None, None -> None
@@ -191,28 +233,57 @@ let get_ocaml_wrap loc an =
         Error.error loc "Incomplete annotation. Missing t, wrap or unwrap"
 
 let get_ocaml_cons default an =
-  Atd.Annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default
+    ~sections:["ocaml"]
+    ~field:"name"
+    an
 
 let get_ocaml_fname default an =
-  Atd.Annot.get_field (fun s -> Some s) default ["ocaml"] "name" an
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:default
+    ~sections:["ocaml"]
+    ~field:"name"
+    an
 
 let get_ocaml_default an =
-  Atd.Annot.get_field (fun s -> Some (Some s)) None ["ocaml"] "default" an
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"default"
+    an
 
 let get_ocaml_mutable an =
-  Atd.Annot.get_flag ["ocaml"] "mutable" an
+  Atd.Annot.get_flag
+    ~sections:["ocaml"]
+    ~field:"mutable"
+    an
 
 let get_ocaml_predef target an =
   let path = path_of_target target in
-  Atd.Annot.get_flag path "predef" an
+  Atd.Annot.get_flag
+    ~sections:path
+    ~field:"predef"
+    an
 
 let get_ocaml_module target an =
   let path = path_of_target target in
-  let o = Atd.Annot.get_field (fun s -> Some (Some s)) None path "module" an in
+  let o =
+    Atd.Annot.get_opt_field
+      ~parse:(fun s -> Some s)
+      ~sections:path
+      ~field:"module"
+      an
+  in
   match o with
     Some s -> Some (s, s)
   | None ->
-      Atd.Annot.get_field (fun s -> Some (Some s)) None path "from" an
+      Atd.Annot.get_opt_field
+        ~parse:(fun s -> Some s)
+        ~sections:path
+        ~field:"from" an
       |> Option.map (fun s ->
         let type_module = s ^ "_t" in
         let main_module =
@@ -226,7 +297,12 @@ let get_ocaml_module target an =
 
 let get_ocaml_t target default an =
   let path = path_of_target target in
-  Atd.Annot.get_field (fun s -> Some s) default path "t" an
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:default
+    ~sections:path
+    ~field:"t"
+    an
 
 let get_ocaml_module_and_t target default_name an =
   get_ocaml_module target an

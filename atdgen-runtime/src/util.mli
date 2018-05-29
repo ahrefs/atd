@@ -1,4 +1,4 @@
-(** Various convenience types and functions *)
+(** Various convenience types and functions meant for the user of atdgen. *)
 
 type 'a ocaml_array = 'a array
     (** An alias for OCaml's standard array type,

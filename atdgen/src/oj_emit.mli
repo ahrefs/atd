@@ -1,3 +1,4 @@
+(** OCaml-Json code generator. *)
 
 val make_ocaml_files
   :opens:string list

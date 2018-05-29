@@ -1,5 +1,3 @@
-
-
 (** Expansion of [inherit] statements *)
 
 val expand_module_body :

@@ -1,5 +1,3 @@
-
-
 (** Pretty-printing of ATD data *)
 
 val default_annot : Ast.annot_section -> Easy_format.t

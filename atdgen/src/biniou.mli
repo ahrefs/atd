@@ -1,3 +1,5 @@
+(** Biniou-specific options derived from ATD annotations. *)
+
 type biniou_int =
     [ `Svint | `Uvint | `Int8 | `Int16 | `Int32 | `Int64 ]
 
@@ -7,6 +9,7 @@ type biniou_list = [ `Array | `Table ]
 
 type biniou_field = { biniou_unwrapped : bool }
 
+(** Biniou-specific options that decorate each kind of ATD AST node. *)
 type biniou_repr =
   | Unit
   | Bool

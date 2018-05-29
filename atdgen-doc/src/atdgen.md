@@ -683,6 +683,9 @@ type unixtime = float <json repr="int">
 
 ### Field '`tag_field`' ###
 
+Superseded by `<json adapter.ocaml="...">`.
+Available since atdgen 1.5.0 and yojson 1.2.0 until atdgen 1.13.
+
 This feature makes it possible to read JSON objects representing
 variants that use one field for the tag and another field for the
 untagged value of the specific type associated with that tag.
@@ -704,9 +707,10 @@ covers JSON objects that have an extra field `kind` which holds either
 `"A"` or `"b"`. Valid JSON values of type `t` include
 `{ "kind": "A" }` and `{ "kind": "b", "value": 123 }`.
 
-Available since atdgen 1.5.0 and yojson 1.2.0.
-
 ### Field '`untyped`' ###
+
+Superseded by `<json open_enum>` and `<json adapter.ocaml="...">`.
+Available since atdgen 1.10.0 and atd 1.2.0 until atdgen 1.13.
 
 This flag enables parsing of arbitrary variants without prior knowledge
 of their type. It is useful for constructing flexible parsers for
@@ -735,7 +739,92 @@ previous section, `v` will parse and print `{ "kind": "foo" }` and `{
 "kind": "bar", "value": [null] }` as well as the examples previously
 given.
 
-Available since atdgen 1.10.0 and atd 1.2.0.
+### Field '`open_enum`' ###
+
+Where an enum (finite set of strings) is expected, this flag allows
+unexpected strings to be kept under a catch-all constructor rather
+than producing an error.
+
+Position: on a variant type comprising exactly one constructor with an
+argument. The type of that argument must be `string`. All other
+constructors must have no arguments.
+
+Value: none
+
+For example:
+
+```ocaml
+type language = [
+  | English
+  | Chinese
+  | Other of string
+] <json open_enum>
+```
+
+maps the json string `"Chinese"` to the OCaml value `` `Chinese`` and
+maps `"French"` to `` `Other "French"``.
+
+Available since atdgen 2.0.
+
+### Field 'adapter.ocaml' ###
+
+Json adapters are a mechanism for rearranging json data on-the-fly, so
+as to make them compatible with ATD. The programmer must provide
+an OCaml module that provides converters between the original json
+representation and the ATD-compatible representation. The signature
+of the user-provided module must be equal to
+`Atdgen_runtime.Json_adapter.S`, which is:
+
+```ocaml
+sig
+  (** Convert from original json to ATD-compatible json *)
+  val normalize : Yojson.Safe.json -> Yojson.Safe.json
+
+  (** Convert from ATD-compatible json to original json *)
+  val restore : Yojson.Safe.json -> Yojson.Safe.json
+end
+```
+
+The type `Yojson.Safe.json` is the type of parsed JSON as provided
+by the yojson library.
+
+Position: on a variant type or on a record type.
+
+Value: an OCaml module identifier. Note that
+`Atdgen_runtime.Json_adapter` provides a few modules and functors
+that are ready to use. Users are however encouraged to write their own
+to suit their needs.
+
+Sample ATD definitions:
+
+```ocaml
+type document = [
+  | Image of image
+  | Text of text
+] <json adapter.ocaml="Atdgen_runtime.Json_adapter.Type_field">
+
+type image = {
+  url: string;
+}
+
+type text = {
+  title: string;
+  body: string;
+}
+```
+
+ATD-compliant json values:
+* `["Image", {"url": "https://example.com/ocean123.jpg"}]`
+* `["Text", {"title": "Cheeses Around the World", "body": "..."}]`
+
+Json values given by some API:
+* `{"type": "Image", "url": "https://example.com/ocean123.jpg"}`
+* `{"type": "Text", "title": "Cheeses Around the World", "body": "..."}`
+
+The json adapter `Type_field` that ships with the atdgen runtime
+takes care of converting between these two forms. For information on
+how to write your own adapter, please consult the documentation for
+the yojson library.
 
 Section '`biniou`'
 ------------------

@@ -766,7 +766,7 @@ maps `"French"` to `` `Other "French"``.
 
 Available since atdgen 2.0.
 
-### Field 'adapter.ocaml' ###
+### Field '`adapter.ocaml`' ###
 
 Json adapters are a mechanism for rearranging json data on-the-fly, so
 as to make them compatible with ATD. The programmer must provide
@@ -814,10 +814,12 @@ type text = {
 ```
 
 ATD-compliant json values:
+
 * `["Image", {"url": "https://example.com/ocean123.jpg"}]`
 * `["Text", {"title": "Cheeses Around the World", "body": "..."}]`
 
-Json values given by some API:
+Corresponding json values given by some API:
+
 * `{"type": "Image", "url": "https://example.com/ocean123.jpg"}`
 * `{"type": "Text", "title": "Cheeses Around the World", "body": "..."}`
 

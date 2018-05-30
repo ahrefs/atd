@@ -1,4 +1,4 @@
-ATD project
+ATD project - Static Types for Json APIs
 ==
 
 ATD stands for Adaptable Type Definitions. It is a syntax for defining
@@ -8,9 +8,9 @@ languages are OCaml and Java.
 
 The following opam packages are provided by the atd project:
 
-* atdgen: executable that generates OCaml code dealing with JSON and
+* atdgen: executable that generates OCaml code dealing with json and
   biniou data formats
-* atdj: executable that generates Java code dealing with JSON
+* atdj: executable that generates Java code dealing with json
 * atd: library for parsing atd files used by code generators
 
 [New Documentation](http://atd.readthedocs.io/) |

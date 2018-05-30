@@ -13,7 +13,8 @@ The following opam packages are provided by the atd project:
 * atdj: executable that generates Java code dealing with JSON
 * atd: library for parsing atd files used by code generators
 
-[Documentation](https://mjambon.github.io/atdgen-doc/)
+[New Documentation](http://atd.readthedocs.io/) |
+[Old Documentation](https://mjambon.github.io/atdgen-doc/)
 
 Help wanted
 --

@@ -8,9 +8,8 @@ What is atdgen?
 Atdgen is a tool that derives OCaml boilerplate code from type definitions.
 Currently it provides support for:
 
-* [JSON](http://json.org/) serialization and deserialization.
-* [Biniou](http://mjambon.com/biniou-format.txt)
-  serialization and deserialization.
+* `JSON <http://json.org/>`_ serialization and deserialization.
+* `Biniou <http://mjambon.com/biniou-format.txt>`_ serialization and deserialization.
   Biniou is a binary format extensible like JSON but more compact
   and faster to process.
 * Convenience functions for creating and validating OCaml data.
@@ -30,12 +29,12 @@ which was based on Camlp4:
 * runs fast, keeping build times low.
 * same ATD definitions can be used to generate code other than
   OCaml. See for instance
-  [atdj](https://github.com/esperco/atdj)
+  `atdj <https://github.com/esperco/atdj>`_
   which generates Java classes for JSON IO.
   Auto-generating GUI widgets from type definitions is another
   popular use of annotated type definitions. The implementation of
   such code generators is facilitated by the
-  [`atd`](https://github.com/mjambon/atd) library.
+  `\`atd\` <https://github.com/mjambon/atd>`_ library.
 
 
 
@@ -51,7 +50,7 @@ The following command tells you which version you are using:
   1.5.0
 
 The recommended way of installing atdgen and all its dependencies is with
-[opam](http://opam.ocamlpro.com/):
+`opam <http://opam.ocamlpro.com/>`_:
 
 ::
 
@@ -120,7 +119,7 @@ And finally we run our `hello` program:
   $ ./hello
   {"year":1970,"month":1,"day":1}
 
-[Source code for this section](https://github.com/mjambon/atdgen-doc/src/tutorial-data/hello)
+`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/hello>`_
 
 Inspecting and pretty-printing JSON
 ===================================
@@ -205,7 +204,7 @@ We now compile and run prettify.ml:
     }
   ]
 
-[Source code for this section](https://github.com/mjambon/atdgen-doc/src/tutorial-data/pretty-json)
+`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/pretty-json>`__
 
 
 
@@ -350,8 +349,7 @@ anymore (for this user on this machine). The following now works:
           4,
           <"Node": (<"Empty">, 5, <"Empty">)>)>)>
 
-[Source code for this
-section](https://github.com/mjambon/atdgen-doc/src/tutorial-data/inspect-biniou)
+`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/inspect-biniou>`__
 
 Optional fields and default values
 ==================================
@@ -727,7 +725,7 @@ Output:
       "end_date": { "year": 1900, "month": 0, "day": 0 }
     }
 
-[Source code for this section](https://github.com/mjambon/atdgen-doc/src/tutorial-data/validate)
+`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/validate>`__
 
 Modularity: referring to type definitions from another ATD file
 ===============================================================
@@ -787,8 +785,7 @@ Output:
 
   {"name":"foo","data":[{"x":1,"y":2},{"x":3,"y":4}]}
 
-[Source code for this
-section](https://github.com/mjambon/atdgen-doc/src/tutorial-data/modularity)
+`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/modularity>`__
 
 
 Managing JSON configuration files
@@ -1037,7 +1034,7 @@ program called `config`:
   let () = main ()
 
 The full source code for this section with examples can be inspected
-and [downloaded here](https://github.com/mjambon/atdgen-doc/src/tutorial-data/config-file).
+and `downloaded here <https://github.com/mjambon/atdgen-doc/src/tutorial-data/config-file>`__.
 
 
 Integration with ocamldoc
@@ -1101,8 +1098,8 @@ Integration with build systems
 OMake
 -----
 
-We provide an [Atdgen plugin](https://github.com/mjambon/atdgen-omake) for
-[OMake](http://omake.metaprl.org). It simplifies the compilation rules to a
+We provide an `Atdgen plugin <https://github.com/mjambon/atdgen-omake>`__ for
+`OMake <http://omake.metaprl.org>`__. It simplifies the compilation rules to a
 minimum.
 
 The plugin consists of a self-documented file to copy into a project's root. The
@@ -1136,13 +1133,13 @@ and ``.ml`` produced by ``atdgen``.
 GNU Make
 --------
 
-We provide [``Atdgen.mk``](https://github.com/mjambon/atdgen-make), a generic
+We provide `\`Atdgen.mk\` <https://github.com/mjambon/atdgen-make>`__, a generic
 makefile that defines the dependencies and rules for generating OCaml ``.mli`` and
 ``.ml`` files from ``.atd`` files containing type definitions. The ``Atdgen.mk`` file
 contains its own documentation.
 
 Here is a sample `Makefile` that takes advantage of
-[OCamlMakefile](http://mmottl.github.io/ocaml-makefile/):
+`OCamlMakefile <http://mmottl.github.io/ocaml-makefile/>`__:
 
 .. code-block:: make
 
@@ -1180,8 +1177,7 @@ provides a number of other targets and options which are documented in
 Ocamlbuild
 ----------
 
-There is an [atdgen plugin for
-ocamlbuild](https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml).
+There is an `atdgen plugin for ocamlbuild <https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml>`__.
 
 
 Dealing with untypable JSON

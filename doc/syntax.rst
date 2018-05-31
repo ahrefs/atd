@@ -557,5 +557,6 @@ identifying the sharing point. The graph example can be rewritten correctly as:
 
 See also
 ========
+`atdgen`_\ (1)
 
-[atdgen](atdgen)(1)
+.. _atdgen: atdgen

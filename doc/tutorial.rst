@@ -1197,7 +1197,7 @@ this will usually look like:
    ((targets (example_t.ml
               example_t.mli))
     (deps    (example.atd))
-    (action  (run atdgen -t -j-std ${^}))))
+    (action  (run atdgen -t ${^}))))
 
 You can refer to ``example_t.ml`` and ``example_j.ml`` as usual (by default, they
 will be automatically linked into the library being built in the same directory).

@@ -1,3 +1,12 @@
+2.0.0 (2018-05-31)
+------------------
+
+* Add support for json adapters in OCaml (`<json adapter.ocaml=...>`)
+
+* Add support for json enums with a catch-all case (`<json open_enum>`)
+
+* Remove `<json tag_field=...>` and `<json untyped>`
+
 1.13.0 (2018-03-27)
 -------------------
 

@@ -1178,6 +1178,33 @@ Ocamlbuild
 
 There is an `atdgen plugin for ocamlbuild <https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml>`__.
 
+Dune (jbuilder)
+---------------
+
+Dune currently needs atdgen build rules specified manually. Given an ``example.atd``,
+this will usually look like:
+
+.. code-block:: scheme
+
+  (rule
+   ((targets (example_j.ml
+              example_j.mli))
+    (deps    (example.atd))
+    (action  (run atdgen -j -j-std ${^}))))
+
+  (rule
+   ((targets (example_t.ml
+              example_t.mli))
+    (deps    (example.atd))
+    (action  (run atdgen -t ${^}))))
+
+You can refer to ``example_t.ml`` and ``example_j.ml`` as usual (by default, they
+will be automatically linked into the library being built in the same directory).
+You will need to write rules for each .atd file individually until
+`Dune supports wildcard rules <https://github.com/ocaml/dune/issues/295>`_.
+
+Note that any options ``atdgen`` supports can be included in the ``run atdgen``
+section (``-open``, ``-deriving-conv``, etc.).
 
 Dealing with untypable JSON
 ===========================

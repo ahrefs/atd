@@ -403,14 +403,13 @@ The following two examples are valid JSON representations of data of type
 
   { "x": 2, "y": 2 }          // OCaml: { x = 2; y = 2; z = None }
 
-For a variety of good reasons JSON's ``null`` value may not be used to indicate
-that a field is undefined. Therefore the following JSON data cannot be read as a
-record of type ``vector_v3``:
+By default, JSON fields whose value is ``null`` are treated
+as missing fields. The following two JSON objects are therefore equivalent:
 
 .. code-block:: json
 
-  { "x": 2, "y": 2, "z": null }  // invalid value for field z
-
+  { "x": 2, "y": 2, "z": null }
+  { "x": 2, "y": 2 }
 
 Note also the difference between ``?z: int option`` and ``~z: int option``:
 

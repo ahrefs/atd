@@ -11,9 +11,9 @@ Releasing `atd`
 --
 
 We use `topkg` to help with the release process. The release process
-involves assigning a [version ID](https://semver.org/) to a git
-commit, building a tar.gz archive, and publishing the opam packages
-that use this archive.
+involves assigning a [version ID](https://semver.org/), tagging a git
+commit with this version ID, building a tar.gz archive,
+and publishing the opam packages that use this archive.
 
 1. Install the command-line interface with `opam install topkg-care`.
 2. Run `topkg help release` then run the steps suggested there.

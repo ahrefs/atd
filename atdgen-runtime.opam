@@ -4,21 +4,17 @@ authors: ["Martin Jambon"]
 
 homepage: "https://github.com/mjambon/atd"
 bug-reports: "https://github.com/mjambon/atd/issues"
-dev-repo: "https://github.com/mjambon/atd.git"
+dev-repo: "git://github.com/mjambon/atd.git"
 
 build: [
   ["jbuilder" "subst" "-n" name] {pinned}
   ["jbuilder" "build" "-p" name "-j" jobs]
-]
-
-  build-test: [
-  ["jbuilder" "runtest" "-p" name]
+  ["jbuilder" "runtest" "-p" name] {with-test}
 ]
 
 depends: [
+  "ocaml" {>= "4.02.3"}
   "jbuilder" {build}
   "biniou" {>= "1.0.6"}
   "yojson" {>= "1.2.1" }
 ]
-
-available: [ocaml-version >= "4.02.3"]

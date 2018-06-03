@@ -118,33 +118,6 @@ let get_assoc_type deref loc x =
   | _ ->
       Error.error loc "Expected due to <json repr=\"object\">: (string * _) list"
 
-let get_fields p a =
-  List.map (
-    fun x ->
-      let ocamlf, jsonf =
-        match x.f_arepr, x.f_brepr with
-        | Ocaml.Repr.Field o, Json.Field j -> o, j
-        | _ -> assert false
-      in
-      let ocaml_fname = ocamlf.Ocaml.ocaml_fname in
-      let ocaml_default =
-        match x.f_kind, ocamlf.Ocaml.ocaml_default with
-        | With_default, None ->
-            (match Ocaml.get_implicit_ocaml_default (p.deref x.f_value) with
-             | None -> Error.error x.f_loc "Missing default field value"
-             | Some d -> Some d
-            )
-        | With_default, Some d -> Some d
-        | Optional, _ -> Some "None"
-        | Required, _ -> None
-      in
-      let json_fname = jsonf.Json.json_fname in
-      let optional = not (Atd.Ast.is_required x.f_kind) in
-      let unwrapped = jsonf.Json.json_unwrapped in
-      (x, ocaml_fname, ocaml_default, json_fname, optional, unwrapped)
-  )
-    (Array.to_list a)
-
 let insert sep l =
   let rec ins sep = function
       [] -> []
@@ -153,7 +126,6 @@ let insert sep l =
   match l with
     [] -> []
   | x :: l -> x :: ins sep l
-
 
 let make_json_string s = Yojson.Safe.to_string (`String s)
 
@@ -471,7 +443,7 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
 
 and make_record_writer p a record_kind =
   let dot = Ocaml.dot record_kind in
-  let fields = get_fields p a in
+  let fields = Ox_emit.get_fields p.deref a in
   let sep =
     [
       Line "if !is_first then";
@@ -487,10 +459,11 @@ and make_record_writer p a record_kind =
 
   let write_fields =
     List.map (
-      fun (x, ocaml_fname, ocaml_default, json_fname, optional, unwrapped) ->
+      fun { Ox_emit.mapping ; ocaml_fname ; ocaml_default
+          ; json_fname ; optional ; unwrapped } ->
         let f_value =
-          if unwrapped then Ocaml.unwrap_option (p.deref x.f_value)
-          else x.f_value
+          if unwrapped then Ocaml.unwrap_option (p.deref mapping.f_value)
+          else mapping.f_value
         in
         let write_field_tag =
           sprintf "Bi_outbuf.add_string ob %S;"
@@ -542,11 +515,12 @@ and make_record_writer p a record_kind =
 let study_record ~ocaml_version fields =
   let field_assignments =
     List.fold_right (
-      fun (x, oname, default, jname, opt, unwrap) field_assignments ->
+      fun { Ox_emit.ocaml_fname ; ocaml_default ; optional ; _ }
+        field_assignments ->
         let v =
-          match default with
+          match ocaml_default with
           | None ->
-              assert (not opt);
+              assert (not optional);
               begin match ocaml_version with
                 | Some (maj, min) when (maj > 4 || maj = 4 && min >= 3) ->
                     "Obj.magic (Sys.opaque_identity 0.0)"
@@ -555,16 +529,16 @@ let study_record ~ocaml_version fields =
           | Some s ->
               s
         in
-        let init = Line (sprintf "let field_%s = ref (%s) in" oname v) in
-        let create = Line (sprintf "%s = !field_%s;" oname oname) in
+        let init = Line (sprintf "let field_%s = ref (%s) in" ocaml_fname v) in
+        let create = Line (sprintf "%s = !field_%s;" ocaml_fname ocaml_fname) in
         (init, create) :: field_assignments
     ) fields []
   in
   let init_fields, create_record_fields = List.split field_assignments in
   let n, mapping =
     List.fold_left (
-      fun (i, acc) (x, oname, default, jname, opt, unwrap) ->
-        if not opt then
+      fun (i, acc) { Ox_emit.optional ; _ } ->
+        if not optional then
           (i+1, (Some i :: acc))
         else
           (i, (None :: acc))
@@ -606,9 +580,9 @@ let study_record ~ocaml_version fields =
     let field_names =
       let l =
         List.fold_right (
-          fun (x, oname, default, jname, opt, unwrap) acc ->
-            if default = None && not opt then
-              sprintf "%S" x.f_name :: acc
+          fun { Ox_emit.mapping ; ocaml_default ; optional ; _ } acc ->
+            if ocaml_default = None && not optional then
+              sprintf "%S" mapping.f_name :: acc
             else
               acc
         ) fields []
@@ -618,8 +592,8 @@ let study_record ~ocaml_version fields =
     if k = 0 then []
     else
       [ Line (sprintf
-                 "if %s then Atdgen_runtime.Oj_run.missing_fields p %s %s;"
-                 bool_expr bit_fields field_names) ]
+                "if %s then Atdgen_runtime.Oj_run.missing_fields p %s %s;"
+                bool_expr bit_fields field_names) ]
   in
   init_fields, init_bits, set_bit, check_bits, create_record
 
@@ -934,7 +908,7 @@ and make_cases_reader p type_annot ~tick ~open_enum ~std ~fallback_expr l =
 
 and make_record_reader p type_annot loc a json_options =
   let keep_nulls = json_options.json_keep_nulls in
-  let fields = get_fields p a in
+  let fields = Ox_emit.get_fields p.deref a in
   let init_fields, init_bits, set_bit, check_bits, create_record =
     study_record ~ocaml_version:p.ocaml_version fields
   in
@@ -943,10 +917,11 @@ and make_record_reader p type_annot loc a json_options =
     let a = Array.of_list fields in
     let cases =
       Array.mapi (
-        fun i (x, ocaml_fname, ocaml_default, json_fname, opt, unwrapped) ->
+        fun i { Ox_emit.mapping ; ocaml_fname ; json_fname ; optional
+              ; unwrapped ; _ } ->
           let f_value =
-            if unwrapped then Ocaml.unwrap_option (p.deref x.f_value)
-            else x.f_value
+            if unwrapped then Ocaml.unwrap_option (p.deref mapping.f_value)
+            else mapping.f_value
           in
         let wrap l =
           if unwrapped then
@@ -973,7 +948,7 @@ and make_record_reader p type_annot loc a json_options =
           ]
         in
         let opt_expr =
-          if opt then
+          if optional then
             if keep_nulls then
               expr
             else

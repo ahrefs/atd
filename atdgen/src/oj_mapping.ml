@@ -12,7 +12,7 @@ type variant_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping
 let check_json_sum loc json_sum_param variants =
   if json_sum_param.Json.json_open_enum then (
     let variants_with_arg =
-      List.filter (function {var_arg = Some _} -> true | _ -> false) variants
+      List.filter (function {var_arg = Some _; _} -> true | _ -> false) variants
     in
     match variants_with_arg with
     | [] ->

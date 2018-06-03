@@ -18,7 +18,9 @@ let parse_text loc s =
 
 let get_doc loc an : doc option =
   Annot.get_opt_field
-    (fun s -> Some (parse_text loc s)) ["doc"] "text" an
+    ~parse:(fun s -> Some (parse_text loc s))
+    ~sections:["doc"]
+    ~field:"text" an
 
 
 (* Conversion to HTML *)

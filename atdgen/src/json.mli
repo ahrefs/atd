@@ -59,6 +59,7 @@ type json_repr =
   | Wrap
 
 val get_json_sum : Atd.Annot.t -> json_adapter
+[@@ocaml.warning "-32"]
 
 val get_json_list : Atd.Annot.t -> json_list
 

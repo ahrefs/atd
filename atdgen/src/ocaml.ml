@@ -821,9 +821,8 @@ let ocaml_of_atd ?(pp_convs=Ppx []) ~target ~type_aliases
   let x = format_all (head @ body) in
   Easy_format.Pretty.to_string x
 
-let unwrap_option deref x =
-  match deref x with
-    Option (_, x, _, _)
+let unwrap_option = function
+  | Option (_, x, _, _)
   | Nullable (_, x, _, _) -> x
   | Name (loc, s, _, _, _) ->
       Error.error loc ("Not an option type: " ^ s)
@@ -831,10 +830,8 @@ let unwrap_option deref x =
       Error.error (loc_of_mapping x) "Not an option type"
 
 
-
-let get_implicit_ocaml_default deref x =
-  match deref x with
-    Unit (_, Repr.Unit, _) -> Some "()"
+let get_implicit_ocaml_default = function
+  | Unit (_, Repr.Unit, _) -> Some "()"
   | Bool (_, Bool, _) -> Some "false"
   | Int (_, Int o, _) ->
       Some (match o with
@@ -868,7 +865,7 @@ let map_record_creator_field deref x =
         intf, impl1, impl2
 
     | Optional ->
-        let x = unwrap_option deref x.f_value in
+        let x = unwrap_option (deref x.f_value) in
         let t = ocaml_of_expr (ocaml_of_expr_mapping x) in
         let intf = sprintf "\n  ?%s: %s ->" fname t in
         let impl1 = sprintf "\n  ?%s" fname in
@@ -881,7 +878,7 @@ let map_record_creator_field deref x =
           let default =
             match o.ocaml_default with
                 None ->
-                  (match get_implicit_ocaml_default deref x.f_value with
+                  (match get_implicit_ocaml_default (deref x.f_value) with
                        None ->
                          Error.error x.f_loc "Missing default field value"
                      | Some s -> s

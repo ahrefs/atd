@@ -543,7 +543,7 @@ and make_record_writer deref tagged a record_kind =
   let write_fields =
     List.concat_map (fun (x, ocaml_fname, ocaml_default, optional, unwrapped) ->
       let f_value =
-        if unwrapped then Ocaml.unwrap_option deref x.f_value
+        if unwrapped then Ocaml.unwrap_option (deref x.f_value)
         else x.f_value
       in
       let write_field_tag =
@@ -985,7 +985,7 @@ and make_record_reader
       Array.mapi (
         fun i (x, name, _, _, unwrapped) ->
           let f_value =
-            if unwrapped then Ocaml.unwrap_option deref x.f_value
+            if unwrapped then Ocaml.unwrap_option (deref x.f_value)
             else x.f_value
           in
           let wrap l =

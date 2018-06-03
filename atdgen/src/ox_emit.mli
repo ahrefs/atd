@@ -77,3 +77,18 @@ val default_value
   -> string option
 
 val include_intf : (Ocaml.Repr.t, 'a) Mapping.def -> bool
+
+type field =
+  { mapping : (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping
+  ; ocaml_fname : string
+  ; json_fname : string
+  ; ocaml_default : string option
+  ; optional : bool
+  ; unwrapped : bool
+  }
+
+val get_fields
+  : ((Ocaml.Repr.t, Json.json_repr) Mapping.mapping
+     -> (Ocaml.Repr.t, 'a) Mapping.mapping)
+  -> (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping array
+  -> field list

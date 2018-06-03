@@ -82,13 +82,11 @@ val get_ocaml_module_and_t
 
 
 val get_implicit_ocaml_default
-  : ('a -> (Repr.t, 'b) Mapping.mapping)
-  -> 'a
+  : (Repr.t, 'b) Mapping.mapping
   -> string option
 
 val unwrap_option
-  : ('a -> ('b, 'c) Mapping.mapping)
-  -> 'a
+  :  ('b, 'c) Mapping.mapping
   -> ('b, 'c) Mapping.mapping
 
 val ocaml_of_atd

@@ -362,7 +362,7 @@ let default_value x deref =
     | _ -> failwith "Ox_emit.default_value" in
   match x.f_kind, ocamlf.Ocaml.ocaml_default with
   | With_default, None ->
-      begin match Ocaml.get_implicit_ocaml_default deref x.f_value with
+      begin match Ocaml.get_implicit_ocaml_default (deref x.f_value) with
         | None -> Error.error x.f_loc "Missing default field value"
         | Some d -> Some d
       end

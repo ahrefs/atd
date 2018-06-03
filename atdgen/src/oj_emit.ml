@@ -130,7 +130,7 @@ let get_fields p a =
       let ocaml_default =
         match x.f_kind, ocamlf.Ocaml.ocaml_default with
         | With_default, None ->
-            (match Ocaml.get_implicit_ocaml_default p.deref x.f_value with
+            (match Ocaml.get_implicit_ocaml_default (p.deref x.f_value) with
              | None -> Error.error x.f_loc "Missing default field value"
              | Some d -> Some d
             )
@@ -489,7 +489,7 @@ and make_record_writer p a record_kind =
     List.map (
       fun (x, ocaml_fname, ocaml_default, json_fname, optional, unwrapped) ->
         let f_value =
-          if unwrapped then Ocaml.unwrap_option p.deref x.f_value
+          if unwrapped then Ocaml.unwrap_option (p.deref x.f_value)
           else x.f_value
         in
         let write_field_tag =
@@ -945,7 +945,7 @@ and make_record_reader p type_annot loc a json_options =
       Array.mapi (
         fun i (x, ocaml_fname, ocaml_default, json_fname, opt, unwrapped) ->
           let f_value =
-            if unwrapped then Ocaml.unwrap_option p.deref x.f_value
+            if unwrapped then Ocaml.unwrap_option (p.deref x.f_value)
             else x.f_value
           in
         let wrap l =

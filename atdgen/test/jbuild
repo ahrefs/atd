@@ -7,10 +7,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test.expected.ml test.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test.expected.mli test.mli))))
 
 (rule
@@ -20,10 +22,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test2.expected.ml test2.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test2.expected.mli test2.mli))))
 
 (rule
@@ -38,10 +42,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff testj.expected.ml testj.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff testj.expected.mli testj.mli))))
 
 (rule
@@ -52,10 +58,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test2j.expected.ml test2j.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test2j.expected.mli test2j.mli))))
 
 (rule
@@ -65,10 +73,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test3j_t.expected.ml test3j_t.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test3j_t.expected.mli test3j_t.mli))))
 
 (rule
@@ -78,10 +88,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test3j_j.expected.ml test3j_j.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff test3j_j.expected.mli test3j_j.mli))))
 
 (rule
@@ -91,10 +103,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff testjstd.expected.ml testjstd.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff testjstd.expected.mli testjstd.mli))))
 
 (rule
@@ -104,10 +118,12 @@
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff testv.expected.ml testv.ml))))
 
 (alias
  ((name runtest)
+  (package atdgen)
   (action (diff testv.expected.mli testv.mli))))
 
 (executables
@@ -127,6 +143,6 @@
 
 (alias
  ((name   runtest)
-  (package atd)
+  (package atdgen)
   (deps   (test_atdgen_main.exe))
   (action (run ${<}))))

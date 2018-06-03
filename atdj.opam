@@ -15,5 +15,5 @@ build: [
 depends: [
   "ocaml" {>= "4.02.3"}
   "jbuilder" {build}
-  "atd" {>= "1.13.0"}
+  "atd" {>= "2.0.0"}
 ]

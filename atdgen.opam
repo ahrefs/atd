@@ -15,8 +15,8 @@ build: [
 depends: [
   "ocaml" {>= "4.02.3"}
   "jbuilder" {build}
-  "atd" {>= "1.13.0"}
-  "atdgen-runtime"
+  "atd" {>= "2.0.0"}
+  "atdgen-runtime" {>= "2.0.0"}
   "biniou" {>= "1.0.6"}
   "yojson" {>= "1.2.1" }
 ]

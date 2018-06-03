@@ -7,6 +7,8 @@ type param =
       -> (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
   }
 
+let open_enum_not_supported () =
+  failwith "open_enum is not supported in bucklescript mode"
 
 let runtime_module = "Atdgen_codec_runtime"
 
@@ -29,8 +31,9 @@ let type_annot_str = Option.value ~default:"_"
 let destruct_sum (x : Oj_mapping.t) =
   let open Mapping in
   match x with
-  | Sum (_, a, Sum x, Sum) ->
+  | Sum (_, a, Sum x, Sum j) ->
       let tick = Ocaml.tick x in
+      if j.json_open_enum then open_enum_not_supported ();
       tick, a
   | Unit _ -> Error.error (loc_of_mapping x) "Cannot destruct unit"
   | Bool _ -> Error.error (loc_of_mapping x) "Cannot destruct bool"
@@ -144,7 +147,8 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_reader p x)
       ; Line ")"
       ]
-  | Sum (_, a, Sum osum, Sum) ->
+  | Sum (_, a, Sum osum, Sum j) ->
+      if j.json_open_enum then open_enum_not_supported ();
       let cases =
         Array.to_list a
         |> List.map
@@ -154,9 +158,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
                | Ocaml.Repr.Variant o, Json.Variant j -> o, j
                | _ -> assert false in
              ( r.var_arg
-             , (match j.json_cons with
-                | None -> o.ocaml_cons
-                | Some j -> j)
+             , j.json_cons
              , o.ocaml_cons
              )
           ) in
@@ -365,7 +367,8 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       ; Block (make_record_writer p a o)
       ; Line ")"
       ]
-  | Sum (_, _a, Sum _osum, Sum) ->
+  | Sum (_, _a, Sum _osum, Sum j) ->
+      if j.json_open_enum then open_enum_not_supported ();
       make_sum_writer ?type_annot p x
   | Wrap (_, x, Wrap o, Wrap) ->
       begin match o with
@@ -431,10 +434,7 @@ and make_sum_writer ?type_annot (p : param)
           | Ocaml.Repr.Variant o, Json.Variant j -> o, j
           | _ -> assert false in
         let ocaml_cons = o.Ocaml.ocaml_cons in
-        let json_cons =
-          match j.Json.json_cons with
-          | None -> failwith "TODO"
-          | Some json_cons -> json_cons in
+        let json_cons = j.Json.json_cons in
         Inline (
           begin match x.var_arg with
             | None ->

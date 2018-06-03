@@ -1,5 +1,5 @@
 (* Auto-generated from "bucklespec.atd" *)
-              [@@@ocaml.warning "-27-32-35-39"]
+[@@@ocaml.warning "-27-32-35-39"]
 
 type valid = Bucklespec_t.valid
 
@@ -45,8 +45,8 @@ let read_valid = (
 let valid_of_string s =
   read_valid (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_v2 : _ -> v2 -> _ = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | V1_foo x ->
         Bi_outbuf.add_string ob "[\"V1_foo\",";
         (
@@ -67,47 +67,10 @@ let string_of_v2 ?(len = 1024) x =
 let read_v2 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                if len = 6 && String.unsafe_get s pos = 'V' then (
-                  match String.unsafe_get s (pos+1) with
-                    | '1' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'f' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' then (
-                          0
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | '2' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'b' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                          1
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | _ -> (
-                        raise (Exit)
-                      )
-                )
-                else (
-                  raise (Exit)
-                )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Yojson.Safe.read_ident p lb with
+            | "V1_foo" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   Atdgen_runtime.Oj_run.read_int
@@ -116,7 +79,7 @@ let read_v2 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               (V1_foo x : v2)
-            | 1 ->
+            | "V2_bar" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   Atdgen_runtime.Oj_run.read_bool
@@ -125,62 +88,17 @@ let read_v2 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               (V2_bar x : v2)
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Double_quote -> (
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-          in
-          let i = Yojson.Safe.map_string p f lb in
-          match i with
-            | _ -> (
-                assert false
-              )
+          match Yojson.Safe.finish_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Square_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                if len = 6 && String.unsafe_get s pos = 'V' then (
-                  match String.unsafe_get s (pos+1) with
-                    | '1' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'f' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' then (
-                          0
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | '2' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'b' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                          1
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | _ -> (
-                        raise (Exit)
-                      )
-                )
-                else (
-                  raise (Exit)
-                )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "V1_foo" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -191,7 +109,7 @@ let read_v2 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               (V1_foo x : v2)
-            | 1 ->
+            | "V2_bar" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -202,16 +120,15 @@ let read_v2 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               (V2_bar x : v2)
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
 )
 let v2_of_string s =
   read_v2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_v1 : _ -> v1 -> _ = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | V1_foo x ->
         Bi_outbuf.add_string ob "[\"V1_foo\",";
         (
@@ -232,47 +149,10 @@ let string_of_v1 ?(len = 1024) x =
 let read_v1 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                if len = 6 && String.unsafe_get s pos = 'V' then (
-                  match String.unsafe_get s (pos+1) with
-                    | '1' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'f' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' then (
-                          0
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | '2' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'b' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                          1
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | _ -> (
-                        raise (Exit)
-                      )
-                )
-                else (
-                  raise (Exit)
-                )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Yojson.Safe.read_ident p lb with
+            | "V1_foo" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   Atdgen_runtime.Oj_run.read_bool
@@ -281,7 +161,7 @@ let read_v1 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               (V1_foo x : v1)
-            | 1 ->
+            | "V2_bar" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   Atdgen_runtime.Oj_run.read_int
@@ -290,62 +170,17 @@ let read_v1 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               (V2_bar x : v1)
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Double_quote -> (
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-          in
-          let i = Yojson.Safe.map_string p f lb in
-          match i with
-            | _ -> (
-                assert false
-              )
+          match Yojson.Safe.finish_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Square_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                if len = 6 && String.unsafe_get s pos = 'V' then (
-                  match String.unsafe_get s (pos+1) with
-                    | '1' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'f' && String.unsafe_get s (pos+4) = 'o' && String.unsafe_get s (pos+5) = 'o' then (
-                          0
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | '2' -> (
-                        if String.unsafe_get s (pos+2) = '_' && String.unsafe_get s (pos+3) = 'b' && String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                          1
-                        )
-                        else (
-                          raise (Exit)
-                        )
-                      )
-                    | _ -> (
-                        raise (Exit)
-                      )
-                )
-                else (
-                  raise (Exit)
-                )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "V1_foo" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -356,7 +191,7 @@ let read_v1 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               (V1_foo x : v1)
-            | 1 ->
+            | "V2_bar" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -367,9 +202,8 @@ let read_v1 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               (V2_bar x : v1)
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
 )
 let v1_of_string s =
@@ -406,8 +240,8 @@ let read_id = (
 let id_of_string s =
   read_id (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__3 = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | `Foo x ->
         Bi_outbuf.add_string ob "[\"Foo\",";
         (
@@ -448,75 +282,10 @@ let string_of__3 ?(len = 1024) x =
 let read__3 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                match len with
-                  | 3 -> (
-                      match String.unsafe_get s pos with
-                        | 'B' -> (
-                            if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'r' then (
-                              1
-                            )
-                            else (
-                              raise (Exit)
-                            )
-                          )
-                        | 'F' -> (
-                            if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                              0
-                            )
-                            else (
-                              raise (Exit)
-                            )
-                          )
-                        | _ -> (
-                            raise (Exit)
-                          )
-                    )
-                  | 6 -> (
-                      if String.unsafe_get s pos = 'F' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                        match String.unsafe_get s (pos+3) with
-                          | '_' -> (
-                              if String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'd' then (
-                                3
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | 'b' -> (
-                              if String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                                2
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | _ -> (
-                              raise (Exit)
-                            )
-                      )
-                      else (
-                        raise (Exit)
-                      )
-                    )
-                  | _ -> (
-                      raise (Exit)
-                    )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Yojson.Safe.read_ident p lb with
+            | "Foo" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   fun p lb ->
@@ -566,11 +335,11 @@ let read__3 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Foo x
-            | 1 ->
+            | "Bar" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Bar
-            | 2 ->
+            | "Foobar" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   Atdgen_runtime.Oj_run.read_null
@@ -579,7 +348,7 @@ let read__3 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Foobar x
-            | 3 ->
+            | "Foo_id" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   read_id
@@ -588,87 +357,19 @@ let read__3 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Foo_id x
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Double_quote -> (
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                if len = 3 && String.unsafe_get s pos = 'B' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'r' then (
-                  0
-                )
-                else (
-                  raise (Exit)
-                )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_string p f lb in
-          match i with
-            | 0 ->
+          match Yojson.Safe.finish_string p lb with
+            | "Bar" ->
               `Bar
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Square_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                match len with
-                  | 3 -> (
-                      if String.unsafe_get s pos = 'F' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                        0
-                      )
-                      else (
-                        raise (Exit)
-                      )
-                    )
-                  | 6 -> (
-                      if String.unsafe_get s pos = 'F' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                        match String.unsafe_get s (pos+3) with
-                          | '_' -> (
-                              if String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'd' then (
-                                2
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | 'b' -> (
-                              if String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                                1
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | _ -> (
-                              raise (Exit)
-                            )
-                      )
-                      else (
-                        raise (Exit)
-                      )
-                    )
-                  | _ -> (
-                      raise (Exit)
-                    )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "Foo" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -720,7 +421,7 @@ let read__3 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Foo x
-            | 1 ->
+            | "Foobar" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -731,7 +432,7 @@ let read__3 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Foobar x
-            | 2 ->
+            | "Foo_id" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -742,9 +443,8 @@ let read__3 = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Foo_id x
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
 )
 let _3_of_string s =
@@ -778,8 +478,8 @@ let read_simple_vars = (
 let simple_vars_of_string s =
   read_simple_vars (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_simple_var write__a = (
-  fun ob sum ->
-    match sum with
+  fun ob x ->
+    match x with
       | `Foo x ->
         Bi_outbuf.add_string ob "[\"Foo\",";
         (
@@ -820,75 +520,10 @@ let string_of_simple_var write__a ?(len = 1024) x =
 let read_simple_var read__a = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
-    
     match Yojson.Safe.start_any_variant p lb with
       | `Edgy_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                match len with
-                  | 3 -> (
-                      match String.unsafe_get s pos with
-                        | 'B' -> (
-                            if String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'r' then (
-                              1
-                            )
-                            else (
-                              raise (Exit)
-                            )
-                          )
-                        | 'F' -> (
-                            if String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                              0
-                            )
-                            else (
-                              raise (Exit)
-                            )
-                          )
-                        | _ -> (
-                            raise (Exit)
-                          )
-                    )
-                  | 6 -> (
-                      if String.unsafe_get s pos = 'F' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                        match String.unsafe_get s (pos+3) with
-                          | '_' -> (
-                              if String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'd' then (
-                                3
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | 'b' -> (
-                              if String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                                2
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | _ -> (
-                              raise (Exit)
-                            )
-                      )
-                      else (
-                        raise (Exit)
-                      )
-                    )
-                  | _ -> (
-                      raise (Exit)
-                    )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Yojson.Safe.read_ident p lb with
+            | "Foo" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   fun p lb ->
@@ -938,11 +573,11 @@ let read_simple_var read__a = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Foo x
-            | 1 ->
+            | "Bar" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Bar
-            | 2 ->
+            | "Foobar" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   read__a
@@ -951,7 +586,7 @@ let read_simple_var read__a = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Foobar x
-            | 3 ->
+            | "Foo_id" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
                   read_id
@@ -960,87 +595,19 @@ let read_simple_var read__a = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
               `Foo_id x
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Double_quote -> (
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                if len = 3 && String.unsafe_get s pos = 'B' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'r' then (
-                  0
-                )
-                else (
-                  raise (Exit)
-                )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_string p f lb in
-          match i with
-            | 0 ->
+          match Yojson.Safe.finish_string p lb with
+            | "Bar" ->
               `Bar
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
       | `Square_bracket -> (
-          Yojson.Safe.read_space p lb;
-          let f =
-            fun s pos len ->
-              if pos < 0 || len < 0 || pos + len > String.length s then
-                invalid_arg "out-of-bounds substring position or length";
-              try
-                match len with
-                  | 3 -> (
-                      if String.unsafe_get s pos = 'F' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                        0
-                      )
-                      else (
-                        raise (Exit)
-                      )
-                    )
-                  | 6 -> (
-                      if String.unsafe_get s pos = 'F' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'o' then (
-                        match String.unsafe_get s (pos+3) with
-                          | '_' -> (
-                              if String.unsafe_get s (pos+4) = 'i' && String.unsafe_get s (pos+5) = 'd' then (
-                                2
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | 'b' -> (
-                              if String.unsafe_get s (pos+4) = 'a' && String.unsafe_get s (pos+5) = 'r' then (
-                                1
-                              )
-                              else (
-                                raise (Exit)
-                              )
-                            )
-                          | _ -> (
-                              raise (Exit)
-                            )
-                      )
-                      else (
-                        raise (Exit)
-                      )
-                    )
-                  | _ -> (
-                      raise (Exit)
-                    )
-              with Exit -> (
-                  Atdgen_runtime.Oj_run.invalid_variant_tag p (String.sub s pos len)
-                )
-          in
-          let i = Yojson.Safe.map_ident p f lb in
-          match i with
-            | 0 ->
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "Foo" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -1092,7 +659,7 @@ let read_simple_var read__a = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Foo x
-            | 1 ->
+            | "Foobar" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -1103,7 +670,7 @@ let read_simple_var read__a = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Foobar x
-            | 2 ->
+            | "Foo_id" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
@@ -1114,9 +681,8 @@ let read_simple_var read__a = (
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
               `Foo_id x
-            | _ -> (
-                assert false
-              )
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
 )
 let simple_var_of_string read__a s =

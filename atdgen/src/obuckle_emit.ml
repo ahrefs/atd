@@ -390,16 +390,17 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
 and make_record_writer p a _record_kind =
   let write_record =
     Ox_emit.get_fields p.deref a
-    |> List.map (fun { Ox_emit. mapping; ocaml_fname; json_fname; _} ->
+    |> List.map (fun { Ox_emit. mapping; ocaml_fname; json_fname
+                     ; unwrapped ; _} ->
       Block
-        [ Line (sprintf "%S,"  json_fname)
+        [ Line (encoder_ident "field")
         ; Block
-            [ Line (sprintf "%s" (encoder_ident "encode"))
-            ; Line "("
+            [ Line "("
             ; Inline (make_writer p mapping.f_value)
             ; Line ")"
-            ; Line (sprintf "t.%s" ocaml_fname)
             ]
+        ; Line (sprintf "~name:%S" json_fname)
+        ; Line (sprintf "t.%s" ocaml_fname)
         ]
     )
     |> Indent.concat (Line ";") in

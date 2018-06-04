@@ -17,7 +17,46 @@ let array f xs = `List (Array.to_list (Array.map f xs))
 let int32 s = `String (Int32.to_string s)
 let int64 s = `String (Int64.to_string s)
 
-let obj s = `Assoc s
+type ('a, 'b) spec =
+  { name: string
+  ; data: 'a
+  ; encode: 'b t
+  }
+
+type 'a field_spec =
+  | Optional of ('a option, 'a) spec
+  | Required of ('a, 'a) spec * 'a option
+
+type field = F : 'a field_spec -> field
+
+let field ?default encode ~name data =
+  F (Required (
+    { name
+    ; data
+    ; encode
+    }, default
+  ))
+
+let field_o encode ~name data =
+  F (Optional (
+    { name
+    ; data
+    ; encode
+    }
+  ))
+
+let obj fields =
+  `Assoc (
+    List.fold_left (fun acc (F f) ->
+      match f with
+      | Required ({ name; data; encode}, _) ->
+          (name, encode data)::acc
+      | Optional { name; data; encode} ->
+          match data with
+          | None -> acc
+          | Some s -> (name, encode s)::acc
+    ) [] fields
+  )
 
 let tuple2 f g (w, x) = `Tuple [f w; g x]
 let tuple3 f g h (w, x, y) = `Tuple [f w; g x; h y]

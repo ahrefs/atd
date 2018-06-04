@@ -294,19 +294,19 @@ let write_param_similar write__a = (
     (
     Atdgen_codec_runtime.Encode.obj
       [
-          "data",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             write__a
             )
-            t.data
+          ~name:"data"
+          t.data
         ;
-          "something",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             Atdgen_codec_runtime.Encode.int
             )
-            t.something
+          ~name:"something"
+          t.something
       ]
     )
   )
@@ -336,19 +336,19 @@ let write_param write__a = (
     (
     Atdgen_codec_runtime.Encode.obj
       [
-          "data",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             write__a
             )
-            t.data
+          ~name:"data"
+          t.data
         ;
-          "nothing",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             Atdgen_codec_runtime.Encode.unit
             )
-            t.nothing
+          ~name:"nothing"
+          t.nothing
       ]
     )
   )
@@ -378,19 +378,19 @@ let write_pair write__a write__b = (
     (
     Atdgen_codec_runtime.Encode.obj
       [
-          "left",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             write__a
             )
-            t.left
+          ~name:"left"
+          t.left
         ;
-          "right",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             write__b
             )
-            t.right
+          ~name:"right"
+          t.right
       ]
     )
   )
@@ -442,26 +442,26 @@ let write_labeled = (
     (
     Atdgen_codec_runtime.Encode.obj
       [
-          "flag",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             write_valid
             )
-            t.flag
+          ~name:"flag"
+          t.flag
         ;
-          "lb",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             write_label
             )
-            t.lb
+          ~name:"lb"
+          t.lb
         ;
-          "count",
-            Atdgen_codec_runtime.Encode.encode
+          Atdgen_codec_runtime.Encode.field
             (
             Atdgen_codec_runtime.Encode.int
             )
-            t.count
+          ~name:"count"
+          t.count
       ]
     )
   )

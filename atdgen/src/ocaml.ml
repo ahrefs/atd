@@ -848,6 +848,11 @@ let get_implicit_ocaml_default = function
   | Nullable (_, _, Nullable, _) -> Some "None"
   | _ -> None
 
+type create_fields =
+  { intf_params: string
+  ; impl_params: string
+  ; impl_fields: string
+  }
 
 let map_record_creator_field deref x =
   let o =
@@ -862,14 +867,20 @@ let map_record_creator_field deref x =
         let t = ocaml_of_expr (ocaml_of_expr_mapping x.f_value) in
         let intf = sprintf "\n  %s: %s ->" fname t in
         let impl1 = sprintf "\n  ~%s" fname in
-        intf, impl1, impl2
+        { intf_params = intf
+        ; impl_params = impl1
+        ; impl_fields = impl2
+        }
 
     | Optional ->
         let x = unwrap_option (deref x.f_value) in
         let t = ocaml_of_expr (ocaml_of_expr_mapping x) in
         let intf = sprintf "\n  ?%s: %s ->" fname t in
         let impl1 = sprintf "\n  ?%s" fname in
-        intf, impl1, impl2
+        { intf_params = intf
+        ; impl_params = impl1
+        ; impl_fields = impl2
+        }
 
     | With_default ->
         let t = ocaml_of_expr (ocaml_of_expr_mapping x.f_value) in
@@ -887,7 +898,10 @@ let map_record_creator_field deref x =
           in
           sprintf "\n  ?(%s = %s)" fname default
         in
-        intf, impl1, impl2
+        { intf_params = intf
+        ; impl_params = impl1
+        ; impl_fields = impl2
+        }
 
 let obj_unimplemented loc = function
    | Record -> ()

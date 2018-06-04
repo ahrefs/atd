@@ -222,25 +222,21 @@ and make_record_reader ?type_annot
     _json_options
   =
   let create_record =
-    Array.map (function (x : (_, _) Mapping.field_mapping) ->
-    match x.f_arepr, x.f_brepr with
-    | Ocaml.Repr.Field o, Json.Field _ ->
-        let oname = o.Ocaml.ocaml_fname in
-        Block
-          [ Line (sprintf "%s =" oname)
-          ;  Block
-              [ Line (decoder_ident "decode")
-              ; Line "("
-              ; Block
-                  [ Inline (make_reader p x.f_value)
-                  ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field") x.f_name)
-                  ]
-              ; Line ") json;"
-              ]
-          ]
-    | _ -> assert false
-    ) a
-    |> Array.to_list
+    Ox_emit.get_fields p.deref a
+    |> List.map (function { Ox_emit. mapping; ocaml_fname; json_fname; _} ->
+      Block
+        [ Line (sprintf "%s =" ocaml_fname)
+        ; Block
+            [ Line (decoder_ident "decode")
+            ; Line "("
+            ; Block
+                [ Inline (make_reader p mapping.f_value)
+                ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field")
+                          mapping.f_name)
+                ]
+            ; Line ") json;"
+            ]
+        ])
   in
   [ Line "("
   ; Block
@@ -393,24 +389,19 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
 
 and make_record_writer p a _record_kind =
   let write_record =
-    a
-    |> Array.map (fun (x : (_, _) Mapping.field_mapping) ->
-      match x.f_arepr, x.f_brepr with
-      | Ocaml.Repr.Field o, Json.Field _ ->
-          let oname = o.Ocaml.ocaml_fname in
-          Block
-            [ Line (sprintf "%S,"  x.f_name)
-            ; Block
-                [ Line (sprintf "%s" (encoder_ident "encode"))
-                ; Line "("
-                ; Inline (make_writer p x.f_value)
-                ; Line ")"
-                ; Line (sprintf "t.%s" oname)
-                ]
+    Ox_emit.get_fields p.deref a
+    |> List.map (fun { Ox_emit. mapping; ocaml_fname; json_fname; _} ->
+      Block
+        [ Line (sprintf "%S,"  json_fname)
+        ; Block
+            [ Line (sprintf "%s" (encoder_ident "encode"))
+            ; Line "("
+            ; Inline (make_writer p mapping.f_value)
+            ; Line ")"
+            ; Line (sprintf "t.%s" ocaml_fname)
             ]
-      | _ -> assert false
+        ]
     )
-    |> Array.to_list
     |> Indent.concat (Line ";") in
   [ Line "("
   ; Line (encoder_ident "obj")

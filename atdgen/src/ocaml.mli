@@ -96,12 +96,17 @@ val ocaml_of_atd
   -> (Atd.Ast.loc * Atd.Ast.annot) * (bool * Atd.Ast.module_body) list
   -> string
 
+type create_fields =
+  { intf_params: string
+  ; impl_params: string
+  ; impl_fields: string
+  }
 
 val map_record_creator_field
   : ((Repr.t, 'a) Mapping.mapping
      -> (Repr.t, 'b) Mapping.mapping)
   -> (Repr.t, 'a) Mapping.field_mapping
-  -> string * string * string
+  -> create_fields
 
 val tick : atd_ocaml_sum -> string
 

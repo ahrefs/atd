@@ -61,6 +61,13 @@ module List = struct
     | []
     | [_] -> t
     | x :: xs -> x :: sep @ (insert_sep xs ~sep)
+
+  let split3 l =
+    let (x, y, z) =
+      List.fold_left (fun (xs, ys, zs) (x, y, z) ->
+        (x::xs, y::ys, z::zs)
+      ) ([], [], []) l in
+    (List.rev x, List.rev y, List.rev z)
 end
 
 module Option = struct

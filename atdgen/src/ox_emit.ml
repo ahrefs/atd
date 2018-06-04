@@ -250,10 +250,13 @@ let make_record_creator deref x =
     Some (Record (_, a, Ocaml.Repr.Record Ocaml.Record, _)) ->
       let s = x.def_name in
       let full_name = get_full_type_name x in
-      let l =
-        Array.to_list
-          (Array.map (Ocaml.map_record_creator_field deref) a) in
-      let intf_params = List.map (fun (x, _, _) -> x) l in
+      let (intf_params, impl_params, impl_fields) =
+        Array.map (Ocaml.map_record_creator_field deref) a
+        |> Array.to_list
+        |> List.map (fun { Ocaml. intf_params; impl_params; impl_fields } ->
+          (intf_params, impl_params, impl_fields))
+        |> List.split3
+      in
       let intf =
         sprintf "\
 val create_%s :%s
@@ -265,8 +268,6 @@ val create_%s :%s
           full_name
           s
       in
-      let impl_params = List.map (fun (_, x, _) -> x) l in
-      let impl_fields = List.map (fun (_, _, x) -> x) l in
       let impl =
         sprintf "\
 let create_%s %s

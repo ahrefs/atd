@@ -26,6 +26,20 @@ of attention. If you'd like to contribute, please leave a comment on the
 issue you're interested in, or create a new issue. Experienced
 contributors will guide you as needed.
 
+There are many simple ways of making a positive impact. For example,
+you can...
+
+* Use the software in your project.
+* Give a demo to your colleagues.
+* Share the passion on your blog.
+* Tweet about what you're doing with atd.
+* Report difficulties by creating new issues. We'll triage them.
+* Ask questions on StackOverflow.
+* Answer questions on
+  [StackOverflow](https://stackoverflow.com/search?q=atdgen).
+* Discuss usage on the [OCaml forums](https://discuss.ocaml.org/).
+* Pick a [task](https://github.com/mjambon/atd/issues) that's easy or for you.
+
 Check out in particular
 [good first time issues](https://github.com/mjambon/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+time+issue%22)
 and other issues with which

@@ -38,7 +38,7 @@ you can...
 * Answer questions on
   [StackOverflow](https://stackoverflow.com/search?q=atdgen).
 * Discuss usage on the [OCaml forums](https://discuss.ocaml.org/).
-* Pick a [task](https://github.com/mjambon/atd/issues) that's easy or for you.
+* Pick a [task](https://github.com/mjambon/atd/issues) that's easy for you.
 
 Check out in particular
 [good first time issues](https://github.com/mjambon/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+time+issue%22)

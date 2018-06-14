@@ -16,6 +16,8 @@ type p = Test.p
 
 and r = Test.r = { a: int; mutable b: bool; c: p }
 
+type validated_string_check = Test.validated_string_check
+
 type validate_me = Test.validate_me
 
 type val1 = Test.val1 = { val1_x: int }
@@ -278,6 +280,27 @@ val create_r :
   c: p ->
   unit -> r
   (** Create a record of type {!r}. *)
+
+
+val write_validated_string_check :
+  Bi_outbuf.t -> validated_string_check -> unit
+  (** Output a JSON value of type {!validated_string_check}. *)
+
+val string_of_validated_string_check :
+  ?len:int -> validated_string_check -> string
+  (** Serialize a value of type {!validated_string_check}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_validated_string_check :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> validated_string_check
+  (** Input JSON data of type {!validated_string_check}. *)
+
+val validated_string_check_of_string :
+  string -> validated_string_check
+  (** Deserialize JSON data of type {!validated_string_check}. *)
 
 
 val write_validate_me :

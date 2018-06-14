@@ -16,6 +16,8 @@ type p = Test.p
 
 and r = Test.r = { a: int; mutable b: bool; c: p }
 
+type validated_string_check = Test.validated_string_check
+
 type validate_me = Test.validate_me
 
 type val1 = Test.val1 = { val1_x: int }
@@ -947,6 +949,18 @@ let rec read__1 = (
 )
 and _1_of_string s =
   read__1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_validated_string_check = (
+  Yojson.Safe.write_string
+)
+let string_of_validated_string_check ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_validated_string_check ob x;
+  Bi_outbuf.contents ob
+let read_validated_string_check = (
+  Atdgen_runtime.Oj_run.read_string
+)
+let validated_string_check_of_string s =
+  read_validated_string_check (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__31 = (
   Atdgen_runtime.Oj_run.write_list (
     Yojson.Safe.write_string

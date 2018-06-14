@@ -18,6 +18,8 @@ type p = [ `A | `B of r | `C ]
 
 and r = { a: int; mutable b: bool; c: p }
 
+type validated_string_check = string
+
 type validate_me = string list
 
 type val1 = { val1_x: int }
@@ -716,6 +718,25 @@ and read__1 = (
 )
 and _1_of_string ?pos s =
   read__1 (Bi_inbuf.from_string ?pos s)
+let validated_string_check_tag = Bi_io.string_tag
+let write_untagged_validated_string_check = (
+  Bi_io.write_untagged_string
+)
+let write_validated_string_check ob x =
+  Bi_io.write_tag ob Bi_io.string_tag;
+  write_untagged_validated_string_check ob x
+let string_of_validated_string_check ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_validated_string_check ob x;
+  Bi_outbuf.contents ob
+let get_validated_string_check_reader = (
+  Atdgen_runtime.Ob_run.get_string_reader
+)
+let read_validated_string_check = (
+  Atdgen_runtime.Ob_run.read_string
+)
+let validated_string_check_of_string ?pos s =
+  read_validated_string_check (Bi_inbuf.from_string ?pos s)
 let _31_tag = Bi_io.array_tag
 let write_untagged__31 = (
   Atdgen_runtime.Ob_run.write_untagged_list

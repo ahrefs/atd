@@ -132,6 +132,7 @@
   (flags (:include ${ROOT}/ocamlflags.sexp))
   (modules
    (test
+    json_adapters
     test3j_j
     test3j_t
     testjstd

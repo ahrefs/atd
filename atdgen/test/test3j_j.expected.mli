@@ -1,6 +1,8 @@
 (* Auto-generated from "test3j.atd" *)
 [@@@ocaml.warning "-27-32-35-39"]
 
+type rec_type = Test3j_t.rec_type = { more: rec_type list }
+
 type unixtime_list = Test3j_t.unixtime_list
 
 type json = Yojson.Safe.json
@@ -37,6 +39,26 @@ type b = Test3j_t.b = { thing: int }
 type a = Test3j_t.a = { thing: string; other_thing: bool }
 
 type adapted = Test3j_t.adapted
+
+val write_rec_type :
+  Bi_outbuf.t -> rec_type -> unit
+  (** Output a JSON value of type {!rec_type}. *)
+
+val string_of_rec_type :
+  ?len:int -> rec_type -> string
+  (** Serialize a value of type {!rec_type}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_rec_type :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> rec_type
+  (** Input JSON data of type {!rec_type}. *)
+
+val rec_type_of_string :
+  string -> rec_type
+  (** Deserialize JSON data of type {!rec_type}. *)
 
 val write_unixtime_list :
   Bi_outbuf.t -> unixtime_list -> unit

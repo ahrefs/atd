@@ -40,6 +40,12 @@ type b = {
   thing: int; (* field name found in `a` with another type! *)
 }
 
+(* Json adapters on recursive types *)
+
+type rec_type = {
+  more: rec_type list;
+} <json adapter.ocaml="Json_adapters.Identity">
+
 (*
    Test variants represented as single-field json objects.
 *)

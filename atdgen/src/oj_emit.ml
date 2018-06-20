@@ -256,9 +256,9 @@ let write_with_adapter adapter writer =
       let restore =
         Oj_mapping.json_restorer_of_adapter_path adapter_path in
       [
-        Annot ("fun", Line (
+        Line (
           sprintf "Atdgen_runtime.Oj_run.write_with_adapter %s (" restore
-        ));
+        );
         Block writer;
         Line ")";
       ]
@@ -604,9 +604,9 @@ let read_with_adapter adapter reader =
       let normalize =
         Oj_mapping.json_normalizer_of_adapter_path adapter_path in
       [
-        Annot ("fun", Line (
+        Line (
           sprintf "Atdgen_runtime.Oj_run.read_with_adapter %s (" normalize
-        ));
+        );
         Block reader;
         Line ")";
       ]

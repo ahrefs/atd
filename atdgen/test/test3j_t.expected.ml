@@ -1,6 +1,8 @@
 (* Auto-generated from "test3j.atd" *)
               [@@@ocaml.warning "-27-32-35-39"]
 
+type rec_type = { more: rec_type list }
+
 type unixtime_list = float list
 
 type json = Yojson.Safe.json

@@ -1,6 +1,8 @@
 (* Auto-generated from "test3j.atd" *)
 [@@@ocaml.warning "-27-32-35-39"]
 
+type rec_type = Test3j_t.rec_type = { more: rec_type list }
+
 type unixtime_list = Test3j_t.unixtime_list
 
 type json = Yojson.Safe.json
@@ -38,6 +40,124 @@ type a = Test3j_t.a = { thing: string; other_thing: bool }
 
 type adapted = Test3j_t.adapted
 
+let rec write__4 ob x = (
+  Atdgen_runtime.Oj_run.write_list (
+    write_rec_type
+  )
+) ob x
+and string_of__4 ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__4 ob x;
+  Bi_outbuf.contents ob
+and write_rec_type ob (x : rec_type) = (
+  Atdgen_runtime.Oj_run.write_with_adapter Json_adapters.Identity.restore (
+    fun ob x ->
+      Bi_outbuf.add_char ob '{';
+      let is_first = ref true in
+      if !is_first then
+        is_first := false
+      else
+        Bi_outbuf.add_char ob ',';
+      Bi_outbuf.add_string ob "\"more\":";
+      (
+        write__4
+      )
+        ob x.more;
+      Bi_outbuf.add_char ob '}';
+  )
+) ob x
+and string_of_rec_type ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_rec_type ob x;
+  Bi_outbuf.contents ob
+let rec read__4 p lb = (
+  Atdgen_runtime.Oj_run.read_list (
+    read_rec_type
+  )
+) p lb
+and _4_of_string s =
+  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+and read_rec_type p lb = (
+  Atdgen_runtime.Oj_run.read_with_adapter Json_adapters.Identity.normalize (
+    fun p lb ->
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_lcurl p lb;
+      let field_more = ref (Obj.magic (Sys.opaque_identity 0.0)) in
+      let bits0 = ref 0 in
+      try
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_end lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg "out-of-bounds substring position or length";
+            if len = 4 && String.unsafe_get s pos = 'm' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'e' then (
+              0
+            )
+            else (
+              -1
+            )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_more := (
+                (
+                  read__4
+                ) p lb
+              );
+              bits0 := !bits0 lor 0x1;
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+        while true do
+          Yojson.Safe.read_space p lb;
+          Yojson.Safe.read_object_sep p lb;
+          Yojson.Safe.read_space p lb;
+          let f =
+            fun s pos len ->
+              if pos < 0 || len < 0 || pos + len > String.length s then
+                invalid_arg "out-of-bounds substring position or length";
+              if len = 4 && String.unsafe_get s pos = 'm' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'r' && String.unsafe_get s (pos+3) = 'e' then (
+                0
+              )
+              else (
+                -1
+              )
+          in
+          let i = Yojson.Safe.map_ident p f lb in
+          Atdgen_runtime.Oj_run.read_until_field_value p lb;
+          (
+            match i with
+              | 0 ->
+                field_more := (
+                  (
+                    read__4
+                  ) p lb
+                );
+                bits0 := !bits0 lor 0x1;
+              | _ -> (
+                  Yojson.Safe.skip_json p lb
+                )
+          );
+        done;
+        assert false;
+      with Yojson.End_of_object -> (
+          if !bits0 <> 0x1 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "more" |];
+          (
+            {
+              more = !field_more;
+            }
+           : rec_type)
+        )
+  )
+) p lb
+and rec_type_of_string s =
+  read_rec_type (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__1 = (
   Atdgen_runtime.Oj_run.write_list (
     Atdgen_runtime.Oj_run.write_float_as_int
@@ -78,16 +198,16 @@ let read_json = (
 )
 let json_of_string s =
   read_json (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__4 = (
+let write__5 = (
   Atdgen_runtime.Oj_run.write_nullable (
     write_json
   )
 )
-let string_of__4 ?(len = 1024) x =
+let string_of__5 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__4 ob x;
+  write__5 ob x;
   Bi_outbuf.contents ob
-let read__4 = (
+let read__5 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     (if Yojson.Safe.read_null_if_possible p lb then None
@@ -95,8 +215,8 @@ let read__4 = (
       read_json
     ) p lb) : _ option)
 )
-let _4_of_string s =
-  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _5_of_string s =
+  read__5 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tf_variant2 = (
   fun ob x ->
     match x with
@@ -125,7 +245,7 @@ let write_tf_variant2 = (
             Bi_outbuf.add_char ob ',';
             (let _, x = x in
             (
-              write__4
+              write__5
             ) ob x
             );
             Bi_outbuf.add_char ob ']';
@@ -183,7 +303,7 @@ let read_tf_variant2 = (
                       let x1 =
                         let x =
                           (
-                            read__4
+                            read__5
                           ) p lb
                         in
                         incr len;
@@ -267,7 +387,7 @@ let read_tf_variant2 = (
                       let x1 =
                         let x =
                           (
-                            read__4
+                            read__5
                           ) p lb
                         in
                         incr len;
@@ -1041,31 +1161,31 @@ let read_sample_open_enum = (
 )
 let sample_open_enum_of_string s =
   read_sample_open_enum (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__5 = (
+let write__6 = (
   Atdgen_runtime.Oj_run.write_list (
     write_sample_open_enum
   )
 )
-let string_of__5 ?(len = 1024) x =
+let string_of__6 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__5 ob x;
+  write__6 ob x;
   Bi_outbuf.contents ob
-let read__5 = (
+let read__6 = (
   Atdgen_runtime.Oj_run.read_list (
     read_sample_open_enum
   )
 )
-let _5_of_string s =
-  read__5 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _6_of_string s =
+  read__6 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_sample_open_enums = (
-  write__5
+  write__6
 )
 let string_of_sample_open_enums ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_sample_open_enums ob x;
   Bi_outbuf.contents ob
 let read_sample_open_enums = (
-  read__5
+  read__6
 )
 let sample_open_enums_of_string s =
   read_sample_open_enums (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

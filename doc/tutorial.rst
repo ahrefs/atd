@@ -1,6 +1,6 @@
-*********************
-Tutorial Introduction
-*********************
+********
+Tutorial
+********
 
 What is atdgen?
 ===============
@@ -9,7 +9,7 @@ Atdgen is a tool that derives OCaml boilerplate code from type definitions.
 Currently it provides support for:
 
 * `JSON <http://json.org/>`_ serialization and deserialization.
-* `Biniou <https://mjambon.github.io/atdgen-doc/biniou-format.txt>`_ serialization and deserialization.
+* `Biniou <https://raw.githubusercontent.com/mjambon/atd/master/atdgen-doc/src/biniou-format.txt>`_ serialization and deserialization.
   Biniou is a binary format extensible like JSON but more compact
   and faster to process.
 * Convenience functions for creating and validating OCaml data.
@@ -29,13 +29,12 @@ which was based on Camlp4:
 * runs fast, keeping build times low.
 * same ATD definitions can be used to generate code other than
   OCaml. See for instance
-  `atdj <https://github.com/esperco/atdj>`_
+  `atdj <https://github.com/mjambon/atd/tree/master/atdj>`_
   which generates Java classes for JSON IO.
   Auto-generating GUI widgets from type definitions is another
   popular use of annotated type definitions. The implementation of
   such code generators is facilitated by the
-  `\`atd\` <https://github.com/mjambon/atd>`_ library.
-
+  `atd <https://github.com/mjambon/atd/tree/atd>`_ library.
 
 
 Prerequisites
@@ -119,7 +118,7 @@ And finally we run our `hello` program:
   $ ./hello
   {"year":1970,"month":1,"day":1}
 
-`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/hello>`_
+`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/hello>`_
 
 Inspecting and pretty-printing JSON
 ===================================
@@ -204,7 +203,7 @@ We now compile and run prettify.ml:
     }
   ]
 
-`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/pretty-json>`__
+`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/pretty-json>`__
 
 
 
@@ -349,7 +348,7 @@ anymore (for this user on this machine). The following now works:
           4,
           <"Node": (<"Empty">, 5, <"Empty">)>)>)>
 
-`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/inspect-biniou>`__
+`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/inspect-biniou>`__
 
 Optional fields and default values
 ==================================
@@ -724,7 +723,7 @@ Output:
       "end_date": { "year": 1900, "month": 0, "day": 0 }
     }
 
-`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/validate>`__
+`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/validate>`__
 
 Modularity: referring to type definitions from another ATD file
 ===============================================================
@@ -784,7 +783,7 @@ Output:
 
   {"name":"foo","data":[{"x":1,"y":2},{"x":3,"y":4}]}
 
-`Source code for this section <https://github.com/mjambon/atdgen-doc/src/tutorial-data/modularity>`__
+`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/modularity>`__
 
 
 Managing JSON configuration files
@@ -1033,7 +1032,7 @@ program called `config`:
   let () = main ()
 
 The full source code for this section with examples can be inspected
-and `downloaded here <https://github.com/mjambon/atdgen-doc/src/tutorial-data/config-file>`__.
+and `downloaded here <https://github.com/mjambon/doc/src/tutorial-data/config-file>`__.
 
 
 Integration with ocamldoc

@@ -1,4 +1,4 @@
-Welcome to atd's documentation!
+Welcome to ATD's documentation!
 ===============================
 
 .. toctree::
@@ -6,3 +6,4 @@ Welcome to atd's documentation!
 
    tutorial
    syntax
+   atdgen

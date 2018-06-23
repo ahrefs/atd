@@ -1618,10 +1618,17 @@ comments:
       | `RGB of (int * int * int) (** Red, green, blue components *)
     ]
 
-Library
-=======
+Atdgen runtime library
+======================
 
-A library named ``atdgen`` is installed by the standard installation
+A library named `atdgen-runtime <https://github.com/mjambon/atd/tree/master/atdgen-runtime/src>`_ is installed by the standard installation
 process. Only a fraction of it is officially supported and documented.
-It is intended for tool developers. Please refer to the comments in the
-`source code of atdgen <https://github.com/mjambon/atd>`__.
+
+Modules intended for all users are:
+
+-  ``Util``
+-  ``Json_adapter``
+
+The other modules exported by the library are used directly by
+generated code. Tool developers may use them but we don't guarantee
+strong compatibility across releases.

@@ -1,5 +1,5 @@
 *************************
-ATD Core Syntax Reference
+ATD core syntax reference
 *************************
 
 Introduction

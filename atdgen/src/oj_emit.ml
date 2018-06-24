@@ -405,8 +405,8 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
 and make_variant_writer p ~tick ~open_enum x : Indent.t list =
   let o, j =
     match x.var_arepr, x.var_brepr with
-        Variant o, Variant j -> o, j
-      | _ -> assert false
+      Variant o, Variant j -> o, j
+    | _ -> assert false
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
   let json_cons = j.Json.json_cons in
@@ -418,8 +418,8 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
       in
       [
         Line (sprintf "| %s%s -> Bi_outbuf.add_string ob %S"
-                 tick ocaml_cons
-                 (enclose (make_json_string json_cons)))
+                tick ocaml_cons
+                (enclose (make_json_string json_cons)))
       ]
   | Some v when open_enum ->
       (* v should resolve to type string. *)
@@ -439,7 +439,7 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
         Line (sprintf "| %s%s x ->" tick ocaml_cons);
         Block [
           Line (sprintf "Bi_outbuf.add_string ob %S;"
-                   (op ^ make_json_string json_cons ^ sep));
+                  (op ^ make_json_string json_cons ^ sep));
           Line "(";
           Block (make_writer p v);
           Line ") ob x;";
@@ -951,15 +951,44 @@ and make_record_reader p type_annot loc a json_options =
               (* treat fields with null values as missing fields
                  (atdgen's default) *)
               [
-                Line "if not (Yojson.Safe.read_null_if_possible p lb) \
-                       then (";
-                Block expr;
+                Line "Some (";
+                Block l;
                 Line ")"
               ]
-          else
-            expr
-        in
-        (json_fname, opt_expr)
+            else l
+          in
+          let read_value =
+            [
+              Line "(";
+              Block (make_reader p None f_value);
+              Line ") p lb";
+            ]
+          in
+          let expr =
+            [
+              Line (sprintf "field_%s := (" ocaml_fname);
+              Block (wrap read_value);
+              Line ");";
+              Inline (set_bit i);
+            ]
+          in
+          let opt_expr =
+            if optional then
+              if keep_nulls then
+                expr
+              else
+                (* treat fields with null values as missing fields
+                   (atdgen's default) *)
+                [
+                  Line "if not (Yojson.Safe.read_null_if_possible p lb) \
+                        then (";
+                  Block expr;
+                  Line ")"
+                ]
+            else
+              expr
+          in
+          (json_fname, opt_expr)
       ) a
     in
     let int_mapping_function, int_matching =

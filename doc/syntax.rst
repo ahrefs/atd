@@ -1,22 +1,6 @@
-****************
-Syntax Reference
-****************
-
-Name
-====
-
-atd - syntax for cross-language **a**djustable **t**ype **d**efinitions
-
-Synopsis
-========
-
-::
-
-  atdcat [_infile_.atd] [options...]
-
-  atdcat -version
-
-  atdcat -help
+*************************
+ATD core syntax reference
+*************************
 
 Introduction
 ============

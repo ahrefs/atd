@@ -287,9 +287,7 @@ let expand ?(keep_poly = false) (l : type_def list)
         let t' = subst env t in
         subst_type_name loc loc2 "wrap" [t'] a
 
-    | Tvar (_, s) as x ->
-        (try List.assoc s env
-         with Not_found -> x)
+    | Tvar (_, s) as x -> Option.value (List.assoc s env) ~default:x
 
     | Name (loc, (loc2, name, args), a) ->
         let args' = List.map (subst env) args in

@@ -5,24 +5,21 @@ let html_of_doc loc s =
   Atd.Doc.html_of_doc doc
 
 let format_html_comments ((section, (_, l)) as x) =
+  let comment s =
+    let comment = "(*html " ^ s ^ "*)" in
+    Easy_format.Atom (comment, Easy_format.atom)
+  in
   match section with
-      "doc" ->
-        (try
-           match List.assoc "html" l with
-               (_, Some s) ->
-                 let comment = "(*html " ^ s ^ "*)" in
-                 Easy_format.Atom (comment, Easy_format.atom)
-             | _ -> raise Not_found
-         with Not_found ->
-           match List.assoc "text" l with
-               (loc, Some s) ->
-                 let comment = "(*html " ^ html_of_doc loc s ^ "*)" in
-                 Easy_format.Atom (comment, Easy_format.atom)
-             | _ ->
-                 Atd.Print.default_annot x
-        )
-    | _ ->
-        Atd.Print.default_annot x
+  | "doc" ->
+      begin match List.assoc "html" l with
+        | Some (_, Some s) -> comment s
+        | Some _ | None ->
+            begin match List.assoc "text" l with
+              | Some (loc, Some s) -> comment (html_of_doc loc s)
+              | Some _ | None -> Atd.Print.default_annot x
+            end
+      end
+  | _ -> Atd.Print.default_annot x
 
 let print_atd ~html_doc ast =
   let annot =

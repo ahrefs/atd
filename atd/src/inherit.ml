@@ -87,9 +87,7 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
     | Name (loc, (_, "wrap", [t]), a) ->
         Wrap (loc, subst false param t, a)
 
-    | Tvar (_, s) ->
-        (try List.assoc s param
-         with Not_found -> t)
+    | Tvar (_, s) -> Option.value (List.assoc s param) ~default:t
 
     | Name (loc, (loc2, k, args), a) ->
         let expanded_args = List.map (subst false param) args in

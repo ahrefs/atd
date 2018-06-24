@@ -40,7 +40,7 @@ an example application ``AtdjTest`` that uses the generated interface.
 
    ::
 
-       ./atdj -graph -package com.mylife.test test.atd
+       atdj -graph -package com.mylife.test test.atd
        export CLASSPATH='.:json.jar'
        javac com/mylife/test/*.java
 
@@ -83,7 +83,7 @@ A Java interface is generated from an ATD file as
 
 ::
 
-    ./atdj -package <package> <atd_file>
+    atdj -package <package> <atd_file>
 
 This outputs a set of Java source files. The ``-package`` option causes
 the resulting classes to be members of the specified package, and also
@@ -94,7 +94,7 @@ For example, the command
 
 ::
 
-    ./atdj -graph -package com.mylife.test test.atd
+    atdj -graph -package com.mylife.test test.atd
 
 causes the generated files to be members of the package
 ``com.mylife.test`` and to be located in the directory

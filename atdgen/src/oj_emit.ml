@@ -263,6 +263,12 @@ let write_with_adapter adapter writer =
         Line ")";
       ]
 
+let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
+  if unwrapped then
+    Ocaml.unwrap_option (p.deref mapping.f_value)
+  else
+    mapping.f_value
+
 let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
@@ -459,12 +465,9 @@ and make_record_writer p a record_kind =
 
   let write_fields =
     List.map (
-      fun { Ox_emit.mapping ; ocaml_fname ; ocaml_default
-          ; json_fname ; optional ; unwrapped } ->
-        let f_value =
-          if unwrapped then Ocaml.unwrap_option (p.deref mapping.f_value)
-          else mapping.f_value
-        in
+      fun ({ Ox_emit.mapping ; ocaml_fname ; ocaml_default
+           ; json_fname ; optional ; unwrapped } as field) ->
+        let f_value = unwrap_f_value field p in
         let write_field_tag =
           sprintf "Bi_outbuf.add_string ob %S;"
             (make_json_string json_fname ^ ":")
@@ -910,12 +913,9 @@ and make_record_reader p type_annot loc a json_options =
     let a = Array.of_list fields in
     let cases =
       Array.mapi (
-        fun i { Ox_emit.mapping ; ocaml_fname ; json_fname ; optional
-              ; unwrapped ; _ } ->
-          let f_value =
-            if unwrapped then Ocaml.unwrap_option (p.deref mapping.f_value)
-            else mapping.f_value
-          in
+        fun i ({ Ox_emit.mapping ; ocaml_fname ; json_fname ; optional
+               ; unwrapped } as field) ->
+          let f_value = unwrap_f_value field p in
         let wrap l =
           if unwrapped then
             [

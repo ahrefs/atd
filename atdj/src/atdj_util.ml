@@ -24,13 +24,11 @@ let rec norm_ty ?(unwrap_option = false) env atd_ty =
       (match name with
        | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
        | _ ->
-           (try
-              let x = List.assoc name env.module_items in
-              norm_ty env x
-            with Not_found ->
-              eprintf "Warning: unknown type %s\n%!" name;
-              atd_ty
-           )
+           (match List.assoc name env.module_items with
+            | Some x -> norm_ty env x
+            | None ->
+                eprintf "Warning: unknown type %s\n%!" name;
+                atd_ty)
       )
   | Option (_, atd_ty, _) when unwrap_option ->
       norm_ty env atd_ty

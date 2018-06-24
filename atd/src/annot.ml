@@ -9,67 +9,48 @@ type t = Ast.annot
 let error_at loc s =
   failwith (sprintf "%s:\n%s" (Ast.string_of_loc loc) s)
 
+let field ~section ~field l =
+  let open Option.O in
+  List.assoc section l >>= fun (_, l2) -> List.assoc field l2
+
 let has_section k l =
-  try ignore (List.assoc k l); true
-  with Not_found -> false
+  Option.is_some (List.assoc k l)
 
 let has_field ~sections:k ~field:k2 l =
-  List.exists (
-    fun k1 ->
-      try
-        (* each section must be unique *)
-        let _, l2 = List.assoc k1 l in
-        ignore (List.assoc k2 l2);
-        true
-      with Not_found -> false
+  List.exists (fun k1 ->
+    field ~section:k1 ~field:k2 l
+    |> Option.is_some
   ) k
 
 let get_flag ~sections:k ~field:k2 l =
-  let result =
-    List.find_map (fun k1 ->
-        try
-          (* each section must be unique *)
-          let _, l2 = List.assoc k1 l in
-          let loc, o = List.assoc k2 l2 in
-          match o with
-              None -> Some true
-            | Some "true" -> Some true
-            | Some "false" -> Some false
-            | Some s ->
-                error_at loc
-                  (sprintf "Invalid value %S for flag %s.%s" s k1 k2)
-        with Not_found -> None
-    ) k
-  in
-  match result with
-      None -> false
-    | Some x -> x
+  k
+  |> List.find_map (fun k1 ->
+    field ~section:k1 ~field:k2 l
+    |> Option.map (fun (loc, o) ->
+      match o with
+      | None | Some "true" -> true
+      | Some "false" -> false
+      | Some s ->
+          error_at loc
+            (sprintf "Invalid value %S for flag %s.%s" s k1 k2)))
+  |> Option.value ~default:false
 
 let get_field ~parse ~default ~sections:k ~field:k2 l =
-  let result =
-    List.find_map (fun k1 ->
-        try
-          (* each section must be unique *)
-          let _, l2 = List.assoc k1 l in
-          let loc, o = List.assoc k2 l2 in
-          match o with
-              Some s ->
-                (match parse s with
-                     Some _ as y -> y
-                   | None ->
-                       error_at loc
-                         (sprintf "Invalid annotation <%s %s=%S>" k1 k2 s)
-                )
-            | None ->
-                error_at loc
-                  (sprintf "Missing value for annotation %s.%s" k1 k2)
-        with Not_found ->
-          None
-    ) k
-  in
-  match result with
-      None -> default
-    | Some x -> x
+  k
+  |> List.find_map (fun k1 ->
+    let open Option.O in
+    field l ~section:k1 ~field:k2 >>= fun (loc, o) ->
+    match o with
+    | Some s ->
+        (match parse s with
+           Some _ as y -> y
+         | None ->
+             error_at loc
+               (sprintf "Invalid annotation <%s %s=%S>" k1 k2 s))
+    | None ->
+        error_at loc
+          (sprintf "Missing value for annotation %s.%s" k1 k2))
+  |> Option.value ~default
 
 let get_opt_field ~parse ~sections ~field l =
   let parse s =
@@ -80,20 +61,16 @@ let get_opt_field ~parse ~sections ~field l =
   get_field ~parse ~default:None ~sections ~field l
 
 let set_field ~loc ~section:k ~field:k2 v l : Ast.annot =
-  try
-    let section_loc, section = List.assoc k l in
-    let section =
-      try
-        let _field = List.assoc k2 section in
-        List.assoc_update k2 (loc, v) section
-      with Not_found ->
-        (k2, (loc, v)) :: section
-    in
-    List.assoc_update k (section_loc, section) l
-
-  with Not_found ->
-    (k, (loc, [ k2, (loc, v) ])) :: l
-
+  match List.assoc k l with
+  | None -> (k, (loc, [ k2, (loc, v) ])) :: l
+  | Some (section_loc, section) ->
+      let section_loc, section = List.assoc_exn k l in
+      let section =
+        match List.assoc k2 section with
+        | None -> (k2, (loc, v)) :: section
+        | Some _ -> List.assoc_update k2 (loc, v) section
+      in
+      List.assoc_update k (section_loc, section) l
 
 let collapse merge l =
   let tbl = Hashtbl.create 10 in

@@ -68,6 +68,13 @@ module List = struct
         (x::xs, y::ys, z::zs)
       ) ([], [], []) l in
     (List.rev x, List.rev y, List.rev z)
+
+  let assoc_exn = assoc
+
+  let assoc key xs =
+    match List.assoc key xs with
+    | s -> Some s
+    | exception Not_found -> None
 end
 
 module Option = struct
@@ -78,6 +85,21 @@ module Option = struct
   let value_exn = function
     | None -> failwith "Option.value_exn"
     | Some s -> s
+
+  let value ~default = function
+    | None -> default
+    | Some s -> s
+
+  let is_some = function
+    | None -> false
+    | Some _ -> true
+
+  module O = struct
+    let (>>=) x f =
+      match x with
+      | None -> None
+      | Some x -> f x
+  end
 end
 
 let sprintf = Printf.sprintf

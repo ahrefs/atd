@@ -18,11 +18,9 @@ module Type_field = struct
     let normalize (x : json) : json =
       match x with
       | `Assoc fields ->
-          (match
-             try Some (List.assoc type_field_name fields)
-             with Not_found -> None
-           with
-           | Some (`String type_) -> `List [ `String type_; x ]
+          (match List.assoc type_field_name fields with
+           | `String type_ -> `List [ `String type_; x ]
+           | exception Not_found -> x
            | _ -> x (* malformed *)
           )
       | `String type_ as x -> x

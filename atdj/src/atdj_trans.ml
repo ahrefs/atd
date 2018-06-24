@@ -539,7 +539,8 @@ public class %s implements Atdj {
   let env = List.fold_left
       (fun env (`Field (_, (field_name, _, annots), _) as field) ->
          let field_name = get_java_field_name field_name annots in
-         let cmd = assign_field env field (List.assoc field_name java_tys) in
+         let cmd =
+           assign_field env field (List.assoc_exn field_name java_tys) in
          fprintf out "%s" cmd;
          env
       )
@@ -568,7 +569,7 @@ public class %s implements Atdj {
   List.iter
     (function `Field (loc, (field_name, _, annots), _) ->
        let field_name = get_java_field_name field_name annots in
-       let java_ty = List.assoc field_name java_tys in
+       let java_ty = List.assoc_exn field_name java_tys in
        output_string out (javadoc loc annots "  ");
        fprintf out "  public %s %s;\n" java_ty field_name)
     fields;

@@ -973,18 +973,15 @@ and make_record_reader p type_annot loc a json_options =
             ]
           in
           let opt_expr =
-            if optional then
-              if keep_nulls then
-                expr
-              else
-                (* treat fields with null values as missing fields
-                   (atdgen's default) *)
-                [
-                  Line "if not (Yojson.Safe.read_null_if_possible p lb) \
-                        then (";
-                  Block expr;
-                  Line ")"
-                ]
+            if optional && not keep_nulls then
+              (* treat fields with null values as missing fields
+                 (atdgen's default) *)
+              [
+                Line "if not (Yojson.Safe.read_null_if_possible p lb) \
+                      then (";
+                Block expr;
+                Line ")"
+              ]
             else
               expr
           in

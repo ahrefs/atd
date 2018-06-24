@@ -67,11 +67,8 @@ an example application ``AtdjTest`` that uses the generated interface.
 
 The output file ``test.pdf`` contains a class graph of the generated
 Java interface. The required ``dot`` program is part of the Graphviz
-graph visualisation package, and may be download from
+graph visualisation package, and may be downloaded from
 http://www.graphviz.org/.
-
-Alternatively, if the source distribution is present, all of the above
-steps can be run as ``omake example``.
 
 In the following sections we discuss the individual steps in more
 detail, using the example from above.

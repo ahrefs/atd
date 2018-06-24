@@ -1,3 +1,7 @@
+***************************
+Java/Json support with atdj
+***************************
+
 The ATDJ tool generates a Java interface from an ATD interface. In
 particular, given a set of ATD types, this tool generates a set of Java
 classes representing those types. These classes may then be instantiated
@@ -19,18 +23,11 @@ Specifically, the generated interface offers the following features:
 Installation
 ============
 
-#. Install the dependencies: ATD and Atdgen. These may be obtained from
-   http://martin.jambon.free.fr/atd-biniou-intro.html. Alternatively,
-   they are available as the packages ``godi-atd`` and ``godi-atdgen``
-   using the GODI package manager
-   (http://godi.camlcity.org/godi/index.html).
+Build and install the ``atdj`` command with `opam <https://opam.ocaml.org/>`__:
 
-#. Having set the appropriate ``OCAMLPATH`` (if necessary), build the
-   ATDJ tool:
+  ::
 
-   ::
-
-       omake atdj
+       opam install atdj
 
 Quick-start
 ===========

@@ -1106,11 +1106,7 @@ and make_tuple_reader p a =
                   Line "x"
                 ]
               else
-                let default_value =
-                  match default with
-                    None -> assert false
-                  | Some s -> s
-                in
+                let default_value = Option.value_exn default in
                 [
                   Line (sprintf "if !end_of_tuple then (%s)" default_value);
                   Line "else (";

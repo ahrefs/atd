@@ -1275,14 +1275,8 @@ let make_ocaml_json_impl
     ~with_create ~force_defaults ~preprocess_input ~original_types
     ~ocaml_version
     buf deref defs =
-  let p = {
-    deref = deref;
-    std = std;
-    unknown_field_handler = unknown_field_handler;
-    force_defaults = force_defaults;
-    preprocess_input;
-    ocaml_version;
-  } in
+  let p = { deref; std; unknown_field_handler; force_defaults
+          ; preprocess_input; ocaml_version } in
   defs
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in

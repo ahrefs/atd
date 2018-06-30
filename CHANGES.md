@@ -1,3 +1,12 @@
+2.x.x
+-----
+
+* Fix bug preventing generated code from compiling when using
+  json adapters on recursive types.
+
+* Improve automatic error messages shown in case of failed validation.
+  Now include the validator's name or code.
+
 2.0.0 (2018-05-31)
 ------------------
 

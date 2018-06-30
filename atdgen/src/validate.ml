@@ -24,10 +24,13 @@ type validate_repr = (string option * bool)
 
 let make_full_validator s =
   sprintf "\
-    fun path x -> \
-      if ( %s ) x then None \
-      else Some (Atdgen_runtime.Util.Validation.error path)"
-    s
+  fun path x ->
+    let msg = \"Failed check by %s\" in
+    if (%s) x then
+      None
+    else
+      Some (Atdgen_runtime.Util.Validation.error ~msg path)"
+    (String.escaped s) s
 
 let get_validator an =
   let full =

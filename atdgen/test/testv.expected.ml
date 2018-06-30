@@ -16,6 +16,8 @@ type p = Test.p
 
 and r = Test.r = { a: int; mutable b: bool; c: p }
 
+type validated_string_check = Test.validated_string_check
+
 type validate_me = Test.validate_me
 
 type val1 = Test.val1 = { val1_x: int }
@@ -224,13 +226,31 @@ and validate_test_variant path x = (
 let rec validate__1 path (x : _ p') = (
   fun _ _ -> None
 ) path x
+let validate_validated_string_check = (
+  fun path x ->
+    let msg = "Failed check by fun s -> s = \"abc\"" in
+    if (fun s -> s = "abc") x then
+      None
+    else
+      Some (Atdgen_runtime.Util.Validation.error ~msg path)
+)
 let validate__31 = (
   (fun path x ->
-    (match ( fun path x -> if ( fun l -> true ) x then None else Some (Atdgen_runtime.Util.Validation.error path) ) path x with
+    (match ( fun path x ->
+    let msg = "Failed check by fun l -> true" in
+    if (fun l -> true) x then
+      None
+    else
+      Some (Atdgen_runtime.Util.Validation.error ~msg path) ) path x with
       | Some _ as err -> err
       | None -> (
           Atdgen_runtime.Ov_run.validate_list (
-            fun path x -> if ( fun s -> true ) x then None else Some (Atdgen_runtime.Util.Validation.error path)
+            fun path x ->
+    let msg = "Failed check by fun s -> true" in
+    if (fun s -> true) x then
+      None
+    else
+      Some (Atdgen_runtime.Util.Validation.error ~msg path)
           )
         ) path x
     )
@@ -324,7 +344,12 @@ let validate_tup = (
   fun _ _ -> None
 )
 let validate_star_rating = (
-  fun path x -> if ( fun x -> x >= 1 && x <= 5 ) x then None else Some (Atdgen_runtime.Util.Validation.error path)
+  fun path x ->
+    let msg = "Failed check by fun x -> x >= 1 && x <= 5" in
+    if (fun x -> x >= 1 && x <= 5) x then
+      None
+    else
+      Some (Atdgen_runtime.Util.Validation.error ~msg path)
 )
 let validate__30 : _ -> _ generic -> _ = (
   fun _ _ -> None

@@ -18,6 +18,8 @@ type p = [ `A | `B of r | `C ]
 
 and r = { a: int; mutable b: bool; c: p }
 
+type validated_string_check = string
+
 type validate_me = string list
 
 type val1 = { val1_x: int }
@@ -400,6 +402,43 @@ val create_r :
   c: p ->
   unit -> r
   (** Create a record of type {!r}. *)
+
+
+(* Writers for type validated_string_check *)
+
+val validated_string_check_tag : Bi_io.node_tag
+  (** Tag used by the writers for type {!validated_string_check}.
+      Readers may support more than just this tag. *)
+
+val write_untagged_validated_string_check :
+  Bi_outbuf.t -> validated_string_check -> unit
+  (** Output an untagged biniou value of type {!validated_string_check}. *)
+
+val write_validated_string_check :
+  Bi_outbuf.t -> validated_string_check -> unit
+  (** Output a biniou value of type {!validated_string_check}. *)
+
+val string_of_validated_string_check :
+  ?len:int -> validated_string_check -> string
+  (** Serialize a value of type {!validated_string_check} into
+      a biniou string. *)
+
+(* Readers for type validated_string_check *)
+
+val get_validated_string_check_reader :
+  Bi_io.node_tag -> (Bi_inbuf.t -> validated_string_check)
+  (** Return a function that reads an untagged
+      biniou value of type {!validated_string_check}. *)
+
+val read_validated_string_check :
+  Bi_inbuf.t -> validated_string_check
+  (** Input a tagged biniou value of type {!validated_string_check}. *)
+
+val validated_string_check_of_string :
+  ?pos:int -> string -> validated_string_check
+  (** Deserialize a biniou value of type {!validated_string_check}.
+      @param pos specifies the position where
+                 reading starts. Default: 0. *)
 
 
 (* Writers for type validate_me *)

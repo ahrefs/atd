@@ -16,6 +16,8 @@ type p = Test.p
 
 and r = Test.r = { a: int; mutable b: bool; c: p }
 
+type validated_string_check = Test.validated_string_check
+
 type validate_me = Test.validate_me
 
 type val1 = Test.val1 = { val1_x: int }
@@ -185,6 +187,10 @@ val create_r :
 val validate_r :
   Atdgen_runtime.Util.Validation.path -> r -> Atdgen_runtime.Util.Validation.error option
   (** Validate a value of type {!r}. *)
+
+val validate_validated_string_check :
+  Atdgen_runtime.Util.Validation.path -> validated_string_check -> Atdgen_runtime.Util.Validation.error option
+  (** Validate a value of type {!validated_string_check}. *)
 
 val validate_validate_me :
   Atdgen_runtime.Util.Validation.path -> validate_me -> Atdgen_runtime.Util.Validation.error option

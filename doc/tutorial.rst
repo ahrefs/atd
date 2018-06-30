@@ -1131,7 +1131,7 @@ and ``.ml`` produced by ``atdgen``.
 GNU Make
 --------
 
-We provide `\`Atdgen.mk\` <https://github.com/mjambon/atdgen-make>`__, a generic
+We provide `Atdgen.mk <https://github.com/mjambon/atdgen-make>`__, a generic
 makefile that defines the dependencies and rules for generating OCaml ``.mli`` and
 ``.ml`` files from ``.atd`` files containing type definitions. The ``Atdgen.mk`` file
 contains its own documentation.

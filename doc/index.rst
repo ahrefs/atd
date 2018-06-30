@@ -7,3 +7,4 @@ Welcome to ATD's documentation!
    tutorial
    syntax
    atdgen
+   atdj

@@ -117,12 +117,12 @@ type_expr:
          | "nullable", [x] -> Nullable (loc, x, a)
          | "shared", [x] ->
              let a =
-               if Annot.has_field ["share"] "id" a then
+               if Annot.has_field ~sections:["share"] ~field:"id" a then
                  (* may cause ID clashes if not used properly *)
                  a
                else
-                 Annot.set_field loc
-                   "share" "id" (Some (Annot.create_id ())) a
+                 Annot.set_field ~loc
+                   ~section:"share" ~field:"id" (Some (Annot.create_id ())) a
              in
              Shared (loc, x, a)
          | "wrap", [x] -> Wrap (loc, x, a)

@@ -1,12 +1,10 @@
 let check_experience x =
-  (match Resume_v.validate_work_experience [] x with
-      None ->
-        Printf.printf "VALID:\n"
-    | Some error ->
-        Printf.printf "INVALID: %s\n"
-          (Atdgen_runtime.Util.Validation.string_of_error error)
-  );
-  Printf.printf "%s\n"
+  let is_valid = match Resume_v.validate_work_experience [] x with
+    | None -> false
+    | _ -> true
+  in
+  Printf.printf "%s:\n%s\n"
+    (if is_valid then "VALID" else "INVALID")
     (Yojson.Safe.prettify (Resume_j.string_of_work_experience x))
 
 let () =

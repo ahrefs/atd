@@ -546,38 +546,79 @@ example is:
 
   type t = string <ocaml valid="fun s -> String.length s >= 8"> option
 
-``atdgen -v`` will produce something equivalent to the following
-implementation:
+As we can see from this example, the validation function is specified using the
+annotation ``<ocaml valid="p">``, where ``p`` is a predicate ``p : t -> bool``,
+returning ``true`` when the value of type ``t`` is valid and ``false``
+otherwise.
+
+Calling ``atdgen -v`` on a file containing this specification will produce
+a validation function equivalent to the following implementation:
 
 .. code-block:: ocaml
 
-  let validate_t x =
+  let validate_t path x =
     match x with
-        None -> true
-      | Some x -> (fun s -> String.length s >= 8) x
+    | None -> None
+    | Some x ->
+        let msg = "Failed check by fun s -> String.length s >= 8" in
+        if (fun s -> String.length s >= 8) x
+        then None
+        else Some {error_path = path; error_msg = msg}
+
+Let's consider this particular example as an illustration of the general shape
+of generated validation functions.
+
+The function takes two arguments: the first, ``path``, is a list indicating
+where the second, ``x``, was encountered. As specified by our example ``.atd``
+code above, ``x`` has type ``t option``.
+
+The body of the validation function does two things:
+
+1. it checks the value of ``x`` against the validation function specified in our
+``.atd`` file, namely, checking whether there is ``Some s``, and verifying that
+``s`` is at least 8 characters long if so
+2. in the event that the validation check fails, it constructs an appropriate
+error record.
+
+In general, generated validation functions for a type ``t`` have a type
+equivalent to ``validate_t : path -> t -> error option``, where the ``path``
+gives the current location in a data structure and the ``error`` is a record of
+the location of, and reason for, validation failure.
+
+A return value of ``None`` indicates successful validation, while ``Some
+{error_path; error_msg}`` tells us where and why validation failed.
 
 Let's now consider a more realistic example with complex validators defined in a
-separate ``.ml`` file. We created the following 3 source files:
+separate ``.ml`` file. We will define a data structure representing a section of
+a resume recording work experience. We will also define validation functions
+that can enforce certain properties to protect against errors and junk data.
+
+In the course of this example, we will manually create the following 3 source
+files:
 
 * ``resume.atd``: contains the type definitions with annotations
 * ``resume_util.ml``: contains our handwritten validators
-* ``resume.ml``: is our main program that creates data and
-  calls the validators
+* ``resume.ml``: is our main program that creates data and checks it using our
+  generated validation functions.
 
+After generating additional code with ``atdgen``, we will end up with the
+following OCaml modules:
 
-In terms of OCaml modules we have:
+* ``Resume_t``: generated into ``resume_t.ml`` by ``atdgen -t resume.atd``, this
+  provides our OCaml type definitions
+* ``Resume_util``: written manually in ``resume_util.ml``, this depends on
+  ``Resume_t`` and provides validators we will use in ``resume.atd``
+* ``Resume_v``: generated into ``resume_v.ml`` by ``atdgen -v resume.atd``, this
+  depends on ``Resume_util`` and ``Resume_t`` and provides a validation function
+  for each type
+* ``Resume_j``: generated into ``resume_j.ml`` by ``atdgen -j resume.atd``, this
+  provides functions to serialize and deserialize data in and out of JSON.
+* ``Resume``: written manually in ``resume.ml``, this depends on ``Resume_v``,
+  and ``Resume_t``, and makes use of the generated types and validation
+  functions.
 
-
-* ``Resume_t``: produced by ``atdgen -t resume.atd``, provides OCaml type
-  definitions
-* ``Resume_util``: depends on ``Resume_t``, provides validators mentioned in
-  ``resume.atd``
-* ``Resume_v``: produced by ``atdgen -v resume.atd``, depends on
-  ``Resume_util``, provides a validator for each type
-* ``Resume``: depends on ``Resume_v``, uses the validators
-
-
-Type definitions are placed in ``resume.atd``:
+To begin, we specify type definitions for a data structure representing a resume
+in ``resume.atd``:
 
 .. code-block:: ocaml
 
@@ -598,7 +639,10 @@ Type definitions are placed in ``resume.atd``:
 
   type work_experience = job list
 
-``resume_util.ml`` contains our handwritten validators:
+We can now call ``atdgen -t resume.atd`` to generate our ``Resume_t`` module in
+``resume_t.ml``, providing our data types. Using these data types, we'll define
+the following handwritten validators in ``resume_util.ml`` (note that we've
+already referred to these validators in ``resume.atd``):
 
 .. code-block:: ocaml
 
@@ -655,13 +699,18 @@ Type definitions are placed in ``resume.atd``:
       | Some end_date ->
           compare_date x.start_date end_date <= 0
 
-``resume.ml`` uses the ``validate_work_experience`` function provided by the
-``Resume_v`` module:
+After we call ``atdgen -v resume.atd``, the module ``Resume_v`` will be
+generated in ``resume_v.ml``, providing the function
+``validate_work_experience`` . We can then use this function, along with the
+generated ``Resume_j`` in the following program written in ``resume.ml``:
 
 .. code-block:: ocaml
 
   let check_experience x =
-    let is_valid = Resume_v.validate_work_experience x in
+    let is_valid = match Resume_v.validate_work_experience [] x with
+      | None -> false
+      | _ -> true
+    in
     Printf.printf "%s:\n%s\n"
       (if is_valid then "VALID" else "INVALID")
       (Yojson.Safe.prettify (Resume_j.string_of_work_experience x))
@@ -723,7 +772,7 @@ Output:
       "end_date": { "year": 1900, "month": 0, "day": 0 }
     }
 
-`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/validate>`__
+`Source code for this section <https://github.com/mjambon/atd/tree/master/doc/tutorial-data/validate>`__
 
 Modularity: referring to type definitions from another ATD file
 ===============================================================

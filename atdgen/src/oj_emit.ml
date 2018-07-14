@@ -914,7 +914,7 @@ and make_record_reader p type_annot loc a json_options =
     let cases =
       Array.mapi (
         fun i ({ Ox_emit.mapping ; ocaml_fname ; json_fname ; optional
-               ; unwrapped } as field) ->
+               ; unwrapped ; ocaml_default = _ } as field) ->
           let f_value = unwrap_f_value field p in
         let wrap l =
           if unwrapped then

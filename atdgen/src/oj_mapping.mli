@@ -5,6 +5,7 @@ type variant_mapping = (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping
 
 val defs_of_atd_modules
   : ('a * Atd.Ast.module_body) list
+  -> target:Ocaml.target
   -> ('a * (Ocaml.Repr.t, Json.json_repr) Mapping.def list) list
 
 (** "A.B" -> "A.B.normalize" *)

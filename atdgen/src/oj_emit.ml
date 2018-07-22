@@ -9,6 +9,8 @@ open Indent
 open Atd.Ast
 open Mapping
 
+let target : Ocaml.target = Json
+
 (*
   OCaml code generator (json readers and writers)
 *)
@@ -1372,7 +1374,7 @@ let make_ocaml_files
       Atd.Util.tsort
   in
   let m1 = tsort m0 in
-  let defs1 = Oj_mapping.defs_of_atd_modules m1 in
+  let defs1 = Oj_mapping.defs_of_atd_modules m1 ~target in
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
   in
@@ -1382,7 +1384,7 @@ let make_ocaml_files
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
     Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases (head, m1) in
-  let defs = Oj_mapping.defs_of_atd_modules m2 in
+  let defs = Oj_mapping.defs_of_atd_modules m2 ~target in
   let header =
     let src =
       match atd_file with

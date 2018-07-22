@@ -188,16 +188,19 @@ and mapping_of_field ocaml_field_prefix = function
 
   | `Inherit _ -> assert false
 
-
-let def_of_atd atd =
-  Ox_emit.def_of_atd atd ~target:Json ~external_:Json.External
-    ~mapping_of_expr ~def:Json.Def
-
-let defs_of_atd_module l =
-  List.map (function Atd.Ast.Type def -> def_of_atd def) l
-
-let defs_of_atd_modules l =
-  List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l
+let defs_of_atd_modules l ~(target : Ocaml.target)=
+  (match target with
+   | Json
+   | Bucklescript -> ()
+   | t -> invalid_arg "target must be json or bucklescript");
+  List.map (fun (is_rec, l) ->
+    ( is_rec
+    , List.map (function Atd.Ast.Type atd ->
+        Ox_emit.def_of_atd atd ~target ~external_:Json.External
+          ~mapping_of_expr ~def:Json.Def
+      ) l
+    )
+  ) l
 
 let json_normalizer_of_adapter_path module_ =
   module_ ^ ".normalize"

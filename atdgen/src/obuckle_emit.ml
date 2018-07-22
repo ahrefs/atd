@@ -7,6 +7,8 @@ type param =
       -> (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
   }
 
+let target : Ocaml.target = Bucklescript
+
 let open_enum_not_supported () =
   failwith "open_enum is not supported in bucklescript mode"
 
@@ -556,9 +558,9 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs:(Ppx []) ~target:Bucklescript
+    Ocaml.ocaml_of_atd ~pp_convs:(Ppx []) ~target
       ~type_aliases (head, m1) in
-  let defs = Oj_mapping.defs_of_atd_modules m2 in
+  let defs = Oj_mapping.defs_of_atd_modules m2 ~target in
   let header =
     let src =
       match atd_file with

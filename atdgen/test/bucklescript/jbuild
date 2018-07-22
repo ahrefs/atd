@@ -18,7 +18,8 @@
 (library
  ((name bucklespec_types)
   (wrapped false)
-  (modules (bucklespec_t))))
+  (libraries (atdgen-codec-runtime))
+  (modules (bucklespec_t a_t a_bs))))
 
 (library
  ((name bucklespec_bs)
@@ -28,7 +29,7 @@
 
 (executable
  ((name bucklespec_roundtrip)
-  (modules (bucklespec_roundtrip bucklespec_j))
+  (modules (bucklespec_roundtrip bucklespec_j a_j))
   (libraries (bucklespec_types bucklespec_bs atdgen-runtime))))
 
 (alias

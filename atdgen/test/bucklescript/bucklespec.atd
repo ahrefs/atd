@@ -58,3 +58,5 @@ type v2 =
  [ V1_foo of int
  | V2_bar of bool
  ] <ocaml repr="classic">
+
+type from_module_a <ocaml from="A"> = abstract

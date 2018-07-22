@@ -32,6 +32,8 @@ type label = Bucklespec_t.label
 
 type labeled = Bucklespec_t.labeled = { flag: valid; lb: label; count: int }
 
+type from_module_a = A_t.from_module_a
+
 let write_valid = (
   Yojson.Safe.write_bool
 )
@@ -1538,3 +1540,15 @@ let read_labeled = (
 )
 let labeled_of_string s =
   read_labeled (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_from_module_a = (
+  A_j.write_from_module_a
+)
+let string_of_from_module_a ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_from_module_a ob x;
+  Bi_outbuf.contents ob
+let read_from_module_a = (
+  A_j.read_from_module_a
+)
+let from_module_a_of_string s =
+  read_from_module_a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

@@ -492,3 +492,9 @@ let read_labeled = (
     )
   )
 )
+let write_from_module_a = (
+  A_j.write_from_module_a
+)
+let read_from_module_a = (
+  A_j.read_from_module_a
+)

@@ -58,3 +58,7 @@ val read_labeled :  labeled Atdgen_codec_runtime.Decode.t
 
 val write_labeled :  labeled Atdgen_codec_runtime.Encode.t
 
+val read_from_module_a :  from_module_a Atdgen_codec_runtime.Decode.t
+
+val write_from_module_a :  from_module_a Atdgen_codec_runtime.Encode.t
+

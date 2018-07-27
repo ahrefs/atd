@@ -1226,8 +1226,8 @@ Ocamlbuild
 
 There is an `atdgen plugin for ocamlbuild <https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml>`__.
 
-Dune (jbuilder)
----------------
+Dune (formerly jbuilder)
+------------------------
 
 Dune currently needs atdgen build rules specified manually. Given an ``example.atd``,
 this will usually look like:
@@ -1235,16 +1235,16 @@ this will usually look like:
 .. code-block:: scheme
 
   (rule
-   ((targets (example_j.ml
-              example_j.mli))
-    (deps    (example.atd))
-    (action  (run atdgen -j -j-std ${^}))))
+   (targets (example_j.ml
+             example_j.mli))
+   (deps    example.atd)
+   (action  (run atdgen -j -j-std %{deps})))
 
   (rule
-   ((targets (example_t.ml
-              example_t.mli))
-    (deps    (example.atd))
-    (action  (run atdgen -t ${^}))))
+   (targets (example_t.ml
+             example_t.mli))
+   (deps    example.atd)
+   (action  (run atdgen -t %{deps})))
 
 You can refer to ``example_t.ml`` and ``example_j.ml`` as usual (by default, they
 will be automatically linked into the library being built in the same directory).

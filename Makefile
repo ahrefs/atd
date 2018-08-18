@@ -1,10 +1,10 @@
 JBUILDER ?= jbuilder
 
 all:
-	$(JBUILDER) build
+	$(JBUILDER) build --dev
 
 tests:
-	$(JBUILDER) runtest
+	$(JBUILDER) runtest --dev
 
 check: tests
 

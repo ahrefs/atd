@@ -259,6 +259,35 @@ let read_same_pair read__a = (
       read__a
     )
 )
+let write_record_json_name = (
+  Atdgen_codec_runtime.Encode.make (fun (t : record_json_name) ->
+    (
+    Atdgen_codec_runtime.Encode.obj
+      [
+          Atdgen_codec_runtime.Encode.field
+            (
+            Atdgen_codec_runtime.Encode.int
+            )
+          ~name:"bar"
+          t.foo
+      ]
+    )
+  )
+)
+let read_record_json_name = (
+  Atdgen_codec_runtime.Decode.make (fun json ->
+    (
+      ({
+          foo =
+            Atdgen_codec_runtime.Decode.decode
+            (
+              Atdgen_codec_runtime.Decode.int
+              |> Atdgen_codec_runtime.Decode.field "foo"
+            ) json;
+      } : record_json_name)
+    )
+  )
+)
 let write_point = (
   Atdgen_codec_runtime.Encode.tuple4
     (

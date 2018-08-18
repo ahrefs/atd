@@ -30,6 +30,10 @@ val read_same_pair : 'a Atdgen_codec_runtime.Decode.t -> 'a same_pair Atdgen_cod
 
 val write_same_pair : 'a Atdgen_codec_runtime.Encode.t -> 'a same_pair Atdgen_codec_runtime.Encode.t
 
+val read_record_json_name :  record_json_name Atdgen_codec_runtime.Decode.t
+
+val write_record_json_name :  record_json_name Atdgen_codec_runtime.Encode.t
+
 val read_point :  point Atdgen_codec_runtime.Decode.t
 
 val write_point :  point Atdgen_codec_runtime.Encode.t

@@ -225,20 +225,22 @@ and make_record_reader ?type_annot
   =
   let create_record =
     Ox_emit.get_fields p.deref a
-    |> List.map (function { Ox_emit. mapping; ocaml_fname; json_fname; _} ->
-      Block
-        [ Line (sprintf "%s =" ocaml_fname)
-        ; Block
-            [ Line (decoder_ident "decode")
-            ; Line "("
-            ; Block
-                [ Inline (make_reader p mapping.f_value)
-                ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field")
-                          json_fname)
-                ]
-            ; Line ") json;"
-            ]
-        ])
+    |> List.map (function { Ox_emit. mapping; ocaml_fname; json_fname
+                          ; ocaml_default = _ ; optional = _ ; unwrapped = _
+                          } ->
+        Block
+          [ Line (sprintf "%s =" ocaml_fname)
+          ; Block
+              [ Line (decoder_ident "decode")
+              ; Line "("
+              ; Block
+                  [ Inline (make_reader p mapping.f_value)
+                  ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field")
+                            json_fname)
+                  ]
+              ; Line ") json;"
+              ]
+          ])
   in
   [ Line "("
   ; Block
@@ -371,7 +373,7 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   | Wrap (_, x, Wrap o, Wrap) ->
       begin match o with
         | None -> make_writer p x
-        | Some { Ocaml.ocaml_unwrap ; _ } ->
+        | Some { Ocaml.ocaml_unwrap ; ocaml_wrap_t = _ ; ocaml_wrap = _ } ->
             [ Block (make_writer p x)
             ; Line (sprintf "|> %s (%s)" (encoder_ident "contramap")
                       ocaml_unwrap)
@@ -393,7 +395,7 @@ and make_record_writer p a _record_kind =
   let write_record =
     Ox_emit.get_fields p.deref a
     |> List.map (fun { Ox_emit. mapping; ocaml_fname; json_fname
-                     ; unwrapped ; _} ->
+                     ; unwrapped ; optional = _ ; ocaml_default = _ } ->
       Block
         [ Line (encoder_ident "field")
         ; Block

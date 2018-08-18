@@ -24,7 +24,7 @@ type ('a, 'b) spec =
   }
 
 type 'a field_spec =
-  | Optional of ('a option, 'a) spec
+  | Optional of ('a option, 'a) spec * 'a option
   | Required of ('a, 'a) spec * 'a option
 
 type field = F : 'a field_spec -> field
@@ -37,24 +37,35 @@ let field ?default encode ~name data =
     }, default
   ))
 
-let field_o encode ~name data =
+let field_o ?default encode ~name data =
   F (Optional (
     { name
     ; data
     ; encode
-    }
+    }, default
   ))
 
 let obj fields =
   `Assoc (
     List.fold_left (fun acc (F f) ->
       match f with
-      | Required ({ name; data; encode}, _) ->
+      | Required ({ name; data; encode}, None) ->
           (name, encode data)::acc
-      | Optional { name; data; encode} ->
-          match data with
-          | None -> acc
-          | Some s -> (name, encode s)::acc
+      | Required ({ name; data; encode}, Some default) ->
+          if default = data then
+            acc
+          else
+            (name, encode data)::acc
+      | Optional ({ name; data; encode}, default) ->
+          match data, default with
+          | None, _ -> acc
+          | Some s, Some default ->
+              if s = default then
+                acc
+              else
+                (name, encode s)::acc
+          | Some s, None ->
+              (name, encode s)::acc
     ) [] fields
   )
 

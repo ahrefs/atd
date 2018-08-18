@@ -332,6 +332,12 @@ let get_left_writer_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
   get_writer_name p (Name (Atd.Ast.dummy_loc, name, args, None, None))
 
+let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
+  if unwrapped then
+    Ocaml.unwrap_option (p.deref mapping.f_value)
+  else
+    mapping.f_value
+
 let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
@@ -394,19 +400,38 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
 and make_record_writer p a _record_kind =
   let write_record =
     Ox_emit.get_fields p.deref a
-    |> List.map (fun { Ox_emit. mapping; ocaml_fname; json_fname
-                     ; unwrapped ; optional = _ ; ocaml_default = _ } ->
-      Block
-        [ Line (encoder_ident "field")
-        ; Block
-            [ Line "("
-            ; Inline (make_writer p mapping.f_value)
-            ; Line ")"
-            ]
-        ; Line (sprintf "~name:%S" json_fname)
-        ; Line (sprintf "t.%s" ocaml_fname)
-        ]
-    )
+    |> List.map
+      (fun ({ Ox_emit. mapping; ocaml_fname; json_fname
+            ; unwrapped ; optional ; ocaml_default } as field) ->
+        let f_value = unwrap_f_value field p in
+        Block
+          [ Line (
+              match unwrapped, optional, ocaml_default with
+              | true, true, None
+              | true, true, Some _ ->
+                  encoder_ident "field_o"
+              | false, false, Some default ->
+                  encoder_ident (sprintf "field ~default:%s" default)
+              | false, false, None
+              | false, true, _ ->
+                  encoder_ident "field"
+              | true, false, _ ->
+                  assert false
+            )
+          ; Block
+              [ Line "("
+              ; Inline (make_writer p (
+                  if unwrapped then
+                    f_value
+                  else
+                    mapping.f_value
+                ))
+              ; Line ")"
+              ]
+          ; Line (sprintf "~name:%S" json_fname)
+          ; Line (sprintf "t.%s" ocaml_fname)
+          ]
+      )
     |> Indent.concat (Line ";") in
   [ Line "("
   ; Line (encoder_ident "obj")

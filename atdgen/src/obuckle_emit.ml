@@ -234,7 +234,7 @@ and make_record_reader ?type_annot
             ; Block
                 [ Inline (make_reader p mapping.f_value)
                 ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field")
-                          mapping.f_name)
+                          json_fname)
                 ]
             ; Line ") json;"
             ]

@@ -282,7 +282,7 @@ let read_record_json_name = (
             Atdgen_codec_runtime.Decode.decode
             (
               Atdgen_codec_runtime.Decode.int
-              |> Atdgen_codec_runtime.Decode.field "foo"
+              |> Atdgen_codec_runtime.Decode.field "bar"
             ) json;
       } : record_json_name)
     )

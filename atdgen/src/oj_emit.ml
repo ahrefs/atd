@@ -918,40 +918,8 @@ and make_record_reader p type_annot loc a json_options =
         fun i ({ Ox_emit.mapping ; ocaml_fname ; json_fname ; optional
                ; unwrapped ; ocaml_default = _ } as field) ->
           let f_value = unwrap_f_value field p in
-        let wrap l =
-          if unwrapped then
-            [
-              Line "Some (";
-              Block l;
-              Line ")"
-            ]
-          else l
-        in
-        let read_value =
-          [
-            Line "(";
-            Block (make_reader p None f_value);
-            Line ") p lb";
-          ]
-        in
-        let read_value =
-          if optional then read_value
-          else wrap_tmp_required_value read_value
-        in
-        let expr =
-          [
-            Line (sprintf "field_%s := (" ocaml_fname);
-            Block (wrap read_value);
-            Line ");";
-          ]
-        in
-        let opt_expr =
-          if optional then
-            if keep_nulls then
-              expr
-            else
-              (* treat fields with null values as missing fields
-                 (atdgen's default) *)
+          let wrap l =
+            if unwrapped then
               [
                 Line "Some (";
                 Block l;
@@ -966,12 +934,15 @@ and make_record_reader p type_annot loc a json_options =
               Line ") p lb";
             ]
           in
+          let read_value =
+            if optional then read_value
+            else wrap_tmp_required_value read_value
+          in
           let expr =
             [
               Line (sprintf "field_%s := (" ocaml_fname);
               Block (wrap read_value);
               Line ");";
-              Inline (set_bit i);
             ]
           in
           let opt_expr =
@@ -1277,8 +1248,14 @@ let make_ocaml_json_impl
     ~with_create ~force_defaults ~preprocess_input ~original_types
     ~ocaml_version
     buf deref defs =
-  let p = { deref; std; unknown_field_handler; force_defaults
-          ; preprocess_input; ocaml_version } in
+  let p =
+    { deref
+    ; std
+    ; unknown_field_handler
+    ; force_defaults
+    ; preprocess_input
+    ; ocaml_version
+    } in
   defs
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in

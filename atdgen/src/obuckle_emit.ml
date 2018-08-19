@@ -73,6 +73,12 @@ let make_ocaml_bs_intf buf _deref defs =
       s write_params (encoder_t full_name)
   )
 
+let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
+  if unwrapped then
+    Ocaml.unwrap_option (p.deref mapping.f_value)
+  else
+    mapping.f_value
+
 let rec get_reader_name
     ?(paren = false)
     ?(name_f = fun s -> "read_" ^ s)
@@ -225,18 +231,47 @@ and make_record_reader ?type_annot
   =
   let create_record =
     Ox_emit.get_fields p.deref a
-    |> List.map (function { Ox_emit. mapping; ocaml_fname; json_fname
-                          ; ocaml_default = _ ; optional = _ ; unwrapped = _
-                          } ->
+    |> List.map (function ({ Ox_emit. mapping; ocaml_fname; json_fname
+                           ; ocaml_default ; optional ; unwrapped
+                           } as field) ->
+        let f_value = unwrap_f_value field p in
         Block
           [ Line (sprintf "%s =" ocaml_fname)
           ; Block
               [ Line (decoder_ident "decode")
               ; Line "("
               ; Block
-                  [ Inline (make_reader p mapping.f_value)
-                  ; Line (sprintf "|> %s \"%s\"" (decoder_ident "field")
-                            json_fname)
+                  [ Inline (
+                      make_reader p (
+                        if unwrapped then
+                          f_value
+                        else
+                          mapping.f_value
+                      )
+                    )
+                  ; Line (
+                      sprintf "|> %s"
+                        (match unwrapped, optional, ocaml_default with
+                         | true, true, Some _
+                         | true, true, None ->
+                             sprintf "%s \"%s\""
+                               (decoder_ident "fieldOptional")
+                               json_fname
+                         | false, true, Some default
+                         | false, false, Some default ->
+                             sprintf "%s \"%s\" %s"
+                               (decoder_ident "fieldDefault")
+                               json_fname
+                               default
+                         | false, false, None
+                         | true, false, None
+                         | false, true, None ->
+                             sprintf "%s \"%s\""
+                               (decoder_ident "field")
+                               json_fname
+                         | true, false, _ -> assert false
+                        )
+                    )
                   ]
               ; Line ") json;"
               ]
@@ -331,12 +366,6 @@ let rec get_writer_name
 let get_left_writer_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
   get_writer_name p (Name (Atd.Ast.dummy_loc, name, args, None, None))
-
-let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
-  if unwrapped then
-    Ocaml.unwrap_option (p.deref mapping.f_value)
-  else
-    mapping.f_value
 
 let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   match x with

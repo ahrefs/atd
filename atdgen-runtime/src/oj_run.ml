@@ -203,6 +203,8 @@ let missing_tuple_fields p len req_fields =
            (if List.length missing > 1 then "s" else "")
            (String.concat ", " (List.map string_of_int missing)))
 
+let missing_field p field_name =
+  error_with_line p (sprintf "Missing record field %s" field_name)
 
 let missing_fields p bit_fields field_names =
   let acc = ref [] in

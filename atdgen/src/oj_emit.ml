@@ -512,90 +512,83 @@ and make_record_writer p a record_kind =
     Line "Bi_outbuf.add_char ob '}';";
   ]
 
+let wrap_tmp_required_value value =
+  [
+    Line "Some (";
+    Block value;
+    Line ")";
+  ]
+
+let unwrap_tmp_required_value ocaml_fname var =
+  sprintf "(match !%s with Some x -> x \
+           | None -> Atdgen_runtime.Oj_run.missing_field p %S)"
+    var ocaml_fname
+
+(*
+   Json object fields come in an arbitrary order, so we read the fields
+   from the input and keep their value in a temporary slot until we're done
+   reading the object i.e. we find a closing brace '}'. At that point,
+   we must have a value for each field so that we can create an OCaml
+   record.
+
+   Now ATD supports optional fields e.g. `?name: string option;`
+   as well as required fields with a default e.g. `~special : bool;`.
+   These two cases are handled similarly here because in each case we have
+   an initial value to set the field to. For these, we generate essentially
+   the following code:
+
+     let field_x = ref default in
+
+   For the examples above, this is:
+
+     let field_name = ref None in     (* default value for option is None *)
+     let field_special = ref false in (* default value for bool is false *)
+
+   The third case, in which a required field has no default value such as
+   `id : string;`, we don't have a default value so we resort to wrapping
+   in an option, until we're done reading the whole json object.
+   Once the json object has been read, we expect to have found a value for
+   this field:
+
+     let field_id = ref None in   (* no initial value *)
+     ...                          (* read json input *)
+     (* construct the ocaml record: *)
+     {
+       id = (match !field_id with None -> error ... | Some value -> value);
+       ...
+     }
+
+   Note that we no longer use Obj.magic to improve performance because
+   we don't have the resources to do so safely.
+*)
 let study_record ~ocaml_version fields =
   let field_assignments =
     List.fold_right (
       fun { Ox_emit.ocaml_fname ; ocaml_default ; optional ; _ }
         field_assignments ->
-        let v =
+        let var = sprintf "field_%s" ocaml_fname in
+        let initial_value, extract_value =
           match ocaml_default with
           | None ->
               assert (not optional);
-              begin match ocaml_version with
-                | Some (maj, min) when (maj > 4 || maj = 4 && min >= 3) ->
-                    "Obj.magic (Sys.opaque_identity 0.0)"
-                | _ -> "Obj.magic 0.0"
-              end
+              ("None",
+               unwrap_tmp_required_value ocaml_fname var)
           | Some s ->
-              s
+              (s,
+               sprintf "!%s" var)
         in
-        let init = Line (sprintf "let field_%s = ref (%s) in" ocaml_fname v) in
-        let create = Line (sprintf "%s = !field_%s;" ocaml_fname ocaml_fname) in
-        (init, create) :: field_assignments
+        let init_tmp_field =
+          Line (sprintf "let %s = ref (%s) in" var initial_value)
+        in
+        let create_field =
+          Line (sprintf "%s = %s;" ocaml_fname extract_value)
+        in
+        (init_tmp_field, create_field) :: field_assignments
     ) fields []
   in
-  let init_fields, create_record_fields = List.split field_assignments in
-  let n, mapping =
-    List.fold_left (
-      fun (i, acc) { Ox_emit.optional ; _ } ->
-        if not optional then
-          (i+1, (Some i :: acc))
-        else
-          (i, (None :: acc))
-    ) (0, []) fields
-  in
-  let mapping = Array.of_list (List.rev mapping) in
-
+  let init_tmp_fields, create_record_fields = List.split field_assignments in
   let create_record = [ Line "{"; Block create_record_fields; Line "}" ] in
-
-  let k = n / 31 + (if n mod 31 > 0 then 1 else 0) in
-  let init_bits = List.init k (fun i -> Line (sprintf "let bits%i = ref 0 in" i)) in
-  let final_bits = Array.make k 0 in
-  for z0 = 0 to List.length fields - 1 do
-    match mapping.(z0) with
-        None -> ()
-      | Some z ->
-          let i = z / 31 in
-          let j = z mod 31 in
-          final_bits.(i) <- final_bits.(i) lor (1 lsl j);
-  done;
-  let set_bit z0 =
-    match mapping.(z0) with
-        None -> []
-      | Some z ->
-          let i = z / 31 in
-          let j = z mod 31 in
-          [ Line (sprintf "bits%i := !bits%i lor 0x%x;" i i (1 lsl j)) ]
-  in
-
-  let check_bits =
-    let bool_expr =
-      Array.mapi (fun i x -> sprintf "!bits%i <> 0x%x" i x) final_bits
-      |> Array.to_list
-      |> String.concat " || " in
-    let bit_fields =
-      let a = Array.init k (fun i -> sprintf "!bits%i" i) in
-      sprintf "[| %s |]" (String.concat "; " (Array.to_list a))
-    in
-    let field_names =
-      let l =
-        List.fold_right (
-          fun { Ox_emit.mapping ; ocaml_default ; optional ; _ } acc ->
-            if ocaml_default = None && not optional then
-              sprintf "%S" mapping.f_name :: acc
-            else
-              acc
-        ) fields []
-      in
-      sprintf "[| %s |]" (String.concat "; " l)
-    in
-    if k = 0 then []
-    else
-      [ Line (sprintf
-                "if %s then Atdgen_runtime.Oj_run.missing_fields p %s %s;"
-                bool_expr bit_fields field_names) ]
-  in
-  init_fields, init_bits, set_bit, check_bits, create_record
+  init_tmp_fields, create_record
 
 let read_with_adapter adapter reader =
   match adapter.Json.ocaml_adapter with
@@ -909,7 +902,7 @@ and make_cases_reader p type_annot ~tick ~open_enum ~std ~fallback_expr l =
 and make_record_reader p type_annot loc a json_options =
   let keep_nulls = json_options.json_keep_nulls in
   let fields = Ox_emit.get_fields p.deref a in
-  let init_fields, init_bits, set_bit, check_bits, create_record =
+  let init_fields, create_record =
     study_record ~ocaml_version:p.ocaml_version fields
   in
 
@@ -939,12 +932,15 @@ and make_record_reader p type_annot loc a json_options =
             Line ") p lb";
           ]
         in
+        let read_value =
+          if optional then read_value
+          else wrap_tmp_required_value read_value
+        in
         let expr =
           [
             Line (sprintf "field_%s := (" ocaml_fname);
             Block (wrap read_value);
             Line ");";
-            Inline (set_bit i);
           ]
         in
         let opt_expr =
@@ -997,7 +993,6 @@ and make_record_reader p type_annot loc a json_options =
     Line "Yojson.Safe.read_space p lb;";
     Line "Yojson.Safe.read_lcurl p lb;";
     Inline init_fields;
-    Inline init_bits;
     Line "try";
     Block [
       Line "Yojson.Safe.read_space p lb;";
@@ -1015,7 +1010,6 @@ and make_record_reader p type_annot loc a json_options =
     Line "with Yojson.End_of_object -> (";
     Block [
       Block [
-        Inline check_bits;
         Line "(";
         Block create_record;
         Line (sprintf "%s)" (Ox_emit.insert_annot type_annot));

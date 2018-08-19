@@ -141,9 +141,8 @@ let read_test2 = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_test0 = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let field_test1 = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let bits0 = ref 0 in
+    let field_test0 = ref (None) in
+    let field_test1 = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -174,18 +173,20 @@ let read_test2 = (
         match i with
           | 0 ->
             field_test0 := (
-              (
-                read_poly_int2
-              ) p lb
+              Some (
+                (
+                  read_poly_int2
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x1;
           | 1 ->
             field_test1 := (
-              (
-                read__4
-              ) p lb
+              Some (
+                (
+                  read__4
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x2;
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -220,18 +221,20 @@ let read_test2 = (
           match i with
             | 0 ->
               field_test0 := (
-                (
-                  read_poly_int2
-                ) p lb
+                Some (
+                  (
+                    read_poly_int2
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x1;
             | 1 ->
               field_test1 := (
-                (
-                  read__4
-                ) p lb
+                Some (
+                  (
+                    read__4
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x2;
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -239,11 +242,10 @@ let read_test2 = (
       done;
       assert false;
     with Yojson.End_of_object -> (
-        if !bits0 <> 0x3 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "test0"; "test1" |];
         (
           {
-            test0 = !field_test0;
-            test1 = !field_test1;
+            test0 = (match !field_test0 with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "test0");
+            test1 = (match !field_test1 with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "test1");
           }
          : test2)
       )

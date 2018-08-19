@@ -1,18 +1,18 @@
-JBUILDER ?= jbuilder
+DUNE ?= dune
 
 all:
-	$(JBUILDER) build --dev
+	$(DUNE) build
 
 tests:
-	$(JBUILDER) runtest --dev
+	$(DUNE) runtest
 
 check: tests
 
 clean:
-	$(JBUILDER) clean
+	$(DUNE) clean
 
 all-supported-ocaml-versions:
-	$(JBUILDER) runtest --dev --workspace jbuild-workspace.dev
+	$(DUNE) runtest  --workspace dune-workspace.dev
 
 doc:
 	cd doc && sphinx-build . _build

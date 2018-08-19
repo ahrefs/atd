@@ -104,17 +104,8 @@ and mapping_of_variant = function
 and mapping_of_field ocaml_field_prefix = function
   | `Inherit _ -> assert false
   | `Field (f_loc, (f_name, f_kind, an), x) ->
-      let ocaml_default, biniou_unwrapped =
-        match f_kind, Ocaml.get_ocaml_default an with
-          Required, None -> None, false
-        | Optional, None -> Some "None", true
-        | (Required | Optional), Some _ ->
-            Error.error f_loc "Superfluous default OCaml value"
-        | With_default, Some s -> Some s, false
-        | With_default, None ->
-            (* will try to determine implicit default value later *)
-            None, false
-      in
+      let { Ox_mapping.ocaml_default; unwrapped } =
+        Ox_mapping.analyze_field f_loc f_kind an in
       { f_loc
       ; f_name
       ; f_kind
@@ -126,7 +117,7 @@ and mapping_of_field ocaml_field_prefix = function
             ; ocaml_mutable = Ocaml.get_ocaml_mutable an
             ; ocaml_fdoc = Atd.Doc.get_doc f_loc an
             }
-      ; f_brepr = Biniou.Field { Biniou.biniou_unwrapped = biniou_unwrapped };
+      ; f_brepr = Biniou.Field { Biniou.biniou_unwrapped = unwrapped };
       }
 
 

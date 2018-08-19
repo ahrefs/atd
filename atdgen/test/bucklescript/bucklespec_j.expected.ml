@@ -780,8 +780,7 @@ let read_record_json_name = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_foo = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let bits0 = ref 0 in
+    let field_foo = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -803,11 +802,12 @@ let read_record_json_name = (
         match i with
           | 0 ->
             field_foo := (
-              (
-                Atdgen_runtime.Oj_run.read_int
-              ) p lb
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x1;
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -833,11 +833,12 @@ let read_record_json_name = (
           match i with
             | 0 ->
               field_foo := (
-                (
-                  Atdgen_runtime.Oj_run.read_int
-                ) p lb
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x1;
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -845,10 +846,9 @@ let read_record_json_name = (
       done;
       assert false;
     with Yojson.End_of_object -> (
-        if !bits0 <> 0x1 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "foo" |];
         (
           {
-            foo = !field_foo;
+            foo = (match !field_foo with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "foo");
           }
          : record_json_name)
       )
@@ -987,9 +987,8 @@ let read_param_similar read__a = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_data = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let field_something = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let bits0 = ref 0 in
+    let field_data = ref (None) in
+    let field_something = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -1025,18 +1024,20 @@ let read_param_similar read__a = (
         match i with
           | 0 ->
             field_data := (
-              (
-                read__a
-              ) p lb
+              Some (
+                (
+                  read__a
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x1;
           | 1 ->
             field_something := (
-              (
-                Atdgen_runtime.Oj_run.read_int
-              ) p lb
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x2;
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -1076,18 +1077,20 @@ let read_param_similar read__a = (
           match i with
             | 0 ->
               field_data := (
-                (
-                  read__a
-                ) p lb
+                Some (
+                  (
+                    read__a
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x1;
             | 1 ->
               field_something := (
-                (
-                  Atdgen_runtime.Oj_run.read_int
-                ) p lb
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x2;
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -1095,11 +1098,10 @@ let read_param_similar read__a = (
       done;
       assert false;
     with Yojson.End_of_object -> (
-        if !bits0 <> 0x3 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "data"; "something" |];
         (
           {
-            data = !field_data;
-            something = !field_something;
+            data = (match !field_data with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "data");
+            something = (match !field_something with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "something");
           }
          : 'a param_similar)
       )
@@ -1138,9 +1140,8 @@ let read_param read__a = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_data = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let field_nothing = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let bits0 = ref 0 in
+    let field_data = ref (None) in
+    let field_nothing = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -1176,18 +1177,20 @@ let read_param read__a = (
         match i with
           | 0 ->
             field_data := (
-              (
-                read__a
-              ) p lb
+              Some (
+                (
+                  read__a
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x1;
           | 1 ->
             field_nothing := (
-              (
-                Atdgen_runtime.Oj_run.read_null
-              ) p lb
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_null
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x2;
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -1227,18 +1230,20 @@ let read_param read__a = (
           match i with
             | 0 ->
               field_data := (
-                (
-                  read__a
-                ) p lb
+                Some (
+                  (
+                    read__a
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x1;
             | 1 ->
               field_nothing := (
-                (
-                  Atdgen_runtime.Oj_run.read_null
-                ) p lb
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_null
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x2;
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -1246,11 +1251,10 @@ let read_param read__a = (
       done;
       assert false;
     with Yojson.End_of_object -> (
-        if !bits0 <> 0x3 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "data"; "nothing" |];
         (
           {
-            data = !field_data;
-            nothing = !field_nothing;
+            data = (match !field_data with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "data");
+            nothing = (match !field_nothing with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "nothing");
           }
          : 'a param)
       )
@@ -1289,9 +1293,8 @@ let read_pair read__a read__b = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_left = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let field_right = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let bits0 = ref 0 in
+    let field_left = ref (None) in
+    let field_right = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -1327,18 +1330,20 @@ let read_pair read__a read__b = (
         match i with
           | 0 ->
             field_left := (
-              (
-                read__a
-              ) p lb
+              Some (
+                (
+                  read__a
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x1;
           | 1 ->
             field_right := (
-              (
-                read__b
-              ) p lb
+              Some (
+                (
+                  read__b
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x2;
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -1378,18 +1383,20 @@ let read_pair read__a read__b = (
           match i with
             | 0 ->
               field_left := (
-                (
-                  read__a
-                ) p lb
+                Some (
+                  (
+                    read__a
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x1;
             | 1 ->
               field_right := (
-                (
-                  read__b
-                ) p lb
+                Some (
+                  (
+                    read__b
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x2;
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -1397,11 +1404,10 @@ let read_pair read__a read__b = (
       done;
       assert false;
     with Yojson.End_of_object -> (
-        if !bits0 <> 0x3 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "left"; "right" |];
         (
           {
-            left = !field_left;
-            right = !field_right;
+            left = (match !field_left with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "left");
+            right = (match !field_right with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "right");
           }
          : ('a, 'b) pair)
       )
@@ -1489,10 +1495,9 @@ let read_labeled = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     Yojson.Safe.read_lcurl p lb;
-    let field_flag = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let field_lb = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let field_count = ref (Obj.magic (Sys.opaque_identity 0.0)) in
-    let bits0 = ref 0 in
+    let field_flag = ref (None) in
+    let field_lb = ref (None) in
+    let field_count = ref (None) in
     try
       Yojson.Safe.read_space p lb;
       Yojson.Safe.read_object_end lb;
@@ -1536,25 +1541,28 @@ let read_labeled = (
         match i with
           | 0 ->
             field_flag := (
-              (
-                read_valid
-              ) p lb
+              Some (
+                (
+                  read_valid
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x1;
           | 1 ->
             field_lb := (
-              (
-                read_label
-              ) p lb
+              Some (
+                (
+                  read_label
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x2;
           | 2 ->
             field_count := (
-              (
-                Atdgen_runtime.Oj_run.read_int
-              ) p lb
+              Some (
+                (
+                  Atdgen_runtime.Oj_run.read_int
+                ) p lb
+              )
             );
-            bits0 := !bits0 lor 0x4;
           | _ -> (
               Yojson.Safe.skip_json p lb
             )
@@ -1602,25 +1610,28 @@ let read_labeled = (
           match i with
             | 0 ->
               field_flag := (
-                (
-                  read_valid
-                ) p lb
+                Some (
+                  (
+                    read_valid
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x1;
             | 1 ->
               field_lb := (
-                (
-                  read_label
-                ) p lb
+                Some (
+                  (
+                    read_label
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x2;
             | 2 ->
               field_count := (
-                (
-                  Atdgen_runtime.Oj_run.read_int
-                ) p lb
+                Some (
+                  (
+                    Atdgen_runtime.Oj_run.read_int
+                  ) p lb
+                )
               );
-              bits0 := !bits0 lor 0x4;
             | _ -> (
                 Yojson.Safe.skip_json p lb
               )
@@ -1628,12 +1639,11 @@ let read_labeled = (
       done;
       assert false;
     with Yojson.End_of_object -> (
-        if !bits0 <> 0x7 then Atdgen_runtime.Oj_run.missing_fields p [| !bits0 |] [| "flag"; "lb"; "count" |];
         (
           {
-            flag = !field_flag;
-            lb = !field_lb;
-            count = !field_count;
+            flag = (match !field_flag with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "flag");
+            lb = (match !field_lb with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "lb");
+            count = (match !field_count with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "count");
           }
          : labeled)
       )

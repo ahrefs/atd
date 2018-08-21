@@ -76,81 +76,50 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
   | Tvar (loc, s) ->
       Tvar (loc, s)
 
-and mapping_of_cell (loc, x, an) =
-  let default = Ocaml.get_ocaml_default an in
-  let doc = Atd.Doc.get_doc loc an in
-  let ocaml_t =
-    Ocaml.Repr.Cell {
-      Ocaml.ocaml_default = default;
-      ocaml_fname = "";
-      ocaml_mutable = false;
-      ocaml_fdoc = doc;
-    }
-  in
-  let biniou_t = Biniou.Cell in
-  {
-    cel_loc = loc;
-    cel_value = mapping_of_expr x;
-    cel_arepr = ocaml_t;
-    cel_brepr = biniou_t
+and mapping_of_cell (cel_loc, x, an) =
+  { cel_loc
+  ; cel_value = mapping_of_expr x
+  ; cel_arepr = Ocaml.Repr.Cell
+        { Ocaml.ocaml_default = Ocaml.get_ocaml_default an
+        ; ocaml_fname = ""
+        ; ocaml_mutable = false
+        ; ocaml_fdoc = Atd.Doc.get_doc cel_loc an
+        }
+  ; cel_brepr = Biniou.Cell
   }
 
-
 and mapping_of_variant = function
-    Variant (loc, (s, an), o) ->
-      let ocaml_cons = Ocaml.get_ocaml_cons s an in
-      let doc = Atd.Doc.get_doc loc an in
-      let ocaml_t =
-        Ocaml.Repr.Variant {
-          Ocaml.ocaml_cons = ocaml_cons;
-          ocaml_vdoc = doc;
-        }
-      in
-      let biniou_t = Biniou.Variant in
-      let arg = Option.map mapping_of_expr o in
-      {
-        var_loc = loc;
-        var_cons = s;
-        var_arg = arg;
-        var_arepr = ocaml_t;
-        var_brepr = biniou_t
-      }
-
   | Inherit _ -> assert false
+  | Variant (var_loc, (var_cons, an), o) ->
+      { var_loc
+      ; var_cons
+      ; var_arg = Option.map mapping_of_expr o
+      ; var_arepr = Ocaml.Repr.Variant
+            { Ocaml.ocaml_cons = Ocaml.get_ocaml_cons var_cons an
+            ; ocaml_vdoc = Atd.Doc.get_doc var_loc an
+            }
+      ; var_brepr = Biniou.Variant
+      }
 
 and mapping_of_field ocaml_field_prefix = function
-    `Field (loc, (s, fk, an), x) ->
-      let fvalue = mapping_of_expr x in
-      let ocaml_default, biniou_unwrapped =
-        match fk, Ocaml.get_ocaml_default an with
-          Required, None -> None, false
-        | Optional, None -> Some "None", true
-        | (Required | Optional), Some _ ->
-            Error.error loc "Superfluous default OCaml value"
-        | With_default, Some s -> Some s, false
-        | With_default, None ->
-            (* will try to determine implicit default value later *)
-            None, false
-      in
-      let ocaml_fname = Ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
-      let ocaml_mutable = Ocaml.get_ocaml_mutable an in
-      let doc = Atd.Doc.get_doc loc an in
-      { f_loc = loc;
-        f_name = s;
-        f_kind = fk;
-        f_value = fvalue;
-
-        f_arepr = Ocaml.Repr.Field {
-          Ocaml.ocaml_default = ocaml_default;
-          ocaml_fname = ocaml_fname;
-          ocaml_mutable = ocaml_mutable;
-          ocaml_fdoc = doc;
-        };
-
-        f_brepr = Biniou.Field { Biniou.biniou_unwrapped = biniou_unwrapped };
+  | `Inherit _ -> assert false
+  | `Field (f_loc, (f_name, f_kind, an), x) ->
+      let { Ox_mapping.ocaml_default; unwrapped } =
+        Ox_mapping.analyze_field f_loc f_kind an in
+      { f_loc
+      ; f_name
+      ; f_kind
+      ; f_value = mapping_of_expr x
+      ; f_arepr = Ocaml.Repr.Field
+            { Ocaml.ocaml_default
+            ; ocaml_fname =
+                Ocaml.get_ocaml_fname (ocaml_field_prefix ^ f_name) an
+            ; ocaml_mutable = Ocaml.get_ocaml_mutable an
+            ; ocaml_fdoc = Atd.Doc.get_doc f_loc an
+            }
+      ; f_brepr = Biniou.Field { Biniou.biniou_unwrapped = unwrapped };
       }
 
-  | `Inherit _ -> assert false
 
 
 let def_of_atd atd =

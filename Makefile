@@ -1,18 +1,18 @@
-JBUILDER ?= jbuilder
+DUNE ?= dune
 
 all:
-	$(JBUILDER) build
+	$(DUNE) build
 
-tests:
-	$(JBUILDER) runtest
+test:
+	$(DUNE) runtest
 
-check: tests
+check: test
 
 clean:
-	$(JBUILDER) clean
+	$(DUNE) clean
 
 all-supported-ocaml-versions:
-	$(JBUILDER) runtest --dev --workspace jbuild-workspace.dev
+	$(DUNE) runtest --workspace dune-workspace.dev
 
 doc:
 	cd doc && sphinx-build . _build
@@ -21,4 +21,4 @@ livedoc:
 	cd doc && sphinx-autobuild . _build \
 	  -p 8888 -q  --host $(shell hostname) -r '\.#.*'
 
-.PHONY: all tests clean check doc livedoc
+.PHONY: all test clean check doc livedoc

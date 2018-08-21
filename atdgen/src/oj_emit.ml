@@ -9,6 +9,8 @@ open Indent
 open Atd.Ast
 open Mapping
 
+let target : Ocaml.target = Json
+
 (*
   OCaml code generator (json readers and writers)
 *)
@@ -263,6 +265,12 @@ let write_with_adapter adapter writer =
         Line ")";
       ]
 
+let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
+  if unwrapped then
+    Ocaml.unwrap_option (p.deref mapping.f_value)
+  else
+    mapping.f_value
+
 let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
@@ -399,8 +407,8 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
 and make_variant_writer p ~tick ~open_enum x : Indent.t list =
   let o, j =
     match x.var_arepr, x.var_brepr with
-        Variant o, Variant j -> o, j
-      | _ -> assert false
+      Variant o, Variant j -> o, j
+    | _ -> assert false
   in
   let ocaml_cons = o.Ocaml.ocaml_cons in
   let json_cons = j.Json.json_cons in
@@ -412,8 +420,8 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
       in
       [
         Line (sprintf "| %s%s -> Bi_outbuf.add_string ob %S"
-                 tick ocaml_cons
-                 (enclose (make_json_string json_cons)))
+                tick ocaml_cons
+                (enclose (make_json_string json_cons)))
       ]
   | Some v when open_enum ->
       (* v should resolve to type string. *)
@@ -433,7 +441,7 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
         Line (sprintf "| %s%s x ->" tick ocaml_cons);
         Block [
           Line (sprintf "Bi_outbuf.add_string ob %S;"
-                   (op ^ make_json_string json_cons ^ sep));
+                  (op ^ make_json_string json_cons ^ sep));
           Line "(";
           Block (make_writer p v);
           Line ") ob x;";
@@ -459,12 +467,9 @@ and make_record_writer p a record_kind =
 
   let write_fields =
     List.map (
-      fun { Ox_emit.mapping ; ocaml_fname ; ocaml_default
-          ; json_fname ; optional ; unwrapped } ->
-        let f_value =
-          if unwrapped then Ocaml.unwrap_option (p.deref mapping.f_value)
-          else mapping.f_value
-        in
+      fun ({ Ox_emit.mapping ; ocaml_fname ; ocaml_default
+           ; json_fname ; optional ; unwrapped } as field) ->
+        let f_value = unwrap_f_value field p in
         let write_field_tag =
           sprintf "Bi_outbuf.add_string ob %S;"
             (make_json_string json_fname ^ ":")
@@ -910,56 +915,50 @@ and make_record_reader p type_annot loc a json_options =
     let a = Array.of_list fields in
     let cases =
       Array.mapi (
-        fun i { Ox_emit.mapping ; ocaml_fname ; json_fname ; optional
-              ; unwrapped ; _ } ->
-          let f_value =
-            if unwrapped then Ocaml.unwrap_option (p.deref mapping.f_value)
-            else mapping.f_value
+        fun i ({ Ox_emit.mapping ; ocaml_fname ; json_fname ; optional
+               ; unwrapped ; ocaml_default = _ } as field) ->
+          let f_value = unwrap_f_value field p in
+          let wrap l =
+            if unwrapped then
+              [
+                Line "Some (";
+                Block l;
+                Line ")"
+              ]
+            else l
           in
-        let wrap l =
-          if unwrapped then
+          let read_value =
             [
-              Line "Some (";
-              Block l;
-              Line ")"
+              Line "(";
+              Block (make_reader p None f_value);
+              Line ") p lb";
             ]
-          else l
-        in
-        let read_value =
-          [
-            Line "(";
-            Block (make_reader p None f_value);
-            Line ") p lb";
-          ]
-        in
-        let read_value =
-          if optional then read_value
-          else wrap_tmp_required_value read_value
-        in
-        let expr =
-          [
-            Line (sprintf "field_%s := (" ocaml_fname);
-            Block (wrap read_value);
-            Line ");";
-          ]
-        in
-        let opt_expr =
-          if optional then
-            if keep_nulls then
-              expr
-            else
+          in
+          let read_value =
+            if optional then read_value
+            else wrap_tmp_required_value read_value
+          in
+          let expr =
+            [
+              Line (sprintf "field_%s := (" ocaml_fname);
+              Block (wrap read_value);
+              Line ");";
+            ]
+          in
+          let opt_expr =
+            if optional && not keep_nulls then
               (* treat fields with null values as missing fields
                  (atdgen's default) *)
               [
                 Line "if not (Yojson.Safe.read_null_if_possible p lb) \
-                       then (";
+                      then (";
                 Block expr;
                 Line ")"
               ]
-          else
-            expr
-        in
-        (json_fname, opt_expr)
+            else
+              expr
+          in
+          (json_fname, opt_expr)
       ) a
     in
     let int_mapping_function, int_matching =
@@ -1080,11 +1079,7 @@ and make_tuple_reader p a =
                   Line "x"
                 ]
               else
-                let default_value =
-                  match default with
-                    None -> assert false
-                  | Some s -> s
-                in
+                let default_value = Option.value_exn default in
                 [
                   Line (sprintf "if !end_of_tuple then (%s)" default_value);
                   Line "else (";
@@ -1253,14 +1248,14 @@ let make_ocaml_json_impl
     ~with_create ~force_defaults ~preprocess_input ~original_types
     ~ocaml_version
     buf deref defs =
-  let p = {
-    deref = deref;
-    std = std;
-    unknown_field_handler = unknown_field_handler;
-    force_defaults = force_defaults;
-    preprocess_input;
-    ocaml_version;
-  } in
+  let p =
+    { deref
+    ; std
+    ; unknown_field_handler
+    ; force_defaults
+    ; preprocess_input
+    ; ocaml_version
+    } in
   defs
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in
@@ -1356,7 +1351,7 @@ let make_ocaml_files
       Atd.Util.tsort
   in
   let m1 = tsort m0 in
-  let defs1 = Oj_mapping.defs_of_atd_modules m1 in
+  let defs1 = Oj_mapping.defs_of_atd_modules m1 ~target in
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
   in
@@ -1366,7 +1361,7 @@ let make_ocaml_files
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
     Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases (head, m1) in
-  let defs = Oj_mapping.defs_of_atd_modules m2 in
+  let defs = Oj_mapping.defs_of_atd_modules m2 ~target in
   let header =
     let src =
       match atd_file with

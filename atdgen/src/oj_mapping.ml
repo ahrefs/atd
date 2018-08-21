@@ -104,100 +104,70 @@ let rec mapping_of_expr (x : type_expr) =
   | Tvar (loc, s) ->
       Tvar (loc, s)
 
-and mapping_of_cell (loc, x, an) =
-  let default = Ocaml.get_ocaml_default an in
-  let doc = Atd.Doc.get_doc loc an in
-  let ocaml_t =
-    Ocaml.Repr.Cell {
-      Ocaml.ocaml_default = default;
-      ocaml_fname = "";
-      ocaml_mutable = false;
-      ocaml_fdoc = doc;
-    }
-  in
-  let json_t = Json.Cell in
-  {
-    cel_loc = loc;
-    cel_value = mapping_of_expr x;
-    cel_arepr = ocaml_t;
-    cel_brepr = json_t
+and mapping_of_cell (cel_loc, x, an) =
+  { cel_loc
+  ; cel_value = mapping_of_expr x
+  ; cel_arepr =
+      Ocaml.Repr.Cell
+        { Ocaml.ocaml_default = Ocaml.get_ocaml_default an
+        ; ocaml_fname = ""
+        ; ocaml_mutable = false
+        ; ocaml_fdoc = Atd.Doc.get_doc cel_loc an
+        }
+  ; cel_brepr = Json.Cell
   }
 
 and mapping_of_variant = function
-  | Variant (loc, (s, an), o) ->
-      let ocaml_cons = Ocaml.get_ocaml_cons s an in
-      let doc = Atd.Doc.get_doc loc an in
-      let ocaml_t =
-        Ocaml.Repr.Variant {
-          Ocaml.ocaml_cons = ocaml_cons;
-          ocaml_vdoc = doc;
-        }
-      in
-      let json_cons = Json.get_json_cons s an in
-      let json_t =
-        Json.Variant {
-          Json.json_cons = json_cons;
-        }
-      in
-      let arg = Option.map mapping_of_expr o in
-      {
-        var_loc = loc;
-        var_cons = s;
-        var_arg = arg;
-        var_arepr = ocaml_t;
-        var_brepr = json_t
-      }
-
   | Inherit _ -> assert false
+  | Variant (var_loc, (var_cons, an), o) ->
+      { var_loc
+      ; var_cons
+      ; var_arg = Option.map mapping_of_expr o
+      ; var_arepr = Ocaml.Repr.Variant
+            { Ocaml.ocaml_cons = Ocaml.get_ocaml_cons var_cons an
+            ; ocaml_vdoc = Atd.Doc.get_doc var_loc an
+            }
+      ; var_brepr =
+          Json.Variant
+            { Json.json_cons = Json.get_json_cons var_cons an
+            }
+      }
 
 and mapping_of_field ocaml_field_prefix = function
-    `Field (loc, (s, fk, an), x) ->
-      let fvalue = mapping_of_expr x in
-      let ocaml_default, json_unwrapped =
-        match fk, Ocaml.get_ocaml_default an with
-          Required, None -> None, false
-        | Optional, None -> Some "None", true
-        | (Required | Optional), Some _ ->
-            Error.error loc "Superfluous default OCaml value"
-        | With_default, Some s -> Some s, false
-        | With_default, None ->
-            (* will try to determine implicit default value later *)
-            None, false
-      in
-      let ocaml_fname = Ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
-      let ocaml_mutable = Ocaml.get_ocaml_mutable an in
-      let doc = Atd.Doc.get_doc loc an in
-      let json_fname = Json.get_json_fname s an in
-      { f_loc = loc;
-        f_name = s;
-        f_kind = fk;
-        f_value = fvalue;
-
-        f_arepr = Ocaml.Repr.Field {
-          Ocaml.ocaml_default = ocaml_default;
-          ocaml_fname = ocaml_fname;
-          ocaml_mutable = ocaml_mutable;
-          ocaml_fdoc = doc;
-        };
-
-        f_brepr = Json.Field {
-          Json.json_fname;
-          json_unwrapped;
-        };
+  | `Inherit _ -> assert false
+  | `Field (f_loc, (f_name, f_kind, an), x) ->
+      let { Ox_mapping.ocaml_default; unwrapped } =
+        Ox_mapping.analyze_field f_loc f_kind an in
+      { f_loc
+      ; f_name
+      ; f_kind
+      ; f_value = mapping_of_expr x
+      ; f_arepr = Ocaml.Repr.Field
+            { Ocaml.ocaml_default
+            ; ocaml_fname =
+                Ocaml.get_ocaml_fname (ocaml_field_prefix ^ f_name) an
+            ; ocaml_mutable = Ocaml.get_ocaml_mutable an
+            ; ocaml_fdoc = Atd.Doc.get_doc f_loc an
+            }
+      ; f_brepr = Json.Field
+            { Json.json_fname = Json.get_json_fname f_name an
+            ; json_unwrapped = unwrapped
+            }
       }
 
-  | `Inherit _ -> assert false
-
-
-let def_of_atd atd =
-  Ox_emit.def_of_atd atd ~target:Json ~external_:Json.External
-    ~mapping_of_expr ~def:Json.Def
-
-let defs_of_atd_module l =
-  List.map (function Atd.Ast.Type def -> def_of_atd def) l
-
-let defs_of_atd_modules l =
-  List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l
+let defs_of_atd_modules l ~(target : Ocaml.target)=
+  (match target with
+   | Json
+   | Bucklescript -> ()
+   | t -> invalid_arg "target must be json or bucklescript");
+  List.map (fun (is_rec, l) ->
+    ( is_rec
+    , List.map (function Atd.Ast.Type atd ->
+        Ox_emit.def_of_atd atd ~target ~external_:Json.External
+          ~mapping_of_expr ~def:Json.Def
+      ) l
+    )
+  ) l
 
 let json_normalizer_of_adapter_path module_ =
   module_ ^ ".normalize"

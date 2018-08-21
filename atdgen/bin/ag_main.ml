@@ -39,6 +39,7 @@ type mode =
   | Biniou (* -biniou (deprecated) *)
   | Json (* -json (deprecated) *)
   | Validate (* -validate (deprecated) *)
+  | Bucklescript (* -bs (bucklescript) *)
 
 let parse_ocaml_version () =
   let re = Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
@@ -104,6 +105,14 @@ let main () =
           Produce files example_j.mli and example_j.ml
           containing OCaml serializers and deserializers for the JSON
           data format from the specifications in example.atd.";
+
+    "-bs", Arg.Unit (fun () -> set_once "output type" mode Bucklescript),
+    "
+          Produce files example_bs.mli and example_bs.ml
+          containing OCaml serializers and deserializers for the JSON
+          data format from the specifications in example.atd using
+          bucklescript's json api.";
+
 
     "-v", Arg.Unit (fun () -> set_once "output type" mode V),
     "
@@ -279,7 +288,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
         Some x -> x
       | None ->
           match mode with
-              T | B | J -> false
+              T | B | J | Bucklescript -> false
             | V -> true
             | Biniou | Json | Validate -> true
             | Dep | List -> true (* don't care *)
@@ -291,6 +300,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
       | T
       | B | Biniou
       | V | Validate
+      | Bucklescript
       | Dep | List -> false (* don't care *)
   in
 
@@ -324,24 +334,32 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
                | B -> base ^ "_b"
                | J -> base ^ "_j"
                | V -> base ^ "_v"
-               | _ -> base
+               | Bucklescript -> base ^ "_bs"
+               | Dep
+               | List
+               | Biniou
+               | Validate
+               | Json -> base
             )
   in
   let type_aliases =
     match base_prefix with
         None ->
           (match mode with
-               B | J |  V -> Some "T"
-             | _ -> None
+               B | J |  V | Bucklescript -> Some "T"
+           | Biniou | Validate
+           | T | Dep | List
+           | Json -> None
           )
       | Some base ->
           match !type_aliases with
               Some _ as x -> x
             | None ->
                 (match mode with
-                     B | J | V ->
+                     B | J | V | Bucklescript ->
                        Some (String.capitalize_ascii (Filename.basename base) ^ "_t")
-                   | _ -> None
+                 | T | Json | Dep | List | Validate
+                   | Biniou -> None
           )
   in
   let get_base_prefix () =
@@ -352,6 +370,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
   match mode with
       Dep -> print_deps (get_base_prefix ())
     | List -> print_file_list (get_base_prefix ())
+    | Bucklescript
     | T | B | J | V | Biniou | Json | Validate ->
 
         let opens = List.rev !opens in
@@ -368,6 +387,8 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-bs) example.atd" Sys.argv.(0) in
                   ~preprocess_input: !j_preprocess_input
             | V | Validate ->
                 Ov_emit.make_ocaml_files
+            | Bucklescript ->
+                Obuckle_emit.make_ocaml_files
             | Dep | List -> assert false
         in
         let with_default default = function None -> default | Some x -> x in

@@ -92,3 +92,12 @@ val get_fields
      -> (Ocaml.Repr.t, 'a) Mapping.mapping)
   -> (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping array
   -> field list
+
+val is_string : (('a, 'b) Mapping.mapping -> ('a, 'b) Mapping.mapping) -> ('a, 'b) Mapping.mapping -> bool
+
+val get_assoc_type : ((Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
+  (Ocaml.Repr.t, Json.json_repr) Mapping.mapping) ->
+    Mapping.loc ->
+      (Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
+        (Ocaml.Repr.t, Json.json_repr) Mapping.mapping *
+          (Ocaml.Repr.t, Json.json_repr) Mapping.mapping

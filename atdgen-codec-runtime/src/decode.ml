@@ -38,6 +38,14 @@ let array f = function
   | `List l -> Array.map f (Array.of_list l)
   | _ -> raise DecoderError
 
+let obj_list f = function
+  | `Assoc l -> List.map (fun (k, v) -> k, f v) l
+  | _ -> raise DecoderError
+
+let obj_array f = function
+  | `Assoc l -> Array.map (fun (k, v) -> k, f v) (Array.of_list l)
+  | _ -> raise DecoderError
+
 let optional f j =
   match f j with
   | exception DecoderError -> None

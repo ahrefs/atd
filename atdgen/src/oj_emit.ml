@@ -100,26 +100,6 @@ val %s_of_string :%s
     Ox_emit.maybe_write_creator_intf ~with_create deref buf x
   )
 
-let is_json_string deref x =
-  (*
-    Calling 'unwrap' allows us to ignore 'wrap' constructors
-    and determine that the JSON representation is a string.
-    This assumes that no '<json>' annotation imposes
-    another representation for the JSON string.
-  *)
-  match Mapping.unwrap deref x with
-  | String _ -> true
-  | _ -> false (* or maybe we just don't know *)
-
-let get_assoc_type deref loc x =
-  match deref x with
-  | Tuple (_, [| k; v |], Ocaml.Repr.Tuple, Json.Tuple) ->
-      if not (is_json_string deref k.cel_value) then
-        Error.error loc "Due to <json repr=\"object\"> keys must be strings";
-      (k.cel_value, v.cel_value)
-  | _ ->
-      Error.error loc "Expected due to <json repr=\"object\">: (string * _) list"
-
 let insert sep l =
   let rec ins sep = function
       [] -> []
@@ -357,7 +337,7 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
            ]
 
        | Object ->
-           let k, v = get_assoc_type p.deref loc x in
+           let k, v = Ox_emit.get_assoc_type p.deref loc x in
            let write =
              match o with
                List -> "Atdgen_runtime.Oj_run.write_assoc_list ("
@@ -713,7 +693,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
            ]
 
        | Object ->
-           let k, v = get_assoc_type p.deref loc x in
+           let k, v = Ox_emit.get_assoc_type p.deref loc x in
            let read =
              match o with
                List -> "Atdgen_runtime.Oj_run.read_assoc_list ("

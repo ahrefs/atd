@@ -12,6 +12,9 @@ type j2 = unit
 type j3 = int list <ocaml repr="array">
 type j4 = int <ocaml repr="char">
 
+type o1 = (string * int) list <json repr="object">
+type o2 = (string * int) list <json repr="object"> <ocaml repr="array">
+
 type t1 = (int * string)
 type t2 = (int * int * <ocaml default="-1"> : int)
 

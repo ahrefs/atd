@@ -18,6 +18,8 @@ module type Json = sig
   val j2     : j2 j
   val j3     : j3 j
   val j4     : j4 j
+  val o1     : o1 j
+  val o2     : o2 j
   val t1     : t1 j
   val t2     : t2 j
   val v1list : v1list j
@@ -47,6 +49,8 @@ module Make (J : Json) = struct
       ; j2 ()
       ; j3 [|1; 2; 3|]
       ; j4 'c'
+      ; o1 [ "foo", 7; "bar", 8; "baz", 43 ]
+      ; o2 [| "foo2", 5; "bar2", 6; "baz2", 41; "42", 42 |]
       ; t1 (100, "foo")
       ; t2 (100, 200, 42)
       ; t2 (100, 200, -1)

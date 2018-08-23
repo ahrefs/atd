@@ -413,3 +413,23 @@ let get_fields deref a =
     ; unwrapped
     }
   ) (Array.to_list a)
+
+let is_string deref x =
+  (*
+    Calling 'unwrap' allows us to ignore 'wrap' constructors
+    and determine that the JSON representation is a string.
+    This assumes that no '<json>' annotation imposes
+    another representation for the JSON string.
+  *)
+  match Mapping.unwrap deref x with
+  | String _ -> true
+  | _ -> false (* or maybe we just don't know *)
+
+let get_assoc_type deref loc x =
+  match deref x with
+  | Tuple (_, [| k; v |], Ocaml.Repr.Tuple, Json.Tuple) ->
+      if not (is_string deref k.cel_value) then
+        Error.error loc "Due to <json repr=\"object\"> keys must be strings";
+      (k.cel_value, v.cel_value)
+  | _ ->
+      Error.error loc "Expected due to <json repr=\"object\">: (string * _) list"

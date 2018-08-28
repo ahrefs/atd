@@ -55,7 +55,7 @@ let destruct_sum (x : Oj_mapping.t) =
   | _ -> Error.error (loc_of_mapping x) "Cannot destruct unknown type"
 
 
-let make_ocaml_bs_intf buf _deref defs =
+let make_ocaml_bs_intf ~with_create buf deref defs =
   List.concat_map snd defs
   |> List.filter Ox_emit.include_intf
   |> List.iter (fun (x : (_, _) Mapping.def) ->
@@ -70,7 +70,8 @@ let make_ocaml_bs_intf buf _deref defs =
     bprintf buf "val read_%s : %s %s\n\n"
       s read_params (decoder_t full_name);
     bprintf buf "val write_%s : %s %s\n\n"
-      s write_params (encoder_t full_name)
+      s write_params (encoder_t full_name);
+    Ox_emit.maybe_write_creator_intf ~with_create deref buf x
   )
 
 let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
@@ -576,6 +577,7 @@ let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
   ]
 
 let make_ocaml_bs_impl
+    ~with_create
     ~original_types
     buf deref defs =
   let p = {deref = deref;} in
@@ -596,36 +598,59 @@ let make_ocaml_bs_impl
       ) l
     in
     List.flatten (writers @ readers))
-  |> Indent.to_buffer buf
+  |> Indent.to_buffer buf;
+  Ox_emit.maybe_write_creator_impl ~with_create deref buf defs
 
 let make_ml
     ~opens
     ~header
+    ~with_typedefs
+    ~with_create
+    ~with_fundefs
     ~original_types
-    _ocaml_typedefs deref defs =
+    ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   Ox_emit.write_opens buf opens;
-  make_ocaml_bs_impl ~original_types buf deref defs;
+  if with_typedefs then
+    bprintf buf "%s\n" ocaml_typedefs;
+  if with_typedefs && with_fundefs then
+    bprintf buf "\n";
+  if with_fundefs then
+    make_ocaml_bs_impl ~with_create ~original_types buf deref defs;
   Buffer.contents buf
 
 let make_mli
     ~opens
     ~header
+    ~with_typedefs
+    ~with_create
+    ~with_fundefs
     ~original_types:_
-    _ocaml_typedefs deref defs =
+    ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   Ox_emit.write_opens buf opens;
-  make_ocaml_bs_intf buf deref defs;
+  if with_typedefs then
+    bprintf buf "%s\n" ocaml_typedefs;
+  if with_typedefs && with_fundefs then
+    bprintf buf "\n";
+  if with_fundefs then
+    make_ocaml_bs_intf ~with_create buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
     ~opens
+    ~with_typedefs
+    ~with_create
+    ~with_fundefs
     ~all_rec
     ~pos_fname
     ~pos_lnum
     ~type_aliases
+    ~force_defaults:_
+    ~ocaml_version
+    ~pp_convs:_
     atd_file out =
   let ((head, m0), _) =
     match atd_file with
@@ -648,6 +673,7 @@ let make_ocaml_files
       Atd.Util.tsort
   in
   let m1 = tsort m0 in
+  let defs1 = Oj_mapping.defs_of_atd_modules m1 ~target in
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
   in
@@ -669,27 +695,11 @@ let make_ocaml_files
               [@@@ocaml.warning "-27-32-35-39"]|} src
   in
   let ml =
-    make_ml ~opens ~header ~original_types
+    make_ml ~opens ~header ~with_typedefs ~with_create ~with_fundefs ~original_types
       ocaml_typedefs (Mapping.make_deref defs) defs
   in
   let mli =
-    make_mli ~opens ~header ~original_types
-      ocaml_typedefs (Mapping.make_deref defs) defs
+    make_mli ~opens ~header ~with_typedefs ~with_create ~with_fundefs ~original_types
+      ocaml_typedefs (Mapping.make_deref defs1) defs1
   in
   Ox_emit.write_ocaml out mli ml
-
-let make_ocaml_files
-    ~opens
-    ~with_typedefs:_
-    ~with_create:_
-    ~with_fundefs:_
-    ~all_rec
-    ~pos_fname
-    ~pos_lnum
-    ~type_aliases
-    ~force_defaults:_
-    ~ocaml_version:_
-    ~pp_convs:_
-    atd_file out =
-  make_ocaml_files ~opens ~all_rec ~pos_fname ~pos_lnum ~type_aliases atd_file
-    out

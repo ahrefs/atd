@@ -117,3 +117,6 @@ let option_as_constr f =
 let nullable f = function
   | `Null -> None
   | x -> Some (f x)
+
+let adapter (normalize: Json.t -> Json.t) (reader: 'a t) json =
+  reader (normalize json)

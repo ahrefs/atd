@@ -117,6 +117,19 @@ let rec get_reader_name
 
   | _ -> assert false
 
+let read_with_adapter adapter reader =
+  match adapter.Json.ocaml_adapter with
+  | None -> reader
+  | Some adapter_path ->
+    let normalize = Oj_mapping.json_normalizer_of_adapter_path adapter_path in
+    [
+      Line (
+        sprintf "Atdgen_codec_runtime.Decode.adapter %s (" normalize
+      );
+      Block reader;
+      Line ")";
+    ]
+
 let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
@@ -207,11 +220,15 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
           ])
         |> Indent.concat (Line ";")
       in
-      [ Line (decoder_ident "enum")
-      ; Line "["
-      ; Block cases
-      ; Line "]"
-      ]
+      let standard_reader =
+        [ Line (decoder_ident "enum")
+        ; Line "["
+        ; Block cases
+        ; Line "]"
+        ]
+      in
+      let adapter = j.json_sum_adapter in
+      read_with_adapter adapter standard_reader
   | Wrap (_, x, Wrap o, Wrap) ->
       (match o with
        | None -> make_reader p x

@@ -16,4 +16,5 @@ depends: [
   "ocaml" {>= "4.02.3"}
   "dune" {build}
   "atd" {>= "2.0.0"}
+  "re"
 ]

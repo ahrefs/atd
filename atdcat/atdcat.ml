@@ -76,7 +76,7 @@ let print ~html_doc ~out_format ast =
   f ast
 
 let split_on_comma =
-  Str.split_delim (Str.regexp ",")
+  Re.Str.split_delim (Re.Str.regexp ",")
 
 let () =
   let expand = ref false in

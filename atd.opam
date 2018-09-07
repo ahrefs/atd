@@ -17,4 +17,5 @@ depends: [
   "dune" {build}
   "menhir" {build}
   "easy-format"
+  "re"
 ]

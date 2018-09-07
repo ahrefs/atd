@@ -42,10 +42,10 @@ type mode =
   | Bucklescript (* -bs (bucklescript) *)
 
 let parse_ocaml_version () =
-  let re = Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
-  if Str.string_match re Sys.ocaml_version 0 then
-    let major = Str.matched_group 1 Sys.ocaml_version in
-    let minor = Str.matched_group 2 Sys.ocaml_version in
+  let re = Re.Str.regexp "^\\([0-9]+\\)\\.\\([0-9]+\\)" in
+  if Re.Str.string_match re Sys.ocaml_version 0 then
+    let major = Re.Str.matched_group 1 Sys.ocaml_version in
+    let minor = Re.Str.matched_group 2 Sys.ocaml_version in
     Some (int_of_string major, int_of_string minor)
   else
     None
@@ -68,20 +68,20 @@ let main () =
   let type_aliases = ref None in
   let ocaml_version = parse_ocaml_version () in
   let set_opens s =
-    let l = Str.split (Str.regexp " *, *\\| +") s in
+    let l = Re.Str.split (Re.Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
   in
   let pp_convs : Ocaml.pp_convs ref = ref (Ocaml.Ppx []) in
   let options = [
     "-type-conv", Arg.String (fun s ->
-      pp_convs := Camlp4 (Str.split (Str.regexp ",") s)),
+      pp_convs := Camlp4 (Re.Str.split (Re.Str.regexp ",") s)),
     "
     GEN1,GEN2,...
          Insert 'with GEN1, GEN2, ...' after OCaml type definitions for the
          type-conv preprocessor
     ";
     "-deriving-conv", Arg.String (fun s ->
-      pp_convs := Ocaml.Ppx (Str.split (Str.regexp ",") s)),
+      pp_convs := Ocaml.Ppx (Re.Str.split (Re.Str.regexp ",") s)),
     "
     GEN1,GEN2,...
          Insert 'with GEN1, GEN2, ...' after OCaml type definitions for the

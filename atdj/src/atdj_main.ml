@@ -12,8 +12,8 @@ let args_spec env = Arg.align
 let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"
 
 let make_package_dirs package =
-  let re   = Str.regexp "\\." in
-  let dirs = Str.split re package in
+  let re   = Re.Str.regexp "\\." in
+  let dirs = Re.Str.split re package in
   List.fold_left
     (fun parent dir ->
        let full_dir = parent ^ "/" ^ dir in
@@ -54,8 +54,8 @@ let main () =
           ) else x in
 
   (* Validate package name *)
-  let re = Str.regexp "^[a-zA-Z0-9]+\\(\\.[a-zA-Z0-9]+\\)*$" in
-  if not (Str.string_match re env.package 0) then (
+  let re = Re.Str.regexp "^[a-zA-Z0-9]+\\(\\.[a-zA-Z0-9]+\\)*$" in
+  if not (Re.Str.string_match re env.package 0) then (
     prerr_endline "Invalid package name";
     Arg.usage args_spec' usage_msg;
     exit 1

@@ -33,7 +33,7 @@ let test_decode ~name ~yojson ~buckle ~data =
 let test_encode ~name ~yojson ~buckle ~data =
   T { name
     ; to_yojson = Atdgen_codec_runtime.Encode.encode buckle
-    ; of_yojson = (fun j -> yojson (Yojson.Safe.to_string ~std:true j))
+    ; of_yojson = (fun j -> yojson (Yojson.Safe.to_string ~std:false j))
     ; data
     }
 
@@ -116,4 +116,8 @@ let () =
               ; `Foobar ()
               ; `Foo_id (`Id "testing")
               ]
+    ; test_encode ~name:"encode 1 tuple"
+        ~yojson:Bucklespec_j.single_tuple_of_string
+        ~buckle:Bucklespec_bs.write_single_tuple
+        ~data:(`Single_tuple (123))
     ]

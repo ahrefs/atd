@@ -71,6 +71,11 @@ let fieldDefault s default f =
     | None -> default
     | Some s -> s)
 
+let tuple1 a = function
+  | `Tuple [w]
+  | `List [w] -> a w
+  | _ -> raise DecoderError
+
 let tuple2 a b = function
   | `Tuple [w ; x]
   | `List [w ; x] -> (a w, b x)

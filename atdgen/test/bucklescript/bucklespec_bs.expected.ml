@@ -7,6 +7,8 @@ type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool
 
 type v1 = Bucklespec_t.v1 =  V1_foo of bool | V2_bar of int 
 
+type single_tuple = Bucklespec_t.single_tuple
+
 type id = Bucklespec_t.id
 
 type 'a simple_var = 'a Bucklespec_t.simple_var
@@ -106,6 +108,33 @@ let read_v1 = (
         `Decode (
         Atdgen_codec_runtime.Decode.int
         |> Atdgen_codec_runtime.Decode.map (fun x -> ((V2_bar x) : v1))
+        )
+      )
+  ]
+)
+let write_single_tuple = (
+  Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
+    | `Single_tuple x ->
+    Atdgen_codec_runtime.Encode.constr1 "Single_tuple" (
+      Atdgen_codec_runtime.Encode.tuple1
+        (
+          Atdgen_codec_runtime.Encode.int
+        )
+    ) x
+  )
+)
+let read_single_tuple = (
+  Atdgen_codec_runtime.Decode.enum
+  [
+      (
+      "Single_tuple"
+      ,
+        `Decode (
+        Atdgen_codec_runtime.Decode.tuple1
+          (
+            Atdgen_codec_runtime.Decode.int
+          )
+        |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Single_tuple x) : _))
         )
       )
   ]

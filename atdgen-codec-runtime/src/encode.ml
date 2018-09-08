@@ -69,6 +69,7 @@ let obj fields =
     ) [] fields
   )
 
+let tuple1 f x = `Tuple [f x]
 let tuple2 f g (w, x) = `Tuple [f w; g x]
 let tuple3 f g h (w, x, y) = `Tuple [f w; g x; h y]
 let tuple4 f g h i (w, x, y, z) = `Tuple [f w; g x; h y;i z]

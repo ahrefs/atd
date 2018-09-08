@@ -7,6 +7,8 @@ type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool
 
 type v1 = Bucklespec_t.v1 =  V1_foo of bool | V2_bar of int 
 
+type single_tuple = Bucklespec_t.single_tuple
+
 type id = Bucklespec_t.id
 
 type 'a simple_var = 'a Bucklespec_t.simple_var
@@ -212,6 +214,129 @@ let read_v1 = (
 )
 let v1_of_string s =
   read_v1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_single_tuple = (
+  fun ob x ->
+    match x with
+      | `Single_tuple x ->
+        Bi_outbuf.add_string ob "[\"Single_tuple\",";
+        (
+          fun ob x ->
+            Bi_outbuf.add_char ob '[';
+            (let x = x in
+            (
+              Yojson.Safe.write_int
+            ) ob x
+            );
+            Bi_outbuf.add_char ob ']';
+        ) ob x;
+        Bi_outbuf.add_char ob ']'
+)
+let string_of_single_tuple ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_single_tuple ob x;
+  Bi_outbuf.contents ob
+let read_single_tuple = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    match Yojson.Safe.start_any_variant p lb with
+      | `Edgy_bracket -> (
+          match Yojson.Safe.read_ident p lb with
+            | "Single_tuple" ->
+              Atdgen_runtime.Oj_run.read_until_field_value p lb;
+              let x = (
+                  fun p lb ->
+                    Yojson.Safe.read_space p lb;
+                    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+                    let len = ref 0 in
+                    let end_of_tuple = ref false in
+                    (try
+                      let x0 =
+                        let x =
+                          (
+                            Atdgen_runtime.Oj_run.read_int
+                          ) p lb
+                        in
+                        incr len;
+                        (try
+                          Yojson.Safe.read_space p lb;
+                          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        with Yojson.End_of_tuple -> end_of_tuple := true);
+                        x
+                      in
+                      if not !end_of_tuple then (
+                        try
+                          while true do
+                            Yojson.Safe.skip_json p lb;
+                            Yojson.Safe.read_space p lb;
+                            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                          done
+                        with Yojson.End_of_tuple -> ()
+                      );
+                      (x0)
+                    with Yojson.End_of_tuple ->
+                      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Single_tuple x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Double_quote -> (
+          match Yojson.Safe.finish_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+      | `Square_bracket -> (
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | "Single_tuple" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_comma p lb;
+              Yojson.Safe.read_space p lb;
+              let x = (
+                  fun p lb ->
+                    Yojson.Safe.read_space p lb;
+                    let std_tuple = Yojson.Safe.start_any_tuple p lb in
+                    let len = ref 0 in
+                    let end_of_tuple = ref false in
+                    (try
+                      let x0 =
+                        let x =
+                          (
+                            Atdgen_runtime.Oj_run.read_int
+                          ) p lb
+                        in
+                        incr len;
+                        (try
+                          Yojson.Safe.read_space p lb;
+                          Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                        with Yojson.End_of_tuple -> end_of_tuple := true);
+                        x
+                      in
+                      if not !end_of_tuple then (
+                        try
+                          while true do
+                            Yojson.Safe.skip_json p lb;
+                            Yojson.Safe.read_space p lb;
+                            Yojson.Safe.read_tuple_sep2 p std_tuple lb;
+                          done
+                        with Yojson.End_of_tuple -> ()
+                      );
+                      (x0)
+                    with Yojson.End_of_tuple ->
+                      Atdgen_runtime.Oj_run.missing_tuple_fields p !len [ 0 ]);
+                ) p lb
+              in
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_rbr p lb;
+              `Single_tuple x
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+)
+let single_tuple_of_string s =
+  read_single_tuple (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__2 = (
   fun ob x -> (
     let x = ( function `Id s -> s ) x in (

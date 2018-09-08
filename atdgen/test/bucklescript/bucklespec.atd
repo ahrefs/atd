@@ -64,3 +64,5 @@ type from_module_a <ocaml from="A"> = abstract
 type record_json_name =
   { foo <json name="bar"> : int
   }
+
+type single_tuple = [ Single_tuple of (int) ]

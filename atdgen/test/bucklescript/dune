@@ -1,7 +1,7 @@
 (rule
  (targets bucklespec_bs.ml bucklespec_bs.mli)
  (deps bucklespec.atd)
- (action (run atdgen %{deps} -bs -open Bucklespec_t)))
+ (action (run atdgen %{deps} -bs)))
 
 (rule
  (targets bucklespec_t.ml bucklespec_t.mli)

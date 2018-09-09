@@ -126,7 +126,7 @@ let read_with_adapter adapter reader =
       in
       [
         Line (
-          sprintf "Atdgen_codec_runtime.Decode.adapter %s (" normalize
+          sprintf "%s %s (" (decoder_ident "adapter") normalize
         );
         Block reader;
         Line ")";
@@ -391,6 +391,19 @@ let rec get_writer_name
 
   | _ -> assert false
 
+let write_with_adapter adapter writer =
+  match adapter.Json.ocaml_adapter with
+  | None -> writer
+  | Some adapter_path ->
+      let restore = Oj_mapping.json_restorer_of_adapter_path adapter_path in
+      [
+        Line (
+          sprintf "%s %s (" (encoder_ident "adapter") restore
+        );
+        Block writer;
+        Line ")";
+      ]
+
 let get_left_writer_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
   get_writer_name p (Name (Atd.Ast.dummy_loc, name, args, None, None))
@@ -466,7 +479,10 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       ]
   | Sum (_, _a, Sum _osum, Sum j) ->
       if j.json_open_enum then open_enum_not_supported ();
-      make_sum_writer ?type_annot p x
+      let standard_writer = make_sum_writer ?type_annot p x in
+      let adapter = j.json_sum_adapter in
+      write_with_adapter adapter standard_writer
+
   | Wrap (_, x, Wrap o, Wrap) ->
       begin match o with
         | None -> make_writer p x

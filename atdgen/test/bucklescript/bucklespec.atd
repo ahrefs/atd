@@ -66,3 +66,15 @@ type record_json_name =
   }
 
 type single_tuple = [ Single_tuple of (int) ]
+
+type recurse = {
+  recurse_items: recurse list;
+}
+
+type mutual_recurse1 = {
+  mutual_recurse2: mutual_recurse2;
+}
+
+type mutual_recurse2 = {
+  mutual_recurse1: mutual_recurse1;
+}

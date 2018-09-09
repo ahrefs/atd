@@ -1208,7 +1208,7 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
   let write = get_left_writer_name ~tagged:true name param in
   let to_string = get_left_to_string_name name param in
   let write_untagged_expr = make_writer deref ~tagged:false x in
-  let eta_expand = is_rec && not (Ox_emit.is_function write_untagged_expr) in
+  let eta_expand = is_rec && not (Ox_emit.is_lambda write_untagged_expr) in
   let needs_annot = Ox_emit.needs_type_annot x in
   let extra_param, extra_args =
     match eta_expand, needs_annot with
@@ -1260,8 +1260,8 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
   let get_reader_expr =
     make_reader deref ~tagged:false ~ocaml_version ?type_annot x in
   let read_expr = make_reader deref ~tagged:true ~ocaml_version ?type_annot x in
-  let eta_expand1 = is_rec && not (Ox_emit.is_function get_reader_expr) in
-  let eta_expand2 = is_rec && not (Ox_emit.is_function read_expr) in
+  let eta_expand1 = is_rec && not (Ox_emit.is_lambda get_reader_expr) in
+  let eta_expand2 = is_rec && not (Ox_emit.is_lambda read_expr) in
   let extra_param1, extra_args1 =
     if eta_expand1 then " tag", " tag"
     else "", ""

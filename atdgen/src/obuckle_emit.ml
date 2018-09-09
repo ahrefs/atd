@@ -313,7 +313,7 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
     )
   in
   let reader_expr = make_reader ?type_annot p x in
-  let eta_expand = is_rec && not (Ox_emit.is_function reader_expr) in
+  let eta_expand = is_rec && not (Ox_emit.is_lambda reader_expr) in
   let extra_param, extra_args =
     if eta_expand then " js", " js"
     else "", ""
@@ -563,7 +563,7 @@ let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
   let param = def.def_param in
   let write = get_left_writer_name p name param in
   let writer_expr = make_writer ?type_annot p x in
-  let eta_expand = is_rec && not (Ox_emit.is_function writer_expr) in
+  let eta_expand = is_rec && not (Ox_emit.is_lambda writer_expr) in
   let extra_param, extra_args =
     if eta_expand then " js", " js"
     else "", ""

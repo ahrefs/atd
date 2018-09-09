@@ -1,6 +1,16 @@
 (* Auto-generated from "bucklespec.atd" *)
               [@@@ocaml.warning "-27-32-35-39"]
 
+type recurse = Bucklespec_t.recurse = { recurse_items: recurse list }
+
+type mutual_recurse1 = Bucklespec_t.mutual_recurse1 = {
+  mutual_recurse2: mutual_recurse2
+}
+
+and mutual_recurse2 = Bucklespec_t.mutual_recurse2 = {
+  mutual_recurse1: mutual_recurse1
+}
+
 type valid = Bucklespec_t.valid
 
 type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool 
@@ -38,6 +48,103 @@ type labeled = Bucklespec_t.labeled = { flag: valid; lb: label; count: int }
 
 type from_module_a = A_t.from_module_a
 
+let rec write_mutual_recurse1 js = (
+  Atdgen_codec_runtime.Encode.make (fun (t : mutual_recurse1) ->
+    (
+    Atdgen_codec_runtime.Encode.obj
+      [
+          Atdgen_codec_runtime.Encode.field
+            (
+            write_mutual_recurse2
+            )
+          ~name:"mutual_recurse2"
+          t.mutual_recurse2
+      ]
+    )
+  )
+) js
+and write_mutual_recurse2 js = (
+  Atdgen_codec_runtime.Encode.make (fun (t : mutual_recurse2) ->
+    (
+    Atdgen_codec_runtime.Encode.obj
+      [
+          Atdgen_codec_runtime.Encode.field
+            (
+            write_mutual_recurse1
+            )
+          ~name:"mutual_recurse1"
+          t.mutual_recurse1
+      ]
+    )
+  )
+) js
+let rec read_mutual_recurse1 js = (
+  Atdgen_codec_runtime.Decode.make (fun json ->
+    (
+      ({
+          mutual_recurse2 =
+            Atdgen_codec_runtime.Decode.decode
+            (
+              read_mutual_recurse2
+              |> Atdgen_codec_runtime.Decode.field "mutual_recurse2"
+            ) json;
+      } : mutual_recurse1)
+    )
+  )
+) js
+and read_mutual_recurse2 js = (
+  Atdgen_codec_runtime.Decode.make (fun json ->
+    (
+      ({
+          mutual_recurse1 =
+            Atdgen_codec_runtime.Decode.decode
+            (
+              read_mutual_recurse1
+              |> Atdgen_codec_runtime.Decode.field "mutual_recurse1"
+            ) json;
+      } : mutual_recurse2)
+    )
+  )
+) js
+let rec write__5 js = (
+  Atdgen_codec_runtime.Encode.list (
+    write_recurse
+  )
+) js
+and write_recurse js = (
+  Atdgen_codec_runtime.Encode.make (fun (t : recurse) ->
+    (
+    Atdgen_codec_runtime.Encode.obj
+      [
+          Atdgen_codec_runtime.Encode.field
+            (
+            write__5
+            )
+          ~name:"recurse_items"
+          t.recurse_items
+      ]
+    )
+  )
+) js
+let rec read__5 js = (
+  Atdgen_codec_runtime.Decode.list (
+    read_recurse
+  )
+) js
+and read_recurse js = (
+  Atdgen_codec_runtime.Decode.make (fun json ->
+    (
+      ({
+          recurse_items =
+            Atdgen_codec_runtime.Decode.decode
+            (
+              read__5
+              |> Atdgen_codec_runtime.Decode.field "recurse_items"
+            ) json;
+      } : recurse)
+    )
+  )
+) js
 let write_valid = (
   Atdgen_codec_runtime.Encode.bool
 )

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 CLASSPATH='.:json.jar:junit-4.8.2.jar'
 

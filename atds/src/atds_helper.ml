@@ -1,15 +1,15 @@
 (* Helper classes *)
 
 open Atd.Import
-open Atdj_env
+open Atds_env
 
-let output_atdj env =
-  let out = Atdj_trans.open_class env "Atdj" in
+let output_atds env =
+  let out = Atds_trans.open_class env "Atds" in
   fprintf out "\
 /**
  * Common utility interface.
  */
-public interface Atdj {
+public interface Atds {
   /**
    * Get the JSON string representation, failing if some of the data
    * was not initialized.
@@ -27,7 +27,7 @@ public interface Atdj {
   close_out out
 
 let output_util env =
-  let out = Atdj_trans.open_class env "Util" in
+  let out = Atds_trans.open_class env "Util" in
   fprintf out "\
 class Util {
   // Extract the tag of sum-typed value

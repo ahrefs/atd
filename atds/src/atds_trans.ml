@@ -1,7 +1,7 @@
 open Atd.Import
-open Atdj_names
-open Atdj_env
-open Atdj_util
+open Atds_names
+open Atds_env
+open Atds_util
 (* Calculate the JSON representation of an ATD type.
  *
  * Values of sum types t are encoded as either Strings or two-element
@@ -268,7 +268,7 @@ let javadoc loc annots indent =
 (* For option, sum and record types, we generate a Java class.  Each such class
  * implements the following interface:
  *
- *  interface Atdj {
+ *  interface Atds {
  *    String toJson() throws JSONException;
  *    void toJsonBuffer(StringBuilder out) throws JSONException;
  *  }
@@ -318,7 +318,7 @@ and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
  * in a separate file TyTag.java.
 *)
 and trans_sum my_name env (_, vars, _) =
-  let class_name = Atdj_names.to_class_name my_name in
+  let class_name = Atds_names.to_class_name my_name in
 
   let cases = List.map (function
     | Atd.Ast.Variant (_, (atd_name, an), opt_ty) ->
@@ -510,12 +510,12 @@ and trans_record my_name env (loc, fields, annots) =
       ([], env) fields in
   let java_tys = List.rev java_tys in
   (* Output Java class *)
-  let class_name = Atdj_names.to_class_name my_name in
+  let class_name = Atds_names.to_class_name my_name in
   let out = open_class env class_name in
   (* Javadoc *)
   output_string out (javadoc loc annots "");
   fprintf out "\
-public class %s implements Atdj {
+public class %s implements Atds {
   /**
    * Construct from a fresh record with null fields.
    */
@@ -584,9 +584,9 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
        | Name (_, (_, name2, _), _) ->
            (* It's a primitive type e.g. int *)
-           (Atdj_names.to_class_name name2, env)
+           (Atds_names.to_class_name name2, env)
        | _ ->
-           (Atdj_names.to_class_name name1, env)
+           (Atds_names.to_class_name name1, env)
       )
   | List (_, sub_atd_ty, _)  ->
       let (ty', env) = trans_inner env sub_atd_ty in

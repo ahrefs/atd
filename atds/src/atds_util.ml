@@ -1,7 +1,7 @@
 (* Utilities *)
 
 open Atd.Import
-open Atdj_env
+open Atds_env
 
 (* Get rid of `wrap' constructors that we don't support on the Java side yet.
    They could be useful for timestamps, though. *)
@@ -36,11 +36,11 @@ let rec norm_ty ?(unwrap_option = false) env atd_ty =
       atd_ty
 
 let not_supported loc =
-  Atd.Ast.error_at loc "Construct not yet supported by atdj."
+  Atd.Ast.error_at loc "Construct not yet supported by atds."
 
 let type_not_supported x =
   let loc = Atd.Ast.loc_of_type_expr x in
-  Atd.Ast.error_at loc "Type not supported by atdj."
+  Atd.Ast.error_at loc "Type not supported by atds."
 
 let warning loc msg =
   let loc_s = Atd.Ast.string_of_loc loc in

@@ -1,18 +1,17 @@
 
 (rule
  (targets
-  A.java
-  Atdj.java
-  B.java
-  ComplexRecord.java
-  E.java
-  RecordWithDefaults.java
-  SampleSum.java
-  SimpleRecord.java
-  Util.java
-  package.html)
+  ;; A.scala
+  Atds.scala
+  ;; B.scala
+  ;; ComplexRecord.scala
+  E.scala
+  ;; RecordWithDefaults.scala
+  ;; SampleSum.scala
+  SimpleRecord.scala
+  )
  (deps ../../../test.atd)
  (action
   (chdir
    ../../../
-   (run %{bin:atdj} %{deps} -package com.mylife.test))))
+   (run %{bin:atds} %{deps} -package com.mylife.test))))

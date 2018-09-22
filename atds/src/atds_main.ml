@@ -81,10 +81,7 @@ let main () =
   let env = Atds_trans.trans_module env atd_module in
 
   (* Output helper classes *)
-  Atds_helper.output_util env;
-  Atds_helper.output_atds env;
-
-  Atds_helper.output_package_javadoc env atd_head
+  Atds_helper.output_atds env
 
 
 let () =

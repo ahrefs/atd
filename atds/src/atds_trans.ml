@@ -126,52 +126,31 @@ let rec assign env opt_dst src java_ty atd_ty indent =
  * check for the field and manually create a default.  If the field is present,
  * then we wrap its values as necessary.
 *)
-let assign_field env
-    (`Field (_, (atd_field_name, kind, annots), atd_ty)) java_ty =
-  let json_field_name = get_json_field_name atd_field_name annots in
-  let field_name = get_java_field_name atd_field_name annots in
-  (* Check whether the field is optional *)
-  let is_opt =
+let declare_field env
+    (`Field (_, (atd_field_name, kind, annots), atd_ty)) scala_ty =
+  let field_name = get_scala_field_name atd_field_name annots in
+  let opt_default =
     match kind with
-    | Atd.Ast.Optional
-    | With_default -> true
-    | Required -> false in
-  let src = sprintf "jo.%s(\"%s\")" (get env atd_ty is_opt) json_field_name in
-  if not is_opt then
-    assign env (Some field_name) src java_ty atd_ty "    "
-  else
-    let mk_else = function
-      | Some default ->
-          sprintf "    } else {\n      %s = %s;\n    }\n"
-            field_name default
-      | None ->
-          "    }\n"
-    in
-    let opt_set_default =
-      match kind with
-      | Atd.Ast.With_default ->
-          (match norm_ty ~unwrap_option:true env atd_ty with
-           | Name (_, (_, name, _), _) ->
-               (match name with
-                | "bool" -> mk_else (Some "false")
-                | "int" -> mk_else (Some "0")
-                | "float" -> mk_else (Some "0.0")
-                | "string" -> mk_else (Some "\"\"")
-                | _ -> mk_else None (* TODO: fail if no default is provided *)
-               )
-           | List _ ->
-               (* java_ty is supposed to be of the form "ArrayList<...>" *)
-               mk_else (Some (sprintf "new %s()" java_ty))
-           | _ ->
-               mk_else None (* TODO: fail if no default is provided *)
-          )
-      | _ ->
-          mk_else None
-    in
-    let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
-    sprintf "    if (jo.has(\"%s\")) {\n" json_field_name
-    ^ assign env (Some field_name) src java_ty atd_ty "      "
-    ^ opt_set_default
+    | Atd.Ast.With_default ->
+        (match norm_ty ~unwrap_option:true env atd_ty with
+         | Name (_, (_, name, _), _) ->
+             (match name with
+              | "bool" -> Some "false"
+              | "int" -> Some "0"
+              | "float" -> Some "0.0"
+              | "string" -> Some "\"\""
+              | _ -> None (* TODO: fail if no default is provided *)
+             )
+         | List _ ->
+            Some "Nil"
+         | _ ->
+             None (* TODO: fail if no default is provided *)
+        )
+    | _ ->
+        None
+  in
+  let opt_set_default = match opt_default with Some s -> " = "^s | None -> "" in
+  sprintf "  %s: %s%s" field_name scala_ty opt_set_default
 
 
 (* Generate a toJsonBuffer command *)
@@ -196,43 +175,13 @@ let rec to_string env id atd_ty indent =
   | _ ->
       sprintf "%s%s.toJsonBuffer(_out);\n" indent id
 
-(* Generate a toJsonBuffer command for a record field. *)
+(* Generate an argonaut field for a record field. *)
 let to_string_field env = function
   | (`Field (_, (atd_field_name, kind, annots), atd_ty)) ->
       let json_field_name = get_json_field_name atd_field_name annots in
-      let field_name = get_java_field_name atd_field_name annots in
-      let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
-      (* In the case of an optional field, create a predicate to test whether
-       * the field has its default value. *)
-      let if_part =
-        sprintf "
-    if (%s != null) {
-      if (_isFirst)
-        _isFirst = false;
-      else
-        _out.append(\",\");
-      _out.append(\"\\\"%s\\\":\");
-%s    }
-"
-          field_name
-          json_field_name
-          (to_string env field_name atd_ty "      ")
-      in
-      let else_part =
-        let is_opt =
-          match kind with
-          | Atd.Ast.Optional | With_default -> true
-          | Required -> false in
-        if is_opt then
-          ""
-        else
-          sprintf "    \
-                   else
-      throw new JSONException(\"Uninitialized field %s\");
-"
-            field_name
-      in
-      if_part ^ else_part
+      let field_name = get_scala_field_name atd_field_name annots in
+      (* TODO: Omit fields with default value. *)
+      sprintf "    \"%s\" := %s,\n" json_field_name field_name
 
 (* Generate a javadoc comment *)
 let javadoc loc annots indent =
@@ -287,12 +236,11 @@ let javadoc loc annots indent =
 *)
 
 let open_class env cname =
-  let out = open_out (env.package_dir ^ "/" ^ cname ^ ".java") in
+  let out = open_out (env.package_dir ^ "/" ^ cname ^ ".scala") in
   fprintf out "\
 // Automatically generated; do not edit
 package %s;
-import org.json.*;
-
+import argonaut._, Argonaut._
 "
     env.package;
   out
@@ -314,8 +262,8 @@ and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
  *
  *   type ty = Foo | Bar of whatever
  *
- * we generate a class Ty implemented in Ty.java and an enum TyEnum defined
- * in a separate file TyTag.java.
+ * we generate a sealed abstract class Ty and case classes Foo and Bar
+ * in the Ty companion object.
 *)
 and trans_sum my_name env (_, vars, _) =
   let class_name = Atds_names.to_class_name my_name in
@@ -323,19 +271,16 @@ and trans_sum my_name env (_, vars, _) =
   let cases = List.map (function
     | Atd.Ast.Variant (_, (atd_name, an), opt_ty) ->
         let json_name = get_json_variant_name atd_name an in
-        let func_name, enum_name, field_name =
-          get_java_variant_names atd_name an in
+        let scala_name = get_scala_variant_name atd_name an in
         let opt_java_ty =
           opt_ty |> Option.map (fun ty ->
             let (java_ty, _) = trans_inner env (unwrap_option env ty) in
             (ty, java_ty)
           ) in
-        (json_name, func_name, enum_name, field_name, opt_java_ty)
+        (json_name, scala_name, opt_java_ty)
     | Inherit _ -> assert false
   ) vars
   in
-
-  let tags = List.map (fun (_, _, enum_name, _, _) -> enum_name) cases in
 
   let out = open_class env class_name in
 
@@ -343,146 +288,42 @@ and trans_sum my_name env (_, vars, _) =
 /**
  * Construct objects of type %s.
  */
-
-public class %s {
-  Tag t = null;
-
-  public %s() {
-  }
-
-  public Tag tag() {
-    return t;
-  }
+sealed abstract class %s extends Atds
 "
     my_name
-    class_name
     class_name;
 
   fprintf out "
   /**
    * Define tags for sum type %s.
    */
-  public enum Tag {
-    %s
-  }
+object %s {
 "
     my_name
-    (String.concat ", " tags);
+    class_name;
 
-  fprintf out "
-  public %s(Object o) throws JSONException {
-    String tag = Util.extractTag(o);
-   %a
-      throw new JSONException(\"Invalid tag: \" + tag);
-  }
+  List.iter (fun (json_name, scala_name, opt_ty) ->
+      fprintf out "
+  case class %s() extends %s {
+
+    def toJson: argonaut.Json =
 "
-    class_name
-    (fun out l ->
-       List.iter (fun (json_name, _func_name, enum_name, field_name, opt_ty) ->
-         match opt_ty with
-         | None ->
-             fprintf out " \
-                          if (tag.equals(\"%s\"))
-      t = Tag.%s;
-    else"
-               json_name (* TODO: java-string-escape this *)
-               enum_name
-
-         | Some (atd_ty, java_ty) ->
-             let src = sprintf "((JSONArray)o).%s(1)" (get env atd_ty false) in
-             let set_value =
-               assign env
-                 (Some ("field_" ^ field_name)) src
-                 java_ty atd_ty "      "
-             in
-             fprintf out " \
-                          if (tag.equals(\"%s\")) {
-%s
-      t = Tag.%s;
-    }
-    else"
-               json_name (* TODO: java-string-escape this *)
-               set_value
-               enum_name
-       ) l
-    ) cases;
-
-  List.iter (fun (_, func_name, enum_name, field_name, opt_ty) ->
-    match opt_ty with
+        scala_name
+        class_name;
+    (match opt_ty with
     | None ->
+       fprintf out "      jString(\"%s\")\n" json_name;
+    | Some (atd_ty, java_ty) ->
         fprintf out "
-  public void set%s() {
-    /* TODO: clear previously-set field and avoid memory leak */
-    t = Tag.%s;
-  }
-"
-          func_name
-          enum_name;
-    | Some (_atd_ty, java_ty) ->
-        fprintf out "
-  %s field_%s = null;
-  public void set%s(%s x) {
-    /* TODO: clear previously-set field in order to avoid memory leak */
-    t = Tag.%s;
-    field_%s = x;
-  }
-  public %s get%s() {
-    if (t == Tag.%s)
-      return field_%s;
-    else
-      return null;
-  }
-"
-          java_ty field_name
-          func_name java_ty
-          enum_name
-          field_name
-          java_ty func_name
-          enum_name
-          field_name;
+      argonaut.Json.array(
+        \"%s\",
+        %s
+      )"
+          json_name
+          "FIXME"(*(to_string env ("field_" ^ field_name) atd_ty "         ")*)
+      );
+    fprintf out "  }\n"
   ) cases;
-
-  fprintf out "
-  public void toJsonBuffer(StringBuilder _out) throws JSONException {
-    if (t == null)
-      throw new JSONException(\"Uninitialized %s\");
-    else {
-      switch(t) {%a
-      default:
-        break; /* unused; keeps compiler happy */
-      }
-    }
-  }
-
-  public String toJson() throws JSONException {
-    StringBuilder out = new StringBuilder(128);
-    toJsonBuffer(out);
-    return out.toString();
-  }
-"
-    class_name
-    (fun out l ->
-       List.iter (fun (json_name, _func_name, enum_name, field_name, opt_ty) ->
-         match opt_ty with
-         | None ->
-             fprintf out "
-      case %s:
-        _out.append(\"\\\"%s\\\"\");
-        break;"
-               enum_name
-               json_name (* TODO: java-string-escape *)
-
-         | Some (atd_ty, _) ->
-             fprintf out "
-      case %s:
-         _out.append(\"[\\\"%s\\\",\");
-%s         _out.append(\"]\");
-         break;"
-               enum_name
-               json_name
-               (to_string env ("field_" ^ field_name) atd_ty "         ")
-       ) l
-    ) cases;
 
   fprintf out "}\n";
   close_out out;
@@ -503,76 +344,45 @@ and trans_record my_name env (loc, fields, annots) =
   let (java_tys, env) = List.fold_left
       (fun (java_tys, env) -> function
          | `Field (_, (field_name, _, annots), atd_ty) ->
-             let field_name = get_java_field_name field_name annots in
-             let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
+             let field_name = get_scala_field_name field_name annots in
+             let (java_ty, env) = trans_inner env atd_ty in
              ((field_name, java_ty) :: java_tys, env)
       )
       ([], env) fields in
   let java_tys = List.rev java_tys in
-  (* Output Java class *)
+  (* Output Scala class *)
   let class_name = Atds_names.to_class_name my_name in
   let out = open_class env class_name in
   (* Javadoc *)
   output_string out (javadoc loc annots "");
-  fprintf out "\
-public class %s implements Atds {
-  /**
-   * Construct from a fresh record with null fields.
-   */
-  public %s() {
-  }
-
-  /**
-   * Construct from a JSON string.
-   */
-  public %s(String s) throws JSONException {
-    this(new JSONObject(s));
-  }
-
-  %s(JSONObject jo) throws JSONException {
-"
-    class_name
-    class_name
-    class_name
-    class_name;
+  fprintf out "case class %s(\n" class_name;
 
   let env = List.fold_left
       (fun env (`Field (_, (field_name, _, annots), _) as field) ->
-         let field_name = get_java_field_name field_name annots in
+         let field_name = get_scala_field_name field_name annots in
          let cmd =
-           assign_field env field (List.assoc_exn field_name java_tys) in
-         fprintf out "%s" cmd;
+           declare_field env field (List.assoc_exn field_name java_tys) in
+         fprintf out "%s,\n" cmd;
          env
       )
       env fields in
-  fprintf out "\n  \
-               }
+  fprintf out ") extends Atds {";
+  fprintf out "
 
-  public void toJsonBuffer(StringBuilder _out) throws JSONException {
-    boolean _isFirst = true;
-    _out.append(\"{\");%a
-    _out.append(\"}\");
-  }
-
-  public String toJson() throws JSONException {
-    StringBuilder out = new StringBuilder(128);
-    toJsonBuffer(out);
-    return out.toString();
-  }
+  override def toJson: Json = Json(\n%a  )
 "
-    (fun out l ->
+    (fun out ->
        List.iter (fun field ->
          output_string out (to_string_field env field)
-       ) l;
+       )
     ) fields;
-
-  List.iter
+(*  List.iter
     (function `Field (loc, (field_name, _, annots), _) ->
-       let field_name = get_java_field_name field_name annots in
+       let field_name = get_scala_field_name field_name annots in
        let java_ty = List.assoc_exn field_name java_tys in
        output_string out (javadoc loc annots "  ");
        fprintf out "  public %s %s;\n" java_ty field_name)
-    fields;
+    fields;*)
   fprintf out "}\n";
   close_out out;
   env
@@ -590,5 +400,8 @@ and trans_inner env atd_ty =
       )
   | List (_, sub_atd_ty, _)  ->
       let (ty', env) = trans_inner env sub_atd_ty in
-      ("java.util.ArrayList<" ^ ty' ^ ">", env)
+      ("List[" ^ ty' ^ "]", env)
+  | Option (_, sub_atd_ty, _) ->
+      let (ty', env) = trans_inner env sub_atd_ty in
+      ("Option[" ^ ty' ^ "]", env)
   | x -> type_not_supported x

@@ -1,6 +1,13 @@
 (* Sum (enum) *)
 type e = [ Alpha | Beta ]
 
+(* Record with optional field *)
+type simple_record = {
+  int_field: int;
+  ?opt : bool option
+}
+
+(* TODO: Enable more tests
 (* Sum *)
 type sample_sum = [
   | Simple_tag
@@ -41,9 +48,9 @@ type record_with_defaults = {
   ~e : e;
 }
 
-(* Record with optional field *)
-type simple_record = { ?o : bool option }
 
 (* https://github.com/esperco/atdj/issues/2 *)
 type a = [ A of b list ]
 type b = [ B ]
+
+*)

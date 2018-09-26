@@ -303,27 +303,30 @@ object %s {
     class_name;
 
   List.iter (fun (json_name, scala_name, opt_ty) ->
-      fprintf out "
-  case class %s() extends %s {
-
-    def toJson: argonaut.Json =
-"
-        scala_name
-        class_name;
-    (match opt_ty with
+    match opt_ty with
     | None ->
-       fprintf out "      jString(\"%s\")\n" json_name;
-    | Some (atd_ty, java_ty) ->
+       fprintf out "
+  case object %s extends %s {
+    def toJson: argonaut.Json = jString(\"%s\")
+  }
+"
+         scala_name
+         class_name
+         json_name;
+    | Some (atd_ty, scala_ty) ->
         fprintf out "
-      argonaut.Json.array(
-        \"%s\",
-        %s
-      )"
+    case class %s(data: %s) extends %s {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString(\"%s\"),
+        %s.asJson
+      )
+    }"
+          scala_name
+          scala_ty
+          class_name
           json_name
-          "FIXME"(*(to_string env ("field_" ^ field_name) atd_ty "         ")*)
-      );
-    fprintf out "  }\n"
-  ) cases;
+          "data"(*(to_string env ("field_" ^ field_name) atd_ty "         ")*)
+   ) cases;
 
   fprintf out "\n}\n";
   close_out out;

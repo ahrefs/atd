@@ -11,10 +11,50 @@ sealed abstract class SampleSum extends Atds
    */
 object SampleSum {
 
-  case class SimpleTag() extends SampleSum {
-
-    def toJson: argonaut.Json =
-      jString("Simple_tag")
+  case object SimpleTag extends SampleSum {
+    def toJson: argonaut.Json = jString("Simple_tag")
   }
 
+    case class Bool(data: Boolean) extends SampleSum {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString("Bool"),
+        data.asJson
+      )
+    }
+    case class Int(data: Integer) extends SampleSum {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString("Int"),
+        data.asJson
+      )
+    }
+    case class Float(data: Double) extends SampleSum {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString("Float"),
+        data.asJson
+      )
+    }
+    case class String(data: String) extends SampleSum {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString("String"),
+        data.asJson
+      )
+    }
+    case class SimpleRecord(data: SimpleRecord) extends SampleSum {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString("Simple_record"),
+        data.asJson
+      )
+    }
+    case class ComplexRecord(data: ComplexRecord) extends SampleSum {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString("Complex_record"),
+        data.asJson
+      )
+    }
+    case class RecordWithDefaults(data: RecordWithDefaults) extends SampleSum {
+      def toJson: argonaut.Json = argonaut.Json.array(
+        jString("Record_with_defaults"),
+        data.asJson
+      )
+    }
 }

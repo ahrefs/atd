@@ -11,16 +11,12 @@ sealed abstract class E extends Atds
    */
 object E {
 
-  case class Alpha() extends E {
-
-    def toJson: argonaut.Json =
-      jString("Alpha")
+  case object Alpha extends E {
+    def toJson: argonaut.Json = jString("Alpha")
   }
 
-  case class Beta() extends E {
-
-    def toJson: argonaut.Json =
-      jString("Beta")
+  case object Beta extends E {
+    def toJson: argonaut.Json = jString("Beta")
   }
 
 }

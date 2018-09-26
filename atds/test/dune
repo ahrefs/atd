@@ -13,28 +13,28 @@
 ;; (package atds)
 ;; (action (diff expected/B.scala com/mylife/test/B.scala)))
 ;;
-;;(alias
-;; (name runtest)
-;; (package atds)
-;; (action
-;;  (diff expected/ComplexRecord.scala com/mylife/test/ComplexRecord.scala)))
+(alias
+ (name runtest)
+ (package atds)
+ (action
+  (diff expected/ComplexRecord.scala com/mylife/test/ComplexRecord.scala)))
 
 (alias
  (name runtest)
  (package atds)
  (action (diff expected/E.scala com/mylife/test/E.scala)))
 
-;;(alias
-;; (name runtest)
-;; (package atds)
-;; (action
-;;  (diff expected/RecordWithDefaults.scala com/mylife/test/RecordWithDefaults.scala)))
-;;
-;;(alias
-;; (name runtest)
-;; (package atds)
-;; (action (diff expected/SampleSum.scala com/mylife/test/SampleSum.scala)))
-;;
+(alias
+ (name runtest)
+ (package atds)
+ (action
+  (diff expected/RecordWithDefaults.scala com/mylife/test/RecordWithDefaults.scala)))
+
+(alias
+ (name runtest)
+ (package atds)
+ (action (diff expected/SampleSum.scala com/mylife/test/SampleSum.scala)))
+
 (alias
  (name runtest)
  (package atds)

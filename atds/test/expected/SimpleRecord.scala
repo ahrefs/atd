@@ -2,8 +2,8 @@
 package com.mylife.test;
 import argonaut._, Argonaut._
 case class SimpleRecord(
-  int_field: Integer,
-  opt: Option[Boolean],
+  int_field : Integer,
+  opt : Option[Boolean],
 ) extends Atds {
 
   override def toJson: Json = Json(

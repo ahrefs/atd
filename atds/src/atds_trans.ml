@@ -150,7 +150,7 @@ let declare_field env
         None
   in
   let opt_set_default = match opt_default with Some s -> " = "^s | None -> "" in
-  sprintf "  %s: %s%s" field_name scala_ty opt_set_default
+  sprintf "  %s : %s%s" field_name scala_ty opt_set_default
 
 
 (* Generate a toJsonBuffer command *)
@@ -325,7 +325,7 @@ object %s {
     fprintf out "  }\n"
   ) cases;
 
-  fprintf out "}\n";
+  fprintf out "\n}\n";
   close_out out;
   env
 

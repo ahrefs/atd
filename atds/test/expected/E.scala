@@ -22,4 +22,5 @@ object E {
     def toJson: argonaut.Json =
       jString("Beta")
   }
+
 }

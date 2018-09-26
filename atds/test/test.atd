@@ -7,18 +7,21 @@ type simple_record = {
   ?opt : bool option
 }
 
-(* TODO: Enable more tests
+
 (* Sum *)
 type sample_sum = [
   | Simple_tag
+(*
   | Bool of bool
   | Int of int
   | Float of float
-  | String <java name="S"> of string
+  | String <scala name="S"> of string
   | Simple_record of simple_record
   | Complex_record of complex_record
   | Record_with_defaults of record_with_defaults
+*)
 ]
+
 
 (* Record *)
 type complex_record = {
@@ -28,14 +31,14 @@ type complex_record = {
   l : bool list;
   sample_sum : sample_sum;
 
-  (* Java keywords used as field names *)
+  (* Scala keywords used as field names *)
   ?class : int option;
   ?final <java name="is_final"> : int option;
+  case <scala name="kase"> : string;
 
   (* List of records *)
   l2 : record_with_defaults list;
 }
-
 <doc text="wibble">
 
 (* Record with default fields *)
@@ -43,14 +46,13 @@ type record_with_defaults = {
   ~b : bool;
   ~i : int;
   ~s : string;
-  ~o : bool option;
+  (*TODO ~o : bool option;*)
   ~l : bool list;
   ~e : e;
 }
 
-
+(*
 (* https://github.com/esperco/atdj/issues/2 *)
 type a = [ A of b list ]
 type b = [ B ]
-
 *)

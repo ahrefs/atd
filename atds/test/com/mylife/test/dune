@@ -4,10 +4,10 @@
   ;; A.scala
   Atds.scala
   ;; B.scala
-  ;; ComplexRecord.scala
+  ComplexRecord.scala
   E.scala
-  ;; RecordWithDefaults.scala
-  ;; SampleSum.scala
+  RecordWithDefaults.scala
+  SampleSum.scala
   SimpleRecord.scala
   )
  (deps ../../../test.atd)

@@ -8,5 +8,10 @@ trait Atds {
   /**
    * Get the Argonaut JSON representation
    */
-  def toJson(): Json
+  def toJson: Json
+}
+object Atds {
+  implicit def argonautCodecAtds[A <: Atds] = new argonaut.EncodeJson[A] {
+    override def encode(a: A) = a.toJson
+  }
 }

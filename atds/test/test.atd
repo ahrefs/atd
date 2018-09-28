@@ -27,6 +27,7 @@ type complex_record = {
   i : int;
   s : string;
   l : bool list;
+  m : int list list;
   sample_sum : sample_sum;
 
   (* Scala keywords used as field names *)

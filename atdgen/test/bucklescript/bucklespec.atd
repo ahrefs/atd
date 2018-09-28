@@ -66,3 +66,19 @@ type record_json_name =
   }
 
 type single_tuple = [ Single_tuple of (int) ]
+
+(*** Test json adapters ***)
+
+type adapted = [
+  | A of a
+  | B of b
+] <json adapter.ocaml="Atdgen_codec_runtime.Json_adapter.Type_field">
+
+type a = {
+  thing: string;
+  other_thing: bool;
+}
+
+type b = {
+  thing: int;
+}

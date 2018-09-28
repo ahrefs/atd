@@ -2,105 +2,8 @@ open Atd.Import
 open Atds_names
 open Atds_env
 open Atds_util
-(* Calculate the JSON representation of an ATD type.
- *
- * Values of sum types t are encoded as either Strings or two-element
- * JSONArrays, depending upon the arity of the particular constructor.
- * A nullary constructor C is denoted by the String "C", whilst
- * an application of a unary constructor C to an ATD value v is denoted by the
- * JSONArray ["C", <v>], where <v> is the JSON representation of v.
- *
- * Option types other than in optional fields (e.g. '?foo: int option')
- * are not supported.
-*)
-let json_of_atd env atd_ty =
-  let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
-  match atd_ty with
-  | Sum    _ -> "Object" (* Either a String or a two element JSONArray *)
-  | Record _ -> "JSONObject"
-  | List   _ -> "JSONArray"
-  | Name (_, (_, ty, _), _) ->
-      (match ty with
-       | "bool"   -> "boolean"
-       | "int"    -> "int"
-       | "float"  -> "double"
-       | "string" -> "String"
-       | _        -> type_not_supported atd_ty
-      )
-  | x -> type_not_supported x
 
-(* Calculate the method name required to extract the JSON representation of an
- * ATD value from either a JSONObject or a JSONArray ("get", "opt",
- * "getInt", "optInt", ...)
-*)
-let get env atd_ty opt =
-  let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
-  let prefix = if opt then "opt" else "get" in
-  let suffix =
-    match atd_ty with
-    | Sum _ -> ""
-    | _ -> String.capitalize_ascii (json_of_atd env atd_ty) in
-  prefix ^ suffix
-
-let extract_from_edgy_brackets s =
-  Str.global_replace
-    (Str.regexp "^[^<]*<\\|>[^>]*$") "" s
-(*
-extract_from_edgy_brackets "ab<cd<e>>f";;
-- : string = "cd<e>"
-*)
-
-(* Assignment with translation.  Suppose that atd_ty is an ATD type, with
- * corresponding Java and (Javafied) JSON types java_ty and json_ty. Then this
- * function assigns to a variable `dst' of type java_ty from a variable `src' of
- * type `json_ty'.
-*)
-let rec assign env opt_dst src java_ty atd_ty indent =
-  let atd_ty = norm_ty env atd_ty in
-  match opt_dst with
-  | None ->
-      (match atd_ty with
-       | Sum _ ->
-           sprintf "new %s(%s)" java_ty src
-       | Record _ ->
-           sprintf "new %s(%s)" java_ty src
-       | Name (_, (_, ty, _), _) ->
-           (match ty with
-            | "bool" | "int" | "float" | "string" -> src
-            | _  -> type_not_supported atd_ty
-           )
-       | x -> type_not_supported x
-      )
-  | Some dst ->
-      (match atd_ty with
-       | Sum _ ->
-           sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
-       | Record _ ->
-           sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
-       | List (_, sub_ty, _) ->
-           let java_sub_ty = (*ahem*) extract_from_edgy_brackets java_ty in
-           let sub_expr = assign env None "_tmp" java_sub_ty sub_ty "" in
-
-           sprintf "%s%s = new %s();\n" indent dst java_ty
-           ^ sprintf "%sfor (int _i = 0; _i < %s.length(); ++_i) {\n" indent src
-
-           ^ sprintf "%s  %s _tmp = %s.%s(_i);\n" indent
-             (json_of_atd env sub_ty) src (get env sub_ty false)
-
-           ^ sprintf "%s  %s.add(%s);\n" indent
-             dst sub_expr
-           ^ sprintf "%s}\n" indent
-
-       | Name (_, (_, ty, _), _) ->
-           (match ty with
-            | "bool" | "int" | "float" | "string" ->
-                sprintf "%s%s = %s;\n" indent dst src
-            | _  -> type_not_supported atd_ty
-           )
-       | x -> type_not_supported x
-      )
-
-(* Assign from an object field, with support for optional fields.  The are two
+(* Declare a case class field, with support for optional fields.  The are two
  * kinds of optional fields: `With_default (~) and `Optional (?).  For both
  * kinds, we return the following values if the field is absent:
  *
@@ -152,28 +55,6 @@ let declare_field env
   let opt_set_default = match opt_default with Some s -> " = "^s | None -> "" in
   sprintf "  %s : %s%s" field_name scala_ty opt_set_default
 
-
-(* Generate a toJsonBuffer command *)
-let rec to_string env id atd_ty indent =
-  let atd_ty = norm_ty env atd_ty in
-  match atd_ty with
-  | List (_, atd_sub_ty, _) ->
-      sprintf "%s_out.append(\"[\");\n" indent
-      ^ sprintf "%sfor (int i = 0; i < %s.size(); ++i) {\n" indent id
-      ^ to_string env (id ^ ".get(i)") atd_sub_ty (indent ^ "  ")
-      ^ sprintf "%s  if (i < %s.size() - 1)\n" indent id
-      ^ sprintf "%s    _out.append(\",\");\n" indent
-      ^ sprintf "%s}\n" indent
-      ^ sprintf "%s_out.append(\"]\");\n" indent
-  | Name (_, (_, "string", _), _) ->
-      (* TODO Check that this is the correct behaviour *)
-      sprintf
-        "%sUtil.writeJsonString(_out, %s);\n"
-        indent id
-  | Name _ ->
-      sprintf "%s_out.append(String.valueOf(%s));\n" indent id
-  | _ ->
-      sprintf "%s%s.toJsonBuffer(_out);\n" indent id
 
 (* Generate an argonaut field for a record field. *)
 let to_string_field env = function
@@ -325,7 +206,7 @@ object %s {
           scala_ty
           class_name
           json_name
-          "data"(*(to_string env ("field_" ^ field_name) atd_ty "         ")*)
+          "data"
    ) cases;
 
   fprintf out "\n}\n";

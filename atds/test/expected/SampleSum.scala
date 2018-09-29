@@ -39,9 +39,9 @@ object SampleSum {
         data.asJson
       )
     }
-    case class SimpleRecord(data: SimpleRecord) extends SampleSum {
+    case class SimpleRec(data: SimpleRecord) extends SampleSum {
       def toJson: argonaut.Json = argonaut.Json.array(
-        jString("Simple_record"),
+        jString("Simple_rec"),
         data.asJson
       )
     }

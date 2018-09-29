@@ -15,7 +15,7 @@ type sample_sum = [
   | Int of int
   | Float of float
   | String <scala name="S"> of string
-  | Simple_record of simple_record
+  | Simple_rec of simple_record
   | Complex_record of complex_record
   | Record_with_defaults of record_with_defaults
 ]

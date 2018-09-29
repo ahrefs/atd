@@ -44,7 +44,7 @@
  (name runtest)
  (package atds)
  (deps
-  AtdjTest.java
+  AtdsTest.scala
   argonaut_2.12-6.2.2.jar
   junit-4.8.2.jar
   (glob_files com/mylife/test/*.scala))

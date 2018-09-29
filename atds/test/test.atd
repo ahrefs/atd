@@ -45,7 +45,7 @@ type record_with_defaults = {
   ~b : bool;
   ~i : int;
   ~s : string;
-  (*TODO ~o : bool option;*)
+  ~o : bool option;
   ~l : bool list;
   ~e : e;
 }

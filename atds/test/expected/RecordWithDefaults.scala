@@ -5,6 +5,7 @@ case class RecordWithDefaults(
   b : Boolean = false,
   i : Integer = 0,
   s : String = "",
+  o : Option[Boolean] = None,
   l : List[Boolean] = Nil,
   e : E,
 ) extends Atds {
@@ -13,6 +14,7 @@ case class RecordWithDefaults(
     "b" := b,
     "i" := i,
     "s" := s,
+    "o" := o,
     "l" := l,
     "e" := e,
   )

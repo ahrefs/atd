@@ -11,7 +11,7 @@ open Atds_util
  *   int    -> 0
  *   float  -> 0.0
  *   string -> ""
- *   list   -> []
+ *   list   -> Nil
  *   option -> None
  *
  * Optional fields of record and sum types are not supported. They are
@@ -35,7 +35,7 @@ let declare_field env
   let opt_default =
     match kind with
     | Atd.Ast.With_default ->
-        (match norm_ty ~unwrap_option:true env atd_ty with
+        (match norm_ty env atd_ty with
          | Name (_, (_, name, _), _) ->
              (match name with
               | "bool" -> Some "false"
@@ -46,6 +46,7 @@ let declare_field env
              )
          | List _ ->
             Some "Nil"
+         | Option _ -> Some "None"
          | _ ->
              None (* TODO: fail if no default is provided *)
         )

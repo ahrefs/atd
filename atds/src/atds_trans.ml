@@ -156,7 +156,7 @@ and trans_sum my_name env (_, vars, _) =
         let scala_name = get_scala_variant_name atd_name an in
         let opt_java_ty =
           opt_ty |> Option.map (fun ty ->
-            let (java_ty, _) = trans_inner env (unwrap_option env ty) in
+            let (java_ty, _) = trans_inner env ty in
             (ty, java_ty)
           ) in
         (json_name, scala_name, opt_java_ty)

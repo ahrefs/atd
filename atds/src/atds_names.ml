@@ -144,3 +144,12 @@ let get_json_variant_name field_name annot =
     ~sections:["json"]
     ~field:"name"
     annot
+
+(* Splits a package name into a prefix and last component.
+   Eg: "com.example.foo.bar" -> ("com.example.foo", "bar")
+*)
+let split_package_name p =
+  let dot = String.rindex p '.' in
+  let prefix = String.sub p 0 dot in
+  let suffix = String.sub p (dot + 1) (String.length p - dot - 1) in
+  (prefix, suffix)

@@ -1,6 +1,53 @@
 // Automatically generated; do not edit
-package com.mylife.test;
+package com.mylife
+
 import argonaut._, Argonaut._
+
+package object test {
+
+/**
+ * Common utility interface.
+ */
+trait Atds {
+  /**
+   * Get the Argonaut JSON representation
+   */
+  def toJson: Json
+}
+object Atds {
+  implicit def argonautCodecAtds[A <: Atds] = new argonaut.EncodeJson[A] {
+    override def encode(a: A) = a.toJson
+  }
+}
+/**
+ * Construct objects of type e.
+ */
+sealed abstract class E extends Atds
+
+  /**
+   * Define tags for sum type e.
+   */
+object E {
+
+  case object Alpha extends E {
+    def toJson: argonaut.Json = jString("Alpha")
+  }
+
+  case object Beta extends E {
+    def toJson: argonaut.Json = jString("Beta")
+  }
+
+}
+case class SimpleRecord(
+  int_field : Int,
+  opt : Option[Boolean],
+) extends Atds {
+
+  override def toJson: Json = Json(
+    "int_field" := int_field,
+    "opt" := opt,
+  )
+}
 /**
  * Construct objects of type sample_sum.
  */
@@ -57,4 +104,53 @@ object SampleSum {
         data.asJson
       )
     }
+}
+/**
+ * wibble
+ */
+case class ComplexRecord(
+  b : Boolean,
+  i : Int,
+  s : String,
+  l : List[Boolean],
+  m : List[List[Int]],
+  sample_sum : SampleSum,
+  class_ : Option[Int],
+  final_ : Option[Int],
+  kase : String,
+  l2 : List[RecordWithDefaults],
+) extends Atds {
+
+  override def toJson: Json = Json(
+    "b" := b,
+    "i" := i,
+    "s" := s,
+    "l" := l,
+    "m" := m,
+    "sample_sum" := sample_sum,
+    "class" := class_,
+    "final" := final_,
+    "case" := kase,
+    "l2" := l2,
+  )
+}
+case class RecordWithDefaults(
+  b : Boolean = false,
+  i : Int = 0,
+  s : String = "",
+  o : Option[Boolean] = None,
+  l : List[Boolean] = Nil,
+  e : E,
+) extends Atds {
+
+  override def toJson: Json = Json(
+    "b" := b,
+    "i" := i,
+    "s" := s,
+    "o" := o,
+    "l" := l,
+    "e" := e,
+  )
+}
+
 }

@@ -117,15 +117,21 @@ let javadoc loc annots indent =
  * value upon access.
 *)
 
-let open_class env cname =
-  let out = open_out (env.package_dir ^ "/" ^ cname ^ ".scala") in
+let open_package env =
+  let pref, suf = Atds_names.split_package_name env.package in
+  let out = env.output in
   fprintf out "\
 // Automatically generated; do not edit
-package %s;
+package %s
+
 import argonaut._, Argonaut._
+
+package object %s {
+
 "
-    env.package;
-  out
+    pref
+    suf;
+  fun () -> output_string out "\n}\n"
 
 let rec trans_module env items = List.fold_left trans_outer env items
 
@@ -164,7 +170,7 @@ and trans_sum my_name env (_, vars, _) =
   ) vars
   in
 
-  let out = open_class env class_name in
+  let out = env.output in
 
   fprintf out "\
 /**
@@ -211,7 +217,6 @@ object %s {
    ) cases;
 
   fprintf out "\n}\n";
-  close_out out;
   env
 
 (* Translate a record into a Java class.  Each record field becomes a field
@@ -237,7 +242,7 @@ and trans_record my_name env (loc, fields, annots) =
   let java_tys = List.rev java_tys in
   (* Output Scala class *)
   let class_name = Atds_names.to_class_name my_name in
-  let out = open_class env class_name in
+  let out = env.output in
   (* Javadoc *)
   output_string out (javadoc loc annots "");
   fprintf out "case class %s(\n" class_name;
@@ -269,7 +274,6 @@ and trans_record my_name env (loc, fields, annots) =
        fprintf out "  public %s %s;\n" java_ty field_name)
     fields;*)
   fprintf out "}\n";
-  close_out out;
   env
 
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)

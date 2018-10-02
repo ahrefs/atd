@@ -6,28 +6,13 @@ open Atds_env
 let args_spec env = Arg.align
     [ "-package",
       Arg.String (fun x -> env := { !env with package = x }),
-      " Package name of generated files"
+      " Package name of generated files";
+      "-o",
+      Arg.String (fun x -> env := { !env with output = open_out x }),
+      " File name for Scala output"
     ]
 
 let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"
-
-let make_package_dirs package =
-  let re   = Str.regexp "\\." in
-  let dirs = Str.split re package in
-  List.fold_left
-    (fun parent dir ->
-       let full_dir = parent ^ "/" ^ dir in
-       if Sys.file_exists full_dir then
-         if not (Sys.is_directory full_dir) then
-           failwith (
-             sprintf "Cannot make directory %s: file already exists" full_dir
-           )
-         else ()
-       else
-         Unix.mkdir full_dir 0o755;
-       full_dir
-    )
-    "." dirs
 
 let main () =
   Printexc.record_backtrace true;
@@ -74,15 +59,15 @@ let main () =
         atd_module
   } in
 
-  (* Create package directories *)
-  let env = { env with package_dir = make_package_dirs env.package } in
-
-  (* Generate classes from ATD definition *)
-  let env = Atds_trans.trans_module env atd_module in
+  let close_package = Atds_trans.open_package env in
 
   (* Output helper classes *)
-  Atds_helper.output_atds env
+  Atds_helper.output_atds env;
 
+  (* Generate classes from ATD definition *)
+  let _ = Atds_trans.trans_module env atd_module in
+
+  close_package()
 
 let () =
   try main ()

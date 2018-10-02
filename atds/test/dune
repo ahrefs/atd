@@ -1,44 +1,14 @@
-;;(alias
-;; (name runtest)
-;; (package atds)
-;; (action (diff expected/A.scala com/mylife/test/A.scala)))
 
-(alias
- (name runtest)
- (package atds)
- (action (diff expected/Atds.scala com/mylife/test/Atds.scala)))
-
-;;(alias
-;; (name runtest)
-;; (package atds)
-;; (action (diff expected/B.scala com/mylife/test/B.scala)))
-;;
-(alias
- (name runtest)
- (package atds)
+(rule
+ (targets test.scala)
+ (deps test.atd)
  (action
-  (diff expected/ComplexRecord.scala com/mylife/test/ComplexRecord.scala)))
+  (run %{bin:atds} %{deps} -package com.mylife.test -o test.scala)))
 
 (alias
  (name runtest)
  (package atds)
- (action (diff expected/E.scala com/mylife/test/E.scala)))
-
-(alias
- (name runtest)
- (package atds)
- (action
-  (diff expected/RecordWithDefaults.scala com/mylife/test/RecordWithDefaults.scala)))
-
-(alias
- (name runtest)
- (package atds)
- (action (diff expected/SampleSum.scala com/mylife/test/SampleSum.scala)))
-
-(alias
- (name runtest)
- (package atds)
- (action (diff expected/SimpleRecord.scala com/mylife/test/SimpleRecord.scala)))
+ (action (diff test.expected.scala test.scala)))
 
 (alias
  (name runtest)
@@ -47,5 +17,5 @@
   AtdsTest.scala
   argonaut_2.12-6.2.2.jar
   junit-4.8.2.jar
-  (glob_files com/mylife/test/*.scala))
+  test.scala)
  (action (run ./run_test.sh)))

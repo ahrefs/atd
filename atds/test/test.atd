@@ -48,6 +48,30 @@ type record_with_defaults = {
   ~o : bool option;
   ~l : bool list;
   ~e : e;
+  }
+
+type bigger_record = {
+  inherit record_with_defaults;
+  more : string;
+}
+
+(* type alias *)
+type rec = record_with_defaults
+type rwd <scala name="RWD"> = record_with_defaults
+
+type bigger_sum = [
+  inherit e
+  | Gamma
+]
+
+type street = (int * string)
+type city = string
+type state = string
+
+type addr = {
+  street: street;
+  city: city;
+  state: state;
 }
 
 (*

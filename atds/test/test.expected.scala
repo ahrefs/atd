@@ -152,5 +152,75 @@ case class RecordWithDefaults(
     "e" := e,
   )
 }
+case class BiggerRecord(
+  b : Boolean = false,
+  i : Int = 0,
+  s : String = "",
+  o : Option[Boolean] = None,
+  l : List[Boolean] = Nil,
+  e : E,
+  more : String,
+) extends Atds {
+
+  override def toJson: Json = Json(
+    "b" := b,
+    "i" := i,
+    "s" := s,
+    "o" := o,
+    "l" := l,
+    "e" := e,
+    "more" := more,
+  )
+}
+
+type Rec = RecordWithDefaults
+
+
+type RWD = RecordWithDefaults
+
+/**
+ * Construct objects of type bigger_sum.
+ */
+sealed abstract class BiggerSum extends Atds
+
+  /**
+   * Define tags for sum type bigger_sum.
+   */
+object BiggerSum {
+
+  case object Alpha extends BiggerSum {
+    def toJson: argonaut.Json = jString("Alpha")
+  }
+
+  case object Beta extends BiggerSum {
+    def toJson: argonaut.Json = jString("Beta")
+  }
+
+  case object Gamma extends BiggerSum {
+    def toJson: argonaut.Json = jString("Gamma")
+  }
+
+}
+
+type Street = (Int, String)
+
+
+type City = String
+
+
+type State = String
+
+case class Addr(
+  street : Street,
+  city : String,
+  state : String,
+) extends Atds {
+
+  override def toJson: Json = Json(
+    "street" := street,
+    "city" := city,
+    "state" := state,
+  )
+}
 
 }

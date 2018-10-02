@@ -135,15 +135,14 @@ package object %s {
 
 let rec trans_module env items = List.fold_left trans_outer env items
 
-and trans_outer env (Atd.Ast.Type (_, (name, _, _), atd_ty)) =
+and trans_outer env (Atd.Ast.Type (_, (name, _, annots), atd_ty)) =
   match unwrap atd_ty with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
   | Record (loc, v, a) ->
       trans_record name env (loc, v, a)
-  | Name (_, (_, _name, _), _) ->
-      (* Don't translate primitive types at the top-level *)
-      env
+  | Name _ | Tuple _ ->
+      trans_alias name env annots atd_ty
   | x -> type_not_supported x
 
 (* Translation of sum types.  For a sum type
@@ -162,7 +161,7 @@ and trans_sum my_name env (_, vars, _) =
         let scala_name = get_scala_variant_name atd_name an in
         let opt_java_ty =
           opt_ty |> Option.map (fun ty ->
-            let (java_ty, _) = trans_inner env ty in
+            let java_ty = trans_inner env ty in
             (ty, java_ty)
           ) in
         (json_name, scala_name, opt_java_ty)
@@ -235,7 +234,7 @@ and trans_record my_name env (loc, fields, annots) =
       (fun (java_tys, env) -> function
          | `Field (_, (field_name, _, annots), atd_ty) ->
              let field_name = get_scala_field_name field_name annots in
-             let (java_ty, env) = trans_inner env atd_ty in
+             let java_ty = trans_inner env atd_ty in
              ((field_name, java_ty) :: java_tys, env)
       )
       ([], env) fields in
@@ -276,6 +275,11 @@ and trans_record my_name env (loc, fields, annots) =
   fprintf out "}\n";
   env
 
+and trans_alias name env annots ty =
+  let scala_name = Atds_names.get_scala_variant_name name annots in
+  fprintf env.output "\ntype %s = %s\n\n" scala_name (trans_inner env ty);
+  env
+
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)
 and trans_inner env atd_ty =
   match atd_ty with
@@ -283,14 +287,17 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
        | Name (_, (_, name2, _), _) ->
            (* It's a primitive type e.g. int *)
-           (Atds_names.to_class_name name2, env)
+           Atds_names.to_class_name name2
        | _ ->
-           (Atds_names.to_class_name name1, env)
+           Atds_names.to_class_name name1
       )
   | List (_, sub_atd_ty, _)  ->
-      let (ty', env) = trans_inner env sub_atd_ty in
-      ("List[" ^ ty' ^ "]", env)
+      let ty' = trans_inner env sub_atd_ty in
+      "List[" ^ ty' ^ "]"
   | Option (_, sub_atd_ty, _) ->
-      let (ty', env) = trans_inner env sub_atd_ty in
-      ("Option[" ^ ty' ^ "]", env)
+      let ty' = trans_inner env sub_atd_ty in
+      "Option[" ^ ty' ^ "]"
+  | Tuple (_, cells, annot) ->
+     let cells = List.map (fun (_, ty, _) -> trans_inner env ty) cells in
+     sprintf "(%s)" (String.concat ", " cells)
   | x -> type_not_supported x

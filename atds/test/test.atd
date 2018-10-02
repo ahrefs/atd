@@ -12,7 +12,7 @@ type simple_record = {
 type sample_sum = [
   | Simple_tag
   | Bool of bool
-  | Int of int
+  | Int <scala name="Integer"> of int
   | Float of float
   | String <scala name="S"> of string
   | Simple_rec of simple_record

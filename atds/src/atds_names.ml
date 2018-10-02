@@ -22,15 +22,15 @@ let to_camel_case (s : string) =
   String.iter f s;
   Bytes.to_string (Bytes.sub res 0 !offset)
 
-(* Translate type names into idiomatic Java class names.  We special case
- * `string', `int' and `bool'  (see code).  For the remainder, we remove
+(* Translate type names into idiomatic Scala names.  We special case
+ * `string', `int', `bool' and `float` (see code).  For the remainder, we remove
  * underscores and capitalise any character that is immediately following
  * an underscore or digit.  We also capitalise the initial character
  * e.g. "foo_bar42baz" becomes "FooBar42Baz". *)
 let to_class_name str =
   match str with
     | "string" -> "String"
-    | "int"    -> "Integer"
+    | "int"    -> "Int"
     | "bool"   -> "Boolean"
     | "float"  -> "Double"
     | _ -> to_camel_case str
@@ -122,7 +122,7 @@ let get_scala_variant_name field_name annot =
     Atd.Annot.get_field
       ~parse:(fun s -> Some s)
       ~default:field_name
-      ~sections:["java"]
+      ~sections:["scala"]
       ~field:"name"
       annot
   in

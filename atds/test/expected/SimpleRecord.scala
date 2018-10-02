@@ -2,7 +2,7 @@
 package com.mylife.test;
 import argonaut._, Argonaut._
 case class SimpleRecord(
-  int_field : Integer,
+  int_field : Int,
   opt : Option[Boolean],
 ) extends Atds {
 

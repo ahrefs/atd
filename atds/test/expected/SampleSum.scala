@@ -21,7 +21,7 @@ object SampleSum {
         data.asJson
       )
     }
-    case class Int(data: Integer) extends SampleSum {
+    case class Integer(data: Int) extends SampleSum {
       def toJson: argonaut.Json = argonaut.Json.array(
         jString("Int"),
         data.asJson
@@ -33,7 +33,7 @@ object SampleSum {
         data.asJson
       )
     }
-    case class String(data: String) extends SampleSum {
+    case class S(data: String) extends SampleSum {
       def toJson: argonaut.Json = argonaut.Json.array(
         jString("String"),
         data.asJson

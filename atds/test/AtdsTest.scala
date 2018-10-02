@@ -7,7 +7,7 @@ class AtdsTest {
 
   @Test
   def testSimpleSum() {
-    val i: SampleSum = SampleSum.Int(42)
+    val i: SampleSum = SampleSum.Integer(42)
     assertEquals("""["Int",42]""", i.asJson.nospaces)
 
     val b = SampleSum.Bool(true)

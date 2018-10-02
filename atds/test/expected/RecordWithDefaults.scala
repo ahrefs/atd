@@ -3,7 +3,7 @@ package com.mylife.test;
 import argonaut._, Argonaut._
 case class RecordWithDefaults(
   b : Boolean = false,
-  i : Integer = 0,
+  i : Int = 0,
   s : String = "",
   o : Option[Boolean] = None,
   l : List[Boolean] = Nil,

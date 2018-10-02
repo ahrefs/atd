@@ -6,13 +6,13 @@ import argonaut._, Argonaut._
  */
 case class ComplexRecord(
   b : Boolean,
-  i : Integer,
+  i : Int,
   s : String,
   l : List[Boolean],
-  m : List[List[Integer]],
+  m : List[List[Int]],
   sample_sum : SampleSum,
-  class_ : Option[Integer],
-  final_ : Option[Integer],
+  class_ : Option[Int],
+  final_ : Option[Int],
   kase : String,
   l2 : List[RecordWithDefaults],
 ) extends Atds {

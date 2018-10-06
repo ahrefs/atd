@@ -194,7 +194,7 @@ object %s {
     | None ->
        fprintf out "
   case object %s extends %s {
-    def toJson: argonaut.Json = jString(\"%s\")
+    override protected def toArgonaut: argonaut.Json = jString(\"%s\")
   }
 "
          scala_name
@@ -203,7 +203,7 @@ object %s {
     | Some (atd_ty, scala_ty) ->
         fprintf out "
     case class %s(data: %s) extends %s {
-      def toJson: argonaut.Json = argonaut.Json.array(
+      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
         jString(\"%s\"),
         %s.asJson
       )
@@ -258,7 +258,7 @@ and trans_record my_name env (loc, fields, annots) =
   fprintf out ") extends Atds {";
   fprintf out "
 
-  override def toJson: Json = Json(\n%a  )
+  override protected def toArgonaut: Json = Json(\n%a  )
 "
     (fun out ->
        List.iter (fun field ->

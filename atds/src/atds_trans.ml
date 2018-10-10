@@ -94,27 +94,24 @@ let javadoc loc annots indent =
 
 
 (* ------------------------------------------------------------------------- *)
-(* Translation of ATD types into Java types *)
+(* Translation of ATD types into Scala types *)
 
-(* For option, sum and record types, we generate a Java class.  Each such class
- * implements the following interface:
+(* For sum and record types, we generate a Scala case classes.
  *
- *  interface Atds {
- *    String toJson() throws JSONException;
- *    void toJsonBuffer(StringBuilder out) throws JSONException;
- *  }
+ * Each record is translated to a single case class with an argument/member
+ * for each field.
  *
- * The toJson() method outputs a JSON representation of the
- * associated value.
+ * Each sum type is translated into a sealed abstract class with
+ * a concrete case class extending it for each variant of the sum type.
  *
- * Each class also has a String constructor for a JSON string as well as a
- * constructor from the corresponding org.json type (see json_of_atd, above).
+ * All the classes generated extend Atds and can be encoded into JSON via the
+ * argonaut encoder at Atds.argonautCodecAtds.
  *
- * We do not generate classes for types bool, int, float, string and list;
- * instead we `inline' these types directly into the class in which they
- * occur.  We do this so that the Java programmer can access such values
- * directly, thereby avoiding the overhead of having to manually unbox each such
- * value upon access.
+ * Decoding JSON is not yet supported.
+ *
+ * For types bool, int, float, string, list, and option, we use existing
+ * Scala types. We do generate type aliases when they are used in type aliases.
+ * They can be encoded to (or decoded from) JSON via the standard argonaut codecs.
 *)
 
 let open_package env =

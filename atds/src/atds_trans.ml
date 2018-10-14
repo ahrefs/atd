@@ -168,7 +168,7 @@ and trans_sum my_name env (_, vars, _) =
 
   let out = env.output in
 
-  fprintf out "\
+  fprintf out "
 /**
  * Construct objects of type %s.
  */
@@ -178,11 +178,10 @@ sealed abstract class %s extends Atds
     class_name;
 
   fprintf out "
-  /**
-   * Define tags for sum type %s.
-   */
-object %s {
-"
+/**
+ * Define tags for sum type %s.
+ */
+object %s {"
     my_name
     class_name;
 
@@ -192,19 +191,18 @@ object %s {
        fprintf out "
   case object %s extends %s {
     override protected def toArgonaut: argonaut.Json = jString(\"%s\")
-  }
-"
+  }"
          scala_name
          class_name
          json_name;
     | Some (atd_ty, scala_ty) ->
         fprintf out "
-    case class %s(data: %s) extends %s {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString(\"%s\"),
-        %s.asJson
-      )
-    }"
+  case class %s(data: %s) extends %s {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString(\"%s\"),
+      %s.asJson
+     )
+  }"
           scala_name
           scala_ty
           class_name
@@ -239,6 +237,7 @@ and trans_record my_name env (loc, fields, annots) =
   (* Output Scala class *)
   let class_name = Atds_names.to_class_name my_name in
   let out = env.output in
+  fprintf out "\n";
   (* Javadoc *)
   output_string out (javadoc loc annots "");
   fprintf out "case class %s(\n" class_name;
@@ -274,7 +273,7 @@ and trans_record my_name env (loc, fields, annots) =
 
 and trans_alias name env annots ty =
   let scala_name = Atds_names.get_scala_variant_name name annots in
-  fprintf env.output "\ntype %s = %s\n\n" scala_name (trans_inner env ty);
+  fprintf env.output "\ntype %s = %s\n" scala_name (trans_inner env ty);
   env
 
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)

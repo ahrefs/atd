@@ -57,6 +57,9 @@ object E {
   }
 
 }
+
+type Es = List[E]
+
 case class SimpleRecord(
   int_field : Int,
   opt : Option[Boolean],

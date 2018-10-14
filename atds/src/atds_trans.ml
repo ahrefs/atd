@@ -138,7 +138,7 @@ and trans_outer env (Atd.Ast.Type (_, (name, _, annots), atd_ty)) =
       trans_sum name env (loc, v, a)
   | Record (loc, v, a) ->
       trans_record name env (loc, v, a)
-  | Name _ | Tuple _ ->
+  | Name _ | Tuple _ | List _ ->
       trans_alias name env annots atd_ty
   | x -> type_not_supported x
 

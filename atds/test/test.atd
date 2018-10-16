@@ -1,6 +1,8 @@
 (* Sum (enum) *)
 type e = [ Alpha | Beta ]
 
+type es = e list
+
 (* Record with optional field *)
 type simple_record = {
   int_field: int;

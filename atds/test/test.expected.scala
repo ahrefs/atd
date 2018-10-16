@@ -38,25 +38,26 @@ object Atds {
   }
 
 }
+
 /**
  * Construct objects of type e.
  */
 sealed abstract class E extends Atds
 
-  /**
-   * Define tags for sum type e.
-   */
+/**
+ * Define tags for sum type e.
+ */
 object E {
-
   case object Alpha extends E {
     override protected def toArgonaut: argonaut.Json = jString("Alpha")
   }
-
   case object Beta extends E {
     override protected def toArgonaut: argonaut.Json = jString("Beta")
   }
-
 }
+
+type Es = List[E]
+
 case class SimpleRecord(
   int_field : Int,
   opt : Option[Boolean],
@@ -67,63 +68,63 @@ case class SimpleRecord(
     "opt" := opt,
   )
 }
+
 /**
  * Construct objects of type sample_sum.
  */
 sealed abstract class SampleSum extends Atds
 
-  /**
-   * Define tags for sum type sample_sum.
-   */
+/**
+ * Define tags for sum type sample_sum.
+ */
 object SampleSum {
-
   case object SimpleTag extends SampleSum {
     override protected def toArgonaut: argonaut.Json = jString("Simple_tag")
   }
-
-    case class Bool(data: Boolean) extends SampleSum {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString("Bool"),
-        data.asJson
-      )
-    }
-    case class Integer(data: Int) extends SampleSum {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString("Int"),
-        data.asJson
-      )
-    }
-    case class Float(data: Double) extends SampleSum {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString("Float"),
-        data.asJson
-      )
-    }
-    case class S(data: String) extends SampleSum {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString("String"),
-        data.asJson
-      )
-    }
-    case class SimpleRec(data: SimpleRecord) extends SampleSum {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString("Simple_rec"),
-        data.asJson
-      )
-    }
-    case class ComplexRecord(data: ComplexRecord) extends SampleSum {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString("Complex_record"),
-        data.asJson
-      )
-    }
-    case class RecordWithDefaults(data: RecordWithDefaults) extends SampleSum {
-      override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-        jString("Record_with_defaults"),
-        data.asJson
-      )
-    }
+  case class Bool(data: Boolean) extends SampleSum {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString("Bool"),
+      data.asJson
+     )
+  }
+  case class Integer(data: Int) extends SampleSum {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString("Int"),
+      data.asJson
+     )
+  }
+  case class Float(data: Double) extends SampleSum {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString("Float"),
+      data.asJson
+     )
+  }
+  case class S(data: String) extends SampleSum {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString("String"),
+      data.asJson
+     )
+  }
+  case class SimpleRec(data: SimpleRecord) extends SampleSum {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString("Simple_rec"),
+      data.asJson
+     )
+  }
+  case class ComplexRecord(data: ComplexRecord) extends SampleSum {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString("Complex_record"),
+      data.asJson
+     )
+  }
+  case class RecordWithDefaults(data: RecordWithDefaults) extends SampleSum {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
+      jString("Record_with_defaults"),
+      data.asJson
+     )
+  }
 }
+
 /**
  * wibble
  */
@@ -153,6 +154,7 @@ case class ComplexRecord(
     "l2" := l2,
   )
 }
+
 case class RecordWithDefaults(
   b : Boolean = false,
   i : Int = 0,
@@ -171,6 +173,7 @@ case class RecordWithDefaults(
     "e" := e,
   )
 }
+
 case class BiggerRecord(
   b : Boolean = false,
   i : Int = 0,
@@ -194,7 +197,6 @@ case class BiggerRecord(
 
 type Rec = RecordWithDefaults
 
-
 type RWD = RecordWithDefaults
 
 /**
@@ -202,30 +204,24 @@ type RWD = RecordWithDefaults
  */
 sealed abstract class BiggerSum extends Atds
 
-  /**
-   * Define tags for sum type bigger_sum.
-   */
+/**
+ * Define tags for sum type bigger_sum.
+ */
 object BiggerSum {
-
   case object Alpha extends BiggerSum {
     override protected def toArgonaut: argonaut.Json = jString("Alpha")
   }
-
   case object Beta extends BiggerSum {
     override protected def toArgonaut: argonaut.Json = jString("Beta")
   }
-
   case object Gamma extends BiggerSum {
     override protected def toArgonaut: argonaut.Json = jString("Gamma")
   }
-
 }
 
 type Street = (Int, String)
 
-
 type City = String
-
 
 type State = String
 

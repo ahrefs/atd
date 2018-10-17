@@ -1,6 +1,6 @@
 (executable
- (name atds_main)
- (public_name atds)
+ (name atdjs_main)
+ (public_name atdjs)
  (flags (:include %{workspace_root}/ocamlflags.sexp))
- (package atds)
+ (package atdjs)
  (libraries str atd))

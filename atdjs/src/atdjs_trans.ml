@@ -1,7 +1,7 @@
 open Atd.Import
-open Atds_names
-open Atds_env
-open Atds_util
+open Atdjs_names
+open Atdjs_env
+open Atdjs_util
 
 (* Declare a case class field, with support for optional fields.  The are two
  * kinds of optional fields: `With_default (~) and `Optional (?).  For both
@@ -104,8 +104,8 @@ let javadoc loc annots indent =
  * Each sum type is translated into a sealed abstract class with
  * a concrete case class extending it for each variant of the sum type.
  *
- * All the classes generated extend Atds and can be encoded into JSON via the
- * argonaut encoder at Atds.argonautCodecAtds.
+ * All the classes generated extend Atdjs and can be encoded into JSON via the
+ * argonaut encoder at Atdjs.argonautCodecAtdjs.
  *
  * Decoding JSON is not yet supported.
  *
@@ -115,7 +115,7 @@ let javadoc loc annots indent =
 *)
 
 let open_package env =
-  let pref, suf = Atds_names.split_package_name env.package in
+  let pref, suf = Atdjs_names.split_package_name env.package in
   let out = env.output in
   fprintf out "\
 // Automatically generated; do not edit
@@ -150,7 +150,7 @@ and trans_outer env (Atd.Ast.Type (_, (name, _, annots), atd_ty)) =
  * in the Ty companion object.
 *)
 and trans_sum my_name env (_, vars, _) =
-  let class_name = Atds_names.to_class_name my_name in
+  let class_name = Atdjs_names.to_class_name my_name in
 
   let cases = List.map (function
     | Atd.Ast.Variant (_, (atd_name, an), opt_ty) ->
@@ -172,7 +172,7 @@ and trans_sum my_name env (_, vars, _) =
 /**
  * Construct objects of type %s.
  */
-sealed abstract class %s extends Atds
+sealed abstract class %s extends Atdjs
 "
     my_name
     class_name;
@@ -235,7 +235,7 @@ and trans_record my_name env (loc, fields, annots) =
       ([], env) fields in
   let java_tys = List.rev java_tys in
   (* Output Scala class *)
-  let class_name = Atds_names.to_class_name my_name in
+  let class_name = Atdjs_names.to_class_name my_name in
   let out = env.output in
   fprintf out "\n";
   (* Javadoc *)
@@ -251,7 +251,7 @@ and trans_record my_name env (loc, fields, annots) =
          env
       )
       env fields in
-  fprintf out ") extends Atds {";
+  fprintf out ") extends Atdjs {";
   fprintf out "
 
   override protected def toArgonaut: Json = Json(\n%a  )
@@ -272,7 +272,7 @@ and trans_record my_name env (loc, fields, annots) =
   env
 
 and trans_alias name env annots ty =
-  let scala_name = Atds_names.get_scala_variant_name name annots in
+  let scala_name = Atdjs_names.get_scala_variant_name name annots in
   fprintf env.output "\ntype %s = %s\n" scala_name (trans_inner env ty);
   env
 
@@ -283,9 +283,9 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
        | Name (_, (_, name2, _), _) ->
            (* It's a primitive type e.g. int *)
-           Atds_names.to_class_name name2
+           Atdjs_names.to_class_name name2
        | _ ->
-           Atds_names.to_class_name name1
+           Atdjs_names.to_class_name name1
       )
   | List (_, sub_atd_ty, _)  ->
       let ty' = trans_inner env sub_atd_ty in

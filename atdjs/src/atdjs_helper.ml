@@ -1,16 +1,16 @@
 (* Helper classes *)
 
 open Atd.Import
-open Atds_env
+open Atdjs_env
 
 (* TODO: Extract to to a plain file? *)
 
-let output_atds env =
+let output_atdjs env =
   fprintf env.output "\
 /**
  * Common utility interface.
  */
-trait Atds {
+trait Atdjs {
 
   /**
    * Get the Argonaut JSON representation.
@@ -33,9 +33,9 @@ trait Atds {
 
 }
 
-object Atds {
+object Atdjs {
 
-  implicit def argonautCodecAtds[A <: Atds] = new argonaut.EncodeJson[A] {
+  implicit def argonautCodecAtdjs[A <: Atdjs] = new argonaut.EncodeJson[A] {
     override def encode(a: A) = a.toArgonaut
   }
 

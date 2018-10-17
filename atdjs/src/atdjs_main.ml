@@ -1,7 +1,7 @@
 (* Main *)
 
 open Atd.Import
-open Atds_env
+open Atdjs_env
 
 let args_spec env = Arg.align
     [ "-package",
@@ -59,13 +59,13 @@ let main () =
         atd_module
   } in
 
-  let close_package = Atds_trans.open_package env in
+  let close_package = Atdjs_trans.open_package env in
 
   (* Output helper classes *)
-  Atds_helper.output_atds env;
+  Atdjs_helper.output_atdjs env;
 
   (* Generate classes from ATD definition *)
-  let _ = Atds_trans.trans_module env atd_module in
+  let _ = Atdjs_trans.trans_module env atd_module in
 
   close_package()
 

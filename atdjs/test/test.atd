@@ -1,7 +1,7 @@
 (* Sum (enum) *)
-type e = [ Alpha | Beta ]
-
+(*type e = [ Alpha | Beta ]
 type es = e list
+*)
 
 (* Record with optional field *)
 type simple_record = {
@@ -9,7 +9,7 @@ type simple_record = {
   ?opt : bool option
 }
 
-
+(*
 (* Sum *)
 type sample_sum = [
   | Simple_tag
@@ -65,6 +65,7 @@ type bigger_sum = [
   inherit e
   | Gamma
 ]
+*)
 
 type street = (int * string)
 type city = string

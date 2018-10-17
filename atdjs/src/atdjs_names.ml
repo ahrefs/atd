@@ -22,17 +22,33 @@ let to_camel_case (s : string) =
   String.iter f s;
   Bytes.to_string (Bytes.sub res 0 !offset)
 
-(* Translate type names into idiomatic Scala names.  We special case
+let get_json_field_name field_name annot =
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:field_name
+    ~sections:["json"]
+    ~field:"name"
+    annot
+
+let get_json_variant_name field_name annot =
+  Atd.Annot.get_field
+    ~parse:(fun s -> Some s)
+    ~default:field_name
+    ~sections:["json"]
+    ~field:"name"
+    annot
+
+(* Translate type names into idiomatic Flow names.  We special case
  * `string', `int', `bool' and `float` (see code).  For the remainder, we remove
  * underscores and capitalise any character that is immediately following
  * an underscore or digit.  We also capitalise the initial character
  * e.g. "foo_bar42baz" becomes "FooBar42Baz". *)
-let to_class_name str =
+let to_flow_name str =
   match str with
-    | "string" -> "String"
-    | "int"    -> "Int"
-    | "bool"   -> "Boolean"
-    | "float"  -> "Double"
+    | "string" -> "string"
+    | "float"
+    | "int" -> "number"
+    | "bool"   -> "boolean"
     | _ -> to_camel_case str
 
 (* Per https://scala-lang.org/files/archive/spec/2.12/01-lexical-syntax.html *)
@@ -85,18 +101,19 @@ let is_scala_keyword =
   fun k -> Hashtbl.mem tbl k
 
 (*
-   Automatically append an underscore to a field name if it is a Scala keyword.
-   Use the alternative provided as <scala name ="..."> if available.
+   Automatically append an underscore to a field name if it is a JS keyword.
+   Use the alternative provided as <js name ="...">  or <json name ="..."> if available.
 
-   ATD field                           Scala name
+   ATD field                                 Flow name
 
-   not_a_keyword                       not_a_keyword
-   class                               class_
-   class <scala name="class_name">     class_name
-   not_a_keyword <scala name="class">  class
+   not_a_keyword                             not_a_keyword
+   case                                      case_
+   case <json name="cas">                    cas
+   case <js name="kase"> <json name="cas">   kase
 
 *)
-let get_scala_field_name field_name annot =
+let get_js_field_name field_name annot =
+  let field_name = get_json_field_name field_name annot in
   let field_name =
     if is_scala_keyword field_name then
       field_name ^ "_"
@@ -106,11 +123,11 @@ let get_scala_field_name field_name annot =
   Atd.Annot.get_field
     ~parse:(fun s -> Some s)
     ~default:field_name
-    ~sections:["scala"]
+    ~sections:["js"]
     ~field:"name"
     annot
 
-let get_scala_variant_name field_name annot =
+let get_flow_type_name field_name annot =
   let lower_field_name = String.lowercase_ascii field_name in
   let field_name =
     if is_scala_keyword lower_field_name then
@@ -122,34 +139,8 @@ let get_scala_variant_name field_name annot =
     Atd.Annot.get_field
       ~parse:(fun s -> Some s)
       ~default:field_name
-      ~sections:["scala"]
+      ~sections:["js"]
       ~field:"name"
       annot
   in
   to_camel_case field_name
-
-
-let get_json_field_name field_name annot =
-  Atd.Annot.get_field
-    ~parse:(fun s -> Some s)
-    ~default:field_name
-    ~sections:["json"]
-    ~field:"name"
-    annot
-
-let get_json_variant_name field_name annot =
-  Atd.Annot.get_field
-    ~parse:(fun s -> Some s)
-    ~default:field_name
-    ~sections:["json"]
-    ~field:"name"
-    annot
-
-(* Splits a package name into a prefix and last component.
-   Eg: "com.example.foo.bar" -> ("com.example.foo", "bar")
-*)
-let split_package_name p =
-  let dot = String.rindex p '.' in
-  let prefix = String.sub p 0 dot in
-  let suffix = String.sub p (dot + 1) (String.length p - dot - 1) in
-  (prefix, suffix)

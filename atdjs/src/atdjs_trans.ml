@@ -31,7 +31,7 @@ open Atdjs_util
 *)
 let declare_field env
     (`Field (_, (atd_field_name, kind, annots), atd_ty)) scala_ty =
-  let field_name = get_scala_field_name atd_field_name annots in
+  let field_name = get_js_field_name atd_field_name annots in
   let opt_default =
     match kind with
     | Atd.Ast.With_default ->
@@ -61,7 +61,8 @@ let declare_field env
 let to_string_field env = function
   | (`Field (_, (atd_field_name, kind, annots), atd_ty)) ->
       let json_field_name = get_json_field_name atd_field_name annots in
-      let field_name = get_scala_field_name atd_field_name annots in
+      let field_name = get_js_field_name atd_field_name annots in
+
       (* TODO: Omit fields with default value. *)
       sprintf "    \"%s\" := %s,\n" json_field_name field_name
 
@@ -115,30 +116,21 @@ let javadoc loc annots indent =
 *)
 
 let open_package env =
-  let pref, suf = Atdjs_names.split_package_name env.package in
   let out = env.output in
   fprintf out "\
+// @flow
 // Automatically generated; do not edit
-package %s
 
-import argonaut._, Argonaut._
-
-package object %s {
-
-"
-    pref
-    suf;
-  fun () -> output_string out "\n}\n"
+";
+  fun () -> output_string out "\n//So long and thanks for all the fish\\\\\n"
 
 let rec trans_module env items = List.fold_left trans_outer env items
 
 and trans_outer env (Atd.Ast.Type (_, (name, _, annots), atd_ty)) =
   match unwrap atd_ty with
-  | Sum (loc, v, a) ->
-      trans_sum name env (loc, v, a)
-  | Record (loc, v, a) ->
-      trans_record name env (loc, v, a)
-  | Name _ | Tuple _ | List _ ->
+  (*| Sum (loc, v, a) ->
+      trans_sum name env (loc, v, a)*)
+  | Record _ | Name _ | Tuple _ | List _ ->
       trans_alias name env annots atd_ty
   | x -> type_not_supported x
 
@@ -146,77 +138,20 @@ and trans_outer env (Atd.Ast.Type (_, (name, _, annots), atd_ty)) =
  *
  *   type ty = Foo | Bar of whatever
  *
- * we generate a sealed abstract class Ty and case classes Foo and Bar
- * in the Ty companion object.
+ * Flow currently supports disjoint unions of object types, which we could use
+ * for sum types. https://flow.org/en/docs/types/unions/#toc-disjoint-unions
+ *
+ * A nicer approach would be to use disjoint unions of tuple types, as
+ * the JS representation would then match the JSON representation, but they are
+ * not yet supported in Flow. https://github.com/facebook/flow/issues/4296
 *)
-and trans_sum my_name env (_, vars, _) =
-  let class_name = Atdjs_names.to_class_name my_name in
-
-  let cases = List.map (function
-    | Atd.Ast.Variant (_, (atd_name, an), opt_ty) ->
-        let json_name = get_json_variant_name atd_name an in
-        let scala_name = get_scala_variant_name atd_name an in
-        let opt_java_ty =
-          opt_ty |> Option.map (fun ty ->
-            let java_ty = trans_inner env ty in
-            (ty, java_ty)
-          ) in
-        (json_name, scala_name, opt_java_ty)
-    | Inherit _ -> assert false
-  ) vars
-  in
-
-  let out = env.output in
-
-  fprintf out "
-/**
- * Construct objects of type %s.
- */
-sealed abstract class %s extends Atdjs
-"
-    my_name
-    class_name;
-
-  fprintf out "
-/**
- * Define tags for sum type %s.
- */
-object %s {"
-    my_name
-    class_name;
-
-  List.iter (fun (json_name, scala_name, opt_ty) ->
-    match opt_ty with
-    | None ->
-       fprintf out "
-  case object %s extends %s {
-    override protected def toArgonaut: argonaut.Json = jString(\"%s\")
-  }"
-         scala_name
-         class_name
-         json_name;
-    | Some (atd_ty, scala_ty) ->
-        fprintf out "
-  case class %s(data: %s) extends %s {
-    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-      jString(\"%s\"),
-      %s.asJson
-     )
-  }"
-          scala_name
-          scala_ty
-          class_name
-          json_name
-          "data"
-   ) cases;
-
-  fprintf out "\n}\n";
-  env
+and trans_sum my_name env (loc, vars, annots) =
+  type_not_supported (Sum(loc, vars, annots))
 
 (* Translate a record into a Java class.  Each record field becomes a field
  * within the class.
 *)
-and trans_record my_name env (loc, fields, annots) =
+and trans_record env (loc, fields, annots) =
   (* Remove `Inherit values *)
   let fields = List.map
       (function
@@ -224,56 +159,21 @@ and trans_record my_name env (loc, fields, annots) =
         | `Inherit _ -> assert false
       )
       fields in
-  (* Translate field types *)
-  let (java_tys, env) = List.fold_left
-      (fun (java_tys, env) -> function
-         | `Field (_, (field_name, _, annots), atd_ty) ->
-             let field_name = get_scala_field_name field_name annots in
-             let java_ty = trans_inner env atd_ty in
-             ((field_name, java_ty) :: java_tys, env)
-      )
-      ([], env) fields in
-  let java_tys = List.rev java_tys in
-  (* Output Scala class *)
-  let class_name = Atdjs_names.to_class_name my_name in
-  let out = env.output in
-  fprintf out "\n";
-  (* Javadoc *)
-  output_string out (javadoc loc annots "");
-  fprintf out "case class %s(\n" class_name;
-
-  let env = List.fold_left
-      (fun env (`Field (_, (field_name, _, annots), _) as field) ->
-         let field_name = get_scala_field_name field_name annots in
-         let cmd =
-           declare_field env field (List.assoc_exn field_name java_tys) in
-         fprintf out "%s,\n" cmd;
-         env
-      )
-      env fields in
-  fprintf out ") extends Atdjs {";
-  fprintf out "
-
-  override protected def toArgonaut: Json = Json(\n%a  )
-"
-    (fun out ->
-       List.iter (fun field ->
-         output_string out (to_string_field env field)
-       )
-    ) fields;
-(*  List.iter
-    (function `Field (loc, (field_name, _, annots), _) ->
-       let field_name = get_scala_field_name field_name annots in
-       let java_ty = List.assoc_exn field_name java_tys in
-       output_string out (javadoc loc annots "  ");
-       fprintf out "  public %s %s;\n" java_ty field_name)
-    fields;*)
-  fprintf out "}\n";
-  env
+  let buf = Buffer.create 128 in
+  Buffer.add_string buf "{\n";
+  List.iter (function
+      | `Field (_, (field_name, kind, annots), atd_ty) ->
+         let field_name = get_js_field_name field_name annots in
+         let flow_ty = trans_inner env atd_ty in
+         let opt = if kind == Atd.Ast.Optional then "?" else "" in
+         bprintf buf "  %s%s: %s,\n" field_name opt flow_ty
+  ) fields;
+  Buffer.add_string buf "}";
+  Buffer.contents buf
 
 and trans_alias name env annots ty =
-  let scala_name = Atdjs_names.get_scala_variant_name name annots in
-  fprintf env.output "\ntype %s = %s\n" scala_name (trans_inner env ty);
+  let scala_name = Atdjs_names.get_flow_type_name name annots in
+  fprintf env.output "\ntype %s = %s;\n" scala_name (trans_inner env ty);
   env
 
 (* Translate an `inner' type i.e. a type that occurs within a record or sum *)
@@ -283,17 +183,19 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
        | Name (_, (_, name2, _), _) ->
            (* It's a primitive type e.g. int *)
-           Atdjs_names.to_class_name name2
+           Atdjs_names.to_flow_name name2
        | _ ->
-           Atdjs_names.to_class_name name1
+           Atdjs_names.to_flow_name name1
       )
   | List (_, sub_atd_ty, _)  ->
       let ty' = trans_inner env sub_atd_ty in
-      "List[" ^ ty' ^ "]"
+      "Array<" ^ ty' ^ ">"
   | Option (_, sub_atd_ty, _) ->
       let ty' = trans_inner env sub_atd_ty in
-      "Option[" ^ ty' ^ "]"
+      "?" ^ ty'
   | Tuple (_, cells, annot) ->
      let cells = List.map (fun (_, ty, _) -> trans_inner env ty) cells in
-     sprintf "(%s)" (String.concat ", " cells)
+     sprintf "[%s]" (String.concat ", " cells)
+  | Record (loc, v, a) ->
+      trans_record env (loc, v, a)
   | x -> type_not_supported x

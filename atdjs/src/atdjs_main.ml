@@ -61,9 +61,6 @@ let main () =
 
   let close_package = Atdjs_trans.open_package env in
 
-  (* Output helper classes *)
-  Atdjs_helper.output_atdjs env;
-
   (* Generate classes from ATD definition *)
   let _ = Atdjs_trans.trans_module env atd_module in
 

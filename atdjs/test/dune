@@ -1,21 +1,19 @@
 
 (rule
- (targets test.scala)
+ (targets test.flow.js)
  (deps test.atd)
  (action
-  (run %{bin:atds} %{deps} -package com.mylife.test -o test.scala)))
+  (run %{bin:atdjs} %{deps} -o %{targets})))
 
 (alias
  (name runtest)
  (package atds)
- (action (diff test.expected.scala test.scala)))
+ (action (diff test.expected.js test.flow.js)))
 
-(alias
- (name runtest)
- (package atds)
- (deps
-  AtdsTest.scala
-  argonaut_2.12-6.2.2.jar
-  junit-4.8.2.jar
-  test.scala)
- (action (run ./run_test.sh)))
+;;(alias
+;; (name runtest)
+;; (package atds)
+;; (deps
+;;  atds_test.js
+;;  test.flow.js)
+;; (action (run ./run_test.sh)))

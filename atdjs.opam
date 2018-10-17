@@ -1,0 +1,19 @@
+opam-version: "2.0"
+maintainer: "martin@mjambon.com"
+authors: ["Ivan Jager" "Martin Jambon"]
+
+homepage: "https://github.com/mjambon/atd"
+bug-reports: "https://github.com/mjambon/atd/issues"
+dev-repo: "git://github.com/mjambon/atd.git"
+
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name] {with-test}
+]
+
+depends: [
+  "ocaml" {>= "4.02.3"}
+  "dune" {build}
+  "atd" {>= "2.0.0"}
+]

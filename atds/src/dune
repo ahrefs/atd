@@ -1,6 +1,5 @@
 (executable
  (name atds_main)
  (public_name atds)
- (flags (:include %{workspace_root}/ocamlflags.sexp))
  (package atds)
  (libraries str atd))

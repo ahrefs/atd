@@ -7,6 +7,8 @@
 * Improve automatic error messages shown in case of failed validation.
   Now include the validator's name or code.
 
+* Add support for json adapters in the bucklescript backend. (#153)
+
 2.0.0 (2018-05-31)
 ------------------
 

@@ -86,3 +86,7 @@ let nullable f = function
 let option_as_constr f = function
   | None -> `Variant ("None", None)
   | Some s -> `Variant ("Some", Some (f s))
+
+let adapter (restore: Json.t -> Json.t) (writer: 'a t) x =
+  let encoded = writer x in
+  restore encoded

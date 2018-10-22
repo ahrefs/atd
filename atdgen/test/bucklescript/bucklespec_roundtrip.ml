@@ -120,4 +120,34 @@ let () =
         ~yojson:Bucklespec_j.single_tuple_of_string
         ~buckle:Bucklespec_bs.write_single_tuple
         ~data:(`Single_tuple (123))
+    ; test_decode ~name:"decode adapted variant a"
+        ~yojson:Bucklespec_j.string_of_adapted
+        ~buckle:Bucklespec_bs.read_adapted
+        ~data: Bucklespec_t.(
+          `A ({
+            thing = "thing";
+            other_thing = false;
+          }))
+    ; test_encode ~name:"encode adapted variant a"
+        ~yojson:Bucklespec_j.adapted_of_string
+        ~buckle:Bucklespec_bs.write_adapted
+        ~data: Bucklespec_t.(
+          `A ({
+            thing = "thing";
+            other_thing = false;
+          }))
+    ; test_decode ~name:"decode adapted variant b"
+        ~yojson:Bucklespec_j.string_of_adapted
+        ~buckle:Bucklespec_bs.read_adapted
+        ~data: Bucklespec_t.(
+          `B ({
+            thing = 1;
+          }))
+    ; test_encode ~name:"encode adapted variant b"
+        ~yojson:Bucklespec_j.adapted_of_string
+        ~buckle:Bucklespec_bs.write_adapted
+        ~data: Bucklespec_t.(
+          `B ({
+            thing = 1;
+          }))
     ]

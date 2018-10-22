@@ -117,6 +117,21 @@ let rec get_reader_name
 
   | _ -> assert false
 
+let read_with_adapter adapter reader =
+  match adapter.Json.ocaml_adapter with
+  | None -> reader
+  | Some adapter_path ->
+      let normalize =
+        Oj_mapping.json_normalizer_of_adapter_path adapter_path
+      in
+      [
+        Line (
+          sprintf "%s %s (" (decoder_ident "adapter") normalize
+        );
+        Block reader;
+        Line ")";
+      ]
+
 let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
@@ -128,11 +143,14 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ Indent.Line (get_reader_name p x) ]
   | Record (loc, a, Record o, Record j) ->
-      Ocaml.obj_unimplemented loc o;
-      [ Annot ("fun", Line (sprintf "%s (fun json ->" decoder_make))
-      ; Block (make_record_reader ?type_annot p loc a j)
-      ; Line ")"
-      ]
+      let reader =
+        [ Annot ("fun", Line (sprintf "%s (fun json ->" decoder_make))
+        ; Block (make_record_reader ?type_annot p loc a j)
+        ; Line ")"
+        ]
+      in
+      let adapter = j.json_record_adapter in
+      read_with_adapter adapter reader
   | Tuple (_, a, Tuple, Tuple) ->
       [ Line (decoder_ident (sprintf "tuple%d" (Array.length a)))
       ; Block (
@@ -146,23 +164,23 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       ]
   | List (loc, x, List o, List j) ->
       (match j with
-          Array ->
-            [ Line (sprintf "%s ("
-                      (match o with
-                       | List -> decoder_ident "list"
-                       | Array -> decoder_ident "array"))
-            ; Block (make_reader p x)
-            ; Line ")"
-            ]
-        | Object ->
-            let _k, v = Ox_emit.get_assoc_type p.deref loc x in (* TODO key wrap *)
-            [ Line (sprintf "%s ("
-                      (match o with
-                       | List -> decoder_ident "obj_list"
-                       | Array -> decoder_ident "obj_array"))
-            ; Block (make_reader p v)
-            ; Line ")"
-            ]
+         Array ->
+           [ Line (sprintf "%s ("
+                     (match o with
+                      | List -> decoder_ident "list"
+                      | Array -> decoder_ident "array"))
+           ; Block (make_reader p x)
+           ; Line ")"
+           ]
+       | Object ->
+           let _k, v = Ox_emit.get_assoc_type p.deref loc x in (* TODO key wrap *)
+           [ Line (sprintf "%s ("
+                     (match o with
+                      | List -> decoder_ident "obj_list"
+                      | Array -> decoder_ident "obj_array"))
+           ; Block (make_reader p v)
+           ; Line ")"
+           ]
       )
   | Sum (_, a, Sum osum, Sum j) ->
       if j.json_open_enum then open_enum_not_supported ();
@@ -207,11 +225,15 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
           ])
         |> Indent.concat (Line ";")
       in
-      [ Line (decoder_ident "enum")
-      ; Line "["
-      ; Block cases
-      ; Line "]"
-      ]
+      let standard_reader =
+        [ Line (decoder_ident "enum")
+        ; Line "["
+        ; Block cases
+        ; Line "]"
+        ]
+      in
+      let adapter = j.json_sum_adapter in
+      read_with_adapter adapter standard_reader
   | Wrap (_, x, Wrap o, Wrap) ->
       (match o with
        | None -> make_reader p x
@@ -346,7 +368,7 @@ let rec get_writer_name
       encoder_ident (
         match j with
         | Float None -> "float"
-          (* TODO *)
+        (* TODO *)
         | Float (Some _precision) -> sprintf "float"
         | Int -> "float"
       )
@@ -371,6 +393,19 @@ let rec get_writer_name
       else s
 
   | _ -> assert false
+
+let write_with_adapter adapter writer =
+  match adapter.Json.ocaml_adapter with
+  | None -> writer
+  | Some adapter_path ->
+      let restore = Oj_mapping.json_restorer_of_adapter_path adapter_path in
+      [
+        Line (
+          sprintf "%s %s (" (encoder_ident "adapter") restore
+        );
+        Block writer;
+        Line ")";
+      ]
 
 let get_left_writer_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
@@ -398,56 +433,62 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       ]
   | List (loc, x, List o, List j) ->
       (match j with
-          Array ->
-            [ Line (sprintf "%s ("
-                       (match o with
-                        | List -> encoder_ident "list"
-                        | Array -> encoder_ident "array"))
-            ; Block (make_writer p x)
-            ; Line ")"
-            ]
-        | Object ->
-            let _k, v = Ox_emit.get_assoc_type p.deref loc x in
-            [ Annot
-                ("fun", Line (sprintf "%s (fun (t : %s) ->"
-                               encoder_make (type_annot_str type_annot)))
-            ; Block
-                [ Line (sprintf "%s |>"
-                           (match o with
-                            | List -> "t"
-                            | Array -> "Array.to_list t"))
-                ; Line "List.map ("
-                ; Block
-                    [ Line "fun (key, value) ->"
-                    ; Block
-                        [ Line (encoder_ident "field")
-                        ; Block
-                            [ Line "("
-                            ; Block (make_writer p v)
-                            ; Line ")"
-                            ]
-                        ; Block
-                            [ Line "~name:key" (* TODO unwrap keys? *)
-                            ; Line "value";
-                            ]
-                        ]
-                    ]
-                ; Line ") |>"
-                ; Line (encoder_ident "obj")
-                ]
-            ; Line ")"
-            ]
-       )
-  | Record (_, a, Record o, Record _) ->
-      [ Annot
-          ("fun", Line (sprintf "%s (fun (t : %s) ->"
-                          encoder_make (type_annot_str type_annot)))
-      ; Block (make_record_writer p a o)
-      ; Line ")"
-      ]
+         Array ->
+           [ Line (sprintf "%s ("
+                     (match o with
+                      | List -> encoder_ident "list"
+                      | Array -> encoder_ident "array"))
+           ; Block (make_writer p x)
+           ; Line ")"
+           ]
+       | Object ->
+           let _k, v = Ox_emit.get_assoc_type p.deref loc x in
+           [ Annot
+               ("fun" , Line (sprintf "%s (fun (t : %s) ->"
+                                encoder_make (type_annot_str type_annot)))
+           ; Block
+               [ Line (sprintf "%s |>"
+                         (match o with
+                          | List -> "t"
+                          | Array -> "Array.to_list t"))
+               ; Line "List.map ("
+               ; Block
+                   [ Line "fun (key, value) ->"
+                   ; Block
+                       [ Line (encoder_ident "field")
+                       ; Block
+                           [ Line "("
+                           ; Block (make_writer p v)
+                           ; Line ")"
+                           ]
+                       ; Block
+                           [ Line "~name:key" (* TODO unwrap keys? *)
+                           ; Line "value";
+                           ]
+                       ]
+                   ]
+               ; Line ") |>"
+               ; Line (encoder_ident "obj")
+               ]
+           ; Line ")"
+           ]
+      )
+  | Record (_, a, Record o, Record j) ->
+      let writer =
+        [ Annot
+            ("fun", Line (sprintf "%s (fun (t : %s) ->"
+                            encoder_make (type_annot_str type_annot)))
+        ; Block (make_record_writer p a o)
+        ; Line ")"
+        ]
+      in
+      write_with_adapter j.json_record_adapter writer
   | Sum (_, _a, Sum _osum, Sum j) ->
       if j.json_open_enum then open_enum_not_supported ();
-      make_sum_writer ?type_annot p x
+      let standard_writer = make_sum_writer ?type_annot p x in
+      let adapter = j.json_sum_adapter in
+      write_with_adapter adapter standard_writer
+
   | Wrap (_, x, Wrap o, Wrap) ->
       begin match o with
         | None -> make_writer p x

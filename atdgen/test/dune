@@ -127,7 +127,6 @@
 (executables
  (libraries atd atdgen-runtime)
  (names test_atdgen_main)
- (flags (:include %{workspace_root}/ocamlflags.sexp))
  (modules
   test
   json_adapters

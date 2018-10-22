@@ -38,6 +38,12 @@ type labeled = Bucklespec_t.labeled = { flag: valid; lb: label; count: int }
 
 type from_module_a = A_t.from_module_a
 
+type b = Bucklespec_t.b = { thing: int }
+
+type a = Bucklespec_t.a = { thing: string; other_thing: bool }
+
+type adapted = Bucklespec_t.adapted
+
 val read_valid :  valid Atdgen_codec_runtime.Decode.t
 
 val write_valid :  valid Atdgen_codec_runtime.Encode.t
@@ -105,4 +111,16 @@ val write_labeled :  labeled Atdgen_codec_runtime.Encode.t
 val read_from_module_a :  from_module_a Atdgen_codec_runtime.Decode.t
 
 val write_from_module_a :  from_module_a Atdgen_codec_runtime.Encode.t
+
+val read_b :  b Atdgen_codec_runtime.Decode.t
+
+val write_b :  b Atdgen_codec_runtime.Encode.t
+
+val read_a :  a Atdgen_codec_runtime.Decode.t
+
+val write_a :  a Atdgen_codec_runtime.Encode.t
+
+val read_adapted :  adapted Atdgen_codec_runtime.Decode.t
+
+val write_adapted :  adapted Atdgen_codec_runtime.Encode.t
 

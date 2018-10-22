@@ -38,3 +38,5 @@ val enum : (string * [`Single of 'a | `Decode of 'a t]) list -> 'a t
 val option_as_constr : 'a t -> 'a option t
 
 val nullable : 'a t -> 'a option t
+
+val adapter: (Json.t -> Json.t) -> 'a t -> 'a t

@@ -143,11 +143,14 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   | External _
   | Tvar _ -> [ Indent.Line (get_reader_name p x) ]
   | Record (loc, a, Record o, Record j) ->
-      Ocaml.obj_unimplemented loc o;
-      [ Annot ("fun", Line (sprintf "%s (fun json ->" decoder_make))
-      ; Block (make_record_reader ?type_annot p loc a j)
-      ; Line ")"
-      ]
+      let reader =
+        [ Annot ("fun", Line (sprintf "%s (fun json ->" decoder_make))
+        ; Block (make_record_reader ?type_annot p loc a j)
+        ; Line ")"
+        ]
+      in
+      let adapter = j.json_record_adapter in
+      read_with_adapter adapter reader
   | Tuple (_, a, Tuple, Tuple) ->
       [ Line (decoder_ident (sprintf "tuple%d" (Array.length a)))
       ; Block (
@@ -470,13 +473,16 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
            ; Line ")"
            ]
       )
-  | Record (_, a, Record o, Record _) ->
-      [ Annot
-          ("fun", Line (sprintf "%s (fun (t : %s) ->"
-                          encoder_make (type_annot_str type_annot)))
-      ; Block (make_record_writer p a o)
-      ; Line ")"
-      ]
+  | Record (_, a, Record o, Record j) ->
+      let writer =
+        [ Annot
+            ("fun", Line (sprintf "%s (fun (t : %s) ->"
+                            encoder_make (type_annot_str type_annot)))
+        ; Block (make_record_writer p a o)
+        ; Line ")"
+        ]
+      in
+      write_with_adapter j.json_record_adapter writer
   | Sum (_, _a, Sum _osum, Sum j) ->
       if j.json_open_enum then open_enum_not_supported ();
       let standard_writer = make_sum_writer ?type_annot p x in

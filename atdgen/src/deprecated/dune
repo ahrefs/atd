@@ -3,5 +3,4 @@
 (library
  (name atdgen)
  (public_name atdgen)
- (flags (:include %{workspace_root}/ocamlflags.sexp))
  (libraries atdgen-runtime))

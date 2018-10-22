@@ -1,0 +1,5 @@
+(env
+ ;; disable warnings against "Innocuous unused variables"
+ ;; enforce the separation between types `string` and `bytes`
+ (dev (flags :standard -w -27 -safe-string))
+ (release (flags :standard -w -27 -safe-string)))

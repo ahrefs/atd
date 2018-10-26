@@ -485,7 +485,7 @@ Notes:
 -  JSON tuples in standard JSON (``atdgen -j -j-std``) use the array
    notation e.g. ``["ABC", 123]``. Yojson also provides a specific
    syntax for tuples using parentheses, e.g. ``("ABC", 123)``.
--  Types defined as abstractare defined in another module.
+-  Types defined as abstract are defined in another module.
 
 ATD Annotations
 ===============

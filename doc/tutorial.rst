@@ -1235,14 +1235,14 @@ this will usually look like:
 .. code-block:: scheme
 
   (rule
-   (targets (example_j.ml
-             example_j.mli))
+   (targets example_j.ml
+            example_j.mli)
    (deps    example.atd)
    (action  (run atdgen -j -j-std %{deps})))
 
   (rule
-   (targets (example_t.ml
-             example_t.mli))
+   (targets example_t.ml
+            example_t.mli)
    (deps    example.atd)
    (action  (run atdgen -t %{deps})))
 

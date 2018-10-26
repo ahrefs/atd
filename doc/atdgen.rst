@@ -1013,7 +1013,7 @@ Second input file ``part2.atd`` depending on the first one:
     type points = point list
 
 To use a different type name than defined in the ``Part1`` module, add a
-``t`` field declaration to the annotation which refers the original
+``t`` field declaration to the annotation which refers to the original
 type name:
 
 .. code:: ocaml

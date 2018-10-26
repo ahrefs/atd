@@ -1012,6 +1012,16 @@ Second input file ``part2.atd`` depending on the first one:
     type point <ocaml from="Part1"> = abstract
     type points = point list
 
+To use a different type name than defined in the ``Part1`` module, add a
+``t`` field declaration to the annotation which refers the original
+type name:
+
+.. code:: ocaml
+
+    type point_xy <ocaml from="Part1" t="point"> = abstract
+    type points = point_xy list
+
+
 Field ``module``
 ~~~~~~~~~~~~~~~~~~
 

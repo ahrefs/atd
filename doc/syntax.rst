@@ -495,15 +495,15 @@ any monomorphic type expression.
 It allows notably to represent cyclic values and to enforce that cycles
 are preserved during transformations such as serialization.
 
-```ocaml
-(* Example of a simple graph type *)
-type shared_node = node shared (* sharing point *)
-type graph = shared_node list
-type node = {
-  label : string;
-  neighbors : shared_node list;
-}
-```
+.. code-block:: ocaml
+
+  (* Example of a simple graph type *)
+  type shared_node = node shared (* sharing point *)
+  type graph = shared_node list
+  type node = {
+    label : string;
+    neighbors : shared_node list;
+  }
 
 Two shared values that are physically identical must remain physically
 identical after any translation from one data format to another.

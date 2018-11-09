@@ -144,7 +144,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   | Tvar _ -> [ Indent.Line (get_reader_name p x) ]
   | Record (loc, a, Record o, Record j) ->
       let reader =
-        [ Annot ("fun", Line (sprintf "%s (fun json ->" decoder_make))
+        [ Line (sprintf "%s (fun json ->" decoder_make)
         ; Block (make_record_reader ?type_annot p loc a j)
         ; Line ")"
         ]
@@ -335,7 +335,7 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
     )
   in
   let reader_expr = make_reader ?type_annot p x in
-  let eta_expand = is_rec && not (Ox_emit.is_function reader_expr) in
+  let eta_expand = is_rec && not (Ox_emit.is_lambda reader_expr) in
   let extra_param, extra_args =
     if eta_expand then " js", " js"
     else "", ""
@@ -443,9 +443,8 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
            ]
        | Object ->
            let _k, v = Ox_emit.get_assoc_type p.deref loc x in
-           [ Annot
-               ("fun" , Line (sprintf "%s (fun (t : %s) ->"
-                                encoder_make (type_annot_str type_annot)))
+           [ Line (sprintf "%s (fun t: %s ->"
+               encoder_make (type_annot_str type_annot))
            ; Block
                [ Line (sprintf "%s |>"
                          (match o with
@@ -475,9 +474,8 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       )
   | Record (_, a, Record o, Record j) ->
       let writer =
-        [ Annot
-            ("fun", Line (sprintf "%s (fun (t : %s) ->"
-                            encoder_make (type_annot_str type_annot)))
+        [ Line (sprintf "%s (fun (t : %s) ->"
+                  encoder_make (type_annot_str type_annot))
         ; Block (make_record_writer p a o)
         ; Line ")"
         ]
@@ -606,7 +604,7 @@ let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
   let param = def.def_param in
   let write = get_left_writer_name p name param in
   let writer_expr = make_writer ?type_annot p x in
-  let eta_expand = is_rec && not (Ox_emit.is_function writer_expr) in
+  let eta_expand = is_rec && not (Ox_emit.is_lambda writer_expr) in
   let extra_param, extra_args =
     if eta_expand then " js", " js"
     else "", ""

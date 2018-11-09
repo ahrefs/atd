@@ -82,3 +82,15 @@ type a = {
 type b = {
   thing: int;
 }
+
+type recurse = {
+  recurse_items: recurse list;
+}
+
+type mutual_recurse1 = {
+  mutual_recurse2: mutual_recurse2;
+}
+
+type mutual_recurse2 = {
+  mutual_recurse1: mutual_recurse1;
+}

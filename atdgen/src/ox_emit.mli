@@ -29,7 +29,13 @@ val get_type_constraint
   -> ('a, 'b) Mapping.def
   -> string
 
+(** Determine whether the start of the given block of code was annotated
+    with the "fun" tag, indicating that it represents a lambda (anonymous
+    function). *)
+val is_lambda : Indent.t list -> bool
+
 val is_function : Indent.t list -> bool
+[@@deprecated "Please use 'is_lambda' instead of 'is_function'."]
 
 val needs_type_annot : _ expr -> bool
 

@@ -1,4 +1,4 @@
-type 'a t
+type 'a t = Json.t -> 'a
 
 val make : (Json.t -> 'a) -> 'a t
 

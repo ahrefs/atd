@@ -341,7 +341,7 @@ let make_ocaml_validator ~original_types is_rec let1 def =
   let param = def.def_param in
   let validate = get_left_validator_name name param in
   let validator_expr = make_validator x in
-  let eta_expand = is_rec && not (Ox_emit.is_function validator_expr) in
+  let eta_expand = is_rec && not (Ox_emit.is_lambda validator_expr) in
   let needs_annot = Ox_emit.needs_type_annot x in
   let extra_param, extra_args, type_annot =
     match eta_expand, needs_annot with

@@ -282,16 +282,18 @@ let create_%s %s
 
   | _ -> "", ""
 
-let rec is_function (l : Indent.t list) =
+let rec is_lambda (l : Indent.t list) =
   match l with
     [] -> false
   | x :: _ ->
       match x with
         Line _ -> false
-      | Block l -> is_function l
-      | Inline l -> is_function l
+      | Block l -> is_lambda l
+      | Inline l -> is_lambda l
       | Annot ("fun", _) -> true
-      | Annot (_, x) -> is_function [x]
+      | Annot (_, x) -> is_lambda [x]
+
+let is_function = is_lambda
 
 let name_of_var s = "_" ^ s
 

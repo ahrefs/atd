@@ -251,7 +251,7 @@ let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
   else
     mapping.f_value
 
-let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
+let rec make_writer ?type_constraint p (x : Oj_mapping.t) : Indent.t list =
   match x with
     Unit _
   | Bool _
@@ -285,8 +285,13 @@ let rec make_writer p (x : Oj_mapping.t) : Indent.t list =
       write_with_adapter adapter standard_writer
 
   | Record (_, a, Record o, Record j) ->
+      let xval =
+        match type_constraint with
+        | Some x -> sprintf "(x : %s)" x
+        | None -> "x"
+      in
       let standard_writer = [
-        Annot ("fun", Line "fun ob x ->");
+        Annot ("fun", Line (sprintf "fun ob %s ->" xval));
         Block (make_record_writer p a o);
       ] in
       let adapter = j.json_record_adapter in
@@ -1163,9 +1168,13 @@ let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
   let param = def.def_param in
   let write = get_left_writer_name p name param in
   let to_string = get_left_to_string_name p name param in
-  let writer_expr = make_writer p x in
-  let eta_expand = is_rec && not (Ox_emit.is_lambda writer_expr) in
   let needs_annot = Ox_emit.needs_type_annot x in
+  let writer_expr =
+    if needs_annot
+    then make_writer ~type_constraint p x
+    else make_writer p x
+  in
+  let eta_expand = is_rec && not (Ox_emit.is_lambda writer_expr) in
   let extra_param, extra_args, type_annot =
     match eta_expand, needs_annot with
     | true, false -> " ob x", " ob x", None

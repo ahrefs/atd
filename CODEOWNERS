@@ -1,0 +1,22 @@
+# This file determines who will be assigned code reviews by Github.
+# See https://help.github.com/articles/about-codeowners/
+
+# Fallback reviewers
+* @mjambon @rgrinberg
+
+# ATD language
+/atd/ @mjambon
+/atdcat/ @mjambon
+
+# OCaml and Bucklescript support
+/atdgen-runtime/ @rgrinberg @mjambon
+/atdgen/ @rgrinberg @mjambon
+
+# Java support
+# /atdj/ YOUR_NAME_HERE
+
+# Scala support
+/atds/ @aij
+
+# Use of the dune build system
+dune* @rgrinberg

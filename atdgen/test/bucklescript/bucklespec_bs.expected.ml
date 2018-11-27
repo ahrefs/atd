@@ -228,7 +228,7 @@ let read_v1 = (
   ]
 )
 let write__6 = (
-  Atdgen_codec_runtime.Encode.make (fun t: _ ->
+  Atdgen_codec_runtime.Encode.make (fun (t : _) ->
     t |>
     List.map (
       fun (key, value) ->

@@ -94,3 +94,7 @@ type mutual_recurse1 = {
 type mutual_recurse2 = {
   mutual_recurse1: mutual_recurse1;
 }
+
+type using_object = {
+   f : (string * int) list <json repr="object">;
+ }

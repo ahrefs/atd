@@ -17,6 +17,8 @@ type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool
 
 type v1 = Bucklespec_t.v1 =  V1_foo of bool | V2_bar of int 
 
+type using_object = Bucklespec_t.using_object = { f: (string * int) list }
+
 type single_tuple = Bucklespec_t.single_tuple
 
 type id = Bucklespec_t.id
@@ -77,6 +79,10 @@ val write_v2 :  v2 Atdgen_codec_runtime.Encode.t
 val read_v1 :  v1 Atdgen_codec_runtime.Decode.t
 
 val write_v1 :  v1 Atdgen_codec_runtime.Encode.t
+
+val read_using_object :  using_object Atdgen_codec_runtime.Decode.t
+
+val write_using_object :  using_object Atdgen_codec_runtime.Encode.t
 
 val read_single_tuple :  single_tuple Atdgen_codec_runtime.Decode.t
 

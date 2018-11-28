@@ -25,6 +25,11 @@
 /atdgen-runtime/ @rgrinberg @mjambon
 /atdgen/ @rgrinberg @mjambon
 
+# Bucklescript-specific files
+obuckle_* @rgrinberg
+bucklescript/ @rgrinberg
+*_bs* @rgrinberg
+
 # Java support
 # /atdj/ YOUR_NAME_HERE
 

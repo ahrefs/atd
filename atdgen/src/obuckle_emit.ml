@@ -81,6 +81,7 @@ let unwrap_f_value { Ox_emit.mapping; unwrapped; _} (p : param) =
     mapping.f_value
 
 let rec get_reader_name
+    ?type_annot
     ?(paren = false)
     ?(name_f = fun s -> "read_" ^ s)
     p (x : Oj_mapping.t) : string =
@@ -101,16 +102,15 @@ let rec get_reader_name
   | Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s
 
   | Name (_, s, args, None, None) ->
-      let l = List.map (get_reader_name ~paren:true p) args in
-      let s = String.concat " " (name_f s :: l) in
-      if paren && l <> [] then "(" ^ s ^ ")"
-      else s
+      let l = List.map (get_reader_name ?type_annot ~paren:true p) args in
+      let s = String.concat " " (name_f (Printf.sprintf "%s: %s" s (type_annot_str type_annot)) :: l) in
+      "(" ^ s ^ ")"
 
   | External (_, _, args,
               External (_, main_module, ext_name),
               External) ->
       let f = main_module ^ "." ^ name_f ext_name in
-      let l = List.map (get_reader_name ~paren:true p) args in
+      let l = List.map (get_reader_name ?type_annot ~paren:true p) args in
       let s = String.concat " " (f :: l) in
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
@@ -141,7 +141,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
   | String _
   | Name _
   | External _
-  | Tvar _ -> [ Indent.Line (get_reader_name p x) ]
+  | Tvar _ -> [ Indent.Line (get_reader_name ?type_annot p x) ]
   | Record (loc, a, Record o, Record j) ->
       let reader =
         [ Line (sprintf "%s (fun json ->" decoder_make)

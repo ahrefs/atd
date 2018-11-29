@@ -90,28 +90,28 @@ and write_mutual_recurse2 js = (
     )
   )
 ) js
-let rec read_mutual_recurse1 js = (
+let rec (read_mutual_recurse1: _) js = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
           mutual_recurse2 =
             Atdgen_codec_runtime.Decode.decode
             (
-              read_mutual_recurse2
+              (read_mutual_recurse2: _)
               |> Atdgen_codec_runtime.Decode.field "mutual_recurse2"
             ) json;
       } : mutual_recurse1)
     )
   )
 ) js
-and read_mutual_recurse2 js = (
+and (read_mutual_recurse2: _) js = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
           mutual_recurse1 =
             Atdgen_codec_runtime.Decode.decode
             (
-              read_mutual_recurse1
+              (read_mutual_recurse1: _)
               |> Atdgen_codec_runtime.Decode.field "mutual_recurse1"
             ) json;
       } : mutual_recurse2)
@@ -138,19 +138,19 @@ and write_recurse js = (
     )
   )
 ) js
-let rec read__5 js = (
+let rec (read__5: _) js = (
   Atdgen_codec_runtime.Decode.list (
-    read_recurse
+    (read_recurse: _)
   )
 ) js
-and read_recurse js = (
+and (read_recurse: _) js = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
           recurse_items =
             Atdgen_codec_runtime.Decode.decode
             (
-              read__5
+              (read__5: _)
               |> Atdgen_codec_runtime.Decode.field "recurse_items"
             ) json;
       } : recurse)
@@ -165,7 +165,7 @@ let write_variant2 = (
     Atdgen_codec_runtime.Encode.constr0 "C"
   )
 )
-let read_variant2 = (
+let (read_variant2: _) = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -189,7 +189,7 @@ let write_variant1 = (
     Atdgen_codec_runtime.Encode.constr0 "B"
   )
 )
-let read_variant1 = (
+let (read_variant1: _) = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -208,7 +208,7 @@ let read_variant1 = (
 let write_valid = (
   Atdgen_codec_runtime.Encode.bool
 )
-let read_valid = (
+let (read_valid: _) = (
   Atdgen_codec_runtime.Decode.bool
 )
 let write_v2 = (
@@ -223,7 +223,7 @@ let write_v2 = (
     ) x
   )
 )
-let read_v2 = (
+let (read_v2: _) = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -257,7 +257,7 @@ let write_v1 = (
     ) x
   )
 )
-let read_v1 = (
+let (read_v1: _) = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -294,7 +294,7 @@ let write__6 = (
     Atdgen_codec_runtime.Encode.obj
   )
 )
-let read__6 = (
+let (read__6: _) = (
   Atdgen_codec_runtime.Decode.obj_list (
     Atdgen_codec_runtime.Decode.int
   )
@@ -314,14 +314,14 @@ let write_using_object = (
     )
   )
 )
-let read_using_object = (
+let (read_using_object: _) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
           f =
             Atdgen_codec_runtime.Decode.decode
             (
-              read__6
+              (read__6: _)
               |> Atdgen_codec_runtime.Decode.field "f"
             ) json;
       } : using_object)
@@ -339,7 +339,7 @@ let write_single_tuple = (
     ) x
   )
 )
-let read_single_tuple = (
+let (read_single_tuple: _) = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -359,7 +359,7 @@ let write__2 = (
     Atdgen_codec_runtime.Encode.string
   |> Atdgen_codec_runtime.Encode.contramap (function `Id s -> s)
 )
-let read__2 = (
+let (read__2: _) = (
   (
     Atdgen_codec_runtime.Decode.string
   ) |> (Atdgen_codec_runtime.Decode.map (fun s -> `Id s))
@@ -367,8 +367,8 @@ let read__2 = (
 let write_id = (
   write__2
 )
-let read_id = (
-  read__2
+let (read_id: _) = (
+  (read__2: _)
 )
 let write__3 = (
   Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
@@ -394,7 +394,7 @@ let write__3 = (
     ) x
   )
 )
-let read__3 = (
+let (read__3: _) = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -431,7 +431,7 @@ let read__3 = (
       "Foo_id"
       ,
         `Decode (
-        read_id
+        (read_id: _)
         |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foo_id x) : _))
         )
       )
@@ -442,16 +442,16 @@ let write__4 = (
     write__3
   )
 )
-let read__4 = (
+let (read__4: _) = (
   Atdgen_codec_runtime.Decode.list (
-    read__3
+    (read__3: _)
   )
 )
 let write_simple_vars = (
   write__4
 )
-let read_simple_vars = (
-  read__4
+let (read_simple_vars: _) = (
+  (read__4: _)
 )
 let write_simple_var write__a = (
   Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
@@ -477,7 +477,7 @@ let write_simple_var write__a = (
     ) x
   )
 )
-let read_simple_var read__a = (
+let (read_simple_var: _ read__a) = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -514,7 +514,7 @@ let read_simple_var read__a = (
       "Foo_id"
       ,
         `Decode (
-        read_id
+        (read_id: _)
         |> Atdgen_codec_runtime.Decode.map (fun x -> ((`Foo_id x) : _))
         )
       )
@@ -529,7 +529,7 @@ let write_same_pair write__a = (
       write__a
     )
 )
-let read_same_pair read__a = (
+let (read_same_pair: _ read__a) = (
   Atdgen_codec_runtime.Decode.tuple2
     (
       read__a
@@ -553,7 +553,7 @@ let write_record_json_name = (
     )
   )
 )
-let read_record_json_name = (
+let (read_record_json_name: _) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
@@ -582,7 +582,7 @@ let write_point = (
       Atdgen_codec_runtime.Encode.unit
     )
 )
-let read_point = (
+let (read_point: _) = (
   Atdgen_codec_runtime.Decode.tuple4
     (
       Atdgen_codec_runtime.Decode.int
@@ -619,7 +619,7 @@ let write_param_similar write__a = (
     )
   )
 )
-let read_param_similar read__a = (
+let (read_param_similar: _ read__a) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
@@ -661,7 +661,7 @@ let write_param write__a = (
     )
   )
 )
-let read_param read__a = (
+let (read_param: _ read__a) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
@@ -703,7 +703,7 @@ let write_pair write__a write__b = (
     )
   )
 )
-let read_pair read__a read__b = (
+let (read_pair: _ read__a read__b) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
@@ -728,21 +728,21 @@ let write__1 write__a write__b = (
     write_pair write__a write__a
   )
 )
-let read__1 read__a read__b = (
+let (read__1: _ read__a read__b) = (
   Atdgen_codec_runtime.Decode.list (
-    read_pair read__a read__a
+    (read_pair: _ read__a read__a)
   )
 )
 let write_pairs write__a = (
   write__1 write__a write__a
 )
-let read_pairs read__a = (
-  read__1 read__a read__a
+let (read_pairs: _ read__a) = (
+  (read__1: _ read__a read__a)
 )
 let write_label = (
   Atdgen_codec_runtime.Encode.string
 )
-let read_label = (
+let (read_label: _) = (
   Atdgen_codec_runtime.Decode.string
 )
 let write_labeled = (
@@ -774,20 +774,20 @@ let write_labeled = (
     )
   )
 )
-let read_labeled = (
+let (read_labeled: _) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
           flag =
             Atdgen_codec_runtime.Decode.decode
             (
-              read_valid
+              (read_valid: _)
               |> Atdgen_codec_runtime.Decode.field "flag"
             ) json;
           lb =
             Atdgen_codec_runtime.Decode.decode
             (
-              read_label
+              (read_label: _)
               |> Atdgen_codec_runtime.Decode.field "lb"
             ) json;
           count =
@@ -803,7 +803,7 @@ let read_labeled = (
 let write_from_module_a = (
   A_bs.write_from_module_a
 )
-let read_from_module_a = (
+let (read_from_module_a: _) = (
   A_bs.read_from_module_a
 )
 let write_b = (
@@ -821,7 +821,7 @@ let write_b = (
     )
   )
 )
-let read_b = (
+let (read_b: _) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
@@ -857,7 +857,7 @@ let write_a = (
     )
   )
 )
-let read_a = (
+let (read_a: _) = (
   Atdgen_codec_runtime.Decode.make (fun json ->
     (
       ({
@@ -891,7 +891,7 @@ let write_adapted = (
     )
   )
 )
-let read_adapted = (
+let (read_adapted: _) = (
   Atdgen_codec_runtime.Decode.adapter Atdgen_codec_runtime.Json_adapter.Type_field.normalize (
     Atdgen_codec_runtime.Decode.enum
     [
@@ -899,7 +899,7 @@ let read_adapted = (
         "A"
         ,
           `Decode (
-          read_a
+          (read_a: _)
           |> Atdgen_codec_runtime.Decode.map (fun x -> ((`A x) : _))
           )
         )
@@ -908,7 +908,7 @@ let read_adapted = (
         "B"
         ,
           `Decode (
-          read_b
+          (read_b: _)
           |> Atdgen_codec_runtime.Decode.map (fun x -> ((`B x) : _))
           )
         )

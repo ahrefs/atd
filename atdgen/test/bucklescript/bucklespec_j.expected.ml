@@ -17,6 +17,8 @@ type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool
 
 type v1 = Bucklespec_t.v1 =  V1_foo of bool | V2_bar of int 
 
+type using_object = Bucklespec_t.using_object = { f: (string * int) list }
+
 type single_tuple = Bucklespec_t.single_tuple
 
 type id = Bucklespec_t.id
@@ -540,6 +542,124 @@ let read_v1 = (
 )
 let v1_of_string s =
   read_v1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__6 = (
+  Atdgen_runtime.Oj_run.write_assoc_list (
+    Yojson.Safe.write_string
+  ) (
+    Yojson.Safe.write_int
+  )
+)
+let string_of__6 ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__6 ob x;
+  Bi_outbuf.contents ob
+let read__6 = (
+  Atdgen_runtime.Oj_run.read_assoc_list (
+    Atdgen_runtime.Oj_run.read_string
+  ) (
+    Atdgen_runtime.Oj_run.read_int
+  )
+)
+let _6_of_string s =
+  read__6 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_using_object : _ -> using_object -> _ = (
+  fun ob x ->
+    Bi_outbuf.add_char ob '{';
+    let is_first = ref true in
+    if !is_first then
+      is_first := false
+    else
+      Bi_outbuf.add_char ob ',';
+    Bi_outbuf.add_string ob "\"f\":";
+    (
+      write__6
+    )
+      ob x.f;
+    Bi_outbuf.add_char ob '}';
+)
+let string_of_using_object ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_using_object ob x;
+  Bi_outbuf.contents ob
+let read_using_object = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    Yojson.Safe.read_lcurl p lb;
+    let field_f = ref (None) in
+    try
+      Yojson.Safe.read_space p lb;
+      Yojson.Safe.read_object_end lb;
+      Yojson.Safe.read_space p lb;
+      let f =
+        fun s pos len ->
+          if pos < 0 || len < 0 || pos + len > String.length s then
+            invalid_arg "out-of-bounds substring position or length";
+          if len = 1 && String.unsafe_get s pos = 'f' then (
+            0
+          )
+          else (
+            -1
+          )
+      in
+      let i = Yojson.Safe.map_ident p f lb in
+      Atdgen_runtime.Oj_run.read_until_field_value p lb;
+      (
+        match i with
+          | 0 ->
+            field_f := (
+              Some (
+                (
+                  read__6
+                ) p lb
+              )
+            );
+          | _ -> (
+              Yojson.Safe.skip_json p lb
+            )
+      );
+      while true do
+        Yojson.Safe.read_space p lb;
+        Yojson.Safe.read_object_sep p lb;
+        Yojson.Safe.read_space p lb;
+        let f =
+          fun s pos len ->
+            if pos < 0 || len < 0 || pos + len > String.length s then
+              invalid_arg "out-of-bounds substring position or length";
+            if len = 1 && String.unsafe_get s pos = 'f' then (
+              0
+            )
+            else (
+              -1
+            )
+        in
+        let i = Yojson.Safe.map_ident p f lb in
+        Atdgen_runtime.Oj_run.read_until_field_value p lb;
+        (
+          match i with
+            | 0 ->
+              field_f := (
+                Some (
+                  (
+                    read__6
+                  ) p lb
+                )
+              );
+            | _ -> (
+                Yojson.Safe.skip_json p lb
+              )
+        );
+      done;
+      assert false;
+    with Yojson.End_of_object -> (
+        (
+          {
+            f = (match !field_f with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "f");
+          }
+         : using_object)
+      )
+)
+let using_object_of_string s =
+  read_using_object (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_single_tuple = (
   fun ob x ->
     match x with

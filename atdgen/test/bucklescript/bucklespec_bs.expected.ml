@@ -17,6 +17,8 @@ type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool
 
 type v1 = Bucklespec_t.v1 =  V1_foo of bool | V2_bar of int 
 
+type using_object = Bucklespec_t.using_object = { f: (string * int) list }
+
 type single_tuple = Bucklespec_t.single_tuple
 
 type id = Bucklespec_t.id
@@ -224,6 +226,55 @@ let read_v1 = (
         )
       )
   ]
+)
+let write__6 = (
+  Atdgen_codec_runtime.Encode.make (fun (t : _) ->
+    t |>
+    List.map (
+      fun (key, value) ->
+        Atdgen_codec_runtime.Encode.field
+          (
+            Atdgen_codec_runtime.Encode.int
+          )
+          ~name:key
+          value
+    ) |>
+    Atdgen_codec_runtime.Encode.obj
+  )
+)
+let read__6 = (
+  Atdgen_codec_runtime.Decode.obj_list (
+    Atdgen_codec_runtime.Decode.int
+  )
+)
+let write_using_object = (
+  Atdgen_codec_runtime.Encode.make (fun (t : using_object) ->
+    (
+    Atdgen_codec_runtime.Encode.obj
+      [
+          Atdgen_codec_runtime.Encode.field
+            (
+            write__6
+            )
+          ~name:"f"
+          t.f
+      ]
+    )
+  )
+)
+let read_using_object = (
+  Atdgen_codec_runtime.Decode.make (fun json ->
+    (
+      ({
+          f =
+            Atdgen_codec_runtime.Decode.decode
+            (
+              read__6
+              |> Atdgen_codec_runtime.Decode.field "f"
+            ) json;
+      } : using_object)
+    )
+  )
 )
 let write_single_tuple = (
   Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with

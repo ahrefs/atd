@@ -443,7 +443,7 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
            ]
        | Object ->
            let _k, v = Ox_emit.get_assoc_type p.deref loc x in
-           [ Line (sprintf "%s (fun t: %s ->"
+           [ Line (sprintf "%s (fun (t : %s) ->"
                encoder_make (type_annot_str type_annot))
            ; Block
                [ Line (sprintf "%s |>"

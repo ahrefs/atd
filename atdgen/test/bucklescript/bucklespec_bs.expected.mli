@@ -11,6 +11,10 @@ and mutual_recurse2 = Bucklespec_t.mutual_recurse2 = {
   mutual_recurse1: mutual_recurse1
 }
 
+type variant2 = Bucklespec_t.variant2 =  A | C 
+
+type variant1 = Bucklespec_t.variant1 =  A | B 
+
 type valid = Bucklespec_t.valid
 
 type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool 
@@ -67,6 +71,14 @@ val write_mutual_recurse1 :  mutual_recurse1 Atdgen_codec_runtime.Encode.t
 val read_mutual_recurse2 :  mutual_recurse2 Atdgen_codec_runtime.Decode.t
 
 val write_mutual_recurse2 :  mutual_recurse2 Atdgen_codec_runtime.Encode.t
+
+val read_variant2 :  variant2 Atdgen_codec_runtime.Decode.t
+
+val write_variant2 :  variant2 Atdgen_codec_runtime.Encode.t
+
+val read_variant1 :  variant1 Atdgen_codec_runtime.Decode.t
+
+val write_variant1 :  variant1 Atdgen_codec_runtime.Encode.t
 
 val read_valid :  valid Atdgen_codec_runtime.Decode.t
 

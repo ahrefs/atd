@@ -11,6 +11,10 @@ and mutual_recurse2 = Bucklespec_t.mutual_recurse2 = {
   mutual_recurse1: mutual_recurse1
 }
 
+type variant2 = Bucklespec_t.variant2 =  A | C 
+
+type variant1 = Bucklespec_t.variant1 =  A | B 
+
 type valid = Bucklespec_t.valid
 
 type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool 
@@ -153,6 +157,54 @@ and read_recurse js = (
     )
   )
 ) js
+let write_variant2 = (
+  Atdgen_codec_runtime.Encode.make (fun (x : variant2) -> match x with
+    | A ->
+    Atdgen_codec_runtime.Encode.constr0 "A"
+    | C ->
+    Atdgen_codec_runtime.Encode.constr0 "C"
+  )
+)
+let read_variant2 = (
+  Atdgen_codec_runtime.Decode.enum
+  [
+      (
+      "A"
+      ,
+        `Single (A)
+      )
+    ;
+      (
+      "C"
+      ,
+        `Single (C)
+      )
+  ]
+)
+let write_variant1 = (
+  Atdgen_codec_runtime.Encode.make (fun (x : variant1) -> match x with
+    | A ->
+    Atdgen_codec_runtime.Encode.constr0 "A"
+    | B ->
+    Atdgen_codec_runtime.Encode.constr0 "B"
+  )
+)
+let read_variant1 = (
+  Atdgen_codec_runtime.Decode.enum
+  [
+      (
+      "A"
+      ,
+        `Single (A)
+      )
+    ;
+      (
+      "B"
+      ,
+        `Single (B)
+      )
+  ]
+)
 let write_valid = (
   Atdgen_codec_runtime.Encode.bool
 )

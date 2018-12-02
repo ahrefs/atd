@@ -19,4 +19,5 @@ depends: [
   "atdgen-runtime" {>= "2.0.0"}
   "biniou" {>= "1.0.6"}
   "yojson" {>= "1.2.1" }
+  "re"
 ]

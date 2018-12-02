@@ -43,8 +43,8 @@ let get env atd_ty opt =
   prefix ^ suffix
 
 let extract_from_edgy_brackets s =
-  Str.global_replace
-    (Str.regexp "^[^<]*<\\|>[^>]*$") "" s
+  Re.Str.global_replace
+    (Re.Str.regexp "^[^<]*<\\|>[^>]*$") "" s
 (*
 extract_from_edgy_brackets "ab<cd<e>>f";;
 - : string = "cd<e>"

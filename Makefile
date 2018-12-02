@@ -8,6 +8,9 @@ test:
 
 check: test
 
+js:
+	$(DUNE) build atdgen/bin/ag_main.bc.js
+
 clean:
 	$(DUNE) clean
 

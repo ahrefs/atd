@@ -594,7 +594,7 @@ let ocamldoc_verbatim_escape s =
   in
   escape esc s
 
-let split = Str.split (Str.regexp " ")
+let split = Re.Str.split (Re.Str.regexp " ")
 
 
 let make_ocamldoc_block = function

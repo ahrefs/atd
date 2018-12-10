@@ -51,53 +51,74 @@ let to_flow_name str =
     | "bool"   -> "boolean"
     | _ -> to_camel_case str
 
-(* Per https://scala-lang.org/files/archive/spec/2.12/01-lexical-syntax.html *)
-let scala_keywords = [
-  "abstract";
+(* Per https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#Keywords *)
+let js_keywords = [
+  "await";
+  "break";
   "case";
   "catch";
   "class";
-  "def";
+  "const";
+  "continue";
+  "debugger";
+  "default";
+  "delete";
   "do";
   "else";
+  "enum";
+  "export";
   "extends";
-  "false";
-  "final";
   "finally";
   "for";
-  "forSome";
+  "function";
   "if";
-  "implicit";
+  "implements";
   "import";
-  "lazy";
-  "macro";
-  "match";
+  "in";
+  "instanceof";
+  "interface";
+  "let";
   "new";
-  "null";
-  "object";
-  "override";
   "package";
   "private";
   "protected";
+  "public";
   "return";
-  "sealed";
+  "static";
   "super";
+  "switch";
   "this";
   "throw";
-  "trait";
   "try";
-  "true";
-  "type";
-  "val";
+  "typeof";
   "var";
+  "void";
   "while";
   "with";
   "yield";
+
+  (* Previous "future" reserved keywords. Do we still need to avoid these? *)
+  "abstract";
+  "boolean";
+  "byte";
+  "char";
+  "double";
+  "final";
+  "float";
+  "goto";
+  "int";
+  "long";
+  "native";
+  "short";
+  "synchronized";
+  "throws";
+  "transient";
+  "volatile";
 ]
 
-let is_scala_keyword =
+let is_js_keyword =
   let tbl = Hashtbl.create 200 in
-  List.iter (fun k -> Hashtbl.add tbl k ()) scala_keywords;
+  List.iter (fun k -> Hashtbl.add tbl k ()) js_keywords;
   fun k -> Hashtbl.mem tbl k
 
 (*
@@ -115,7 +136,7 @@ let is_scala_keyword =
 let get_js_field_name field_name annot =
   let field_name = get_json_field_name field_name annot in
   let field_name =
-    if is_scala_keyword field_name then
+    if is_js_keyword field_name then
       field_name ^ "_"
     else
       field_name
@@ -130,7 +151,7 @@ let get_js_field_name field_name annot =
 let get_flow_type_name field_name annot =
   let lower_field_name = String.lowercase_ascii field_name in
   let field_name =
-    if is_scala_keyword lower_field_name then
+    if is_js_keyword lower_field_name then
       field_name ^ "_"
     else
       field_name

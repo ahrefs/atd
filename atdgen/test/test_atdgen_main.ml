@@ -604,6 +604,22 @@ let test_json_open_enum () =
   let x2 = Test3j_j.sample_open_enums_of_string json_out in
   check (x2 = x)
 
+let test_ambiguous_record () =
+  section "test <test ambiguous record with json adapters>";
+  let json_in = {|{ambiguous:"x", not_ambiguous1:0}|} in
+  let json_in' = {|{ambiguous:"x'", not_ambiguous2:1}|} in
+  let x, x' =
+    Test_ambiguous_record_j.ambiguous_of_string json_in,
+    Test_ambiguous_record_j.ambiguous'_of_string json_in' in
+  let json_out, json_out' =
+    Test_ambiguous_record_j.string_of_ambiguous x,
+    Test_ambiguous_record_j.string_of_ambiguous' x' in
+  let x2, x2' =
+    Test_ambiguous_record_j.ambiguous_of_string json_out,
+    Test_ambiguous_record_j.ambiguous'_of_string json_out' in
+  check ((x, x') = (x2, x2'))
+
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -637,6 +653,7 @@ let all_tests = [
   test_tag_field_emulation;
   test_tag_field_emulation_with_catchall;
   test_json_open_enum;
+  test_ambiguous_record;
 ]
 
 (* TODO: use Alcotest to run the test suite. *)
@@ -655,3 +672,8 @@ let quality_test () =
       exit 1
 
 let () = quality_test ()
+
+
+
+
+

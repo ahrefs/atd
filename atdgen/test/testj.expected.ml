@@ -274,7 +274,7 @@ and string_of_p ?(len = 1024) x =
   write_p ob x;
   Bi_outbuf.contents ob
 and write_r : _ -> r -> _ = (
-  fun ob x ->
+  fun ob (x : r) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -517,7 +517,7 @@ and string_of__20 write__a write__b ?(len = 1024) x =
   write__20 write__a write__b ob x;
   Bi_outbuf.contents ob
 and write_poly write__x write__y : _ -> ('x, 'y) poly -> _ = (
-  fun ob x ->
+  fun ob (x : ('x, 'y) poly) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -996,7 +996,7 @@ let read_validate_me = (
 let validate_me_of_string s =
   read_validate_me (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_val1 : _ -> val1 -> _ = (
-  fun ob x ->
+  fun ob (x : val1) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1153,7 +1153,7 @@ let read__16 = (
 let _16_of_string s =
   read__16 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_val2 : _ -> val2 -> _ = (
-  fun ob x ->
+  fun ob (x : val2) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1728,7 +1728,7 @@ let read__10 = (
 let _10_of_string s =
   read__10 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_mixed_record : _ -> mixed_record -> _ = (
-  fun ob x ->
+  fun ob (x : mixed_record) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     (match x.field0 with None -> () | Some x ->
@@ -2707,7 +2707,7 @@ let read__15 = (
 let _15_of_string s =
   read__15 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_test : _ -> test -> _ = (
-  fun ob x ->
+  fun ob (x : test) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     (match x.x0 with None -> () | Some x ->
@@ -3043,7 +3043,7 @@ let read_star_rating = (
 let star_rating_of_string s =
   read_star_rating (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__30 : _ -> _ generic -> _ = (
-  fun ob x ->
+  fun ob (x : _ generic) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -3155,7 +3155,7 @@ let read_specialized = (
 let specialized_of_string s =
   read_specialized (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_some_record : _ -> some_record -> _ = (
-  fun ob x ->
+  fun ob (x : some_record) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -3255,7 +3255,7 @@ let read_some_record = (
 let some_record_of_string s =
   read_some_record (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_precision : _ -> precision -> _ = (
-  fun ob x ->
+  fun ob (x : precision) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -3859,7 +3859,7 @@ let read_hello = (
 let hello_of_string s =
   read_hello (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_generic write__a : _ -> 'a generic -> _ = (
-  fun ob x ->
+  fun ob (x : 'a generic) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -3959,7 +3959,7 @@ let read_generic read__a = (
 let generic_of_string read__a s =
   read_generic read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_floats : _ -> floats -> _ = (
-  fun ob x ->
+  fun ob (x : floats) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -4286,7 +4286,7 @@ let read_extended_tuple = (
 let extended_tuple_of_string s =
   read_extended_tuple (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_extended : _ -> extended -> _ = (
-  fun ob x ->
+  fun ob (x : extended) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -4694,7 +4694,7 @@ let read_base_tuple = (
 let base_tuple_of_string s =
   read_base_tuple (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_base : _ -> base -> _ = (
-  fun ob x ->
+  fun ob (x : base) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then

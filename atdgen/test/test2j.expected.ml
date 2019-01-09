@@ -110,7 +110,7 @@ let read__4 = (
 let _4_of_string s =
   read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_test2 : _ -> test2 -> _ = (
-  fun ob x ->
+  fun ob (x : test2) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then

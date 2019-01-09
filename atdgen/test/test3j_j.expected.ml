@@ -51,7 +51,7 @@ and string_of__4 ?(len = 1024) x =
   Bi_outbuf.contents ob
 and write_rec_type ob (x : rec_type) = (
   Atdgen_runtime.Oj_run.write_with_adapter Json_adapters.Identity.restore (
-    fun ob x ->
+    fun ob (x : rec_type) ->
       Bi_outbuf.add_char ob '{';
       let is_first = ref true in
       if !is_first then
@@ -504,7 +504,7 @@ let tf_variant_of_string s =
   read_tf_variant (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tf_record2 : _ -> tf_record2 -> _ = (
   Atdgen_runtime.Oj_run.write_with_adapter Test_lib.Tag_field_with_catchall.restore (
-    fun ob x ->
+    fun ob (x : tf_record2) ->
       Bi_outbuf.add_char ob '{';
       let is_first = ref true in
       if !is_first then
@@ -661,7 +661,7 @@ let tf_record2_of_string s =
   read_tf_record2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tf_record : _ -> tf_record -> _ = (
   Atdgen_runtime.Oj_run.write_with_adapter Test_lib.Tag_field_example.restore (
-    fun ob x ->
+    fun ob (x : tf_record) ->
       Bi_outbuf.add_char ob '{';
       let is_first = ref true in
       if !is_first then
@@ -829,7 +829,7 @@ let read_dyn = (
 let dyn_of_string s =
   read_dyn (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_t : _ -> t -> _ = (
-  fun ob x ->
+  fun ob (x : t) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1274,7 +1274,7 @@ let read__3 = (
 let _3_of_string s =
   read__3 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_patch : _ -> patch -> _ = (
-  fun ob x ->
+  fun ob (x : patch) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     (match x.patch1 with None -> () | Some x ->
@@ -1456,7 +1456,7 @@ let read_patch = (
 let patch_of_string s =
   read_patch (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_b : _ -> b -> _ = (
-  fun ob x ->
+  fun ob (x : b) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1554,7 +1554,7 @@ let read_b = (
 let b_of_string s =
   read_b (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_a : _ -> a -> _ = (
-  fun ob x ->
+  fun ob (x : a) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then

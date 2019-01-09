@@ -57,7 +57,7 @@ type a = Bucklespec_t.a = { thing: string; other_thing: bool }
 type adapted = Bucklespec_t.adapted
 
 let rec write_mutual_recurse1 : _ -> mutual_recurse1 -> _ = (
-  fun ob x ->
+  fun ob (x : mutual_recurse1) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -76,7 +76,7 @@ and string_of_mutual_recurse1 ?(len = 1024) x =
   write_mutual_recurse1 ob x;
   Bi_outbuf.contents ob
 and write_mutual_recurse2 : _ -> mutual_recurse2 -> _ = (
-  fun ob x ->
+  fun ob (x : mutual_recurse2) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -262,7 +262,7 @@ and string_of__5 ?(len = 1024) x =
   write__5 ob x;
   Bi_outbuf.contents ob
 and write_recurse : _ -> recurse -> _ = (
-  fun ob x ->
+  fun ob (x : recurse) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -563,7 +563,7 @@ let read__6 = (
 let _6_of_string s =
   read__6 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_using_object : _ -> using_object -> _ = (
-  fun ob x ->
+  fun ob (x : using_object) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1329,7 +1329,7 @@ let read_same_pair read__a = (
 let same_pair_of_string read__a s =
   read_same_pair read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_record_json_name : _ -> record_json_name -> _ = (
-  fun ob x ->
+  fun ob (x : record_json_name) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1527,7 +1527,7 @@ let read_point = (
 let point_of_string s =
   read_point (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_param_similar write__a : _ -> 'a param_similar -> _ = (
-  fun ob x ->
+  fun ob (x : 'a param_similar) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1680,7 +1680,7 @@ let read_param_similar read__a = (
 let param_similar_of_string read__a s =
   read_param_similar read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_param write__a : _ -> 'a param -> _ = (
-  fun ob x ->
+  fun ob (x : 'a param) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1833,7 +1833,7 @@ let read_param read__a = (
 let param_of_string read__a s =
   read_param read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_pair write__a write__b : _ -> ('a, 'b) pair -> _ = (
-  fun ob x ->
+  fun ob (x : ('a, 'b) pair) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -2026,7 +2026,7 @@ let read_label = (
 let label_of_string s =
   read_label (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_labeled : _ -> labeled -> _ = (
-  fun ob x ->
+  fun ob (x : labeled) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -2234,7 +2234,7 @@ let read_from_module_a = (
 let from_module_a_of_string s =
   read_from_module_a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_b : _ -> b -> _ = (
-  fun ob x ->
+  fun ob (x : b) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -2332,7 +2332,7 @@ let read_b = (
 let b_of_string s =
   read_b (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_a : _ -> a -> _ = (
-  fun ob x ->
+  fun ob (x : a) ->
     Bi_outbuf.add_char ob '{';
     let is_first = ref true in
     if !is_first then

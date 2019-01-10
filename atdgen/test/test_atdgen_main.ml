@@ -605,7 +605,7 @@ let test_json_open_enum () =
   check (x2 = x)
 
 let test_ambiguous_record () =
-  section "test <test ambiguous record with json adapters>";
+  section "test ambiguous record with json adapters";
   let json_in = {|{ambiguous:"x", not_ambiguous1:0}|} in
   let json_in' = {|{ambiguous:"x'", not_ambiguous2:1}|} in
   let x, x' =

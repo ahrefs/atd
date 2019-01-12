@@ -191,7 +191,7 @@ let get_ocaml_list an =
     ~field:"repr"
     an
 
-let get_ocaml_wrap loc an =
+let get_ocaml_wrap ?(param=[]) loc an =
   let module_ =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
@@ -200,12 +200,22 @@ let get_ocaml_wrap loc an =
       an
   in
   let default field =
-    Option.map (fun s -> sprintf "%s.%s" s field) module_
+    Option.map (fun s ->
+      sprintf "%s.%s" s field) module_
+  in
+  let default_t field =
+    Option.map (fun s ->
+      let param =
+        match List.map (sprintf "'%s") param with
+        | [] -> ""
+        | x::[] -> sprintf "%s " x
+        | param -> sprintf "(%s) " (String.concat ", " param) in
+      sprintf "%s%s.%s" param s field) module_
   in
   let t =
     Atd.Annot.get_field
       ~parse:(fun s -> Some (Some s))
-      ~default:(default "t")
+      ~default:(default_t "t")
       ~sections:["ocaml"]
       ~field:"t"
       an
@@ -349,7 +359,8 @@ type ocaml_module_body = ocaml_module_item list
   Mapping from ATD to OCaml
 *)
 
-let rec map_expr (x : type_expr) : ocaml_expr =
+let rec map_expr
+    (param: type_param) (x : type_expr) : ocaml_expr =
   match x with
     Atd.Ast.Sum (_, l, an) ->
       let kind = get_ocaml_sum an in
@@ -362,24 +373,24 @@ let rec map_expr (x : type_expr) : ocaml_expr =
       else
         `Record (kind, List.map (map_field field_prefix) l)
   | Tuple (_, l, _) ->
-      `Tuple (List.map (fun (_, x, _) -> map_expr x) l)
+      `Tuple (List.map (fun (_, x, _) -> (map_expr []) x) l)
   | List (_, x, an) ->
       let s = string_of_ocaml_list (get_ocaml_list an) in
-      `Name (s, [map_expr x])
+      `Name (s, [map_expr [] x])
   | Option (_, x, _) ->
-      `Name ("option", [map_expr x])
+      `Name ("option", [map_expr [] x])
   | Nullable (_, x, _) ->
-      `Name ("option", [map_expr x])
+      `Name ("option", [map_expr [] x])
   | Shared (_, _, _) ->
       failwith "Sharing is not supported"
   | Wrap (loc, x, a) ->
-      (match get_ocaml_wrap loc a with
-         None -> map_expr x
+      (match get_ocaml_wrap ~param loc a with
+         None -> map_expr [] x
        | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
       )
   | Name (_, (_2, s, l), an) ->
       let s = get_ocaml_type_path s an in
-      `Name (s, List.map map_expr l)
+      `Name (s, List.map (map_expr []) l)
   | Tvar (_, s) ->
       `Tvar s
 
@@ -388,7 +399,7 @@ and map_variant (x : variant) : ocaml_variant =
     Inherit _ -> assert false
   | Variant (loc, (s, an), o) ->
       let s = get_ocaml_cons s an in
-      (s, Option.map map_expr o, Atd.Doc.get_doc loc an)
+      (s, Option.map (map_expr []) o, Atd.Doc.get_doc loc an)
 
 and map_field ocaml_field_prefix (x : field) : ocaml_field =
   match x with
@@ -401,7 +412,7 @@ and map_field ocaml_field_prefix (x : field) : ocaml_field =
         else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
       in
       let is_mutable = get_ocaml_mutable an in
-      ((fname, is_mutable), map_expr x, Atd.Doc.get_doc loc an)
+      ((fname, is_mutable), map_expr [] x, Atd.Doc.get_doc loc an)
 
 let map_def
     ~(target : target)
@@ -429,11 +440,11 @@ let map_def
       match define_alias with
           None ->
             if is_abstract then (None, None)
-            else (None, Some (map_expr x))
+            else (None, Some (map_expr param x))
         | Some (module_path, ext_name) ->
             let alias = Some (module_path ^ "." ^ ext_name, param) in
             let x =
-              match map_expr x with
+              match map_expr param x with
                   `Sum (Classic, _)
                 | `Record (Record, _) as x -> Some x
                 | _ -> None

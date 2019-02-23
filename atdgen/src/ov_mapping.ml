@@ -151,13 +151,13 @@ let rec mapping_of_expr
   let v2 an x = (Validate.get_validator an, is_shallow x) in
   match x0 with
     Sum (loc, l, an) ->
-      let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
+      let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum Validate an) in
       Sum (loc, Array.of_list (List.map (mapping_of_variant is_shallow) l),
            ocaml_t, v2 an x0)
 
   | Record (loc, l, an) ->
-      let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
-      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
+      let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record Validate an) in
+      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix Validate an in
       Record (loc,
               Array.of_list
                 (List.map
@@ -170,7 +170,7 @@ let rec mapping_of_expr
              ocaml_t, v2 an x0)
 
   | List (loc, x, an) ->
-      let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
+      let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list Validate an) in
       List (loc, mapping_of_expr is_shallow x, ocaml_t, v2 an x0)
 
   | Option (loc, x, an) ->
@@ -185,7 +185,7 @@ let rec mapping_of_expr
       failwith "Sharing is not supported"
 
   | Wrap (loc, x, an) ->
-      let w = Ocaml.get_ocaml_wrap loc an in
+      let w = Ocaml.get_ocaml_wrap Validate loc an in
       let ocaml_t = Ocaml.Repr.Wrap w in
       let validator =
         match w with
@@ -201,7 +201,7 @@ let rec mapping_of_expr
        | "bool" ->
            Bool (loc, Bool, (v an, true))
        | "int" ->
-           let o = Ocaml.get_ocaml_int an in
+           let o = Ocaml.get_ocaml_int Validate an in
            Int (loc, Int o, (v an, true))
        | "float" ->
            Float (loc, Float, (v an, true))
@@ -220,7 +220,7 @@ let rec mapping_of_expr
       Tvar (loc, s)
 
 and mapping_of_cell is_shallow (loc, x, an) =
-  let default = Ocaml.get_ocaml_default an in
+  let default = Ocaml.get_ocaml_default Validate an in
   let doc = Atd.Doc.get_doc loc an in
   let ocaml_t =
     Ocaml.Repr.Cell {
@@ -240,7 +240,7 @@ and mapping_of_cell is_shallow (loc, x, an) =
 
 and mapping_of_variant is_shallow = function
     Variant (loc, (s, an), o) ->
-      let ocaml_cons = Ocaml.get_ocaml_cons s an in
+      let ocaml_cons = Ocaml.get_ocaml_cons Validate s an in
       let doc = Atd.Doc.get_doc loc an in
       let ocaml_t =
         Ocaml.Repr.Variant {
@@ -270,7 +270,7 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
     `Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr is_shallow x in
       let ocaml_default =
-        match fk, Ocaml.get_ocaml_default an with
+        match fk, Ocaml.get_ocaml_default Validate an with
           Required, None -> None
         | Optional, None -> Some "None"
         | (Required | Optional), Some _ ->
@@ -280,8 +280,8 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
             (* will try to determine implicit default value later *)
             None
       in
-      let ocaml_fname = Ocaml.get_ocaml_fname (ocaml_field_prefix ^ s) an in
-      let ocaml_mutable = Ocaml.get_ocaml_mutable an in
+      let ocaml_fname = Ocaml.get_ocaml_fname Validate (ocaml_field_prefix ^ s) an in
+      let ocaml_mutable = Ocaml.get_ocaml_mutable Validate an in
       let doc = Atd.Doc.get_doc loc an in
       { f_loc = loc;
         f_name = s;

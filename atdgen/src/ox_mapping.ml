@@ -6,9 +6,9 @@ type analyze_field =
   ; unwrapped : bool
   }
 
-let analyze_field loc (f_kind : field_kind) annot =
+let analyze_field target loc (f_kind : field_kind) annot =
   let ocaml_default, unwrapped =
-    match f_kind, Ocaml.get_ocaml_default annot with
+    match f_kind, Ocaml.get_ocaml_default target annot with
       Required, None -> None, false
     | Optional, None -> Some "None", true
     | (Required | Optional), Some _ ->

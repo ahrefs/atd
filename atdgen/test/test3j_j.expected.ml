@@ -187,14 +187,14 @@ let read_unixtime_list = (
 let unixtime_list_of_string s =
   read_unixtime_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_json = (
-  Yojson.Safe.write_json
+  Yojson.Safe.write_t
 )
 let string_of_json ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_json ob x;
   Bi_outbuf.contents ob
 let read_json = (
-  Yojson.Safe.read_json
+  Yojson.Safe.read_t
 )
 let json_of_string s =
   read_json (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
@@ -817,14 +817,14 @@ let read_tf_record = (
 let tf_record_of_string s =
   read_tf_record (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_dyn = (
-  Yojson.Safe.write_json
+  Yojson.Safe.write_t
 )
 let string_of_dyn ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_dyn ob x;
   Bi_outbuf.contents ob
 let read_dyn = (
-  Yojson.Safe.read_json
+  Yojson.Safe.read_t
 )
 let dyn_of_string s =
   read_dyn (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

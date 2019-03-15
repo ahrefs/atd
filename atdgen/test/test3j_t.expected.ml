@@ -5,7 +5,7 @@ type rec_type = { more: rec_type list }
 
 type unixtime_list = float list
 
-type json = Yojson.Safe.json
+type json = Yojson.Safe.t
 
 type tf_variant2 = [
     `A of int
@@ -19,7 +19,7 @@ type tf_record2 = { the_value2: tf_variant2; etc2: string }
 
 type tf_record = { the_value: tf_variant; etc: string }
 
-type dyn = Yojson.Safe.json
+type dyn = Yojson.Safe.t
 
 type t = { foo: int; bar: json; baz: dyn }
 

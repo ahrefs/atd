@@ -746,13 +746,13 @@ the user-provided module must be equal to
 
     sig
       (** Convert from original json to ATD-compatible json *)
-      val normalize : Yojson.Safe.json -> Yojson.Safe.json
+      val normalize : Yojson.Safe.t -> Yojson.Safe.t
 
       (** Convert from ATD-compatible json to original json *)
-      val restore : Yojson.Safe.json -> Yojson.Safe.json
+      val restore : Yojson.Safe.t -> Yojson.Safe.t
     end
 
-The type ``Yojson.Safe.json`` is the type of parsed JSON as provided by
+The type ``Yojson.Safe.t`` is the type of parsed JSON as provided by
 the yojson library.
 
 Position: on a variant type or on a record type.
@@ -1492,7 +1492,7 @@ equivalent ``<ocaml ...>`` annotations are almost always preferable.
 Example:
 
 This example shows how to parse a field into a generic tree of type
-``Yojson.Safe.json`` rather than a value of a specialized OCaml type.
+``Yojson.Safe.t`` rather than a value of a specialized OCaml type.
 
 .. code:: ocaml
 
@@ -1504,7 +1504,7 @@ translates to the following OCaml type definitions:
 
 .. code:: ocaml
 
-    type dyn = Yojson.Safe.json
+    type dyn = Yojson.Safe.t
 
     type t = { foo : int; bar : dyn }
 

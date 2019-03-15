@@ -3,7 +3,7 @@ module J = Spec_j
 
 open Spec_t
 
-type 'a j = 'a -> Yojson.Safe.json
+type 'a j = 'a -> Yojson.Safe.t
 
 module type Json = sig
   val r1     : r1 j

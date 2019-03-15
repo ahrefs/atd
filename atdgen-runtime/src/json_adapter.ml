@@ -1,8 +1,8 @@
 (* Json adapters. See .mli. *)
 
 module type S = sig
-  val normalize : Yojson.Safe.json -> Yojson.Safe.json
-  val restore : Yojson.Safe.json -> Yojson.Safe.json
+  val normalize : Yojson.Safe.t -> Yojson.Safe.t
+  val restore : Yojson.Safe.t -> Yojson.Safe.t
 end
 
 module Type_field = struct
@@ -15,7 +15,7 @@ module Type_field = struct
 
     open Param
 
-    let normalize (x : json) : json =
+    let normalize (x : t) : t =
       match x with
       | `Assoc fields ->
           (match List.assoc type_field_name fields with
@@ -26,7 +26,7 @@ module Type_field = struct
       | `String type_ as x -> x
       | malformed -> malformed
 
-    let restore (x : json) : json =
+    let restore (x : t) : t =
       match x with
       | `List [ `String type_; `Assoc fields ] ->
           let fields =
@@ -48,13 +48,13 @@ end
 module One_field = struct
   open Yojson.Safe
 
-  let normalize (x : json) : json =
+  let normalize (x : t) : t =
     match x with
     | `Assoc [name, value] -> `List [`String name; value]
     | `String _ as x -> x
     | malformed -> malformed
 
-  let restore (x : json) : json =
+  let restore (x : t) : t =
     match x with
     | `List [`String name; value] -> `Assoc [name, value]
     | `String _ as x -> x
@@ -103,7 +103,7 @@ module Type_and_value_fields = struct
       else
         `List [ `String (catch_all_tag ()); `Null ]
 
-    let normalize (x : json) : json =
+    let normalize (x : t) : t =
       let open Yojson.Safe.Util in
       match x with
       | `Assoc fields ->
@@ -128,7 +128,7 @@ module Type_and_value_fields = struct
           `Assoc fields
       | malformed -> malformed
 
-    let unwrap_value (x : json) =
+    let unwrap_value (x : t) =
       match x with
       | `String tag -> (tag, None)
       | `List [`String tag; v] ->
@@ -142,7 +142,7 @@ module Type_and_value_fields = struct
             (tag, Some v)
       | malformed -> failwith ("Malformed json field " ^ value_field_name)
 
-    let restore (x : json) : json =
+    let restore (x : t) : t =
       match x with
       | `Assoc fields ->
           let type_ = ref None in

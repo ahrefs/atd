@@ -1297,7 +1297,7 @@ or a field ``labels`` of type ``string``:
   (* File untypable.atd *)
 
   type json <ocaml module="Yojson.Safe"> = abstract
-    (* uses type Yojson.Safe.json,
+    (* uses type Yojson.Safe.t,
       with the functions Yojson.Safe.write_json
       and Yojson.Safe.read_json *)
 
@@ -1316,7 +1316,7 @@ in the annotation, i.e.:
 .. code-block:: ocaml
 
   type raw_json <ocaml module="Yojson.Safe" t="json"> = abstract
-    (* uses type Yojson.Safe.json,
+    (* uses type Yojson.Safe.t,
       with the functions Yojson.Safe.write_json
       and Yojson.Safe.read_json *)
 

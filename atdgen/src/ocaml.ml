@@ -125,20 +125,29 @@ let string_of_ocaml_list (x : atd_ocaml_list) =
       List -> "list"
     | Array -> "Atdgen_runtime.Util.ocaml_array"
 
-let get_ocaml_int an =
+let path_of_target (target : target) =
+  match target with
+    | Default -> [ "ocaml" ]
+    | Biniou -> [ "ocaml_biniou"; "ocaml" ]
+    | Json -> [ "ocaml_json"; "ocaml" ]
+    | Bucklescript -> ["ocaml_bs"; "ocaml"]
+    | Validate -> [ "ocaml_validate"; "ocaml" ]
+
+let get_ocaml_int target an =
+  let path = path_of_target target in
   Atd.Annot.get_field
     ~parse:ocaml_int_of_string
     ~default:Int
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"repr"
     an
 
-let get_ocaml_type_path atd_name an =
+let get_ocaml_type_path target atd_name an =
   let x =
     match atd_name with
         "unit" -> `Unit
       | "bool" -> `Bool
-      | "int" -> `Int (get_ocaml_int an)
+      | "int" -> `Int (get_ocaml_int target an)
       | "float" -> `Float
       | "string" -> `String
       | s -> `Name s
@@ -151,51 +160,48 @@ let get_ocaml_type_path atd_name an =
     | `String -> "string"
     | `Name s -> s
 
-let path_of_target (target : target) =
-  match target with
-    | Default -> [ "ocaml" ]
-    | Biniou -> [ "ocaml_biniou"; "ocaml" ]
-    | Json -> [ "ocaml_json"; "ocaml" ]
-    | Bucklescript -> ["ocaml_bs"; "ocaml"]
-    | Validate -> [ "ocaml_validate"; "ocaml" ]
-
-let get_ocaml_sum an =
+let get_ocaml_sum target an =
+  let path = path_of_target target in
   Atd.Annot.get_field
     ~parse:ocaml_sum_of_string
     ~default:Poly
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"repr"
     an
 
-let get_ocaml_field_prefix an =
+let get_ocaml_field_prefix target an =
+  let path = path_of_target target in
   Atd.Annot.get_field
     ~parse:(fun s -> Some s)
     ~default:""
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"field_prefix"
     an
 
-let get_ocaml_record an =
+let get_ocaml_record target an =
+  let path = path_of_target target in
   Atd.Annot.get_field
     ~parse:ocaml_record_of_string
     ~default:Record
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"repr"
     an
 
-let get_ocaml_list an =
+let get_ocaml_list target an =
+  let path = path_of_target target in
   Atd.Annot.get_field
     ~parse:ocaml_list_of_string
     ~default:List
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"repr"
     an
 
-let get_ocaml_wrap loc an =
+let get_ocaml_wrap target loc an =
+  let path = path_of_target target in
   let module_ =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
-      ~sections:["ocaml"]
+      ~sections:path
       ~field:"module"
       an
   in
@@ -206,7 +212,7 @@ let get_ocaml_wrap loc an =
     Atd.Annot.get_field
       ~parse:(fun s -> Some (Some s))
       ~default:(default "t")
-      ~sections:["ocaml"]
+      ~sections:path
       ~field:"t"
       an
   in
@@ -214,7 +220,7 @@ let get_ocaml_wrap loc an =
     Atd.Annot.get_field
       ~parse:(fun s -> Some (Some s))
       ~default:(default "wrap")
-      ~sections:["ocaml"]
+      ~sections:path
       ~field:"wrap"
       an
   in
@@ -222,7 +228,7 @@ let get_ocaml_wrap loc an =
     Atd.Annot.get_field
       ~parse:(fun s -> Some (Some s))
       ~default:(default "unwrap")
-      ~sections:["ocaml"]
+      ~sections:path
       ~field:"unwrap"
       an
   in
@@ -233,32 +239,36 @@ let get_ocaml_wrap loc an =
     | _ ->
         Error.error loc "Incomplete annotation. Missing t, wrap or unwrap"
 
-let get_ocaml_cons default an =
+let get_ocaml_cons target default an =
+  let path = path_of_target target in
   Atd.Annot.get_field
     ~parse:(fun s -> Some s)
     ~default
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"name"
     an
 
-let get_ocaml_fname default an =
+let get_ocaml_fname target default an =
+  let path = path_of_target target in
   Atd.Annot.get_field
     ~parse:(fun s -> Some s)
     ~default:default
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"name"
     an
 
-let get_ocaml_default an =
+let get_ocaml_default target an =
+  let path = path_of_target target in
   Atd.Annot.get_opt_field
     ~parse:(fun s -> Some s)
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"default"
     an
 
-let get_ocaml_mutable an =
+let get_ocaml_mutable target an =
+  let path = path_of_target target in
   Atd.Annot.get_flag
-    ~sections:["ocaml"]
+    ~sections:path
     ~field:"mutable"
     an
 
@@ -349,59 +359,59 @@ type ocaml_module_body = ocaml_module_item list
   Mapping from ATD to OCaml
 *)
 
-let rec map_expr (x : type_expr) : ocaml_expr =
+let rec map_expr target (x : type_expr) : ocaml_expr =
   match x with
     Atd.Ast.Sum (_, l, an) ->
-      let kind = get_ocaml_sum an in
-      `Sum (kind, List.map map_variant l)
+      let kind = get_ocaml_sum target an in
+      `Sum (kind, List.map (map_variant target) l)
   | Record (loc, l, an) ->
-      let kind = get_ocaml_record an in
-      let field_prefix = get_ocaml_field_prefix an in
+      let kind = get_ocaml_record target an in
+      let field_prefix = get_ocaml_field_prefix target an in
       if l = [] then
         Error.error loc "Empty record (not valid in OCaml)"
       else
-        `Record (kind, List.map (map_field field_prefix) l)
+        `Record (kind, List.map (map_field target field_prefix) l)
   | Tuple (_, l, _) ->
-      `Tuple (List.map (fun (_, x, _) -> map_expr x) l)
+      `Tuple (List.map (fun (_, x, _) -> map_expr target x) l)
   | List (_, x, an) ->
-      let s = string_of_ocaml_list (get_ocaml_list an) in
-      `Name (s, [map_expr x])
+      let s = string_of_ocaml_list (get_ocaml_list target an) in
+      `Name (s, [map_expr target x])
   | Option (_, x, _) ->
-      `Name ("option", [map_expr x])
+      `Name ("option", [map_expr target x])
   | Nullable (_, x, _) ->
-      `Name ("option", [map_expr x])
+      `Name ("option", [map_expr target x])
   | Shared (_, _, _) ->
       failwith "Sharing is not supported"
   | Wrap (loc, x, a) ->
-      (match get_ocaml_wrap loc a with
-         None -> map_expr x
+      (match get_ocaml_wrap target loc a with
+         None -> map_expr target x
        | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
       )
   | Name (_, (_2, s, l), an) ->
-      let s = get_ocaml_type_path s an in
-      `Name (s, List.map map_expr l)
+      let s = get_ocaml_type_path target s an in
+      `Name (s, List.map (map_expr target) l)
   | Tvar (_, s) ->
       `Tvar s
 
-and map_variant (x : variant) : ocaml_variant =
+and map_variant target (x : variant) : ocaml_variant =
   match x with
     Inherit _ -> assert false
   | Variant (loc, (s, an), o) ->
-      let s = get_ocaml_cons s an in
-      (s, Option.map map_expr o, Atd.Doc.get_doc loc an)
+      let s = get_ocaml_cons target s an in
+      (s, Option.map (map_expr target) o, Atd.Doc.get_doc loc an)
 
-and map_field ocaml_field_prefix (x : field) : ocaml_field =
+and map_field target ocaml_field_prefix (x : field) : ocaml_field =
   match x with
     `Inherit _ -> assert false
   | `Field (loc, (atd_fname, _, an), x) ->
       let ocaml_fname =
-        get_ocaml_fname (ocaml_field_prefix ^ atd_fname) an in
+        get_ocaml_fname target (ocaml_field_prefix ^ atd_fname) an in
       let fname =
         if ocaml_fname = atd_fname then ocaml_fname
         else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
       in
-      let is_mutable = get_ocaml_mutable an in
-      ((fname, is_mutable), map_expr x, Atd.Doc.get_doc loc an)
+      let is_mutable = get_ocaml_mutable target an in
+      ((fname, is_mutable), map_expr target x, Atd.Doc.get_doc loc an)
 
 let map_def
     ~(target : target)
@@ -429,11 +439,11 @@ let map_def
       match define_alias with
           None ->
             if is_abstract then (None, None)
-            else (None, Some (map_expr x))
+            else (None, Some (map_expr target x))
         | Some (module_path, ext_name) ->
             let alias = Some (module_path ^ "." ^ ext_name, param) in
             let x =
-              match map_expr x with
+              match map_expr target x with
                   `Sum (Classic, _)
                 | `Record (Record, _) as x -> Some x
                 | _ -> None

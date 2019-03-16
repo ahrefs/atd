@@ -12,14 +12,14 @@ type ob_mapping =
 let rec mapping_of_expr (x : type_expr) : ob_mapping =
   match x with
     Sum (loc, l, an) ->
-      let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
+      let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum Biniou an) in
       let biniou_t = Biniou.Sum in
       Sum (loc, Array.of_list (List.map mapping_of_variant l),
            ocaml_t, biniou_t)
 
   | Record (loc, l, an) ->
-      let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
-      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
+      let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record Biniou an) in
+      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix Biniou an in
       let biniou_t = Biniou.Record in
       Record (loc,
               Array.of_list
@@ -33,7 +33,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
              ocaml_t, biniou_t)
 
   | List (loc, x, an) ->
-      let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
+      let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list Biniou an) in
       let biniou_t = Biniou.List (Biniou.get_biniou_list an) in
       List (loc, mapping_of_expr x, ocaml_t, biniou_t)
 
@@ -51,7 +51,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
       failwith "Sharing is no longer supported"
 
   | Wrap (loc, x, a) ->
-      let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap loc a) in
+      let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap Biniou loc a) in
       let json_t = Biniou.Wrap in
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
@@ -62,7 +62,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
        | "bool" ->
            Bool (loc, Bool, Biniou.Bool)
        | "int" ->
-           let o = Ocaml.get_ocaml_int an in
+           let o = Ocaml.get_ocaml_int Biniou an in
            let b = Biniou.get_biniou_int an in
            Int (loc, Int o, Biniou.Int b)
        | "float" ->
@@ -80,7 +80,7 @@ and mapping_of_cell (cel_loc, x, an) =
   { cel_loc
   ; cel_value = mapping_of_expr x
   ; cel_arepr = Ocaml.Repr.Cell
-        { Ocaml.ocaml_default = Ocaml.get_ocaml_default an
+        { Ocaml.ocaml_default = Ocaml.get_ocaml_default Biniou an
         ; ocaml_fname = ""
         ; ocaml_mutable = false
         ; ocaml_fdoc = Atd.Doc.get_doc cel_loc an
@@ -95,7 +95,7 @@ and mapping_of_variant = function
       ; var_cons
       ; var_arg = Option.map mapping_of_expr o
       ; var_arepr = Ocaml.Repr.Variant
-            { Ocaml.ocaml_cons = Ocaml.get_ocaml_cons var_cons an
+            { Ocaml.ocaml_cons = Ocaml.get_ocaml_cons Biniou var_cons an
             ; ocaml_vdoc = Atd.Doc.get_doc var_loc an
             }
       ; var_brepr = Biniou.Variant
@@ -105,7 +105,7 @@ and mapping_of_field ocaml_field_prefix = function
   | `Inherit _ -> assert false
   | `Field (f_loc, (f_name, f_kind, an), x) ->
       let { Ox_mapping.ocaml_default; unwrapped } =
-        Ox_mapping.analyze_field f_loc f_kind an in
+        Ox_mapping.analyze_field Biniou f_loc f_kind an in
       { f_loc
       ; f_name
       ; f_kind
@@ -113,8 +113,8 @@ and mapping_of_field ocaml_field_prefix = function
       ; f_arepr = Ocaml.Repr.Field
             { Ocaml.ocaml_default
             ; ocaml_fname =
-                Ocaml.get_ocaml_fname (ocaml_field_prefix ^ f_name) an
-            ; ocaml_mutable = Ocaml.get_ocaml_mutable an
+                Ocaml.get_ocaml_fname Biniou (ocaml_field_prefix ^ f_name) an
+            ; ocaml_mutable = Ocaml.get_ocaml_mutable Biniou an
             ; ocaml_fdoc = Atd.Doc.get_doc f_loc an
             }
       ; f_brepr = Biniou.Field { Biniou.biniou_unwrapped = unwrapped };

@@ -62,16 +62,16 @@ module Repr : sig
     | Def of atd_ocaml_def
 end
 
-val get_ocaml_sum : Atd.Annot.t -> atd_ocaml_sum
-val get_ocaml_record : Atd.Annot.t -> atd_ocaml_record
-val get_ocaml_field_prefix : Atd.Annot.t -> string
-val get_ocaml_list : Atd.Annot.t -> atd_ocaml_list
-val get_ocaml_wrap : Atd.Ast.loc -> Atd.Annot.t -> atd_ocaml_wrap option
-val get_ocaml_int : Atd.Annot.t -> atd_ocaml_int
-val get_ocaml_default : Atd.Annot.t -> string option
-val get_ocaml_cons : string -> Atd.Annot.t -> string
-val get_ocaml_fname : string -> Atd.Annot.t -> string
-val get_ocaml_mutable : Atd.Annot.t -> bool
+val get_ocaml_sum : target -> Atd.Annot.t -> atd_ocaml_sum
+val get_ocaml_record : target -> Atd.Annot.t -> atd_ocaml_record
+val get_ocaml_field_prefix : target -> Atd.Annot.t -> string
+val get_ocaml_list : target -> Atd.Annot.t -> atd_ocaml_list
+val get_ocaml_wrap : target -> Atd.Ast.loc -> Atd.Annot.t -> atd_ocaml_wrap option
+val get_ocaml_int : target -> Atd.Annot.t -> atd_ocaml_int
+val get_ocaml_default : target -> Atd.Annot.t -> string option
+val get_ocaml_cons : target -> string -> Atd.Annot.t -> string
+val get_ocaml_fname : target -> string -> Atd.Annot.t -> string
+val get_ocaml_mutable : target -> Atd.Annot.t -> bool
 val get_ocaml_predef : target -> Atd.Annot.t -> bool
 
 val get_ocaml_module_and_t

@@ -38,7 +38,7 @@ let check_json_sum loc json_sum_param variants =
 let rec mapping_of_expr (x : type_expr) =
   match x with
   | Sum (loc, l, an) ->
-      let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum an) in
+      let ocaml_t = Ocaml.Repr.Sum (Ocaml.get_ocaml_sum Json an) in
       let json_sum_param = Json.get_json_sum an in
       let json_t = Json.Sum (Json.get_json_sum an) in
       let variants = List.map mapping_of_variant l in
@@ -47,8 +47,8 @@ let rec mapping_of_expr (x : type_expr) =
            ocaml_t, json_t)
 
   | Record (loc, l, an) ->
-      let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record an) in
-      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix an in
+      let ocaml_t = Ocaml.Repr.Record (Ocaml.get_ocaml_record Json an) in
+      let ocaml_field_prefix = Ocaml.get_ocaml_field_prefix Json an in
       let json_t = Json.Record (Json.get_json_record an) in
       Record (loc,
               Array.of_list
@@ -62,7 +62,7 @@ let rec mapping_of_expr (x : type_expr) =
              ocaml_t, json_t)
 
   | List (loc, x, an) ->
-      let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list an) in
+      let ocaml_t = Ocaml.Repr.List (Ocaml.get_ocaml_list Json an) in
       let json_t = Json.List (Json.get_json_list an) in
       List (loc, mapping_of_expr x, ocaml_t, json_t)
 
@@ -80,7 +80,7 @@ let rec mapping_of_expr (x : type_expr) =
       Error.error loc "Sharing is not supported by the JSON interface"
 
   | Wrap (loc, x, an) ->
-      let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap loc an) in
+      let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap Json loc an) in
       let json_t = Json.Wrap in
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
@@ -91,7 +91,7 @@ let rec mapping_of_expr (x : type_expr) =
        | "bool" ->
            Bool (loc, Bool, Bool)
        | "int" ->
-           let o = Ocaml.get_ocaml_int an in
+           let o = Ocaml.get_ocaml_int Json an in
            Int (loc, Int o, Int)
        | "float" ->
            let j = Json.get_json_float an in
@@ -109,7 +109,7 @@ and mapping_of_cell (cel_loc, x, an) =
   ; cel_value = mapping_of_expr x
   ; cel_arepr =
       Ocaml.Repr.Cell
-        { Ocaml.ocaml_default = Ocaml.get_ocaml_default an
+        { Ocaml.ocaml_default = Ocaml.get_ocaml_default Json an
         ; ocaml_fname = ""
         ; ocaml_mutable = false
         ; ocaml_fdoc = Atd.Doc.get_doc cel_loc an
@@ -124,7 +124,7 @@ and mapping_of_variant = function
       ; var_cons
       ; var_arg = Option.map mapping_of_expr o
       ; var_arepr = Ocaml.Repr.Variant
-            { Ocaml.ocaml_cons = Ocaml.get_ocaml_cons var_cons an
+            { Ocaml.ocaml_cons = Ocaml.get_ocaml_cons Json var_cons an
             ; ocaml_vdoc = Atd.Doc.get_doc var_loc an
             }
       ; var_brepr =
@@ -137,7 +137,7 @@ and mapping_of_field ocaml_field_prefix = function
   | `Inherit _ -> assert false
   | `Field (f_loc, (f_name, f_kind, an), x) ->
       let { Ox_mapping.ocaml_default; unwrapped } =
-        Ox_mapping.analyze_field f_loc f_kind an in
+        Ox_mapping.analyze_field Json f_loc f_kind an in
       { f_loc
       ; f_name
       ; f_kind
@@ -145,8 +145,8 @@ and mapping_of_field ocaml_field_prefix = function
       ; f_arepr = Ocaml.Repr.Field
             { Ocaml.ocaml_default
             ; ocaml_fname =
-                Ocaml.get_ocaml_fname (ocaml_field_prefix ^ f_name) an
-            ; ocaml_mutable = Ocaml.get_ocaml_mutable an
+                Ocaml.get_ocaml_fname Json (ocaml_field_prefix ^ f_name) an
+            ; ocaml_mutable = Ocaml.get_ocaml_mutable Json an
             ; ocaml_fdoc = Atd.Doc.get_doc f_loc an
             }
       ; f_brepr = Json.Field

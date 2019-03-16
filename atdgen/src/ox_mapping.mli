@@ -5,4 +5,4 @@ type analyze_field =
   ; unwrapped : bool
   }
 
-val analyze_field : loc -> field_kind -> annot -> analyze_field
+val analyze_field : Ocaml.target -> loc -> field_kind -> annot -> analyze_field

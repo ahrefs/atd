@@ -5,7 +5,7 @@ type rec_type = Test3j_t.rec_type = { more: rec_type list }
 
 type unixtime_list = Test3j_t.unixtime_list
 
-type json = Yojson.Safe.json
+type json = Yojson.Safe.t
 
 type tf_variant2 = Test3j_t.tf_variant2
 
@@ -18,7 +18,7 @@ type tf_record2 = Test3j_t.tf_record2 = {
 
 type tf_record = Test3j_t.tf_record = { the_value: tf_variant; etc: string }
 
-type dyn = Yojson.Safe.json
+type dyn = Yojson.Safe.t
 
 type t = Test3j_t.t = { foo: int; bar: json; baz: dyn }
 

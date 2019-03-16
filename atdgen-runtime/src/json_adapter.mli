@@ -14,10 +14,10 @@
 *)
 module type S = sig
   (** Convert a real json tree into an atd-compliant form. *)
-  val normalize : Yojson.Safe.json -> Yojson.Safe.json
+  val normalize : Yojson.Safe.t -> Yojson.Safe.t
 
   (** Convert an atd-compliant json tree into a real json tree. *)
-  val restore : Yojson.Safe.json -> Yojson.Safe.json
+  val restore : Yojson.Safe.t -> Yojson.Safe.t
 end
 
 (** Support for json objects that contain a field that indicates

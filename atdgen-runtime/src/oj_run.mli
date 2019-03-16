@@ -40,7 +40,7 @@ val missing_field : Yojson.lexer_state -> string -> _
 val missing_fields : Yojson.lexer_state -> int array -> string array -> _
 
 val write_with_adapter :
-  (Yojson.Safe.json -> Yojson.Safe.json) -> ('a write) -> ('a write)
+  (Yojson.Safe.t -> Yojson.Safe.t) -> ('a write) -> ('a write)
 
 val read_with_adapter :
-  (Yojson.Safe.json -> Yojson.Safe.json) -> ('a read) -> ('a read)
+  (Yojson.Safe.t -> Yojson.Safe.t) -> ('a read) -> ('a read)

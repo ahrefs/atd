@@ -5,7 +5,7 @@ type rec_type = Test3j_t.rec_type = { more: rec_type list }
 
 type unixtime_list = Test3j_t.unixtime_list
 
-type json = Yojson.Safe.json
+type json = Yojson.Safe.t
 
 type tf_variant2 = Test3j_t.tf_variant2
 
@@ -18,7 +18,7 @@ type tf_record2 = Test3j_t.tf_record2 = {
 
 type tf_record = Test3j_t.tf_record = { the_value: tf_variant; etc: string }
 
-type dyn = Yojson.Safe.json
+type dyn = Yojson.Safe.t
 
 type t = Test3j_t.t = { foo: int; bar: json; baz: dyn }
 
@@ -187,14 +187,14 @@ let read_unixtime_list = (
 let unixtime_list_of_string s =
   read_unixtime_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_json = (
-  Yojson.Safe.write_json
+  Yojson.Safe.write_t
 )
 let string_of_json ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_json ob x;
   Bi_outbuf.contents ob
 let read_json = (
-  Yojson.Safe.read_json
+  Yojson.Safe.read_t
 )
 let json_of_string s =
   read_json (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
@@ -817,14 +817,14 @@ let read_tf_record = (
 let tf_record_of_string s =
   read_tf_record (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_dyn = (
-  Yojson.Safe.write_json
+  Yojson.Safe.write_t
 )
 let string_of_dyn ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
   write_dyn ob x;
   Bi_outbuf.contents ob
 let read_dyn = (
-  Yojson.Safe.read_json
+  Yojson.Safe.read_t
 )
 let dyn_of_string s =
   read_dyn (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

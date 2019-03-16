@@ -1,8 +1,8 @@
 
 type 'a test =
   { name: string
-  ; to_yojson : 'a -> Yojson.Safe.json
-  ; of_yojson : Yojson.Safe.json -> 'a
+  ; to_yojson : 'a -> Yojson.Safe.t
+  ; of_yojson : Yojson.Safe.t -> 'a
   ; data: 'a
   }
 
@@ -10,8 +10,8 @@ type test' = T : 'a test -> test'
 
 type failure =
   { name: string
-  ; actual: Yojson.Safe.json
-  ; received: (Yojson.Safe.json, (exn * string)) result
+  ; actual: Yojson.Safe.t
+  ; received: (Yojson.Safe.t, (exn * string)) result
   }
 
 let pp_json fmt json =

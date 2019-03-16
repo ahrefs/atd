@@ -1,7 +1,7 @@
 (* JSON support only *)
 
-type json <ocaml module="Yojson.Safe"> = abstract
-type dyn <ocaml module="Yojson.Safe" t="json"> = abstract
+type json <ocaml module="Yojson.Safe" t="t"> = abstract
+type dyn <ocaml module="Yojson.Safe" t="t"> = abstract
 
 type t = {
   foo: int;

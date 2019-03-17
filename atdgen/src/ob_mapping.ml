@@ -51,7 +51,8 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
       failwith "Sharing is no longer supported"
 
   | Wrap (loc, x, a) ->
-      let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap Biniou loc a) in
+      let ocaml_t =
+        Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap ~type_param:[] Biniou loc a) in
       let json_t = Biniou.Wrap in
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 

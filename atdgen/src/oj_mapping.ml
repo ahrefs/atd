@@ -80,7 +80,8 @@ let rec mapping_of_expr (x : type_expr) =
       Error.error loc "Sharing is not supported by the JSON interface"
 
   | Wrap (loc, x, an) ->
-      let ocaml_t = Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap Json loc an) in
+      let ocaml_t =
+        Ocaml.Repr.Wrap (Ocaml.get_ocaml_wrap ~type_param:[] Json loc an) in
       let json_t = Json.Wrap in
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 

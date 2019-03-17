@@ -211,12 +211,12 @@ let get_ocaml_wrap ~type_param target loc an =
   in
   let default_t field =
     Option.map (fun s ->
-      let param =
+      let type_param =
         match List.map (sprintf "'%s") type_param with
         | [] -> ""
         | x::[] -> sprintf "%s " x
-        | param -> sprintf "(%s) " (String.concat ", " param) in
-      sprintf "%s%s.%s" param s field) module_
+        | param -> sprintf "(%s) " (String.concat ", " type_param) in
+      sprintf "%s%s.%s" type_param s field) module_
   in
   let t =
     Atd.Annot.get_field

@@ -619,6 +619,16 @@ let test_ambiguous_record () =
     Test_ambiguous_record_j.ambiguous'_of_string json_out' in
   check ((x, x') = (x2, x2'))
 
+let test_polymorphic_wrap () =
+  section "test wrapping of polymorphic types";
+  let json_in = {|["1", ["2"]]|} in
+  let x =
+    Test_polymorphic_wrap_j.t_of_string Yojson.Safe.read_string json_in in
+  let json_out =
+    Test_polymorphic_wrap_j.string_of_t Yojson.Safe.write_string x in
+  let x2 =
+    Test_polymorphic_wrap_j.t_of_string Yojson.Safe.read_string json_out in
+  check (x = x2)
 
 let all_tests = [
   test_ocaml_internals;

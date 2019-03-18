@@ -66,6 +66,18 @@
  (action
   (run %{bin:atdgen} -json -std-json -o test_ambiguous_record_j -open Test_ambiguous_record_t -ntd %{deps})))
 
+(rule
+ (targets test_polymorphic_wrap_t.ml test_polymorphic_wrap_t.mli)
+ (deps    test_polymorphic_wrap.atd)
+ (action
+  (run %{bin:atdgen} -t %{deps})))
+
+(rule
+ (targets test_polymorphic_wrap_j.ml test_polymorphic_wrap_j.mli)
+ (deps    test_polymorphic_wrap.atd)
+ (action
+  (run %{bin:atdgen} -json -std-json -o test_polymorphic_wrap_j %{deps})))
+
 (alias
  (name runtest)
  (package atdgen)
@@ -142,16 +154,29 @@
  (action (diff test_ambiguous_record_j.expected.ml test_ambiguous_record_j.ml)))
 
 
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_polymorphic_wrap_t.expected.ml test_polymorphic_wrap_t.ml)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_polymorphic_wrap_j.expected.ml test_polymorphic_wrap_j.ml)))
+
 (executables
  (libraries atd atdgen-runtime)
  (names test_atdgen_main)
  (modules
   test
   json_adapters
+  array_wrap
   test3j_j
   test3j_t
   test_ambiguous_record_t
   test_ambiguous_record_j
+  test_polymorphic_wrap_t
+  test_polymorphic_wrap_j
   testjstd
   testj
   testv

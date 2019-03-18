@@ -185,7 +185,7 @@ let rec mapping_of_expr
       failwith "Sharing is not supported"
 
   | Wrap (loc, x, an) ->
-      let w = Ocaml.get_ocaml_wrap Validate loc an in
+      let w = Ocaml.get_ocaml_wrap ~type_param:[] Validate loc an in
       let ocaml_t = Ocaml.Repr.Wrap w in
       let validator =
         match w with

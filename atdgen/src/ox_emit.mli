@@ -107,3 +107,40 @@ val get_assoc_type : ((Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
       (Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
         (Ocaml.Repr.t, Json.json_repr) Mapping.mapping *
           (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
+
+(* Glue *)
+type 't make_ocaml_intf =
+  with_create:bool ->
+  Buffer.t ->
+  ('t expr -> 't expr) ->
+  (bool * 't def list) list -> unit
+
+type 't make_ocaml_impl =
+  with_create:bool ->
+  original_types:(string, string * int) Hashtbl.t ->
+  ocaml_version:(int * int) option ->
+  Buffer.t ->
+  ('t expr -> 't expr) ->
+  (bool * 't def list) list -> unit
+
+type 't defs_of_atd_modules =
+  (bool * Atd.Ast.module_body) list ->
+  (bool * 't def list) list
+
+val make_ocaml_files
+  : opens:string list
+  -> with_typedefs:bool
+  -> with_create:bool
+  -> with_fundefs:bool
+  -> all_rec:bool
+  -> pos_fname:string option
+  -> pos_lnum:int option
+  -> type_aliases:string option
+  -> force_defaults:_ (* not used *)
+  -> ocaml_version:(int * int) option
+  -> pp_convs:Ocaml.pp_convs
+  -> defs_of_atd_modules:'t defs_of_atd_modules
+  -> make_ocaml_intf:'t make_ocaml_intf
+  -> make_ocaml_impl:'t make_ocaml_impl
+  -> target:Ocaml.target
+  -> string option -> target -> unit

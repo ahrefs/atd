@@ -435,3 +435,129 @@ let get_assoc_type deref loc x =
       (k.cel_value, v.cel_value)
   | _ ->
       Error.error loc "Expected due to <json repr=\"object\">: (string * _) list"
+
+(* Glue *)
+let make_mli
+    ~make_ocaml_intf
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+    ocaml_typedefs deref defs =
+  let buf = Buffer.create 1000 in
+  bprintf buf "%s\n" header;
+  write_opens buf opens;
+  if with_typedefs then
+    bprintf buf "%s\n" ocaml_typedefs;
+  if with_typedefs && with_fundefs then
+    bprintf buf "\n";
+  if with_fundefs then
+    make_ocaml_intf ~with_create buf deref defs;
+  Buffer.contents buf
+
+let make_ml
+    ~make_ocaml_impl
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs ~original_types
+    ~ocaml_version
+    ocaml_typedefs deref defs =
+  let buf = Buffer.create 1000 in
+  bprintf buf "%s\n" header;
+  write_opens buf opens;
+  if with_typedefs then
+    bprintf buf "%s\n" ocaml_typedefs;
+  if with_typedefs && with_fundefs then
+    bprintf buf "\n";
+  if with_fundefs then
+    make_ocaml_impl
+      ~with_create ~original_types ~ocaml_version
+      buf deref defs;
+  Buffer.contents buf
+
+type 't make_ocaml_intf =
+  with_create:bool ->
+  Buffer.t ->
+  ('t expr -> 't expr) ->
+  (bool * 't def list) list -> unit
+
+type 't make_ocaml_impl =
+  with_create:bool ->
+  original_types:(string, string * int) Hashtbl.t ->
+  ocaml_version:(int * int) option ->
+  Buffer.t ->
+  ('t expr -> 't expr) ->
+  (bool * 't def list) list -> unit
+
+type 't defs_of_atd_modules =
+  (bool * Atd.Ast.module_body) list ->
+  (bool * 't def list) list
+
+let make_ocaml_files
+    ~opens
+    ~with_typedefs
+    ~with_create
+    ~with_fundefs
+    ~all_rec
+    ~pos_fname
+    ~pos_lnum
+    ~type_aliases
+    ~force_defaults:_
+    ~ocaml_version
+    ~pp_convs
+    ~defs_of_atd_modules
+    ~make_ocaml_intf
+    ~make_ocaml_impl
+    ~target
+    atd_file out
+  =
+  let ((head, m0), _) =
+    match atd_file with
+      Some file ->
+        Atd.Util.load_file
+          ~expand:false ~inherit_fields:true ~inherit_variants:true
+          ?pos_fname ?pos_lnum
+          file
+    | None ->
+        Atd.Util.read_channel
+          ~expand:false ~inherit_fields:true ~inherit_variants:true
+          ?pos_fname ?pos_lnum
+          stdin
+  in
+  let tsort =
+    if all_rec then
+      function m -> [ (true, m) ]
+    else
+      Atd.Util.tsort
+  in
+  let m1 = tsort m0 in
+  let defs1 = defs_of_atd_modules m1 in
+  check defs1;
+  let (m1', original_types) =
+    Atd.Expand.expand_module_body ~keep_poly:true m0
+  in
+  let m2 = tsort m1' in
+  (* m0 = original type definitions
+     m1 = original type definitions after dependency analysis
+     m2 = monomorphic type definitions after dependency analysis *)
+  let ocaml_typedefs =
+    Ocaml.ocaml_of_atd ~pp_convs ~target ~type_aliases (head, m1) in
+  let defs = defs_of_atd_modules m2 in
+  let header =
+    let src =
+      match atd_file with
+        None -> "stdin"
+      | Some path -> sprintf "%S" (Filename.basename path)
+    in
+    sprintf {|(* Auto-generated from %s *)
+              [@@@ocaml.warning "-27-32-33-35-39"]|} src
+  in
+  let mli =
+    make_mli
+      ~make_ocaml_intf
+      ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+      ocaml_typedefs (Mapping.make_deref defs1) defs1
+  in
+  let ml =
+    make_ml
+      ~make_ocaml_impl
+      ~header ~opens ~with_typedefs ~with_create ~with_fundefs
+      ~original_types ~ocaml_version ocaml_typedefs
+      (Mapping.make_deref defs) defs
+  in
+  write_ocaml out mli ml

@@ -359,7 +359,7 @@ let make_ocaml_validator ~original_types is_rec let1 def =
   ]
 
 
-let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
+let make_ocaml_validate_impl ~with_create ~original_types ~ocaml_version:_ buf deref defs =
   defs
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in
@@ -377,95 +377,9 @@ let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
 (*
   Glue
 *)
-
-let make_mli
-    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ocaml_typedefs deref defs =
-  let buf = Buffer.create 1000 in
-  bprintf buf "%s\n" header;
-  Ox_emit.write_opens buf opens;
-  if with_typedefs then
-    bprintf buf "%s\n" ocaml_typedefs;
-  if with_typedefs && with_fundefs then
-    bprintf buf "\n";
-  if with_fundefs then
-    make_ocaml_validate_intf ~with_create buf deref defs;
-  Buffer.contents buf
-
-let make_ml
-    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ~original_types ocaml_typedefs deref defs =
-  let buf = Buffer.create 1000 in
-  bprintf buf "%s\n" header;
-  Ox_emit.write_opens buf opens;
-  if with_typedefs then
-    bprintf buf "%s\n" ocaml_typedefs;
-  if with_typedefs && with_fundefs then
-    bprintf buf "\n";
-  if with_fundefs then
-    make_ocaml_validate_impl ~with_create ~original_types buf deref defs;
-  Buffer.contents buf
-
-let make_ocaml_files
-    ~opens
-    ~with_typedefs
-    ~with_create
-    ~with_fundefs
-    ~all_rec
-    ~pos_fname
-    ~pos_lnum
-    ~type_aliases
-    ~force_defaults:_
-    ~ocaml_version:_
-    ~pp_convs
-    atd_file out =
-  let ((head, m0), _) =
-    match atd_file with
-      Some file ->
-        Atd.Util.load_file
-          ~expand:false ~inherit_fields:true ~inherit_variants:true
-          ?pos_fname ?pos_lnum
-          file
-    | None ->
-        Atd.Util.read_channel
-          ~expand:false ~inherit_fields:true ~inherit_variants:true
-          ?pos_fname ?pos_lnum
-          stdin
-  in
-  let tsort =
-    if all_rec then
-      function m -> [ (true, m) ]
-    else
-      Atd.Util.tsort
-  in
-  let m1 = tsort m0
-  in
-  let defs1 = Ov_mapping.defs_of_atd_modules m1 in
-  let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_poly:true m0
-  in
-  let m2 = tsort m1' in
-  (* m0 = original type definitions
-     m1 = original type definitions after dependency analysis
-     m2 = monomorphic type definitions after dependency analysis *)
-  let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs ~target:Validate ~type_aliases (head, m1) in
-  let defs = Ov_mapping.defs_of_atd_modules m2 in
-  let header =
-    let src =
-      match atd_file with
-        None -> "stdin"
-      | Some path -> sprintf "%S" (Filename.basename path)
-    in
-    sprintf {|(* Auto-generated from %s *)
-              [@@@ocaml.warning "-27-32-33-35-39"]|} src
-  in
-  let mli =
-    make_mli ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ocaml_typedefs (Mapping.make_deref defs1) defs1
-  in
-  let ml =
-    make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~original_types ocaml_typedefs (Mapping.make_deref defs) defs
-  in
-  Ox_emit.write_ocaml out mli ml
+let make_ocaml_files =
+  Ox_emit.make_ocaml_files
+    ~defs_of_atd_modules
+    ~make_ocaml_intf:make_ocaml_validate_intf
+    ~make_ocaml_impl:make_ocaml_validate_impl
+    ~target:Validate

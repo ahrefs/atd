@@ -1283,7 +1283,7 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
     ]
   ]
 
-let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
+let make_ocaml_biniou_impl ~with_create ~original_types ~force_defaults:_ ~ocaml_version
     buf deref defs =
   defs
   |> List.concat_map (fun (is_rec, l) ->

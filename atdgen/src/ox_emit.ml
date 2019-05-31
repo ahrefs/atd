@@ -455,7 +455,7 @@ let make_mli
 let make_ml
     ~make_ocaml_impl
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs ~original_types
-    ~ocaml_version
+    ~force_defaults ~ocaml_version
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -466,7 +466,7 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then
     make_ocaml_impl
-      ~with_create ~original_types ~ocaml_version
+      ~with_create ~original_types ~force_defaults ~ocaml_version
       buf deref defs;
   Buffer.contents buf
 
@@ -479,6 +479,7 @@ type 't make_ocaml_intf =
 type 't make_ocaml_impl =
   with_create:bool ->
   original_types:(string, string * int) Hashtbl.t ->
+  force_defaults:bool ->
   ocaml_version:(int * int) option ->
   Buffer.t ->
   ('t expr -> 't expr) ->
@@ -497,7 +498,7 @@ let make_ocaml_files
     ~pos_fname
     ~pos_lnum
     ~type_aliases
-    ~force_defaults:_
+    ~force_defaults
     ~ocaml_version
     ~pp_convs
     ~defs_of_atd_modules
@@ -527,7 +528,9 @@ let make_ocaml_files
   in
   let m1 = tsort m0 in
   let defs1 = defs_of_atd_modules m1 in
+(*
   check defs1;
+*)
   let (m1', original_types) =
     Atd.Expand.expand_module_body ~keep_poly:true m0
   in
@@ -557,7 +560,7 @@ let make_ocaml_files
     make_ml
       ~make_ocaml_impl
       ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~original_types ~ocaml_version ocaml_typedefs
+      ~original_types ~force_defaults ~ocaml_version ocaml_typedefs
       (Mapping.make_deref defs) defs
   in
   write_ocaml out mli ml

@@ -359,7 +359,7 @@ let make_ocaml_validator ~original_types is_rec let1 def =
   ]
 
 
-let make_ocaml_validate_impl ~with_create ~original_types ~ocaml_version:_ buf deref defs =
+let make_ocaml_validate_impl ~with_create ~original_types ~force_defaults:_ ~ocaml_version:_ buf deref defs =
   defs
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in

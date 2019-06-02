@@ -1,5 +1,6 @@
 module Bs = Spec_bs
 module J = Spec_j
+module W = Spec_w
 
 open Spec_t
 

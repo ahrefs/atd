@@ -50,7 +50,7 @@ struct
   module S = Set.Make (
     struct
       type t = node
-      let compare a b = Pervasives.compare a.id b.id
+      let compare a b = compare a.id b.id
     end
   )
 

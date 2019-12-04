@@ -1,5 +1,5 @@
-2.x.x
------
+2.1.0 (2019-12-3)
+-----------------
 
 * Fix bug preventing generated code from compiling when using
   json adapters on recursive types.

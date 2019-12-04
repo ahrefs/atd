@@ -24,4 +24,11 @@ livedoc:
 	cd doc && sphinx-autobuild . _build \
 	  -p 8888 -q  --host $(shell hostname) -r '\.#.*'
 
+package := atd
+opam-release:
+	dune-release distrib --skip-build --skip-lint --skip-tests -n $(package)
+	dune-release publish distrib --verbose -n $(package)
+	dune-release opam pkg -n $(package)
+	dune-release opam submit -n $(package)
+
 .PHONY: all test clean check doc livedoc

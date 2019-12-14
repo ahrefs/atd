@@ -242,7 +242,7 @@ and trans_record my_name env (loc, fields, annots) =
   output_string out (javadoc loc annots "");
   fprintf out "case class %s(\n" class_name;
 
-  List.map 
+  List.map
       (fun (`Field (_, (field_name, _, annots), _) as field) ->
          let field_name = get_scala_field_name field_name annots in
          declare_field env field (List.assoc_exn field_name java_tys)

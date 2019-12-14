@@ -63,7 +63,7 @@ let to_string_field env = function
       let json_field_name = get_json_field_name atd_field_name annots in
       let field_name = get_scala_field_name atd_field_name annots in
       (* TODO: Omit fields with default value. *)
-      sprintf "    \"%s\" := %s,\n" json_field_name field_name
+      sprintf "    \"%s\" := %s" json_field_name field_name
 
 (* Generate a javadoc comment *)
 let javadoc loc annots indent =
@@ -242,25 +242,20 @@ and trans_record my_name env (loc, fields, annots) =
   output_string out (javadoc loc annots "");
   fprintf out "case class %s(\n" class_name;
 
-  let env = List.fold_left
-      (fun env (`Field (_, (field_name, _, annots), _) as field) ->
+  List.map 
+      (fun (`Field (_, (field_name, _, annots), _) as field) ->
          let field_name = get_scala_field_name field_name annots in
-         let cmd =
-           declare_field env field (List.assoc_exn field_name java_tys) in
-         fprintf out "%s,\n" cmd;
-         env
-      )
-      env fields in
-  fprintf out ") extends Atds {";
+         declare_field env field (List.assoc_exn field_name java_tys)
+  ) fields
+         |> String.concat ",\n"
+         |> fprintf out "%s";
+  fprintf out "\n) extends Atds {";
   fprintf out "
 
-  override protected def toArgonaut: Json = Json(\n%a  )
+  override protected def toArgonaut: Json = Json(\n%s\n  )
 "
-    (fun out ->
-       List.iter (fun field ->
-         output_string out (to_string_field env field)
-       )
-    ) fields;
+    (List.map (fun field -> to_string_field env field) fields
+         |> String.concat ",\n");
 (*  List.iter
     (function `Field (loc, (field_name, _, annots), _) ->
        let field_name = get_scala_field_name field_name annots in

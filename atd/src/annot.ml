@@ -22,7 +22,7 @@ let field ~section ~field l =
   | (loc, _) :: others -> error_at loc
     (sprintf "Duplicate annotation %s.%s (also in:\n  %s\n)" section field
     (List.map (fun (loc, _) -> (Ast.string_of_loc loc)) others
-     |> String.concat ",/n  "))
+     |> String.concat ",\n  "))
   | _ -> None
 
 let has_section k l =

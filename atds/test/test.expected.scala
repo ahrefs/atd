@@ -60,12 +60,12 @@ type Es = List[E]
 
 case class SimpleRecord(
   int_field : Int,
-  opt : Option[Boolean]
+  opt : Option[Boolean],
 ) extends Atds {
 
   override protected def toArgonaut: Json = Json(
     "int_field" := int_field,
-    "opt" := opt
+    "opt" := opt,
   )
 }
 
@@ -138,7 +138,7 @@ case class ComplexRecord(
   class_ : Option[Int],
   final_ : Option[Int],
   kase : String,
-  l2 : List[RecordWithDefaults]
+  l2 : List[RecordWithDefaults],
 ) extends Atds {
 
   override protected def toArgonaut: Json = Json(
@@ -151,7 +151,7 @@ case class ComplexRecord(
     "class" := class_,
     "final" := final_,
     "case" := kase,
-    "l2" := l2
+    "l2" := l2,
   )
 }
 
@@ -161,7 +161,7 @@ case class RecordWithDefaults(
   s : String = "",
   o : Option[Boolean] = None,
   l : List[Boolean] = Nil,
-  e : E
+  e : E,
 ) extends Atds {
 
   override protected def toArgonaut: Json = Json(
@@ -170,7 +170,7 @@ case class RecordWithDefaults(
     "s" := s,
     "o" := o,
     "l" := l,
-    "e" := e
+    "e" := e,
   )
 }
 
@@ -181,7 +181,7 @@ case class BiggerRecord(
   o : Option[Boolean] = None,
   l : List[Boolean] = Nil,
   e : E,
-  more : String
+  more : String,
 ) extends Atds {
 
   override protected def toArgonaut: Json = Json(
@@ -191,7 +191,7 @@ case class BiggerRecord(
     "o" := o,
     "l" := l,
     "e" := e,
-    "more" := more
+    "more" := more,
   )
 }
 
@@ -228,13 +228,13 @@ type State = String
 case class Addr(
   street : Street,
   city : String,
-  state : String
+  state : String,
 ) extends Atds {
 
   override protected def toArgonaut: Json = Json(
     "street" := street,
     "city" := city,
-    "state" := state
+    "state" := state,
   )
 }
 

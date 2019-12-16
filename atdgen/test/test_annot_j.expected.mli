@@ -3,7 +3,7 @@
 
 type pointC = ProtoC_t.pointC = { f: float }
 
-type pointB = ProtoB_t.pointB = { f: float }
+type pointB = ProtoD_t.pointB = { f: float }
 
 type pointA = ProtoA_t.pointA = { f: float }
 

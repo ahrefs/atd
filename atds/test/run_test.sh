@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -e
-CLASSPATH='.:argonaut_2.12-6.2.2.jar:junit-4.8.2.jar'
+CLASSPATH=`scala -version 2>&1 | sed 's/^.*version \(2...\).*$/.:argonaut_\1-6.2.2.jar:junit-4.8.2.jar/'`
 
 scalac -classpath $CLASSPATH test.scala
 scalac -classpath $CLASSPATH AtdsTest.scala

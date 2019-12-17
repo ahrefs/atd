@@ -10,8 +10,20 @@ let error_at loc s =
   failwith (sprintf "%s:\n%s" (Ast.string_of_loc loc) s)
 
 let field ~section ~field l =
-  let open Option.O in
-  List.assoc section l >>= fun (_, l2) -> List.assoc field l2
+  let fieldmatches = List.filter_map (fun (s, (_, fs)) ->
+    if s = section then Some fs else None) l
+    |> List.map (fun fs ->
+      List.filter_map (fun (f, (l, s)) ->
+        if f = field then Some (l, s) else None)
+      fs)
+    |> List.flatten in
+  match fieldmatches with
+  | [fieldmatch] -> Some fieldmatch
+  | (loc, _) :: others -> error_at loc
+    (sprintf "Duplicate annotation %s.%s (also in:\n  %s\n)" section field
+    (List.map (fun (loc, _) -> (Ast.string_of_loc loc)) others
+     |> String.concat ",\n  "))
+  | _ -> None
 
 let has_section k l =
   Option.is_some (List.assoc k l)

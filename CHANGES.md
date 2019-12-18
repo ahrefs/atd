@@ -1,3 +1,10 @@
+unreleased
+-----------------
+
+* Add support for merging double annotations (`<ocaml from="ProtoA"><ocaml predef>`)
+
+* Add tests for annotation merging and target-specific annotations
+
 2.1.0 (2019-12-3)
 -----------------
 

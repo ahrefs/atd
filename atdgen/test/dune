@@ -164,6 +164,54 @@
  (package atdgen)
  (action (diff test_polymorphic_wrap_j.expected.ml test_polymorphic_wrap_j.ml)))
 
+(rule
+ (targets test_annot_t.ml test_annot_t.mli)
+ (deps    test_annot.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_annot_t.expected.ml test_annot_t.ml)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_annot_t.expected.mli test_annot_t.mli)))
+
+(rule
+ (targets test_annot_j.ml test_annot_j.mli)
+ (deps    test_annot.atd)
+ (action  (run %{bin:atdgen} -j -j-std %{deps})))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_annot_j.expected.ml test_annot_j.ml)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_annot_j.expected.mli test_annot_j.mli)))
+
+(rule
+ (targets test_annot_error.stderr)
+ (deps    test_annot_error.atd)
+ (action
+   (with-stderr-to test_annot_error.stderr
+   (with-stdout-to test_annot_error.stdout
+     (bash "%{bin:atdgen} -t %{deps} || echo 'Failed succesfully!'")))))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_annot_error.expected.stderr test_annot_error.stderr)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
+
 (executables
  (libraries atd atdgen-runtime)
  (names test_atdgen_main)

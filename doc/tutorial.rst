@@ -1249,7 +1249,7 @@ this will usually look like:
 You can refer to ``example_t.ml`` and ``example_j.ml`` as usual (by default, they
 will be automatically linked into the library being built in the same directory).
 You will need to write rules for each .atd file individually until
-`Dune supports wildcard rules <https://github.com/ocaml/dune/issues/295>`_.
+`Dune supports wildcard rules <https://github.com/ocaml/dune/issues/307>`_.
 
 Note that any options ``atdgen`` supports can be included in the ``run atdgen``
 section (``-open``, ``-deriving-conv``, etc.).

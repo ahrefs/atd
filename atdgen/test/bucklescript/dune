@@ -32,16 +32,20 @@
 
 (alias
  (name runtest)
+ (package atdgen)
  (action (diff bucklespec_bs.expected.ml bucklespec_bs.ml)))
 
 (alias
  (name runtest)
+ (package atdgen)
  (action (diff bucklespec_bs.expected.mli bucklespec_bs.mli)))
 
 (alias
  (name runtest)
+ (package atdgen)
  (action (diff bucklespec_j.expected.ml bucklespec_j.ml)))
 
 (alias
  (name runtest)
+ (package atdgen)
  (action (run ./bucklespec_roundtrip.exe)))

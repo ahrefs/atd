@@ -34,6 +34,7 @@
 
 (alias
  (name runtest)
+ (package atdgen)
  (action (diff spec_j.expected.json spec_j.json)))
 
 (rule
@@ -42,4 +43,5 @@
 
 (alias
  (name runtest)
+ (package atdgen)
  (action (diff spec_bs.expected.json spec_bs.json)))

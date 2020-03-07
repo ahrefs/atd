@@ -41,6 +41,7 @@ depends: [
   "biniou" {>= "1.0.6"}
   "yojson" {>= "1.7.0"}
 ]
+dev-repo: "git+https://github.com/ahrefs/atd.git"
 build: [
   ["dune" "subst"] {pinned}
   [
@@ -51,8 +52,6 @@ build: [
     "-j"
     jobs
     "@install"
-    "@runtest" {with-test}
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/ahrefs/atd.git"

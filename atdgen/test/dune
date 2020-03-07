@@ -196,11 +196,11 @@
 
 (rule
  (targets test_annot_error.stderr)
- (deps    test_annot_error.atd)
+ (deps    (:atd test_annot_error.atd) %{bin:atdgen})
  (action
    (with-stderr-to test_annot_error.stderr
    (with-stdout-to test_annot_error.stdout
-     (bash "%{bin:atdgen} -t %{deps} || echo 'Failed succesfully!'")))))
+     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
 
 (alias
  (name runtest)
@@ -229,7 +229,6 @@
   testj
   testv
   test_atdgen_main
-  test_atdgen_type_conv
   test_lib))
 
 (alias

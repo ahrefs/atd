@@ -1,5 +1,5 @@
-unreleased
------------------
+2.2.0 (2020-09-03)
+------------------
 
 * Add support for merging double annotations (`<ocaml from="ProtoA"><ocaml predef>`)
 

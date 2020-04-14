@@ -1,4 +1,4 @@
-(lang dune 1.11)
+(lang dune 2.0)
 (using menhir 1.0)
 
 (name atd)
@@ -30,7 +30,7 @@
  (name atd)
  (depends
   (ocaml (>= 4.02))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   menhir
   easy-format
   re)
@@ -45,7 +45,7 @@ formats. "))
  (name atdgen)
  (depends
   (ocaml (>= 4.02))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   (atd (>= 2.0.0))
   (atdgen-runtime (>= 2.0.0))
   (atdgen-codec-runtime :with-test)
@@ -71,7 +71,7 @@ This package should be used only in conjunction with the stdgen code
 generator")
  (depends
   (ocaml (>= 4.02))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   (yojson (>= 1.7.0))
   (biniou (>= 1.0.6))
   re))
@@ -96,7 +96,7 @@ specification.
 automatically handled")
  (depends
   (ocaml (>= 4.02))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   (atd (>= 2.0.0))
   re))
 
@@ -106,7 +106,7 @@ automatically handled")
  (description "ATD Code generator for Scala")
  (depends
   (ocaml (>= 4.02))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   (atd (>= 2.0.0))
   re))
 

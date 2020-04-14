@@ -2,7 +2,7 @@
  (libraries atd)
  (names unit_tests))
 
-(alias
- (name   runtest)
+(rule
+ (alias   runtest)
  (package atd)
  (action (run ./unit_tests.exe)))

@@ -3,13 +3,13 @@
  (deps    test.atd)
  (action  (run %{bin:atdgen} %{deps})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test.expected.ml test.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test.expected.mli test.mli)))
 
@@ -18,13 +18,13 @@
  (deps    test2.atd)
  (action  (run %{bin:atdgen} -open Test %{deps})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test2.expected.ml test2.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test2.expected.mli test2.mli)))
 
@@ -38,13 +38,13 @@
    %{atd}
     -o testj)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff testj.expected.ml testj.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff testj.expected.mli testj.mli)))
 
@@ -78,13 +78,13 @@
  (action
   (run %{bin:atdgen} -json -std-json -o test_polymorphic_wrap_j %{deps})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test2j.expected.ml test2j.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test2j.expected.mli test2j.mli)))
 
@@ -93,13 +93,13 @@
  (deps    test3j.atd)
  (action  (run %{bin:atdgen} -t %{deps})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test3j_t.expected.ml test3j_t.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test3j_t.expected.mli test3j_t.mli)))
 
@@ -108,13 +108,13 @@
  (deps    test3j.atd)
  (action  (run %{bin:atdgen} -j -j-std %{deps})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test3j_j.expected.ml test3j_j.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test3j_j.expected.mli test3j_j.mli)))
 
@@ -123,13 +123,13 @@
  (deps    test.atd)
  (action  (run %{bin:atdgen} -std-json -extend Test test.atd -o testjstd)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff testjstd.expected.ml testjstd.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff testjstd.expected.mli testjstd.mli)))
 
@@ -138,29 +138,29 @@
  (deps    test.atd)
  (action  (run %{bin:atdgen} -validate -extend Test test.atd -o testv)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff testv.expected.ml testv.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff testv.expected.mli testv.mli)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_ambiguous_record_j.expected.ml test_ambiguous_record_j.ml)))
 
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_polymorphic_wrap_t.expected.ml test_polymorphic_wrap_t.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_polymorphic_wrap_j.expected.ml test_polymorphic_wrap_j.ml)))
 
@@ -169,13 +169,13 @@
  (deps    test_annot.atd)
  (action  (run %{bin:atdgen} -t %{deps})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_annot_t.expected.ml test_annot_t.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_annot_t.expected.mli test_annot_t.mli)))
 
@@ -184,31 +184,31 @@
  (deps    test_annot.atd)
  (action  (run %{bin:atdgen} -j -j-std %{deps})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_annot_j.expected.ml test_annot_j.ml)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_annot_j.expected.mli test_annot_j.mli)))
 
 (rule
  (targets test_annot_error.stderr)
- (deps    (:atd test_annot_error.atd) %{bin:atdgen})
+ (deps    (:atd test_annot_error.atd))
  (action
-   (with-stderr-to test_annot_error.stderr
+  (with-stderr-to test_annot_error.stderr
    (with-stdout-to test_annot_error.stdout
-     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+    (with-accepted-exit-codes 1 (run %{bin:atdgen} -t %{atd}))))))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_annot_error.expected.stderr test_annot_error.stderr)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
 
@@ -231,7 +231,7 @@
   test_atdgen_main
   test_lib))
 
-(alias
- (name   runtest)
+(rule
+ (alias   runtest)
  (package atdgen)
  (action (run ./test_atdgen_main.exe)))

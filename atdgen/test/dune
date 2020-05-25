@@ -213,7 +213,7 @@
  (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
 
 (executables
- (libraries atd atdgen-runtime)
+ (libraries atd atdgen-runtime biniou yojson)
  (names test_atdgen_main)
  (modules
   test

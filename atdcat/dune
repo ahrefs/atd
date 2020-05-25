@@ -1,5 +1,5 @@
 (executables
  (names atdcat)
  (public_names atdcat)
- (libraries atd)
+ (libraries atd easy-format re)
  (package atd))

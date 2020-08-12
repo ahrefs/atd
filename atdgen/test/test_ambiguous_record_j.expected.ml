@@ -1,6 +1,6 @@
 (* Auto-generated from "test_ambiguous_record.atd" *)
 [@@@ocaml.warning "-27-32-35-39"]
-open Test_ambiguous_record_t
+open! Test_ambiguous_record_t
 
 let write_ambiguous' : _ -> ambiguous' -> _ = (
   Atdgen_runtime.Oj_run.write_with_adapter Json_adapters.Identity.restore (

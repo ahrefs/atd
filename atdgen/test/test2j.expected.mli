@@ -1,8 +1,8 @@
 (* Auto-generated from "test2.atd" *)
 [@@@ocaml.warning "-27-32-35-39"]
-open Test
-open Test2
-open Testj
+open! Test
+open! Test2
+open! Testj
 
 val write_poly :
   (Bi_outbuf.t -> 'aa -> unit) ->

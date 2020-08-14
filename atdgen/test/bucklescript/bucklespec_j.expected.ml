@@ -1,5 +1,5 @@
 (* Auto-generated from "bucklespec.atd" *)
-[@@@ocaml.warning "-27-32-35-39"]
+[@@@ocaml.warning "-27-32-33-35-39"]
 
 type recurse = Bucklespec_t.recurse = { recurse_items: recurse list }
 

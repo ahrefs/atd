@@ -309,7 +309,7 @@ let get_let ~is_rec ~is_first =
   else "and", "and"
 
 let write_opens buf l =
-  List.iter (fun s -> bprintf buf "open! %s\n" s) l;
+  List.iter (fun s -> bprintf buf "open %s\n" s) l;
   bprintf buf "\n"
 
 let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_

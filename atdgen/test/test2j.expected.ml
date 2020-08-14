@@ -1,8 +1,8 @@
 (* Auto-generated from "test2.atd" *)
 [@@@ocaml.warning "-27-32-33-35-39"]
-open! Test
-open! Test2
-open! Testj
+open Test
+open Test2
+open Testj
 
 let write_poly write__aa write__bb = (
   Testj.write_poly write__aa write__bb

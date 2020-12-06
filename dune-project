@@ -33,7 +33,8 @@
   (dune (>= 1.11))
   menhir
   easy-format
-  re)
+  re
+  (odoc :with-doc))
  (synopsis "Parser for the ATD data format description language")
  (description "\
 ATD is the OCaml library providing a parser for the ATD language and various
@@ -50,7 +51,8 @@ formats. "))
   (atdgen-runtime (>= 2.0.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
-  (yojson (>= 1.7.0)))
+  (yojson (>= 1.7.0))
+  (odoc :with-doc))
  (synopsis "Generates efficient JSON serializers, deserializers and validators")
  (description "\
 Atdgen is a command-line program that takes as input type definitions in the ATD
@@ -74,7 +76,8 @@ generator")
   (dune (>= 1.11))
   (yojson (>= 1.7.0))
   (biniou (>= 1.0.6))
-  re))
+  re
+  (odoc :with-doc)))
 
 (package
  (name atdj)
@@ -98,7 +101,8 @@ automatically handled")
   (ocaml (>= 4.02))
   (dune (>= 1.11))
   (atd (>= 2.0.0))
-  re))
+  re
+  (odoc :with-doc)))
 
 (package
  (name atds)
@@ -108,7 +112,8 @@ automatically handled")
   (ocaml (>= 4.02))
   (dune (>= 1.11))
   (atd (>= 2.0.0))
-  re))
+  re
+  (odoc :with-doc)))
 
 (package
  (name atdgen-codec-runtime)
@@ -117,4 +122,5 @@ automatically handled")
 This library contains the types that are used by atdgen's
 bucklescript backend")
  (depends
-  (ocaml (>= 4.02))))
+  (ocaml (>= 4.02))
+  (odoc :with-doc)))

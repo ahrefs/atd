@@ -9,7 +9,7 @@ Atdgen is a tool that derives OCaml boilerplate code from type definitions.
 Currently it provides support for:
 
 * `JSON <http://json.org/>`_ serialization and deserialization.
-* `Biniou <https://raw.githubusercontent.com/mjambon/atd/master/atdgen-doc/src/biniou-format.txt>`_ serialization and deserialization.
+* `Biniou <https://raw.githubusercontent.com/ahrefs/atd/master/doc/biniou-format.txt>`_ serialization and deserialization.
   Biniou is a binary format extensible like JSON but more compact
   and faster to process.
 * Convenience functions for creating and validating OCaml data.

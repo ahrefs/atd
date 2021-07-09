@@ -19,7 +19,7 @@ module Type_field = struct
       match x with
       | `Assoc fields ->
           (match List.assoc type_field_name fields with
-           | `String type_ -> `List [ `String type_; x ]
+           | `String _type_ -> `List [ `String _type_; `Assoc (List.remove_assoc type_field_name fields) ]
            | exception Not_found -> x
            | _ -> x (* malformed *)
           )

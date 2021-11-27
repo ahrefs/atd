@@ -1,5 +1,5 @@
 (lang dune 1.11)
-(using menhir 1.0)
+(using menhir 2.0)
 (implicit_transitive_deps false)
 
 (name atd)

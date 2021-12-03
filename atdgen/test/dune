@@ -222,6 +222,41 @@
  (package atdgen)
  (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
 
+;; inline records are not allowed within poly variant, but allowed in classic
+
+(rule
+ (targets test_poly_inline_record_error.stderr)
+ (deps    (:atd test_poly_inline_record_error.atd) %{bin:atdgen})
+ (action
+   (with-stderr-to test_poly_inline_record_error.stderr
+   (with-stdout-to test_poly_inline_record_error.stdout
+     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_poly_inline_record_error.expected.stderr test_poly_inline_record_error.stderr)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_poly_inline_record_error.expected.stdout test_poly_inline_record_error.stdout)))
+
+(rule
+ (targets test_classic_inline_record_t.ml test_classic_inline_record_t.mli)
+ (deps    test_classic_inline_record.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_classic_inline_record_t.expected.ml test_classic_inline_record_t.ml)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_classic_inline_record_t.expected.mli test_classic_inline_record_t.mli)))
+
 (executables
  (libraries atd atdgen-runtime biniou yojson)
  (names test_atdgen_main)

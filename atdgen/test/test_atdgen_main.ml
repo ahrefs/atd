@@ -209,6 +209,10 @@ let test_biniou_missing_cell () =
     Test.extended_tuple_of_string
     (Test.string_of_base_tuple test_missing_tuple)
 
+let test_biniou_read_write_unit () =
+  section "biniou read/write unit";
+  Test_unit_biniou_b.t_of_string (Test_unit_biniou_b.string_of_t ())
+
 let test_json_missing_field () =
   section "json missing record fields";
   expect_error
@@ -640,6 +644,7 @@ let all_tests = [
   test_json_assoc_list;
   test_json_assoc_array;
   test_json_int_ocaml_float;
+  test_biniou_read_write_unit;
   test_biniou_correctness;
   test_json_correctness;
   test_json_space;

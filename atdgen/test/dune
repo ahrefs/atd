@@ -38,6 +38,16 @@
    %{atd}
     -o testj)))
 
+(rule
+ (targets test_unit_biniou_b.ml test_unit_biniou_b.mli)
+ (deps    test_unit_biniou.atd)
+ (action  (run %{bin:atdgen} -b %{deps})))
+
+(rule
+ (targets test_unit_biniou_t.ml test_unit_biniou_t.mli)
+ (deps    test_unit_biniou.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
 (alias
  (name runtest)
  (package atdgen)
@@ -228,8 +238,11 @@
   testjstd
   testj
   testv
+  test_unit_biniou_t
+  test_unit_biniou_b
   test_atdgen_main
-  test_lib))
+  test_lib
+  ))
 
 (alias
  (name   runtest)

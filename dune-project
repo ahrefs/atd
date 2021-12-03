@@ -34,7 +34,6 @@
   (dune (>= 1.11))
   menhir
   easy-format
-  re
   (odoc :with-doc))
  (synopsis "Parser for the ATD data format description language")
  (description "\
@@ -53,7 +52,8 @@ formats. "))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
   (yojson (>= 1.7.0))
-  (odoc :with-doc))
+  (odoc :with-doc)
+  re)
  (synopsis "Generates efficient JSON serializers, deserializers and validators")
  (description "\
 Atdgen is a command-line program that takes as input type definitions in the ATD
@@ -77,7 +77,6 @@ generator")
   (dune (>= 1.11))
   (yojson (>= 1.7.0))
   (biniou (>= 1.0.6))
-  re
   (odoc :with-doc)))
 
 (package
@@ -113,7 +112,6 @@ automatically handled")
   (ocaml (>= 4.02))
   (dune (>= 1.11))
   (atd (>= 2.0.0))
-  re
   (odoc :with-doc)))
 
 (package

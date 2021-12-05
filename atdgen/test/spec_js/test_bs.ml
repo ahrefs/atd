@@ -20,7 +20,6 @@ module M = Spec_js.Make(struct
     let t1     = make write_t1
     let t2     = make write_t2
     let v1list = make write_v1list
-    let v2     = make write_v2
     let v3list = make write_v3list
     let ages   = make write_ages
   end)

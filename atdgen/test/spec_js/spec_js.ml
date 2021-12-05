@@ -23,7 +23,6 @@ module type Json = sig
   val t1     : t1 j
   val t2     : t2 j
   val v1list : v1list j
-  val v2     : v2 j
   val v3list : v3list j
   val ages   : ages j
 end
@@ -56,8 +55,6 @@ module Make (J : Json) = struct
       ; t2 (100, 200, -1)
       ; v1list [ `V1; `V2; `V3 "testing";
                       `V4 255; `V5 None; `V5 (Some true)]
-      ; v2 { v2 = `A }
-      ; v2 { v2 = `B 100 }
       ; v3list [C1 ; C2 true; C2 false]
       ; ages [ `Age 50; `Age 30; `Age (-1); `Age 400]
       ]

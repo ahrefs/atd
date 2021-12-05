@@ -21,7 +21,6 @@ module M = Spec_js.Make(struct
     let t1     = make string_of_t1
     let t2     = make string_of_t2
     let v1list = make string_of_v1list
-    let v2     = make string_of_v2
     let v3list = make string_of_v3list
     let ages   = make string_of_ages
   end)

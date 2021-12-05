@@ -27,10 +27,6 @@ type v1 =
 
 type v1list = v1 list
 
-type v2 =
-  { v2 <json tag_field="kind">: [ A | B of int ]
-  }
-
 type v3 = [ C1 | C2 of bool] <ocaml repr="classic">
 
 type v3list = v3 list

@@ -45,3 +45,21 @@
  (name runtest)
  (package atdgen)
  (action (diff spec_bs.expected.json spec_bs.json)))
+
+(rule
+ (targets test_json_annot_invalid_field.stderr)
+ (deps    (:atd test_json_annot_invalid_field.atd) %{bin:atdgen})
+ (action
+   (with-stderr-to test_json_annot_invalid_field.stderr
+   (with-stdout-to test_json_annot_invalid_field.stdout
+     (bash "%{bin:atdgen} -j %{atd} || echo 'Failed succesfully!'")))))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_json_annot_invalid_field.expected.stderr test_json_annot_invalid_field.stderr)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_json_annot_invalid_field.expected.stdout test_json_annot_invalid_field.stdout)))

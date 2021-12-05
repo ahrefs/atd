@@ -63,6 +63,26 @@ type json_repr =
   | Variant of json_variant
   | Wrap (* should we add support for Base64 encoding of binary data? *)
 
+let json_fields = [
+  "precision";
+  "repr";
+  "adapter.ocaml";
+  "adapter.java";
+  "open_enum";
+  "lowercase_tags";
+  "name";
+  "keep_nulls"
+]
+
+let validate_json_annotation an =
+  List.iter (fun (s, (_, fs)) ->
+    if s = "json" then
+      List.iter (fun (f, (loc, _)) ->
+        if (not (List.mem f json_fields)) then
+          Error.error loc (Printf.sprintf "json.%s annotation not allowed" f)
+      ) fs
+  ) an
+
 let json_float_of_string s : [ `Float | `Int ] option =
   match s with
       "float" -> Some `Float
@@ -74,6 +94,7 @@ let json_precision_of_string s =
   with _ -> None
 
 let get_json_precision an =
+  validate_json_annotation an;
   Atd.Annot.get_opt_field
     ~parse:json_precision_of_string
     ~sections:["json"]
@@ -81,6 +102,7 @@ let get_json_precision an =
     an
 
 let get_json_float an : json_float =
+  validate_json_annotation an;
   match
     Atd.Annot.get_field
       ~parse:json_float_of_string
@@ -104,6 +126,7 @@ let json_list_of_string s : json_list option =
          java_adapter = None; }
 *)
 let get_json_adapter an =
+  validate_json_annotation an;
   let ocaml_adapter =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
@@ -122,9 +145,11 @@ let get_json_adapter an =
     java_adapter }
 
 let get_json_open_enum an =
+  validate_json_annotation an;
   Atd.Annot.get_flag ~sections:["json"] ~field:"open_enum" an
 
 let get_json_lowercase_tags an =
+  validate_json_annotation an;
   Atd.Annot.get_flag ~sections:["json"] ~field:"lowercase_tags" an
 
 let get_json_sum an = {
@@ -134,6 +159,7 @@ let get_json_sum an = {
 }
 
 let get_json_list an =
+  validate_json_annotation an;
   Atd.Annot.get_field
     ~parse:json_list_of_string
     ~default:Array
@@ -142,6 +168,7 @@ let get_json_list an =
     an
 
 let get_json_cons default an =
+  validate_json_annotation an;
   Atd.Annot.get_field
     ~parse:(fun s -> Some s)
     ~default
@@ -150,6 +177,7 @@ let get_json_cons default an =
     an
 
 let get_json_fname default an =
+  validate_json_annotation an;
   Atd.Annot.get_field
     ~parse:(fun s -> Some s)
     ~default
@@ -158,6 +186,7 @@ let get_json_fname default an =
     an
 
 let get_json_keep_nulls an =
+  validate_json_annotation an;
   Atd.Annot.get_flag
     ~sections:["json"]
     ~field:"keep_nulls"

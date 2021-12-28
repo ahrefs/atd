@@ -12,6 +12,7 @@
 *.opt
 *.exe
 _build
+_opam
 .merlin
 *.install
 META

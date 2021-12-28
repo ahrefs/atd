@@ -204,7 +204,10 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
           let codec_cons =
             match arg with
             | None ->
-                [Line (sprintf "`Single (%s%s)" tick o)]
+                let single_payload = match type_annot with
+                | None -> sprintf "%s%s" tick o
+                | Some type_annot -> sprintf "%s%s: %s" tick o type_annot in
+                [Line (sprintf "`Single (%s)" single_payload)]
             | Some v ->
                 [ Line "`Decode ("
                 ; Inline (make_reader p v)

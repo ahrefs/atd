@@ -234,9 +234,7 @@ let get_left_of_string_name p name param =
 let write_with_adapter adapter writer =
   match adapter.Json.ocaml_adapter with
   | None -> writer
-  | Some adapter_path ->
-      let restore =
-        Oj_mapping.json_restorer_of_adapter_path adapter_path in
+  | Some { restore; _ } ->
       [
         Line (
           sprintf "Atdgen_runtime.Oj_run.write_with_adapter %s (" restore
@@ -583,9 +581,7 @@ let study_record ~ocaml_version fields =
 let read_with_adapter adapter reader =
   match adapter.Json.ocaml_adapter with
   | None -> reader
-  | Some adapter_path ->
-      let normalize =
-        Oj_mapping.json_normalizer_of_adapter_path adapter_path in
+  | Some { normalize; _ } ->
       [
         Line (
           sprintf "Atdgen_runtime.Oj_run.read_with_adapter %s (" normalize

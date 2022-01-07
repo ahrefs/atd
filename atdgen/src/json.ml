@@ -6,8 +6,13 @@ type json_float =
   | Float of int option (* max decimal places *)
   | Int
 
+type ocaml_adapter = {
+    normalize : string;
+    restore : string;
+}
+
 type json_adapter = {
-  ocaml_adapter : string option;
+  ocaml_adapter : ocaml_adapter option;
   java_adapter : string option;
 }
 
@@ -104,12 +109,17 @@ let json_list_of_string s : json_list option =
          java_adapter = None; }
 *)
 let get_json_adapter an =
-  let ocaml_adapter =
+  let ocaml_adapter_module =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
       ~sections:["json"]
       ~field:"adapter.ocaml"
       an
+  in
+  let ocaml_adapter =
+    match ocaml_adapter_module with
+    | None -> None
+    | Some m -> Some { normalize = m ^ ".normalize"; restore = m ^ ".restore"; }
   in
   let java_adapter =
     Atd.Annot.get_opt_field

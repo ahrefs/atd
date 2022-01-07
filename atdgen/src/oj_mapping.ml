@@ -169,9 +169,3 @@ let defs_of_atd_modules l ~(target : Ocaml.target)=
       ) l
     )
   ) l
-
-let json_normalizer_of_adapter_path module_ =
-  module_ ^ ".normalize"
-
-let json_restorer_of_adapter_path module_ =
-  module_ ^ ".restore"

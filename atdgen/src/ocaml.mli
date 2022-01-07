@@ -2,6 +2,7 @@
 
 type pp_convs =
   | Camlp4 of string list
+  | Ppx_deriving of string list
   | Ppx of string list
 
 type atd_ocaml_sum = Classic | Poly

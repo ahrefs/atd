@@ -363,6 +363,17 @@ type ocaml_module_item =
 
 type ocaml_module_body = ocaml_module_item list
 
+(* https://ocaml.org/manual/lex.html#sss:keywords *)
+let is_ocaml_keyword = function
+  | "and" | "as" | "assert" | "asr" | "begin" | "class" | "constraint"
+  | "do" | "done" | "downto" | "else" | "end" | "exception" | "external"
+  | "false" | "for" | "fun" | "function" | "functor" | "if" | "in" | "include"
+  | "inherit" | "initializer" | "land" | "lazy" | "let" | "lor" | "lsl"
+  | "lsr" | "lxor" | "match" | "method" | "mod" | "module" | "mutable" | "new"
+  | "nonrec" | "object" | "of" | "open" | "or" | "private" | "rec" | "sig"
+  | "struct" | "then" | "to" | "true" | "try" | "type" | "val" | "virtual"
+  | "when" | "while" | "with" -> true
+  | _ -> false
 
 
 (*
@@ -420,6 +431,10 @@ and map_field target ocaml_field_prefix (x : field) : ocaml_field =
   | `Field (loc, (atd_fname, _, an), x) ->
       let ocaml_fname =
         get_ocaml_fname target (ocaml_field_prefix ^ atd_fname) an in
+      if is_ocaml_keyword ocaml_fname then
+        Error.error loc
+          ("\"" ^ ocaml_fname ^
+           "\" cannot be used as field name (reserved OCaml keyword)");
       let fname =
         if ocaml_fname = atd_fname then ocaml_fname
         else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
@@ -431,6 +446,9 @@ let map_def
     ~(target : target)
     ~(type_aliases : string option)
     ((loc, (s, param, an1), x) : type_def) : ocaml_def option =
+  if is_ocaml_keyword s then
+    Error.error loc
+      ("\"" ^ s ^ "\" cannot be used as type name (reserved OCaml keyword)");
   let is_predef = get_ocaml_predef target an1 in
   let is_abstract = Mapping.is_abstract x in
   let define_alias =

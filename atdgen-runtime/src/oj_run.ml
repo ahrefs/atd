@@ -105,7 +105,9 @@ let write_int32 ob x =
   Bi_outbuf.add_string ob (Int32.to_string x)
 
 let write_int64 ob x =
-  Bi_outbuf.add_string ob (Int64.to_string x)
+  Bi_outbuf.add_char ob '"';
+  Bi_outbuf.add_string ob (Int64.to_string x);
+  Bi_outbuf.add_char ob '"'
 
 let min_float = float min_int
 let max_float = float max_int

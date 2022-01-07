@@ -385,7 +385,7 @@ let rec map_expr target
   match x with
     Atd.Ast.Sum (_, l, an) ->
       let kind = get_ocaml_sum target an in
-      `Sum (kind, List.map (map_variant target) l)
+      `Sum (kind, List.map (map_variant ~kind target) l)
   | Record (loc, l, an) ->
       let kind = get_ocaml_record target an in
       let field_prefix = get_ocaml_field_prefix target an in
@@ -415,10 +415,13 @@ let rec map_expr target
   | Tvar (_, s) ->
       `Tvar s
 
-and map_variant target (x : variant) : ocaml_variant =
-  match x with
-    Inherit _ -> assert false
-  | Variant (loc, (s, an), o) ->
+and map_variant ~kind target (x : variant) : ocaml_variant =
+  match kind, x with
+  | _, Inherit _ -> assert false
+  | Poly, Variant (loc, _, Some (Record _)) ->
+      Error.error loc
+        "Inline records are not allowed in polymorphic variants (not valid in OCaml)"
+  | _, Variant (loc, (s, an), o) ->
       let s = get_ocaml_cons target s an in
       (s, Option.map (map_expr target []) o, Atd.Doc.get_doc loc an)
 

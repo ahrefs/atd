@@ -12,6 +12,7 @@
 *.opt
 *.exe
 _build
+_opam
 .merlin
 *.install
 META
@@ -29,3 +30,5 @@ man1
 *.cmx[as]
 *.[oa]
 *.annot
+/me/
+/out/

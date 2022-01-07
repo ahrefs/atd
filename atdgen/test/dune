@@ -38,6 +38,16 @@
    %{atd}
     -o testj)))
 
+(rule
+ (targets test_unit_biniou_b.ml test_unit_biniou_b.mli)
+ (deps    test_unit_biniou.atd)
+ (action  (run %{bin:atdgen} -b %{deps})))
+
+(rule
+ (targets test_unit_biniou_t.ml test_unit_biniou_t.mli)
+ (deps    test_unit_biniou.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
 (alias
  (name runtest)
  (package atdgen)
@@ -211,7 +221,44 @@
  (name runtest)
  (package atdgen)
  (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
+ 
+ ;; inline records are not allowed within poly variant, but allowed in classic
 
+(rule
+ (targets test_poly_inline_record_error.stderr)
+ (deps    (:atd test_poly_inline_record_error.atd) %{bin:atdgen})
+ (action
+   (with-stderr-to test_poly_inline_record_error.stderr
+   (with-stdout-to test_poly_inline_record_error.stdout
+     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_poly_inline_record_error.expected.stderr test_poly_inline_record_error.stderr)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_poly_inline_record_error.expected.stdout test_poly_inline_record_error.stdout)))
+
+(rule
+ (targets test_classic_inline_record_t.ml test_classic_inline_record_t.mli)
+ (deps    test_classic_inline_record.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_classic_inline_record_t.expected.ml test_classic_inline_record_t.ml)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_classic_inline_record_t.expected.mli test_classic_inline_record_t.mli)))
+
+ ;; OCaml keywords cannot be used as type names or record field names
+ 
 (rule
  (targets test_ocaml_keyword_error1.stderr)
  (deps    (:atd test_ocaml_keyword_error1.atd) %{bin:atdgen})
@@ -264,8 +311,11 @@
   testjstd
   testj
   testv
+  test_unit_biniou_t
+  test_unit_biniou_b
   test_atdgen_main
-  test_lib))
+  test_lib
+  ))
 
 (alias
  (name   runtest)

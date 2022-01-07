@@ -105,29 +105,46 @@ let json_list_of_string s : json_list option =
 
 (*
    <json adapter.ocaml="Foo.Bar">
-   --> { ocaml_adapter = Some "Foo.Bar";
+   --> { ocaml_adapter =
+           Some { normalize="Foo.Bar.normalize" restore="Foo.Bar.restore"};
          java_adapter = None; }
 *)
 let get_json_adapter an =
-  let ocaml_adapter_module =
+  let get_field field =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
       ~sections:["json"]
-      ~field:"adapter.ocaml"
+      ~field
       an
   in
+  let get_loc field = Atd.Annot.get_loc_exn ~sections:["json"] ~field an in
   let ocaml_adapter =
-    match ocaml_adapter_module with
-    | None -> None
-    | Some m -> Some { normalize = m ^ ".normalize"; restore = m ^ ".restore"; }
+    let field_module = "adapter.ocaml" in
+    let field_normalize = "adapter.ocaml_normalize" in
+    let field_restore = "adapter.ocaml_restore" in
+    match
+      get_field field_module,
+      get_field field_normalize,
+      get_field field_restore
+    with
+    | None, None, None -> None
+    | Some m, None, None -> Some { normalize = m ^ ".normalize"; restore = m ^ ".restore"; }
+    | None, Some normalize, Some restore ->
+      Some { normalize = "(" ^ normalize ^ ")"; restore = "(" ^ restore ^ ")" }
+    | Some _, _, _ ->
+      Error.error (get_loc field_module)
+        (Printf.sprintf "Cannot use %S field together with %S or %S"
+           field_module field_normalize field_restore)
+    | None, Some _, None ->
+      Error.error (get_loc field_normalize)
+        (Printf.sprintf "%S is used without required counterpart %S"
+           field_normalize field_restore)
+    | None, None, Some _ ->
+      Error.error (get_loc field_restore)
+        (Printf.sprintf "%S is used without required counterpart %S"
+           field_restore field_normalize)
   in
-  let java_adapter =
-    Atd.Annot.get_opt_field
-      ~parse:(fun s -> Some s)
-      ~sections:["json"]
-      ~field:"adapter.java"
-      an
-  in
+  let java_adapter = get_field "adapter.java" in
   { ocaml_adapter;
     java_adapter }
 

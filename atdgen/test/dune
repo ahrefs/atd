@@ -212,6 +212,42 @@
  (package atdgen)
  (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
 
+(rule
+ (targets test_ocaml_keyword_error1.stderr)
+ (deps    (:atd test_ocaml_keyword_error1.atd) %{bin:atdgen})
+ (action
+   (with-stderr-to test_ocaml_keyword_error1.stderr
+   (with-stdout-to test_ocaml_keyword_error1.stdout
+     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_ocaml_keyword_error1.expected.stderr test_ocaml_keyword_error1.stderr)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_ocaml_keyword_error1.expected.stdout test_ocaml_keyword_error1.stdout)))
+
+(rule
+ (targets test_ocaml_keyword_error2.stderr)
+ (deps    (:atd test_ocaml_keyword_error2.atd) %{bin:atdgen})
+ (action
+   (with-stderr-to test_ocaml_keyword_error2.stderr
+   (with-stdout-to test_ocaml_keyword_error2.stdout
+     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_ocaml_keyword_error2.expected.stderr test_ocaml_keyword_error2.stderr)))
+
+(alias
+ (name runtest)
+ (package atdgen)
+ (action (diff test_ocaml_keyword_error2.expected.stdout test_ocaml_keyword_error2.stdout)))
+
 (executables
  (libraries atd atdgen-runtime biniou yojson)
  (names test_atdgen_main)

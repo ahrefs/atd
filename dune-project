@@ -115,6 +115,16 @@ automatically handled")
   (odoc :with-doc)))
 
 (package
+ (name atdcpp)
+ (synopsis "ATD Code generator for cpp")
+ (description "ATD Code generator for cpp")
+ (depends
+  (ocaml (>= 4.02))
+  (dune (>= 1.11))
+  (atd (>= 2.0.0))
+  (odoc :with-doc)))
+
+(package
  (name atdgen-codec-runtime)
  (synopsis "Runtime for atdgen generated bucklescript converters")
  (description "\

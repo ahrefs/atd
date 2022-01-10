@@ -1,5 +1,0 @@
-(executable
- (name atdcpp_main)
- (public_name atdcpp)
- (package atdcpp)
- (libraries str atd))

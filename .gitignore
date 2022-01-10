@@ -30,5 +30,3 @@ man1
 *.cmx[as]
 *.[oa]
 *.annot
-/me/
-/out/

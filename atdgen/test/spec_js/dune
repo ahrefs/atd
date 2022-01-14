@@ -36,7 +36,7 @@
 (executable
  (name test_w)
  (modules test_w)
- (libraries spec_js atdgen-runtime))
+ (libraries spec_js atdgen-runtime yojson))
 
 (rule
  (targets spec_j.json)

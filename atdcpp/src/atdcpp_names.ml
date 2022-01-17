@@ -37,46 +37,103 @@ let to_class_name str =
 
 (* Per https://cpp-lang.org/files/archive/spec/2.12/01-lexical-syntax.html *)
 let cpp_keywords = [
-  "abstract";
+  "alignas";
+  "alignof";
+  "and";
+  "and_eq";
+  "asm";
+  "atomic_cancel";
+  "atomic_commit";
+  "atomic_noexcept";
+  "auto";
+  "bitand";
+  "bitor";
+  "bool";
+  "break";
   "case";
   "catch";
+  "char";
+  "char8_t";
+  "char16_t";
+  "char32_t";
   "class";
-  "def";
+  "compl";
+  "concept";
+  "const";
+  "consteval";
+  "constexpr";
+  "constinit";
+  "const_cast";
+  "continue";
+  "co_await";
+  "co_return";
+  "co_yield";
+  "decltype";
+  "default";
+  "delete";
   "do";
+  "double";
+  "dynamic_cast";
   "else";
-  "extends";
+  "enum";
+  "explicit";
+  "extern";
   "false";
-  "final";
-  "finally";
+  "float";
   "for";
-  "forSome";
+  "friend";
+  "goto";
   "if";
-  "implicit";
-  "import";
-  "lazy";
-  "macro";
-  "match";
+  "inline";
+  "int";
+  "long";
+  "mutable";
+  "namespace";
   "new";
-  "null";
-  "object";
-  "override";
-  "package";
+  "noexcept";
+  "not";
+  "not_eq";
+  "nullptr";
+  "operator";
+  "or";
+  "or_eq";
   "private";
   "protected";
+  "public";
+  "reflexpr";
+  "register";
+  "reinterpret_cast";
+  "requires";
   "return";
-  "sealed";
-  "super";
+  "short";
+  "signed";
+  "sizeof";
+  "static";
+  "static_assert";
+  "static_cast";
+  "struct";
+  "switch";
+  "synchronized";
+  "template";
   "this";
+  "thread_local";
   "throw";
-  "trait";
-  "try";
   "true";
-  "type";
-  "val";
-  "var";
+  "true";
+  "try";
+  "typedef";
+  "typeid";
+  "typename";
+  "union";
+  "unsigned";
+  "using";
+  "virtual";
+  "void";
+  "volatile";
+  "wchar_t";
   "while";
-  "with";
-  "yield";
+  "xor";
+  "xor_eq";
 ]
 
 let is_cpp_keyword =
@@ -85,10 +142,10 @@ let is_cpp_keyword =
   fun k -> Hashtbl.mem tbl k
 
 (*
-   Automatically append an underscore to a field name if it is a Scala keyword.
+   Automatically append an underscore to a field name if it is a CPP keyword.
    Use the alternative provided as <cpp name ="..."> if available.
 
-   ATD field                           Scala name
+   ATD field                           CPP name
 
    not_a_keyword                       not_a_keyword
    class                               class_

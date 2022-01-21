@@ -24,14 +24,19 @@ let make_field = function
   | { top = true; prefix; } -> (fun key -> { top = false; prefix = key :: prefix; })
   | { top = false; prefix; } -> (fun key -> { top = false; prefix = "]" :: key :: "[" :: prefix; })
 
-let write_list write_item state acc l =
+let write_list_simple write_item state acc l =
   List.fold_left (write_item (make_item state)) acc l
 
 let rec write_list_indexed index write_item state acc = function
   | [] -> acc
   | hd :: tl -> write_list_indexed (succ index) write_item state (write_item (make_item_indexed index state) acc hd) tl
 
-let write_array write_item state acc l =
+let write_list ?start_index write_item state acc l =
+  match start_index with
+  | Some start_index -> write_list_indexed start_index write_item state acc l
+  | None -> write_list_simple write_item state acc l
+
+let write_array_simple write_item state acc l =
   Array.fold_left (write_item (make_item state)) acc l
 
 let write_array_indexed index write_item state acc l =
@@ -41,6 +46,11 @@ let write_array_indexed index write_item state acc l =
     | false -> aux (succ index) (write_item (make_item_indexed index state) acc (Array.unsafe_get l i)) (succ i) len
   in
   aux index acc 0 (Array.length l)
+
+let write_array ?start_index write_item state acc l =
+  match start_index with
+  | Some start_index -> write_array_indexed start_index write_item state acc l
+  | None -> write_array_simple write_item state acc l
 
 let write_string write s =
   match write { top = true; prefix = []; } [] s with

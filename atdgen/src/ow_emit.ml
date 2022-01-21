@@ -292,8 +292,8 @@ let rec make_writer ?type_constraint p (x : mapping) : Indent.t list =
              | Some start ->
                (
                  match o with
-                 | List -> runtime "write_list_indexed %d (" start
-                 | Array -> runtime "write_array_indexed %d (" start
+                 | List -> runtime "write_list ~start_index:%d (" start
+                 | Array -> runtime "write_array ~start_index:%d (" start
                )
            in
            [

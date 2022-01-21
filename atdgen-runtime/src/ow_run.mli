@@ -14,10 +14,8 @@ val make_item : state -> state
 val make_field : state -> string -> state
 
 val write_bool : bool write
-val write_list : 'a write -> 'a list write
-val write_list_indexed : int -> 'a write -> 'a list write
-val write_array : 'a write -> 'a array write
-val write_array_indexed : int -> 'a write -> 'a array write
+val write_list : ?start_index:int -> 'a write -> 'a list write
+val write_array : ?start_index:int -> 'a write -> 'a array write
 val write_float : float write
 val write_float_as_int : float write
 val write_float_prec : int -> float write

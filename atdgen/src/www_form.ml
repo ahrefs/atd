@@ -14,7 +14,12 @@ type www_float =
   | Float of int option (* max decimal places *)
   | Int
 
-type www_list = Array of int option | Object
+type www_list_array = {
+  start_index : int option;
+  depth_first : bool;
+}
+
+type www_list = Array of www_list_array | Object
 
 type www_variant = { www_cons : string }
 
@@ -137,7 +142,7 @@ let get_www_list an =
   match repr with
   | `Object -> Object
   | `Array ->
-  let start =
+  let start_index =
     Atd.Annot.get_field
       ~parse:(function "none" -> Some None | x -> Some (Some (int_of_string x)))
       ~default:None
@@ -145,7 +150,15 @@ let get_www_list an =
       ~field:"start"
       an
   in
-  Array start
+  let depth_first =
+    Atd.Annot.get_field
+      ~parse:(fun s -> Some (bool_of_string s))
+      ~default:false
+      ~sections
+      ~field:"depth"
+      an
+  in
+  Array { start_index; depth_first; }
 
 let get_www_cons default an =
   Atd.Annot.get_field

@@ -280,24 +280,12 @@ let rec make_writer ?type_constraint p (x : mapping) : Indent.t list =
 
   | List (loc, x, List o, List w) ->
       (match w with
-         Array start ->
-           let write =
-             match start with
-             | None ->
-               (
-                 match o with
-                 | List -> runtime "write_list ("
-                 | Array -> runtime "write_array ("
-               )
-             | Some start ->
-               (
-                 match o with
-                 | List -> runtime "write_list ~start_index:%d (" start
-                 | Array -> runtime "write_array ~start_index:%d (" start
-               )
-           in
+         Array { start_index; depth_first; } ->
+           let repr = match o with List -> "list" | Array -> "array" in
+           let start_index = match start_index with Some start_index -> Printf.sprintf "~start_index:%d" start_index | None -> "" in
+           let depth_first = match depth_first with true -> Printf.sprintf "~depth_first:%B" depth_first | false -> "" in
            [
-             Line write;
+             Line (runtime "write_%s %s%s(" repr start_index depth_first);
              Block (make_writer p x);
              Line ")";
            ]

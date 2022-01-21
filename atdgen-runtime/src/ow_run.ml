@@ -5,6 +5,7 @@ open Printf
 type state = {
   top : bool;
   prefix : string list;
+  suffix : string list;
 }
 
 type acc = (string list * string) list
@@ -15,45 +16,57 @@ exception Error of string
 
 let error s = raise (Error s)
 
-let make_item { top = _; prefix; } = { top = false; prefix = "[]" :: prefix; }
-
-let make_item_indexed index { top = _; prefix; } =
-  { top = false; prefix = "]" :: string_of_int index :: "[" :: prefix; }
+let make_item ?index ?(depth_first=false) { top = _; prefix; suffix; } =
+  match depth_first with
+  | false ->
+    let prefix = match index with Some index -> "]" :: string_of_int index :: "[" :: prefix | None -> "[]" :: prefix in
+    { top = false; prefix; suffix; }
+  | true ->
+    let suffix = match index with Some index -> "[" :: string_of_int index :: "]" :: suffix | None -> "[]" :: suffix in
+    { top = false; prefix; suffix; }
 
 let make_field = function
-  | { top = true; prefix; } -> (fun key -> { top = false; prefix = key :: prefix; })
-  | { top = false; prefix; } -> (fun key -> { top = false; prefix = "]" :: key :: "[" :: prefix; })
+  | { top = true; prefix; suffix; } -> (fun key -> { top = false; prefix = key :: prefix; suffix; })
+  | { top = false; prefix; suffix; } -> (fun key -> { top = false; prefix = "]" :: key :: "[" :: prefix; suffix; })
 
-let write_list_simple write_item state acc l =
-  List.fold_left (write_item (make_item state)) acc l
+let write_list_simple write_item acc l =
+  List.fold_left write_item acc l
 
-let rec write_list_indexed index write_item state acc = function
+let rec write_list_indexed index write_item acc = function
   | [] -> acc
-  | hd :: tl -> write_list_indexed (succ index) write_item state (write_item (make_item_indexed index state) acc hd) tl
+  | hd :: tl -> write_list_indexed (succ index) write_item (write_item index acc hd) tl
 
-let write_list ?start_index write_item state acc l =
+let write_list ?start_index ?depth_first write_item state acc l =
   match start_index with
-  | Some start_index -> write_list_indexed start_index write_item state acc l
-  | None -> write_list_simple write_item state acc l
+  | None ->
+    let write_item = write_item (make_item ?depth_first state) in
+    write_list_simple write_item acc l
+  | Some start_index ->
+    let write_item index = write_item (make_item ~index ?depth_first state) in
+    write_list_indexed start_index write_item acc l
 
-let write_array_simple write_item state acc l =
-  Array.fold_left (write_item (make_item state)) acc l
+let write_array_simple write_item acc l =
+  Array.fold_left write_item acc l
 
-let write_array_indexed index write_item state acc l =
+let write_array_indexed index write_item acc l =
   let rec aux index acc i len =
     match i >= len with
     | true -> acc
-    | false -> aux (succ index) (write_item (make_item_indexed index state) acc (Array.unsafe_get l i)) (succ i) len
+    | false -> aux (succ index) (write_item index acc (Array.unsafe_get l i)) (succ i) len
   in
   aux index acc 0 (Array.length l)
 
-let write_array ?start_index write_item state acc l =
+let write_array ?start_index ?depth_first write_item state acc l =
   match start_index with
-  | Some start_index -> write_array_indexed start_index write_item state acc l
-  | None -> write_array_simple write_item state acc l
+  | None ->
+    let write_item = write_item (make_item ?depth_first state) in
+    write_array_simple write_item acc l
+  | Some start_index ->
+    let write_item index = write_item (make_item ~index ?depth_first state) in
+    write_array_indexed start_index write_item acc l
 
 let write_string write s =
-  match write { top = true; prefix = []; } [] s with
+  match write { top = true; prefix = []; suffix = []; } [] s with
   | [ [], key ] -> key
   | _ -> error "wrong write_string output"
 
@@ -80,7 +93,7 @@ let write_option write_item state acc x =
 
 let write_nullable = write_option
 
-let write_string state acc x = (state.prefix, x) :: acc
+let write_string { top = _; prefix; suffix; } acc x = (List.rev_append suffix prefix, x) :: acc
 
 let write_bool state acc x = write_string state acc (string_of_bool x)
 
@@ -114,5 +127,5 @@ let write_float_prec prec state acc x =
   | FP_nan -> error "Cannot convert NaN into a WWW-form float"
 
 let www_form_of_acc write x =
-  let acc = write { top = true; prefix = []; } [] x in
+  let acc = write { top = true; prefix = []; suffix = []; } [] x in
   List.rev_map (fun (key, value) -> String.concat "" (List.rev key), value) acc

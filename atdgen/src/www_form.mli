@@ -15,7 +15,12 @@ type www_float =
   | Float of int option (* max decimal places *)
   | Int
 
-type www_list = Array of int option | Object
+type www_list_array = {
+  start_index : int option;
+  depth_first : bool;
+}
+
+type www_list = Array of www_list_array | Object
 
 type www_variant = { www_cons : string }
 

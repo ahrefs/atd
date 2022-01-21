@@ -17,6 +17,9 @@ let error s = raise (Error s)
 
 let make_item { top = _; prefix; } = { top = false; prefix = "[]" :: prefix; }
 
+let make_item_indexed index { top = _; prefix; } =
+  { top = false; prefix = "]" :: string_of_int index :: "[" :: prefix; }
+
 let make_field = function
   | { top = true; prefix; } -> (fun key -> { top = false; prefix = key :: prefix; })
   | { top = false; prefix; } -> (fun key -> { top = false; prefix = "]" :: key :: "[" :: prefix; })
@@ -24,8 +27,20 @@ let make_field = function
 let write_list write_item state acc l =
   List.fold_left (write_item (make_item state)) acc l
 
+let rec write_list_indexed index write_item state acc = function
+  | [] -> acc
+  | hd :: tl -> write_list_indexed (succ index) write_item state (write_item (make_item_indexed index state) acc hd) tl
+
 let write_array write_item state acc l =
   Array.fold_left (write_item (make_item state)) acc l
+
+let write_array_indexed index write_item state acc l =
+  let rec aux index acc i len =
+    match i >= len with
+    | true -> acc
+    | false -> aux (succ index) (write_item (make_item_indexed index state) acc (Array.unsafe_get l i)) (succ i) len
+  in
+  aux index acc 0 (Array.length l)
 
 let write_string write s =
   match write { top = true; prefix = []; } [] s with

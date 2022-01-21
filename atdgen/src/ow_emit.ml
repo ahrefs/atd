@@ -278,13 +278,23 @@ let rec make_writer ?type_constraint p (x : mapping) : Indent.t list =
         ];
       ]
 
-  | List (loc, x, List o, List j) ->
-      (match j with
-         Array ->
+  | List (loc, x, List o, List w) ->
+      (match w with
+         Array start ->
            let write =
-             match o with
-               List -> runtime "write_list ("
-             | Array -> runtime "write_array ("
+             match start with
+             | None ->
+               (
+                 match o with
+                 | List -> runtime "write_list ("
+                 | Array -> runtime "write_array ("
+               )
+             | Some start ->
+               (
+                 match o with
+                 | List -> runtime "write_list_indexed %d (" start
+                 | Array -> runtime "write_array_indexed %d (" start
+               )
            in
            [
              Line write;

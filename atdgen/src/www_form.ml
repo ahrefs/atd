@@ -14,7 +14,7 @@ type www_float =
   | Float of int option (* max decimal places *)
   | Int
 
-type www_list = Array | Object
+type www_list = Array of int option | Object
 
 type www_variant = { www_cons : string }
 
@@ -93,10 +93,10 @@ let get_www_float an : www_float =
       `Float -> Float (get_www_precision an)
     | `Int -> Int
 
-let www_list_of_string s : www_list option =
+let www_list_repr_of_string s : [ `Array | `Object ] option =
   match s with
-  | "array" -> Some Array
-  | "object" -> Some Object
+  | "array" -> Some `Array
+  | "object" -> Some `Object
   | _ -> (* error *) None
 
 (*
@@ -126,12 +126,26 @@ let get_www_sum an = {
 }
 
 let get_www_list an =
-  Atd.Annot.get_field
-    ~parse:www_list_of_string
-    ~default:Array
-    ~sections
-    ~field:"repr"
-    an
+  let repr =
+    Atd.Annot.get_field
+      ~parse:www_list_repr_of_string
+      ~default:`Array
+      ~sections
+      ~field:"repr"
+      an
+  in
+  match repr with
+  | `Object -> Object
+  | `Array ->
+  let start =
+    Atd.Annot.get_field
+      ~parse:(function "none" -> Some None | x -> Some (Some (int_of_string x)))
+      ~default:None
+      ~sections
+      ~field:"start"
+      an
+  in
+  Array start
 
 let get_www_cons default an =
   Atd.Annot.get_field

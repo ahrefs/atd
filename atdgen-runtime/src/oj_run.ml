@@ -239,14 +239,14 @@ let write_with_adapter restore writer ob x =
 (*
   Checking at runtime that our assumptions on unspecified compiler behavior
   still hold.
+   TODO: what are these assumptions and which component makes them?
 *)
-
 type t = {
   _a : int option;
   _b : int;
 }
 
-let create () =
+(* This must be a test for the type checker since the function isn't used
+   anywhere. *)
+let _test () =
   { { _a = None; _b = Array.length Sys.argv } with _a = None }
-
-(************************************)

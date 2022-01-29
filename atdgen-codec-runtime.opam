@@ -4,7 +4,11 @@ synopsis: "Runtime for atdgen generated bucklescript converters"
 description: """
 This library contains the types that are used by atdgen's
 bucklescript backend"""
-maintainer: ["Rudi Grinberg <me@rgrinberg.com>"]
+maintainer: [
+  "Louis Roché <louis@louisroche.net>"
+  "Martin Jambon <martin@mjambon.com>"
+  "Rudi Grinberg <me@rgrinberg.com>"
+]
 authors: [
   "Martin Jambon <martin@mjambon.com>"
   "David Sheets <sheets@alum.mit.edu>"
@@ -21,7 +25,7 @@ authors: [
   "Vincent Bernardoff <vb@luminar.eu.org>"
   "haoyang <haoyang@esper.co>"
 ]
-license: "BSD-3-Clause"
+license: "MIT"
 homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [

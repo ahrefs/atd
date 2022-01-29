@@ -1,0 +1,14 @@
+;
+; Typecheck and run the tests on the generated Python code.
+;
+
+(alias
+ (name runtest)
+ (package atdpy)
+ (deps
+  (glob_files python-output/*.py)
+  (glob_files *.py))
+ (action
+  (progn
+   (run python3 -m mypy .)
+   (run python3 -m pytest .))))

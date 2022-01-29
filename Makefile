@@ -49,6 +49,12 @@ test-java:
 	$(MAKE) test-common
 	$(MAKE) -C atdj test
 
+# Test only the Python backend
+.PHONY: test-python
+test-python:
+	$(MAKE) test-common
+	$(MAKE) -C atdpy test
+
 ############################################################################
 
 .PHONY: js

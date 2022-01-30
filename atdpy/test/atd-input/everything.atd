@@ -1,3 +1,4 @@
-type t = {
-    id: string;
+type root = {
+  id: string;
+  await: bool;
 }

@@ -4,15 +4,24 @@
    Something similar is found in atdgen/src but this API is simpler.
 *)
 
-type t =
+type node =
   | Line of string
-  | Block of t list
-  | Inline of t list
+  | Block of node list
+  | Inline of node list
+
+type t = node list
+
+let rec is_empty_node = function
+  | Line "" -> true
+  | Line _ -> false
+  | Block xs -> List.for_all is_empty_node xs
+  | Inline xs -> List.for_all is_empty_node xs
 
 let to_buffer ?(offset = 0) ?(indent = 2) buf l =
   let rec print n = function
     | Block l -> List.iter (print (n + indent)) l
     | Inline l -> List.iter (print n) l
+    | Line "" -> Buffer.add_char buf '\n'
     | Line s ->
         for _ = 1 to n do
           Buffer.add_char buf ' '

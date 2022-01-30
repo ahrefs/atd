@@ -150,8 +150,10 @@ type user = \{
 v}
       *)
 
+and simple_field = (loc * (string * field_kind * annot) * type_expr)
+
 and field =
-    [ `Field of (loc * (string * field_kind * annot) * type_expr)
+    [ `Field of simple_field
     | `Inherit of (loc * type_expr) ]
       (**
          A single record field or an [inherit] statement.

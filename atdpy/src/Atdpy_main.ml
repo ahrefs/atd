@@ -15,7 +15,7 @@ let run_file src_path =
     Atd.Util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
   in
-  Codegen.to_file atd_module dst_path
+  Codegen.to_file ~atd_filename:src_name atd_module dst_path
 
 (* TODO: use cmdliner for a complete CLI *)
 let main () =

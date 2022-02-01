@@ -78,6 +78,60 @@ def atd_read_nullable(read_elt: Callable[[Any], Any]) \
     return read_nullable
 
 
+def atd_write_unit(x: Any) -> None:
+    if x is None:
+        return x
+    else:
+        return atd_type_mismatch('unit', x)
+
+
+def atd_write_bool(x: Any) -> bool:
+    if isinstance(x, bool):
+        return x
+    else:
+        return atd_type_mismatch('bool', x)
+
+
+def atd_write_int(x: Any) -> int:
+    if isinstance(x, int):
+        return x
+    else:
+        return atd_type_mismatch('int', x)
+
+
+def atd_write_float(x: Any) -> float:
+    if isinstance(x, (int, float)):
+        return x
+    else:
+        return atd_type_mismatch('float', x)
+
+
+def atd_write_string(x: Any) -> str:
+    if isinstance(x, str):
+        return x
+    else:
+        return atd_type_mismatch('str', x)
+
+
+def atd_write_list(write_elt: Callable[[Any], Any]) \
+        -> Callable[[List[Any]], List[Any]]:
+    def write_list(elts: List[Any]) -> List[Any]:
+        if isinstance(elts, list):
+            return [write_elt(elt) for elt in elts]
+        else:
+            atd_type_mismatch('list', elts)
+    return write_list
+
+
+def atd_write_nullable(write_elt: Callable[[Any], Any]) \
+        -> Callable[[Optional[Any]], Optional[Any]]:
+    def write_nullable(x: Any) -> Any:
+        if x is None:
+            return None
+        else:
+            return write_elt(x)
+    return write_nullable
+
 class Root:
     def __init__(
         self,
@@ -85,11 +139,17 @@ class Root:
         await_: bool,
         __init__: float,
         items: List[List[int]],
+        maybe: Optional[int],
+        extras: List[int],
+        answer: int,
     ):
         self._id = id
         self._await = await_
         self.x____init__ = __init__
         self._items = items
+        self._maybe = maybe
+        self._extras = extras
+        self._answer = answer
 
     @property
     def id(self):
@@ -106,6 +166,18 @@ class Root:
     @property
     def items(self):
         return self._items
+
+    @property
+    def maybe(self):
+        return self._maybe
+
+    @property
+    def extras(self):
+        return self._extras
+
+    @property
+    def answer(self):
+        return self._answer
 
     @classmethod
     def from_json(cls, x: Any):
@@ -126,6 +198,18 @@ class Root:
                 items: List[List[int]] = atd_read_list(atd_read_list(atd_read_int))(x['items'])
             else:
                 atd_missing_field('Root', 'items')
+            if 'maybe' in x:
+                maybe: Optional[int] = atd_read_int(x['maybe'])
+            else:
+                maybe = None
+            if 'extras' in x:
+                extras: List[int] = atd_read_list(atd_read_int)(x['extras'])
+            else:
+                extras = []
+            if 'answer' in x:
+                answer: int = atd_read_int(x['answer'])
+            else:
+                answer = 42
         else:
             atd_type_mismatch('Root', x)
         return cls(
@@ -133,15 +217,22 @@ class Root:
             await_,
             __init__,
             items,
+            maybe,
+            extras,
+            answer,
         )
 
     def to_json(self) -> Any:
-        return {
-            'id': self._id,
-            'await': self._await,
-            '__init__': self.x____init__,
-            'items': self._items,
-        }
+        res: Dict[str, Any] = {}
+        res['id'] = atd_write_string(self._id)
+        res['await'] = atd_write_bool(self._await)
+        res['__init__'] = atd_write_float(self.x____init__)
+        res['items'] = atd_write_list(atd_write_list(atd_write_int))(self._items)
+        if self._maybe is not None:
+            res['maybe'] = atd_write_int(self._maybe)
+        res['extras'] = atd_write_list(atd_write_int)(self._extras)
+        res['answer'] = atd_write_int(self._answer)
+        return res
 
     @classmethod
     def from_json_string(cls, x: str):

@@ -3,4 +3,7 @@ type root = {
   await: bool;
   __init__: float;
   items: int list list;
+  ?maybe: int option;
+  ~extras: int list;
+  ~answer <python default="42">: int;
 }

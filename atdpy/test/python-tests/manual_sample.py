@@ -72,6 +72,61 @@ def atd_read_nullable(read_elt: Callable[[Any], Any]) \
     return read_nullable
 
 
+def atd_write_unit(x: Any) -> None:
+    if x is None:
+        return x
+    else:
+        return atd_type_mismatch('unit', x)
+
+
+def atd_write_bool(x: Any) -> bool:
+    if isinstance(x, bool):
+        return x
+    else:
+        return atd_type_mismatch('bool', x)
+
+
+def atd_write_int(x: Any) -> int:
+    if isinstance(x, int):
+        return x
+    else:
+        return atd_type_mismatch('int', x)
+
+
+def atd_write_float(x: Any) -> float:
+    if isinstance(x, (int, float)):
+        return x
+    else:
+        return atd_type_mismatch('float', x)
+
+
+def atd_write_string(x: Any) -> str:
+    if isinstance(x, str):
+        return x
+    else:
+        return atd_type_mismatch('str', x)
+
+
+def atd_write_list(write_elt: Callable[[Any], Any]) \
+        -> Callable[[List[Any]], List[Any]]:
+    def write_list(elts: List[Any]) -> List[Any]:
+        if isinstance(elts, list):
+            return [write_elt(elt) for elt in elts]
+        else:
+            atd_type_mismatch('list', elts)
+    return write_list
+
+
+def atd_write_nullable(write_elt: Callable[[Any], Any]) \
+        -> Callable[[Optional[Any]], Optional[Any]]:
+    def write_nullable(x: Any) -> Any:
+        if x is None:
+            return None
+        else:
+            return write_elt(x)
+    return write_nullable
+
+
 class Root:
     def __init__(
             self,
@@ -115,11 +170,11 @@ class Root:
         return cls(id, await_, items)
 
     def to_json(self) -> Any:
-        return {
-            'id': self._id,
-            'await': self._await,
-            'items': self.items,
-        }
+        res: Dict[str, Any] = {}
+        res['id'] = atd_write_string(self._id)
+        res['await'] = atd_write_bool(self._await)
+        res['items'] = atd_write_list(atd_write_list(atd_write_int))(self.items)
+        return res
 
     @classmethod
     def from_json_string(cls, x: str):

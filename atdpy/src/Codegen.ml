@@ -193,6 +193,60 @@ def atd_read_nullable(read_elt: Callable[[Any], Any]) \
             return read_elt(x)
     return read_nullable
 
+
+def atd_write_unit(x: Any) -> None:
+    if x is None:
+        return x
+    else:
+        return atd_type_mismatch('unit', x)
+
+
+def atd_write_bool(x: Any) -> bool:
+    if isinstance(x, bool):
+        return x
+    else:
+        return atd_type_mismatch('bool', x)
+
+
+def atd_write_int(x: Any) -> int:
+    if isinstance(x, int):
+        return x
+    else:
+        return atd_type_mismatch('int', x)
+
+
+def atd_write_float(x: Any) -> float:
+    if isinstance(x, (int, float)):
+        return x
+    else:
+        return atd_type_mismatch('float', x)
+
+
+def atd_write_string(x: Any) -> str:
+    if isinstance(x, str):
+        return x
+    else:
+        return atd_type_mismatch('str', x)
+
+
+def atd_write_list(write_elt: Callable[[Any], Any]) \
+        -> Callable[[List[Any]], List[Any]]:
+    def write_list(elts: List[Any]) -> List[Any]:
+        if isinstance(elts, list):
+            return [write_elt(elt) for elt in elts]
+        else:
+            atd_type_mismatch('list', elts)
+    return write_list
+
+
+def atd_write_nullable(write_elt: Callable[[Any], Any]) \
+        -> Callable[[Optional[Any]], Optional[Any]]:
+    def write_nullable(x: Any) -> Any:
+        if x is None:
+            return None
+        else:
+            return write_elt(x)
+    return write_nullable
 |}
     atd_filename
     atd_filename
@@ -264,13 +318,56 @@ let property_definition
     ]
   ]
 
+let rec json_writer env e =
+  match e with
+  | Sum (loc, _, _) -> assert false
+  | Record (loc, _, _) -> assert false
+  | Tuple (loc, xs, an) -> assert false
+  | List (loc, e, an) -> sprintf "atd_write_list(%s)" (json_writer env e)
+  | Option (loc, e, an) -> sprintf "atd_write_option(%s)" (json_writer env e)
+  | Nullable (loc, e, an) ->
+      sprintf "atd_write_nullable(%s)" (json_writer env e)
+  | Shared (loc, e, an) -> not_implemented loc "shared"
+  | Wrap (loc, e, an) -> json_writer env e
+  | Name (loc, (loc2, name, []), an) ->
+      (match name with
+       | "bool" | "int" | "float" | "string" -> sprintf "atd_write_%s" name
+       | _ -> "(lambda x: x.to_json())")
+  | Name (loc, _, _) -> not_implemented loc "parametrized types"
+  | Tvar (loc, _) -> not_implemented loc "type variables"
+
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
-  [
-    Line (sprintf "'%s': self.%s,"
-            (Atdgen_emit.Json.get_json_fname name an |> single_esc)
-            (class_var_name trans_meth name))
-  ]
+  let unwrapped_type =
+    match kind with
+    | Required
+    | With_default -> e
+    | Optional ->
+        match e with
+        | Option (loc, e, an) -> e
+        | _ ->
+            A.error_at loc
+              (sprintf "the type of optional field '%s' should be of \
+                        the form 'xxx option'" name)
+  in
+  let writer_function = json_writer env unwrapped_type in
+  let assignment =
+    [
+      Line (sprintf "res['%s'] = %s(self.%s)"
+              (Atdgen_emit.Json.get_json_fname name an |> single_esc)
+              writer_function
+              (class_var_name trans_meth name))
+    ]
+  in
+  match kind with
+  | Required
+  | With_default -> assignment
+  | Optional ->
+      [
+        Line (sprintf "if self.%s is not None:"
+                (class_var_name trans_meth name));
+        Block assignment
+      ]
 
 (*
    Function value that can be applied to a JSON node, converting it
@@ -293,25 +390,91 @@ let rec json_reader env (e : type_expr) =
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
+let rec get_default_default (e : type_expr) : string option =
+  match e with
+  | Sum _
+  | Record _
+  | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
+  | List _ -> Some "[]"
+  | Option _ -> Some "Option(None)"
+  | Nullable _ -> Some "None"
+  | Shared (loc, e, an) -> get_default_default e
+  | Wrap (loc, e, an) -> get_default_default e
+  | Name _ -> None
+  | Tvar _ -> None
+
 let initialize_field_from_json
     env py_class_name ((loc, (name, kind, an), e) : simple_field) =
   let json_name = Atdgen_emit.Json.get_json_fname name an in
-  [
-    Line (sprintf "if '%s' in x:" (single_esc json_name));
-    Block [
-      Line (sprintf "%s: %s = %s(x['%s'])"
-              (trans env name)
-              (type_name_of_expr env e)
-              (json_reader env e)
-              (single_esc json_name))
-    ];
-    Line "else:";
-    Block [
-      Line (sprintf "atd_missing_field('%s', '%s')"
-              (single_esc py_class_name)
-              (single_esc json_name))
+  let unwrapped_type =
+    match kind with
+    | Required
+    | With_default -> e
+    | Optional ->
+        match e with
+        | Option (loc, e, an) -> e
+        | _ ->
+            A.error_at loc
+              (sprintf "the type of optional field '%s' should be of \
+                        the form 'xxx option'" name)
+  in
+  let if_then =
+    [
+      Line (sprintf "if '%s' in x:" (single_esc json_name));
+      Block [
+        Line (sprintf "%s: %s = %s(x['%s'])"
+                (trans env name)
+                (type_name_of_expr env e)
+                (json_reader env unwrapped_type)
+                (single_esc json_name))
+      ]
     ]
-  ]
+  in
+  let else_ =
+    match kind with
+    | Required ->
+        [
+          Line "else:";
+          Block [
+            Line (sprintf "atd_missing_field('%s', '%s')"
+                    (single_esc py_class_name)
+                    (single_esc json_name))
+          ]
+        ]
+    | Optional ->
+        [
+          Line "else:";
+          Block [
+            Line (sprintf "%s = None" (trans env name))
+          ]
+        ]
+    | With_default ->
+        let user_default =
+          Atd.Annot.get_opt_field
+            ~parse:(fun s -> Some s)
+            ~sections:["python"]
+            ~field:"default"
+            an
+        in
+        let default =
+          match user_default with
+          | Some x -> x
+          | None ->
+              match get_default_default e with
+              | Some x -> x
+              | None ->
+                  A.error_at loc
+                    (sprintf "missing default Python value for field '%s'"
+                       name)
+        in
+        [
+          Line "else:";
+          Block [
+            Line (sprintf "%s = %s" (trans env name) default)
+          ]
+        ]
+  in
+  if_then @ else_
 
 let class_arg env ((loc, (name, kind, an), e) : simple_field) =
   [
@@ -378,9 +541,9 @@ let record env loc name (fields : field list) an =
     [
       Line "def to_json(self) -> Any:";
       Block [
-        Line "return {";
-        Block json_object_body;
-        Line "}"
+        Line "res: Dict[str, Any] = {}";
+        Inline json_object_body;
+        Line "return res"
       ]
     ]
   in

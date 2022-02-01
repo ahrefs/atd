@@ -54,15 +54,6 @@ let init ~reserved_identifiers ~reserved_prefixes ~safe_prefix =
     reverse_translations = Hashtbl.create 100;
   }
 
-let copy x =
-  {
-    reserved_identifiers = x.reserved_identifiers;
-    reserved_prefixes = x.reserved_prefixes;
-    safe_prefix = x.safe_prefix;
-    translations = Hashtbl.copy x.translations;
-    reverse_translations = Hashtbl.copy x.reverse_translations;
-  }
-
 let is_reserved env src_or_dst =
   Hashtbl.mem env.reserved_identifiers src_or_dst
 
@@ -87,7 +78,7 @@ let enumerate_suffixes () =
   get_suffix
 
 let register env src =
-  let src =
+  let dst =
     (* assume that safe_prefix is not a prefix of a reserved prefix *)
     if has_reserved_prefix env src then
       env.safe_prefix ^ src
@@ -97,7 +88,7 @@ let register env src =
   let get_suffix = enumerate_suffixes () in
   let rec find_available_suffix () =
     let suffix = get_suffix () in
-    let dst = src ^ suffix in
+    let dst = dst ^ suffix in
     if is_reserved env dst || conflicts_with_existing_translation env dst then
       find_available_suffix ()
     else

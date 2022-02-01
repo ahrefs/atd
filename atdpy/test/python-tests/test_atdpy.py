@@ -8,11 +8,11 @@ import manual_sample
 
 
 def test_sample():
-    a_str = '{"id": "hello"}'
-    a_obj = manual_sample.Sample.from_json_string(a_str)
+    a_str = '{"id": "hello", "await": true, "items": [[1, 2], [3]]}'
+    a_obj = manual_sample.Root.from_json_string(a_str)
     a_str2 = a_obj.to_json_string()
 
-    b_obj = manual_sample.Sample("hello")
+    b_obj = manual_sample.Root("hello", True, [[1, 2], [3]])
     b_str = b_obj.to_json_string()
 
     assert a_str == a_str2  # depends on json formatting (whitespace...)
@@ -21,7 +21,7 @@ def test_sample():
 
 def test_sample_missing_field():
     try:
-        manual_sample.Sample.from_json_string('{}')
+        manual_sample.Root.from_json_string('{}')
         assert False
     except ValueError:
         pass
@@ -29,7 +29,7 @@ def test_sample_missing_field():
 
 def test_sample_wrong_type():
     try:
-        manual_sample.Sample.from_json_string('["hello"]')
+        manual_sample.Root.from_json_string('["hello"]')
         assert False
     except ValueError:
         pass

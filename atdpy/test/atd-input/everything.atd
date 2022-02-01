@@ -1,4 +1,6 @@
 type root = {
   id: string;
   await: bool;
+  __init__: float;
+  items: int list list;
 }

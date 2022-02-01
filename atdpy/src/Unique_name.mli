@@ -21,13 +21,6 @@ val init :
   safe_prefix: string ->
   t
 
-(** Make a local copy. This allows managing a local environment.
-
-    Design note: if this becomes tedious, an alternative is to make the
-    environment immutable, with the downside of returning the updated the
-    environment each time we want to change it. *)
-val copy : t -> t
-
 (** Register a name if it's not already registered and return its
     translation into an available identifier. *)
 val translate : t -> string -> string

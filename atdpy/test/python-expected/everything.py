@@ -170,6 +170,7 @@ class Root:
         extras: List[int],
         answer: int,
         aliased: Alias,
+        point: Tuple[float, float],
     ):
         self._id = id
         self._await = await_
@@ -179,6 +180,7 @@ class Root:
         self._extras = extras
         self._answer = answer
         self._aliased = aliased
+        self._point = point
 
     def __repr__(self):
         return self.to_json_string()
@@ -215,6 +217,10 @@ class Root:
     def aliased(self):
         return self._aliased
 
+    @property
+    def point(self):
+        return self._point
+
     @classmethod
     def from_json(cls, x: Any):
         if isinstance(x, dict):
@@ -250,6 +256,10 @@ class Root:
                 aliased: Alias = Alias.from_json(x['aliased'])
             else:
                 _atd_missing_field('Root', 'aliased')
+            if 'point' in x:
+                point: Tuple[float, float] = (lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))(x['point'])
+            else:
+                _atd_missing_field('Root', 'point')
         else:
             _atd_type_mismatch('Root', x)
         return cls(
@@ -261,6 +271,7 @@ class Root:
             extras,
             answer,
             aliased,
+            point,
         )
 
     def to_json(self) -> Any:
@@ -274,6 +285,7 @@ class Root:
         res['extras'] = _atd_write_list(_atd_write_int)(self._extras)
         res['answer'] = _atd_write_int(self._answer)
         res['aliased'] = (lambda x: x.to_json())(self._aliased)
+        res['point'] = (lambda x: (_atd_write_float(x[0]), _atd_write_float(x[1])) if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))(self._point)
         return res
 
     @classmethod

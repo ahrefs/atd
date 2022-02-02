@@ -363,9 +363,9 @@ let property_definition
 
 let rec json_writer env e =
   match e with
-  | Sum (loc, _, _) -> assert false
-  | Record (loc, _, _) -> assert false
-  | Tuple (loc, xs, an) -> assert false
+  | Sum (loc, _, _) -> not_implemented loc "inline sum types"
+  | Record (loc, _, _) -> not_implemented loc "inline records"
+  | Tuple (loc, cells, an) -> tuple_writer env cells
   | List (loc, e, an) -> sprintf "_atd_write_list(%s)" (json_writer env e)
   | Option (loc, e, an) -> sprintf "_atd_write_option(%s)" (json_writer env e)
   | Nullable (loc, e, an) ->
@@ -378,6 +378,20 @@ let rec json_writer env e =
        | _ -> "(lambda x: x.to_json())")
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
+
+(*
+   (lambda x: (write0(x[0]), write1(x[1])) if isinstance(x, tuple) else error())
+*)
+and tuple_writer env cells =
+  let tuple_body =
+    List.mapi (fun i (loc, e, an) ->
+      sprintf "%s(x[%i])" (json_writer env e) i
+    ) cells
+    |> String.concat ", "
+  in
+  sprintf "(lambda x: (%s) \
+           if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))"
+    tuple_body
 
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
@@ -418,12 +432,13 @@ let construct_json_field env trans_meth
 *)
 let rec json_reader env (e : type_expr) =
   match e with
-  | Sum (loc, _, _) -> assert false
-  | Record (loc, _, _) -> assert false
-  | Tuple (loc, xs, an) -> assert false
+  | Sum (loc, _, _) -> not_implemented loc "inline sum types"
+  | Record (loc, _, _) -> not_implemented loc "inline records"
+  | Tuple (loc, cells, an) -> tuple_reader env cells
   | List (loc, e, an) -> sprintf "_atd_read_list(%s)" (json_reader env e)
   | Option (loc, e, an) -> sprintf "_atd_read_option(%s)" (json_reader env e)
-  | Nullable (loc, e, an) -> sprintf "_atd_read_nullable(%s)" (json_reader env e)
+  | Nullable (loc, e, an) ->
+      sprintf "_atd_read_nullable(%s)" (json_reader env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_reader env e
   | Name (loc, (loc2, name, []), an) ->
@@ -432,6 +447,20 @@ let rec json_reader env (e : type_expr) =
        | _ -> sprintf "%s.from_json" (class_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
+
+(*
+   (lambda x: (read0(x[0]), read1(x[1])) if isinstance(x, tuple) else error())
+*)
+and tuple_reader env cells =
+  let tuple_body =
+    List.mapi (fun i (loc, e, an) ->
+      sprintf "%s(x[%i])" (json_reader env e) i
+    ) cells
+    |> String.concat ", "
+  in
+  sprintf "(lambda x: (%s) \
+           if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))"
+    tuple_body
 
 let rec get_default_default (e : type_expr) : string option =
   match e with

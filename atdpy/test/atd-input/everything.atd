@@ -7,6 +7,7 @@ type root = {
   ~extras: int list;
   ~answer <python default="42">: int;
   aliased: alias;
+  point: (float * float);
 }
 
 type alias = int list

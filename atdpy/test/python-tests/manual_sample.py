@@ -138,6 +138,9 @@ class Root:
         self._await = await_
         self._items = items
 
+    def __repr__(self):
+        return self.to_json_string()
+
     @property
     def id(self):
         return self._id

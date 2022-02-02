@@ -1,7 +1,24 @@
 (*
    Python code generation for JSON support (no biniou support)
 
-  Takes the contents of a .atd file and translates it to a .py file.
+   Takes the contents of a .atd file and translates it to a .py file.
+
+   Design:
+   - Python's standard 'json' module handles the parsing into generic
+     dictionaries and such.
+   - The generated code assigns one class to each ATD record. The use
+     of type annotations allows for some type checking with mypy.
+   - When converting from JSON to Python, the well-formedness of the data
+     is checked.
+   - When converting from Python to JSON, the well-formedness of the data
+     is checked as well since the type system is too easy to bypass.
+   - Sum types use one main class and one subclass per case.
+   - Tuples, like arrays, options, and nullables don't get a class of
+     their own.
+   - Generic functions are provided to deal with the case where the JSON
+     root is an array.
+
+   Look into the tests to see what generated code looks like.
 *)
 
 open Printf
@@ -62,10 +79,31 @@ let init_env () : env =
     "match"; "case"; "_";
   ]
   in
+  (* Various variables used in the generated code.
+     Lowercase variables in this list are superfluous as long as all generated
+     variables either start with '_', 'atd_', or an uppercase letter.
+  *)
+  let reserved_variables = [
+    (* from typing *)
+    "Any"; "Callable"; "Dict"; "List"; "Optional"; "Tuple";
+
+    (* for use in json.dumps, json.loads etc. *)
+    "json";
+
+    (* exceptions *)
+    "ValueError";
+
+    (* used to check JSON node type *)
+    "isinstance";
+    "bool"; "int"; "float"; "str"; "dict"; "list"; "tuple";
+
+    (* other built-in variables *)
+    "self"; "cls"; "repr";
+  ] in
   let variables =
     Unique_name.init
-      ~reserved_identifiers:keywords
-      ~reserved_prefixes:["atd_"]
+      ~reserved_identifiers:(reserved_variables @ keywords)
+      ~reserved_prefixes:["atd_"; "_atd_"]
       ~safe_prefix:"x_"
   in
   let method_names () =
@@ -125,12 +163,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import json
 
 
-def atd_missing_field(type_name: str, json_field_name: str):
+def _atd_missing_field(type_name: str, json_field_name: str):
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def atd_type_mismatch(expected_type: str, json_value: Any):
+def _atd_type_mismatch(expected_type: str, json_value: Any):
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -139,52 +177,52 @@ def atd_type_mismatch(expected_type: str, json_value: Any):
                      f" type '{expected_type}' was expected: '{value_str}'")
 
 
-def atd_read_unit(x: Any) -> None:
+def _atd_read_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return atd_type_mismatch('unit', x)
+        return _atd_type_mismatch('unit', x)
 
 
-def atd_read_bool(x: Any) -> bool:
+def _atd_read_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return atd_type_mismatch('bool', x)
+        return _atd_type_mismatch('bool', x)
 
 
-def atd_read_int(x: Any) -> int:
+def _atd_read_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return atd_type_mismatch('int', x)
+        return _atd_type_mismatch('int', x)
 
 
-def atd_read_float(x: Any) -> float:
+def _atd_read_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return atd_type_mismatch('float', x)
+        return _atd_type_mismatch('float', x)
 
 
-def atd_read_string(x: Any) -> str:
+def _atd_read_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return atd_type_mismatch('str', x)
+        return _atd_type_mismatch('str', x)
 
 
-def atd_read_list(read_elt: Callable[[Any], Any]) \
+def _atd_read_list(read_elt: Callable[[Any], Any]) \
         -> Callable[[List[Any]], List[Any]]:
     def read_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
         else:
-            atd_type_mismatch('list', elts)
+            _atd_type_mismatch('list', elts)
     return read_list
 
 
-def atd_read_nullable(read_elt: Callable[[Any], Any]) \
+def _atd_read_nullable(read_elt: Callable[[Any], Any]) \
         -> Callable[[Optional[Any]], Optional[Any]]:
     def read_nullable(x: Any) -> Any:
         if x is None:
@@ -194,60 +232,59 @@ def atd_read_nullable(read_elt: Callable[[Any], Any]) \
     return read_nullable
 
 
-def atd_write_unit(x: Any) -> None:
+def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return atd_type_mismatch('unit', x)
+        return _atd_type_mismatch('unit', x)
 
 
-def atd_write_bool(x: Any) -> bool:
+def _atd_write_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return atd_type_mismatch('bool', x)
+        return _atd_type_mismatch('bool', x)
 
 
-def atd_write_int(x: Any) -> int:
+def _atd_write_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return atd_type_mismatch('int', x)
+        return _atd_type_mismatch('int', x)
 
 
-def atd_write_float(x: Any) -> float:
+def _atd_write_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return atd_type_mismatch('float', x)
+        return _atd_type_mismatch('float', x)
 
 
-def atd_write_string(x: Any) -> str:
+def _atd_write_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return atd_type_mismatch('str', x)
+        return _atd_type_mismatch('str', x)
 
 
-def atd_write_list(write_elt: Callable[[Any], Any]) \
+def _atd_write_list(write_elt: Callable[[Any], Any]) \
         -> Callable[[List[Any]], List[Any]]:
     def write_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [write_elt(elt) for elt in elts]
         else:
-            atd_type_mismatch('list', elts)
+            _atd_type_mismatch('list', elts)
     return write_list
 
 
-def atd_write_nullable(write_elt: Callable[[Any], Any]) \
+def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
         -> Callable[[Optional[Any]], Optional[Any]]:
     def write_nullable(x: Any) -> Any:
         if x is None:
             return None
         else:
             return write_elt(x)
-    return write_nullable
-|}
+    return write_nullable|}
     atd_filename
     atd_filename
 
@@ -257,11 +294,17 @@ let not_implemented loc msg =
 let todo hint =
   failwith ("TODO: " ^ hint)
 
-let rec spaced (xs : B.node list) : B.node list =
-  match List.filter (fun x -> not (B.is_empty_node x)) xs with
-  | []
-  | [_] as xs -> xs
-  | a :: rest -> a :: Line "" :: spaced rest
+let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
+  let rec spaced xs =
+    match List.filter (fun x -> not (B.is_empty_node x)) xs with
+    | []
+    | [_] as xs -> xs
+    | a :: rest -> a :: spacer @ spaced rest
+  in
+  spaced blocks
+
+let double_spaced blocks =
+  spaced ~spacer:[Line ""; Line ""] blocks
 
 (* Map ATD built-in types to built-in mypy types *)
 let py_type_name env (name : string) =
@@ -296,7 +339,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
 let field_as_param env ((loc, (name, kind, an), e) : simple_field) =
   let type_name = type_name_of_expr env e in
   [
-    Line (sprintf "%s: %s," (trans env name) (trans env type_name))
+    Line (sprintf "%s: %s," (trans env name) type_name)
   ]
 
 let class_var_name trans_meth field_name =
@@ -323,15 +366,15 @@ let rec json_writer env e =
   | Sum (loc, _, _) -> assert false
   | Record (loc, _, _) -> assert false
   | Tuple (loc, xs, an) -> assert false
-  | List (loc, e, an) -> sprintf "atd_write_list(%s)" (json_writer env e)
-  | Option (loc, e, an) -> sprintf "atd_write_option(%s)" (json_writer env e)
+  | List (loc, e, an) -> sprintf "_atd_write_list(%s)" (json_writer env e)
+  | Option (loc, e, an) -> sprintf "_atd_write_option(%s)" (json_writer env e)
   | Nullable (loc, e, an) ->
-      sprintf "atd_write_nullable(%s)" (json_writer env e)
+      sprintf "_atd_write_nullable(%s)" (json_writer env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_writer env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "atd_write_%s" name
+       | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
        | _ -> "(lambda x: x.to_json())")
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -378,15 +421,15 @@ let rec json_reader env (e : type_expr) =
   | Sum (loc, _, _) -> assert false
   | Record (loc, _, _) -> assert false
   | Tuple (loc, xs, an) -> assert false
-  | List (loc, e, an) -> sprintf "atd_read_list(%s)" (json_reader env e)
-  | Option (loc, e, an) -> sprintf "atd_read_option(%s)" (json_reader env e)
-  | Nullable (loc, e, an) -> sprintf "atd_read_nullable(%s)" (json_reader env e)
+  | List (loc, e, an) -> sprintf "_atd_read_list(%s)" (json_reader env e)
+  | Option (loc, e, an) -> sprintf "_atd_read_option(%s)" (json_reader env e)
+  | Nullable (loc, e, an) -> sprintf "_atd_read_nullable(%s)" (json_reader env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_reader env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "atd_read_%s" name
-       | _ -> sprintf "%s.from_json()" (class_name env name))
+       | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
+       | _ -> sprintf "%s.from_json" (class_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -436,7 +479,7 @@ let initialize_field_from_json
         [
           Line "else:";
           Block [
-            Line (sprintf "atd_missing_field('%s', '%s')"
+            Line (sprintf "_atd_missing_field('%s', '%s')"
                     (single_esc py_class_name)
                     (single_esc json_name))
           ]
@@ -505,6 +548,11 @@ let record env loc name (fields : field list) an =
       ];
       Line "):";
       Block init_body;
+      Line "";
+      Line "def __repr__(self):";
+      Block [
+        Line "return self.to_json_string()"
+      ]
     ]
   in
   let properties =
@@ -528,7 +576,7 @@ let record env loc name (fields : field list) an =
         Block field_init_from_json;
         Line "else:";
         Block [
-          Line (sprintf "atd_type_mismatch('%s', x)"
+          Line (sprintf "_atd_type_mismatch('%s', x)"
                   (single_esc py_class_name))
         ];
         Line "return cls(";
@@ -567,6 +615,7 @@ let record env loc name (fields : field list) an =
   [
     Line (sprintf "class %s:" py_class_name);
     Block (spaced [
+      Line (sprintf {|"""original type: %s"""|} name);
       Inline init;
       Inline properties;
       Inline from_json;
@@ -576,6 +625,63 @@ let record env loc name (fields : field list) an =
     ])
   ]
 
+(*
+   A general-purpose wrapper that provides json-related methods for a type.
+   This is used for tuples and for type aliases e.g. 'type foo = bar array'.
+
+class Foo:
+  def __init__(self, x: T):
+    ...
+  def to_json(self):
+    ...
+  def from_json(x):
+    ...
+  def to_json_string(self):
+    ...
+  def from_json_string(x):
+    ...
+*)
+let alias_wrapper env name type_expr =
+  let value_type = type_name_of_expr env type_expr in
+  [
+    Line (sprintf "class %s:" (class_name env name));
+    Block [
+      Line (sprintf {|"""original type: %s"""|} name);
+      Line "";
+      Line (sprintf "def __init__(self, x: %s):" value_type);
+      Block [
+        Line (sprintf "self._value: %s = x" value_type);
+      ];
+      Line "";
+      Line "def __repr__(self):";
+      Block [
+        Line "return self.to_json_string()"
+      ];
+      Line "";
+      Line "@classmethod";
+      Line "def from_json(cls, x: Any):";
+      Block [
+        Line (sprintf "return %s(x)" (json_reader env type_expr))
+      ];
+      Line "";
+      Line "def to_json(self) -> Any:";
+      Block [
+        Line (sprintf "return %s(self._value)" (json_writer env type_expr))
+      ];
+      Line "";
+      Line "@classmethod";
+      Line "def from_json_string(cls, x: str):";
+      Block [
+        Line "return cls.from_json(json.loads(x))"
+      ];
+      Line "";
+      Line "def to_json_string(self) -> str:";
+      Block [
+        Line "return json.dumps(self.to_json())"
+      ]
+    ]
+  ]
+
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
@@ -583,26 +689,45 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     match e with
     | Sum (loc, xs, an) -> todo "sum type"
     | Record (loc, fields, an) -> record env loc name fields an
-    | Tuple (loc, xs, an) -> todo "tuple"
-    | List (loc, e, an) -> todo "list/array"
-    | Option (loc, e, an) -> todo "option"
-    | Nullable (loc, e, an) -> todo "nullable"
-    | Shared (loc, e, an) -> not_implemented loc "cyclic references"
+    | Tuple _ -> alias_wrapper env name e
+    | List _ -> alias_wrapper env name e
+    | Option _ -> alias_wrapper env name e
+    | Nullable _ -> alias_wrapper env name e
+    | Shared _ -> not_implemented loc "cyclic references"
     | Wrap (loc, e, an) -> unwrap e
-    | Name (loc, type_inst, an) -> todo "atomic type"
-    | Tvar (loc, s) -> not_implemented loc "parametrized type"
+    | Name _ -> alias_wrapper env name e
+    | Tvar _ -> not_implemented loc "parametrized type"
   in
   unwrap e
 
 let module_body env x =
   List.fold_left (fun acc (Type x) -> Inline (type_def env x) :: acc) [] x
   |> List.rev
+  |> spaced
+
+let extract_definition_names (items : A.module_body) =
+  List.map (fun (Type (loc, (name, param, an), e)) -> name) items
+
+let definition_group ~atd_filename env
+    (is_recursive, (items: A.module_body)) : B.t =
+  if is_recursive then
+    A.error (
+      sprintf "recursive definitions are not supported by atdpy \
+               at this time: types %s in %S"
+        (extract_definition_names items
+         |> String.concat ", ")
+        atd_filename
+    );
+  [
+    Inline (module_body env items);
+  ]
 
 let to_file ~atd_filename (x : A.module_body) dst_path =
   let env = init_env () in
-  let tree = [
-    Line (fixed_size_preamble atd_filename);
-    Inline (module_body env x);
-  ]
+  let python_defs =
+    Atd.Util.tsort x
+    |> List.map (fun x -> Inline (definition_group ~atd_filename env x))
   in
-  Indent.to_file ~indent:4 dst_path tree
+  Line (fixed_size_preamble atd_filename) :: python_defs
+  |> double_spaced
+  |> Indent.to_file ~indent:4 dst_path

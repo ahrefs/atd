@@ -9,12 +9,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import json
 
 
-def atd_missing_field(type_name: str, json_field_name: str):
+def _atd_missing_field(type_name: str, json_field_name: str):
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def atd_type_mismatch(expected_type: str, json_value: Any):
+def _atd_type_mismatch(expected_type: str, json_value: Any):
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -23,52 +23,52 @@ def atd_type_mismatch(expected_type: str, json_value: Any):
                      f" type '{expected_type}' was expected: '{value_str}'")
 
 
-def atd_read_unit(x: Any) -> None:
+def _atd_read_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return atd_type_mismatch('unit', x)
+        return _atd_type_mismatch('unit', x)
 
 
-def atd_read_bool(x: Any) -> bool:
+def _atd_read_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return atd_type_mismatch('bool', x)
+        return _atd_type_mismatch('bool', x)
 
 
-def atd_read_int(x: Any) -> int:
+def _atd_read_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return atd_type_mismatch('int', x)
+        return _atd_type_mismatch('int', x)
 
 
-def atd_read_float(x: Any) -> float:
+def _atd_read_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return atd_type_mismatch('float', x)
+        return _atd_type_mismatch('float', x)
 
 
-def atd_read_string(x: Any) -> str:
+def _atd_read_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return atd_type_mismatch('str', x)
+        return _atd_type_mismatch('str', x)
 
 
-def atd_read_list(read_elt: Callable[[Any], Any]) \
+def _atd_read_list(read_elt: Callable[[Any], Any]) \
         -> Callable[[List[Any]], List[Any]]:
     def read_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
         else:
-            atd_type_mismatch('list', elts)
+            _atd_type_mismatch('list', elts)
     return read_list
 
 
-def atd_read_nullable(read_elt: Callable[[Any], Any]) \
+def _atd_read_nullable(read_elt: Callable[[Any], Any]) \
         -> Callable[[Optional[Any]], Optional[Any]]:
     def read_nullable(x: Any) -> Any:
         if x is None:
@@ -78,52 +78,52 @@ def atd_read_nullable(read_elt: Callable[[Any], Any]) \
     return read_nullable
 
 
-def atd_write_unit(x: Any) -> None:
+def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return atd_type_mismatch('unit', x)
+        return _atd_type_mismatch('unit', x)
 
 
-def atd_write_bool(x: Any) -> bool:
+def _atd_write_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return atd_type_mismatch('bool', x)
+        return _atd_type_mismatch('bool', x)
 
 
-def atd_write_int(x: Any) -> int:
+def _atd_write_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return atd_type_mismatch('int', x)
+        return _atd_type_mismatch('int', x)
 
 
-def atd_write_float(x: Any) -> float:
+def _atd_write_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return atd_type_mismatch('float', x)
+        return _atd_type_mismatch('float', x)
 
 
-def atd_write_string(x: Any) -> str:
+def _atd_write_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return atd_type_mismatch('str', x)
+        return _atd_type_mismatch('str', x)
 
 
-def atd_write_list(write_elt: Callable[[Any], Any]) \
+def _atd_write_list(write_elt: Callable[[Any], Any]) \
         -> Callable[[List[Any]], List[Any]]:
     def write_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [write_elt(elt) for elt in elts]
         else:
-            atd_type_mismatch('list', elts)
+            _atd_type_mismatch('list', elts)
     return write_list
 
 
-def atd_write_nullable(write_elt: Callable[[Any], Any]) \
+def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
         -> Callable[[Optional[Any]], Optional[Any]]:
     def write_nullable(x: Any) -> Any:
         if x is None:
@@ -132,7 +132,34 @@ def atd_write_nullable(write_elt: Callable[[Any], Any]) \
             return write_elt(x)
     return write_nullable
 
+
+class Alias:
+    """original type: alias"""
+
+    def __init__(self, x: List[int]):
+        self._value: List[int] = x
+
+    def __repr__(self):
+        return self.to_json_string()
+
+    @classmethod
+    def from_json(cls, x: Any):
+        return _atd_read_list(_atd_read_int)(x)
+
+    def to_json(self) -> Any:
+        return _atd_write_list(_atd_write_int)(self._value)
+
+    @classmethod
+    def from_json_string(cls, x: str):
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self) -> str:
+        return json.dumps(self.to_json())
+
+
 class Root:
+    """original type: root"""
+
     def __init__(
         self,
         id: str,
@@ -142,6 +169,7 @@ class Root:
         maybe: Optional[int],
         extras: List[int],
         answer: int,
+        aliased: Alias,
     ):
         self._id = id
         self._await = await_
@@ -150,6 +178,10 @@ class Root:
         self._maybe = maybe
         self._extras = extras
         self._answer = answer
+        self._aliased = aliased
+
+    def __repr__(self):
+        return self.to_json_string()
 
     @property
     def id(self):
@@ -179,39 +211,47 @@ class Root:
     def answer(self):
         return self._answer
 
+    @property
+    def aliased(self):
+        return self._aliased
+
     @classmethod
     def from_json(cls, x: Any):
         if isinstance(x, dict):
             if 'id' in x:
-                id: str = atd_read_string(x['id'])
+                id: str = _atd_read_string(x['id'])
             else:
-                atd_missing_field('Root', 'id')
+                _atd_missing_field('Root', 'id')
             if 'await' in x:
-                await_: bool = atd_read_bool(x['await'])
+                await_: bool = _atd_read_bool(x['await'])
             else:
-                atd_missing_field('Root', 'await')
+                _atd_missing_field('Root', 'await')
             if '__init__' in x:
-                __init__: float = atd_read_float(x['__init__'])
+                __init__: float = _atd_read_float(x['__init__'])
             else:
-                atd_missing_field('Root', '__init__')
+                _atd_missing_field('Root', '__init__')
             if 'items' in x:
-                items: List[List[int]] = atd_read_list(atd_read_list(atd_read_int))(x['items'])
+                items: List[List[int]] = _atd_read_list(_atd_read_list(_atd_read_int))(x['items'])
             else:
-                atd_missing_field('Root', 'items')
+                _atd_missing_field('Root', 'items')
             if 'maybe' in x:
-                maybe: Optional[int] = atd_read_int(x['maybe'])
+                maybe: Optional[int] = _atd_read_int(x['maybe'])
             else:
                 maybe = None
             if 'extras' in x:
-                extras: List[int] = atd_read_list(atd_read_int)(x['extras'])
+                extras: List[int] = _atd_read_list(_atd_read_int)(x['extras'])
             else:
                 extras = []
             if 'answer' in x:
-                answer: int = atd_read_int(x['answer'])
+                answer: int = _atd_read_int(x['answer'])
             else:
                 answer = 42
+            if 'aliased' in x:
+                aliased: Alias = Alias.from_json(x['aliased'])
+            else:
+                _atd_missing_field('Root', 'aliased')
         else:
-            atd_type_mismatch('Root', x)
+            _atd_type_mismatch('Root', x)
         return cls(
             id,
             await_,
@@ -220,18 +260,20 @@ class Root:
             maybe,
             extras,
             answer,
+            aliased,
         )
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}
-        res['id'] = atd_write_string(self._id)
-        res['await'] = atd_write_bool(self._await)
-        res['__init__'] = atd_write_float(self.x____init__)
-        res['items'] = atd_write_list(atd_write_list(atd_write_int))(self._items)
+        res['id'] = _atd_write_string(self._id)
+        res['await'] = _atd_write_bool(self._await)
+        res['__init__'] = _atd_write_float(self.x____init__)
+        res['items'] = _atd_write_list(_atd_write_list(_atd_write_int))(self._items)
         if self._maybe is not None:
-            res['maybe'] = atd_write_int(self._maybe)
-        res['extras'] = atd_write_list(atd_write_int)(self._extras)
-        res['answer'] = atd_write_int(self._answer)
+            res['maybe'] = _atd_write_int(self._maybe)
+        res['extras'] = _atd_write_list(_atd_write_int)(self._extras)
+        res['answer'] = _atd_write_int(self._answer)
+        res['aliased'] = (lambda x: x.to_json())(self._aliased)
         return res
 
     @classmethod

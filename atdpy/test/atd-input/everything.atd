@@ -6,4 +6,7 @@ type root = {
   ?maybe: int option;
   ~extras: int list;
   ~answer <python default="42">: int;
+  aliased: alias;
 }
+
+type alias = int list

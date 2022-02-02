@@ -106,3 +106,24 @@ let translate env src =
   match translate_only env src with
   | Some dst -> dst
   | None -> register env src
+
+let reverse_translate env dst =
+  Hashtbl.find_opt env.reverse_translations dst
+
+let create env src =
+  let get_suffix = enumerate_suffixes () in
+  let rec find_available_suffix () =
+    let suffix = get_suffix () in
+    let src = src ^ suffix in
+    if Hashtbl.mem env.translations src then
+      find_available_suffix ()
+    else
+      src
+  in
+  let src = find_available_suffix () in
+  ignore (register env src);
+  src
+
+let all env =
+  Hashtbl.fold (fun src dst acc -> (src, dst) :: acc) env.translations []
+  |> List.sort (fun (a, _) (b, _) -> String.compare a b)

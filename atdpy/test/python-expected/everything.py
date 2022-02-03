@@ -370,10 +370,10 @@ class Root:
     @classmethod
     def from_json(cls, x: Any):
         if isinstance(x, dict):
-            if 'id' in x:
-                id: str = _atd_read_string(x['id'])
+            if 'ID' in x:
+                id: str = _atd_read_string(x['ID'])
             else:
-                _atd_missing_json_field('Root', 'id')
+                _atd_missing_json_field('Root', 'ID')
             if 'await' in x:
                 await_: bool = _atd_read_bool(x['await'])
             else:
@@ -427,7 +427,7 @@ class Root:
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}
-        res['id'] = _atd_write_string(self._id)
+        res['ID'] = _atd_write_string(self._id)
         res['await'] = _atd_write_bool(self._await)
         res['__init__'] = _atd_write_float(self.x____init__)
         res['items'] = _atd_write_list(_atd_write_list(_atd_write_int))(self._items)

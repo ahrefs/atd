@@ -58,7 +58,7 @@ def test_everything_to_json():
 
     b_str = \
         """{
-  "id": "abc",
+  "ID": "abc",
   "await": true,
   "__init__": 1.5,
   "items": [

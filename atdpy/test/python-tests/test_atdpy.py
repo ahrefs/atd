@@ -105,5 +105,11 @@ def test_everything_to_json():
     assert b_str2 == a_str
 
 
+def test_kind():
+    x = e.Kind(e.WOW())
+    assert x.kind == x.value.kind
+    assert x.kind == 'WOW'
+
+
 # print updated json
 test_everything_to_json()

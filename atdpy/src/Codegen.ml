@@ -778,6 +778,13 @@ let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
             Line "return self.to_json_string()"
           ];
           Line "";
+          Line "@property";
+          Line "def kind(self):";
+          Block [
+            Line {|"""Name of the class representing this variant."""|};
+            Line (sprintf "return '%s'" (trans env unique_name))
+          ];
+          Line "";
           Line "def to_json(self):";
           Block [
             Line (sprintf "return '%s'" (single_esc json_name))
@@ -806,6 +813,13 @@ let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
           Line "def __repr__(self):";
           Block [
             Line "return self.to_json_string()"
+          ];
+          Line "";
+          Line "@property";
+          Line "def kind(self):";
+          Block [
+            Line {|"""Name of the class representing this variant."""|};
+            Line (sprintf "return '%s'" (class_name env type_name))
           ];
           Line "";
           Line "@property";
@@ -917,6 +931,19 @@ let sum_container env loc name cases =
       Line "def __repr__(self):";
       Block [
         Line "return self._value.to_json_string()"
+      ];
+      Line "";
+      Line "@property";
+      Line "def kind(self):";
+      Block [
+        Line {|"""Name of the class representing this variant."""|};
+        Line (sprintf "return self._value.kind")
+      ];
+      Line "";
+      Line "@property";
+      Line "def value(self):";
+      Block [
+        Line "return self._value"
       ];
       Line "";
       Line "@classmethod";

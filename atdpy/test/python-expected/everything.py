@@ -148,6 +148,11 @@ class Root_:
     def __repr__(self):
         return self.to_json_string()
 
+    @property
+    def kind(self):
+        """Name of the class representing this variant."""
+        return 'Root_'
+
     def to_json(self):
         return 'Root'
 
@@ -163,6 +168,11 @@ class Thing:
 
     def __repr__(self):
         return self.to_json_string()
+
+    @property
+    def kind(self):
+        """Name of the class representing this variant."""
+        return 'Kind'
 
     @property
     def value(self):
@@ -181,6 +191,11 @@ class WOW:
     def __repr__(self):
         return self.to_json_string()
 
+    @property
+    def kind(self):
+        """Name of the class representing this variant."""
+        return 'WOW'
+
     def to_json(self):
         return 'wow'
 
@@ -196,6 +211,11 @@ class Amaze:
 
     def __repr__(self):
         return self.to_json_string()
+
+    @property
+    def kind(self):
+        """Name of the class representing this variant."""
+        return 'Kind'
 
     @property
     def value(self):
@@ -214,6 +234,15 @@ class Kind:
 
     def __repr__(self):
         return self._value.to_json_string()
+
+    @property
+    def kind(self):
+        """Name of the class representing this variant."""
+        return self._value.kind
+
+    @property
+    def value(self):
+        return self._value
 
     @classmethod
     def from_json(cls, x: Any):

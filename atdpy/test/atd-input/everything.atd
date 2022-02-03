@@ -16,6 +16,10 @@ type root = {
   aliased: alias;
   point: (float * float);
   kinds: kind list;
+  (* TODO:
+  assoc: (string * int) list <json repr="object">;
+  map: (string * int) list <json repr="object"> <python repr="dict">;
+  *)
 }
 
 type alias = int list

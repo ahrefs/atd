@@ -130,6 +130,7 @@ def atd_write_nullable(write_elt: Callable[[Any], Any]) \
 class Root:
     def __init__(
             self,
+            *,
             id: str,
             await_: bool,
             items: List[List[int]]
@@ -170,7 +171,7 @@ class Root:
                 atd_missing_field('Root', 'items')
         else:
             atd_type_mismatch('Root', x)
-        return cls(id, await_, items)
+        return cls(id=id, await_=await_, items=items)
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}

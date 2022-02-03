@@ -9,12 +9,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import json
 
 
-def _atd_missing_field(type_name: str, json_field_name: str):
+def _atd_missing_json_field(type_name: str, json_field_name: str):
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def _atd_type_mismatch(expected_type: str, json_value: Any):
+def _atd_bad_json(expected_type: str, json_value: Any):
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -23,39 +23,48 @@ def _atd_type_mismatch(expected_type: str, json_value: Any):
                      f" type '{expected_type}' was expected: '{value_str}'")
 
 
+def _atd_bad_python(expected_type: str, json_value: Any):
+    value_str = str(json_value)
+    if len(value_str) > 200:
+        value_str = value_str[:200] + '…'
+
+    raise ValueError(f"incompatible Python value where"
+                     f" type '{expected_type}' was expected: '{value_str}'")
+
+
 def _atd_read_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_type_mismatch('unit', x)
+        return _atd_bad_json('unit', x)
 
 
 def _atd_read_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_type_mismatch('bool', x)
+        return _atd_bad_json('bool', x)
 
 
 def _atd_read_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_type_mismatch('int', x)
+        return _atd_bad_json('int', x)
 
 
 def _atd_read_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_type_mismatch('float', x)
+        return _atd_bad_json('float', x)
 
 
 def _atd_read_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_type_mismatch('str', x)
+        return _atd_bad_json('str', x)
 
 
 def _atd_read_list(read_elt: Callable[[Any], Any]) \
@@ -64,7 +73,7 @@ def _atd_read_list(read_elt: Callable[[Any], Any]) \
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
         else:
-            _atd_type_mismatch('list', elts)
+            _atd_bad_json('array', elts)
     return read_list
 
 
@@ -82,35 +91,35 @@ def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_type_mismatch('unit', x)
+        return _atd_bad_python('unit', x)
 
 
 def _atd_write_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_type_mismatch('bool', x)
+        return _atd_bad_python('bool', x)
 
 
 def _atd_write_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_type_mismatch('int', x)
+        return _atd_bad_python('int', x)
 
 
 def _atd_write_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_type_mismatch('float', x)
+        return _atd_bad_python('float', x)
 
 
 def _atd_write_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_type_mismatch('str', x)
+        return _atd_bad_python('str', x)
 
 
 def _atd_write_list(write_elt: Callable[[Any], Any]) \
@@ -119,7 +128,7 @@ def _atd_write_list(write_elt: Callable[[Any], Any]) \
         if isinstance(elts, list):
             return [write_elt(elt) for elt in elts]
         else:
-            _atd_type_mismatch('list', elts)
+            _atd_bad_python('list', elts)
     return write_list
 
 
@@ -142,8 +151,8 @@ class Root_:
     def to_json(self):
         return 'Root'
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json())
+    def to_json_string(self, **kw) -> str:
+        return json.dumps(self.to_json(), **kw)
 
 
 class Thing:
@@ -160,10 +169,10 @@ class Thing:
         return self._value
 
     def to_json(self):
-        return 'Thing'
+        return ['Thing', _atd_write_int(self._value)]
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json())
+    def to_json_string(self, **kw) -> str:
+        return json.dumps(self.to_json(), **kw)
 
 
 class WOW:
@@ -175,8 +184,8 @@ class WOW:
     def to_json(self):
         return 'wow'
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json())
+    def to_json_string(self, **kw) -> str:
+        return json.dumps(self.to_json(), **kw)
 
 
 class Amaze:
@@ -193,10 +202,10 @@ class Amaze:
         return self._value
 
     def to_json(self):
-        return '!!!'
+        return ['!!!', _atd_write_list(_atd_write_string)(self._value)]
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json())
+    def to_json_string(self, **kw) -> str:
+        return json.dumps(self.to_json(), **kw)
 
 
 class Kind:
@@ -213,15 +222,15 @@ class Kind:
                 return cls(Root_())
             if x == 'wow':
                 return cls(WOW())
-            _atd_type_mismatch('Kind', x)
+            _atd_bad_json('Kind', x)
         if isinstance(x, List) and len(x) == 2:
             cons = x[0]
             if cons == 'Thing':
                 return cls(Thing(_atd_read_int(x[1])))
             if cons == '!!!':
                 return cls(Amaze(_atd_read_list(_atd_read_string)(x[1])))
-            _atd_type_mismatch('Kind', x)
-        _atd_type_mismatch('Kind', x)
+            _atd_bad_json('Kind', x)
+        _atd_bad_json('Kind', x)
 
     def to_json(self):
         return self._value.to_json()
@@ -230,8 +239,8 @@ class Kind:
     def from_json_string(cls, x: str):
         return cls.from_json(json.loads(x))
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json())
+    def to_json_string(self, **kw) -> str:
+        return json.dumps(self.to_json(), **kw)
 
 
 class Alias:
@@ -245,7 +254,7 @@ class Alias:
 
     @classmethod
     def from_json(cls, x: Any):
-        return _atd_read_list(_atd_read_int)(x)
+        return cls(_atd_read_list(_atd_read_int)(x))
 
     def to_json(self) -> Any:
         return _atd_write_list(_atd_write_int)(self._value)
@@ -254,8 +263,8 @@ class Alias:
     def from_json_string(cls, x: str):
         return cls.from_json(json.loads(x))
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json())
+    def to_json_string(self, **kw) -> str:
+        return json.dumps(self.to_json(), **kw)
 
 
 class Root:
@@ -263,6 +272,7 @@ class Root:
 
     def __init__(
         self,
+        *,
         id: str,
         await_: bool,
         __init__: float,
@@ -334,19 +344,19 @@ class Root:
             if 'id' in x:
                 id: str = _atd_read_string(x['id'])
             else:
-                _atd_missing_field('Root', 'id')
+                _atd_missing_json_field('Root', 'id')
             if 'await' in x:
                 await_: bool = _atd_read_bool(x['await'])
             else:
-                _atd_missing_field('Root', 'await')
+                _atd_missing_json_field('Root', 'await')
             if '__init__' in x:
                 __init__: float = _atd_read_float(x['__init__'])
             else:
-                _atd_missing_field('Root', '__init__')
+                _atd_missing_json_field('Root', '__init__')
             if 'items' in x:
                 items: List[List[int]] = _atd_read_list(_atd_read_list(_atd_read_int))(x['items'])
             else:
-                _atd_missing_field('Root', 'items')
+                _atd_missing_json_field('Root', 'items')
             if 'maybe' in x:
                 maybe: Optional[int] = _atd_read_int(x['maybe'])
             else:
@@ -362,28 +372,28 @@ class Root:
             if 'aliased' in x:
                 aliased: Alias = Alias.from_json(x['aliased'])
             else:
-                _atd_missing_field('Root', 'aliased')
+                _atd_missing_json_field('Root', 'aliased')
             if 'point' in x:
-                point: Tuple[float, float] = (lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))(x['point'])
+                point: Tuple[float, float] = (lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, list) else _atd_bad_json('array', x))(x['point'])
             else:
-                _atd_missing_field('Root', 'point')
+                _atd_missing_json_field('Root', 'point')
             if 'kinds' in x:
                 kinds: List[Kind] = _atd_read_list(Kind.from_json)(x['kinds'])
             else:
-                _atd_missing_field('Root', 'kinds')
+                _atd_missing_json_field('Root', 'kinds')
         else:
-            _atd_type_mismatch('Root', x)
+            _atd_bad_json('Root', x)
         return cls(
-            id,
-            await_,
-            __init__,
-            items,
-            maybe,
-            extras,
-            answer,
-            aliased,
-            point,
-            kinds,
+            id=id,
+            await_=await_,
+            __init__=__init__,
+            items=items,
+            maybe=maybe,
+            extras=extras,
+            answer=answer,
+            aliased=aliased,
+            point=point,
+            kinds=kinds,
         )
 
     def to_json(self) -> Any:
@@ -397,7 +407,7 @@ class Root:
         res['extras'] = _atd_write_list(_atd_write_int)(self._extras)
         res['answer'] = _atd_write_int(self._answer)
         res['aliased'] = (lambda x: x.to_json())(self._aliased)
-        res['point'] = (lambda x: (_atd_write_float(x[0]), _atd_write_float(x[1])) if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))(self._point)
+        res['point'] = (lambda x: [_atd_write_float(x[0]), _atd_write_float(x[1])] if isinstance(x, tuple) else _atd_bad_python('tuple', x))(self._point)
         res['kinds'] = _atd_write_list((lambda x: x.to_json()))(self._kinds)
         return res
 
@@ -405,5 +415,5 @@ class Root:
     def from_json_string(cls, x: str):
         return cls.from_json(json.loads(x))
 
-    def to_json_string(self) -> str:
-        return json.dumps(self.to_json())
+    def to_json_string(self, **kw) -> str:
+        return json.dumps(self.to_json(), **kw)

@@ -182,12 +182,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import json
 
 
-def _atd_missing_field(type_name: str, json_field_name: str):
+def _atd_missing_json_field(type_name: str, json_field_name: str):
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def _atd_type_mismatch(expected_type: str, json_value: Any):
+def _atd_bad_json(expected_type: str, json_value: Any):
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -196,39 +196,48 @@ def _atd_type_mismatch(expected_type: str, json_value: Any):
                      f" type '{expected_type}' was expected: '{value_str}'")
 
 
+def _atd_bad_python(expected_type: str, json_value: Any):
+    value_str = str(json_value)
+    if len(value_str) > 200:
+        value_str = value_str[:200] + '…'
+
+    raise ValueError(f"incompatible Python value where"
+                     f" type '{expected_type}' was expected: '{value_str}'")
+
+
 def _atd_read_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_type_mismatch('unit', x)
+        return _atd_bad_json('unit', x)
 
 
 def _atd_read_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_type_mismatch('bool', x)
+        return _atd_bad_json('bool', x)
 
 
 def _atd_read_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_type_mismatch('int', x)
+        return _atd_bad_json('int', x)
 
 
 def _atd_read_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_type_mismatch('float', x)
+        return _atd_bad_json('float', x)
 
 
 def _atd_read_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_type_mismatch('str', x)
+        return _atd_bad_json('str', x)
 
 
 def _atd_read_list(read_elt: Callable[[Any], Any]) \
@@ -237,7 +246,7 @@ def _atd_read_list(read_elt: Callable[[Any], Any]) \
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
         else:
-            _atd_type_mismatch('list', elts)
+            _atd_bad_json('array', elts)
     return read_list
 
 
@@ -255,35 +264,35 @@ def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_type_mismatch('unit', x)
+        return _atd_bad_python('unit', x)
 
 
 def _atd_write_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_type_mismatch('bool', x)
+        return _atd_bad_python('bool', x)
 
 
 def _atd_write_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_type_mismatch('int', x)
+        return _atd_bad_python('int', x)
 
 
 def _atd_write_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_type_mismatch('float', x)
+        return _atd_bad_python('float', x)
 
 
 def _atd_write_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_type_mismatch('str', x)
+        return _atd_bad_python('str', x)
 
 
 def _atd_write_list(write_elt: Callable[[Any], Any]) \
@@ -292,7 +301,7 @@ def _atd_write_list(write_elt: Callable[[Any], Any]) \
         if isinstance(elts, list):
             return [write_elt(elt) for elt in elts]
         else:
-            _atd_type_mismatch('list', elts)
+            _atd_bad_python('list', elts)
     return write_list
 
 
@@ -399,7 +408,9 @@ let rec json_writer env e =
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 (*
-   (lambda x: (write0(x[0]), write1(x[1])) if isinstance(x, tuple) else error())
+   Convert python tuple to json list
+
+   (lambda x: [write0(x[0]), write1(x[1])] if isinstance(x, tuple) else error())
 *)
 and tuple_writer env cells =
   let tuple_body =
@@ -408,8 +419,8 @@ and tuple_writer env cells =
     ) cells
     |> String.concat ", "
   in
-  sprintf "(lambda x: (%s) \
-           if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))"
+  sprintf "(lambda x: [%s] \
+           if isinstance(x, tuple) else _atd_bad_python('tuple', x))"
     tuple_body
 
 let construct_json_field env trans_meth
@@ -468,7 +479,9 @@ let rec json_reader env (e : type_expr) =
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 (*
-   (lambda x: (read0(x[0]), read1(x[1])) if isinstance(x, tuple) else error())
+   Convert json list to python tuple
+
+   (lambda x: (read0(x[0]), read1(x[1])) if isinstance(x, list) else error())
 *)
 and tuple_reader env cells =
   let tuple_body =
@@ -478,7 +491,7 @@ and tuple_reader env cells =
     |> String.concat ", "
   in
   sprintf "(lambda x: (%s) \
-           if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))"
+           if isinstance(x, list) else _atd_bad_json('array', x))"
     tuple_body
 
 let rec get_default_default (e : type_expr) : string option =
@@ -527,7 +540,7 @@ let initialize_field_from_json
         [
           Line "else:";
           Block [
-            Line (sprintf "_atd_missing_field('%s', '%s')"
+            Line (sprintf "_atd_missing_json_field('%s', '%s')"
                     (single_esc py_class_name)
                     (single_esc json_name))
           ]
@@ -568,8 +581,9 @@ let initialize_field_from_json
   if_then @ else_
 
 let class_arg env ((loc, (name, kind, an), e) : simple_field) =
+  let python_name = trans env name in
   [
-    Line (sprintf "%s," (trans env name))
+    Line (sprintf "%s=%s," python_name python_name)
   ]
 
 let record env loc name (fields : field list) an =
@@ -592,6 +606,7 @@ let record env loc name (fields : field list) an =
       Line "def __init__(";
       Block [
         Line "self,";
+        Line "*,"; (* keyword args follow *)
         Inline init_params;
       ];
       Line "):";
@@ -624,7 +639,7 @@ let record env loc name (fields : field list) an =
         Block field_init_from_json;
         Line "else:";
         Block [
-          Line (sprintf "_atd_type_mismatch('%s', x)"
+          Line (sprintf "_atd_bad_json('%s', x)"
                   (single_esc py_class_name))
         ];
         Line "return cls(";
@@ -654,9 +669,9 @@ let record env loc name (fields : field list) an =
   in
   let to_json_string =
     [
-      Line "def to_json_string(self) -> str:";
+      Line "def to_json_string(self, **kw) -> str:";
       Block [
-        Line "return json.dumps(self.to_json())"
+        Line "return json.dumps(self.to_json(), **kw)"
       ]
     ]
   in
@@ -709,7 +724,7 @@ let alias_wrapper env name type_expr =
       Line "@classmethod";
       Line "def from_json(cls, x: Any):";
       Block [
-        Line (sprintf "return %s(x)" (json_reader env type_expr))
+        Line (sprintf "return cls(%s(x))" (json_reader env type_expr))
       ];
       Line "";
       Line "def to_json(self) -> Any:";
@@ -723,9 +738,9 @@ let alias_wrapper env name type_expr =
         Line "return cls.from_json(json.loads(x))"
       ];
       Line "";
-      Line "def to_json_string(self) -> str:";
+      Line "def to_json_string(self, **kw) -> str:";
       Block [
-        Line "return json.dumps(self.to_json())"
+        Line "return json.dumps(self.to_json(), **kw)"
       ]
     ]
   ]
@@ -752,9 +767,9 @@ let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
             Line (sprintf "return '%s'" (single_esc json_name))
           ];
           Line "";
-          Line "def to_json_string(self) -> str:";
+          Line "def to_json_string(self, **kw) -> str:";
           Block [
-            Line "return json.dumps(self.to_json())"
+            Line "return json.dumps(self.to_json(), **kw)"
           ]
         ]
       ]
@@ -785,12 +800,14 @@ let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
           Line "";
           Line "def to_json(self):";
           Block [
-            Line (sprintf "return '%s'" (single_esc json_name))
+            Line (sprintf "return ['%s', %s(self._value)]"
+                    (single_esc json_name)
+                    (json_writer env e))
           ];
           Line "";
-          Line "def to_json_string(self) -> str:";
+          Line "def to_json_string(self, **kw) -> str:";
           Block [
-            Line "return json.dumps(self.to_json())"
+            Line "return json.dumps(self.to_json(), **kw)"
           ]
         ]
       ]
@@ -810,7 +827,7 @@ let read_cases0 env loc name cases0 =
   in
   [
     Inline ifs;
-    Line (sprintf "_atd_type_mismatch('%s', x)"
+    Line (sprintf "_atd_bad_json('%s', x)"
             (class_name env name |> single_esc))
   ]
 
@@ -836,7 +853,7 @@ let read_cases1 env loc name cases1 =
   in
   [
     Inline ifs;
-    Line (sprintf "_atd_type_mismatch('%s', x)"
+    Line (sprintf "_atd_bad_json('%s', x)"
             (class_name env name |> single_esc))
   ]
 
@@ -891,7 +908,7 @@ let sum_container env loc name cases =
       Block [
         Inline cases0_block;
         Inline cases1_block;
-        Line (sprintf "_atd_type_mismatch('%s', x)"
+        Line (sprintf "_atd_bad_json('%s', x)"
                 (single_esc (class_name env name)))
       ];
       Line "";
@@ -906,9 +923,9 @@ let sum_container env loc name cases =
         Line "return cls.from_json(json.loads(x))"
       ];
       Line "";
-      Line "def to_json_string(self) -> str:";
+      Line "def to_json_string(self, **kw) -> str:";
       Block [
-        Line "return json.dumps(self.to_json())"
+        Line "return json.dumps(self.to_json(), **kw)"
       ]
     ]
   ]

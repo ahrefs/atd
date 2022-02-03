@@ -1,12 +1,22 @@
 ;
+; Convert ATD -> Python
+;
+(rule
+  (targets
+    everything.py)
+  (deps
+    ../atd-input/everything.atd)
+  (action
+    (run %{bin:atdpy} %{deps})))
+
+;
 ; Typecheck and run the tests on the generated Python code.
 ;
-
 (alias
  (name runtest)
  (package atdpy)
  (deps
-  (glob_files python-output/*.py)
+  everything.py
   (glob_files *.py))
  (action
   (progn

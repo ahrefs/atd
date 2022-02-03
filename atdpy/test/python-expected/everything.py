@@ -4,7 +4,7 @@ This implements classes for the types defined in 'everything.atd', providing
 methods and functions to convert data from/to JSON.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import json
 
@@ -133,6 +133,107 @@ def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
     return write_nullable
 
 
+class Root_:
+    """Case 'Root' of type 'kind' (class 'Kind')."""
+
+    def __repr__(self):
+        return self.to_json_string()
+
+    def to_json(self):
+        return 'Root'
+
+    def to_json_string(self) -> str:
+        return json.dumps(self.to_json())
+
+
+class Thing:
+    """Case 'Thing' of type 'kind' (class 'Kind')."""
+
+    def __init__(self, value):
+        self._value: int = value
+
+    def __repr__(self):
+        return self.to_json_string()
+
+    @property
+    def value(self):
+        return self._value
+
+    def to_json(self):
+        return 'Thing'
+
+    def to_json_string(self) -> str:
+        return json.dumps(self.to_json())
+
+
+class WOW:
+    """Case 'WOW' of type 'kind' (class 'Kind')."""
+
+    def __repr__(self):
+        return self.to_json_string()
+
+    def to_json(self):
+        return 'wow'
+
+    def to_json_string(self) -> str:
+        return json.dumps(self.to_json())
+
+
+class Amaze:
+    """Case 'Amaze' of type 'kind' (class 'Kind')."""
+
+    def __init__(self, value):
+        self._value: List[str] = value
+
+    def __repr__(self):
+        return self.to_json_string()
+
+    @property
+    def value(self):
+        return self._value
+
+    def to_json(self):
+        return '!!!'
+
+    def to_json_string(self) -> str:
+        return json.dumps(self.to_json())
+
+
+class Kind:
+    def __init__(self, value):
+        self._value: Union[Root_, Thing, WOW, Amaze] = value
+
+    def __repr__(self):
+        return self._value.to_json_string()
+
+    @classmethod
+    def from_json(cls, x: Any):
+        if isinstance(x, str):
+            if x == 'Root':
+                return cls(Root_())
+            if x == 'wow':
+                return cls(WOW())
+            _atd_type_mismatch('Kind', x)
+        if isinstance(x, List) and len(x) == 2:
+            cons = x[0]
+            if cons == 'Thing':
+                return cls(Thing(_atd_read_int(x[1])))
+            if cons == '!!!':
+                return cls(Amaze(_atd_read_list(_atd_read_string)(x[1])))
+            _atd_type_mismatch('Kind', x)
+        _atd_type_mismatch('Kind', x)
+
+    def to_json(self):
+        return self._value.to_json()
+
+    @classmethod
+    def from_json_string(cls, x: str):
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self) -> str:
+        return json.dumps(self.to_json())
+
+
 class Alias:
     """original type: alias"""
 
@@ -171,6 +272,7 @@ class Root:
         answer: int,
         aliased: Alias,
         point: Tuple[float, float],
+        kinds: List[Kind],
     ):
         self._id = id
         self._await = await_
@@ -181,6 +283,7 @@ class Root:
         self._answer = answer
         self._aliased = aliased
         self._point = point
+        self._kinds = kinds
 
     def __repr__(self):
         return self.to_json_string()
@@ -221,6 +324,10 @@ class Root:
     def point(self):
         return self._point
 
+    @property
+    def kinds(self):
+        return self._kinds
+
     @classmethod
     def from_json(cls, x: Any):
         if isinstance(x, dict):
@@ -260,6 +367,10 @@ class Root:
                 point: Tuple[float, float] = (lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))(x['point'])
             else:
                 _atd_missing_field('Root', 'point')
+            if 'kinds' in x:
+                kinds: List[Kind] = _atd_read_list(Kind.from_json)(x['kinds'])
+            else:
+                _atd_missing_field('Root', 'kinds')
         else:
             _atd_type_mismatch('Root', x)
         return cls(
@@ -272,6 +383,7 @@ class Root:
             answer,
             aliased,
             point,
+            kinds,
         )
 
     def to_json(self) -> Any:
@@ -286,6 +398,7 @@ class Root:
         res['answer'] = _atd_write_int(self._answer)
         res['aliased'] = (lambda x: x.to_json())(self._aliased)
         res['point'] = (lambda x: (_atd_write_float(x[0]), _atd_write_float(x[1])) if isinstance(x, tuple) else _atd_type_mismatch('tuple', x))(self._point)
+        res['kinds'] = _atd_write_list((lambda x: x.to_json()))(self._kinds)
         return res
 
     @classmethod

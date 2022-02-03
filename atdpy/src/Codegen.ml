@@ -31,6 +31,7 @@ module B = Indent
    naming conflicts. *)
 type env = {
   (* Global *)
+  create_variable: string -> string;
   translate_variable: string -> string;
   (* Local to a class: class variables, including method names *)
   translate_class_variable: unit -> (string -> string);
@@ -40,6 +41,10 @@ type env = {
 let trans env id =
   env.translate_variable id
 
+(*
+   Convert an ascii string to CamelCase.
+   Note that this gets rid of leading and trailing underscores.
+*)
 let to_camel_case s =
   let buf = Buffer.create (String.length s) in
   let start_word = ref true in
@@ -56,9 +61,19 @@ let to_camel_case s =
   done;
   Buffer.contents buf
 
-(* Use CamelCase as recommended by PEP 8 *)
+(* Use CamelCase as recommended by PEP 8. *)
 let class_name env id =
   trans env (to_camel_case id)
+
+(*
+   Create a class identifier that hasn't been seen yet.
+   This is for internal disambiguation and still must translated using
+   the 'trans' function ('class_name' will not work due to trailing
+   underscores being added for disambiguation).
+*)
+let create_class_name env name =
+  let preferred_id = to_camel_case name in
+  env.create_variable preferred_id
 
 let init_env () : env =
   let keywords = [
@@ -116,6 +131,9 @@ let init_env () : env =
       ~reserved_prefixes:["__"]
       ~safe_prefix:"x_"
   in
+  let create_variable name =
+    Unique_name.create variables name
+  in
   let translate_variable id =
     Unique_name.translate variables id
   in
@@ -124,6 +142,7 @@ let init_env () : env =
     fun id -> Unique_name.translate u id
   in
   {
+    create_variable;
     translate_variable;
     translate_class_variable;
   }
@@ -158,7 +177,7 @@ This implements classes for the types defined in '%s', providing
 methods and functions to convert data from/to JSON.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import json
 
@@ -711,12 +730,215 @@ let alias_wrapper env name type_expr =
     ]
   ]
 
+let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
+  let json_name = Atdgen_emit.Json.get_json_cons orig_name an in
+  match opt_e with
+  | None ->
+      [
+        Line (sprintf "class %s:" (trans env unique_name));
+        Block [
+          Line (sprintf {|"""Case '%s' of type '%s' (class '%s')."""|}
+                  orig_name
+                  type_name
+                  (class_name env type_name));
+          Line "";
+          Line "def __repr__(self):";
+          Block [
+            Line "return self.to_json_string()"
+          ];
+          Line "";
+          Line "def to_json(self):";
+          Block [
+            Line (sprintf "return '%s'" (single_esc json_name))
+          ];
+          Line "";
+          Line "def to_json_string(self) -> str:";
+          Block [
+            Line "return json.dumps(self.to_json())"
+          ]
+        ]
+      ]
+  | Some e ->
+      [
+        Line (sprintf "class %s:" (trans env unique_name));
+        Block [
+          Line (sprintf {|"""Case '%s' of type '%s' (class '%s')."""|}
+                  orig_name
+                  type_name
+                  (class_name env type_name));
+          Line "";
+          Line "def __init__(self, value):";
+          Block [
+            Line (sprintf "self._value: %s = value" (type_name_of_expr env e))
+          ];
+          Line "";
+          Line "def __repr__(self):";
+          Block [
+            Line "return self.to_json_string()"
+          ];
+          Line "";
+          Line "@property";
+          Line "def value(self):";
+          Block [
+            Line "return self._value"
+          ];
+          Line "";
+          Line "def to_json(self):";
+          Block [
+            Line (sprintf "return '%s'" (single_esc json_name))
+          ];
+          Line "";
+          Line "def to_json_string(self) -> str:";
+          Block [
+            Line "return json.dumps(self.to_json())"
+          ]
+        ]
+      ]
+
+let read_cases0 env loc name cases0 =
+  let ifs =
+    cases0
+    |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+      let json_name = Atdgen_emit.Json.get_json_cons orig_name an in
+      Inline [
+        Line (sprintf "if x == '%s':" (single_esc json_name));
+        Block [
+          Line (sprintf "return cls(%s())" (trans env unique_name))
+        ]
+      ]
+    )
+  in
+  [
+    Inline ifs;
+    Line (sprintf "_atd_type_mismatch('%s', x)"
+            (class_name env name |> single_esc))
+  ]
+
+let read_cases1 env loc name cases1 =
+  let ifs =
+    cases1
+    |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+      let e =
+        match opt_e with
+        | None -> assert false
+        | Some x -> x
+      in
+      let json_name = Atdgen_emit.Json.get_json_cons orig_name an in
+      Inline [
+        Line (sprintf "if cons == '%s':" (single_esc json_name));
+        Block [
+          Line (sprintf "return cls(%s(%s(x[1])))"
+                  (trans env unique_name)
+                  (json_reader env e))
+        ]
+      ]
+    )
+  in
+  [
+    Inline ifs;
+    Line (sprintf "_atd_type_mismatch('%s', x)"
+            (class_name env name |> single_esc))
+  ]
+
+let sum_container env loc name cases =
+  let type_list =
+    List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+      trans env unique_name
+    ) cases
+    |> String.concat ", "
+  in
+  let cases0, cases1 =
+    List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
+      opt_e = None
+    ) cases
+  in
+  let cases0_block =
+    if cases0 <> [] then
+      [
+        Line "if isinstance(x, str):";
+        Block (read_cases0 env loc name cases0)
+      ]
+    else
+      []
+  in
+  let cases1_block =
+    if cases1 <> [] then
+      [
+        Line "if isinstance(x, List) and len(x) == 2:";
+        Block [
+          Line "cons = x[0]";
+          Inline (read_cases1 env loc name cases1)
+        ]
+      ]
+    else
+      []
+  in
+  [
+    Line (sprintf "class %s:" (class_name env name));
+    Block [
+      Line "def __init__(self, value):";
+      Block [
+        Line (sprintf "self._value: Union[%s] = value" type_list)
+      ];
+      Line "";
+      Line "def __repr__(self):";
+      Block [
+        Line "return self._value.to_json_string()"
+      ];
+      Line "";
+      Line "@classmethod";
+      Line "def from_json(cls, x: Any):";
+      Block [
+        Inline cases0_block;
+        Inline cases1_block;
+        Line (sprintf "_atd_type_mismatch('%s', x)"
+                (single_esc (class_name env name)))
+      ];
+      Line "";
+      Line "def to_json(self):";
+      Block [
+        Line "return self._value.to_json()";
+      ];
+      Line "";
+      Line "@classmethod";
+      Line "def from_json_string(cls, x: str):";
+      Block [
+        Line "return cls.from_json(json.loads(x))"
+      ];
+      Line "";
+      Line "def to_json_string(self) -> str:";
+      Block [
+        Line "return json.dumps(self.to_json())"
+      ]
+    ]
+  ]
+
+let sum env loc name cases =
+  let cases =
+    List.map (function
+      | Variant (loc, (orig_name, an), opt_e) ->
+          let unique_name = create_class_name env orig_name in
+          (loc, orig_name, unique_name, an, opt_e)
+      | Inherit _ -> assert false
+    ) cases
+  in
+  let case_classes =
+    List.map (fun x -> Inline (case_class env name x)) cases
+    |> double_spaced
+  in
+  let container_class = sum_container env loc name cases in
+  [
+    Inline case_classes;
+    Inline container_class;
+  ]
+  |> double_spaced
+
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
   let rec unwrap e =
     match e with
-    | Sum (loc, xs, an) -> todo "sum type"
+    | Sum (loc, cases, an) -> sum env loc name cases
     | Record (loc, fields, an) -> record env loc name fields an
     | Tuple _ -> alias_wrapper env name e
     | List _ -> alias_wrapper env name e
@@ -751,10 +973,25 @@ let definition_group ~atd_filename env
     Inline (module_body env items);
   ]
 
-let to_file ~atd_filename (x : A.module_body) dst_path =
+(*
+   Make sure that the types as defined in the atd file get a good name.
+   For example, type 'foo' should become class 'Foo'.
+   We do this because each case constructor of sum types will also
+   translate to a class in the same namespace. For example,
+   there may be a type like 'type bar = [ Foo | Bleep ]'.
+   We want to ensure that the type 'foo' gets the name 'Foo' and that only
+   later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
+*)
+let reserve_good_class_names env (items: A.module_body) =
+  List.iter
+    (fun (Type (loc, (name, param, an), e)) -> ignore (class_name env name))
+    items
+
+let to_file ~atd_filename (items : A.module_body) dst_path =
   let env = init_env () in
+  reserve_good_class_names env items;
   let python_defs =
-    Atd.Util.tsort x
+    Atd.Util.tsort items
     |> List.map (fun x -> Inline (definition_group ~atd_filename env x))
   in
   Line (fixed_size_preamble atd_filename) :: python_defs

@@ -33,8 +33,8 @@ type env = {
   (* Global *)
   create_variable: string -> string;
   translate_variable: string -> string;
-  (* Local to a class: class variables, including method names *)
-  translate_class_variable: unit -> (string -> string);
+  (* Local to a class: instance variables, including method names *)
+  translate_inst_variable: unit -> (string -> string);
 }
 
 (* Translate a preferred variable name into an available Python identifier. *)
@@ -137,14 +137,14 @@ let init_env () : env =
   let translate_variable id =
     Unique_name.translate variables id
   in
-  let translate_class_variable () =
+  let translate_inst_variable () =
     let u = method_names () in
     fun id -> Unique_name.translate u id
   in
   {
     create_variable;
     translate_variable;
-    translate_class_variable;
+    translate_inst_variable;
   }
 
 type quote_kind = Single | Double
@@ -420,11 +420,11 @@ let field_as_param env ((loc, (name, kind, an), e) : simple_field) =
     Line (sprintf "%s: %s%s," (trans env name) type_name default)
   ]
 
-let class_var_name trans_meth field_name =
+let inst_var_name trans_meth field_name =
   trans_meth ("_" ^ field_name)
 
 let field_init env trans_meth ((loc, (name, kind, an), e) : simple_field) =
-  let var_name = class_var_name trans_meth name in
+  let var_name = inst_var_name trans_meth name in
   [
     Line (sprintf "self.%s = %s" var_name (trans env name))
   ]
@@ -435,7 +435,7 @@ let property_definition
     Line "@property";
     Line (sprintf "def %s(self):" (trans_meth name));
     Block [
-      Line (sprintf "return self.%s" (class_var_name trans_meth name))
+      Line (sprintf "return self.%s" (inst_var_name trans_meth name))
     ]
   ]
 
@@ -482,7 +482,7 @@ let construct_json_field env trans_meth
       Line (sprintf "res['%s'] = %s(self.%s)"
               (Atdgen_emit.Json.get_json_fname name an |> single_esc)
               writer_function
-              (class_var_name trans_meth name))
+              (inst_var_name trans_meth name))
     ]
   in
   match kind with
@@ -491,7 +491,7 @@ let construct_json_field env trans_meth
   | Optional ->
       [
         Line (sprintf "if self.%s is not None:"
-                (class_var_name trans_meth name));
+                (inst_var_name trans_meth name));
         Block assignment
       ]
 
@@ -604,7 +604,7 @@ let class_arg env ((loc, (name, kind, an), e) : simple_field) =
 
 let record env loc name (fields : field list) an =
   let py_class_name = class_name env name in
-  let trans_meth = env.translate_class_variable () in
+  let trans_meth = env.translate_inst_variable () in
   let fields =
     List.map (function
       | `Field x -> x
@@ -694,7 +694,7 @@ let record env loc name (fields : field list) an =
   [
     Line (sprintf "class %s:" py_class_name);
     Block (spaced [
-      Line (sprintf {|"""original type: %s"""|} name);
+      Line (sprintf {|"""Original type: %s"""|} name);
       Inline init;
       Inline properties;
       Inline from_json;
@@ -725,7 +725,7 @@ let alias_wrapper env name type_expr =
   [
     Line (sprintf "class %s:" (class_name env name));
     Block [
-      Line (sprintf {|"""original type: %s"""|} name);
+      Line (sprintf {|"""Original type: %s"""|} name);
       Line "";
       Line (sprintf "def __init__(self, x: %s):" value_type);
       Block [

@@ -244,7 +244,7 @@ class Kind:
 
 
 class Alias:
-    """original type: alias"""
+    """Original type: alias"""
 
     def __init__(self, x: List[int]):
         self._value: List[int] = x
@@ -268,7 +268,7 @@ class Alias:
 
 
 class Root:
-    """original type: root"""
+    """Original type: root"""
 
     def __init__(
         self,

@@ -276,13 +276,13 @@ class Root:
         id: str,
         await_: bool,
         __init__: float,
-        items: List[List[int]],
-        maybe: Optional[int],
-        extras: List[int],
-        answer: int,
+        items: List[List[int]] = [],
+        maybe: Optional[int] = None,
+        extras: List[int] = [],
+        answer: int = (42),
         aliased: Alias,
         point: Tuple[float, float],
-        kinds: List[Kind],
+        kinds: List[Kind] = [],
     ):
         self._id = id
         self._await = await_
@@ -368,7 +368,7 @@ class Root:
             if 'answer' in x:
                 answer: int = _atd_read_int(x['answer'])
             else:
-                answer = 42
+                answer = (42)
             if 'aliased' in x:
                 aliased: Alias = Alias.from_json(x['aliased'])
             else:

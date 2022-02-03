@@ -364,10 +364,60 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
+let rec get_default_default (e : type_expr) : string option =
+  match e with
+  | Sum _
+  | Record _
+  | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
+  | List _ -> Some "[]"
+  | Option _ -> Some "Option(None)"
+  | Nullable _ -> Some "None"
+  | Shared (loc, e, an) -> get_default_default e
+  | Wrap (loc, e, an) -> get_default_default e
+  | Name _ -> None
+  | Tvar _ -> None
+
+let get_python_default (e : type_expr) (an : annot) : string option =
+  let user_default =
+    Atd.Annot.get_opt_field
+      ~parse:(fun s -> Some s)
+      ~sections:["python"]
+      ~field:"default"
+      an
+  in
+  match user_default with
+  | Some s ->
+      (* a bit of protection against malformed user input *)
+      Some (sprintf "(%s)" s)
+  | None -> get_default_default e
+
+(* If the field is '?foo: bar option', its python or json value has type
+   'bar' rather than 'bar option'. *)
+let unwrap_field_type loc field_name kind e =
+  match kind with
+  | Required
+  | With_default -> e
+  | Optional ->
+      match e with
+      | Option (loc, e, an) -> e
+      | _ ->
+          A.error_at loc
+            (sprintf "the type of optional field '%s' should be of \
+                      the form 'xxx option'" field_name)
+
 let field_as_param env ((loc, (name, kind, an), e) : simple_field) =
   let type_name = type_name_of_expr env e in
+  let unwrapped_e = unwrap_field_type loc name kind e in
+  let default =
+    match kind with
+    | Optional -> " = None"
+    | Required | With_default ->
+        match get_python_default unwrapped_e an with
+        | None -> ""
+        | Some value -> sprintf " = %s" value
+  in
   [
-    Line (sprintf "%s: %s," (trans env name) type_name)
+    Line (sprintf "%s: %s%s," (trans env name) type_name default)
   ]
 
 let class_var_name trans_meth field_name =
@@ -425,18 +475,7 @@ and tuple_writer env cells =
 
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
-  let unwrapped_type =
-    match kind with
-    | Required
-    | With_default -> e
-    | Optional ->
-        match e with
-        | Option (loc, e, an) -> e
-        | _ ->
-            A.error_at loc
-              (sprintf "the type of optional field '%s' should be of \
-                        the form 'xxx option'" name)
-  in
+  let unwrapped_type = unwrap_field_type loc name kind e in
   let writer_function = json_writer env unwrapped_type in
   let assignment =
     [
@@ -494,19 +533,6 @@ and tuple_reader env cells =
            if isinstance(x, list) else _atd_bad_json('array', x))"
     tuple_body
 
-let rec get_default_default (e : type_expr) : string option =
-  match e with
-  | Sum _
-  | Record _
-  | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
-  | List _ -> Some "[]"
-  | Option _ -> Some "Option(None)"
-  | Nullable _ -> Some "None"
-  | Shared (loc, e, an) -> get_default_default e
-  | Wrap (loc, e, an) -> get_default_default e
-  | Name _ -> None
-  | Tvar _ -> None
-
 let initialize_field_from_json
     env py_class_name ((loc, (name, kind, an), e) : simple_field) =
   let json_name = Atdgen_emit.Json.get_json_fname name an in
@@ -553,23 +579,13 @@ let initialize_field_from_json
           ]
         ]
     | With_default ->
-        let user_default =
-          Atd.Annot.get_opt_field
-            ~parse:(fun s -> Some s)
-            ~sections:["python"]
-            ~field:"default"
-            an
-        in
         let default =
-          match user_default with
+          match get_python_default e an with
           | Some x -> x
           | None ->
-              match get_default_default e with
-              | Some x -> x
-              | None ->
-                  A.error_at loc
-                    (sprintf "missing default Python value for field '%s'"
-                       name)
+              A.error_at loc
+                (sprintf "missing default Python value for field '%s'"
+                   name)
         in
         [
           Line "else:";

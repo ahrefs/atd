@@ -42,7 +42,6 @@ def test_everything_to_json():
         await_=True,
         __init__=1.5,
         items=[[], [1, 2]],
-        maybe=None,
         extras=[17, 53],
         answer=42,
         aliased=e.Alias([8, 9, 10]),

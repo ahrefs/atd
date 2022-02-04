@@ -5,7 +5,7 @@ methods and functions to convert data from/to JSON.
 """
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
 import json
 
@@ -13,12 +13,12 @@ import json
 # Private functions
 ############################################################################
 
-def _atd_missing_json_field(type_name: str, json_field_name: str):
+def _atd_missing_json_field(type_name: str, json_field_name: str) -> NoReturn:
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def _atd_bad_json(expected_type: str, json_value: Any):
+def _atd_bad_json(expected_type: str, json_value: Any) -> NoReturn:
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -27,7 +27,7 @@ def _atd_bad_json(expected_type: str, json_value: Any):
                      f" type '{expected_type}' was expected: '{value_str}'")
 
 
-def _atd_bad_python(expected_type: str, json_value: Any):
+def _atd_bad_python(expected_type: str, json_value: Any) -> NoReturn:
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -40,35 +40,35 @@ def _atd_read_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_bad_json('unit', x)
+        _atd_bad_json('unit', x)
 
 
 def _atd_read_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_bad_json('bool', x)
+        _atd_bad_json('bool', x)
 
 
 def _atd_read_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_bad_json('int', x)
+        _atd_bad_json('int', x)
 
 
 def _atd_read_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_bad_json('float', x)
+        _atd_bad_json('float', x)
 
 
 def _atd_read_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_bad_json('str', x)
+        _atd_bad_json('str', x)
 
 
 def _atd_read_list(read_elt: Callable[[Any], Any]) \
@@ -95,35 +95,35 @@ def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_bad_python('unit', x)
+        _atd_bad_python('unit', x)
 
 
 def _atd_write_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_bad_python('bool', x)
+        _atd_bad_python('bool', x)
 
 
 def _atd_write_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_bad_python('int', x)
+        _atd_bad_python('int', x)
 
 
 def _atd_write_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_bad_python('float', x)
+        _atd_bad_python('float', x)
 
 
 def _atd_write_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_bad_python('str', x)
+        _atd_bad_python('str', x)
 
 
 def _atd_write_list(write_elt: Callable[[Any], Any]) \
@@ -156,15 +156,15 @@ class Root_:
     """Original type: kind = [ ... | Root | ... ]"""
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         """Name of the class representing this variant."""
         return 'Root_'
 
     @staticmethod
-    def to_json():
+    def to_json() -> Any:
         return 'Root'
 
-    def to_json_string(self, **kw) -> str:
+    def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)
 
 
@@ -175,14 +175,14 @@ class Thing:
     value: int
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         """Name of the class representing this variant."""
         return 'Thing'
 
-    def to_json(self):
+    def to_json(self) -> Any:
         return ['Thing', _atd_write_int(self.value)]
 
-    def to_json_string(self, **kw) -> str:
+    def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)
 
 
@@ -191,15 +191,15 @@ class WOW:
     """Original type: kind = [ ... | WOW | ... ]"""
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         """Name of the class representing this variant."""
         return 'WOW'
 
     @staticmethod
-    def to_json():
+    def to_json() -> Any:
         return 'wow'
 
-    def to_json_string(self, **kw) -> str:
+    def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)
 
 
@@ -210,14 +210,14 @@ class Amaze:
     value: List[str]
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         """Name of the class representing this variant."""
         return 'Amaze'
 
-    def to_json(self):
+    def to_json(self) -> Any:
         return ['!!!', _atd_write_list(_atd_write_string)(self.value)]
 
-    def to_json_string(self, **kw) -> str:
+    def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)
 
 
@@ -228,12 +228,12 @@ class Kind:
     value: Union[Root_, Thing, WOW, Amaze]
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         """Name of the class representing this variant."""
         return self.value.kind
 
     @classmethod
-    def from_json(cls, x: Any):
+    def from_json(cls, x: Any) -> 'Kind':
         if isinstance(x, str):
             if x == 'Root':
                 return cls(Root_())
@@ -249,14 +249,14 @@ class Kind:
             _atd_bad_json('Kind', x)
         _atd_bad_json('Kind', x)
 
-    def to_json(self):
+    def to_json(self) -> Any:
         return self.value.to_json()
 
     @classmethod
-    def from_json_string(cls, x: str):
+    def from_json_string(cls, x: str) -> 'Kind':
         return cls.from_json(json.loads(x))
 
-    def to_json_string(self, **kw) -> str:
+    def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)
 
 
@@ -267,17 +267,17 @@ class Alias:
     value: List[int]
 
     @classmethod
-    def from_json(cls, x: Any):
+    def from_json(cls, x: Any) -> 'Alias':
         return cls(_atd_read_list(_atd_read_int)(x))
 
     def to_json(self) -> Any:
         return _atd_write_list(_atd_write_int)(self.value)
 
     @classmethod
-    def from_json_string(cls, x: str):
+    def from_json_string(cls, x: str) -> 'Alias':
         return cls.from_json(json.loads(x))
 
-    def to_json_string(self, **kw) -> str:
+    def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)
 
 
@@ -297,7 +297,7 @@ class Root:
     answer: int = (42)
 
     @classmethod
-    def from_json(cls, x: Any):
+    def from_json(cls, x: Any) -> 'Root':
         if isinstance(x, dict):
             return cls(
                 id=_atd_read_string(x['ID']) if 'ID' in x else _atd_missing_json_field('Root', 'ID'),
@@ -330,8 +330,8 @@ class Root:
         return res
 
     @classmethod
-    def from_json_string(cls, x: str):
+    def from_json_string(cls, x: str) -> 'Root':
         return cls.from_json(json.loads(x))
 
-    def to_json_string(self, **kw) -> str:
+    def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)

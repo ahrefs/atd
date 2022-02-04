@@ -178,7 +178,7 @@ methods and functions to convert data from/to JSON.
 """
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
 import json
 
@@ -186,12 +186,12 @@ import json
 # Private functions
 ############################################################################
 
-def _atd_missing_json_field(type_name: str, json_field_name: str):
+def _atd_missing_json_field(type_name: str, json_field_name: str) -> NoReturn:
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def _atd_bad_json(expected_type: str, json_value: Any):
+def _atd_bad_json(expected_type: str, json_value: Any) -> NoReturn:
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -200,7 +200,7 @@ def _atd_bad_json(expected_type: str, json_value: Any):
                      f" type '{expected_type}' was expected: '{value_str}'")
 
 
-def _atd_bad_python(expected_type: str, json_value: Any):
+def _atd_bad_python(expected_type: str, json_value: Any) -> NoReturn:
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -213,35 +213,35 @@ def _atd_read_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_bad_json('unit', x)
+        _atd_bad_json('unit', x)
 
 
 def _atd_read_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_bad_json('bool', x)
+        _atd_bad_json('bool', x)
 
 
 def _atd_read_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_bad_json('int', x)
+        _atd_bad_json('int', x)
 
 
 def _atd_read_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_bad_json('float', x)
+        _atd_bad_json('float', x)
 
 
 def _atd_read_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_bad_json('str', x)
+        _atd_bad_json('str', x)
 
 
 def _atd_read_list(read_elt: Callable[[Any], Any]) \
@@ -268,35 +268,35 @@ def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return _atd_bad_python('unit', x)
+        _atd_bad_python('unit', x)
 
 
 def _atd_write_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return _atd_bad_python('bool', x)
+        _atd_bad_python('bool', x)
 
 
 def _atd_write_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return _atd_bad_python('int', x)
+        _atd_bad_python('int', x)
 
 
 def _atd_write_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return _atd_bad_python('float', x)
+        _atd_bad_python('float', x)
 
 
 def _atd_write_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return _atd_bad_python('str', x)
+        _atd_bad_python('str', x)
 
 
 def _atd_write_list(write_elt: Callable[[Any], Any]) \
@@ -612,7 +612,8 @@ let record env loc name (fields : field list) an =
   let from_json =
     [
       Line "@classmethod";
-      Line "def from_json(cls, x: Any):";
+      Line (sprintf "def from_json(cls, x: Any) -> '%s':"
+              (single_esc py_class_name));
       Block [
         Line "if isinstance(x, dict):";
         Block [
@@ -641,7 +642,8 @@ let record env loc name (fields : field list) an =
   let from_json_string =
     [
       Line "@classmethod";
-      Line "def from_json_string(cls, x: str):";
+      Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
+              (single_esc py_class_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
       ]
@@ -649,7 +651,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json_string =
     [
-      Line "def to_json_string(self, **kw) -> str:";
+      Line "def to_json_string(self, **kw: Any) -> str:";
       Block [
         Line "return json.dumps(self.to_json(), **kw)"
       ]
@@ -685,17 +687,19 @@ class Foo:
     ...
 *)
 let alias_wrapper env name type_expr =
+  let py_class_name = class_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
     Line "@dataclass";
-    Line (sprintf "class %s:" (class_name env name));
+    Line (sprintf "class %s:" py_class_name);
     Block [
       Line (sprintf {|"""Original type: %s"""|} name);
       Line "";
       Line (sprintf "value: %s" value_type);
       Line "";
       Line "@classmethod";
-      Line "def from_json(cls, x: Any):";
+      Line (sprintf "def from_json(cls, x: Any) -> '%s':"
+              (single_esc py_class_name));
       Block [
         Line (sprintf "return cls(%s(x))" (json_reader env type_expr))
       ];
@@ -706,12 +710,13 @@ let alias_wrapper env name type_expr =
       ];
       Line "";
       Line "@classmethod";
-      Line "def from_json_string(cls, x: str):";
+      Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
+              (single_esc py_class_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
       ];
       Line "";
-      Line "def to_json_string(self, **kw) -> str:";
+      Line "def to_json_string(self, **kw: Any) -> str:";
       Block [
         Line "return json.dumps(self.to_json(), **kw)"
       ]
@@ -731,19 +736,19 @@ let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
                   orig_name);
           Line "";
           Line "@property";
-          Line "def kind(self):";
+          Line "def kind(self) -> str:";
           Block [
             Line {|"""Name of the class representing this variant."""|};
             Line (sprintf "return '%s'" (trans env unique_name))
           ];
           Line "";
           Line "@staticmethod";
-          Line "def to_json():";
+          Line "def to_json() -> Any:";
           Block [
             Line (sprintf "return '%s'" (single_esc json_name))
           ];
           Line "";
-          Line "def to_json_string(self, **kw) -> str:";
+          Line "def to_json_string(self, **kw: Any) -> str:";
           Block [
             Line "return json.dumps(self.to_json(), **kw)"
           ]
@@ -761,20 +766,20 @@ let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
           Line (sprintf "value: %s" (type_name_of_expr env e));
           Line "";
           Line "@property";
-          Line "def kind(self):";
+          Line "def kind(self) -> str:";
           Block [
             Line {|"""Name of the class representing this variant."""|};
             Line (sprintf "return '%s'" (trans env unique_name))
           ];
           Line "";
-          Line "def to_json(self):";
+          Line "def to_json(self) -> Any:";
           Block [
             Line (sprintf "return ['%s', %s(self.value)]"
                     (single_esc json_name)
                     (json_writer env e))
           ];
           Line "";
-          Line "def to_json_string(self, **kw) -> str:";
+          Line "def to_json_string(self, **kw: Any) -> str:";
           Block [
             Line "return json.dumps(self.to_json(), **kw)"
           ]
@@ -827,6 +832,7 @@ let read_cases1 env loc name cases1 =
   ]
 
 let sum_container env loc name cases =
+  let py_class_name = class_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
       trans env unique_name
@@ -861,21 +867,22 @@ let sum_container env loc name cases =
   in
   [
     Line "@dataclass";
-    Line (sprintf "class %s:" (class_name env name));
+    Line (sprintf "class %s:" py_class_name);
     Block [
       Line (sprintf {|"""Original type: %s = [ ... ]"""|} name);
       Line "";
       Line (sprintf "value: Union[%s]" type_list);
       Line "";
       Line "@property";
-      Line "def kind(self):";
+      Line "def kind(self) -> str:";
       Block [
         Line {|"""Name of the class representing this variant."""|};
         Line (sprintf "return self.value.kind")
       ];
       Line "";
       Line "@classmethod";
-      Line "def from_json(cls, x: Any):";
+      Line (sprintf "def from_json(cls, x: Any) -> '%s':"
+              (single_esc py_class_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
@@ -883,18 +890,19 @@ let sum_container env loc name cases =
                 (single_esc (class_name env name)))
       ];
       Line "";
-      Line "def to_json(self):";
+      Line "def to_json(self) -> Any:";
       Block [
         Line "return self.value.to_json()";
       ];
       Line "";
       Line "@classmethod";
-      Line "def from_json_string(cls, x: str):";
+      Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
+              (single_esc py_class_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
       ];
       Line "";
-      Line "def to_json_string(self, **kw) -> str:";
+      Line "def to_json_string(self, **kw: Any) -> str:";
       Block [
         Line "return json.dumps(self.to_json(), **kw)"
       ]

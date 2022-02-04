@@ -8,7 +8,7 @@ import manual_sample
 import everything as e
 
 
-def test_sample():
+def test_sample() -> None:
     a_obj = manual_sample.Root(id="hello", await_=True, items=[[1, 2], [3]])
     a_str = a_obj.to_json_string()
 
@@ -20,7 +20,7 @@ def test_sample():
     assert b_str2 == a_str
 
 
-def test_sample_missing_field():
+def test_sample_missing_field() -> None:
     try:
         manual_sample.Root.from_json_string('{}')
         assert False
@@ -28,7 +28,7 @@ def test_sample_missing_field():
         pass
 
 
-def test_sample_wrong_type():
+def test_sample_wrong_type() -> None:
     try:
         manual_sample.Root.from_json_string('["hello"]')
         assert False
@@ -36,7 +36,7 @@ def test_sample_wrong_type():
         pass
 
 
-def test_everything_to_json():
+def test_everything_to_json() -> None:
     a_obj = e.Root(
         id="abc",
         await_=True,
@@ -105,7 +105,7 @@ def test_everything_to_json():
     assert b_str2 == a_str
 
 
-def test_kind():
+def test_kind() -> None:
     x = e.Kind(e.WOW())
     assert x.kind == x.value.kind
     assert x.kind == 'WOW'

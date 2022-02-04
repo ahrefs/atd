@@ -2,21 +2,18 @@
 Handwritten code that serves as a model for generated code.
 """
 
-from typing import Any, Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, NoReturn, Optional
 
 import json
 
 
-def atd_missing_field(type_name: str, json_field_name: str) -> Any:
+def atd_missing_field(type_name: str, json_field_name: str) -> NoReturn:
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def atd_type_mismatch(expected_type: str, json_value: Any) -> Any:
+def atd_type_mismatch(expected_type: str, json_value: Any) -> NoReturn:
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'
@@ -28,28 +25,31 @@ def atd_read_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return atd_type_mismatch('bool', x)
+        atd_type_mismatch('bool', x)
 
 
 def atd_read_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return atd_type_mismatch('int', x)
+        atd_type_mismatch('int', x)
+        assert False  # keep mypy happy
 
 
 def atd_read_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return atd_type_mismatch('float', x)
+        atd_type_mismatch('float', x)
+        assert False  # keep mypy happy
 
 
 def atd_read_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return atd_type_mismatch('str', x)
+        atd_type_mismatch('str', x)
+        assert False  # keep mypy happy
 
 
 def atd_read_list(read_elt: Callable[[Any], Any]) \
@@ -58,7 +58,8 @@ def atd_read_list(read_elt: Callable[[Any], Any]) \
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
         else:
-            return atd_type_mismatch('list', elts)
+            atd_type_mismatch('list', elts)
+            assert False  # keep mypy happy
     return read_list
 
 
@@ -76,35 +77,40 @@ def atd_write_unit(x: Any) -> None:
     if x is None:
         return x
     else:
-        return atd_type_mismatch('unit', x)
+        atd_type_mismatch('unit', x)
+        assert False  # keep mypy happy
 
 
 def atd_write_bool(x: Any) -> bool:
     if isinstance(x, bool):
         return x
     else:
-        return atd_type_mismatch('bool', x)
+        atd_type_mismatch('bool', x)
+        assert False  # keep mypy happy
 
 
 def atd_write_int(x: Any) -> int:
     if isinstance(x, int):
         return x
     else:
-        return atd_type_mismatch('int', x)
+        atd_type_mismatch('int', x)
+        assert False  # keep mypy happy
 
 
 def atd_write_float(x: Any) -> float:
     if isinstance(x, (int, float)):
         return x
     else:
-        return atd_type_mismatch('float', x)
+        atd_type_mismatch('float', x)
+        assert False  # keep mypy happy
 
 
 def atd_write_string(x: Any) -> str:
     if isinstance(x, str):
         return x
     else:
-        return atd_type_mismatch('str', x)
+        atd_type_mismatch('str', x)
+        assert False  # keep mypy happy
 
 
 def atd_write_list(write_elt: Callable[[Any], Any]) \
@@ -114,6 +120,7 @@ def atd_write_list(write_elt: Callable[[Any], Any]) \
             return [write_elt(elt) for elt in elts]
         else:
             atd_type_mismatch('list', elts)
+            assert False  # keep mypy happy
     return write_list
 
 
@@ -127,61 +134,33 @@ def atd_write_nullable(write_elt: Callable[[Any], Any]) \
     return write_nullable
 
 
+@dataclass
 class Root:
-    def __init__(
-            self,
-            *,
-            id: str,
-            await_: bool,
-            items: List[List[int]]
-    ):
-        self._id = id
-        self._await = await_
-        self._items = items
-
-    def __repr__(self):
-        return self.to_json_string()
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def await_(self):
-        return self._await
-
-    @property
-    def items(self):
-        return self._items
+    id: str
+    await_: bool
+    items: List[List[int]]
 
     @classmethod
-    def from_json(cls, x: Any):
+    def from_json(cls, x: Any) -> "Root":
         if isinstance(x, dict):
-            if 'id' in x:
-                id: str = atd_read_string(x['id'])
-            else:
-                atd_missing_field('Root', 'id')
-            if 'await' in x:
-                await_: bool = atd_read_bool(x['await'])
-            else:
-                atd_missing_field('Root', 'await')
-            if 'items' in x:
-                items: List[List[int]] = atd_read_list(atd_read_list(atd_read_int))(x['items'])
-            else:
-                atd_missing_field('Root', 'items')
+            return cls(
+                id=atd_read_string(x['id']) if 'id' in x else atd_missing_field('Root', 'id'),
+                await_=atd_read_bool(x['await']) if 'await' in x else atd_missing_field('Root', 'await'),
+                items=atd_read_list(atd_read_list(atd_read_int))(x['items']) if 'items' in x else atd_missing_field('Root', 'items'),
+            )
         else:
             atd_type_mismatch('Root', x)
-        return cls(id=id, await_=await_, items=items)
+            assert False  # keep mypy happy
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}
-        res['id'] = atd_write_string(self._id)
-        res['await'] = atd_write_bool(self._await)
+        res['id'] = atd_write_string(self.id)
+        res['await'] = atd_write_bool(self.await_)
         res['items'] = atd_write_list(atd_write_list(atd_write_int))(self.items)
         return res
 
     @classmethod
-    def from_json_string(cls, x: str):
+    def from_json_string(cls, x: str) -> "Root":
         return cls.from_json(json.loads(x))
 
     def to_json_string(self) -> str:

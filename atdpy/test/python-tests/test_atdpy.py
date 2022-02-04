@@ -111,5 +111,14 @@ def test_kind() -> None:
     assert x.kind == 'WOW'
 
 
+def test_pair() -> None:
+    try:
+        e.Pair.from_json_string('[1,2,3]')
+        assert False
+    except ValueError as exn:
+        print(f"Exception: {exn}")
+        assert str(exn) == "incompatible JSON value where type 'array of length 2' was expected: '[1, 2, 3]'"
+
+
 # print updated json
 test_everything_to_json()

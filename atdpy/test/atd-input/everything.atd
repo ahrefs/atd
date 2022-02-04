@@ -23,3 +23,5 @@ type root = {
 }
 
 type alias = int list
+
+type pair = (string * int)

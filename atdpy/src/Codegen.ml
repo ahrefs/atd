@@ -454,6 +454,7 @@ let rec json_writer env e =
    (lambda x: [write0(x[0]), write1(x[1])] if isinstance(x, tuple) else error())
 *)
 and tuple_writer env cells =
+  let len = List.length cells in
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
       sprintf "%s(x[%i])" (json_writer env e) i
@@ -461,8 +462,10 @@ and tuple_writer env cells =
     |> String.concat ", "
   in
   sprintf "(lambda x: [%s] \
-           if isinstance(x, tuple) else _atd_bad_python('tuple', x))"
+           if isinstance(x, tuple) and len(x) == %d \
+           else _atd_bad_python('tuple of length %d', x))"
     tuple_body
+    len len
 
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
@@ -514,6 +517,7 @@ let rec json_reader env (e : type_expr) =
    (lambda x: (read0(x[0]), read1(x[1])) if isinstance(x, list) else error())
 *)
 and tuple_reader env cells =
+  let len = List.length cells in
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
       sprintf "%s(x[%i])" (json_reader env e) i
@@ -521,8 +525,10 @@ and tuple_reader env cells =
     |> String.concat ", "
   in
   sprintf "(lambda x: (%s) \
-           if isinstance(x, list) else _atd_bad_json('array', x))"
+           if isinstance(x, list) and len(x) == %d \
+           else _atd_bad_json('array of length %d', x))"
     tuple_body
+    len len
 
 let from_json_class_argument
     env trans_meth py_class_name ((loc, (name, kind, an), e) : simple_field) =

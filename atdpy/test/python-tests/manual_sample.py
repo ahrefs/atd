@@ -11,12 +11,12 @@ from typing import Tuple
 import json
 
 
-def atd_missing_field(type_name: str, json_field_name: str):
+def atd_missing_field(type_name: str, json_field_name: str) -> Any:
     raise ValueError(f"missing field '{json_field_name}'"
                      f" in JSON object of type '{type_name}'")
 
 
-def atd_type_mismatch(expected_type: str, json_value: Any):
+def atd_type_mismatch(expected_type: str, json_value: Any) -> Any:
     value_str = str(json_value)
     if len(value_str) > 200:
         value_str = value_str[:200] + '…'

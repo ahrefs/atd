@@ -679,19 +679,12 @@ class Foo:
 let alias_wrapper env name type_expr =
   let value_type = type_name_of_expr env type_expr in
   [
+    Line "@dataclass";
     Line (sprintf "class %s:" (class_name env name));
     Block [
       Line (sprintf {|"""Original type: %s"""|} name);
       Line "";
-      Line (sprintf "def __init__(self, x: %s):" value_type);
-      Block [
-        Line (sprintf "self._value: %s = x" value_type);
-      ];
-      Line "";
-      Line "def __repr__(self):";
-      Block [
-        Line "return self.to_json_string()"
-      ];
+      Line (sprintf "value: %s" value_type);
       Line "";
       Line "@classmethod";
       Line "def from_json(cls, x: Any):";
@@ -701,7 +694,7 @@ let alias_wrapper env name type_expr =
       Line "";
       Line "def to_json(self) -> Any:";
       Block [
-        Line (sprintf "return %s(self._value)" (json_writer env type_expr))
+        Line (sprintf "return %s(self.value)" (json_writer env type_expr))
       ];
       Line "";
       Line "@classmethod";

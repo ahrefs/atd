@@ -40,7 +40,7 @@ def test_everything_to_json():
     a_obj = e.Root(
         id="abc",
         await_=True,
-        __init__=1.5,
+        x___init__=1.5,
         items=[[], [1, 2]],
         extras=[17, 53],
         answer=42,
@@ -72,7 +72,6 @@ def test_everything_to_json():
     17,
     53
   ],
-  "answer": 42,
   "aliased": [
     8,
     9,
@@ -96,7 +95,8 @@ def test_everything_to_json():
       ]
     ],
     "Root"
-  ]
+  ],
+  "answer": 42
 }"""
     b_obj = e.Root.from_json_string(a_str)
     b_str2 = b_obj.to_json_string(indent=2)

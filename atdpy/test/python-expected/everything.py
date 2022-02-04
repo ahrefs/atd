@@ -4,6 +4,7 @@ This implements classes for the types defined in 'everything.atd', providing
 methods and functions to convert data from/to JSON.
 """
 
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import json
@@ -296,148 +297,52 @@ class Alias:
         return json.dumps(self.to_json(), **kw)
 
 
+@dataclass
 class Root:
     """Original type: root"""
 
-    def __init__(
-        self,
-        *,
-        id: str,
-        await_: bool,
-        __init__: float,
-        items: List[List[int]] = [],
-        maybe: Optional[int] = None,
-        extras: List[int] = [],
-        answer: int = (42),
-        aliased: Alias,
-        point: Tuple[float, float],
-        kinds: List[Kind] = [],
-    ):
-        self._id = id
-        self._await = await_
-        self.x____init__ = __init__
-        self._items = items
-        self._maybe = maybe
-        self._extras = extras
-        self._answer = answer
-        self._aliased = aliased
-        self._point = point
-        self._kinds = kinds
-
-    def __repr__(self):
-        return self.to_json_string()
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def await_(self):
-        return self._await
-
-    @property
-    def x___init__(self):
-        return self.x____init__
-
-    @property
-    def items(self):
-        return self._items
-
-    @property
-    def maybe(self):
-        return self._maybe
-
-    @property
-    def extras(self):
-        return self._extras
-
-    @property
-    def answer(self):
-        return self._answer
-
-    @property
-    def aliased(self):
-        return self._aliased
-
-    @property
-    def point(self):
-        return self._point
-
-    @property
-    def kinds(self):
-        return self._kinds
+    id: str
+    await_: bool
+    x___init__: float
+    items: List[List[int]]
+    extras: List[int]
+    aliased: Alias
+    point: Tuple[float, float]
+    kinds: List[Kind]
+    maybe: Optional[int] = None
+    answer: int = (42)
 
     @classmethod
     def from_json(cls, x: Any):
         if isinstance(x, dict):
-            if 'ID' in x:
-                id: str = _atd_read_string(x['ID'])
-            else:
-                _atd_missing_json_field('Root', 'ID')
-            if 'await' in x:
-                await_: bool = _atd_read_bool(x['await'])
-            else:
-                _atd_missing_json_field('Root', 'await')
-            if '__init__' in x:
-                __init__: float = _atd_read_float(x['__init__'])
-            else:
-                _atd_missing_json_field('Root', '__init__')
-            if 'items' in x:
-                items: List[List[int]] = _atd_read_list(_atd_read_list(_atd_read_int))(x['items'])
-            else:
-                _atd_missing_json_field('Root', 'items')
-            if 'maybe' in x:
-                maybe: Optional[int] = _atd_read_int(x['maybe'])
-            else:
-                maybe = None
-            if 'extras' in x:
-                extras: List[int] = _atd_read_list(_atd_read_int)(x['extras'])
-            else:
-                extras = []
-            if 'answer' in x:
-                answer: int = _atd_read_int(x['answer'])
-            else:
-                answer = (42)
-            if 'aliased' in x:
-                aliased: Alias = Alias.from_json(x['aliased'])
-            else:
-                _atd_missing_json_field('Root', 'aliased')
-            if 'point' in x:
-                point: Tuple[float, float] = (lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, list) else _atd_bad_json('array', x))(x['point'])
-            else:
-                _atd_missing_json_field('Root', 'point')
-            if 'kinds' in x:
-                kinds: List[Kind] = _atd_read_list(Kind.from_json)(x['kinds'])
-            else:
-                _atd_missing_json_field('Root', 'kinds')
+            return cls(
+                id=_atd_read_string(x['ID']) if 'ID' in x else _atd_missing_json_field('Root', 'ID'),
+                await_=_atd_read_bool(x['await']) if 'await' in x else _atd_missing_json_field('Root', 'await'),
+                x___init__=_atd_read_float(x['__init__']) if '__init__' in x else _atd_missing_json_field('Root', '__init__'),
+                items=_atd_read_list(_atd_read_list(_atd_read_int))(x['items']) if 'items' in x else _atd_missing_json_field('Root', 'items'),
+                extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
+                aliased=Alias.from_json(x['aliased']) if 'aliased' in x else _atd_missing_json_field('Root', 'aliased'),
+                point=(lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, list) else _atd_bad_json('array', x))(x['point']) if 'point' in x else _atd_missing_json_field('Root', 'point'),
+                kinds=_atd_read_list(Kind.from_json)(x['kinds']) if 'kinds' in x else _atd_missing_json_field('Root', 'kinds'),
+                maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
+                answer=_atd_read_int(x['answer']) if 'answer' in x else (42),
+            )
         else:
             _atd_bad_json('Root', x)
-        return cls(
-            id=id,
-            await_=await_,
-            __init__=__init__,
-            items=items,
-            maybe=maybe,
-            extras=extras,
-            answer=answer,
-            aliased=aliased,
-            point=point,
-            kinds=kinds,
-        )
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}
-        res['ID'] = _atd_write_string(self._id)
-        res['await'] = _atd_write_bool(self._await)
-        res['__init__'] = _atd_write_float(self.x____init__)
-        res['items'] = _atd_write_list(_atd_write_list(_atd_write_int))(self._items)
-        if self._maybe is not None:
-            res['maybe'] = _atd_write_int(self._maybe)
-        res['extras'] = _atd_write_list(_atd_write_int)(self._extras)
-        res['answer'] = _atd_write_int(self._answer)
-        res['aliased'] = (lambda x: x.to_json())(self._aliased)
-        res['point'] = (lambda x: [_atd_write_float(x[0]), _atd_write_float(x[1])] if isinstance(x, tuple) else _atd_bad_python('tuple', x))(self._point)
-        res['kinds'] = _atd_write_list((lambda x: x.to_json()))(self._kinds)
+        res['ID'] = _atd_write_string(self.id)
+        res['await'] = _atd_write_bool(self.await_)
+        res['__init__'] = _atd_write_float(self.x___init__)
+        res['items'] = _atd_write_list(_atd_write_list(_atd_write_int))(self.items)
+        res['extras'] = _atd_write_list(_atd_write_int)(self.extras)
+        res['aliased'] = (lambda x: x.to_json())(self.aliased)
+        res['point'] = (lambda x: [_atd_write_float(x[0]), _atd_write_float(x[1])] if isinstance(x, tuple) else _atd_bad_python('tuple', x))(self.point)
+        res['kinds'] = _atd_write_list((lambda x: x.to_json()))(self.kinds)
+        if self.maybe is not None:
+            res['maybe'] = _atd_write_int(self.maybe)
+        res['answer'] = _atd_write_int(self.answer)
         return res
 
     @classmethod

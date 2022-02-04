@@ -177,6 +177,7 @@ This implements classes for the types defined in '%s', providing
 methods and functions to convert data from/to JSON.
 """
 
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import json
@@ -364,20 +365,23 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
-let rec get_default_default (e : type_expr) : string option =
+let rec get_default_default
+    ?(immutable = false) (e : type_expr) : string option =
   match e with
   | Sum _
   | Record _
   | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
-  | List _ -> Some "[]"
+  | List _ ->
+      if immutable then None
+      else Some "[]"
   | Option _ -> Some "Option(None)"
   | Nullable _ -> Some "None"
-  | Shared (loc, e, an) -> get_default_default e
-  | Wrap (loc, e, an) -> get_default_default e
+  | Shared (loc, e, an) -> get_default_default ~immutable e
+  | Wrap (loc, e, an) -> get_default_default ~immutable e
   | Name _ -> None
   | Tvar _ -> None
 
-let get_python_default (e : type_expr) (an : annot) : string option =
+let get_python_default ?immutable (e : type_expr) (an : annot) : string option =
   let user_default =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
@@ -389,7 +393,12 @@ let get_python_default (e : type_expr) (an : annot) : string option =
   | Some s ->
       (* a bit of protection against malformed user input *)
       Some (sprintf "(%s)" s)
-  | None -> get_default_default e
+  | None -> get_default_default ?immutable e
+
+let has_immutable_default ((loc, (name, kind, an), e) : simple_field) =
+  match get_python_default ~immutable:true e an with
+  | Some _ -> true
+  | None -> false
 
 (* If the field is '?foo: bar option', its python or json value has type
    'bar' rather than 'bar option'. *)
@@ -405,39 +414,13 @@ let unwrap_field_type loc field_name kind e =
             (sprintf "the type of optional field '%s' should be of \
                       the form 'xxx option'" field_name)
 
-let field_as_param env ((loc, (name, kind, an), e) : simple_field) =
-  let type_name = type_name_of_expr env e in
-  let unwrapped_e = unwrap_field_type loc name kind e in
-  let default =
-    match kind with
-    | Optional -> " = None"
-    | Required | With_default ->
-        match get_python_default unwrapped_e an with
-        | None -> ""
-        | Some value -> sprintf " = %s" value
-  in
-  [
-    Line (sprintf "%s: %s%s," (trans env name) type_name default)
-  ]
-
+(*
+   Instance variable that's really the name of the getter method created
+   by @dataclass. It can't start with '__' as those are reserved for
+   internal magic. The 'trans_meth' translator must take care of this.
+*)
 let inst_var_name trans_meth field_name =
-  trans_meth ("_" ^ field_name)
-
-let field_init env trans_meth ((loc, (name, kind, an), e) : simple_field) =
-  let var_name = inst_var_name trans_meth name in
-  [
-    Line (sprintf "self.%s = %s" var_name (trans env name))
-  ]
-
-let property_definition
-    env trans_meth ((loc, (name, kind, an), e) : simple_field) =
-  [
-    Line "@property";
-    Line (sprintf "def %s(self):" (trans_meth name));
-    Block [
-      Line (sprintf "return self.%s" (inst_var_name trans_meth name))
-    ]
-  ]
+  trans_meth field_name
 
 let rec json_writer env e =
   match e with
@@ -533,8 +516,9 @@ and tuple_reader env cells =
            if isinstance(x, list) else _atd_bad_json('array', x))"
     tuple_body
 
-let initialize_field_from_json
-    env py_class_name ((loc, (name, kind, an), e) : simple_field) =
+let from_json_class_argument
+    env trans_meth py_class_name ((loc, (name, kind, an), e) : simple_field) =
+  let python_name = inst_var_name trans_meth name in
   let json_name = Atdgen_emit.Json.get_json_fname name an in
   let unwrapped_type =
     match kind with
@@ -548,58 +532,43 @@ let initialize_field_from_json
               (sprintf "the type of optional field '%s' should be of \
                         the form 'xxx option'" name)
   in
-  let if_then =
-    [
-      Line (sprintf "if '%s' in x:" (single_esc json_name));
-      Block [
-        Line (sprintf "%s: %s = %s(x['%s'])"
-                (trans env name)
-                (type_name_of_expr env e)
-                (json_reader env unwrapped_type)
-                (single_esc json_name))
-      ]
-    ]
-  in
-  let else_ =
+  let else_body =
     match kind with
     | Required ->
-        [
-          Line "else:";
-          Block [
-            Line (sprintf "_atd_missing_json_field('%s', '%s')"
-                    (single_esc py_class_name)
-                    (single_esc json_name))
-          ]
-        ]
-    | Optional ->
-        [
-          Line "else:";
-          Block [
-            Line (sprintf "%s = None" (trans env name))
-          ]
-        ]
+        sprintf "_atd_missing_json_field('%s', '%s')"
+          (single_esc py_class_name)
+          (single_esc json_name)
+    | Optional -> "None"
     | With_default ->
-        let default =
-          match get_python_default e an with
-          | Some x -> x
-          | None ->
-              A.error_at loc
-                (sprintf "missing default Python value for field '%s'"
-                   name)
-        in
-        [
-          Line "else:";
-          Block [
-            Line (sprintf "%s = %s" (trans env name) default)
-          ]
-        ]
+        match get_python_default e an with
+        | Some x -> x
+        | None ->
+            A.error_at loc
+              (sprintf "missing default Python value for field '%s'"
+                 name)
   in
-  if_then @ else_
+  sprintf "%s=%s(x['%s']) if '%s' in x else %s,"
+    python_name
+    (json_reader env unwrapped_type)
+    (single_esc json_name)
+    (single_esc json_name)
+    else_body
 
-let class_arg env ((loc, (name, kind, an), e) : simple_field) =
-  let python_name = trans env name in
+let inst_var_declaration
+    env trans_meth ((loc, (name, kind, an), e) : simple_field) =
+  let var_name = inst_var_name trans_meth name in
+  let type_name = type_name_of_expr env e in
+  let unwrapped_e = unwrap_field_type loc name kind e in
+  let default =
+    match kind with
+    | Optional -> " = None"
+    | Required | With_default ->
+        match get_python_default ~immutable:true unwrapped_e an with
+        | None -> ""
+        | Some value -> sprintf " = %s" value
+  in
   [
-    Line (sprintf "%s=%s," python_name python_name)
+    Line (sprintf "%s: %s%s" var_name type_name default)
   ]
 
 let record env loc name (fields : field list) an =
@@ -611,56 +580,43 @@ let record env loc name (fields : field list) an =
       | `Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
-  let init_params =
-    List.map (fun x -> Inline (field_as_param env x)) fields
+  (*
+     Reorder fields with no-defaults first as required by @dataclass.
+     Starting with Python 3.10, '@dataclass(kw_only=True)' solves this
+     problem and makes this reordering unnecessary.
+     TODO: remove once we require python >= 3.10. It could also be done
+     as command-line flag specifying the Python version.
+  *)
+  let fields =
+    let with_default, no_default =
+      List.partition has_immutable_default fields in
+    no_default @ with_default
   in
-  let init_body =
-    List.map (fun x -> Inline (field_init env trans_meth x)) fields
-  in
-  let init =
-    [
-      Line "def __init__(";
-      Block [
-        Line "self,";
-        Line "*,"; (* keyword args follow *)
-        Inline init_params;
-      ];
-      Line "):";
-      Block init_body;
-      Line "";
-      Line "def __repr__(self):";
-      Block [
-        Line "return self.to_json_string()"
-      ]
-    ]
-  in
-  let properties =
-    List.map (fun x -> Inline (property_definition env trans_meth x)) fields
-    |> spaced
+  let inst_var_declarations =
+    List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields
   in
   let json_object_body =
     List.map (fun x -> Inline (construct_json_field env trans_meth x)) fields in
-  let field_init_from_json =
+  let from_json_class_arguments =
     List.map (fun x ->
-      Inline (initialize_field_from_json env py_class_name x)
+      Line (from_json_class_argument env trans_meth py_class_name x)
     ) fields in
-  let class_arguments =
-    List.map (fun x -> Inline (class_arg env x)) fields in
   let from_json =
     [
       Line "@classmethod";
       Line "def from_json(cls, x: Any):";
       Block [
         Line "if isinstance(x, dict):";
-        Block field_init_from_json;
+        Block [
+          Line "return cls(";
+          Block from_json_class_arguments;
+          Line ")"
+        ];
         Line "else:";
         Block [
           Line (sprintf "_atd_bad_json('%s', x)"
                   (single_esc py_class_name))
-        ];
-        Line "return cls(";
-        Block class_arguments;
-        Line ")";
+        ]
       ]
     ]
   in
@@ -692,11 +648,11 @@ let record env loc name (fields : field list) an =
     ]
   in
   [
+    Line "@dataclass";
     Line (sprintf "class %s:" py_class_name);
     Block (spaced [
       Line (sprintf {|"""Original type: %s"""|} name);
-      Inline init;
-      Inline properties;
+      Inline inst_var_declarations;
       Inline from_json;
       Inline to_json;
       Inline from_json_string;

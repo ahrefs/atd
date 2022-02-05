@@ -244,14 +244,52 @@ def _atd_read_string(x: Any) -> str:
         _atd_bad_json('str', x)
 
 
-def _atd_read_list(read_elt: Callable[[Any], Any]) \
-        -> Callable[[List[Any]], List[Any]]:
+def _atd_read_list(
+        read_elt: Callable[[Any], Any]
+    ) -> Callable[[List[Any]], List[Any]]:
     def read_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
         else:
             _atd_bad_json('array', elts)
     return read_list
+
+
+def _atd_read_assoc_array_into_dict(
+        read_key: Callable[[Any], Any],
+        read_value: Callable[[Any], Any],
+    ) -> Callable[[List[Any]], Dict[Any, Any]]:
+    def read_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
+        if isinstance(elts, list):
+            return {read_key(elt[0]): read_value(elt[1]) for elt in elts}
+        else:
+            _atd_bad_json('array', elts)
+            assert False  # keep mypy happy
+    return read_assoc
+
+
+def _atd_read_assoc_object_into_dict(
+        read_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+    def read_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(elts, dict):
+            return {_atd_read_string(k): read_value(v) for k, v in elts.items()}
+        else:
+            _atd_bad_json('object', elts)
+            assert False  # keep mypy happy
+    return read_assoc
+
+
+def _atd_read_assoc_object_into_list(
+        read_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[str, Any]], List[Tuple[str, Any]]]:
+    def read_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
+        if isinstance(elts, dict):
+            return [(_atd_read_string(k), read_value(v)) for k, v in elts.items()]
+        else:
+            _atd_bad_json('object', elts)
+            assert False  # keep mypy happy
+    return read_assoc
 
 
 def _atd_read_nullable(read_elt: Callable[[Any], Any]) \
@@ -299,14 +337,52 @@ def _atd_write_string(x: Any) -> str:
         _atd_bad_python('str', x)
 
 
-def _atd_write_list(write_elt: Callable[[Any], Any]) \
-        -> Callable[[List[Any]], List[Any]]:
+def _atd_write_list(
+        write_elt: Callable[[Any], Any]
+    ) -> Callable[[List[Any]], List[Any]]:
     def write_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [write_elt(elt) for elt in elts]
         else:
             _atd_bad_python('list', elts)
     return write_list
+
+
+def _atd_write_assoc_dict_to_array(
+        write_key: Callable[[Any], Any],
+        write_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[Any, Any]], List[Tuple[Any, Any]]]:
+    def write_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
+        if isinstance(elts, dict):
+            return [(write_key(k), write_value(v)) for k, v in elts.items()]
+        else:
+            _atd_bad_python('Dict[str, <value type>]]', elts)
+            assert False  # keep mypy happy
+    return write_assoc
+
+
+def _atd_write_assoc_dict_to_object(
+        write_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+    def write_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(elts, dict):
+            return {_atd_write_string(k): write_value(v) for k, v in elts.items()}
+        else:
+            _atd_bad_python('Dict[str, <value type>]', elts)
+            assert False  # keep mypy happy
+    return write_assoc
+
+
+def _atd_write_assoc_list_to_object(
+        write_value: Callable[[Any], Any],
+    ) -> Callable[[List[Any]], Dict[str, Any]]:
+    def write_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
+        if isinstance(elts, list):
+            return {_atd_write_string(elt[0]): write_value(elt[1]) for elt in elts}
+        else:
+            _atd_bad_python('List[Tuple[<key type>, <value type>]]', elts)
+            assert False  # keep mypy happy
+    return write_assoc
 
 
 def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
@@ -343,6 +419,34 @@ let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
 let double_spaced blocks =
   spaced ~spacer:[Line ""; Line ""] blocks
 
+(*
+   Representations of ATD type '(key * value) list' in JSON and Python.
+   Key type or value type are provided when it's useful.
+*)
+type assoc_kind =
+  | Array_list (* default representation; possibly not even a list of pairs *)
+  | Array_dict of type_expr * type_expr (* key type, value type *)
+  (* Keys in JSON objects are always of type string. *)
+  | Object_dict of type_expr (* value type *)
+  | Object_list of type_expr (* value type *)
+
+let assoc_kind loc (e : type_expr) an : assoc_kind =
+  let json_repr = Atdgen_emit.Json.get_json_list an in
+  let python_repr = Python_annot.get_python_assoc_repr an in
+  match e, json_repr, python_repr with
+  | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Dict ->
+      Array_dict (key, value)
+  | Tuple (loc,
+           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+    Object, Dict ->
+      Object_dict value
+  | Tuple (loc,
+           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+    Object, List -> Object_list value
+  | _, Array, List -> Array_list
+  | _, Object, _ -> error_at loc "not a (string * _) list"
+  | _, Array, _ -> error_at loc "not a (_ * _) list"
+
 (* Map ATD built-in types to built-in mypy types *)
 let py_type_name env (name : string) =
   match name with
@@ -364,7 +468,19 @@ let rec type_name_of_expr env (e : type_expr) : string =
         |> List.map (fun (loc, x, an) -> type_name_of_expr env x)
       in
       sprintf "Tuple[%s]" (String.concat ", " type_names)
-  | List (loc, e, an) -> sprintf "List[%s]" (type_name_of_expr env e)
+  | List (loc, e, an) ->
+      (match assoc_kind loc e an with
+       | Array_list
+       | Object_list _ ->
+           sprintf "List[%s]"
+             (type_name_of_expr env e)
+       | Array_dict (key, value) ->
+           sprintf "Dict[%s, %s]"
+             (type_name_of_expr env key) (type_name_of_expr env value)
+       | Object_dict value ->
+           sprintf "Dict[str, %s]"
+             (type_name_of_expr env value)
+      )
   | Option (loc, e, an) -> sprintf "Optional[%s]" (type_name_of_expr env e)
   | Nullable (loc, e, an) -> type_name_of_expr env e
   | Shared (loc, e, an) -> not_implemented loc "shared"
@@ -390,13 +506,7 @@ let rec get_default_default
   | Tvar _ -> None
 
 let get_python_default ?immutable (e : type_expr) (an : annot) : string option =
-  let user_default =
-    Atd.Annot.get_opt_field
-      ~parse:(fun s -> Some s)
-      ~sections:["python"]
-      ~field:"default"
-      an
-  in
+  let user_default = Python_annot.get_python_default an in
   match user_default with
   | Some s ->
       (* a bit of protection against malformed user input *)
@@ -435,7 +545,20 @@ let rec json_writer env e =
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
   | Tuple (loc, cells, an) -> tuple_writer env cells
-  | List (loc, e, an) -> sprintf "_atd_write_list(%s)" (json_writer env e)
+  | List (loc, e, an) ->
+      (match assoc_kind loc e an with
+       | Array_list ->
+           sprintf "_atd_write_list(%s)" (json_writer env e)
+       | Array_dict (key, value) ->
+           sprintf "_atd_write_assoc_dict_to_array(%s, %s)"
+             (json_writer env key) (json_writer env value)
+       | Object_dict value ->
+           sprintf "_atd_write_assoc_dict_to_object(%s)"
+             (json_writer env value)
+       | Object_list value ->
+           sprintf "_atd_write_assoc_list_to_object(%s)"
+             (json_writer env value)
+      )
   | Option (loc, e, an) -> sprintf "_atd_write_option(%s)" (json_writer env e)
   | Nullable (loc, e, an) ->
       sprintf "_atd_write_nullable(%s)" (json_writer env e)
@@ -498,7 +621,24 @@ let rec json_reader env (e : type_expr) =
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
   | Tuple (loc, cells, an) -> tuple_reader env cells
-  | List (loc, e, an) -> sprintf "_atd_read_list(%s)" (json_reader env e)
+  | List (loc, e, an) ->
+      (* ATD lists of pairs can be represented as objects in JSON or
+         as dicts in Python. All 4 combinations are supported.
+         The default is to use JSON arrays and Python lists. *)
+      (match assoc_kind loc e an with
+       | Array_list ->
+           sprintf "_atd_read_list(%s)"
+             (json_reader env e)
+       | Array_dict (key, value) ->
+           sprintf "_atd_read_assoc_array_into_dict(%s, %s)"
+             (json_reader env key) (json_reader env value)
+       | Object_dict value ->
+           sprintf "_atd_read_assoc_object_into_dict(%s)"
+             (json_reader env value)
+       | Object_list value ->
+           sprintf "_atd_read_assoc_object_into_list(%s)"
+             (json_reader env value)
+      )
   | Option (loc, e, an) -> sprintf "_atd_read_option(%s)" (json_reader env e)
   | Nullable (loc, e, an) ->
       sprintf "_atd_read_nullable(%s)" (json_reader env e)

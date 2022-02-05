@@ -51,7 +51,23 @@ def test_everything_to_json() -> None:
             e.Kind(e.Thing(99)),
             e.Kind(e.Amaze(["a", "b"])),
             e.Kind(e.Root_())
-        ]
+        ],
+        assoc1=[
+            (1.1, 1),
+            (2.2, 2),
+        ],
+        assoc2=[
+            ("c", 3),
+            ("d", 4),
+        ],
+        assoc3={
+            5.5: 5,
+            6.6: 6,
+        },
+        assoc4={
+            "g": 7,
+            "h": 8,
+        },
     )
     a_str = a_obj.to_json_string(indent=2)
     print(a_str)
@@ -96,6 +112,34 @@ def test_everything_to_json() -> None:
     ],
     "Root"
   ],
+  "assoc1": [
+    [
+      1.1,
+      1
+    ],
+    [
+      2.2,
+      2
+    ]
+  ],
+  "assoc2": {
+    "c": 3,
+    "d": 4
+  },
+  "assoc3": [
+    [
+      5.5,
+      5
+    ],
+    [
+      6.6,
+      6
+    ]
+  ],
+  "assoc4": {
+    "g": 7,
+    "h": 8
+  },
   "answer": 42
 }"""
     b_obj = e.Root.from_json_string(a_str)

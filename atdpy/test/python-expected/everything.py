@@ -71,14 +71,52 @@ def _atd_read_string(x: Any) -> str:
         _atd_bad_json('str', x)
 
 
-def _atd_read_list(read_elt: Callable[[Any], Any]) \
-        -> Callable[[List[Any]], List[Any]]:
+def _atd_read_list(
+        read_elt: Callable[[Any], Any]
+    ) -> Callable[[List[Any]], List[Any]]:
     def read_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
         else:
             _atd_bad_json('array', elts)
     return read_list
+
+
+def _atd_read_assoc_array_into_dict(
+        read_key: Callable[[Any], Any],
+        read_value: Callable[[Any], Any],
+    ) -> Callable[[List[Any]], Dict[Any, Any]]:
+    def read_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
+        if isinstance(elts, list):
+            return {read_key(elt[0]): read_value(elt[1]) for elt in elts}
+        else:
+            _atd_bad_json('array', elts)
+            assert False  # keep mypy happy
+    return read_assoc
+
+
+def _atd_read_assoc_object_into_dict(
+        read_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+    def read_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(elts, dict):
+            return {_atd_read_string(k): read_value(v) for k, v in elts.items()}
+        else:
+            _atd_bad_json('object', elts)
+            assert False  # keep mypy happy
+    return read_assoc
+
+
+def _atd_read_assoc_object_into_list(
+        read_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[str, Any]], List[Tuple[str, Any]]]:
+    def read_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
+        if isinstance(elts, dict):
+            return [(_atd_read_string(k), read_value(v)) for k, v in elts.items()]
+        else:
+            _atd_bad_json('object', elts)
+            assert False  # keep mypy happy
+    return read_assoc
 
 
 def _atd_read_nullable(read_elt: Callable[[Any], Any]) \
@@ -126,14 +164,52 @@ def _atd_write_string(x: Any) -> str:
         _atd_bad_python('str', x)
 
 
-def _atd_write_list(write_elt: Callable[[Any], Any]) \
-        -> Callable[[List[Any]], List[Any]]:
+def _atd_write_list(
+        write_elt: Callable[[Any], Any]
+    ) -> Callable[[List[Any]], List[Any]]:
     def write_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [write_elt(elt) for elt in elts]
         else:
             _atd_bad_python('list', elts)
     return write_list
+
+
+def _atd_write_assoc_dict_to_array(
+        write_key: Callable[[Any], Any],
+        write_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[Any, Any]], List[Tuple[Any, Any]]]:
+    def write_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
+        if isinstance(elts, dict):
+            return [(write_key(k), write_value(v)) for k, v in elts.items()]
+        else:
+            _atd_bad_python('Dict[str, <value type>]]', elts)
+            assert False  # keep mypy happy
+    return write_assoc
+
+
+def _atd_write_assoc_dict_to_object(
+        write_value: Callable[[Any], Any]
+    ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+    def write_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
+        if isinstance(elts, dict):
+            return {_atd_write_string(k): write_value(v) for k, v in elts.items()}
+        else:
+            _atd_bad_python('Dict[str, <value type>]', elts)
+            assert False  # keep mypy happy
+    return write_assoc
+
+
+def _atd_write_assoc_list_to_object(
+        write_value: Callable[[Any], Any],
+    ) -> Callable[[List[Any]], Dict[str, Any]]:
+    def write_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
+        if isinstance(elts, list):
+            return {_atd_write_string(elt[0]): write_value(elt[1]) for elt in elts}
+        else:
+            _atd_bad_python('List[Tuple[<key type>, <value type>]]', elts)
+            assert False  # keep mypy happy
+    return write_assoc
 
 
 def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
@@ -293,6 +369,10 @@ class Root:
     aliased: Alias
     point: Tuple[float, float]
     kinds: List[Kind]
+    assoc1: List[Tuple[float, int]]
+    assoc2: List[Tuple[str, int]]
+    assoc3: Dict[float, int]
+    assoc4: Dict[str, int]
     maybe: Optional[int] = None
     answer: int = (42)
 
@@ -306,8 +386,12 @@ class Root:
                 items=_atd_read_list(_atd_read_list(_atd_read_int))(x['items']) if 'items' in x else _atd_missing_json_field('Root', 'items'),
                 extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
                 aliased=Alias.from_json(x['aliased']) if 'aliased' in x else _atd_missing_json_field('Root', 'aliased'),
-                point=(lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, list) else _atd_bad_json('array', x))(x['point']) if 'point' in x else _atd_missing_json_field('Root', 'point'),
+                point=(lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, list) and len(x) == 2 else _atd_bad_json('array of length 2', x))(x['point']) if 'point' in x else _atd_missing_json_field('Root', 'point'),
                 kinds=_atd_read_list(Kind.from_json)(x['kinds']) if 'kinds' in x else _atd_missing_json_field('Root', 'kinds'),
+                assoc1=_atd_read_list((lambda x: (_atd_read_float(x[0]), _atd_read_int(x[1])) if isinstance(x, list) and len(x) == 2 else _atd_bad_json('array of length 2', x)))(x['assoc1']) if 'assoc1' in x else _atd_missing_json_field('Root', 'assoc1'),
+                assoc2=_atd_read_assoc_object_into_list(_atd_read_int)(x['assoc2']) if 'assoc2' in x else _atd_missing_json_field('Root', 'assoc2'),
+                assoc3=_atd_read_assoc_array_into_dict(_atd_read_float, _atd_read_int)(x['assoc3']) if 'assoc3' in x else _atd_missing_json_field('Root', 'assoc3'),
+                assoc4=_atd_read_assoc_object_into_dict(_atd_read_int)(x['assoc4']) if 'assoc4' in x else _atd_missing_json_field('Root', 'assoc4'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 answer=_atd_read_int(x['answer']) if 'answer' in x else (42),
             )
@@ -322,8 +406,12 @@ class Root:
         res['items'] = _atd_write_list(_atd_write_list(_atd_write_int))(self.items)
         res['extras'] = _atd_write_list(_atd_write_int)(self.extras)
         res['aliased'] = (lambda x: x.to_json())(self.aliased)
-        res['point'] = (lambda x: [_atd_write_float(x[0]), _atd_write_float(x[1])] if isinstance(x, tuple) else _atd_bad_python('tuple', x))(self.point)
+        res['point'] = (lambda x: [_atd_write_float(x[0]), _atd_write_float(x[1])] if isinstance(x, tuple) and len(x) == 2 else _atd_bad_python('tuple of length 2', x))(self.point)
         res['kinds'] = _atd_write_list((lambda x: x.to_json()))(self.kinds)
+        res['assoc1'] = _atd_write_list((lambda x: [_atd_write_float(x[0]), _atd_write_int(x[1])] if isinstance(x, tuple) and len(x) == 2 else _atd_bad_python('tuple of length 2', x)))(self.assoc1)
+        res['assoc2'] = _atd_write_assoc_list_to_object(_atd_write_int)(self.assoc2)
+        res['assoc3'] = _atd_write_assoc_dict_to_array(_atd_write_float, _atd_write_int)(self.assoc3)
+        res['assoc4'] = _atd_write_assoc_dict_to_object(_atd_write_int)(self.assoc4)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['answer'] = _atd_write_int(self.answer)
@@ -331,6 +419,27 @@ class Root:
 
     @classmethod
     def from_json_string(cls, x: str) -> 'Root':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class Pair:
+    """Original type: pair"""
+
+    value: Tuple[str, int]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'Pair':
+        return cls((lambda x: (_atd_read_string(x[0]), _atd_read_int(x[1])) if isinstance(x, list) and len(x) == 2 else _atd_bad_json('array of length 2', x))(x))
+
+    def to_json(self) -> Any:
+        return (lambda x: [_atd_write_string(x[0]), _atd_write_int(x[1])] if isinstance(x, tuple) and len(x) == 2 else _atd_bad_python('tuple of length 2', x))(self.value)
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'Pair':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:

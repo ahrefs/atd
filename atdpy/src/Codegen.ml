@@ -502,6 +502,15 @@ let rec get_default_default
   | Nullable _ -> Some "None"
   | Shared (loc, e, an) -> get_default_default ~immutable e
   | Wrap (loc, e, an) -> get_default_default ~immutable e
+  | Name (loc, (loc2, name, []), an) ->
+      (match name with
+       | "unit" -> Some "None"
+       | "bool" -> Some "False"
+       | "int" -> Some "0"
+       | "float" -> Some "0.0"
+       | "string" -> Some {|""|}
+       | _ -> None
+      )
   | Name _ -> None
   | Tvar _ -> None
 

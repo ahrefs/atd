@@ -724,7 +724,7 @@ let make_ocaml_files
      m1 = original type definitions after dependency analysis
      m2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs:(Ppx []) ~target
+    Ocaml.ocaml_of_atd ~pp_convs:(Ppx_deriving []) ~target
       ~type_aliases (head, m1) in
   let defs = Oj_mapping.defs_of_atd_modules m2 ~target in
   let header =

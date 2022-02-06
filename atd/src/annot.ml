@@ -9,15 +9,17 @@ type t = Ast.annot
 let error_at loc s =
   failwith (sprintf "%s:\n%s" (Ast.string_of_loc loc) s)
 
-let field ~section ~field l =
-  let fieldmatches = List.filter_map (fun (s, (_, fs)) ->
+let fields ~section ~field l =
+  List.filter_map (fun (s, (_, fs)) ->
     if s = section then Some fs else None) l
     |> List.map (fun fs ->
       List.filter_map (fun (f, (l, s)) ->
         if f = field then Some (l, s) else None)
       fs)
-    |> List.flatten in
-  match fieldmatches with
+    |> List.flatten
+
+let field ~section ~field l =
+  match fields ~section ~field l with
   | [fieldmatch] -> Some fieldmatch
   | (loc, _) :: others -> error_at loc
     (sprintf "Duplicate annotation %s.%s (also in:\n  %s\n)" section field
@@ -63,6 +65,24 @@ let get_field ~parse ~default ~sections:k ~field:k2 l =
         error_at loc
           (sprintf "Missing value for annotation %s.%s" k1 k2))
   |> Option.value ~default
+
+let get_fields ~parse ~sections ~field l =
+  List.find_map (fun section ->
+    Some (
+      fields l ~section ~field
+      |> List.map (fun (loc, o) ->
+        match o with
+        | None ->
+            error_at loc
+              (sprintf "Missing value for annotation %s.%s" section field)
+        | Some s ->
+            (match parse s with
+             | None ->
+                 error_at loc
+                   (sprintf "Invalid annotation <%s %s=%S>" section field s)
+             | Some v -> v))
+    )) sections
+  |> Option.value ~default:[]
 
 let get_opt_field ~parse ~sections ~field l =
   let parse s =

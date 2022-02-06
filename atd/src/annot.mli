@@ -94,6 +94,23 @@ val get_field :
       Each section should be unique.
   *)
 
+val get_fields :
+  parse:(string -> 'a option) ->
+  sections:string list ->
+  field:string ->
+  t -> 'a list
+  (** [get_fields parse section_names field_name annotations]
+      looks sequentially into the sections specified by [section_names]
+      for fields named [field_name].
+      Each found value is parsed using the given function [parse] which
+      should return [None] in order to indicate an invalid value.
+      In the end the list of parsed values is returned.
+      If the field is present without an associated value
+      or if [parse] returns [None], a [Failure] exception is raised.
+
+      Each section should be unique.
+  *)
+
 val get_opt_field :
   parse:(string -> 'a option) ->
   sections:string list ->

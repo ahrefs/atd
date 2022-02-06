@@ -48,6 +48,16 @@
  (deps    test_unit_biniou.atd)
  (action  (run %{bin:atdgen} -t %{deps})))
 
+(rule
+ (targets test_int64_enc_t.ml test_int64_enc_t.mli)
+ (deps    test_int64_enc.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
+(rule
+ (targets test_int64_enc_j.ml test_int64_enc_j.mli)
+ (deps    test_int64_enc.atd)
+ (action  (run %{bin:atdgen} -j %{deps})))
+
 (alias
  (name runtest)
  (package atdgen)
@@ -313,6 +323,8 @@
   testv
   test_unit_biniou_t
   test_unit_biniou_b
+  test_int64_enc_t
+  test_int64_enc_j
   test_atdgen_main
   test_lib
   ))

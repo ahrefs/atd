@@ -38,6 +38,8 @@ type b = Test3j_t.b = { thing: int }
 
 type a = Test3j_t.a = { thing: string; other_thing: bool }
 
+type adapted_f = Test3j_t.adapted_f
+
 type adapted = Test3j_t.adapted
 
 val write_rec_type :
@@ -339,6 +341,26 @@ val read_a :
 val a_of_string :
   string -> a
   (** Deserialize JSON data of type {!a}. *)
+
+val write_adapted_f :
+  Bi_outbuf.t -> adapted_f -> unit
+  (** Output a JSON value of type {!adapted_f}. *)
+
+val string_of_adapted_f :
+  ?len:int -> adapted_f -> string
+  (** Serialize a value of type {!adapted_f}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_adapted_f :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> adapted_f
+  (** Input JSON data of type {!adapted_f}. *)
+
+val adapted_f_of_string :
+  string -> adapted_f
+  (** Deserialize JSON data of type {!adapted_f}. *)
 
 val write_adapted :
   Bi_outbuf.t -> adapted -> unit

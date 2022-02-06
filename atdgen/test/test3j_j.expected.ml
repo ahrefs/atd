@@ -38,6 +38,8 @@ type b = Test3j_t.b = { thing: int }
 
 type a = Test3j_t.a = { thing: string; other_thing: bool }
 
+type adapted_f = Test3j_t.adapted_f
+
 type adapted = Test3j_t.adapted
 
 let rec write__4 ob x = (
@@ -1706,6 +1708,92 @@ let read_a = (
 )
 let a_of_string s =
   read_a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_adapted_f = (
+  Atdgen_runtime.Oj_run.write_with_adapter (Atdgen_runtime.Json_adapter.restore_type_field "type") (
+    fun ob x ->
+      match x with
+        | `FA x ->
+          Bi_outbuf.add_string ob "[\"fa\",";
+          (
+            write_a
+          ) ob x;
+          Bi_outbuf.add_char ob ']'
+        | `FB x ->
+          Bi_outbuf.add_string ob "[\"fb\",";
+          (
+            write_b
+          ) ob x;
+          Bi_outbuf.add_char ob ']'
+  )
+)
+let string_of_adapted_f ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_adapted_f ob x;
+  Bi_outbuf.contents ob
+let read_adapted_f = (
+  Atdgen_runtime.Oj_run.read_with_adapter (Atdgen_runtime.Json_adapter.normalize_type_field "type") (
+    fun p lb ->
+      Yojson.Safe.read_space p lb;
+      match Yojson.Safe.start_any_variant p lb with
+        | `Edgy_bracket -> (
+            match Yojson.Safe.read_ident p lb with
+              | "fa" ->
+                Atdgen_runtime.Oj_run.read_until_field_value p lb;
+                let x = (
+                    read_a
+                  ) p lb
+                in
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_gt p lb;
+                `FA x
+              | "fb" ->
+                Atdgen_runtime.Oj_run.read_until_field_value p lb;
+                let x = (
+                    read_b
+                  ) p lb
+                in
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_gt p lb;
+                `FB x
+              | x ->
+                Atdgen_runtime.Oj_run.invalid_variant_tag p x
+          )
+        | `Double_quote -> (
+            match Yojson.Safe.finish_string p lb with
+              | x ->
+                Atdgen_runtime.Oj_run.invalid_variant_tag p x
+          )
+        | `Square_bracket -> (
+            match Atdgen_runtime.Oj_run.read_string p lb with
+              | "fa" ->
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_comma p lb;
+                Yojson.Safe.read_space p lb;
+                let x = (
+                    read_a
+                  ) p lb
+                in
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_rbr p lb;
+                `FA x
+              | "fb" ->
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_comma p lb;
+                Yojson.Safe.read_space p lb;
+                let x = (
+                    read_b
+                  ) p lb
+                in
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_rbr p lb;
+                `FB x
+              | x ->
+                Atdgen_runtime.Oj_run.invalid_variant_tag p x
+          )
+  )
+)
+let adapted_f_of_string s =
+  read_adapted_f (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_adapted = (
   Atdgen_runtime.Oj_run.write_with_adapter Atdgen_runtime.Json_adapter.Type_field.restore (
     fun ob x ->

@@ -497,7 +497,7 @@ let map_def
         o_def_alias = alias;
         o_def_expr = x;
         o_def_doc = doc;
-        o_def_attrs = get_type_attrs an;
+        o_def_attrs = get_type_attrs an1;
       }
 
 

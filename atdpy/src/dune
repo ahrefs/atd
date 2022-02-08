@@ -4,4 +4,7 @@
  (package atdpy)
  (libraries
    atd
-   atdgen_emit))
+   atdgen_emit
+   cmdliner
+ )
+)

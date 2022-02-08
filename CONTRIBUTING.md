@@ -1,4 +1,4 @@
-Internal documentation
+ATD Contribution Guidelines
 ==
 
 This is a collection of guides to help contributors to the ATD
@@ -46,3 +46,13 @@ Details and troubleshooting notes:
   `atdgen-runtime`, `atdgen`, and `atdj`. Then make a pull request
   to have your fork/branch merged into the original
   `opam-repository`.
+
+Contributing to a specific subproject
+--
+
+Each subproject has its own README:
+
+* [atdgen](atdgen): targets OCaml, Bucklescript
+* [atdj](atdj): targets Java
+* [atdpy](atdpy): targets Python
+* [atds](atds): targets Scala

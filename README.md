@@ -16,12 +16,12 @@ Documentation
 
 [here](http://atd.readthedocs.io/)
 
-Help wanted
+Contributing
 --
 
 The ATD suite of tools is developed and maintained by
 volunteers&mdash;users like you.
-[Various issues](https://github.com/mjambon/atd/issues) are in need
+[Various issues](https://github.com/ahrefs/atd/issues) are in need
 of attention. If you'd like to contribute, please leave a comment on the
 issue you're interested in, or create a new issue. Experienced
 contributors will guide you as needed.
@@ -38,14 +38,15 @@ you can...
 * Answer questions on
   [StackOverflow](https://stackoverflow.com/search?q=atdgen).
 * Discuss usage on the [OCaml forums](https://discuss.ocaml.org/).
-* Pick a [task](https://github.com/mjambon/atd/issues) that's easy for you.
+* Pick a [task](https://github.com/ahrefs/atd/issues) that's easy for you.
 
 Check out in particular
-[good first time issues](https://github.com/mjambon/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+time+issue%22)
+[good first time issues](https://github.com/ahrefs/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+time+issue%22)
 and other issues with which
-[we could use some help](https://github.com/mjambon/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
+[we could use some
+help](https://github.com/ahrefs/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 
-See our [contribution guidelines](https://github.com/mjambon/documents/blob/master/how-to-contribute.md).
+For guidelines on how to contribute code, consult [CONTRIBUTING.md].
 
 Authors
 --

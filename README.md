@@ -3,15 +3,13 @@ ATD project - Static Types for Json APIs
 
 ATD stands for Adaptable Type Definitions. It is a syntax for defining
 cross-language data types. It is used as input to generate efficient
-and type-safe serializers, deserializers and validators. The current target
-languages are OCaml and Java.
+and type-safe serializers, deserializers and validators.
 
-The following opam packages are provided by the atd project:
-
-* atdgen: executable that generates OCaml code dealing with json and
-  biniou data formats
-* atdj: executable that generates Java code dealing with json
-* atd: library for parsing atd files used by code generators
+Target languages currently supported:
+* Java: [atdj](atdj)
+* OCaml, Bucklescript: [atdgen](atdgen)
+* Python: [atdpy](atdpy)
+* Scala: [atds](atds)
 
 Documentation
 --

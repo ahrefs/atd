@@ -125,6 +125,7 @@ automatically handled")
  (depends
   (ocaml (>= 4.08))
   (dune (>= 1.11))
+  (alcotest :with-test)
   (atd (>= 2.0.0))
   (cmdliner (>= 1.0.0))
   (odoc :with-doc)))

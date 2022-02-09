@@ -12,6 +12,22 @@ See the sample input type definitions
 [everything.atd](test/atd-input/everything.atd) and
 the Python output [everything.py](test/python-expected/everything.py).
 
+Requirements
+--
+
+Requirements for building and testing `atdpy`:
+* Opam and dependencies installed from the [`atd` project root](..)
+  with `opam install --deps-only --with-test --with-doc ./atdpy.opam`
+  or more conveniently with `make setup`.
+* Python 3 (>= 3.7), mypy, pytest
+
+Requirements for generating Python code:
+* the `atdpy` executable
+
+Requirements for running the generated Python code:
+* Python >= 3.7
+* the generated code (no need for a runtime library at this time)
+
 Documentation
 --
 
@@ -28,6 +44,18 @@ Build or rebuild with `make`. Test with `make test`. This requires
 ```
 pip install pytest mypy
 ```
+
+Running the tests is done from the `atdpy/` main folder with `make
+test`.
+
+We have two kinds of tests for atdpy:
+* [unit tests](src/test) for testing internal OCaml code
+* code generation and Python tests:
+  * they generate Python code from ATD files and compare the Python output
+    against the [expectations](python-expected).
+    Updating the expected output files is done with `dune promote`
+    (similar to `pytest --snapshot-update`).
+  * the generated code is executed by some tests using `pytest`.
 
 Contributing
 --

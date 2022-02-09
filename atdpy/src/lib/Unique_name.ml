@@ -78,17 +78,17 @@ let enumerate_suffixes () =
   get_suffix
 
 let register env src =
-  let dst =
-    (* assume that safe_prefix is not a prefix of a reserved prefix *)
-    if has_reserved_prefix env src then
-      env.safe_prefix ^ src
-    else
-      src
-  in
   let get_suffix = enumerate_suffixes () in
   let rec find_available_suffix () =
     let suffix = get_suffix () in
-    let dst = dst ^ suffix in
+    let dst = src ^ suffix in
+    let dst =
+      (* assume that safe_prefix is not a prefix of a reserved prefix *)
+      if has_reserved_prefix env dst then
+        env.safe_prefix ^ dst
+      else
+        dst
+    in
     if is_reserved env dst || conflicts_with_existing_translation env dst then
       find_available_suffix ()
     else

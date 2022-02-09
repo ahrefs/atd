@@ -3,8 +3,8 @@
  (public_name atdpy)
  (package atdpy)
  (libraries
-   atd
-   atdgen_emit
    cmdliner
+   atdpy
+   atd
  )
 )

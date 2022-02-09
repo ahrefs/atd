@@ -15,7 +15,7 @@ all:
 .PHONY: setup
 setup:
 	opam update
-	opam install --deps-only ./*.opam
+	opam install --deps-only --with-test --with-doc ./*.opam
 
 ############################# Testing #####################################
 

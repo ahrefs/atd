@@ -74,9 +74,6 @@ def test_everything_to_json() -> None:
 
     b_str = \
         """{
-  "ID": "abc",
-  "await": true,
-  "__init__": 1.5,
   "items": [
     [],
     [
@@ -140,6 +137,9 @@ def test_everything_to_json() -> None:
     "g": 7,
     "h": 8
   },
+  "ID": "abc",
+  "await": true,
+  "__init__": 1.5,
   "answer": 42
 }"""
     b_obj = e.Root.from_json_string(a_str)

@@ -518,9 +518,7 @@ let get_python_default
     ?mutable_ok (e : type_expr) (an : annot) : string option =
   let user_default = Python_annot.get_python_default an in
   match user_default with
-  | Some s ->
-      (* a bit of protection against malformed user input *)
-      Some (sprintf "(%s)" s)
+  | Some s -> Some s
   | None -> get_default_default ?mutable_ok e
 
 (* see explanation where this function is used *)
@@ -770,7 +768,8 @@ let record env loc name (fields : field list) an =
     List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields
   in
   let json_object_body =
-    List.map (fun x -> Inline (construct_json_field env trans_meth x)) fields in
+    List.map (fun x ->
+      Inline (construct_json_field env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
       Line (from_json_class_argument env trans_meth py_class_name x)

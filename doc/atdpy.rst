@@ -253,16 +253,6 @@ Type mapping
 | ``foo_bar``        | ``FooBar``           |                         |
 +--------------------+----------------------+-------------------------+
 
-Additionally, list of pairs can be represented by JSON objects or by
-Python dicts if the correct annotations are provided:
-
--  ``(string * bar) list <json repr="object">`` will use JSON objects to
-   represent a list of pairs of Python type ``List[str, Bar]``.
-   Using the annotation ``<json repr="array">`` is equivalent to the default.
--  ``(foo * bar) list <python repr="dict">`` will use a Python
-   dictionary of type ``Dict[Foo, Bar]`` to represent the association list.
-   Using the annotation ``<python repr="list">`` is equivalent to the default.
-
 Supported ATD annotations
 ---
 
@@ -334,8 +324,12 @@ Python keywords or reserved identifiers.
 Alternate representations for association lists
 ^^^
 
-``<json repr="array">``
-``<json repr="object">``
+List of pairs can be represented by JSON objects or by
+Python dictionaries if the correct annotations are provided:
 
-``<python repr="list">``
-``<python repr="dict">``
+-  ``(string * bar) list <json repr="object">`` will use JSON objects to
+   represent a list of pairs of Python type ``List[str, Bar]``.
+   Using the annotation ``<json repr="array">`` is equivalent to the default.
+-  ``(foo * bar) list <python repr="dict">`` will use a Python
+   dictionary of type ``Dict[Foo, Bar]`` to represent the association list.
+   Using the annotation ``<python repr="list">`` is equivalent to the default.

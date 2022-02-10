@@ -490,18 +490,18 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 let rec get_default_default
-    ?(immutable = false) (e : type_expr) : string option =
+    ?(mutable_ok = true) (e : type_expr) : string option =
   match e with
   | Sum _
   | Record _
   | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
   | List _ ->
-      if immutable then None
-      else Some "[]"
+      if mutable_ok then Some "[]"
+      else None
   | Option _ -> Some "Option(None)"
   | Nullable _ -> Some "None"
-  | Shared (loc, e, an) -> get_default_default ~immutable e
-  | Wrap (loc, e, an) -> get_default_default ~immutable e
+  | Shared (loc, e, an) -> get_default_default ~mutable_ok e
+  | Wrap (loc, e, an) -> get_default_default ~mutable_ok e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "unit" -> Some "None"
@@ -514,18 +514,28 @@ let rec get_default_default
   | Name _ -> None
   | Tvar _ -> None
 
-let get_python_default ?immutable (e : type_expr) (an : annot) : string option =
+let get_python_default
+    ?mutable_ok (e : type_expr) (an : annot) : string option =
   let user_default = Python_annot.get_python_default an in
   match user_default with
   | Some s ->
       (* a bit of protection against malformed user input *)
       Some (sprintf "(%s)" s)
-  | None -> get_default_default ?immutable e
+  | None -> get_default_default ?mutable_ok e
 
-let has_immutable_default ((loc, (name, kind, an), e) : simple_field) =
-  match get_python_default ~immutable:true e an with
-  | Some _ -> true
-  | None -> false
+(* see explanation where this function is used *)
+let has_no_class_inst_prop_default
+    ((loc, (name, kind, an), e) : simple_field) =
+  match kind with
+  | Required -> true
+  | Optional -> (* default is None *) false
+  | With_default ->
+      match get_python_default ~mutable_ok:false e an with
+      | Some _ -> false
+      | None ->
+          (* There's either no default at all which is an error,
+             or the default value is known to be mutable. *)
+          true
 
 (* If the field is '?foo: bar option', its python or json value has type
    'bar' rather than 'bar option'. *)
@@ -724,9 +734,10 @@ let inst_var_declaration
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
+    | Required -> ""
     | Optional -> " = None"
-    | Required | With_default ->
-        match get_python_default ~immutable:true unwrapped_e an with
+    | With_default ->
+        match get_python_default ~mutable_ok:false unwrapped_e an with
         | None -> ""
         | Some value -> sprintf " = %s" value
   in
@@ -751,8 +762,8 @@ let record env loc name (fields : field list) an =
      as command-line flag specifying the Python version.
   *)
   let fields =
-    let with_default, no_default =
-      List.partition has_immutable_default fields in
+    let no_default, with_default =
+      List.partition has_no_class_inst_prop_default fields in
     no_default @ with_default
   in
   let inst_var_declarations =

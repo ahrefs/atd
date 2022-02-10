@@ -25,3 +25,7 @@ type root = {
 type alias = int list
 
 type pair = (string * int)
+
+type require_field = {
+  req: string;
+}

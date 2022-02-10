@@ -19,7 +19,6 @@ def test_sample() -> None:
     assert b_str == b_str2  # depends on json formatting (whitespace...)
     assert b_str2 == a_str
 
-
 def test_sample_missing_field() -> None:
     try:
         manual_sample.Root.from_json_string('{}')
@@ -34,6 +33,17 @@ def test_sample_wrong_type() -> None:
         assert False
     except ValueError:
         pass
+
+
+# mypy correctly rejects this.
+# TODO: move to its own file and expect mypy to fail.
+# def test_require_field() -> None:
+#     try:
+#         # Should fail because the 'req' field is required.
+#         e.RequireField()
+#         assert False
+#     except ValueError:
+#         pass
 
 
 def test_everything_to_json() -> None:
@@ -72,8 +82,12 @@ def test_everything_to_json() -> None:
     a_str = a_obj.to_json_string(indent=2)
     print(a_str)
 
+    # expected output copy-pasted from the output of the failing test
     b_str = \
         """{
+  "ID": "abc",
+  "await": true,
+  "__init__": 1.5,
   "items": [
     [],
     [
@@ -137,9 +151,6 @@ def test_everything_to_json() -> None:
     "g": 7,
     "h": 8
   },
-  "ID": "abc",
-  "await": true,
-  "__init__": 1.5,
   "answer": 42
 }"""
     b_obj = e.Root.from_json_string(a_str)

@@ -361,6 +361,9 @@ class Alias:
 class Root:
     """Original type: root = { ... }"""
 
+    id: str
+    await_: bool
+    x___init__: float
     items: List[List[int]]
     extras: List[int]
     aliased: Alias
@@ -370,9 +373,6 @@ class Root:
     assoc2: List[Tuple[str, int]]
     assoc3: Dict[float, int]
     assoc4: Dict[str, int]
-    id: str = ""
-    await_: bool = False
-    x___init__: float = 0.0
     maybe: Optional[int] = None
     answer: int = (42)
 
@@ -380,6 +380,9 @@ class Root:
     def from_json(cls, x: Any) -> 'Root':
         if isinstance(x, dict):
             return cls(
+                id=_atd_read_string(x['ID']) if 'ID' in x else _atd_missing_json_field('Root', 'ID'),
+                await_=_atd_read_bool(x['await']) if 'await' in x else _atd_missing_json_field('Root', 'await'),
+                x___init__=_atd_read_float(x['__init__']) if '__init__' in x else _atd_missing_json_field('Root', '__init__'),
                 items=_atd_read_list(_atd_read_list(_atd_read_int))(x['items']) if 'items' in x else _atd_missing_json_field('Root', 'items'),
                 extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
                 aliased=Alias.from_json(x['aliased']) if 'aliased' in x else _atd_missing_json_field('Root', 'aliased'),
@@ -389,9 +392,6 @@ class Root:
                 assoc2=_atd_read_assoc_object_into_list(_atd_read_int)(x['assoc2']) if 'assoc2' in x else _atd_missing_json_field('Root', 'assoc2'),
                 assoc3=_atd_read_assoc_array_into_dict(_atd_read_float, _atd_read_int)(x['assoc3']) if 'assoc3' in x else _atd_missing_json_field('Root', 'assoc3'),
                 assoc4=_atd_read_assoc_object_into_dict(_atd_read_int)(x['assoc4']) if 'assoc4' in x else _atd_missing_json_field('Root', 'assoc4'),
-                id=_atd_read_string(x['ID']) if 'ID' in x else _atd_missing_json_field('Root', 'ID'),
-                await_=_atd_read_bool(x['await']) if 'await' in x else _atd_missing_json_field('Root', 'await'),
-                x___init__=_atd_read_float(x['__init__']) if '__init__' in x else _atd_missing_json_field('Root', '__init__'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 answer=_atd_read_int(x['answer']) if 'answer' in x else (42),
             )
@@ -400,6 +400,9 @@ class Root:
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}
+        res['ID'] = _atd_write_string(self.id)
+        res['await'] = _atd_write_bool(self.await_)
+        res['__init__'] = _atd_write_float(self.x___init__)
         res['items'] = _atd_write_list(_atd_write_list(_atd_write_int))(self.items)
         res['extras'] = _atd_write_list(_atd_write_int)(self.extras)
         res['aliased'] = (lambda x: x.to_json())(self.aliased)
@@ -409,9 +412,6 @@ class Root:
         res['assoc2'] = _atd_write_assoc_list_to_object(_atd_write_int)(self.assoc2)
         res['assoc3'] = _atd_write_assoc_dict_to_array(_atd_write_float, _atd_write_int)(self.assoc3)
         res['assoc4'] = _atd_write_assoc_dict_to_object(_atd_write_int)(self.assoc4)
-        res['ID'] = _atd_write_string(self.id)
-        res['await'] = _atd_write_bool(self.await_)
-        res['__init__'] = _atd_write_float(self.x___init__)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['answer'] = _atd_write_int(self.answer)
@@ -419,6 +419,34 @@ class Root:
 
     @classmethod
     def from_json_string(cls, x: str) -> 'Root':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class RequireField:
+    """Original type: require_field = { ... }"""
+
+    req: str
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'RequireField':
+        if isinstance(x, dict):
+            return cls(
+                req=_atd_read_string(x['req']) if 'req' in x else _atd_missing_json_field('RequireField', 'req'),
+            )
+        else:
+            _atd_bad_json('RequireField', x)
+
+    def to_json(self) -> Any:
+        res: Dict[str, Any] = {}
+        res['req'] = _atd_write_string(self.req)
+        return res
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'RequireField':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:

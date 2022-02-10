@@ -2,7 +2,7 @@ DUNE ?= dune
 
 .PHONY: build
 build:
-	$(DUNE) build @all
+	$(DUNE) build
 
 .PHONY: test
 test:

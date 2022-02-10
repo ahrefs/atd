@@ -3,6 +3,18 @@
 <doc html="<p>This <b>is</b> a test.</p>"
      text="This is a test.">
 
+(* Double-quotes "\"" in comments must be matched. *)
+(* Don't worry about unmatched single quotes in comments. *)
+type test_string_syntax = int
+  <a b="\"">
+  <a b="'">
+  <a b="\'">
+  <a b="\\">
+  <a b='\''>
+  <a b='"'>
+  <a b='\"'>
+  <a b='\\'>
+
 type x <a b> = y <a c>
 type y <a b> = x <a c>  (* conflict or inheritance or anything: unspecified. *)
 

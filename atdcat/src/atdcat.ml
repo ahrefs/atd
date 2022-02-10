@@ -21,20 +21,20 @@ let format_html_comments ((section, (_, l)) as x) =
       end
   | _ -> Atd.Print.default_annot x
 
-let print_atd ~html_doc ast =
+let print_atd ~html_doc oc ast =
   let annot =
     if html_doc then Some format_html_comments
     else None
   in
   let pp = Atd.Print.format ?annot ast in
-  Easy_format.Pretty.to_channel stdout pp;
-  print_newline ()
+  Easy_format.Pretty.to_channel oc pp;
+  output_string oc "\n"
 
-let print_ml ~name ast =
+let print_ml ~name oc ast =
   let buf = Buffer.create 1000 in
   Atd.Reflect.print_full_module_def buf name ast;
-  print_string (Buffer.contents buf);
-  print_newline ()
+  output_string oc (Buffer.contents buf);
+  output_string oc "\n"
 
 let strip all sections x =
   let filter =
@@ -67,13 +67,13 @@ let parse
   let m = first_head, List.flatten bodies in
   strip strip_all strip_sections m
 
-let print ~html_doc ~out_format ast =
+let print ~html_doc ~out_format ~out_channel:oc ast =
   let f =
     match out_format with
         `Atd -> print_atd ~html_doc
       | `Ocaml name -> print_ml ~name
   in
-  f ast
+  f oc ast
 
 let split_on_comma =
   Re.Str.split_delim (Re.Str.regexp ",")
@@ -88,9 +88,14 @@ let () =
   let strip_all = ref false in
   let out_format = ref `Atd in
   let html_doc = ref false in
-  let files = ref [] in
+  let input_files = ref [] in
+  let output_file = ref None in
 
   let options = [
+    "-o", Arg.String (fun file -> output_file := Some file),
+    "<path>
+          write to this file instead of stdout";
+
     "-x", Arg.Set expand,
     "
           make type expressions monomorphic";
@@ -150,7 +155,7 @@ let () =
   ]
   in
   let msg = sprintf "Usage: %s FILE" Sys.argv.(0) in
-  Arg.parse options (fun file -> files := file :: !files) msg;
+  Arg.parse options (fun file -> input_files := file :: !input_files) msg;
   try
     let ast =
       parse
@@ -161,11 +166,18 @@ let () =
           ~inherit_variants: !inherit_variants
           ~strip_all: !strip_all
           ~strip_sections: !strip_sections
-          !files
+          !input_files
     in
-    print ~html_doc: !html_doc ~out_format: !out_format ast
+    let out_channel =
+      match !output_file with
+      | None -> stdout
+      | Some file -> open_out file
+    in
+    print ~html_doc: !html_doc ~out_format: !out_format ~out_channel ast;
+    close_out out_channel
   with
       Atd.Ast.Atd_error s ->
         flush stdout;
-        eprintf "%s\n%!" s
+        eprintf "%s\n%!" s;
+        exit 1
     | e -> raise e

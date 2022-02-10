@@ -350,12 +350,20 @@ discarding whitespace and comments.
 
    identchar ::= upper | lower | digit | `_` | `'`
 
-      string ::= `"` substring* `"`                       _string literal,
-                                                          used in annotations_
+      string ::= `"` (substring | `'`)* `"`               _double-quoted
+                                                          string literal,
+                                                          used in
+                                                          annotations_
+               | `'` (substring | `"`)* `'`               _single-quoted
+                                                          string literal,
+                                                          used in
+                                                          annotations_
 
    substring ::= `\\`                                     _single backslash_
 
                | `\"`                                     _double quote_
+
+               | `\'`                                     _single quote_
 
                | `\x` hex hex                             _single byte
                                                           in hexadecimal
@@ -377,7 +385,7 @@ discarding whitespace and comments.
 
                | not-backslash                            _any byte
                                                           except `\`
-                                                          or `"`_
+                                                          or `"` or `'`_
 
        digit ::= `0`...`9`
 

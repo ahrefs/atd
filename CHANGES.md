@@ -1,3 +1,9 @@
+Next release
+------------
+
+* Allow single-quoted strings as an alternative to double-quoted
+  strings in ATD files
+
 2.2.0 (2020-09-03)
 ------------------
 

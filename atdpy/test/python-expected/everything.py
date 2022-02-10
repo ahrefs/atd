@@ -374,7 +374,7 @@ class Root:
     assoc3: Dict[float, int]
     assoc4: Dict[str, int]
     maybe: Optional[int] = None
-    answer: int = (42)
+    answer: int = 42
 
     @classmethod
     def from_json(cls, x: Any) -> 'Root':
@@ -393,7 +393,7 @@ class Root:
                 assoc3=_atd_read_assoc_array_into_dict(_atd_read_float, _atd_read_int)(x['assoc3']) if 'assoc3' in x else _atd_missing_json_field('Root', 'assoc3'),
                 assoc4=_atd_read_assoc_object_into_dict(_atd_read_int)(x['assoc4']) if 'assoc4' in x else _atd_missing_json_field('Root', 'assoc4'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
-                answer=_atd_read_int(x['answer']) if 'answer' in x else (42),
+                answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
             )
         else:
             _atd_bad_json('Root', x)

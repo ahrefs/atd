@@ -4,6 +4,9 @@ Next release
 * Allow single-quoted strings as an alternative to double-quoted
   strings in ATD files
 
+* Add detection of misplaced annotations and misspelled annotation
+  field names for atdgen targets (#227)
+
 2.2.0 (2020-09-03)
 ------------------
 

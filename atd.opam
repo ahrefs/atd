@@ -31,6 +31,7 @@ depends: [
   "dune" {>= "1.11"}
   "menhir"
   "easy-format"
+  "alcotest" {with-test}
   "odoc" {with-doc}
 ]
 dev-repo: "git+https://github.com/ahrefs/atd.git"

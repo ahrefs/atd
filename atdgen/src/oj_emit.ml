@@ -10,6 +10,7 @@ open Atd.Ast
 open Mapping
 
 let target : Ocaml.target = Json
+let annot_schema = Ocaml.annot_schema_of_target target
 
 (*
   OCaml code generator (json readers and writers)
@@ -1323,11 +1324,13 @@ let make_ocaml_files
     match atd_file with
       Some file ->
         Atd.Util.load_file
+          ~annot_schema
           ~expand:false ~inherit_fields:true ~inherit_variants:true
           ?pos_fname ?pos_lnum
           file
     | None ->
         Atd.Util.read_channel
+          ~annot_schema
           ~expand:false ~inherit_fields:true ~inherit_variants:true
           ?pos_fname ?pos_lnum
           stdin

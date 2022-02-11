@@ -143,7 +143,7 @@ let string_of_loc (pos1, pos2) =
 
 let error s = raise (Atd_error s)
 
-let error_at loc s = error (string_of_loc loc ^ "\n" ^ s)
+let error_at loc s = error (string_of_loc loc ^ ":\n" ^ s)
 
 let annot_of_type_expr = function
   | Sum (_, _, an)

@@ -5,7 +5,11 @@
 (name atd)
 (license MIT)
 
-(maintainers "Rudi Grinberg <me@rgrinberg.com>")
+(maintainers
+  "Louis Roché <louis@louisroche.net>"
+  "Martin Jambon <martin@mjambon.com>"
+  "Rudi Grinberg <me@rgrinberg.com>"
+)
 
 (authors
  "Martin Jambon <martin@mjambon.com>"
@@ -112,6 +116,18 @@ automatically handled")
   (ocaml (>= 4.02))
   (dune (>= 1.11))
   (atd (>= 2.0.0))
+  (odoc :with-doc)))
+
+(package
+ (name atdpy)
+ (synopsis "Python/mypy code generation for ATD APIs")
+ (description "Python/mypy code generation for ATD APIs")
+ (depends
+  (ocaml (>= 4.08))
+  (dune (>= 1.11))
+  (alcotest :with-test)
+  (atd (>= 2.0.0))
+  (cmdliner (>= 1.0.0))
   (odoc :with-doc)))
 
 (package

@@ -1,5 +1,5 @@
 ***************************
-Java/Json support with atdj
+Java/JSON support with atdj
 ***************************
 
 The ATDJ tool generates a Java interface from an ATD interface. In

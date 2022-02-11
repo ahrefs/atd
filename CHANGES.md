@@ -2,7 +2,9 @@ Next release
 ------------
 
 * Allow single-quoted strings as an alternative to double-quoted
-  strings in ATD files
+  strings in ATD files (#239)
+
+* Add Python backend called atdpy (#235)
 
 2.2.0 (2020-09-03)
 ------------------

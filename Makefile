@@ -15,7 +15,7 @@ all:
 .PHONY: setup
 setup:
 	opam update
-	opam install --deps-only ./*.opam
+	opam install --deps-only --with-test --with-doc ./*.opam
 
 ############################# Testing #####################################
 
@@ -48,6 +48,12 @@ test-scala:
 test-java:
 	$(MAKE) test-common
 	$(MAKE) -C atdj test
+
+# Test only the Python backend
+.PHONY: test-python
+test-python:
+	$(MAKE) test-common
+	$(MAKE) -C atdpy test
 
 ############################################################################
 

@@ -1,0 +1,12 @@
+(executable
+  (name Main)
+  (libraries
+     atdpy
+     alcotest
+  )
+)
+
+(alias
+  (name runtest)
+  (action (run ./Main.exe))
+)

@@ -55,8 +55,10 @@ and field_kind =
   | Optional
   | With_default
 
+and simple_field = (loc * (string * field_kind * annot) * type_expr)
+
 and field =
-  [ `Field of (loc * (string * field_kind * annot) * type_expr)
+  [ `Field of simple_field
   | `Inherit of (loc * type_expr) ]
 
 type any =

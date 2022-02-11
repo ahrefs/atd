@@ -8,3 +8,4 @@ Welcome to ATD's documentation!
    syntax
    atdgen
    atdj
+   atdpy

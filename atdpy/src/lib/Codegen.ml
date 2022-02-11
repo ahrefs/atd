@@ -1076,7 +1076,8 @@ let sum_container env loc name cases =
 
 let sum env loc name cases =
   let cases =
-    List.map (function
+    List.map (fun (x : variant) ->
+      match x with
       | Variant (loc, (orig_name, an), opt_e) ->
           let unique_name = create_class_name env orig_name in
           (loc, orig_name, unique_name, an, opt_e)

@@ -231,7 +231,7 @@ val visit :
   ?field: ((field -> unit) -> field -> unit) ->
   unit ->
   (any -> unit)
-  (** Create a function that will visit all the nodes of a tree.
+  (** Create a function that will visit all the nodes of a tree by default.
       Each optional field defines what to do when encountering a node
       of a particular kind. For example, the [full_module] that you provide
       would be applied as [full_module cont x]. The [cont] function
@@ -240,7 +240,7 @@ val visit :
       the call to [cont]. [cont] may be called on a modified version
       of the current node if desired.
 
-      Here's is an example that check that a kind of node isn't present:
+      Here's is an example that checks that a kind of node isn't present:
 {v
   let visitor =
     visit

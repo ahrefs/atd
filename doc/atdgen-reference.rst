@@ -6,12 +6,12 @@ Description
 -----------
 
 Atdgen is a command-line program that takes as input type definitions in
-the `ATD syntax <http://mjambon.com/atd>`__ and produces OCaml code
+the ATD syntax and produces OCaml code
 suitable for data serialization and deserialization.
 
 Two data formats are currently supported, these are
 `JSON <http://json.org/>`__ and
-`biniou <http://mjambon.com/biniou.html>`__, a binary format with
+`biniou <https://github.com/ocaml-community/biniou>`__, a binary format with
 extensibility properties similar to JSON. Atdgen-json and Atdgen-biniou
 will refer to Atdgen used in one context or the other.
 
@@ -25,8 +25,8 @@ with Atdgen:
 -  ``atd``: parser for the syntax of type definitions
 -  ``biniou``: parser and printer for biniou, a binary extensible data
    format
--  ```yojson`` <http://mjambon.com/yojson.html>`__: parser and printer
-   for JSON, a widespread text-based data format
+-  ```yojson`` <https://github.com/ocaml-community/yojson>`__: parser
+   and printer for JSON, a widespread text-based data format
 
 Command-line usage
 ------------------
@@ -1631,7 +1631,7 @@ comments:
 Atdgen runtime library
 ----------------------
 
-A library named `atdgen-runtime <https://github.com/mjambon/atd/tree/master/atdgen-runtime/src>`_ is installed by the standard installation
+A library named `atdgen-runtime <https://github.com/ahrefs/atd/tree/master/atdgen-runtime/src>`_ is installed by the standard installation
 process. Only a fraction of it is officially supported and documented.
 
 Modules intended for all users are:

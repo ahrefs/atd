@@ -29,12 +29,12 @@ which was based on Camlp4:
 * runs fast, keeping build times low.
 * same ATD definitions can be used to generate code other than
   OCaml. See for instance
-  `atdj <https://github.com/mjambon/atd/tree/master/atdj>`_
+  `atdj <atdj.html>`_
   which generates Java classes for JSON IO.
   Auto-generating GUI widgets from type definitions is another
   popular use of annotated type definitions. The implementation of
   such code generators is facilitated by the
-  `atd <https://github.com/mjambon/atd/tree/atd>`_ library.
+  `atd <atd-language.html>`_ library.
 
 
 Prerequisites
@@ -772,7 +772,7 @@ Output:
       "end_date": { "year": 1900, "month": 0, "day": 0 }
     }
 
-`Source code for this section <https://github.com/mjambon/atd/tree/master/doc/tutorial-data/validate>`__
+`Source code for this section <https://github.com/ahrefs/atd/tree/master/doc/atdgen-tutorial-data/validate>`__
 
 Modularity: referring to type definitions from another ATD file
 ---------------------------------------------------------------

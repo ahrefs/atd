@@ -55,7 +55,7 @@ Authors
 <!-- The list of contributors was obtained with:
        git shortlog -s -n | cut -f2 | sed -e 's/^/* /'
 
-     Let's try to update it once in a while :-)
+     Let's try to refresh it once in a while.
 -->
 The ATD project started in 2010. Contributors include:
 

@@ -73,10 +73,12 @@ all-supported-ocaml-versions:
 doc:
 	cd doc && sphinx-build . _build
 
+# Run documentation server.
+# See setup instructions in CONTRIBUTING.md
 .PHONY: livedoc
 livedoc:
-	cd doc && sphinx-autobuild . _build \
-	  -p 8888 -q  --host $(shell hostname) -r '\.#.*'
+	$(MAKE) doc
+	python3 -m http.server 8888 --directory doc/_build
 
 package := atd
 .PHONY: opam-release

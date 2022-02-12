@@ -1,6 +1,6 @@
-***************************
-Python support with atdpy
-***************************
+**********************
+Python Support - atdpy
+**********************
 
 This documentation is incomplete. Your help would be appreciated! In
 particular, some how-to guides would be great.

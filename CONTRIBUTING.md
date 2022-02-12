@@ -75,9 +75,9 @@ You can either edit the `.rst` files and hope that everything will
 turn out fine or you can preview it by running Sphinx locally. The
 latter is recommended for large edits. Try this:
 
-Install sphinx and the read-the-docs theme:
+Install sphinx and the theme we're using:
 ```
-pip install sphinx sphinx_rtd_theme
+pip install -r doc/requirements.txt
 ```
 
 Compile the documentation and run a local

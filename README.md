@@ -46,15 +46,53 @@ and other issues with which
 [we could use some
 help](https://github.com/ahrefs/atd/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 
-For guidelines on how to contribute code, consult [CONTRIBUTING.md].
+For guidelines on how to contribute code, consult
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 Authors
 --
 
-The ATD language and atdgen were originally created at MyLife by
-Martin Jambon in 2010. Atdj was created at MyLife by John
-Billings in 2010. Multiple volunteers contributed to the project after that.
-Other prominent contributors include Jeff Meister, David
-Sheets, and Rudi Grinberg.
+<!-- The list of contributors was obtained with:
+       git shortlog -s -n | cut -f2 | sed -e 's/^/* /'
 
-We distribute the source code under the terms of a BSD license.
+     Let's try to update it once in a while :-)
+-->
+The ATD project started in 2010. Contributors include:
+
+* Martin Jambon
+* Rudi Grinberg
+* Ivan Jager
+* David Sheets
+* Jeff Meister
+* Carmelo Piccione
+* oleksiy
+* Louis Roché
+* Daniel Weil
+* Egor Chemokhonenko
+* Gabriel Scherer
+* Raman Varabets
+* tzm
+* Mathieu Baudet
+* Oleksiy Golovko
+* Rauan Mayemir
+* John Billings
+* Brendan Long
+* Caio Wakamatsu
+* Chris Yocum
+* Pierre Boutillier
+* Shon Feder
+* Anurag Soni
+* Arjun Ravi Narayan
+* Asya-kawai
+* Christophe Troestler
+* Damien Doligez
+* Daniel M
+* François Pottier
+* Javier Chavarri
+* Stephane Legrand
+* Vincent Bernardoff
+* haoyang
+* pmundkur
+* ygrek
+
+We distribute the source code under the terms of a [BSD license](LICENSE.md).

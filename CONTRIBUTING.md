@@ -98,4 +98,4 @@ documentation and why they're best kept separate:
 * [website](https://documentation.divio.com/)
 * [30-min presentation](https://www.youtube.com/watch?v=t4vKPhjcMZg)
 
-![the four kinds of documentation](https://documentation.divio.com/_images/overview.png)
+![the four kinds of documentation](https://user-images.githubusercontent.com/343265/153692997-07752757-2227-4ba7-b53f-e5e85a71e71a.png)

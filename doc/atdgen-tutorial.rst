@@ -394,11 +394,11 @@ example, let's add an optional ``z`` field:
 The following two examples are valid JSON representations of data of type
 ``vector_v3``:
 
-.. code-block:: json
+::
 
   { "x": 2, "y": 2, "z": 3 }  // OCaml: { x = 2; y = 2; z = Some 3 }
 
-.. code-block:: json
+::
 
   { "x": 2, "y": 2 }          // OCaml: { x = 2; y = 2; z = None }
 
@@ -1152,13 +1152,13 @@ The plugin consists of a self-documented file to copy into a project's root. The
 following is a sample ``OMakefile`` for a project using JSON and five source
 files (``foo.atd``, ``foo.ml``, ``bar.atd``, ``bar.ml`` and ``main.ml``):
 
-.. code-block:: make
+::
 
+  # require file Atdgen.om
   include Atdgen
-    # requires file Atdgen.om
 
+  # OCaml modules we want to build
   OCAMLFILES = foo_t foo_j foo bar_t bar_j bar main
-    # correspond to the OCaml modules we want to build
 
   Atdgen(foo bar, -j-std)
   OCamlProgram(foobar, $(OCAMLFILES))
@@ -1231,7 +1231,7 @@ Dune (formerly jbuilder)
 Dune currently needs atdgen build rules specified manually. Given an ``example.atd``,
 this will usually look like:
 
-.. code-block:: scheme
+::
 
   (rule
    (targets example_j.ml

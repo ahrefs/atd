@@ -3,7 +3,7 @@ Atdgen reference
 ================
 
 Description
-----------------------------
+-----------
 
 Atdgen is a command-line program that takes as input type definitions in
 the `ATD syntax <http://mjambon.com/atd>`__ and produces OCaml code
@@ -29,15 +29,15 @@ with Atdgen:
    for JSON, a widespread text-based data format
 
 Command-line usage
-----------------------------
+------------------
 
 Command-line help
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 Call ``atdgen -help`` for the full list of available options.
 
 Atdgen-json example
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -162,7 +162,7 @@ module. For example, the OCaml expressions
 ``x.Example_t.year = x.Example_j.year`` are both valid.
 
 Atdgen-biniou example
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -337,7 +337,7 @@ module. For example, the OCaml expressions
 ``x.Example_t.year = x.Example_b.year`` are both valid.
 
 Validator example
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -414,53 +414,53 @@ showing how the user-specified validators are used:
       (** Validate a value of type {!profile}. *)
 
 Default type mapping
-----------------------------
+--------------------
 
 The following table summarizes the default mapping between ATD types and
 OCaml, biniou and JSON data types. For each language more
 representations are available and are detailed in the next section of
 this manual.
 
-+-----------------+---------------------+-------------------+--------------------+
-| ATD             | OCaml               | JSON              | Biniou             |
-+=================+=====================+===================+====================+
-| ``unit``        | ``unit``            | null              | unit               |
-+-----------------+---------------------+-------------------+--------------------+
-| ``bool``        | ``bool``            | boolean           | bool               |
-+-----------------+---------------------+-------------------+--------------------+
-| ``int``         | ``int``             | -?(0\|[1-9][0-9]\ | svint              |
-|                 |                     | *)                |                    |
-+-----------------+---------------------+-------------------+--------------------+
-| ``float``       | ``float``           | number            | float64            |
-+-----------------+---------------------+-------------------+--------------------+
-| ``string``      | ``string``          | string            | string             |
-+-----------------+---------------------+-------------------+--------------------+
-| ``'a option``   | ``'a option``       | ``"None"`` or     | numeric variants   |
-|                 |                     | ``["Some", ...]`` | (tag 0)            |
-+-----------------+---------------------+-------------------+--------------------+
-| ``'a nullable`` | ``'a option``       | ``null`` or       | numeric variants   |
-|                 |                     | representation of | (tag 0)            |
-|                 |                     | ``'a``            |                    |
-+-----------------+---------------------+-------------------+--------------------+
-| ``'a list``     | ``'a list``         | array             | array              |
-+-----------------+---------------------+-------------------+--------------------+
-| ``'a shared``   | no wrapping         | not implemented   | no longer          |
-|                 |                     |                   | supported          |
-+-----------------+---------------------+-------------------+--------------------+
-| ``'a wrap``     | defined by          | representation of | representation of  |
-|                 | annotation,         | ``'a``            | ``'a``             |
-|                 | converted from      |                   |                    |
-|                 | ``'a``              |                   |                    |
-+-----------------+---------------------+-------------------+--------------------+
-| variants        | polymorphic         | variants          | regular variants   |
-|                 | variants            |                   |                    |
-+-----------------+---------------------+-------------------+--------------------+
-| record          | record              | object            | record             |
-+-----------------+---------------------+-------------------+--------------------+
-| ``('a * 'b)``   | ``('a * 'b)``       | array             | tuple              |
-+-----------------+---------------------+-------------------+--------------------+
-| ``('a)``        | ``'a``              | array             | tuple              |
-+-----------------+---------------------+-------------------+--------------------+
++-----------------+---------------------+---------------------+--------------------+
+| ATD             | OCaml               | JSON                | Biniou             |
++=================+=====================+=====================+====================+
+| ``unit``        | ``unit``            | null                | unit               |
++-----------------+---------------------+---------------------+--------------------+
+| ``bool``        | ``bool``            | boolean             | bool               |
++-----------------+---------------------+---------------------+--------------------+
+| ``int``         | ``int``             | -?(0\|[1-9][0-9]\*) | svint              |
+|                 |                     |                     |                    |
++-----------------+---------------------+---------------------+--------------------+
+| ``float``       | ``float``           | number              | float64            |
++-----------------+---------------------+---------------------+--------------------+
+| ``string``      | ``string``          | string              | string             |
++-----------------+---------------------+---------------------+--------------------+
+| ``'a option``   | ``'a option``       | ``"None"`` or       | numeric variants   |
+|                 |                     | ``["Some", ...]``   | (tag 0)            |
++-----------------+---------------------+---------------------+--------------------+
+| ``'a nullable`` | ``'a option``       | ``null`` or         | numeric variants   |
+|                 |                     | representation of   | (tag 0)            |
+|                 |                     | ``'a``              |                    |
++-----------------+---------------------+---------------------+--------------------+
+| ``'a list``     | ``'a list``         | array               | array              |
++-----------------+---------------------+---------------------+--------------------+
+| ``'a shared``   | no wrapping         | not implemented     | no longer          |
+|                 |                     |                     | supported          |
++-----------------+---------------------+---------------------+--------------------+
+| ``'a wrap``     | defined by          | representation of   | representation of  |
+|                 | annotation,         | ``'a``              | ``'a``             |
+|                 | converted from      |                     |                    |
+|                 | ``'a``              |                     |                    |
++-----------------+---------------------+---------------------+--------------------+
+| variants        | polymorphic         | variants            | regular variants   |
+|                 | variants            |                     |                    |
++-----------------+---------------------+---------------------+--------------------+
+| record          | record              | object              | record             |
++-----------------+---------------------+---------------------+--------------------+
+| ``('a * 'b)``   | ``('a * 'b)``       | array               | tuple              |
++-----------------+---------------------+---------------------+--------------------+
+| ``('a)``        | ``'a``              | array               | tuple              |
++-----------------+---------------------+---------------------+--------------------+
 
 Notes:
 
@@ -488,13 +488,13 @@ Notes:
 -  Types defined as abstract are defined in another module.
 
 ATD Annotations
-----------------------------
+---------------
 
 Section ``json``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 Field ``keep_nulls``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""""""""
 
 Position: after record
 
@@ -552,7 +552,7 @@ object of type ``t``. Such code is not generated by atdgen at this time.
 Available: from atd 1.12
 
 Field ``name``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""
 
 Position: after field name or variant name
 
@@ -588,10 +588,10 @@ A valid JSON object of the ``profile`` type above is:
     }
 
 Field ``repr``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""
 
 Association lists
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Position: after ``(string * _) list`` type
 
@@ -629,7 +629,7 @@ represented as:
     ]
 
 Floats
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~
 
 Position: after ``float`` type
 
@@ -645,7 +645,7 @@ Example:
     type unixtime = float <json repr="int">
 
 Field ``tag_field``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""""""
 
 Superseded by ``<json adapter.ocaml="...">``. Available since atdgen
 1.5.0 and yojson 1.2.0 until atdgen 1.13.
@@ -672,7 +672,7 @@ covers JSON objects that have an extra field ``kind`` which holds either
 ``{ "kind": "A" }`` and ``{ "kind": "b", "value": 123 }``.
 
 Field ``untyped``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""""
 
 Superseded by ``<json open_enum>`` and ``<json adapter.ocaml="...">``.
 Available since atdgen 1.10.0 and atd 1.2.0 until atdgen 1.13.
@@ -705,7 +705,7 @@ type ``t`` context in the previous section, ``v`` will parse and print
 as the examples previously given.
 
 Field ``open_enum``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""""""
 
 Where an enum (finite set of strings) is expected, this flag allows
 unexpected strings to be kept under a catch-all constructor rather than
@@ -733,7 +733,7 @@ maps ``"French"`` to ```Other "French"``.
 Available since atdgen 2.0.
 
 Field ``adapter.ocaml``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""
 
 Json adapters are a mechanism for rearranging json data on-the-fly, so
 as to make them compatible with ATD. The programmer must provide an
@@ -796,13 +796,13 @@ write your own adapter, please consult the documentation for the yojson
 library.
 
 Section ``biniou``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 Field ``repr``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""
 
 Integers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
 
 Position: after ``int`` type
 
@@ -821,7 +821,7 @@ OCaml types in accordance with the following table:
 +---------------+------------------------+---------------------------------------+
 | ``uvint``     | ``int``                | 0 ... ``max_int``, ``min_int`` ... -1 |
 +---------------+------------------------+---------------------------------------+
-| ``int8``      | ``char``               | ``'\000`` ... ``'\255``             |
+| ``int8``      | ``char``               | ``'\000`` ... ``'\255``               |
 +---------------+------------------------+---------------------------------------+
 | ``int16``     | ``int``                | 0 ... 65535                           |
 +---------------+------------------------+---------------------------------------+
@@ -848,7 +848,7 @@ Example:
     }
 
 Floating-point numbers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Position: after ``float`` type
 
@@ -868,7 +868,7 @@ Example:
     }
 
 Arrays and tables
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Position: applies to lists of records
 
@@ -891,10 +891,10 @@ Example:
     type items = item list <biniou repr="table">
 
 Section ``ocaml``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 Field ``predef``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""""
 
 Position: left-hand side of a type definition, after the type name
 
@@ -927,7 +927,7 @@ Example:
     }
 
 Field ``mutable``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""""
 
 Position: after a record field name
 
@@ -955,7 +955,7 @@ translates to the following OCaml definition:
     }
 
 Field ``default``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""""
 
 Position: after a record field name marked with a ``\~{``} symbol or at
 the beginning of a tuple field.
@@ -981,7 +981,7 @@ Example:
     type point = (int * int * <ocaml default="0"> : int)
 
 Field ``from``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""
 
 Position: left-hand side of a type definition, after the type name
 
@@ -1023,10 +1023,10 @@ type name:
 
 
 Field ``module``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""""
 
 Using a custom wrapper
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Using the built-in ``wrap`` constructor, it is possible to add a layer
 of abstraction on top of the concrete structure used for serialization.
@@ -1078,7 +1078,7 @@ This can be useful for very simple validation:
       >
 
 Importing an external type definition
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In most cases since Atdgen 1.2.0 ``module`` annotations are deprecated
 in favor of ``from`` annotations previously described.
@@ -1127,10 +1127,10 @@ Now for instance ``Example.Black`` and ``Color.Black`` can be used
 interchangeably in other modules.
 
 Field ``t``
-"""""""""""""""""""""""""""""""""""
+"""""""""""
 
 Using a custom wrapper
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Specifies the OCaml type of an abstract ``wrap`` construct, possibly
 overriding the default *M*\ ``.t`` if *M* is the module where the
@@ -1153,7 +1153,7 @@ is equivalent to:
     type uid = string wrap <ocaml t="Uid.uid" wrap="Uid.wrap" unwrap="Uid.unwrap">
 
 Importing an external type definition
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Position: left-hand side of a type definition, after the type name. Must
 be used in conjunction with a ``module`` field.
@@ -1186,13 +1186,13 @@ definitions:
     type t = Baz.t
 
 Fields ``wrap`` and ``unwrap``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""
 
 See "Using a custom wrapper" under section ``ocaml``, fields
 ``module`` and ``t``.
 
 Field ``field_prefix``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""
 
 Position: record type expression
 
@@ -1221,7 +1221,7 @@ gives the following OCaml type definition:
     }
 
 Field ``name``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""
 
 Position: after record field name or variant name
 
@@ -1262,10 +1262,10 @@ gives the following OCaml type definitions:
     }
 
 Field ``repr``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""
 
 Integers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
 
 Position: after ``int`` type
 
@@ -1297,7 +1297,7 @@ Example:
     }
 
 Lists and arrays
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 Position: after a ``list`` type
 
@@ -1316,7 +1316,7 @@ Example:
     }
 
 Sum types
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~
 
 Position: after a sum type (denoted by square brackets)
 
@@ -1338,14 +1338,14 @@ translates to the following OCaml type definition:
     type fruit = Apple | Orange
 
 Shared values (obsolete)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Position: after a ``shared`` type
 
 This feature is obsolete and was last supported by atdgen 1.3.1.
 
 Field ``valid``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""
 
 Since atdgen 1.6.0.
 
@@ -1402,7 +1402,7 @@ In order to customize the error message and print the faulty value, use
 ``validator`` instead of ``valid``, as described next.
 
 Field ``validator``
-"""""""""""""""""""""""""""""""""""
+"""""""""""""""""""
 
 This is a variant of the ``valid`` annotation that allows full control
 over the error message that gets generated in case of an error.
@@ -1464,7 +1464,7 @@ results in printing:
     Error: Validation error: Not a positive integer: 0; path = <root>.y
 
 Section ``ocaml_biniou``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Section ``ocaml_biniou`` takes precedence over section ``ocaml`` in
 Biniou mode (``-b``) for the following fields:
@@ -1474,7 +1474,7 @@ Biniou mode (``-b``) for the following fields:
 -  ``t`` (see section ``ocaml.t``)
 
 Section ``ocaml_json`` (obsolete)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Section ``ocaml_json`` takes precedence over section ``ocaml`` in JSON
 mode (``-json`` or ``-j``) for the following fields:
@@ -1533,7 +1533,7 @@ Corresponding JSON data as obtained with ``string_of_t``:
     {"foo":12345,"bar":[12,"abc",{"x":3.14,"y":0.0,"color":[0.3,0.0,1.0]}]}
 
 Section ``doc``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 Unlike comments, ``doc`` annotations are meant to be propagated into the
 generated source code. This is useful for making generated interface
@@ -1543,7 +1543,7 @@ Generated source code comments can comply to a standard format and take
 advantage of documentation generators such as javadoc or ocamldoc.
 
 Field ``text``
-"""""""""""""""""""""""""""""""""""
+""""""""""""""
 
 Position:
 
@@ -1629,7 +1629,7 @@ comments:
     ]
 
 Atdgen runtime library
-----------------------------
+----------------------
 
 A library named `atdgen-runtime <https://github.com/mjambon/atd/tree/master/atdgen-runtime/src>`_ is installed by the standard installation
 process. Only a fraction of it is officially supported and documented.

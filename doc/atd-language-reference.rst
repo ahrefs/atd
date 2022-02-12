@@ -1,9 +1,9 @@
-*************************
+=========================
 ATD core syntax reference
-*************************
+=========================
 
 Introduction
-============
+------------
 
 ATD stands for Adjustable Type Definitions.
 
@@ -75,7 +75,7 @@ a data type definition language designed for maximum expressivity, compatibility
 across languages and static type checking of programs using such data.
 
 Scope
------
+^^^^^
 
 ATD offers a core syntax for type definitions, i.e. an idealized view of the
 structure of data. Types are mapped to each programming language or data format
@@ -118,7 +118,7 @@ ATD by design does not support:
 * a syntax for submodules.
 
 Language overview
------------------
+^^^^^^^^^^^^^^^^^
 
 ATD was strongly inspired by the type system of ML and OCaml. Such a
 type system allows static type checking and type inference, properties
@@ -223,7 +223,7 @@ adding fields to records or variants to sum types:
 
 
 Editing and validating ATD files
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The extension for ATD files is ``.atd``. Editing ATD files is best achieved
 using an OCaml-friendly editor since the ATD syntax is vastly compatible with
@@ -278,13 +278,13 @@ of ``atdcat -help``:
     --help  Display this list of options
 
 ATD language
-============
+------------
 
 This is a precise description of the syntax of the ATD language, not a
 tutorial.
 
 Notations
-----------
+^^^^^^^^^^
 
 Lexical and grammatical rules are expressed using a BNF-like syntax.
 Graphical terminal symbols use `unquoted strings in typewriter font`.
@@ -303,7 +303,7 @@ x+     1 or more occurrences of x
 
 
 Lexical rules
--------------
+^^^^^^^^^^^^^
 
 ATD does not enforce a particular character encoding other than ASCII
 compatibility. Non-ASCII text and data found in annotations and
@@ -401,7 +401,7 @@ discarding whitespace and comments.
 
 
 Grammar
--------
+^^^^^^^
 
 ---------------- ---------------------------------------- --------------------
       module ::= annot* typedef*                          _entry point_
@@ -457,7 +457,7 @@ Grammar
 
 
 Predefined type names
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 The following types are considered predefined and may not be
 redefined.
@@ -496,7 +496,7 @@ Type name          Intended use
 
 
 Shared values
--------------
+^^^^^^^^^^^^^
 
 ATD supports a special type $x$ `shared` where $x$ can be
 any monomorphic type expression.
@@ -546,9 +546,3 @@ identifying the sharing point. The graph example can be rewritten correctly as:
   }
 
   type graph = node shared <share id="1"> list
-
-See also
-========
-`atdgen`_\ (1)
-
-.. _atdgen: atdgen

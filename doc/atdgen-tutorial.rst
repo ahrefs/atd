@@ -1,9 +1,9 @@
-********
+========
 Tutorial
-********
+========
 
 What is atdgen?
-===============
+---------------
 
 Atdgen is a tool that derives OCaml boilerplate code from type definitions.
 Currently it provides support for:
@@ -16,7 +16,7 @@ Currently it provides support for:
 
 
 What are the advantages of atdgen?
-==================================
+----------------------------------
 
 Atdgen has a number of advantages over its predecessor json-static
 which was based on Camlp4:
@@ -38,7 +38,7 @@ which was based on Camlp4:
 
 
 Prerequisites
-=============
+-------------
 
 This tutorial assumes that you are using atdgen version 1.5.0 or above.
 The following command tells you which version you are using:
@@ -57,7 +57,7 @@ The recommended way of installing atdgen and all its dependencies is with
 
 
 Getting started
-===============
+---------------
 
 From now on we assume that atdgen 1.5.0 or above is installed properly.
 
@@ -118,10 +118,10 @@ And finally we run our `hello` program:
   $ ./hello
   {"year":1970,"month":1,"day":1}
 
-`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/hello>`_
+`Source code for this section <https://github.com/ahrefs/atd/tree/master/doc/atdgen-tutorial-data/hello>`_
 
 Inspecting and pretty-printing JSON
-===================================
+-----------------------------------
 
 Input JSON data:
 
@@ -203,12 +203,12 @@ We now compile and run prettify.ml:
     }
   ]
 
-`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/pretty-json>`__
+`Source code for this section <https://github.com/ahrefs/atd/tree/master/doc/atdgen-tutorial-data/pretty-json>`__
 
 
 
 Inspecting biniou data
-======================
+----------------------
 
 Biniou is a binary format that can be displayed as text using a generic command
 called ``bdump``. The only practical difficulty is to recover the original field
@@ -348,10 +348,10 @@ anymore (for this user on this machine). The following now works:
           4,
           <"Node": (<"Empty">, 5, <"Empty">)>)>)>
 
-`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/inspect-biniou>`__
+`Source code for this section <https://github.com/ahrefs/atd/tree/master/doc/atdgen-tutorial-data/inspect-biniou>`__
 
 Optional fields and default values
-==================================
+----------------------------------
 
 Although OCaml records do not support optional fields, both the JSON
 and biniou formats make it possible to omit certain fields on a
@@ -437,7 +437,7 @@ is intended:
 
 
 Smooth protocol upgrades
-========================
+------------------------
 
 Problem: you have a production system that uses a specific JSON or biniou
 format. It may be data files or a client-server pair. You now want to add a
@@ -448,7 +448,7 @@ how to deal with the extra field, the default behavior is to happily ignore it.
 
 
 Adding or removing an optional record field
--------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ocaml
 
@@ -472,7 +472,7 @@ Same ``.atd`` source file, edited:
 
 
 Adding a required record field
----------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ocaml
 
@@ -497,14 +497,14 @@ Same ``.atd`` source file, edited:
 
 
 Removing a required record field
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Upgrade all consumers before the producers
 * Converting old data is not required but may save some storage space
-  (just read and re-write each record using the new type)
+  (just read and re^write each record using the new type)
 
 Adding a variant case
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ocaml
 
@@ -522,13 +522,13 @@ Same ``.atd`` source file, edited:
 
 
 Removing a variant case
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 * Upgrade all producers before the consumers
-* Converting old data requires special-purpose hand-written code
+* Converting old data requires special^purpose hand^written code
 
 Avoiding future problems
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 * In doubt, use records rather than tuples because it makes it possible to add
   or remove any field or to reorder them.
@@ -536,7 +536,7 @@ Avoiding future problems
   only one field if you think they might be extended later.
 
 Data validation
-===============
+---------------
 
 Atdgen can be used to produce data validators for all types defined in an ATD
 file, based on user-given validators specified only for certain types. A simple
@@ -775,7 +775,7 @@ Output:
 `Source code for this section <https://github.com/mjambon/atd/tree/master/doc/tutorial-data/validate>`__
 
 Modularity: referring to type definitions from another ATD file
-===============================================================
+---------------------------------------------------------------
 
 It is possible to define types that depend on types defined in other ``.atd``
 files. The example below is self-explanatory.
@@ -832,11 +832,10 @@ Output:
 
   {"name":"foo","data":[{"x":1,"y":2},{"x":3,"y":4}]}
 
-`Source code for this section <https://github.com/mjambon/doc/src/tutorial-data/modularity>`__
-
+`Source code for this section <https://github.com/ahrefs/atd/tree/master/doc/atdgen-tutorial-data/modularity>`__
 
 Managing JSON configuration files
-=================================
+---------------------------------
 
 JSON makes a good format for configuration files because it is human-readable,
 easy to modify programmatically and widespread. Here is an example of how to use
@@ -1081,11 +1080,11 @@ program called `config`:
   let () = main ()
 
 The full source code for this section with examples can be inspected
-and `downloaded here <https://github.com/mjambon/doc/src/tutorial-data/config-file>`__.
+and `downloaded here <https://github.com/ahrefs/atd/tree/master/doc/atdgen-tutorial-data/config-file>`__.
 
 
 Integration with ocamldoc
-=========================
+-------------------------
 
 Ocamldoc is a tool that comes with the core OCaml distribution.
 It uses comments within `(**` and `*)` to produce
@@ -1140,10 +1139,10 @@ The only two forms of markup supported by ``<doc text="...">`` are ``{{`` ...
 ``}}`` for inline code and ``{{{`` ... ``}}}`` for a block of preformatted code.
 
 Integration with build systems
-==============================
+------------------------------
 
 OMake
------
+^^^^^
 
 We provide an `Atdgen plugin <https://github.com/mjambon/atdgen-omake>`__ for
 `OMake <http://omake.metaprl.org>`__. It simplifies the compilation rules to a
@@ -1178,7 +1177,7 @@ and ``.ml`` produced by ``atdgen``.
 
 
 GNU Make
---------
+^^^^^^^^
 
 We provide `Atdgen.mk <https://github.com/mjambon/atdgen-make>`__, a generic
 makefile that defines the dependencies and rules for generating OCaml ``.mli`` and
@@ -1222,12 +1221,12 @@ provides a number of other targets and options which are documented in
 ``OCamlMakefile``'s README.
 
 Ocamlbuild
-----------
+^^^^^^^^^^
 
 There is an `atdgen plugin for ocamlbuild <https://github.com/hcarty/ocamlbuild-plugins/blob/master/myatdgen.ml>`__.
 
 Dune (formerly jbuilder)
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Dune currently needs atdgen build rules specified manually. Given an ``example.atd``,
 this will usually look like:
@@ -1255,7 +1254,7 @@ Note that any options ``atdgen`` supports can be included in the ``run atdgen``
 section (``-open``, ``-deriving-conv``, etc.).
 
 Dealing with untypable JSON
-===========================
+---------------------------
 
 Sometimes we have to deal with JSON data that cannot be described
 using type definitions. In such case, we can represent the data as its

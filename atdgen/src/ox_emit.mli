@@ -13,9 +13,8 @@ val get_full_type_name : (_, _) Mapping.def -> string
 val is_exportable : (_, _) Mapping.def -> bool
 
 val make_record_creator
-  : ((Ocaml.Repr.t, 'a) Mapping.mapping
-     -> (Ocaml.Repr.t, 'b) Mapping.mapping)
-  -> (Ocaml.Repr.t, 'a) Mapping.def
+  : ('a expr -> 'b expr)
+  -> 'a def
   -> string * string
 
 val opt_annot : string option -> string -> string
@@ -58,31 +57,29 @@ val def_of_atd
   -> target:Ocaml.target
   -> def:'a
   -> external_:'a
-  -> mapping_of_expr:(Atd.Ast.type_expr -> (Ocaml.Repr.t, 'a) Mapping.mapping)
-  -> (Ocaml.Repr.t, 'a) Mapping.def
+  -> mapping_of_expr:(Atd.Ast.type_expr -> 'a expr)
+  -> 'a def
 
 val maybe_write_creator_impl
   : with_create:bool
-  -> ((Ocaml.Repr.t, 'a) Mapping.mapping ->
-      (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> ('a expr -> 'b expr)
   -> Buffer.t
-  -> ('c * (Ocaml.Repr.t, 'a) Mapping.def list) list
+  -> ('c * 'a def list) list
   -> unit
 
 val maybe_write_creator_intf
   : with_create:bool
-  -> ((Ocaml.Repr.t, 'a) Mapping.mapping ->
-      (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> ('a expr -> 'b expr)
   -> Buffer.t
-  -> (Ocaml.Repr.t, 'a) Mapping.def
+  -> 'a def
   -> unit
 
 val default_value
   : (Ocaml.Repr.t, 'a) Mapping.field_mapping
-  -> ((Ocaml.Repr.t, 'a) Mapping.mapping -> (Ocaml.Repr.t, 'b) Mapping.mapping)
+  -> ('a expr -> 'b expr)
   -> string option
 
-val include_intf : (Ocaml.Repr.t, 'a) Mapping.def -> bool
+val include_intf : 'a def -> bool
 
 type field =
   { mapping : (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping
@@ -94,16 +91,52 @@ type field =
   }
 
 val get_fields
-  : ((Ocaml.Repr.t, Json.json_repr) Mapping.mapping
-     -> (Ocaml.Repr.t, 'a) Mapping.mapping)
+  : (Json.json_repr expr -> 'a expr)
   -> (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping array
   -> field list
 
-val is_string : (('a, 'b) Mapping.mapping -> ('a, 'b) Mapping.mapping) -> ('a, 'b) Mapping.mapping -> bool
+val is_string : ('a expr -> 'a expr) -> 'a expr -> bool
 
-val get_assoc_type : ((Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
-  (Ocaml.Repr.t, Json.json_repr) Mapping.mapping) ->
+val get_assoc_type : (Json.json_repr expr -> Json.json_repr expr) ->
     Mapping.loc ->
-      (Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
-        (Ocaml.Repr.t, Json.json_repr) Mapping.mapping *
-          (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
+      Json.json_repr expr ->
+        Json.json_repr expr *
+          Json.json_repr expr
+
+(* Glue *)
+type 't make_ocaml_intf =
+  with_create:bool ->
+  Buffer.t ->
+  ('t expr -> 't expr) ->
+  (bool * 't def list) list -> unit
+
+type 't make_ocaml_impl =
+  with_create:bool ->
+  original_types:(string, string * int) Hashtbl.t ->
+  force_defaults:bool ->
+  ocaml_version:(int * int) option ->
+  Buffer.t ->
+  ('t expr -> 't expr) ->
+  (bool * 't def list) list -> unit
+
+type 't defs_of_atd_modules =
+  (bool * Atd.Ast.module_body) list ->
+  (bool * 't def list) list
+
+val make_ocaml_files
+  : opens:string list
+  -> with_typedefs:bool
+  -> with_create:bool
+  -> with_fundefs:bool
+  -> all_rec:bool
+  -> pos_fname:string option
+  -> pos_lnum:int option
+  -> type_aliases:string option
+  -> force_defaults:bool
+  -> ocaml_version:(int * int) option
+  -> pp_convs:Ocaml.pp_convs
+  -> defs_of_atd_modules:'t defs_of_atd_modules
+  -> make_ocaml_intf:'t make_ocaml_intf
+  -> make_ocaml_impl:'t make_ocaml_impl
+  -> target:Ocaml.target
+  -> string option -> target -> unit

@@ -9,7 +9,7 @@ val make_ocaml_files
   -> pos_fname:string option
   -> pos_lnum:int option
   -> type_aliases:string option
-  -> force_defaults:_ (* not used *)
+  -> force_defaults:bool (* not used *)
   -> ocaml_version:(int * int) option
   -> pp_convs:Ocaml.pp_convs
   -> string option -> Ox_emit.target -> unit

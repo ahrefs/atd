@@ -1,0 +1,10 @@
+#! /usr/bin/env bash
+#
+# Install system packages required to build and test atd (Ubuntu)
+#
+# This is used by the Dockerfile and by the CI build.
+#
+set -eu
+
+sudo apt-get update
+sudo apt-get install -y

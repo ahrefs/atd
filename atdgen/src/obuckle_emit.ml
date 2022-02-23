@@ -8,6 +8,7 @@ type param =
   }
 
 let target : Ocaml.target = Bucklescript
+let annot_schema = Ocaml.annot_schema_of_target target
 
 let open_enum_not_supported () =
   failwith "open_enum is not supported in bucklescript mode"
@@ -698,11 +699,13 @@ let make_ocaml_files
     match atd_file with
       Some file ->
         Atd.Util.load_file
+          ~annot_schema
           ~expand:false ~inherit_fields:true ~inherit_variants:true
           ?pos_fname ?pos_lnum
           file
     | None ->
         Atd.Util.read_channel
+          ~annot_schema
           ~expand:false ~inherit_fields:true ~inherit_variants:true
           ?pos_fname ?pos_lnum
           stdin

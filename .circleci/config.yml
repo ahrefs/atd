@@ -26,14 +26,14 @@ jobs:
       - image: ocaml/opam:ubuntu-20.04-ocaml-4.13
     working_directory: ~/atd
     steps:
-      - build:
+      - build
 
   build_min_ocaml:
     docker:
       - image: ocaml/opam:ubuntu-20.04-ocaml-4.08
     working_directory: ~/atd
     steps:
-      - build:
+      - build
 
 workflows:
   version: 2

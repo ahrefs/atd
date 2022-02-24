@@ -17,6 +17,24 @@ setup:
 	opam update
 	opam install --deps-only --with-test --with-doc ./*.opam
 
+# Build and test everything in a Docker container, producing an
+# image named 'atd'.
+# This is split into two steps because installing the dependencies takes
+# forever each time.
+.PHONY: docker
+docker:
+	$(MAKE) docker-deps
+	$(MAKE) docker-build
+
+# This takes a while and has nothing to do with atd.
+.PHONY: docker-deps
+docker-deps:
+	docker build -t atd-deps -f dockerfiles/atd-deps.dockerfile .
+
+.PHONY: docker-build
+docker-build:
+	docker build -t atd -f dockerfiles/atd.dockerfile .
+
 ############################# Testing #####################################
 
 # Test everything. Requires external non-OCaml compilers and libraries
@@ -64,6 +82,7 @@ js:
 .PHONY: clean
 clean:
 	$(DUNE) clean
+	$(MAKE) -C atdpy clean
 
 .PHONY: all-supported-ocaml-versions
 all-supported-ocaml-versions:

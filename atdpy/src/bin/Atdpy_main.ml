@@ -93,9 +93,9 @@ type bar = [
   `P "atdgen, atdj, atds"
 ]
 
-let cmdline_term =
+let cmdline_term run =
   let combine input_files version =
-    {
+    run {
       input_files;
       version;
     }
@@ -105,17 +105,14 @@ let cmdline_term =
         $ version_term
        )
 
-let parse_command_line () =
+let parse_command_line_and_run run =
   let info =
-    Term.info
+    Cmd.info
       ~doc
       ~man
       "atdpy"
   in
-  match Term.eval (cmdline_term, info) with
-  | `Error _ -> exit 1
-  | `Version | `Help -> exit 0
-  | `Ok conf -> conf
+  Cmd.v info (cmdline_term run) |> Cmd.eval |> exit
 
 let safe_run conf =
   try run conf
@@ -131,7 +128,7 @@ let safe_run conf =
 
 let main () =
   Printexc.record_backtrace true;
-  let conf = parse_command_line () in
+  let conf = parse_command_line_and_run safe_run in
   safe_run conf
 
 let () = main ()

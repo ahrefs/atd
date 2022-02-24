@@ -37,6 +37,21 @@ type env = {
   translate_inst_variable: unit -> (string -> string);
 }
 
+let annot_schema_python : Atd.Annot.schema_section =
+  {
+    section = "python";
+    fields = [
+      Type_expr, "repr";
+      Field, "default";
+    ]
+  }
+
+let annot_schema : Atd.Annot.schema =
+  [
+    annot_schema_python;
+    Atdgen_emit.Json.annot_schema_json;
+  ]
+
 (* Translate a preferred variable name into an available Python identifier. *)
 let trans env id =
   env.translate_variable id
@@ -1076,7 +1091,8 @@ let sum_container env loc name cases =
 
 let sum env loc name cases =
   let cases =
-    List.map (function
+    List.map (fun (x : variant) ->
+      match x with
       | Variant (loc, (orig_name, an), opt_e) ->
           let unique_name = create_class_name env orig_name in
           (loc, orig_name, unique_name, an, opt_e)
@@ -1158,3 +1174,19 @@ let to_file ~atd_filename (items : A.module_body) dst_path =
   Line (fixed_size_preamble atd_filename) :: python_defs
   |> double_spaced
   |> Indent.to_file ~indent:4 dst_path
+
+let run_file src_path =
+  let src_name = Filename.basename src_path in
+  let dst_name =
+    (if Filename.check_suffix src_name ".atd" then
+       Filename.chop_suffix src_name ".atd"
+     else
+       src_name) ^ ".py"
+  in
+  let dst_path = dst_name in
+  let (_atd_head, atd_module), _original_types =
+    Atd.Util.load_file
+      ~annot_schema
+      ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
+  in
+  to_file ~atd_filename:src_name atd_module dst_path

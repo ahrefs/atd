@@ -6,6 +6,9 @@ Next release
 
 * Add Python backend called atdpy (#235)
 
+* Add detection of misplaced annotations and misspelled annotation
+  field names for atdgen targets and atdpy (#204, #227)
+
 2.2.0 (2020-09-03)
 ------------------
 

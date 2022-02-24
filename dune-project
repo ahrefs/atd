@@ -38,6 +38,7 @@
   (dune (>= 1.11))
   menhir
   easy-format
+  (alcotest :with-test)
   (odoc :with-doc))
  (synopsis "Parser for the ATD data format description language")
  (description "\

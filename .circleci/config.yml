@@ -28,6 +28,7 @@ jobs:
     working_directory: ~/atd
     steps:
       - checkout
+      - run:
           name: Install system dependencies
           command: ./.circleci/setup-system
       - run:

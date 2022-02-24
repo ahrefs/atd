@@ -11,8 +11,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dependencies
-          command: ./.circleci/setup
+          name: Install system dependencies
+          command: ./.circleci/setup-system
+      - run:
+          name: Install opam dependencies
+          command: ./.circleci/setup-opam
       - run:
           name: Build
           command: opam exec -- make
@@ -25,9 +28,11 @@ jobs:
     working_directory: ~/atd
     steps:
       - checkout
+          name: Install system dependencies
+          command: ./.circleci/setup-system
       - run:
-          name: Install dependencies
-          command: ./.circleci/setup
+          name: Install opam dependencies
+          command: ./.circleci/setup-opam
       - run:
           name: Build
           command: opam exec -- make

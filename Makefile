@@ -26,6 +26,7 @@ docker:
 	$(MAKE) docker-deps
 	$(MAKE) docker-build
 
+# This takes a while and has nothing to do with atd.
 .PHONY: docker-deps
 docker-deps:
 	docker build -t atd-deps -f dockerfiles/atd-deps.dockerfile .

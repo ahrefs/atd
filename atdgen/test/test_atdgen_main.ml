@@ -634,6 +634,17 @@ let test_polymorphic_wrap () =
     Test_polymorphic_wrap_j.t_of_string Yojson.Safe.read_string json_out in
   check (x = x2)
 
+let test_encoding_int64 () =
+  section "json encoding int64 as string";
+  let encoded = Test_int64_enc_j.string_of_int64 Int64.max_int in
+  check (String.equal encoded {|"9223372036854775807"|})
+
+let test_encoding_decoding_int64 () =
+  section "json encoding & decoding int64";
+  let encoded = Test_int64_enc_j.string_of_int64 Int64.max_int in
+  let decoded = Test_int64_enc_j.int64_of_string encoded in
+  check (decoded = Int64.max_int)
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -669,6 +680,8 @@ let all_tests = [
   test_tag_field_emulation_with_catchall;
   test_json_open_enum;
   test_ambiguous_record;
+  test_encoding_int64;
+  test_encoding_decoding_int64;
 ]
 
 (* TODO: use Alcotest to run the test suite. *)

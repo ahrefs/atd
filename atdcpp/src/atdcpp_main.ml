@@ -9,7 +9,7 @@ let args_spec env = Arg.align
       " Package name of generated files";
       "-o",
       Arg.String (fun x -> env := { !env with output = open_out x }),
-      " File name for Scala output"
+      " File name for C++ output"
     ]
 
 let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"

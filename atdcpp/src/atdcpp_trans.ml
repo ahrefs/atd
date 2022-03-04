@@ -94,9 +94,9 @@ let javadoc loc annots indent =
 
 
 (* ------------------------------------------------------------------------- *)
-(* Translation of ATD types into Scala types *)
+(* Translation of ATD types into C++ types *)
 
-(* For sum and record types, we generate a Scala case classes.
+(* For sum and record types, we generate a C++ case classes.
  *
  * Each record is translated to a single case class with an argument/member
  * for each field.
@@ -110,7 +110,7 @@ let javadoc loc annots indent =
  * Decoding JSON is not yet supported.
  *
  * For types bool, int, float, string, list, and option, we use existing
- * Scala types. We do generate type aliases when they are used in type aliases.
+ * C++ types. We do generate type aliases when they are used in type aliases.
  * They can be encoded to (or decoded from) JSON via the standard argonaut codecs.
 *)
 
@@ -219,7 +219,7 @@ and trans_record my_name env (loc, fields, annots) =
       )
       ([], env) fields in
   let java_tys = List.rev java_tys in
-  (* Output Scala class *)
+  (* Output C++ class *)
   let class_name = Atdcpp_names.to_class_name my_name in
   let out = env.output in
   fprintf out "\n";

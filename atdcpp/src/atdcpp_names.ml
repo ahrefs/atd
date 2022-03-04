@@ -22,7 +22,7 @@ let to_camel_case (s : string) =
   String.iter f s;
   Bytes.to_string (Bytes.sub res 0 !offset)
 
-(* Translate type names into idiomatic Scala names.  We special case
+(* Translate type names into idiomatic C++ names.  We special case
  * `string', `int', `bool' and `float` (see code).  For the remainder, we remove
  * underscores and capitalise any character that is immediately following
  * an underscore or digit.  We also capitalise the initial character

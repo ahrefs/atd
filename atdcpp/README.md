@@ -13,4 +13,4 @@ Don't repeat yourself when defining a JSON interface in multiple languages.
 Instead generate compatible interfaces for all languages from a single definition.
 
 Even if you're only using C++, you may find the ATD definitions more concise
-and less boilerplaity than the equivalent Scala types. (Especially for sum types)
+and less boilerplaity than the equivalent C++ types.

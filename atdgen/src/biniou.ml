@@ -32,6 +32,18 @@ type biniou_repr =
   | Variant
   | Def
 
+(*
+   This must hold all the valid annotations of the form
+   '<biniou ...>'.
+*)
+let annot_schema_biniou : Atd.Annot.schema_section =
+  {
+    section = "biniou";
+    fields = [
+      Type_expr, "repr";
+    ]
+  }
+
 let biniou_int_of_string s : biniou_int option =
   match s with
       "svint" -> Some `Svint

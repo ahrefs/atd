@@ -12,7 +12,11 @@ other.
 Atdgen was designed with efficiency and durability in mind. Software authors are
 encouraged to use Atdgen directly and to write tools that may reuse part of
 Atdgen’s source code."""
-maintainer: ["Rudi Grinberg <me@rgrinberg.com>"]
+maintainer: [
+  "Louis Roché <louis@louisroche.net>"
+  "Martin Jambon <martin@mjambon.com>"
+  "Rudi Grinberg <me@rgrinberg.com>"
+]
 authors: [
   "Martin Jambon <martin@mjambon.com>"
   "David Sheets <sheets@alum.mit.edu>"

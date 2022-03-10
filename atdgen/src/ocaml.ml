@@ -134,6 +134,51 @@ let path_of_target (target : target) =
     | Bucklescript -> ["ocaml_bs"; "ocaml"]
     | Validate -> [ "ocaml_validate"; "ocaml" ]
 
+(*
+   This must hold all the valid annotations of the form
+   '<ocaml ...>' or '<ocaml_TARGET>' (see above for the target names).
+*)
+let annot_schema_ocaml : Atd.Annot.schema_section =
+  {
+    section = "ocaml";
+    fields = [
+      Module_head, "text";
+      Type_def, "from";
+      Type_def, "module";
+      Type_def, "predef";
+      Type_def, "t";
+      Type_expr, "module";
+      Type_expr, "repr";
+      Type_expr, "t";
+      Type_expr, "unwrap";
+      Type_expr, "valid";
+      Type_expr, "validator";
+      Type_expr, "wrap";
+      Variant, "name";
+      Cell, "default";
+      Field, "default";
+      Field, "mutable";
+      Field, "name";
+      Field, "repr";
+    ]
+  }
+
+let annot_schema_of_target (target : target) : Atd.Annot.schema =
+  let section_names = path_of_target target in
+  let ocaml_sections =
+    List.map
+      (fun section -> { annot_schema_ocaml with section }) section_names
+  in
+  let other_section =
+    match target with
+    | Default -> []
+    | Biniou -> [ Biniou.annot_schema_biniou ]
+    | Json -> [ Json.annot_schema_json ]
+    | Bucklescript -> [ Json.annot_schema_json ]
+    | Validate -> []
+  in
+  ocaml_sections @ other_section
+
 let get_ocaml_int target an =
   let path = path_of_target target in
   Atd.Annot.get_field

@@ -1,9 +1,9 @@
-*************************
+=========================
 ATD core syntax reference
-*************************
+=========================
 
 Introduction
-============
+------------
 
 ATD stands for Adjustable Type Definitions.
 
@@ -75,7 +75,7 @@ a data type definition language designed for maximum expressivity, compatibility
 across languages and static type checking of programs using such data.
 
 Scope
------
+^^^^^
 
 ATD offers a core syntax for type definitions, i.e. an idealized view of the
 structure of data. Types are mapped to each programming language or data format
@@ -118,7 +118,7 @@ ATD by design does not support:
 * a syntax for submodules.
 
 Language overview
------------------
+^^^^^^^^^^^^^^^^^
 
 ATD was strongly inspired by the type system of ML and OCaml. Such a
 type system allows static type checking and type inference, properties
@@ -223,7 +223,7 @@ adding fields to records or variants to sum types:
 
 
 Editing and validating ATD files
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The extension for ATD files is ``.atd``. Editing ATD files is best achieved
 using an OCaml-friendly editor since the ATD syntax is vastly compatible with
@@ -278,13 +278,13 @@ of ``atdcat -help``:
     --help  Display this list of options
 
 ATD language
-============
+------------
 
 This is a precise description of the syntax of the ATD language, not a
 tutorial.
 
 Notations
-----------
+^^^^^^^^^^
 
 Lexical and grammatical rules are expressed using a BNF-like syntax.
 Graphical terminal symbols use `unquoted strings in typewriter font`.
@@ -295,15 +295,15 @@ definition.  Parentheses are used for grouping.
 
 The following postfix operators are used to specify repeats:
 
------- ---------------------------------
+====== =================================
 x*     0, 1 or more occurrences of x
 x?     0 or 1 occurrence of x
 x+     1 or more occurrences of x
------- ---------------------------------
+====== =================================
 
 
 Lexical rules
--------------
+^^^^^^^^^^^^^
 
 ATD does not enforce a particular character encoding other than ASCII
 compatibility. Non-ASCII text and data found in annotations and
@@ -315,180 +315,206 @@ recommended for binary data.
 An ATD lexer splits its input into a stream of tokens,
 discarding whitespace and comments.
 
----------------- ---------------------------------------- --------------------
+.. table::
+   :column-alignment: right left left
+   :column-dividers: none none single none
+
+   ============= ======================================== ====================
        token ::= keyword
 
-               | lident
+              \| lident
 
-               | uident
+              \| uident
 
-               | tident
+              \| tident
 
-               | string
+              \| string
 
-   ignorable ::= space                                    _discarded_
+   ignorable ::= space                                    discarded
 
-               | comment
+              \| comment
 
        space ::= SPACE | TAB | CR | LF
 
        blank ::= SPACE | TAB
 
-     comment ::= `(*` (comment | string | byte)* `*)`
+     comment ::= ``(*`` (comment | string | byte)* ``*)``
 
-      lident ::= (lower | `_` identchar) identchar*       _lowercase
-                                                          identifier_
+      lident ::= (lower | ``_`` identchar) identchar*     lowercase
+                                                          identifier
 
-      uident ::= upper identchar*                         _uppercase
-                                                          identifier_
+      uident ::= upper identchar*                         uppercase
+                                                          identifier
 
-      tident ::= `'` lident                               _type parameter_
+      tident ::= ``'`` lident                             type parameter
 
-       lower ::= `a`...`z`
+       lower ::= ``a``...``z``
 
-       upper ::= `A`...`Z`
+       upper ::= ``A``...``Z``
 
-   identchar ::= upper | lower | digit | `_` | `'`
+   identchar ::= upper | lower | digit | ``_`` | ``'``
 
-      string ::= `"` substring* `"`                       _string literal,
-                                                          used in annotations_
+      string ::= ``"`` (substring | ``'``)* ``"``         double-quoted
+                                                          string literal,
+                                                          used in
+                                                          annotations
 
-   substring ::= `\\`                                     _single backslash_
+              \| ``'`` (substring | ``"``)* ``'``         single-quoted
+                                                          string literal,
+                                                          used in
+                                                          annotations
 
-               | `\"`                                     _double quote_
+   substring ::= ``\\``                                   single backslash
 
-               | `\x` hex hex                             _single byte
+              \| ``\"``                                   double quote
+
+              \| ``\'``                                   single quote
+
+              \| ``\x`` hex hex                           single byte
                                                           in hexadecimal
-                                                          notation_
+                                                          notation
 
-               | `\` digit digit digit                    _single byte
+              \| ``\`` digit digit digit                  single byte
                                                           in decimal
-                                                          notation_
+                                                          notation
 
-               | `\n`                                     _LF_
+              \| ``\n``                                   LF
 
-               | `\r`                                     _CR_
+              \| ``\r``                                   CR
 
-               | `\t`                                     _TAB_
+              \| ``\t``                                   TAB
 
-               | `\b`                                     _BS_
+              \| ``\b``                                   BS
 
-               | `\` CR? LF blank*                        _discarded_
+              \| ``\`` CR? LF blank*                      discarded
 
-               | not-backslash                            _any byte
-                                                          except `\`
-                                                          or `"`_
+              \| not-backslash                            any byte
+                                                          except ``\``
+                                                          or ``"`` or ``'``
 
-       digit ::= `0`...`9`
+       digit ::= ``0`` ... ``9``
 
-         hex ::= `0`...`9` | `a`...`f` | `A`...`F`
+         hex ::= ``0`` ... ``9``
 
-     keyword ::= `(` | `)` | `[`                          _all keywords_
-                 | `]` | \str{\{} | `\`}
-                 | `<` | `>` &
-                 | `;` | `,` | `:` | `*`
-                 | `|` | `=` | `?` | `~`
-                 | `type` | `of` | `inherit`
----------------- ---------------------------------------- --------------------
+              \| ``a``... ``f``
+
+              \| ``A`` ... ``F``
+
+     keyword ::= ``(`` | ``)`` | ``[``                    all keywords
+
+              \| ``]`` | ``{`` | ``}``
+
+              \| ``<`` | ``>``
+
+              \| ``;`` | ``,`` | ``:`` | ``*``
+
+              \| ``|`` | ``=`` | ``?`` | ``~``
+
+              \| ``type`` | ``of`` | ``inherit``
+   ============= ======================================== ====================
 
 
 Grammar
--------
+^^^^^^^
 
----------------- ---------------------------------------- --------------------
-      module ::= annot* typedef*                          _entry point_
+.. table::
+   :column-alignment: right left left
+   :column-dividers: none none single none
 
-       annot ::= `<` lident annot-field* `>`              _annotation_
+   =============== ======================================== =================
+        module ::= annot* typedef*                          entry point
 
- annot-field ::= (lident (`=` string)?)
+         annot ::= ``<`` lident annot-field* ``>``          annotation
 
-     typedef ::= `type` params? lident annot              _type definition_
-                 `=` expr
+   annot-field ::= (lident (``=`` string)?)
 
-      params ::= tident                                   _one parameter_
+       typedef ::= ``type`` params? lident annot            type definition
+                   ``=`` expr
 
-               | `(` tident (`,` tident)+ `)`             _two or more
-                                                          parameters_
+        params ::= tident                                   one parameter
 
-        expr ::= expr-body annot*                         _type expression_
+                \| ``(`` tident (``,`` tident)+ ``)``       two or more
+                                                            parameters
 
-               | tident
+          expr ::= expr-body annot*                         type expression
 
-   expr-body ::= args? lident
+                \| tident
 
-               | `(`                                      _tuple type_
-                 (cell (`*` cell)*)?
-                 `)`
+     expr-body ::= args? lident
 
-               | `{`                                      _record type_
-                 ((field (`;` field)*) `;`?)?
-                 `}`
+                \| ``(``                                    tuple type
+                   (cell (``*`` cell)*)?
+                   ``)``
 
-               | `[`                                      _sum type_
-                 (`|`? variant (`|` variant)*)?
-                 `]`
+                \| ``{``                                    record type
+                   ((field (``;`` field)*) ``;``?)?
+                   ``}``
 
-        args ::= expr                                     _one argument_
+                \| ``[``                                    sum type
+                   (``|``? variant (``|`` variant)*)?
+                   ``]``
 
-               | `(` expr (`,` expr)+ `)`                 _two or more
-                                                          arguments_
+          args ::= expr                                     one argument
 
-        cell ::= (annot+ `:`)? expr
+                \| ``(`` expr (``,`` expr)+ ``)``           two or more
+                                                            arguments
 
-       field ::= (`?` | `~`)? lident `=` expr
+          cell ::= (annot+ ``:``)? expr
 
-               | `inherit` expr
+         field ::= (``?`` | ``~``)? lident ``=`` expr
 
-     variant ::= uident annot* `of` expr
+                \| ``inherit`` expr
 
-               | uident annot*
+       variant ::= uident annot* ``of`` expr
 
-               | `inherit` expr
-------------------------------------------------------------------------------
+                \| uident annot*
+
+                \| ``inherit`` expr
+   =============== ======================================== =================
 
 
 
 Predefined type names
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 The following types are considered predefined and may not be
 redefined.
 
-------------------------------------------------------------------------------
+================== =========================================================
 Type name          Intended use
------------------- -----------------------------------------------------------
-`unit`             Type of just one value, useful with parametrized types
+================== =========================================================
+``unit``           Type of just one value, useful with parametrized types
 
-`bool`             Boolean
+``bool``           Boolean
 
-`int`              Integer
+``int``            Integer
 
-`float`            Floating-point number
+``float``          Floating-point number
 
-`string`           Sequence of bytes or characters
+``string``         Sequence of bytes or characters
 
-`'a option`        Container of zero or one element of type `'a`.
+``'a option``      Container of zero or one element of type `'a`.
                    See also `'a nullable`.
 
-`'a list`          Collection or sequence of elements of type `'a`
+``'a list``        Collection or sequence of elements of type `'a`
 
-`'a nullable`      Extend type `'a` with an extra conventional value,
+``'a nullable``    Extend type `'a` with an extra conventional value,
                    typically called "null". The operation is idempotent,
                    i.e. `'a nullable` is equivalent to
                    `'a nullable nullable`.
 
-`'a shared`        Values of type `'a` for which sharing must be preserved
+``'a shared``      Values of type `'a` for which sharing must be preserved
 
-`'a wrap`          Values on which a custom, reversible transformation
+``'a wrap``        Values on which a custom, reversible transformation
                    may be applied, as specified by
                    language-specific annotations.
 
-`abstract`         Type defined elsewhere
-------------------------------------------------------------------------------
+``abstract``       Type defined elsewhere
+================== =========================================================
 
 
 Shared values
--------------
+^^^^^^^^^^^^^
 
 ATD supports a special type $x$ `shared` where $x$ can be
 any monomorphic type expression.
@@ -538,9 +564,3 @@ identifying the sharing point. The graph example can be rewritten correctly as:
   }
 
   type graph = node shared <share id="1"> list
-
-See also
-========
-`atdgen`_\ (1)
-
-.. _atdgen: atdgen

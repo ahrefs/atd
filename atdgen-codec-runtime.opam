@@ -4,7 +4,11 @@ synopsis: "Runtime for atdgen generated bucklescript converters"
 description: """
 This library contains the types that are used by atdgen's
 bucklescript backend"""
-maintainer: ["Rudi Grinberg <me@rgrinberg.com>"]
+maintainer: [
+  "Louis Roché <louis@louisroche.net>"
+  "Martin Jambon <martin@mjambon.com>"
+  "Rudi Grinberg <me@rgrinberg.com>"
+]
 authors: [
   "Martin Jambon <martin@mjambon.com>"
   "David Sheets <sheets@alum.mit.edu>"

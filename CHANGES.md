@@ -1,3 +1,18 @@
+Next release
+------------
+
+* Allow single-quoted strings as an alternative to double-quoted
+  strings in ATD files (#239)
+
+* Add Python backend called atdpy (#235)
+
+* Add detection of misplaced annotations and misspelled annotation
+  field names for atdgen targets and atdpy (#204, #227)
+
+* atdpy: Downcase Python output files (#251)
+
+* atdpy: Disable flake8 checks on generated code via a special comment (#252)
+
 2.2.0 (2020-09-03)
 ------------------
 

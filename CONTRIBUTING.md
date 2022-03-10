@@ -1,4 +1,4 @@
-Internal documentation
+ATD Contribution Guidelines
 ==
 
 This is a collection of guides to help contributors to the ATD
@@ -46,3 +46,56 @@ Details and troubleshooting notes:
   `atdgen-runtime`, `atdgen`, and `atdj`. Then make a pull request
   to have your fork/branch merged into the original
   `opam-repository`.
+
+Contributing to a specific subproject
+--
+
+Each subproject has its own README:
+
+* [atdgen](atdgen): targets OCaml, Bucklescript
+* [atdj](atdj): targets Java
+* [atdpy](atdpy): targets Python
+* [atds](atds): targets Scala
+
+Updating the documentation
+--
+
+### Documentation setup
+
+The user documentation is published at https://atd.readthedocs.io/.
+It's automatically published from the main branch of the GitHub repo
+from the files found in `/doc`.
+
+The [format of the documentation is Restructured
+Text](https://thomas-cokelaer.info/tutorials/sphinx/rest_syntax.html#restructured-text-rest-and-sphinx-cheatsheet)
+because it's more expressive that Markdown and it's not that hard to
+pick up.
+
+You can either edit the `.rst` files and hope that everything will
+turn out fine or you can preview it by running Sphinx locally. The
+latter is recommended for large edits. Try this:
+
+Install sphinx and the theme we're using:
+```
+pip install -r doc/requirements.txt
+```
+
+Compile the documentation and run a local
+[HTTP server on port 8888](http://0.0.0.0:8888):
+```
+make livedoc
+```
+
+### Writing good documentation
+
+Don't assume that our existing documentation is already good (!)
+
+Good documentation separates concerns. This not only makes it easy
+to read but also easier to write.
+Daniele Procida has a wonderful presentation about the four kinds of
+documentation and why they're best kept separate:
+
+* [website](https://documentation.divio.com/)
+* [30-min presentation](https://www.youtube.com/watch?v=t4vKPhjcMZg)
+
+![the four kinds of documentation](https://user-images.githubusercontent.com/343265/153692997-07752757-2227-4ba7-b53f-e5e85a71e71a.png)

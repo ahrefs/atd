@@ -5,7 +5,11 @@
 (name atd)
 (license MIT)
 
-(maintainers "Rudi Grinberg <me@rgrinberg.com>")
+(maintainers
+  "Louis Roché <louis@louisroche.net>"
+  "Martin Jambon <martin@mjambon.com>"
+  "Rudi Grinberg <me@rgrinberg.com>"
+)
 
 (authors
  "Martin Jambon <martin@mjambon.com>"
@@ -30,10 +34,11 @@
 (package
  (name atd)
  (depends
-  (ocaml (>= 4.02))
+  (ocaml (>= 4.03))
   (dune (>= 1.11))
   menhir
   easy-format
+  (alcotest :with-test)
   (odoc :with-doc))
  (synopsis "Parser for the ATD data format description language")
  (description "\
@@ -45,7 +50,7 @@ formats. "))
 (package
  (name atdgen)
  (depends
-  (ocaml (>= 4.02))
+  (ocaml (>= 4.03))
   (dune (>= 1.11))
   (atd (>= 2.0.0))
   (atdgen-runtime (>= 2.0.0))
@@ -73,10 +78,11 @@ Atdgen’s source code."))
 This package should be used only in conjunction with the stdgen code
 generator")
  (depends
-  (ocaml (>= 4.02))
+  (ocaml (>= 4.03))
   (dune (>= 1.11))
   (yojson (>= 1.7.0))
   (biniou (>= 1.0.6))
+  camlp-streams
   (odoc :with-doc)))
 
 (package
@@ -98,7 +104,7 @@ specification.
 - Details such as optional fields and their associated default values are
 automatically handled")
  (depends
-  (ocaml (>= 4.02))
+  (ocaml (>= 4.03))
   (dune (>= 1.11))
   (atd (>= 2.0.0))
   re
@@ -109,9 +115,21 @@ automatically handled")
  (synopsis "ATD Code generator for Scala")
  (description "ATD Code generator for Scala")
  (depends
-  (ocaml (>= 4.02))
+  (ocaml (>= 4.03))
   (dune (>= 1.11))
   (atd (>= 2.0.0))
+  (odoc :with-doc)))
+
+(package
+ (name atdpy)
+ (synopsis "Python/mypy code generation for ATD APIs")
+ (description "Python/mypy code generation for ATD APIs")
+ (depends
+  (ocaml (>= 4.08))
+  (dune (>= 1.11))
+  (alcotest :with-test)
+  (atd (>= 2.0.0))
+  (cmdliner (>= 1.0.0))
   (odoc :with-doc)))
 
 (package
@@ -121,5 +139,5 @@ automatically handled")
 This library contains the types that are used by atdgen's
 bucklescript backend")
  (depends
-  (ocaml (>= 4.02))
+  (ocaml (>= 4.03))
   (odoc :with-doc)))

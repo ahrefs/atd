@@ -2,6 +2,9 @@
 Handwritten code that serves as a model for generated code.
 """
 
+# Disable flake8 entirely on this file:
+# flake8: noqa
+
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple
 
@@ -84,7 +87,7 @@ def _atd_read_assoc_object_into_dict(
             return {_atd_read_string(k): read_value(v) for k, v in elts.items()}
         else:
             _atd_bad_json('object', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return read_assoc
 
 
@@ -96,7 +99,7 @@ def _atd_read_assoc_object_into_list(
             return [(_atd_read_string(k), read_value(v)) for k, v in elts.items()]
         else:
             _atd_bad_json('object', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return read_assoc
 
 
@@ -109,7 +112,7 @@ def _atd_read_assoc_array_into_dict(
             return {read_key(elt[0]): read_value(elt[1]) for elt in elts}
         else:
             _atd_bad_json('array', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return read_assoc
 
 
@@ -194,7 +197,7 @@ class Root:
             )
         else:
             _atd_bad_json('Root', x)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}

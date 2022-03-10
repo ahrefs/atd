@@ -19,7 +19,7 @@ sudo apt-get install -y \
   scala
 
 # For atdpy
-pip install pytest mypy
+pip install pytest mypy flake8
 
 ###### Sanity checks ######
 

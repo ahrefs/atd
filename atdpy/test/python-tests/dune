@@ -24,5 +24,6 @@
   (glob_files *.py))
  (action
   (progn
+   (run python3 -m flake8 .)
    (run python3 -m mypy --strict .)
    (run python3 -m pytest .))))

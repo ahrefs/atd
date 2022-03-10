@@ -1182,6 +1182,7 @@ let run_file src_path =
        Filename.chop_suffix src_name ".atd"
      else
        src_name) ^ ".py"
+    |> String.lowercase_ascii
   in
   let dst_path = dst_name in
   let (_atd_head, atd_module), _original_types =

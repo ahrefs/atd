@@ -9,7 +9,9 @@ Next release
 * Add detection of misplaced annotations and misspelled annotation
   field names for atdgen targets and atdpy (#204, #227)
 
-* Downcase Python output files (#251)
+* atdpy: Downcase Python output files (#251)
+
+* atdpy: Disable flake8 checks on generated code via a special comment (#252)
 
 2.2.0 (2020-09-03)
 ------------------

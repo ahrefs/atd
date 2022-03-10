@@ -91,7 +91,7 @@ def _atd_read_assoc_array_into_dict(
             return {read_key(elt[0]): read_value(elt[1]) for elt in elts}
         else:
             _atd_bad_json('array', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return read_assoc
 
 
@@ -103,7 +103,7 @@ def _atd_read_assoc_object_into_dict(
             return {_atd_read_string(k): read_value(v) for k, v in elts.items()}
         else:
             _atd_bad_json('object', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return read_assoc
 
 
@@ -115,7 +115,7 @@ def _atd_read_assoc_object_into_list(
             return [(_atd_read_string(k), read_value(v)) for k, v in elts.items()]
         else:
             _atd_bad_json('object', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return read_assoc
 
 
@@ -184,7 +184,7 @@ def _atd_write_assoc_dict_to_array(
             return [(write_key(k), write_value(v)) for k, v in elts.items()]
         else:
             _atd_bad_python('Dict[str, <value type>]]', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return write_assoc
 
 
@@ -196,7 +196,7 @@ def _atd_write_assoc_dict_to_object(
             return {_atd_write_string(k): write_value(v) for k, v in elts.items()}
         else:
             _atd_bad_python('Dict[str, <value type>]', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return write_assoc
 
 
@@ -208,7 +208,7 @@ def _atd_write_assoc_list_to_object(
             return {_atd_write_string(elt[0]): write_value(elt[1]) for elt in elts}
         else:
             _atd_bad_python('List[Tuple[<key type>, <value type>]]', elts)
-            assert False  # keep mypy happy
+            raise AssertionError('impossible')  # keep mypy happy
     return write_assoc
 
 

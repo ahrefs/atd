@@ -1,6 +1,8 @@
 ATD project - Static Types for Json APIs
 ==
 
+[![CircleCI](https://circleci.com/gh/ahrefs/atd/tree/master.svg?style=svg)](https://circleci.com/gh/ahrefs/atd/tree/master)
+
 ATD stands for Adaptable Type Definitions. It is a syntax for defining
 cross-language data types. It is used as input to generate efficient
 and type-safe serializers, deserializers and validators.

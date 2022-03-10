@@ -2,6 +2,9 @@
 Handwritten code that serves as a model for generated code.
 """
 
+# Disable flake8 entirely on this file:
+# flake8: noqa
+
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple
 

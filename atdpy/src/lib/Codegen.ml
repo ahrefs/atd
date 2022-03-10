@@ -192,6 +192,9 @@ This implements classes for the types defined in '%s', providing
 methods and functions to convert data from/to JSON.
 """
 
+# Disable flake8 entirely on this file:
+# flake8: noqa
+
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
@@ -200,6 +203,7 @@ import json
 ############################################################################
 # Private functions
 ############################################################################
+
 
 def _atd_missing_json_field(type_name: str, json_field_name: str) -> NoReturn:
     raise ValueError(f"missing field '{json_field_name}'"
@@ -260,8 +264,8 @@ def _atd_read_string(x: Any) -> str:
 
 
 def _atd_read_list(
-        read_elt: Callable[[Any], Any]
-    ) -> Callable[[List[Any]], List[Any]]:
+            read_elt: Callable[[Any], Any]
+        ) -> Callable[[List[Any]], List[Any]]:
     def read_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [read_elt(elt) for elt in elts]
@@ -271,9 +275,9 @@ def _atd_read_list(
 
 
 def _atd_read_assoc_array_into_dict(
-        read_key: Callable[[Any], Any],
-        read_value: Callable[[Any], Any],
-    ) -> Callable[[List[Any]], Dict[Any, Any]]:
+            read_key: Callable[[Any], Any],
+            read_value: Callable[[Any], Any],
+        ) -> Callable[[List[Any]], Dict[Any, Any]]:
     def read_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
         if isinstance(elts, list):
             return {read_key(elt[0]): read_value(elt[1]) for elt in elts}
@@ -284,11 +288,12 @@ def _atd_read_assoc_array_into_dict(
 
 
 def _atd_read_assoc_object_into_dict(
-        read_value: Callable[[Any], Any]
-    ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+            read_value: Callable[[Any], Any]
+        ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
     def read_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(elts, dict):
-            return {_atd_read_string(k): read_value(v) for k, v in elts.items()}
+            return {_atd_read_string(k): read_value(v)
+                    for k, v in elts.items()}
         else:
             _atd_bad_json('object', elts)
             raise AssertionError('impossible')  # keep mypy happy
@@ -296,11 +301,12 @@ def _atd_read_assoc_object_into_dict(
 
 
 def _atd_read_assoc_object_into_list(
-        read_value: Callable[[Any], Any]
-    ) -> Callable[[Dict[str, Any]], List[Tuple[str, Any]]]:
+            read_value: Callable[[Any], Any]
+        ) -> Callable[[Dict[str, Any]], List[Tuple[str, Any]]]:
     def read_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
         if isinstance(elts, dict):
-            return [(_atd_read_string(k), read_value(v)) for k, v in elts.items()]
+            return [(_atd_read_string(k), read_value(v))
+                    for k, v in elts.items()]
         else:
             _atd_bad_json('object', elts)
             raise AssertionError('impossible')  # keep mypy happy
@@ -353,8 +359,8 @@ def _atd_write_string(x: Any) -> str:
 
 
 def _atd_write_list(
-        write_elt: Callable[[Any], Any]
-    ) -> Callable[[List[Any]], List[Any]]:
+            write_elt: Callable[[Any], Any]
+        ) -> Callable[[List[Any]], List[Any]]:
     def write_list(elts: List[Any]) -> List[Any]:
         if isinstance(elts, list):
             return [write_elt(elt) for elt in elts]
@@ -364,9 +370,9 @@ def _atd_write_list(
 
 
 def _atd_write_assoc_dict_to_array(
-        write_key: Callable[[Any], Any],
-        write_value: Callable[[Any], Any]
-    ) -> Callable[[Dict[Any, Any]], List[Tuple[Any, Any]]]:
+            write_key: Callable[[Any], Any],
+            write_value: Callable[[Any], Any]
+        ) -> Callable[[Dict[Any, Any]], List[Tuple[Any, Any]]]:
     def write_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
         if isinstance(elts, dict):
             return [(write_key(k), write_value(v)) for k, v in elts.items()]
@@ -377,11 +383,12 @@ def _atd_write_assoc_dict_to_array(
 
 
 def _atd_write_assoc_dict_to_object(
-        write_value: Callable[[Any], Any]
-    ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+            write_value: Callable[[Any], Any]
+        ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
     def write_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
         if isinstance(elts, dict):
-            return {_atd_write_string(k): write_value(v) for k, v in elts.items()}
+            return {_atd_write_string(k): write_value(v)
+                    for k, v in elts.items()}
         else:
             _atd_bad_python('Dict[str, <value type>]', elts)
             raise AssertionError('impossible')  # keep mypy happy
@@ -389,11 +396,12 @@ def _atd_write_assoc_dict_to_object(
 
 
 def _atd_write_assoc_list_to_object(
-        write_value: Callable[[Any], Any],
-    ) -> Callable[[List[Any]], Dict[str, Any]]:
+            write_value: Callable[[Any], Any],
+        ) -> Callable[[List[Any]], Dict[str, Any]]:
     def write_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
         if isinstance(elts, list):
-            return {_atd_write_string(elt[0]): write_value(elt[1]) for elt in elts}
+            return {_atd_write_string(elt[0]): write_value(elt[1])
+                    for elt in elts}
         else:
             _atd_bad_python('List[Tuple[<key type>, <value type>]]', elts)
             raise AssertionError('impossible')  # keep mypy happy

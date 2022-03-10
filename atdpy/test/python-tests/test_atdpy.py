@@ -19,6 +19,7 @@ def test_sample() -> None:
     assert b_str == b_str2  # depends on json formatting (whitespace...)
     assert b_str2 == a_str
 
+
 def test_sample_missing_field() -> None:
     try:
         manual_sample.Root.from_json_string('{}')
@@ -172,7 +173,10 @@ def test_pair() -> None:
         assert False
     except ValueError as exn:
         print(f"Exception: {exn}")
-        assert str(exn) == "incompatible JSON value where type 'array of length 2' was expected: '[1, 2, 3]'"
+        assert str(exn) == (
+                "incompatible JSON value where type "
+                "'array of length 2' was expected: '[1, 2, 3]'"
+            )
 
 
 # print updated json

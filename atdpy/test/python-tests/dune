@@ -3,9 +3,13 @@
 ;
 (rule
   (targets
-    everything.py)
+    allcaps.py
+    everything.py
+  )
   (deps
-    ../atd-input/everything.atd)
+    ../atd-input/ALLCAPS.atd
+    ../atd-input/everything.atd
+  )
   (action
     (run %{bin:atdpy} %{deps})))
 

@@ -30,7 +30,7 @@ homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
   "dune" {>= "1.11"}
-  "ocaml" {>= "4.02"}
+  "ocaml" {>= "4.08"}
   "odoc" {with-doc}
 ]
 dev-repo: "git+https://github.com/ahrefs/atd.git"

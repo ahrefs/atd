@@ -737,7 +737,7 @@ let make_ocaml_files
       | Some path -> sprintf "%S" (Filename.basename path)
     in
     sprintf {|(* Auto-generated from %s *)
-              [@@@ocaml.warning "-27-32-33-35-39"]|} src
+[@@@ocaml.warning "-27-32-33-35-39"]|} src
   in
   let ml =
     make_ml ~opens ~header ~with_typedefs ~with_create ~with_fundefs ~original_types

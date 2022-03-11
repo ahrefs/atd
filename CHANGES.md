@@ -1,6 +1,11 @@
 Next release
 ------------
 
+* ...
+
+2.3.0 (2022-03-10)
+------------------
+
 * Allow single-quoted strings as an alternative to double-quoted
   strings in ATD files (#239)
 
@@ -15,6 +20,8 @@ Next release
 
 * atdgen: Add support for ppx attributes on individual type
   definitions (#238)
+
+* other enhancement and fixes (see git log)
 
 2.2.0 (2020-09-03)
 ------------------

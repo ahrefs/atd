@@ -893,6 +893,32 @@ Example:
 Section ``ocaml``
 ^^^^^^^^^^^^^^^^^
 
+Field ``attr``
+""""""""""""""
+
+Position: on a type definition, i.e. on the left-handside just before
+the equal sign ``=``
+
+Semantics: specifies custom ppx attributes for the type
+definition. Overrides any default attributes set globally via
+the command line option ``-type-attr``.
+
+Values: the contents of a ppx annotation without the enclosing
+``[@@`` and ``]``
+
+Example:
+
+.. code:: ocaml
+
+    type foo <ocaml attr="deriving show,eq"> = int list
+
+translates to
+
+.. code:: ocaml
+
+    type foo = int list [@@deriving show,eq]
+
+
 Field ``predef``
 """"""""""""""""
 

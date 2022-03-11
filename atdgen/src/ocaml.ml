@@ -143,6 +143,7 @@ let annot_schema_ocaml : Atd.Annot.schema_section =
     section = "ocaml";
     fields = [
       Module_head, "text";
+      Type_def, "attr";
       Type_def, "from";
       Type_def, "module";
       Type_def, "predef";
@@ -377,6 +378,12 @@ let get_ocaml_module_and_t target default_name an =
   |> Option.map (fun (type_module, main_module) ->
   (type_module, main_module, get_ocaml_t target default_name an))
 
+let get_type_attrs an =
+  Atd.Annot.get_fields
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    an
 
 (*
   OCaml syntax tree
@@ -401,7 +408,8 @@ type ocaml_def = {
   o_def_name : (string * ocaml_type_param);
   o_def_alias : (string * ocaml_type_param) option;
   o_def_expr : ocaml_expr option;
-  o_def_doc : Atd.Doc.doc option
+  o_def_doc : Atd.Doc.doc option;
+  o_def_attrs : string list;
 }
 
 type ocaml_module_item =
@@ -420,7 +428,6 @@ let is_ocaml_keyword = function
   | "struct" | "then" | "to" | "true" | "try" | "type" | "val" | "virtual"
   | "when" | "while" | "with" -> true
   | _ -> false
-
 
 (*
   Mapping from ATD to OCaml
@@ -535,7 +542,8 @@ let map_def
         o_def_name = (s, param);
         o_def_alias = alias;
         o_def_expr = x;
-        o_def_doc = doc
+        o_def_doc = doc;
+        o_def_attrs = get_type_attrs an1;
       }
 
 
@@ -751,6 +759,12 @@ let rec format_module_item pp_convs
   let alias = def.o_def_alias in
   let expr = def.o_def_expr in
   let doc = def.o_def_doc in
+  (* TODO: currently replacing, globally set pp_convs, maybe should merge? *)
+  let pp_convs =
+    match def.o_def_attrs with
+    | [] -> pp_convs
+    | attrs -> Ppx attrs
+  in
   let append_if b s1 s2 =
     if b then s1 ^ s2
     else s1

@@ -41,7 +41,7 @@ license: "MIT"
 homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
-  "ocaml" {>= "4.02"}
+  "ocaml" {>= "4.03"}
   "dune" {>= "1.11"}
   "atd" {>= "2.0.0"}
   "re"

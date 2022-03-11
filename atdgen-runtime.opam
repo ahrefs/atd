@@ -29,7 +29,7 @@ license: "MIT"
 homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
-  "ocaml" {>= "4.02"}
+  "ocaml" {>= "4.03"}
   "dune" {>= "1.11"}
   "yojson" {>= "1.7.0"}
   "biniou" {>= "1.0.6"}

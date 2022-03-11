@@ -18,9 +18,8 @@ use this archive.
 process easy and safe. Refer to its documentation for more information.
 
 1. Review and update the changelog `CHANGES.md`.
-2. Create a section with the desired version e.g. `2.3.0
-   (2022-03-10)`.
-3. Commit any pending changes.
+2. Create a section with the desired version e.g. `2.3.0 (2022-03-10)`.
+3. Commit the changes.
 4. Install [dune-release](https://github.com/ocamllabs/dune-release)
    if not already installed:
    `opam install dune-release`

@@ -16,8 +16,8 @@
 ;
 ; Typecheck and run the tests on the generated Python code.
 ;
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdpy)
  (deps
   everything.py

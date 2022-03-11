@@ -32,8 +32,8 @@
  (targets spec_j.json)
  (action (with-stdout-to %{targets} (run ./test_j.exe))))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff spec_j.expected.json spec_j.json)))
 
@@ -41,7 +41,7 @@
  (targets spec_bs.json)
  (action (with-stdout-to %{targets} (run ./test_bs.exe))))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdgen)
  (action (diff spec_bs.expected.json spec_bs.json)))

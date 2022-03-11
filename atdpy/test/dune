@@ -4,8 +4,8 @@
 ; 1. Check that the generated Python code is what we expect.
 ;
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atdpy)
  (action
    (diff python-expected/everything.py

@@ -13,6 +13,9 @@ Next release
 
 * atdpy: Disable flake8 checks on generated code via a special comment (#252)
 
+* atdgen: Add support for ppx attributes on individual type
+  definitions (#238)
+
 2.2.0 (2020-09-03)
 ------------------
 

@@ -1,3 +1,10 @@
+2.3.1 (2022-03-10)
+------------------
+
+* Ensure that atdgen reports its own version rather than the version
+  of the atd library.
+* Fix version constraint on cmdliner.
+
 2.3.0 (2022-03-10)
 ------------------
 

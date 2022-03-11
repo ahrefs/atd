@@ -10,42 +10,29 @@ read documents and follow rules.
 Releasing `atd`
 --
 
-We use `topkg` to help with the release process. The release process
-involves assigning a [version ID](https://semver.org/), tagging a git
-commit with this version ID, building an archive,
-and publishing the opam packages that use this archive.
+The release process involves assigning a
+[version ID](https://semver.org/), tagging a git commit with this
+version ID, building an archive, and publishing the opam packages that
+use this archive.
+[dune-release](https://github.com/ocamllabs/dune-release) makes this
+process easy and safe. Refer to its documentation for more information.
 
-1. Install the command-line interface with `opam install topkg-care`.
-2. Update `CHANGES.md`.
-3. Tag the commit with `git tag <VERSION>`.
-4. Create an archive with `topkg distrib`.
-5. Upload the archive to Github with `topkg publish distrib`.
-6. Run `topkg opam pkg` and grab the `url` file `_build/atd.<VERSION>/url`.
-7. Update the opam packages in
-   [opam-repository](https://github.com/ocaml/opam-repository).
-
-Details and troubleshooting notes:
-* (4) the archive is created in `_build`. The version string in
-  the file `atdgen-runtime/src/version.ml` of the archive
-  should no longer be the `%%VERSION%%` placeholder.
-* (5) if two-factor authentication is enabled for your account,
-  you may get a 401 Unauthorized error.
-  You may follow the [instructions on Github and create an access
-  token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
-  with the scope `public_repo`. Then arrange to put your access token
-  in the `TOPKG_GITHUB_AUTH` environment variable when running
-  `topkg publish distrib`. If everything works, there will be a new
-  release in the "releases" tab/section on Github.
-* (7) at this time, it doesn't seem that topkg understands that we
-  have four opam packages and not just one, so we don't run
-  `topkg opam submit`. Instead, we fork
-  [`opam-repository`](https://github.com/ocaml/opam-repository) and
-  copy `packages/atd/atd.<PREVIOUS>` to `packages/atd/atd.<NEW>`. Then
-  we edit the dependencies in the `opam` file as needed and we replace
-  the `url` file with the one generated at step (6). Repeat for
-  `atdgen-runtime`, `atdgen`, and `atdj`. Then make a pull request
-  to have your fork/branch merged into the original
-  `opam-repository`.
+1. Review and update the changelog `CHANGES.md`.
+2. Create a section with the desired version e.g. `2.3.0
+   (2022-03-10)`.
+3. Commit any pending changes.
+4. Install [dune-release](https://github.com/ocamllabs/dune-release)
+   if not already installed:
+   `opam install dune-release`
+5. Run `dune-release tag`. It will pick up the version from the
+   changelog and ask for confirmation.
+6. Run `dune-release distrib` to create a tarball.
+7. Run `dune-release publish` to upload the tarball to GitHub and
+   create GitHub release including the changes extracted from the
+   changelog.
+8. Create opam packages with `dune-release opam pkg`.
+9. Submit the opam packages to opam-repository using
+   `dune-release opam submit`.
 
 Contributing to a specific subproject
 --

@@ -267,8 +267,7 @@
  (package atdgen)
  (action (diff test_classic_inline_record_t.expected.mli test_classic_inline_record_t.mli)))
 
- ;; OCaml keywords cannot be used as type names or record field names
- 
+;; OCaml keywords cannot be used as type names or record field names
 (rule
  (targets test_ocaml_keyword_error1.stderr)
  (deps    (:atd test_ocaml_keyword_error1.atd) %{bin:atdgen})
@@ -305,6 +304,11 @@
  (package atdgen)
  (action (diff test_ocaml_keyword_error2.expected.stdout test_ocaml_keyword_error2.stdout)))
 
+(rule
+ (targets test_ppx_t.ml test_ppx_t.mli)
+ (deps    test_ppx.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
 (executables
  (libraries atd atdgen-runtime biniou yojson)
  (names test_atdgen_main)
@@ -327,6 +331,7 @@
   test_int64_enc_j
   test_atdgen_main
   test_lib
+  test_ppx_t
   ))
 
 (alias

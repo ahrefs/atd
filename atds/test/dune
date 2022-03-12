@@ -5,13 +5,13 @@
  (action
   (run %{bin:atds} %{deps} -package com.mylife.test -o test.scala)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atds)
  (action (diff test.expected.scala test.scala)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package atds)
  (deps
   AtdsTest.scala

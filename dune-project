@@ -1,4 +1,4 @@
-(lang dune 1.11)
+(lang dune 2.0)
 (using menhir 2.0)
 (implicit_transitive_deps false)
 
@@ -35,11 +35,13 @@
  (name atd)
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   menhir
   easy-format
   (alcotest :with-test)
-  (odoc :with-doc))
+  (odoc :with-doc)
+  (re (>= 1.7.2))
+ )
  (synopsis "Parser for the ATD data format description language")
  (description "\
 ATD is the OCaml library providing a parser for the ATD language and various
@@ -51,14 +53,15 @@ formats. "))
  (name atdgen)
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 1.11))
-  (atd (>= 2.0.0))
+  (dune (>= 2.0))
+  atd ; (atd (>= 2.3.0))
   (atdgen-runtime (>= 2.0.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
   (yojson (>= 1.7.0))
   (odoc :with-doc)
-  re)
+  re
+ )
  (synopsis "Generates efficient JSON serializers, deserializers and validators")
  (description "\
 Atdgen is a command-line program that takes as input type definitions in the ATD
@@ -79,7 +82,7 @@ This package should be used only in conjunction with the stdgen code
 generator")
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   (yojson (>= 1.7.0))
   (biniou (>= 1.0.6))
   camlp-streams
@@ -105,7 +108,7 @@ specification.
 automatically handled")
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   (atd (>= 2.0.0))
   re
   (odoc :with-doc)))
@@ -116,7 +119,7 @@ automatically handled")
  (description "ATD Code generator for Scala")
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 1.11))
+  (dune (>= 2.0))
   (atd (>= 2.0.0))
   (odoc :with-doc)))
 
@@ -128,8 +131,8 @@ automatically handled")
   (ocaml (>= 4.08))
   (dune (>= 1.11))
   (alcotest :with-test)
-  (atd (>= 2.0.0))
-  (cmdliner (>= 1.0.0))
+  atd ; (atd (>= 2.3.0))
+  (cmdliner (>= 1.1.0))
   (odoc :with-doc)))
 
 (package

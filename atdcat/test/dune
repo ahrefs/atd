@@ -3,8 +3,8 @@
  (deps test.atd)
  (action (run %{bin:atdcat} %{deps} -o %{targets})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (deps test.out.atd)
  (action (diff test.expected.atd test.out.atd)))
 
@@ -13,7 +13,7 @@
  (deps test2.atd)
  (action (run %{bin:atdcat} %{deps} -o %{targets})))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (deps test2.out.atd)
  (action (diff test2.expected.atd test2.out.atd)))

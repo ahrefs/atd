@@ -58,7 +58,7 @@ type json_repr =
   | Variant of json_variant
   | Wrap
 
-val annot_schema_json : Atd.Annot.schema_section
+val annot_schema_json : Atd.Annot.schema
 
 val get_json_list : Atd.Annot.t -> json_list
 

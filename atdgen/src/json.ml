@@ -67,7 +67,7 @@ type json_repr =
    This must hold all the valid annotations of the form
    '<json ...>'.
 *)
-let annot_schema_json : Atd.Annot.schema_section =
+let annot_schema_json : Atd.Annot.schema = [
   {
     section = "json";
     fields = [
@@ -80,7 +80,18 @@ let annot_schema_json : Atd.Annot.schema_section =
       Field, "name";
       Field, "tag_field";
     ]
-  }
+  };
+  {
+    (* deprecated *)
+    section = "ocaml_json";
+    fields = [
+      Type_def, "from";
+      Type_def, "module";
+      Type_def, "predef";
+      Type_def, "t";
+    ]
+  };
+]
 
 let json_float_of_string s : [ `Float | `Int ] option =
   match s with

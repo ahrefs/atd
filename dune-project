@@ -109,7 +109,7 @@ automatically handled")
  (depends
   (ocaml (>= 4.08))
   (dune (>= 2.8))
-  (atd (>= 2.0.0))
+  atd ; (atd (>= 2.3.0))
   re
   (odoc :with-doc)))
 
@@ -120,7 +120,7 @@ automatically handled")
  (depends
   (ocaml (>= 4.08))
   (dune (>= 2.8))
-  (atd (>= 2.0.0))
+  atd ; (atd (>= 2.3.0))
   (odoc :with-doc)))
 
 (package
@@ -130,10 +130,11 @@ automatically handled")
  (depends
   (ocaml (>= 4.08))
   (dune (>= 2.8))
-  (alcotest :with-test)
   atd ; (atd (>= 2.3.0))
   atdgen ; (atdgen (>= 2.3.0))
   (cmdliner (>= 1.1.0))
+  (alcotest :with-test)
+  (conf-python-3 :with-test)
   (odoc :with-doc)))
 
 (package

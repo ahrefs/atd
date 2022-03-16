@@ -132,6 +132,7 @@ automatically handled")
   (dune (>= 2.8))
   (alcotest :with-test)
   atd ; (atd (>= 2.3.0))
+  atdgen ; (atdgen (>= 2.3.0))
   (cmdliner (>= 1.1.0))
   (odoc :with-doc)))
 

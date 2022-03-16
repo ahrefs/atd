@@ -58,6 +58,11 @@ type test = Test.test = {
 
 type tup = Test.tup
 
+type test_field_prefix = Test.test_field_prefix = {
+  theprefix_hello (*atd hello *): bool;
+  theprefix_world (*atd world *): int
+}
+
 type star_rating = Test.star_rating
 
 type 'a generic = 'a Test.generic = { x294623: int }
@@ -266,6 +271,16 @@ val validate_test :
 val validate_tup :
   Atdgen_runtime.Util.Validation.path -> tup -> Atdgen_runtime.Util.Validation.error option
   (** Validate a value of type {!tup}. *)
+
+val create_test_field_prefix :
+  theprefix_hello: bool ->
+  theprefix_world: int ->
+  unit -> test_field_prefix
+  (** Create a record of type {!test_field_prefix}. *)
+
+val validate_test_field_prefix :
+  Atdgen_runtime.Util.Validation.path -> test_field_prefix -> Atdgen_runtime.Util.Validation.error option
+  (** Validate a value of type {!test_field_prefix}. *)
 
 val validate_star_rating :
   Atdgen_runtime.Util.Validation.path -> star_rating -> Atdgen_runtime.Util.Validation.error option

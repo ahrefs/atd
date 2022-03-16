@@ -148,6 +148,7 @@ let annot_schema_ocaml : Atd.Annot.schema_section =
       Type_def, "module";
       Type_def, "predef";
       Type_def, "t";
+      Type_expr, "field_prefix";
       Type_expr, "module";
       Type_expr, "repr";
       Type_expr, "t";
@@ -173,9 +174,9 @@ let annot_schema_of_target (target : target) : Atd.Annot.schema =
   let other_section =
     match target with
     | Default -> []
-    | Biniou -> [ Biniou.annot_schema_biniou ]
-    | Json -> [ Json.annot_schema_json ]
-    | Bucklescript -> [ Json.annot_schema_json ]
+    | Biniou -> Biniou.annot_schema_biniou
+    | Json -> Json.annot_schema_json
+    | Bucklescript -> Json.annot_schema_json
     | Validate -> []
   in
   ocaml_sections @ other_section

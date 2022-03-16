@@ -47,10 +47,7 @@ let annot_schema_python : Atd.Annot.schema_section =
   }
 
 let annot_schema : Atd.Annot.schema =
-  [
-    annot_schema_python;
-    Atdgen_emit.Json.annot_schema_json;
-  ]
+  annot_schema_python :: Atdgen_emit.Json.annot_schema_json
 
 (* Translate a preferred variable name into an available Python identifier. *)
 let trans env id =

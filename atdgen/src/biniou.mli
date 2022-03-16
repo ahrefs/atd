@@ -31,7 +31,7 @@ type biniou_repr =
   | Variant
   | Def
 
-val annot_schema_biniou : Atd.Annot.schema_section
+val annot_schema_biniou : Atd.Annot.schema
 
 val get_biniou_float : Atd.Annot.t -> biniou_float
 val get_biniou_int : Atd.Annot.t -> biniou_int

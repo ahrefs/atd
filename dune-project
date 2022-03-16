@@ -36,7 +36,7 @@
  (depends
   (ocaml (>= 4.08))
   (dune (>= 2.8))
-  menhir
+  (menhir (>= 20180523))
   easy-format
   (alcotest :with-test)
   (odoc :with-doc)

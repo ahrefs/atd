@@ -1,5 +1,5 @@
-Next
-----
+2.3.3 (2022-03-16)
+------------------
 
 * Prevent incorrect validation errors for annotations of the form
   `<ocaml field_prefix=...>` and a few others (#258)

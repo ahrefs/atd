@@ -35,7 +35,7 @@
  (name atd)
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 2.8))
+  dune ; version constraint is added automatically by dune
   (menhir (>= 20180523))
   easy-format
   (alcotest :with-test)
@@ -53,7 +53,7 @@ formats. "))
  (name atdgen)
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 2.8))
+  dune
   atd ; (atd (>= 2.3.0))
   (atdgen-runtime (>= 2.0.0))
   (atdgen-codec-runtime :with-test)
@@ -82,7 +82,7 @@ This package should be used only in conjunction with the stdgen code
 generator")
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 2.8))
+  dune
   (yojson (>= 1.7.0))
   (biniou (>= 1.0.6))
   camlp-streams
@@ -108,7 +108,7 @@ specification.
 automatically handled")
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 2.8))
+  dune
   atd ; (atd (>= 2.3.0))
   re
   (odoc :with-doc)))
@@ -119,7 +119,7 @@ automatically handled")
  (description "ATD Code generator for Scala")
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 2.8))
+  dune
   atd ; (atd (>= 2.3.0))
   (odoc :with-doc)))
 
@@ -129,7 +129,7 @@ automatically handled")
  (description "Python/mypy code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (dune (>= 2.8))
+  dune
   atd ; (atd (>= 2.3.0))
   atdgen ; (atdgen (>= 2.3.0))
   (cmdliner (>= 1.1.0))

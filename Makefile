@@ -107,7 +107,7 @@ livedoc:
 #
 .PHONY: opam-files
 opam-files:
-	$(DUNE) build
+	$(DUNE) build *.opam
 	./scripts/patch-opam-files
 
 # This is only part of the release process.

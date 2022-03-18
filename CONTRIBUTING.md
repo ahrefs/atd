@@ -25,27 +25,34 @@ Note that:
   failure after that, the release ID should be incremented and all the
   steps should be followed again.
 
-1. Review and update the changelog `CHANGES.md`.
-2. Create a section with the desired version e.g. `2.3.0 (2022-03-10)`.
-3. Commit the changes.
-4. Install [dune-release](https://github.com/ocamllabs/dune-release)
+1. Run `make opam-files` to make sure the opam files are up-to-date.
+2. Review and update the changelog `CHANGES.md`.
+3. Create a section with the desired version e.g. `2.3.0
+   (2022-03-10)`.
+4. Commit the changes.
+5. Install [dune-release](https://github.com/ocamllabs/dune-release)
    if not already installed:
    `opam install dune-release`
-5. Run `dune-release tag`. It will pick up the version from the
+6. Run `dune-release tag`. It will pick up the version from the
    changelog and ask for confirmation.
-6. Run `dune-release distrib` to create a tarball.
-7. Run `dune-release publish` to upload the tarball to GitHub and
+7. Run `dune-release distrib` to create a tarball.
+8. Run `dune-release publish` to upload the tarball to GitHub and
    create GitHub release including the changes extracted from the
    changelog.
-8. Create opam packages with `dune-release opam pkg`.
-9. Submit the opam packages to opam-repository using
+9. Create opam packages with `dune-release opam pkg`.
+10. Submit the opam packages to opam-repository using
    `dune-release opam submit`.
-10. Fix the opam-repository pull request as needed. For example, this
+11. Fix the opam-repository pull request as needed. For example, this
     may require setting a new version constraint on the `atd` package
     in the opam files, if it wasn't possible to do so in
     `dune-project`.
-11. Check whether opam-repository's CI test succeed and fix problems
+12. Check whether opam-repository's CI test succeed and fix problems
     accordingly until the pull request is merged.
+
+Shortcut for all the `dune-release` steps:
+```
+$ make opam-release
+```
 
 Contributing to a specific subproject
 --

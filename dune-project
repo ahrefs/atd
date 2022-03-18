@@ -12,20 +12,59 @@
 )
 
 (authors
+; All authors according to git log, sorted by decreasing number of commits.
+; Re-generate with:
+; git shortlog -s -e -n --all | cut -f2 | sed -e 's/^\(.*\)$/ "\1"/'
+
  "Martin Jambon <martin@mjambon.com>"
+ "Rudi Grinberg <rudi.grinberg@gmail.com>"
+ "Martin Jambon <martin@r2c.dev>"
+ "Martin Jambon <github@mjambon.com>"
+ "Ivan Jager <aij+git@mrph.org>"
+ "oleksiy <oleksiy.golovko@ahrefs.com>"
  "David Sheets <sheets@alum.mit.edu>"
  "Rudi Grinberg <me@rgrinberg.com>"
- "Ivan Jager <aij+git@mrph.org>"
+ "Martin Jambon <martin@esper.com>"
  "Jeff Meister <nanaki@gmail.com>"
+ "Caio Wakamatsu <caio.wakamatsu@ahrefs.com>"
  "Carmelo Piccione <carmelo.piccione@gmail.com>"
+ "Daniel Weil <danweil68@gmail.com>"
+ "Egor Chemokhonenko <egor.chemohonenko@ahrefs.com>"
+ "Gabriel Scherer <gabriel.scherer@gmail.com>"
  "Raman Varabets <roman.vorobets@gmail.com>"
+ "tzm <frank@boldsolutions.de>"
  "Mathieu Baudet <mathieubaudet@fb.com>"
+ "Oleksiy Golovko <alexei.golovko@gmail.com>"
  "Rauan Mayemir <rauan@mayemir.io>"
+ "Carmelo Piccione <cep1@solvuu.com>"
+ "John Billings <john@monkeynut.org>"
  "Louis Roché <louis@louisroche.net>"
  "Brendan Long <self@brendanlong.com>"
+ "Chris Yocum <cyocum@gmail.com>"
+ "Louis Roché (Ahrefs) <louis.roche@ahrefs.com>"
+ "Louis Roché <louis.roche@ahrefs.com>"
+ "Pavel Antoshkin <pavel.antoshkin@ahrefs.com>"
+ "Pierre Boutillier <pierre.boutillier@laposte.net>"
+ "Shon Feder <shon.feder@key.me>"
+ "Anurag Soni <anuragsoni.13@gmail.com>"
+ "Arjun Ravi Narayan <arjunravinarayan@gmail.com>"
+ "Asya-kawai <kawai-toshiki@aintek.xyz>"
  "Christophe Troestler <christophe.Troestler@umons.ac.be>"
+ "Damien Doligez <ddoligez@janestreet.com>"
+ "Daniel M <dan.mntg@gmail.com>"
+ "Ding Xiang Fei <dingxiangfei2009@protonmail.ch>"
+ "François Pottier <francois.pottier@inria.fr>"
+ "Javier Chavarri <javier.chavarri@gmail.com>"
+ "Kate <kit.ty.kate@disroot.org>"
+ "Louis <louis.roche@ahrefs.com>"
+ "Louis Roché <louis@cryptosense.com>"
+ "Raman Varabets <raman+git@ahrefs.com>"
+ "Stephane Legrand <slegrand45@gmail.com>"
  "Vincent Bernardoff <vb@luminar.eu.org>"
- "haoyang <haoyang@esper.co>")
+ "haoyang <haoyang@esper.co>"
+ "pmundkur <prashanth.mundkur@gmail.com>"
+ "ygrek <ygrek@autistici.org>"
+)
 
 (source (github ahrefs/atd))
 
@@ -35,11 +74,11 @@
  (name atd)
  (depends
   (ocaml (>= 4.08))
-  (menhir (>= 20180523))
+  (menhir (and (>= 20180523) (< "20211215")))
   easy-format
   (alcotest :with-test)
   (odoc :with-doc)
-  (re (>= 1.7.2))
+  (re (>= 1.9.0))
  )
  (synopsis "Parser for the ATD data format description language")
  (description "\
@@ -52,7 +91,7 @@ formats. "))
  (name atdgen)
  (depends
   (ocaml (>= 4.08))
-  atd ; (atd (>= 2.3.0))
+  (atd (>= 2.3.0))
   (atdgen-runtime (>= 2.0.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
@@ -105,7 +144,7 @@ specification.
 automatically handled")
  (depends
   (ocaml (>= 4.08))
-  atd ; (atd (>= 2.3.0))
+  (atd (>= 2.3.0))
   re
   (odoc :with-doc)))
 
@@ -115,7 +154,7 @@ automatically handled")
  (description "ATD Code generator for Scala")
  (depends
   (ocaml (>= 4.08))
-  atd ; (atd (>= 2.3.0))
+  (atd (>= 2.3.0))
   (odoc :with-doc)))
 
 (package
@@ -124,8 +163,8 @@ automatically handled")
  (description "Python/mypy code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  atd ; (atd (>= 2.3.0))
-  atdgen ; (atdgen (>= 2.3.0))
+  (atd (>= 2.3.0))
+  (atdgen (>= 2.3.0))
   (cmdliner (>= 1.1.0))
   (alcotest :with-test)
   (conf-python-3 :with-test)

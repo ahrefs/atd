@@ -10,12 +10,13 @@ DUNE ?= dune
 .PHONY: all
 all:
 	$(DUNE) build
+	./scripts/patch-opam-files  # see 'opam-files' target
 
 # Install the OCaml dependencies for the build.
 .PHONY: setup
 setup:
 	opam update
-	opam install --deps-only --with-test --with-doc ./*.opam
+	./scripts/install-opam-dependencies
 
 # Build and test everything in a Docker container, producing an
 # image named 'atd'.
@@ -83,6 +84,7 @@ js:
 clean:
 	$(DUNE) clean
 	$(MAKE) -C atdpy clean
+	rm -rf tmp
 
 .PHONY: all-supported-ocaml-versions
 all-supported-ocaml-versions:
@@ -99,10 +101,22 @@ livedoc:
 	$(MAKE) doc
 	python3 -m http.server 8888 --directory doc/_build
 
-package := atd
+# Prepare the opam files for a release. They're derived from 'dune-project'
+# by 'dune build' and then patched to work around some issues.
+# https://discuss.ocaml.org/t/when-exactly-does-dune-generate-opam-files/8292/2
+#
+.PHONY: opam-files
+opam-files:
+	$(DUNE) build *.opam
+	./scripts/patch-opam-files
+
+# This is only part of the release process.
+# See complete release instructions in CONTRIBUTING.md.
+#
 .PHONY: opam-release
 opam-release:
-	dune-release distrib --skip-build --skip-lint --skip-tests -n $(package)
-	dune-release publish distrib --verbose -n $(package)
-	dune-release opam pkg -n $(package)
-	dune-release opam submit -n $(package)
+	dune-release tag
+	dune-release distrib
+	dune-release publish
+	dune-release opam pkg
+	dune-release opam submit

@@ -17,8 +17,7 @@ Requirements
 
 Requirements for building and testing `atdpy`:
 * Opam and dependencies installed from the [`atd` project root](..)
-  with `opam install --deps-only --with-test --with-doc ./atdpy.opam`
-  or more conveniently with `make setup`.
+  with `make setup`.
 * Python 3 (>= 3.7), mypy, pytest
 
 Requirements for generating Python code:

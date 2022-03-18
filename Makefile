@@ -16,7 +16,7 @@ all:
 .PHONY: setup
 setup:
 	opam update
-	opam install --deps-only --with-test --with-doc ./*.opam
+	./scripts/install-opam-dependencies
 
 # Build and test everything in a Docker container, producing an
 # image named 'atd'.
@@ -84,6 +84,7 @@ js:
 clean:
 	$(DUNE) clean
 	$(MAKE) -C atdpy clean
+	rm -rf tmp
 
 .PHONY: all-supported-ocaml-versions
 all-supported-ocaml-versions:

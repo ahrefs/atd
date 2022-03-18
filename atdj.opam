@@ -77,7 +77,7 @@ bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
   "dune" {>= "2.8"}
   "ocaml" {>= "4.08"}
-  "atd"
+  "atd" {>= "2.3.0"}
   "re"
   "odoc" {with-doc}
 ]

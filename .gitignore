@@ -26,7 +26,6 @@ dep
 *.out
 html
 man1
-*.cm[ioxa]
-*.cmx[as]
-*.[oa]
-*.annot
+
+# Temporary folder(s) used by some maintenance scripts
+tmp

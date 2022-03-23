@@ -28,3 +28,12 @@ type assoc_repr =
     The default is ["list"].
 *)
 val get_python_assoc_repr : Atd.Annot.t -> assoc_repr
+
+(** Returns the list of class decorators as specified by the user without
+    [@] e.g. [<python decorator="foo" decorator="bar(baz)">]
+    gives [["foo"; "bar(baz)"]]. *)
+val get_python_decorators : Atd.Annot.t -> string list
+
+(** Returns text the user wants to be inserted at the beginning of the
+    Python file such as imports. *)
+val get_python_text : Atd.Annot.t -> string list

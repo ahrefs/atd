@@ -235,6 +235,10 @@ def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
 ############################################################################
 
 
+import deco
+from dataclasses import dataclass
+
+
 @dataclass
 class Root_:
     """Original type: kind = [ ... | Root | ... ]"""
@@ -433,6 +437,9 @@ class Root:
         return json.dumps(self.to_json(), **kw)
 
 
+@deco.deco1
+@deco.deco2(42)
+@dataclass(order=True)
 @dataclass
 class RequireField:
     """Original type: require_field = { ... }"""

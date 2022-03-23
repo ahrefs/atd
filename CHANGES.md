@@ -1,3 +1,9 @@
+Next release
+------------
+
+* atdpy: allow custom imports and class decorators to be added to the
+  generated Python code.
+
 2.3.3 (2022-03-16)
 ------------------
 

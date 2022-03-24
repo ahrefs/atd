@@ -1,5 +1,6 @@
-<python text="import deco">
-<python text="from dataclasses import dataclass">
+<python text="# This was inserted by the user.">
+<python json_py.text="import deco">
+<python json_py.text="from dataclasses import dataclass">
 
 type kind = [
   | Root (* class name conflict *)

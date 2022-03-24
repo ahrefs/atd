@@ -357,6 +357,16 @@ allow inserting arbitrary Python code or comments:
 This is the recommended mechanism for inserting imports. In contrast, it
 should be used only as last resort for inserting functions or classes.
 
+In the future, atdpy may generate more than one kind of files. An
+annotation of the form ``<python text="...">`` will insert that text
+into all the generated files. In order to insert code only in the
+``.py`` file that handles JSON, it is recommended to use a more
+specific annotation of the form ``<python json_py.text="...">``:
+
+::
+
+   <python json_py.text="import deco">
+
 
 Custom class decorators
 ^^^^^^^^^^^^^^^^^^^^^^^

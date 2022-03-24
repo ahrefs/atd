@@ -36,4 +36,4 @@ val get_python_decorators : Atd.Annot.t -> string list
 
 (** Returns text the user wants to be inserted at the beginning of the
     Python file such as imports. *)
-val get_python_text : Atd.Annot.t -> string list
+val get_python_json_text : Atd.Annot.t -> string list

@@ -42,6 +42,7 @@ let annot_schema_python : Atd.Annot.schema_section =
     section = "python";
     fields = [
       Module_head, "text";
+      Module_head, "json_py.text";
       Type_def, "decorator";
       Type_expr, "repr";
       Field, "default";
@@ -1208,5 +1209,5 @@ let run_file src_path =
       ~annot_schema
       ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
   in
-  let head = Python_annot.get_python_text (snd atd_head) in
+  let head = Python_annot.get_python_json_text (snd atd_head) in
   to_file ~atd_filename:src_name ~head atd_module dst_path

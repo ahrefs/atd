@@ -142,7 +142,6 @@ let annot_schema_ocaml : Atd.Annot.schema_section =
   {
     section = "ocaml";
     fields = [
-      Module_head, "text";
       Type_def, "attr";
       Type_def, "from";
       Type_def, "module";

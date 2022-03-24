@@ -41,6 +41,9 @@ let annot_schema_python : Atd.Annot.schema_section =
   {
     section = "python";
     fields = [
+      Module_head, "text";
+      Module_head, "json_py.text";
+      Type_def, "decorator";
       Type_expr, "repr";
       Field, "default";
     ]
@@ -763,7 +766,7 @@ let inst_var_declaration
     Line (sprintf "%s: %s%s" var_name type_name default)
   ]
 
-let record env loc name (fields : field list) an =
+let record env ~class_decorators loc name (fields : field list) an =
   let py_class_name = class_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
@@ -843,6 +846,7 @@ let record env loc name (fields : field list) an =
     ]
   in
   [
+    Inline class_decorators;
     Line "@dataclass";
     Line (sprintf "class %s:" py_class_name);
     Block (spaced [
@@ -871,10 +875,11 @@ class Foo:
   def from_json_string(x):
     ...
 *)
-let alias_wrapper env name type_expr =
+let alias_wrapper env ~class_decorators name type_expr =
   let py_class_name = class_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
+    Inline class_decorators;
     Line "@dataclass";
     Line (sprintf "class %s:" py_class_name);
     Block [
@@ -908,7 +913,8 @@ let alias_wrapper env name type_expr =
     ]
   ]
 
-let case_class env type_name (loc, orig_name, unique_name, an, opt_e) =
+let case_class env type_name
+    (loc, orig_name, unique_name, an, opt_e) =
   let json_name = Atdgen_emit.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
@@ -1016,7 +1022,7 @@ let read_cases1 env loc name cases1 =
             (class_name env name |> single_esc))
   ]
 
-let sum_container env loc name cases =
+let sum_container env ~class_decorators loc name cases =
   let py_class_name = class_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1051,6 +1057,7 @@ let sum_container env loc name cases =
       []
   in
   [
+    Inline class_decorators;
     Line "@dataclass";
     Line (sprintf "class %s:" py_class_name);
     Block [
@@ -1094,7 +1101,7 @@ let sum_container env loc name cases =
     ]
   ]
 
-let sum env loc name cases =
+let sum env ~class_decorators loc name cases =
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1108,7 +1115,7 @@ let sum env loc name cases =
     List.map (fun x -> Inline (case_class env name x)) cases
     |> double_spaced
   in
-  let container_class = sum_container env loc name cases in
+  let container_class = sum_container env ~class_decorators loc name cases in
   [
     Inline case_classes;
     Inline container_class;
@@ -1118,17 +1125,23 @@ let sum env loc name cases =
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
+  let class_decorators =
+    Python_annot.get_python_decorators an
+    |> List.map (fun s -> Line ("@" ^ s))
+  in
   let rec unwrap e =
     match e with
-    | Sum (loc, cases, an) -> sum env loc name cases
-    | Record (loc, fields, an) -> record env loc name fields an
-    | Tuple _ -> alias_wrapper env name e
-    | List _ -> alias_wrapper env name e
-    | Option _ -> alias_wrapper env name e
-    | Nullable _ -> alias_wrapper env name e
+    | Sum (loc, cases, an) ->
+        sum env ~class_decorators loc name cases
+    | Record (loc, fields, an) ->
+        record env  ~class_decorators loc name fields an
+    | Tuple _
+    | List _
+    | Option _
+    | Nullable _
+    | Name _ -> alias_wrapper env ~class_decorators name e
     | Shared _ -> not_implemented loc "cyclic references"
     | Wrap (loc, e, an) -> unwrap e
-    | Name _ -> alias_wrapper env name e
     | Tvar _ -> not_implemented loc "parametrized type"
   in
   unwrap e
@@ -1169,14 +1182,15 @@ let reserve_good_class_names env (items: A.module_body) =
     (fun (Type (loc, (name, param, an), e)) -> ignore (class_name env name))
     items
 
-let to_file ~atd_filename (items : A.module_body) dst_path =
+let to_file ~atd_filename ~head (items : A.module_body) dst_path =
   let env = init_env () in
   reserve_good_class_names env items;
+  let head = List.map (fun s -> Line s) head in
   let python_defs =
     Atd.Util.tsort items
     |> List.map (fun x -> Inline (definition_group ~atd_filename env x))
   in
-  Line (fixed_size_preamble atd_filename) :: python_defs
+  Line (fixed_size_preamble atd_filename) :: Inline head :: python_defs
   |> double_spaced
   |> Indent.to_file ~indent:4 dst_path
 
@@ -1190,9 +1204,10 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let (_atd_head, atd_module), _original_types =
+  let (atd_head, atd_module), _original_types =
     Atd.Util.load_file
       ~annot_schema
       ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
   in
-  to_file ~atd_filename:src_name atd_module dst_path
+  let head = Python_annot.get_python_json_text (snd atd_head) in
+  to_file ~atd_filename:src_name ~head atd_module dst_path

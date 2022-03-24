@@ -1,3 +1,7 @@
+<python text="# This was inserted by the user.">
+<python json_py.text="import deco">
+<python json_py.text="from dataclasses import dataclass">
+
 type kind = [
   | Root (* class name conflict *)
   | Thing of int
@@ -26,6 +30,8 @@ type alias = int list
 
 type pair = (string * int)
 
-type require_field = {
+type require_field <python decorator="deco.deco1"
+                           decorator="deco.deco2(42)"
+                           decorator="dataclass(order=True)"> = {
   req: string;
 }

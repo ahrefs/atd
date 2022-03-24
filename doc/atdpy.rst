@@ -342,3 +342,54 @@ Python dictionaries if the correct annotations are provided:
 * ``(foo * bar) list <python repr="dict">`` will use a Python
   dictionary of type ``Dict[Foo, Bar]`` to represent the association list.
   Using the annotation ``<python repr="list">`` is equivalent to the default.
+
+
+Additional imports
+^^^^^^^^^^^^^^^^^^
+
+At the beginning of the ATD file, placing annotations like this one
+allow inserting arbitrary Python code or comments:
+
+::
+
+   <python text="import deco">
+
+This is the recommended mechanism for inserting imports. In contrast, it
+should be used only as last resort for inserting functions or classes.
+
+In the future, atdpy may generate more than one kind of files. An
+annotation of the form ``<python text="...">`` will insert that text
+into all the generated files. In order to insert code only in the
+``.py`` file that handles JSON, it is recommended to use a more
+specific annotation of the form ``<python json_py.text="...">``:
+
+::
+
+   <python json_py.text="import deco">
+
+
+Custom class decorators
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Extra class decorators can be specified in addition to ``@dataclass``.
+The following ATD definition will add 3 decorators:
+
+.. code-block:: ocaml
+
+   type thing <python decorator="deco.deco1"
+                      decorator="deco.deco2(42)"
+                      decorator="dataclass(order=True)"> = {
+     foo: int;
+     bar: string;
+   }
+
+The generated Python class will start like this:
+
+.. code-block:: python
+
+   @deco.deco1
+   @deco.deco2(42)
+   @dataclass(order=True)
+   @dataclass
+   class Thing:
+       ...

@@ -11,8 +11,6 @@ sed_in_place() {
   rm -f *.sed-tmp
 }
 
-sed_in_place 's/\["dune" "subst"\] {pinned}/\["dune" "subst"\] {dev}/g' *.opam
-
 # Not sure why @runtest is inserted into some opam files and not others.
 # We remove it so as to not have opam-repository's CI run into errors
 # due to missing dependencies for the target languages (Python, Java, etc.)

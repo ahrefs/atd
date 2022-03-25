@@ -1,3 +1,10 @@
+Next
+-----------------
+
+* atdpy: don't apply the `@dataclass` decorator twice if explicitly
+  added by the user via an ATD annotation such as
+  `<python decorator="dataclass(frozen=True)">` (#267)
+
 2.4.0 (2022-03-24)
 -----------------
 

@@ -847,7 +847,6 @@ let record env ~class_decorators loc name (fields : field list) an =
   in
   [
     Inline class_decorators;
-    Line "@dataclass";
     Line (sprintf "class %s:" py_class_name);
     Block (spaced [
       Line (sprintf {|"""Original type: %s = { ... }"""|} name);
@@ -880,7 +879,6 @@ let alias_wrapper env ~class_decorators name type_expr =
   let value_type = type_name_of_expr env type_expr in
   [
     Inline class_decorators;
-    Line "@dataclass";
     Line (sprintf "class %s:" py_class_name);
     Block [
       Line (sprintf {|"""Original type: %s"""|} name);
@@ -1058,7 +1056,6 @@ let sum_container env ~class_decorators loc name cases =
   in
   [
     Inline class_decorators;
-    Line "@dataclass";
     Line (sprintf "class %s:" py_class_name);
     Block [
       Line (sprintf {|"""Original type: %s = [ ... ]"""|} name);
@@ -1122,11 +1119,24 @@ let sum env ~class_decorators loc name cases =
   ]
   |> double_spaced
 
+let uses_dataclass_decorator =
+  let rex = Re.Pcre.regexp {|\A[ \t\r\n]*dataclass(\(|[ \t\r\n]|\z)|} in
+  fun s -> Re.Pcre.pmatch ~rex s
+
+let get_class_decorators an =
+  let decorators = Python_annot.get_python_decorators an in
+  (* Avoid duplicate use of the @dataclass decorator, which doesn't work
+     if some options like frozen=True are used. *)
+  if List.exists uses_dataclass_decorator decorators then
+    decorators
+  else
+    decorators @ ["dataclass"]
+
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
   let class_decorators =
-    Python_annot.get_python_decorators an
+    get_class_decorators an
     |> List.map (fun s -> Line ("@" ^ s))
   in
   let rec unwrap e =

@@ -441,7 +441,6 @@ class Root:
 @deco.deco1
 @deco.deco2(42)
 @dataclass(order=True)
-@dataclass
 class RequireField:
     """Original type: require_field = { ... }"""
 

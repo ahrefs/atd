@@ -1,6 +1,7 @@
 (library
  (name atdpy)
  (libraries
+   re
    atd
    atdgen_emit
  )

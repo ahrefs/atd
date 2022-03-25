@@ -71,6 +71,7 @@ depends: [
   "conf-python-3" {with-test}
   "odoc" {with-doc}
 ]
+dev-repo: "git+https://github.com/ahrefs/atd.git"
 build: [
   ["dune" "subst"] {dev}
   [
@@ -84,4 +85,3 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/ahrefs/atd.git"

@@ -10,7 +10,6 @@ DUNE ?= dune
 .PHONY: all
 all:
 	$(DUNE) build
-	./scripts/patch-opam-files  # see 'opam-files' target
 
 # Install the OCaml dependencies for the build.
 .PHONY: setup
@@ -102,13 +101,11 @@ livedoc:
 	python3 -m http.server 8888 --directory doc/_build
 
 # Prepare the opam files for a release. They're derived from 'dune-project'
-# by 'dune build' and then patched to work around some issues.
-# https://discuss.ocaml.org/t/when-exactly-does-dune-generate-opam-files/8292/2
+# and from the template specified in the root 'dune' file..
 #
 .PHONY: opam-files
 opam-files:
 	$(DUNE) build *.opam
-	./scripts/patch-opam-files
 
 # This is only part of the release process.
 # See complete release instructions in CONTRIBUTING.md.

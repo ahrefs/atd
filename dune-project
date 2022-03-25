@@ -166,6 +166,7 @@ automatically handled")
   (atd (>= 2.3.0))
   (atdgen (>= 2.3.0))
   (cmdliner (>= 1.1.0))
+  re
   (alcotest :with-test)
   (conf-python-3 :with-test)
   (odoc :with-doc)))

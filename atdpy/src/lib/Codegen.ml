@@ -1120,7 +1120,7 @@ let sum env ~class_decorators loc name cases =
   |> double_spaced
 
 let uses_dataclass_decorator =
-  let rex = Re.Pcre.regexp "\\A[ \t\r\n]*dataclass(\\(|[ \t\r\n]|\\z)" in
+  let rex = Re.Pcre.regexp {|\A[ \t\r\n]*dataclass(\(|[ \t\r\n]|\z)|} in
   fun s -> Re.Pcre.pmatch ~rex s
 
 let get_class_decorators an =

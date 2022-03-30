@@ -12,7 +12,7 @@ type conf = {
 
 let run conf =
   if conf.version then (
-    print_endline Atd.Version.version;
+    print_endline Atdpy.Version.version;
     exit 0
   )
   else

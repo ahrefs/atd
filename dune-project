@@ -74,7 +74,7 @@
  (name atd)
  (depends
   (ocaml (>= 4.08))
-  (menhir (and (>= 20180523) (< "20211215")))
+  (menhir (>= 20180523))
   easy-format
   (alcotest :with-test)
   (odoc :with-doc)

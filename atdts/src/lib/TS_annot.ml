@@ -7,6 +7,6 @@
 let get_python_default an : string option =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
-      ~sections:["python"]
+      ~sections:["ts"]
       ~field:"default"
       an

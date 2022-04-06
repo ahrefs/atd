@@ -36,7 +36,7 @@ export type Amaze = {
 
 export type Kind = Root_ | Thing | WOW | Amaze
 
-export interface Root {
+export type Root = {
   id: string;
   items: Int[][];
   maybe?: Int;

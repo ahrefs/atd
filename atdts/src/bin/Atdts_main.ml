@@ -12,7 +12,7 @@ type conf = {
 
 let run conf =
   if conf.version then (
-    print_endline Atdpy.Version.version;
+    print_endline Atdts.Version.version;
     exit 0
   )
   else
@@ -41,7 +41,7 @@ let input_files_term =
 let version_term =
   let info =
     Arg.info ["version"]
-      ~doc:"Prints the version of atdpy and exits"
+      ~doc:"Prints the version of atdts and exits"
   in
   Arg.value (Arg.flag info)
 

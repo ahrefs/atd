@@ -1,23 +1,7 @@
 (*
-   Python code generation for JSON support (no biniou support)
+   TypeScript code generation for JSON support (no biniou support)
 
-   Takes the contents of a .atd file and translates it to a .py file.
-
-   Design:
-   - Python's standard 'json' module handles the parsing into generic
-     dictionaries and such.
-   - The generated code assigns one class to each ATD record. The use
-     of type annotations allows for some type checking with mypy.
-   - When converting from JSON to Python, the well-formedness of the data
-     is checked.
-   - When converting from Python to JSON, the well-formedness of the data
-     is checked as well since the type system is too easy to bypass.
-   - Sum types use one main class and one subclass per case.
-   - Tuples, like arrays, options, and nullables don't get a class of
-     their own.
-   - Generic functions are provided to deal with the case where the JSON
-     root is an array.
-
+   Takes the contents of a .atd file and translates it to a .ts file.
    Look into the tests to see what generated code looks like.
 *)
 
@@ -37,20 +21,16 @@ type env = {
   translate_inst_variable: unit -> (string -> string);
 }
 
-let annot_schema_python : Atd.Annot.schema_section =
+let annot_schema_ts : Atd.Annot.schema_section =
   {
-    section = "python";
+    section = "ts";
     fields = [
-      Module_head, "text";
-      Module_head, "json_py.text";
-      Type_def, "decorator";
-      Type_expr, "repr";
       Field, "default";
     ]
   }
 
 let annot_schema : Atd.Annot.schema =
-  annot_schema_python :: Atdgen_emit.Json.annot_schema_json
+  annot_schema_ts :: Atdgen_emit.Json.annot_schema_json
 
 (* Translate a preferred variable name into an available Python identifier. *)
 let trans env id =
@@ -59,6 +39,8 @@ let trans env id =
 (*
    Convert an ascii string to CamelCase.
    Note that this gets rid of leading and trailing underscores.
+
+   TODO: share the implementation with atdpy?
 *)
 let to_camel_case s =
   let buf = Buffer.create (String.length s) in
@@ -76,37 +58,23 @@ let to_camel_case s =
   done;
   Buffer.contents buf
 
-(* Use CamelCase as recommended by PEP 8. *)
-let class_name env id =
+(* Use CamelCase as customary for type names. *)
+let type_name env id =
   trans env (to_camel_case id)
 
 (*
    Create a class identifier that hasn't been seen yet.
    This is for internal disambiguation and still must translated using
-   the 'trans' function ('class_name' will not work due to trailing
+   the 'trans' function ('type_name' will not work due to trailing
    underscores being added for disambiguation).
 *)
-let create_class_name env name =
+let create_type_name env name =
   let preferred_id = to_camel_case name in
   env.create_variable preferred_id
 
 let init_env () : env =
   let keywords = [
-    (* Keywords
-       https://docs.python.org/3/reference/lexical_analysis.html#keywords
-    *)
-    "False"; "await"; "else"; "import"; "pass";
-    "None"; "break"; "except"; "in"; "raise";
-    "True"; "class"; "finally"; "is"; "return";
-    "and"; "continue"; "for"; "lambda"; "try";
-    "as"; "def"; "from"; "nonlocal"; "while";
-    "assert"; "del"; "global"; "not"; "with";
-    "async"; "elif"; "if"; "or"; "yield";
-
-    (* Soft keywords
-       https://docs.python.org/3/reference/lexical_analysis.html#soft-keywords
-    *)
-    "match"; "case"; "_";
+    (* TODO *)
   ]
   in
   (* Various variables used in the generated code.
@@ -114,36 +82,12 @@ let init_env () : env =
      variables either start with '_', 'atd_', or an uppercase letter.
   *)
   let reserved_variables = [
-    (* from typing *)
-    "Any"; "Callable"; "Dict"; "List"; "Optional"; "Tuple";
-
-    (* for use in json.dumps, json.loads etc. *)
-    "json";
-
-    (* exceptions *)
-    "ValueError";
-
-    (* used to check JSON node type *)
-    "isinstance";
-    "bool"; "int"; "float"; "str"; "dict"; "list"; "tuple";
-
-    (* other built-in variables *)
-    "self"; "cls"; "repr";
+    (* TODO *)
   ] in
   let variables =
     Unique_name.init
       ~reserved_identifiers:(reserved_variables @ keywords)
       ~reserved_prefixes:["atd_"; "_atd_"]
-      ~safe_prefix:"x_"
-  in
-  let method_names () =
-    Unique_name.init
-      ~reserved_identifiers:(
-        ["from_json"; "to_json";
-         "from_json_string"; "to_json_string"]
-        @ keywords
-      )
-      ~reserved_prefixes:["__"]
       ~safe_prefix:"x_"
   in
   let create_variable name =
@@ -152,21 +96,14 @@ let init_env () : env =
   let translate_variable id =
     Unique_name.translate variables id
   in
-  let translate_inst_variable () =
-    let u = method_names () in
-    fun id -> Unique_name.translate u id
-  in
   {
     create_variable;
     translate_variable;
-    translate_inst_variable;
   }
 
 type quote_kind = Single | Double
 
-(* Escape a string fragment to be placed in single quotes or double quotes.
-   https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals
-*)
+(* Escape a string fragment to be placed in single quotes or double quotes. *)
 let escape_string_content quote_kind s =
   let buf = Buffer.create (String.length s + 2) in
   for i = 0 to String.length s - 1 do
@@ -186,24 +123,8 @@ let _double_esc s =
   escape_string_content Double s
 
 let fixed_size_preamble atd_filename =
-  sprintf {|"""Generated by atdpy from type definitions in %s.
-
-This implements classes for the types defined in '%s', providing
-methods and functions to convert data from/to JSON.
-"""
-
-# Disable flake8 entirely on this file:
-# flake8: noqa
-
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
-
-import json
-
-############################################################################
-# Private functions
-############################################################################
-
+  sprintf {|// Generated by atdts from type definitions in %s.
+// Provides type-safe translations from/to JSON.
 
 def _atd_missing_json_field(type_name: str, json_field_name: str) -> NoReturn:
     raise ValueError(f"missing field '{json_field_name}'"
@@ -416,16 +337,12 @@ def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
         else:
             return write_elt(x)
     return write_nullable
-
-
-############################################################################
-# Public classes
-############################################################################|}
+|}
     atd_filename
     atd_filename
 
 let not_implemented loc msg =
-  A.error_at loc ("not implemented in atdpy: " ^ msg)
+  A.error_at loc ("not implemented in atdts: " ^ msg)
 
 let todo hint =
   failwith ("TODO: " ^ hint)
@@ -439,47 +356,16 @@ let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
   in
   spaced blocks
 
-let double_spaced blocks =
-  spaced ~spacer:[Line ""; Line ""] blocks
-
-(*
-   Representations of ATD type '(key * value) list' in JSON and Python.
-   Key type or value type are provided when it's useful.
-*)
-type assoc_kind =
-  | Array_list (* default representation; possibly not even a list of pairs *)
-  | Array_dict of type_expr * type_expr (* key type, value type *)
-  (* Keys in JSON objects are always of type string. *)
-  | Object_dict of type_expr (* value type *)
-  | Object_list of type_expr (* value type *)
-
-let assoc_kind loc (e : type_expr) an : assoc_kind =
-  let json_repr = Atdgen_emit.Json.get_json_list an in
-  let python_repr = Python_annot.get_python_assoc_repr an in
-  match e, json_repr, python_repr with
-  | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Dict ->
-      Array_dict (key, value)
-  | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
-    Object, Dict ->
-      Object_dict value
-  | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
-    Object, List -> Object_list value
-  | _, Array, List -> Array_list
-  | _, Object, _ -> error_at loc "not a (string * _) list"
-  | _, Array, _ -> error_at loc "not a (_ * _) list"
-
-(* Map ATD built-in types to built-in mypy types *)
-let py_type_name env (name : string) =
+(* Map ATD built-in types to built-in TypeScript types *)
+let ts_type_name env (name : string) =
   match name with
-  | "unit" -> "None"
-  | "bool" -> "bool"
-  | "int" -> "int"
-  | "float" -> "float"
-  | "string" -> "str"
-  | "abstract" -> (* not supported *) "Any"
-  | user_defined -> class_name env user_defined
+  | "unit" -> "Null"
+  | "bool" -> "boolean"
+  | "int" -> "Int"
+  | "float" -> "number"
+  | "string" -> "string"
+  | "abstract" -> (* not supported *) "any"
+  | user_defined -> type_name env user_defined
 
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
@@ -491,24 +377,12 @@ let rec type_name_of_expr env (e : type_expr) : string =
         |> List.map (fun (loc, x, an) -> type_name_of_expr env x)
       in
       sprintf "Tuple[%s]" (String.concat ", " type_names)
-  | List (loc, e, an) ->
-      (match assoc_kind loc e an with
-       | Array_list
-       | Object_list _ ->
-           sprintf "List[%s]"
-             (type_name_of_expr env e)
-       | Array_dict (key, value) ->
-           sprintf "Dict[%s, %s]"
-             (type_name_of_expr env key) (type_name_of_expr env value)
-       | Object_dict value ->
-           sprintf "Dict[str, %s]"
-             (type_name_of_expr env value)
-      )
+  | List (loc, e, an) -> sprintf "List[%s]" (type_name_of_expr env e)
   | Option (loc, e, an) -> sprintf "Optional[%s]" (type_name_of_expr env e)
   | Nullable (loc, e, an) -> type_name_of_expr env e
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
-  | Name (loc, (loc2, name, []), an) -> py_type_name env name
+  | Name (loc, (loc2, name, []), an) -> ts_type_name env name
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -537,9 +411,9 @@ let rec get_default_default
   | Name _ -> None
   | Tvar _ -> None
 
-let get_python_default
+let get_ts_default
     ?mutable_ok (e : type_expr) (an : annot) : string option =
-  let user_default = Python_annot.get_python_default an in
+  let user_default = TS_annot.get_ts_default an in
   match user_default with
   | Some s -> Some s
   | None -> get_default_default ?mutable_ok e
@@ -687,7 +561,7 @@ let rec json_reader env (e : type_expr) =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
-       | _ -> sprintf "%s.from_json" (class_name env name))
+       | _ -> sprintf "%s.from_json" (type_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -711,7 +585,7 @@ and tuple_reader env cells =
     len len
 
 let from_json_class_argument
-    env trans_meth py_class_name ((loc, (name, kind, an), e) : simple_field) =
+    env trans_meth py_type_name ((loc, (name, kind, an), e) : simple_field) =
   let python_name = inst_var_name trans_meth name in
   let json_name = Atdgen_emit.Json.get_json_fname name an in
   let unwrapped_type =
@@ -730,7 +604,7 @@ let from_json_class_argument
     match kind with
     | Required ->
         sprintf "_atd_missing_json_field('%s', '%s')"
-          (single_esc py_class_name)
+          (single_esc py_type_name)
           (single_esc json_name)
     | Optional -> "None"
     | With_default ->
@@ -767,7 +641,7 @@ let inst_var_declaration
   ]
 
 let record env ~class_decorators loc name (fields : field list) an =
-  let py_class_name = class_name env name in
+  let py_type_name = type_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
     List.map (function
@@ -795,13 +669,13 @@ let record env ~class_decorators loc name (fields : field list) an =
       Inline (construct_json_field env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
-      Line (from_json_class_argument env trans_meth py_class_name x)
+      Line (from_json_class_argument env trans_meth ts_type_name x)
     ) fields in
   let from_json =
     [
       Line "@classmethod";
       Line (sprintf "def from_json(cls, x: Any) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc ts_type_name));
       Block [
         Line "if isinstance(x, dict):";
         Block [
@@ -812,7 +686,7 @@ let record env ~class_decorators loc name (fields : field list) an =
         Line "else:";
         Block [
           Line (sprintf "_atd_bad_json('%s', x)"
-                  (single_esc py_class_name))
+                  (single_esc ts_type_name))
         ]
       ]
     ]
@@ -831,7 +705,7 @@ let record env ~class_decorators loc name (fields : field list) an =
     [
       Line "@classmethod";
       Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc ts_type_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
       ]
@@ -847,7 +721,7 @@ let record env ~class_decorators loc name (fields : field list) an =
   in
   [
     Inline class_decorators;
-    Line (sprintf "class %s:" py_class_name);
+    Line (sprintf "class %s:" ts_type_name);
     Block (spaced [
       Line (sprintf {|"""Original type: %s = { ... }"""|} name);
       Inline inst_var_declarations;
@@ -875,11 +749,11 @@ class Foo:
     ...
 *)
 let alias_wrapper env ~class_decorators name type_expr =
-  let py_class_name = class_name env name in
+  let ts_type_name = type_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
     Inline class_decorators;
-    Line (sprintf "class %s:" py_class_name);
+    Line (sprintf "class %s:" ts_type_name);
     Block [
       Line (sprintf {|"""Original type: %s"""|} name);
       Line "";
@@ -887,7 +761,7 @@ let alias_wrapper env ~class_decorators name type_expr =
       Line "";
       Line "@classmethod";
       Line (sprintf "def from_json(cls, x: Any) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc ts_type_name));
       Block [
         Line (sprintf "return cls(%s(x))" (json_reader env type_expr))
       ];
@@ -899,7 +773,7 @@ let alias_wrapper env ~class_decorators name type_expr =
       Line "";
       Line "@classmethod";
       Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc ts_type_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
       ];
@@ -991,7 +865,7 @@ let read_cases0 env loc name cases0 =
   [
     Inline ifs;
     Line (sprintf "_atd_bad_json('%s', x)"
-            (class_name env name |> single_esc))
+            (type_name env name |> single_esc))
   ]
 
 let read_cases1 env loc name cases1 =
@@ -1017,11 +891,11 @@ let read_cases1 env loc name cases1 =
   [
     Inline ifs;
     Line (sprintf "_atd_bad_json('%s', x)"
-            (class_name env name |> single_esc))
+            (type_name env name |> single_esc))
   ]
 
 let sum_container env ~class_decorators loc name cases =
-  let py_class_name = class_name env name in
+  let ts_type_name = type_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
       trans env unique_name
@@ -1056,7 +930,7 @@ let sum_container env ~class_decorators loc name cases =
   in
   [
     Inline class_decorators;
-    Line (sprintf "class %s:" py_class_name);
+    Line (sprintf "class %s:" ts_type_name);
     Block [
       Line (sprintf {|"""Original type: %s = [ ... ]"""|} name);
       Line "";
@@ -1071,12 +945,12 @@ let sum_container env ~class_decorators loc name cases =
       Line "";
       Line "@classmethod";
       Line (sprintf "def from_json(cls, x: Any) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc ts_type_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
         Line (sprintf "_atd_bad_json('%s', x)"
-                (single_esc (class_name env name)))
+                (single_esc (type_name env name)))
       ];
       Line "";
       Line "def to_json(self) -> Any:";
@@ -1086,7 +960,7 @@ let sum_container env ~class_decorators loc name cases =
       Line "";
       Line "@classmethod";
       Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc ts_type_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
       ];
@@ -1103,7 +977,7 @@ let sum env ~class_decorators loc name cases =
     List.map (fun (x : variant) ->
       match x with
       | Variant (loc, (orig_name, an), opt_e) ->
-          let unique_name = create_class_name env orig_name in
+          let unique_name = create_type_name env orig_name in
           (loc, orig_name, unique_name, an, opt_e)
       | Inherit _ -> assert false
     ) cases
@@ -1187,14 +1061,14 @@ let definition_group ~atd_filename env
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_class_names env (items: A.module_body) =
+let reserve_good_type_names env (items: A.module_body) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (class_name env name))
+    (fun (Type (loc, (name, param, an), e)) -> ignore (type_name env name))
     items
 
 let to_file ~atd_filename ~head (items : A.module_body) dst_path =
   let env = init_env () in
-  reserve_good_class_names env items;
+  reserve_good_type_names env items;
   let head = List.map (fun s -> Line s) head in
   let python_defs =
     Atd.Util.tsort items

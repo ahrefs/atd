@@ -47,6 +47,7 @@ Next release
 * atdpy: Disable flake8 checks on generated code via a special comment (#252)
 * atdgen: Add support for ppx attributes on individual type
   definitions (#238)
+* (BREAKING) atdgen: change encoding of int64 values to string (#231)
 * other enhancement and fixes (see git log)
 
 2.2.0 (2020-09-03)

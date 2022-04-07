@@ -23,7 +23,7 @@
   test_atdts.ts)
  (action
   (progn
-   (run tsc %{deps})
+   (run tsc --lib es7 %{deps})
    (run js manual_sample.js)
    (run js test_atdts.js)
   )

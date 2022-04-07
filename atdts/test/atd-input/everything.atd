@@ -15,9 +15,11 @@ type root = {
   point: (float * float);
   kinds: kind list;
   assoc1: (float * int) list;
+(*
   assoc2: (string * int) list <json repr="object">;
   assoc3: (float * int) list <ts repr="dict">;
   assoc4: (string * int) list <json repr="object"> <ts repr="dict">;
+*)
 }
 
 type alias = int list

@@ -1,8 +1,5 @@
 // Handwritten code that serves as a model for generated code.
 
-// This type alias documents extra validation when converting from/to JSON
-export type Int = number
-
 /*
 export class Root_ {
   kind: 'Root';
@@ -95,3 +92,67 @@ main({ kind: 'Thing', value: 42 });
 // main(new Root_());
 main({ kind: 'Root' });
 console.log(KindFromJSON(KindToJSON({ kind: 'Thing', value: 42 })))
+_atd_missing_json_field('a', 'b')
+
+////////////////////// Constant runtime library /////////////////////////////
+
+// This type alias documents extra validation when converting from/to JSON
+export type Int = number
+
+function _atd_missing_json_field(type_name: string, json_field_name: string) {
+  throw new Error(`missing field '${json_field_name}'` +
+                  ` in JSON object of type '${type_name}'`)
+}
+
+function _atd_bad_json(expected_type: string, json_value: any) {
+  let value_str = String(json_value)
+  if (value_str.length > 200)
+    value_str = value_str.substring(0, 200) + '…';
+
+  throw new Error(`incompatible JSON value where` +
+                  ` type '${expected_type}' was expected: '${value_str}'`)
+}
+
+function _atd_bad_ts(expected_type: string, json_value: any) {
+  let value_str = String(json_value)
+  if (value_str.length > 200)
+    value_str = value_str.substring(0, 200) + '…';
+
+  throw new Error(`incompatible TypeScript value where` +
+                  ` type '${expected_type}' was expected: '${value_str}'`)
+}
+
+function _atd_read_unit(x: any) {
+  if (x === null)
+    return x;
+  else
+    _atd_bad_json('unit', x);
+}
+
+function _atd_read_bool(x: any): boolean {
+  if (typeof x === 'boolean')
+    return x;
+  else
+    _atd_bad_json('bool', x)
+}
+
+function _atd_read_int(x: any): Int {
+  if (Number.isInteger(x))
+    return x;
+  else
+    _atd_bad_json('integer', x)
+}
+
+function _atd_read_float(x: any): number {
+  if (isFinite(x))
+    return x;
+  else
+    _atd_bad_json('number', x)
+}
+
+function _atd_read_string(x: any): string {
+  if (typeof x === 'string')
+    return x;
+  else
+    _atd_bad_json('str', x)
+}

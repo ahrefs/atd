@@ -4,7 +4,7 @@
    Atdts also honors json-related annotations defined in Atdgen_emit.Json.
 *)
 
-let get_python_default an : string option =
+let get_ts_default an : string option =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
       ~sections:["ts"]

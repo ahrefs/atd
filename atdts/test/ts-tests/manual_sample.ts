@@ -92,12 +92,14 @@ main({ kind: 'Thing', value: 42 });
 // main(new Root_());
 main({ kind: 'Root' });
 console.log(KindFromJSON(KindToJSON({ kind: 'Thing', value: 42 })))
-_atd_missing_json_field('a', 'b')
+//_atd_missing_json_field('a', 'b')
 
 ////////////////////// Constant runtime library /////////////////////////////
 
 // This type alias documents extra validation when converting from/to JSON
 export type Int = number
+
+export type Option<T> = null | { Some: T }
 
 function _atd_missing_json_field(type_name: string, json_field_name: string) {
   throw new Error(`missing field '${json_field_name}'` +
@@ -124,35 +126,90 @@ function _atd_bad_ts(expected_type: string, json_value: any) {
 
 function _atd_read_unit(x: any) {
   if (x === null)
-    return x;
+    return x
   else
-    _atd_bad_json('unit', x);
+    _atd_bad_json('null', x)
 }
 
 function _atd_read_bool(x: any): boolean {
   if (typeof x === 'boolean')
-    return x;
+    return x
   else
-    _atd_bad_json('bool', x)
+    _atd_bad_json('boolean', x)
 }
 
 function _atd_read_int(x: any): Int {
   if (Number.isInteger(x))
-    return x;
+    return x
   else
     _atd_bad_json('integer', x)
 }
 
 function _atd_read_float(x: any): number {
   if (isFinite(x))
-    return x;
+    return x
   else
     _atd_bad_json('number', x)
 }
 
 function _atd_read_string(x: any): string {
   if (typeof x === 'string')
-    return x;
+    return x
   else
     _atd_bad_json('str', x)
+}
+
+function _atd_read_list<T>(read_elt: (any) => T): (any) => T[] {
+  function read_list(elts: any): T[] {
+    if (Array.isArray(elts))
+      return elts.map(read_elt)
+    else
+      _atd_bad_json('array', elts)
+  }
+  return read_list
+}
+
+function _atd_write_unit(x: any) {
+  if (x === null)
+    return x
+  else
+    _atd_bad_ts('null', x)
+}
+
+function _atd_write_bool(x: any): boolean {
+  if (typeof x === 'boolean')
+    return x
+  else
+    _atd_bad_ts('boolean', x)
+}
+
+function _atd_write_int(x: any): Int {
+  if (Number.isInteger(x))
+    return x
+  else
+    _atd_bad_ts('integer', x)
+}
+
+function _atd_write_float(x: any): number {
+  if (isFinite(x))
+    return x
+  else
+    _atd_bad_ts('number', x)
+}
+
+function _atd_write_string(x: any): string {
+  if (typeof x === 'string')
+    return x
+  else
+    _atd_bad_ts('string', x)
+}
+
+function _atd_write_list<T>(write_elt: (T) => any): (elts: T[]) => any {
+  function write_list(elts: T[]): any {
+    if (Array.isArray(elts))
+      return elts.map(write_elt)
+    else
+      _atd_bad_json('array', elts)
+  }
+  return write_list
 }

@@ -1,4 +1,4 @@
-type kind = [
+type different_kinds_of_things = [
   | Root (* class name conflict *)
   | Thing of int
   | WOW <json name="wow">
@@ -13,13 +13,15 @@ type root = {
   ~answer <ts default="42">: int;
   aliased: alias;
   point: (float * float);
-  kinds: kind list;
+  kinds: different_kinds_of_things list;
   assoc1: (float * int) list;
 (*
   assoc2: (string * int) list <json repr="object">;
   assoc3: (float * int) list <ts repr="dict">;
   assoc4: (string * int) list <json repr="object"> <ts repr="dict">;
 *)
+  ~options: int option list;
+  ~nullables: int nullable list;
 }
 
 type alias = int list

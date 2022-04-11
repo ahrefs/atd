@@ -13,10 +13,15 @@ sudo apt-get update
 #
 sudo apt-get install -y \
   default-jdk \
+  nodejs \
+  npm \
   python3 \
   python3-pip \
   python-is-python3 \
   scala
+
+# For atdts
+sudo npm install -g typescript
 
 # For atdpy
 pip install pytest mypy flake8
@@ -43,3 +48,9 @@ python3 -m pytest --version
 
 echo 'check mypy'
 python3 -m mypy --version
+
+echo 'check js'
+js --version
+
+echo 'check tsc'
+tsc --version

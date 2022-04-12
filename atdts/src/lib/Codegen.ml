@@ -176,178 +176,233 @@ function _atd_missing_json_field(type_name: string, json_field_name: string) {
                     ` in JSON object of type '${type_name}'`)
 }
 
-function _atd_bad_json(expected_type: string, json_value: any) {
-  let value_str = String(json_value)
+function _atd_missing_ts_field(type_name: string, ts_field_name: string) {
+    throw new Error(`missing field '${ts_field_name}'` +
+                    ` in TypeScript object of type '${type_name}'`)
+}
+
+function _atd_bad_json(expected_type: string, json_value: any, context: any) {
+  let value_str = JSON.stringify(json_value)
   if (value_str.length > 200)
     value_str = value_str.substring(0, 200) + '…';
 
   throw new Error(`incompatible JSON value where` +
-                  ` type '${expected_type}' was expected: '${value_str}'`)
+                  ` type '${expected_type}' was expected: '${value_str}'.` +
+                  ` Occurs in '${JSON.stringify(context)}'.`)
 }
 
-function _atd_bad_ts(expected_type: string, json_value: any) {
-  let value_str = String(json_value)
+function _atd_bad_ts(expected_type: string, ts_value: any, context: any) {
+  let value_str = JSON.stringify(ts_value)
   if (value_str.length > 200)
     value_str = value_str.substring(0, 200) + '…';
 
   throw new Error(`incompatible TypeScript value where` +
-                  ` type '${expected_type}' was expected: '${value_str}'`)
+                  ` type '${expected_type}' was expected: '${value_str}'.` +
+                  ` Occurs in '${JSON.stringify(context)}'.`)
 }
 
-function _atd_check_json_tuple(len: Int, x: any) {
+function _atd_check_json_tuple(len: Int, x: any, context: any) {
   if (! Array.isArray(x) || x.length !== len)
-    _atd_bad_json('tuple of length ' + len, x);
+    _atd_bad_json('tuple of length ' + len, x, context);
 }
 
-function _atd_read_unit(x: any) {
+function _atd_read_unit(x: any, context: any) {
   if (x === null)
     return x
   else
-    _atd_bad_json('null', x)
+    _atd_bad_json('null', x, context)
 }
 
-function _atd_read_bool(x: any): boolean {
+function _atd_read_bool(x: any, context: any): boolean {
   if (typeof x === 'boolean')
     return x
   else
-    _atd_bad_json('boolean', x)
+    _atd_bad_json('boolean', x, context)
 }
 
-function _atd_read_int(x: any): Int {
+function _atd_read_int(x: any, context: any): Int {
   if (Number.isInteger(x))
     return x
   else
-    _atd_bad_json('integer', x)
+    _atd_bad_json('integer', x, context)
 }
 
-function _atd_read_float(x: any): number {
+function _atd_read_float(x: any, context: any): number {
   if (isFinite(x))
     return x
   else
-    _atd_bad_json('number', x)
+    _atd_bad_json('number', x, context)
 }
 
-function _atd_read_string(x: any): string {
+function _atd_read_string(x: any, context: any): string {
   if (typeof x === 'string')
     return x
   else
-    _atd_bad_json('str', x)
+    _atd_bad_json('str', x, context)
 }
 
-function _atd_read_optional_field<T>(read_elt: (x: any) => T,
-                                     x: any): T {
-  if (x === undefined || x === null)
-    return null
+function _atd_read_required_field<T>(type_name: string,
+                                     field_name: string,
+                                     read_elt: (x: any, context: any) => T,
+                                     x: any,
+                                     context: any): T {
+  if (x === undefined)
+    _atd_missing_json_field(type_name, field_name)
   else
-    return read_elt(x)
+    return read_elt(x, context)
 }
 
-function _atd_read_field_with_default<T>(read_elt: (x: any) => T,
+function _atd_read_optional_field<T>(read_elt: (x: any, context: any) => T,
+                                     x: any,
+                                     context: any): T {
+  if (x === undefined || x === null)
+    return x
+  else
+    return read_elt(x, context)
+}
+
+function _atd_read_field_with_default<T>(read_elt: (x: any, context: any) => T,
                                          default_: T,
-                                         x: any): T {
+                                         x: any,
+                                         context: any): T {
   if (x === undefined || x === null)
     return default_
   else
-    return read_elt(x)
+    return read_elt(x, context)
 }
 
-function _atd_read_option<T>(read_elt: (x: any) => T):
-  (x: any) => Option<T> {
-  function read_option(x: any): Option<T> {
+function _atd_read_option<T>(read_elt: (x: any, context: any) => T):
+  (x: any, context: any) => Option<T> {
+  function read_option(x: any, context: any): Option<T> {
     if (x === 'None')
       return null
     else {
-      _atd_check_json_tuple(2, x);
+      _atd_check_json_tuple(2, x, context);
       switch (x[0]) {
         case 'Some':
-          return { value: read_elt(x[0]) }
+          return { value: read_elt(x[1], context) }
         default:
-           _atd_bad_json('option', x)
+           _atd_bad_json('option', x, context)
       }
     }
   }
   return read_option
 }
 
-function _atd_read_nullable<T>(read_elt: (x: any) => T):
-  (x: any) => T {
-  function read_nullable(x: any): T {
+function _atd_read_nullable<T>(read_elt: (x: any, context: any) => T):
+  (x: any, context: any) => T {
+  function read_nullable(x: any, context: any): T {
     if (x === null)
       return null
     else
-      return read_elt(x)
+      return read_elt(x, context)
   }
   return read_nullable
 }
 
-function _atd_read_list<T>(read_elt: (x: any) => T): (elts: any) => T[] {
-  function read_list(elts: any): T[] {
+function _atd_read_list<T>(read_elt: (x: any, context: any) => T):
+  (elts: any, context: any) => T[] {
+  function read_list(elts: any, context: any): T[] {
     if (Array.isArray(elts))
-      return elts.map(read_elt)
+      return elts.map((x) => read_elt(x, elts))
     else
-      _atd_bad_json('array', elts)
+      _atd_bad_json('array', elts, context)
   }
   return read_list
 }
 
-function _atd_write_unit(x: any) {
+function _atd_write_unit(x: any, context: any) {
   if (x === null)
     return x
   else
-    _atd_bad_ts('null', x)
+    _atd_bad_ts('null', x, context)
 }
 
-function _atd_write_bool(x: any): boolean {
+function _atd_write_bool(x: any, context: any): boolean {
   if (typeof x === 'boolean')
     return x
   else
-    _atd_bad_ts('boolean', x)
+    _atd_bad_ts('boolean', x, context)
 }
 
-function _atd_write_int(x: any): Int {
+function _atd_write_int(x: any, context: any): Int {
   if (Number.isInteger(x))
     return x
   else
-    _atd_bad_ts('integer', x)
+    _atd_bad_ts('integer', x, context)
 }
 
-function _atd_write_float(x: any): number {
+function _atd_write_float(x: any, context: any): number {
   if (isFinite(x))
     return x
   else
-    _atd_bad_ts('number', x)
+    _atd_bad_ts('number', x, context)
 }
 
-function _atd_write_string(x: any): string {
+function _atd_write_string(x: any, context: any): string {
   if (typeof x === 'string')
     return x
   else
-    _atd_bad_ts('string', x)
+    _atd_bad_ts('string', x, context)
 }
 
-function _atd_write_option<T>(write_elt: (x: T) => any):
-   (elts: Option<T>) => any {
-  function write_option(x: Option<T>): any {
+function _atd_write_option<T>(write_elt: (x: T, context: any) => any):
+   (elts: Option<T>, context: any) => any {
+  function write_option(x: Option<T>, context: any): any {
     if (x === null)
       return 'None'
     else
-      return ['Some', write_elt(x.value)]
+      return ['Some', write_elt(x.value, context)]
   }
   return write_option
 }
 
-function _atd_write_nullable<T>(write_elt: (x: T) => any): (elts: T) => any {
-  function write_option(x: T): any {
+function _atd_write_nullable<T>(write_elt: (x: T, context: any) => any):
+  (elts: T, context: any) => any {
+  function write_option(x: T, context: any): any {
     if (x === null)
       return null
     else
-      return write_elt(x)
+      return write_elt(x, context)
   }
   return write_option
 }
 
-function _atd_write_list<T>(write_elt: (elt: T) => any): (elts: T[]) => any {
-  return ((elts: T[]): any => elts.map(write_elt))
+function _atd_write_list<T>(write_elt: (elt: T, context: any) => any):
+  (elts: T[], context: any) => any {
+  return ((elts: T[], context: any): any =>
+    elts.map((x) => write_elt(x, elts))
+  )
+}
+
+function _atd_write_required_field<T>(type_name: string,
+                                      field_name: string,
+                                      write_elt: (x: T, context: any) => any,
+                                      x: T,
+                                      context: any): any {
+  if (x === undefined)
+    _atd_missing_ts_field(type_name, field_name)
+  else
+    return write_elt(x, context)
+}
+
+function _atd_write_optional_field<T>(write_elt: (x: T, context: any) => any,
+                                      x: T,
+                                      context: any): any {
+  if (x === undefined || x === null)
+    return x
+  else
+    return write_elt(x, context)
+}
+
+function _atd_write_field_with_default<T>(
+  write_elt: (x: T, context: any) => any,
+  default_: T,
+  x: T,
+  context: any
+): T {
+  const value = (x === undefined || x === null) ? default_ : x
+  return write_elt(value, context)
 }
 |}
 
@@ -449,11 +504,12 @@ let rec json_reader env e =
 and tuple_reader env cells =
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
-      sprintf "%s(x[%i])" (json_reader env e) i
+      sprintf "%s(x[%i], x)" (json_reader env e) i
     ) cells
     |> String.concat ", "
   in
-  sprintf "((x): %s => { _atd_check_json_tuple(%d, x); return [%s] })"
+  sprintf "((x, context): %s => \
+            { _atd_check_json_tuple(%d, x, context); return [%s] })"
     (type_name_of_tuple env cells)
     (List.length cells)
     tuple_body
@@ -481,11 +537,11 @@ let rec json_writer env e =
 and tuple_writer env cells =
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
-      sprintf "%s(x[%i])" (json_writer env e) i
+      sprintf "%s(x[%i], x)" (json_writer env e) i
     ) cells
     |> String.concat ", "
   in
-  sprintf "((x) => [%s])"
+  sprintf "((x, context) => [%s])"
     tuple_body
 
 let field_def env ((loc, (name, kind, an), e) : simple_field) =
@@ -533,22 +589,23 @@ let case_type env type_name (loc, case_name, an, opt_e) =
   let comment =
     let json_name = Atdgen_emit.Json.get_json_cons case_name an in
     if case_name <> json_name then
-      sprintf " // JSON: \"%s\"" (double_esc json_name)
+      sprintf " /* JSON: \"%s\" */" (double_esc json_name)
     else
       ""
   in
   match opt_e with
   | None ->
       [
-        Line (sprintf "| { kind: %s }%s"
-                (string_of_case_name case_name) comment)
+        Line (sprintf "| { kind: %s%s }"
+                (string_of_case_name case_name)
+                comment)
       ]
   | Some e ->
       [
-        Line (sprintf "| { kind: %s; value: %s }%s"
+        Line (sprintf "| { kind: %s%s; value: %s }"
                 (string_of_case_name case_name)
-                (type_name_of_expr env e)
-                comment);
+                comment
+                (type_name_of_expr env e));
       ]
 
 let flatten_variants variants =
@@ -598,7 +655,7 @@ let read_case env loc orig_name an opt_e =
       [
         Line (sprintf "case '%s':" (single_esc json_name));
         Block [
-          Line (sprintf "return { kind: '%s', value: %s(x[1]) }"
+          Line (sprintf "return { kind: '%s', value: %s(x[1], x) }"
                   (single_esc orig_name)
                   (json_writer env e))
         ]
@@ -618,7 +675,7 @@ let write_case env loc orig_name an opt_e =
       [
         Line (sprintf "case '%s':" (single_esc orig_name));
         Block [
-          Line (sprintf "return ['%s', %s(x.value)]"
+          Line (sprintf "return ['%s', %s(x.value, x)]"
                   (single_esc json_name)
                   (json_writer env e))
         ]
@@ -644,7 +701,7 @@ let read_root_expr env ~ts_type_name e =
           Block [
             Line "default:";
             Block [
-              Line (sprintf "_atd_bad_json('%s', x)"
+              Line (sprintf "_atd_bad_json('%s', x, context)"
                       (single_esc ts_type_name))
             ]
           ];
@@ -653,8 +710,8 @@ let read_root_expr env ~ts_type_name e =
       in
       let part1 =
         [
-          Line "_atd_check_json_tuple(2, x)";
-          Line "switch (x[1]) {";
+          Line "_atd_check_json_tuple(2, x, context)";
+          Line "switch (x[0]) {";
           Block (
             List.map
               (fun (loc, orig_name, an, opt_e) ->
@@ -665,7 +722,7 @@ let read_root_expr env ~ts_type_name e =
           Block [
             Line "default:";
             Block [
-              Line (sprintf "_atd_bad_json('%s', x)"
+              Line (sprintf "_atd_bad_json('%s', x, context)"
                       (single_esc ts_type_name))
             ]
           ];
@@ -699,12 +756,17 @@ let read_root_expr env ~ts_type_name e =
               let unwrapped_e = unwrap_field_type loc name kind e in
               (match kind with
                | Required ->
-                   Line (sprintf "%s: %s(x['%s']),"
-                           name
-                           (json_reader env unwrapped_e)
-                           json_name_lit)
+                   Line (
+                     sprintf "%s: _atd_read_required_field(\
+                               '%s', '%s', %s, x['%s'], x),"
+                       name
+                       (single_esc ts_type_name)
+                       json_name_lit
+                       (json_reader env unwrapped_e)
+                       json_name_lit
+                   )
                | Optional ->
-                   Line (sprintf "%s: _atd_read_optional_field(%s, x['%s']),"
+                   Line (sprintf "%s: _atd_read_optional_field(%s, x['%s'], x),"
                            name
                            (json_reader env unwrapped_e)
                            json_name_lit)
@@ -714,13 +776,13 @@ let read_root_expr env ~ts_type_name e =
                         A.error_at loc
                           "a default field value must be specified with \
                            <ts default=\"...\">"
-                   | Some default ->
-                       Line (sprintf "%s: _atd_read_field_with_default\
-                                      (%s, %s, x['%s']),"
-                               name
-                               (json_reader env unwrapped_e)
-                               default
-                               json_name_lit)
+                    | Some default ->
+                        Line (sprintf "%s: _atd_read_field_with_default\
+                                       (%s, %s, x['%s'], x),"
+                                name
+                                (json_reader env unwrapped_e)
+                                default
+                                json_name_lit)
                    )
               )
         ) fields
@@ -736,13 +798,13 @@ let read_root_expr env ~ts_type_name e =
   | Nullable _
   | Name _ as e ->
       [
-        Line (sprintf "return %s(x);" (json_reader env e))
+        Line (sprintf "return %s(x, context);" (json_reader env e))
       ]
   | Shared (loc, e, an) -> assert false
   | Wrap (loc, e, an) -> assert false
   | Tvar _ -> assert false
 
-let write_root_expr env e =
+let write_root_expr env ~ts_type_name e =
   match unwrap e with
   | Sum (loc, variants, an) ->
       let cases = flatten_variants variants in
@@ -759,13 +821,41 @@ let write_root_expr env e =
           | `Inherit _ -> assert false
           | `Field ((loc, (name, kind, an), e) : simple_field) ->
               let json_name_lit =
-                Atdgen_emit.Json.get_json_fname name an |> single_esc
+                sprintf "'%s'"
+                  (Atdgen_emit.Json.get_json_fname name an |> single_esc)
               in
               let unwrapped_e = unwrap_field_type loc name kind e in
-              Line (sprintf "%s: %s(x.%s),"
-                      json_name_lit
-                      (json_writer env unwrapped_e)
-                      name)
+              (match kind with
+               | Required ->
+                   Line (sprintf "%s: _atd_write_required_field\
+                                    ('%s', '%s', %s, x.%s, x),"
+                           json_name_lit
+                           (single_esc ts_type_name)
+                           (single_esc name)
+                           (json_writer env unwrapped_e)
+                           name)
+               | Optional ->
+                   Line (sprintf "%s: _atd_write_optional_field\
+                                    (%s, x.%s, x),"
+                           json_name_lit
+                           (json_writer env unwrapped_e)
+                           name)
+               | With_default ->
+                   let ts_default =
+                     match get_ts_default e an with
+                     | None ->
+                         A.error_at loc
+                          "a default field value must be specified with \
+                           <ts default=\"...\">"
+                     | Some x -> x
+                   in
+                   Line (sprintf "%s: _atd_write_field_with_default\
+                                    (%s, %s, x.%s, x),"
+                           json_name_lit
+                           (json_writer env unwrapped_e)
+                           ts_default
+                           name)
+              )
         ) fields
       in
       [
@@ -779,7 +869,7 @@ let write_root_expr env e =
   | Nullable _
   | Name _ as e ->
       [
-        Line (sprintf "return %s(x);" (json_writer env e))
+        Line (sprintf "return %s(x, context);" (json_writer env e))
       ]
   | Shared (loc, e, an) -> assert false
   | Wrap (loc, e, an) -> assert false
@@ -790,17 +880,19 @@ let make_reader env loc name an e =
   let ts_name = reader_name env name in
   let read = read_root_expr env ~ts_type_name e in
   [
-    Line (sprintf "export function %s(x: any): %s {" ts_name ts_type_name);
+    Line (sprintf "export function %s(x: any, context: any = x): %s {"
+            ts_name ts_type_name);
     Block read;
     Line "}";
   ]
 
 let make_writer env loc name an e =
-  let type_ = type_name env name in
+  let ts_type_name = type_name env name in
   let ts_name = writer_name env name in
-  let write = write_root_expr env e in
+  let write = write_root_expr env ~ts_type_name e in
   [
-    Line (sprintf "export function %s(x: %s): any {" ts_name type_);
+    Line (sprintf "export function %s(x: %s, context: any = x): any {"
+            ts_name ts_type_name);
     Block write;
     Line "}";
   ]

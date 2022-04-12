@@ -100,16 +100,42 @@ let rec unwrap e =
   | Name _ -> e
 
 let init_env () : env =
+  (* The list of "keywords" is extracted from
+     https://github.com/microsoft/TypeScript/issues/2536#issuecomment-87194347
+     In the current implementation, we don't use variables named by the
+     user. Field names can be any alphanumeric identifiers in JS.
+     Avoiding reserved words for field names is useful when the user wants
+     to use them as variables, for example when they use the shorthand
+     notation {foo} instead of {foo: foo}. In this case, the variable 'foo'
+     may not be a reserved word.
+  *)
   let keywords = [
-    (* TODO *)
+   (* Reserved Words *)
+    "break"; "case"; "catch"; "class"; "const"; "continue"; "debugger";
+    "default"; "delete"; "do"; "else"; "enum"; "export"; "extends"; "false";
+    "finally"; "for"; "function"; "if"; "import"; "in"; "instanceof";
+    "new"; "null"; "return"; "super"; "switch"; "this"; "throw"; "true";
+    "try"; "typeof"; "var"; "void"; "while"; "with";
+
+    (* Strict Mode Reserved Words *)
+    "as"; "implements"; "interface"; "let"; "package"; "private";
+    "protected"; "public"; "static"; "yield";
+
+    (* Contextual Keywords *)
+    "any"; "boolean"; "constructor"; "declare"; "get"; "module";
+    "require"; "number"; "set"; "string"; "symbol"; "type"; "from";
+    "of";
+
+    (* from https://github.com/microsoft/TypeScript/issues/2536#issuecomment-98259939 *)
+    "async"; "await"; "namespace";
+
+    (* Does anyone have complete list? Microsoft, I'm looking at you. *)
   ]
   in
-  (* Various variables used in the generated code.
-     Lowercase variables in this list are superfluous as long as all generated
-     variables either start with '_', 'atd_', or an uppercase letter.
-  *)
+  (* Various variables used in the generated code. *)
   let reserved_variables = [
-    (* TODO *)
+    (* fill this thoroughly when we start using user-named variables *)
+    "x"
   ] in
   let variables =
     Atd.Unique_name.init
@@ -750,6 +776,7 @@ let read_root_expr env ~ts_type_name e =
         List.map (function
           | `Inherit _ -> assert false
           | `Field ((loc, (name, kind, an), e) : simple_field) ->
+              let ts_name = trans env name in
               let json_name_lit =
                 Atdgen_emit.Json.get_json_fname name an |> single_esc
               in
@@ -759,7 +786,7 @@ let read_root_expr env ~ts_type_name e =
                    Line (
                      sprintf "%s: _atd_read_required_field(\
                                '%s', '%s', %s, x['%s'], x),"
-                       name
+                       ts_name
                        (single_esc ts_type_name)
                        json_name_lit
                        (json_reader env unwrapped_e)
@@ -767,7 +794,7 @@ let read_root_expr env ~ts_type_name e =
                    )
                | Optional ->
                    Line (sprintf "%s: _atd_read_optional_field(%s, x['%s'], x),"
-                           name
+                           ts_name
                            (json_reader env unwrapped_e)
                            json_name_lit)
                | With_default ->
@@ -779,7 +806,7 @@ let read_root_expr env ~ts_type_name e =
                     | Some default ->
                         Line (sprintf "%s: _atd_read_field_with_default\
                                        (%s, %s, x['%s'], x),"
-                                name
+                                ts_name
                                 (json_reader env unwrapped_e)
                                 default
                                 json_name_lit)
@@ -820,6 +847,7 @@ let write_root_expr env ~ts_type_name e =
         List.map (function
           | `Inherit _ -> assert false
           | `Field ((loc, (name, kind, an), e) : simple_field) ->
+              let ts_name = trans env name in
               let json_name_lit =
                 sprintf "'%s'"
                   (Atdgen_emit.Json.get_json_fname name an |> single_esc)
@@ -833,13 +861,13 @@ let write_root_expr env ~ts_type_name e =
                            (single_esc ts_type_name)
                            (single_esc name)
                            (json_writer env unwrapped_e)
-                           name)
+                           ts_name)
                | Optional ->
                    Line (sprintf "%s: _atd_write_optional_field\
                                     (%s, x.%s, x),"
                            json_name_lit
                            (json_writer env unwrapped_e)
-                           name)
+                           ts_name)
                | With_default ->
                    let ts_default =
                      match get_ts_default e an with
@@ -854,7 +882,7 @@ let write_root_expr env ~ts_type_name e =
                            json_name_lit
                            (json_writer env unwrapped_e)
                            ts_default
-                           name)
+                           ts_name)
               )
         ) fields
       in

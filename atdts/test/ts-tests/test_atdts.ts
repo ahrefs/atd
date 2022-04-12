@@ -21,6 +21,7 @@ function save(file: string, data: string) {
 function test_everything() {
   const a_obj : API.Root = {
     id: "abc",
+    this_: 100,
     items: [[], [1, 2]],
     // maybe?: 123,
     extras: [17, 53],
@@ -66,6 +67,7 @@ ${a_str}`
   const b_str =
 `{
   "ID": "abc",
+  "this": 100,
   "items": [
     [],
     [

@@ -15,8 +15,11 @@ export type DifferentKindsOfThings =
 | { kind: 'WOW' /* JSON: "wow" */ }
 | { kind: 'Amaze' /* JSON: "!!!" */; value: string[] }
 
+export type This = Int
+
 export type Root = {
   id: string;
+  this_: This;
   items: Int[][];
   maybe?: Int;
   extras: Int[];
@@ -70,9 +73,18 @@ export function readDifferentKindsOfThings(x: any, context: any = x): DifferentK
   }
 }
 
+export function writeThis(x: This, context: any = x): any {
+  return _atd_write_int(x, context);
+}
+
+export function readThis(x: any, context: any = x): This {
+  return _atd_read_int(x, context);
+}
+
 export function writeRoot(x: Root, context: any = x): any {
   return {
     'ID': _atd_write_required_field('Root', 'id', _atd_write_string, x.id, x),
+    'this': _atd_write_required_field('Root', 'this', writeThis, x.this_, x),
     'items': _atd_write_required_field('Root', 'items', _atd_write_list(_atd_write_list(_atd_write_int)), x.items, x),
     'maybe': _atd_write_optional_field(_atd_write_int, x.maybe, x),
     'extras': _atd_write_field_with_default(_atd_write_list(_atd_write_int), [], x.extras, x),
@@ -89,6 +101,7 @@ export function writeRoot(x: Root, context: any = x): any {
 export function readRoot(x: any, context: any = x): Root {
   return {
     id: _atd_read_required_field('Root', 'ID', _atd_read_string, x['ID'], x),
+    this_: _atd_read_required_field('Root', 'this', readThis, x['this'], x),
     items: _atd_read_required_field('Root', 'items', _atd_read_list(_atd_read_list(_atd_read_int)), x['items'], x),
     maybe: _atd_read_optional_field(_atd_read_int, x['maybe'], x),
     extras: _atd_read_field_with_default(_atd_read_list(_atd_read_int), [], x['extras'], x),

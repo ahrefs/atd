@@ -5,8 +5,12 @@ type different_kinds_of_things = [
   | Amaze <json name="!!!"> of string list
 ]
 
+(* TS keyword *)
+type this = int
+
 type root = {
   id <json name="ID">: string;
+  this: this;
   items: int list list;
   ?maybe: int option;
   ~extras: int list;

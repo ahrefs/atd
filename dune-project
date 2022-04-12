@@ -74,6 +74,9 @@
  (name atd)
  (depends
   (ocaml (>= 4.08))
+  ; 20211230 has a bug when parsing variants with a payload https://github.com/ahrefs/atd/pull/272
+  ; preserve the ability to compile with older versions because recent ones create slow builds
+  ; https://github.com/returntocorp/pfff/issues/512
   (menhir (and (>= 20180523) (<> 20211230)))
   easy-format
   (alcotest :with-test)

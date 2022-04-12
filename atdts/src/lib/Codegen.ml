@@ -181,8 +181,7 @@ let runtime_start atd_filename =
 // Type-safe translations from/to JSON
 //
 // For each type 'Foo', there is a pair of functions:
-// - 'writeFoo': convert a 'Foo' value into a JSON-compatible value
-//   of type 'any'.
+// - 'writeFoo': convert a 'Foo' value into a JSON-compatible value.
 // - 'readFoo': convert a JSON-compatible value into a TypeScript value
 //   of type 'Foo'.
 |}

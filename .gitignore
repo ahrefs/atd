@@ -27,5 +27,10 @@ dep
 html
 man1
 
+# for TypeScript support (atdts)
+node_modules
+package.json
+package-lock.json
+
 # Temporary folder(s) used by some maintenance scripts
 tmp

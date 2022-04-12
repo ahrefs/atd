@@ -21,9 +21,8 @@ sudo apt-get install -y \
   scala
 
 # For atdts
-sudo npm install -g \
-  typescript \
-  @types/node
+sudo npm install -g typescript
+npm install @types/node
 
 # For atdpy
 pip install pytest mypy flake8

@@ -4,7 +4,6 @@ import * as API from "./everything"
 import * as fs from "fs"
 
 function assert(is_true: boolean, errmsg) {
-  console.log("assert: " + String(is_true))
   if (!is_true) {
     throw new Error(errmsg)
   }

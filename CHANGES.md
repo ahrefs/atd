@@ -4,7 +4,7 @@ Next release
 * atdpy: make `atdpy --version` print the version of atdpy itself
   rather than the version of the `atd` library (#270)
 * atdpy: fix handling of `nullable` and improve error message on
-         `option` types used without optional fields
+         `option` types used without optional fields (#277)
 
 
 2.4.1 (2022-03-25)

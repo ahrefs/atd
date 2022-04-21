@@ -1,7 +1,7 @@
 ;
 ; We test in two phases:
 ;
-; 1. Check that the generated Python code is what we expect.
+; 1. Check that the generated TypeScript code is what we expect.
 ;
 
 (rule

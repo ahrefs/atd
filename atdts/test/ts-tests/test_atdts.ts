@@ -37,20 +37,18 @@ function test_everything() {
       [1.1, 1],
       [2.2, 2],
     ],
-/*
-      assoc2=[
-          ("c", 3),
-          ("d", 4),
-      ],
-      assoc3={
-          5.5: 5,
-          6.6: 6,
-      },
-      assoc4={
-          "g": 7,
-          "h": 8,
-      },
-*/
+    assoc2: [
+      ["c", 3],
+      ["d", 4],
+    ],
+    assoc3: new Map([
+      [5.5, 5],
+      [6.6, 6],
+    ]),
+    assoc4: new Map([
+      ["g", 7],
+      ["h", 8],
+    ]),
     options: [{value:10}, null, {value:88}],
     nullables: [13, 71]
   }
@@ -113,6 +111,24 @@ ${a_str}`
       2
     ]
   ],
+  "assoc2": {
+    "c": 3,
+    "d": 4
+  },
+  "assoc3": [
+    [
+      5.5,
+      5
+    ],
+    [
+      6.6,
+      6
+    ]
+  ],
+  "assoc4": {
+    "g": 7,
+    "h": 8
+  },
   "options": [
     [
       "Some",

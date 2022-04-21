@@ -27,6 +27,9 @@ export type Root = {
   point: [number, number];
   kinds: DifferentKindsOfThings[];
   assoc1: [number, Int][];
+  assoc2: [string, Int][];
+  assoc3: Map<number, Int>;
+  assoc4: Map<string, Int>;
   options: Option<Int>[];
   nullables: Int[];
 }
@@ -44,7 +47,7 @@ export function writeDifferentKindsOfThings(x: DifferentKindsOfThings, context: 
     case 'WOW':
       return 'wow'
     case 'Amaze':
-      return ['!!!', _atd_write_list(_atd_write_string)(x.value, x)]
+      return ['!!!', _atd_write_array(_atd_write_string)(x.value, x)]
   }
 }
 
@@ -65,7 +68,7 @@ export function readDifferentKindsOfThings(x: any, context: any = x): DifferentK
       case 'Thing':
         return { kind: 'Thing', value: _atd_write_int(x[1], x) }
       case '!!!':
-        return { kind: 'Amaze', value: _atd_write_list(_atd_write_string)(x[1], x) }
+        return { kind: 'Amaze', value: _atd_write_array(_atd_write_string)(x[1], x) }
       default:
         _atd_bad_json('DifferentKindsOfThings', x, context)
     }
@@ -84,16 +87,19 @@ export function writeRoot(x: Root, context: any = x): any {
   return {
     'ID': _atd_write_required_field('Root', 'id', _atd_write_string, x.id, x),
     'this': _atd_write_required_field('Root', 'this', writeThis, x.this_, x),
-    'items': _atd_write_required_field('Root', 'items', _atd_write_list(_atd_write_list(_atd_write_int)), x.items, x),
+    'items': _atd_write_required_field('Root', 'items', _atd_write_array(_atd_write_array(_atd_write_int)), x.items, x),
     'maybe': _atd_write_optional_field(_atd_write_int, x.maybe, x),
-    'extras': _atd_write_field_with_default(_atd_write_list(_atd_write_int), [], x.extras, x),
+    'extras': _atd_write_field_with_default(_atd_write_array(_atd_write_int), [], x.extras, x),
     'answer': _atd_write_field_with_default(_atd_write_int, 42, x.answer, x),
     'aliased': _atd_write_required_field('Root', 'aliased', writeAlias, x.aliased, x),
     'point': _atd_write_required_field('Root', 'point', ((x, context) => [_atd_write_float(x[0], x), _atd_write_float(x[1], x)]), x.point, x),
-    'kinds': _atd_write_required_field('Root', 'kinds', _atd_write_list(writeDifferentKindsOfThings), x.kinds, x),
-    'assoc1': _atd_write_required_field('Root', 'assoc1', _atd_write_list(((x, context) => [_atd_write_float(x[0], x), _atd_write_int(x[1], x)])), x.assoc1, x),
-    'options': _atd_write_field_with_default(_atd_write_list(_atd_write_option(_atd_write_int)), [], x.options, x),
-    'nullables': _atd_write_field_with_default(_atd_write_list(_atd_write_int), [], x.nullables, x),
+    'kinds': _atd_write_required_field('Root', 'kinds', _atd_write_array(writeDifferentKindsOfThings), x.kinds, x),
+    'assoc1': _atd_write_required_field('Root', 'assoc1', _atd_write_array(((x, context) => [_atd_write_float(x[0], x), _atd_write_int(x[1], x)])), x.assoc1, x),
+    'assoc2': _atd_write_required_field('Root', 'assoc2', _atd_write_assoc_array_to_object(_atd_write_int), x.assoc2, x),
+    'assoc3': _atd_write_required_field('Root', 'assoc3', _atd_write_assoc_map_to_array(_atd_write_float, _atd_write_int), x.assoc3, x),
+    'assoc4': _atd_write_required_field('Root', 'assoc4', _atd_write_assoc_map_to_object(_atd_write_int), x.assoc4, x),
+    'options': _atd_write_field_with_default(_atd_write_array(_atd_write_option(_atd_write_int)), [], x.options, x),
+    'nullables': _atd_write_field_with_default(_atd_write_array(_atd_write_int), [], x.nullables, x),
   };
 }
 
@@ -101,25 +107,28 @@ export function readRoot(x: any, context: any = x): Root {
   return {
     id: _atd_read_required_field('Root', 'ID', _atd_read_string, x['ID'], x),
     this_: _atd_read_required_field('Root', 'this', readThis, x['this'], x),
-    items: _atd_read_required_field('Root', 'items', _atd_read_list(_atd_read_list(_atd_read_int)), x['items'], x),
+    items: _atd_read_required_field('Root', 'items', _atd_read_array(_atd_read_array(_atd_read_int)), x['items'], x),
     maybe: _atd_read_optional_field(_atd_read_int, x['maybe'], x),
-    extras: _atd_read_field_with_default(_atd_read_list(_atd_read_int), [], x['extras'], x),
+    extras: _atd_read_field_with_default(_atd_read_array(_atd_read_int), [], x['extras'], x),
     answer: _atd_read_field_with_default(_atd_read_int, 42, x['answer'], x),
     aliased: _atd_read_required_field('Root', 'aliased', readAlias, x['aliased'], x),
     point: _atd_read_required_field('Root', 'point', ((x, context): [number, number] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_float(x[1], x)] }), x['point'], x),
-    kinds: _atd_read_required_field('Root', 'kinds', _atd_read_list(readDifferentKindsOfThings), x['kinds'], x),
-    assoc1: _atd_read_required_field('Root', 'assoc1', _atd_read_list(((x, context): [number, Int] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_int(x[1], x)] })), x['assoc1'], x),
-    options: _atd_read_field_with_default(_atd_read_list(_atd_read_option(_atd_read_int)), [], x['options'], x),
-    nullables: _atd_read_field_with_default(_atd_read_list(_atd_read_nullable(_atd_read_int)), [], x['nullables'], x),
+    kinds: _atd_read_required_field('Root', 'kinds', _atd_read_array(readDifferentKindsOfThings), x['kinds'], x),
+    assoc1: _atd_read_required_field('Root', 'assoc1', _atd_read_array(((x, context): [number, Int] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_int(x[1], x)] })), x['assoc1'], x),
+    assoc2: _atd_read_required_field('Root', 'assoc2', _atd_read_assoc_object_into_array(_atd_read_int), x['assoc2'], x),
+    assoc3: _atd_read_required_field('Root', 'assoc3', _atd_read_assoc_array_into_map(_atd_read_float, _atd_read_int), x['assoc3'], x),
+    assoc4: _atd_read_required_field('Root', 'assoc4', _atd_read_assoc_object_into_map(_atd_read_int), x['assoc4'], x),
+    options: _atd_read_field_with_default(_atd_read_array(_atd_read_option(_atd_read_int)), [], x['options'], x),
+    nullables: _atd_read_field_with_default(_atd_read_array(_atd_read_nullable(_atd_read_int)), [], x['nullables'], x),
   };
 }
 
 export function writeAlias(x: Alias, context: any = x): any {
-  return _atd_write_list(_atd_write_int)(x, context);
+  return _atd_write_array(_atd_write_int)(x, context);
 }
 
 export function readAlias(x: any, context: any = x): Alias {
-  return _atd_read_list(_atd_read_int)(x, context);
+  return _atd_read_array(_atd_read_int)(x, context);
 }
 
 export function writePair(x: Pair, context: any = x): any {
@@ -268,15 +277,68 @@ function _atd_read_nullable<T>(read_elt: (x: any, context: any) => T):
   return read_nullable
 }
 
-function _atd_read_list<T>(read_elt: (x: any, context: any) => T):
+function _atd_read_array<T>(read_elt: (x: any, context: any) => T):
   (elts: any, context: any) => T[] {
-  function read_list(elts: any, context: any): T[] {
+  function read_array(elts: any, context: any): T[] {
     if (Array.isArray(elts))
       return elts.map((x) => read_elt(x, elts))
     else
       _atd_bad_json('array', elts, context)
   }
-  return read_list
+  return read_array
+}
+
+function _atd_read_assoc_array_into_map<K, V>(
+    read_key: (key: any, context: any) => K,
+    read_value: (value: any, context: any) => V
+  ): (x: any, context: any) => Map<K, V> {
+  function read_assoc(elts: any, context: any): Map<K, V> {
+    if (Array.isArray(elts)) {
+      const res = new Map<K, V>([])
+      for (const x of elts) {
+        if (Array.isArray(x) && x.length === 2)
+          res.set(read_key(x[0], x), read_value(x[1], x))
+        else
+          _atd_bad_json('pair', x, elts)
+      }
+      return res
+    }
+    else
+      _atd_bad_json('array', elts, context)
+  }
+  return read_assoc
+}
+
+function _atd_read_assoc_object_into_map<T>(
+    read_value: (value: any, context: any) => T
+  ): (x: any, context: any) => Map<string, T> {
+  function read_assoc(elts: any, context: any): Map<string, T> {
+    if (typeof elts === 'object') {
+      const res = new Map<string, T>([])
+      for (const [key, value] of Object.entries(elts))
+        res.set(key, read_value(value, elts))
+      return res
+    }
+    else
+      _atd_bad_json('object', elts, context)
+  }
+  return read_assoc
+}
+
+function _atd_read_assoc_object_into_array<T>(
+    read_value: (value: any, context: any) => T
+  ): (x: any, context: any) => [string, T][] {
+  function read_assoc(elts: any, context: any): [string, T][] {
+    if (typeof elts === 'object') {
+      const res = []
+      for (const [key, value] of Object.entries(elts))
+        res.push([key, read_value(value, elts)])
+      return res
+    }
+    else
+      _atd_bad_json('object', elts, context)
+  }
+  return read_assoc
 }
 
 function _atd_write_unit(x: any, context: any) {
@@ -336,11 +398,50 @@ function _atd_write_nullable<T>(write_elt: (x: T, context: any) => any):
   return write_option
 }
 
-function _atd_write_list<T>(write_elt: (elt: T, context: any) => any):
+function _atd_write_array<T>(write_elt: (elt: T, context: any) => any):
   (elts: T[], context: any) => any {
   return ((elts: T[], context: any): any =>
     elts.map((x) => write_elt(x, elts))
   )
+}
+
+function _atd_write_assoc_map_to_array<K, V>(
+    write_key: (key: K, context: any) => any,
+    write_value: (value: V, context: any) => any
+  ): (elts: Map<K, V>, context: any) => any {
+  function write_assoc(elts: Map<K, V>, context: any): any {
+    const res = []
+    elts.forEach((value: V, key: K) =>
+      res.push([write_key(key, elts), write_value(value, elts)])
+    )
+    return res
+  }
+  return write_assoc
+}
+
+function _atd_write_assoc_map_to_object<T>(
+    write_value: (value: T, context: any) => any
+  ): (elts: Map<string, T>, context: any) => any {
+  function write_assoc(elts: Map<string, T>, context: any): any {
+    const res = {}
+    elts.forEach((value: T, key: string) =>
+      res[key] = write_value(value, elts)
+    )
+    return res
+  }
+  return write_assoc
+}
+
+function _atd_write_assoc_array_to_object<T>(
+    write_value: (value: T, context: any) => any
+  ): (elts: [string, T][], context: any) => any {
+  function write_assoc(elts: [string, T][], context: any): any {
+    const res = {}
+    for (const [key, value] of elts)
+      res[key] = write_value(value, elts)
+    return res
+  }
+  return write_assoc
 }
 
 function _atd_write_required_field<T>(type_name: string,

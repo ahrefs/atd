@@ -443,7 +443,7 @@ let double_spaced blocks =
   spaced ~spacer:[Line ""; Line ""] blocks
 
 (*
-   Representations of ATD type '(key * value) list' in JSON and Python.
+   Representations of ATD type '(string * value) list' in JSON and Python.
    Key type or value type are provided when it's useful.
 *)
 type assoc_kind =

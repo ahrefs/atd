@@ -23,6 +23,7 @@ let annot_schema_ts : Atd.Annot.schema_section =
   {
     section = "ts";
     fields = [
+      Type_expr, "repr";
       Field, "default";
     ]
   }
@@ -325,15 +326,68 @@ function _atd_read_nullable<T>(read_elt: (x: any, context: any) => T):
   return read_nullable
 }
 
-function _atd_read_list<T>(read_elt: (x: any, context: any) => T):
+function _atd_read_array<T>(read_elt: (x: any, context: any) => T):
   (elts: any, context: any) => T[] {
-  function read_list(elts: any, context: any): T[] {
+  function read_array(elts: any, context: any): T[] {
     if (Array.isArray(elts))
       return elts.map((x) => read_elt(x, elts))
     else
       _atd_bad_json('array', elts, context)
   }
-  return read_list
+  return read_array
+}
+
+function _atd_read_assoc_array_into_map<K, V>(
+    read_key: (key: any, context: any) => K,
+    read_value: (value: any, context: any) => V
+  ): (x: any, context: any) => Map<K, V> {
+  function read_assoc(elts: any, context: any): Map<K, V> {
+    if (Array.isArray(elts)) {
+      const res = new Map<K, V>([])
+      for (const x of elts) {
+        if (Array.isArray(x) && x.length === 2)
+          res.set(read_key(x[0], x), read_value(x[1], x))
+        else
+          _atd_bad_json('pair', x, elts)
+      }
+      return res
+    }
+    else
+      _atd_bad_json('array', elts, context)
+  }
+  return read_assoc
+}
+
+function _atd_read_assoc_object_into_map<T>(
+    read_value: (value: any, context: any) => T
+  ): (x: any, context: any) => Map<string, T> {
+  function read_assoc(elts: any, context: any): Map<string, T> {
+    if (typeof elts === 'object') {
+      const res = new Map<string, T>([])
+      for (const [key, value] of Object.entries(elts))
+        res.set(key, read_value(value, elts))
+      return res
+    }
+    else
+      _atd_bad_json('object', elts, context)
+  }
+  return read_assoc
+}
+
+function _atd_read_assoc_object_into_array<T>(
+    read_value: (value: any, context: any) => T
+  ): (x: any, context: any) => [string, T][] {
+  function read_assoc(elts: any, context: any): [string, T][] {
+    if (typeof elts === 'object') {
+      const res = []
+      for (const [key, value] of Object.entries(elts))
+        res.push([key, read_value(value, elts)])
+      return res
+    }
+    else
+      _atd_bad_json('object', elts, context)
+  }
+  return read_assoc
 }
 
 function _atd_write_unit(x: any, context: any) {
@@ -393,11 +447,50 @@ function _atd_write_nullable<T>(write_elt: (x: T, context: any) => any):
   return write_option
 }
 
-function _atd_write_list<T>(write_elt: (elt: T, context: any) => any):
+function _atd_write_array<T>(write_elt: (elt: T, context: any) => any):
   (elts: T[], context: any) => any {
   return ((elts: T[], context: any): any =>
     elts.map((x) => write_elt(x, elts))
   )
+}
+
+function _atd_write_assoc_map_to_array<K, V>(
+    write_key: (key: K, context: any) => any,
+    write_value: (value: V, context: any) => any
+  ): (elts: Map<K, V>, context: any) => any {
+  function write_assoc(elts: Map<K, V>, context: any): any {
+    const res = []
+    elts.forEach((value: V, key: K) =>
+      res.push([write_key(key, elts), write_value(value, elts)])
+    )
+    return res
+  }
+  return write_assoc
+}
+
+function _atd_write_assoc_map_to_object<T>(
+    write_value: (value: T, context: any) => any
+  ): (elts: Map<string, T>, context: any) => any {
+  function write_assoc(elts: Map<string, T>, context: any): any {
+    const res = {}
+    elts.forEach((value: T, key: string) =>
+      res[key] = write_value(value, elts)
+    )
+    return res
+  }
+  return write_assoc
+}
+
+function _atd_write_assoc_array_to_object<T>(
+    write_value: (value: T, context: any) => any
+  ): (elts: [string, T][], context: any) => any {
+  function write_assoc(elts: [string, T][], context: any): any {
+    const res = {}
+    for (const [key, value] of elts)
+      res[key] = write_value(value, elts)
+    return res
+  }
+  return write_assoc
 }
 
 function _atd_write_required_field<T>(type_name: string,
@@ -431,6 +524,34 @@ function _atd_write_field_with_default<T>(
 }
 |}
 
+(*
+   Representations of ATD type '(string * value) list' in JSON and TypeScript.
+   Key type or value type are provided when it's useful.
+*)
+type assoc_kind =
+  | Array_array (* default representation; possibly not even a list of pairs *)
+  | Array_map of type_expr * type_expr (* key type, value type *)
+  (* Keys in JSON objects are always of type string. *)
+  | Object_map of type_expr (* value type *)
+  | Object_array of type_expr (* value type *)
+
+let assoc_kind loc (e : type_expr) an : assoc_kind =
+  let json_repr = Atdgen_emit.Json.get_json_list an in
+  let ts_repr = TS_annot.get_ts_assoc_repr an in
+  match e, json_repr, ts_repr with
+  | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Map ->
+      Array_map (key, value)
+  | Tuple (loc,
+           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+    Object, Map ->
+      Object_map value
+  | Tuple (loc,
+           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+    Object, Array -> Object_array value
+  | _, Array, Array -> Array_array
+  | _, Object, _ -> error_at loc "not a (string * _) list"
+  | _, Array, _ -> error_at loc "not a (_ * _) list"
+
 (* Map ATD built-in types to built-in TypeScript types *)
 let ts_type_name env (name : string) =
   match name with
@@ -447,7 +568,19 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
   | Tuple (loc, cells, an) -> type_name_of_tuple env cells
-  | List (loc, e, an) -> sprintf "%s[]" (type_name_of_expr env e)
+  | List (loc, e, an) ->
+      (match assoc_kind loc e an with
+       | Array_array
+       | Object_array _ ->
+           sprintf "%s[]"
+             (type_name_of_expr env e)
+       | Array_map (key, value) ->
+           sprintf "Map<%s, %s>"
+             (type_name_of_expr env key) (type_name_of_expr env value)
+       | Object_map value ->
+           sprintf "Map<string, %s>"
+             (type_name_of_expr env value)
+      )
   | Option (loc, e, an) -> sprintf "Option<%s>" (type_name_of_expr env e)
   | Nullable (loc, e, an) -> type_name_of_expr env e
   | Shared (loc, e, an) -> not_implemented loc "shared"
@@ -510,7 +643,23 @@ let rec json_reader env e =
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
   | Tuple (loc, cells, an) -> tuple_reader env cells
-  | List (loc, e, an) -> sprintf "_atd_read_list(%s)" (json_reader env e)
+  | List (loc, e, an) ->
+      (* ATD lists of pairs can be represented as objects in JSON or
+         as Maps in TypeScript. All 4 combinations are supported.
+         The default is to use JSON arrays and TypeScript arrays. *)
+      (match assoc_kind loc e an with
+       | Array_array ->
+           sprintf "_atd_read_array(%s)" (json_reader env e)
+       | Array_map (key, value) ->
+           sprintf "_atd_read_assoc_array_into_map(%s, %s)"
+             (json_reader env key) (json_reader env value)
+       | Object_map value ->
+           sprintf "_atd_read_assoc_object_into_map(%s)"
+             (json_reader env value)
+       | Object_array value ->
+           sprintf "_atd_read_assoc_object_into_array(%s)"
+             (json_reader env value)
+      )
   | Option (loc, e, an) -> sprintf "_atd_read_option(%s)" (json_reader env e)
   | Nullable (loc, e, an) ->
       sprintf "_atd_read_nullable(%s)" (json_reader env e)
@@ -544,7 +693,20 @@ let rec json_writer env e =
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
   | Tuple (loc, cells, an) -> tuple_writer env cells
-  | List (loc, e, an) -> sprintf "_atd_write_list(%s)" (json_writer env e)
+  | List (loc, e, an) ->
+      (match assoc_kind loc e an with
+       | Array_array ->
+           sprintf "_atd_write_array(%s)" (json_writer env e)
+       | Array_map (key, value) ->
+           sprintf "_atd_write_assoc_map_to_array(%s, %s)"
+             (json_writer env key) (json_writer env value)
+       | Object_map value ->
+           sprintf "_atd_write_assoc_map_to_object(%s)"
+             (json_writer env value)
+       | Object_array value ->
+           sprintf "_atd_write_assoc_array_to_object(%s)"
+             (json_writer env value)
+      )
   | Option (loc, e, an) -> sprintf "_atd_write_option(%s)" (json_writer env e)
   | Nullable (loc, e, an) -> json_writer env e
   | Shared (loc, e, an) -> not_implemented loc "shared"

@@ -1,5 +1,5 @@
 (*
-   Python code generation for JSON support (no biniou support)
+   TypeScript code generation for JSON support (no biniou support)
 *)
 
 (** Take ATD type definitions and translate them to TypeScript, writing

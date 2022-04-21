@@ -59,7 +59,7 @@ let to_camel_case s =
   done;
   Buffer.contents buf
 
-(* Translate a preferred variable name into an available Python identifier. *)
+(* Translate a preferred variable name into an available TypeScript identifier. *)
 let trans env id =
   env.translate_variable id
 

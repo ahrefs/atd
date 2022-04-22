@@ -10,22 +10,3 @@
   )
   (action
     (run %{bin:atdts} %{deps})))
-
-;
-; Compile and run the tests on the generated TypeScript code.
-;
-(rule
- (alias runtest)
- (package atdts)
- (deps
-  everything.ts
-  manual_sample.ts
-  test_atdts.ts)
- (action
-  (progn
-   (run tsc --lib es7,dom %{deps})
-   (run js manual_sample.js)
-   (run js test_atdts.js)
-  )
- )
-)

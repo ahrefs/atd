@@ -17,10 +17,13 @@ build:
 .PHONY: test
 test:
 	$(MAKE) clean-for-dune
+	# Run atdts to convert ATD -> TypeScript
 	$(DUNE) runtest -f; status=$$?; \
 	  ln -s ../../../_build/default/atdts/test/ts-tests/everything.ts \
 	    test/ts-tests/everything.ts && \
 	  exit "$$status"
+	# Compile and run the TypeScript code
+	$(MAKE) -C test/ts-tests
 
 .PHONY: clean-for-dune
 clean-for-dune:

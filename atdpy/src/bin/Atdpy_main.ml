@@ -90,7 +90,7 @@ type bar = [
   `P "Report issues at https://github.com/ahrefs/atd";
 
   `S Manpage.s_see_also;
-  `P "atdgen, atdj, atds"
+  `P "atdgen, atdj, atds, atdts"
 ]
 
 let cmdline_term run =

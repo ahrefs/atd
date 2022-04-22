@@ -37,6 +37,10 @@ let not_implemented loc msg =
 let todo hint =
   failwith ("TODO: " ^ hint)
 
+(* This is used to convince the TypeScript type checker in strict mode
+   that a function doesn't lack a return statement (TS2366) *)
+let impossible = "throw new Error('impossible')"
+
 (*
    Convert an ascii string to CamelCase.
    Note that this gets rid of leading and trailing underscores.
@@ -232,39 +236,49 @@ function _atd_check_json_tuple(len: Int, x: any, context: any) {
     _atd_bad_json('tuple of length ' + len, x, context);
 }
 
-function _atd_read_unit(x: any, context: any) {
+function _atd_read_unit(x: any, context: any): null {
   if (x === null)
-    return x
-  else
+    return null
+  else {
     _atd_bad_json('null', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_bool(x: any, context: any): boolean {
   if (typeof x === 'boolean')
     return x
-  else
+  else {
     _atd_bad_json('boolean', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_int(x: any, context: any): Int {
   if (Number.isInteger(x))
     return x
-  else
+  else {
     _atd_bad_json('integer', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_float(x: any, context: any): number {
   if (isFinite(x))
     return x
-  else
+  else {
     _atd_bad_json('number', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_string(x: any, context: any): string {
   if (typeof x === 'string')
     return x
-  else
+  else {
     _atd_bad_json('str', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_required_field<T>(type_name: string,
@@ -272,8 +286,10 @@ function _atd_read_required_field<T>(type_name: string,
                                      read_elt: (x: any, context: any) => T,
                                      x: any,
                                      context: any): T {
-  if (x === undefined)
+  if (x === undefined) {
     _atd_missing_json_field(type_name, field_name)
+    throw new Error('impossible')
+  }
   else
     return read_elt(x, context)
 }
@@ -308,7 +324,8 @@ function _atd_read_option<T>(read_elt: (x: any, context: any) => T):
         case 'Some':
           return { value: read_elt(x[1], context) }
         default:
-           _atd_bad_json('option', x, context)
+          _atd_bad_json('option', x, context)
+          throw new Error('impossible')
       }
     }
   }
@@ -331,8 +348,10 @@ function _atd_read_array<T>(read_elt: (x: any, context: any) => T):
   function read_array(elts: any, context: any): T[] {
     if (Array.isArray(elts))
       return elts.map((x) => read_elt(x, elts))
-    else
+    else {
       _atd_bad_json('array', elts, context)
+      throw new Error('impossible')
+    }
   }
   return read_array
 }
@@ -347,13 +366,17 @@ function _atd_read_assoc_array_into_map<K, V>(
       for (const x of elts) {
         if (Array.isArray(x) && x.length === 2)
           res.set(read_key(x[0], x), read_value(x[1], x))
-        else
+        else {
           _atd_bad_json('pair', x, elts)
+          throw new Error('impossible')
+        }
       }
       return res
     }
-    else
+    else {
       _atd_bad_json('array', elts, context)
+      throw new Error('impossible')
+    }
   }
   return read_assoc
 }
@@ -368,8 +391,10 @@ function _atd_read_assoc_object_into_map<T>(
         res.set(key, read_value(value, elts))
       return res
     }
-    else
+    else {
       _atd_bad_json('object', elts, context)
+      throw new Error('impossible')
+    }
   }
   return read_assoc
 }
@@ -379,13 +404,15 @@ function _atd_read_assoc_object_into_array<T>(
   ): (x: any, context: any) => [string, T][] {
   function read_assoc(elts: any, context: any): [string, T][] {
     if (typeof elts === 'object') {
-      const res = []
+      const res: [string, T][] = []
       for (const [key, value] of Object.entries(elts))
         res.push([key, read_value(value, elts)])
       return res
     }
-    else
+    else {
       _atd_bad_json('object', elts, context)
+      throw new Error('impossible')
+    }
   }
   return read_assoc
 }
@@ -393,36 +420,46 @@ function _atd_read_assoc_object_into_array<T>(
 function _atd_write_unit(x: any, context: any) {
   if (x === null)
     return x
-  else
+  else {
     _atd_bad_ts('null', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_bool(x: any, context: any): boolean {
   if (typeof x === 'boolean')
     return x
-  else
+  else {
     _atd_bad_ts('boolean', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_int(x: any, context: any): Int {
   if (Number.isInteger(x))
     return x
-  else
+  else {
     _atd_bad_ts('integer', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_float(x: any, context: any): number {
   if (isFinite(x))
     return x
-  else
+  else {
     _atd_bad_ts('number', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_string(x: any, context: any): string {
   if (typeof x === 'string')
     return x
-  else
+  else {
     _atd_bad_ts('string', x, context)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_option<T>(write_elt: (x: T, context: any) => any):
@@ -459,7 +496,7 @@ function _atd_write_assoc_map_to_array<K, V>(
     write_value: (value: V, context: any) => any
   ): (elts: Map<K, V>, context: any) => any {
   function write_assoc(elts: Map<K, V>, context: any): any {
-    const res = []
+    const res: any = []
     elts.forEach((value: V, key: K) =>
       res.push([write_key(key, elts), write_value(value, elts)])
     )
@@ -472,7 +509,7 @@ function _atd_write_assoc_map_to_object<T>(
     write_value: (value: T, context: any) => any
   ): (elts: Map<string, T>, context: any) => any {
   function write_assoc(elts: Map<string, T>, context: any): any {
-    const res = {}
+    const res: any = {}
     elts.forEach((value: T, key: string) =>
       res[key] = write_value(value, elts)
     )
@@ -485,7 +522,7 @@ function _atd_write_assoc_array_to_object<T>(
     write_value: (value: T, context: any) => any
   ): (elts: [string, T][], context: any) => any {
   function write_assoc(elts: [string, T][], context: any): any {
-    const res = {}
+    const res: any = {}
     for (const [key, value] of elts)
       res[key] = write_value(value, elts)
     return res
@@ -498,8 +535,10 @@ function _atd_write_required_field<T>(type_name: string,
                                       write_elt: (x: T, context: any) => any,
                                       x: T,
                                       context: any): any {
-  if (x === undefined)
+  if (x === undefined) {
     _atd_missing_ts_field(type_name, field_name)
+    throw new Error('impossible')
+  }
   else
     return write_elt(x, context)
 }
@@ -582,7 +621,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
              (type_name_of_expr env value)
       )
   | Option (loc, e, an) -> sprintf "Option<%s>" (type_name_of_expr env e)
-  | Nullable (loc, e, an) -> type_name_of_expr env e
+  | Nullable (loc, e, an) -> sprintf "(%s | null)" (type_name_of_expr env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
   | Name (loc, (loc2, name, []), an) -> ts_type_name env name
@@ -889,7 +928,8 @@ let read_root_expr env ~ts_type_name e =
             Line "default:";
             Block [
               Line (sprintf "_atd_bad_json('%s', x, context)"
-                      (single_esc ts_type_name))
+                      (single_esc ts_type_name));
+              Line impossible;
             ]
           ];
           Line "}";
@@ -910,7 +950,8 @@ let read_root_expr env ~ts_type_name e =
             Line "default:";
             Block [
               Line (sprintf "_atd_bad_json('%s', x, context)"
-                      (single_esc ts_type_name))
+                      (single_esc ts_type_name));
+              Line impossible
             ]
           ];
           Line "}";

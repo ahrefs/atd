@@ -10,7 +10,7 @@ ATD such as OCaml, Java, Scala, or Python.
 
 See the sample input type definitions
 [everything.atd](test/atd-input/everything.atd) and
-the TypeScript output [everything.py](test/ts-expected/everything.ts).
+the TypeScript output [everything.ts](test/ts-expected/everything.ts).
 
 Requirements
 --

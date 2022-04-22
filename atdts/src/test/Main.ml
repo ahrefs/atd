@@ -1,7 +1,7 @@
 (*
    Entry point to the executable running the unit tests
 
-   TODO: the only test suite we had moved to the atd library. Remove?
+   TODO: We don't have any test suite right now. Remove?
 *)
 
 let test_suites : unit Alcotest.test list = [
@@ -9,6 +9,6 @@ let test_suites : unit Alcotest.test list = [
 ]
 
 let main () =
-  Alcotest.run "atdpy" test_suites
+  Alcotest.run "atdts" test_suites
 
 let () = main ()

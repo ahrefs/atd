@@ -131,13 +131,13 @@ let init_env () : env =
     "self"; "cls"; "repr";
   ] in
   let variables =
-    Unique_name.init
+    Atd.Unique_name.init
       ~reserved_identifiers:(reserved_variables @ keywords)
       ~reserved_prefixes:["atd_"; "_atd_"]
       ~safe_prefix:"x_"
   in
   let method_names () =
-    Unique_name.init
+    Atd.Unique_name.init
       ~reserved_identifiers:(
         ["from_json"; "to_json";
          "from_json_string"; "to_json_string"]
@@ -147,14 +147,14 @@ let init_env () : env =
       ~safe_prefix:"x_"
   in
   let create_variable name =
-    Unique_name.create variables name
+    Atd.Unique_name.create variables name
   in
   let translate_variable id =
-    Unique_name.translate variables id
+    Atd.Unique_name.translate variables id
   in
   let translate_inst_variable () =
     let u = method_names () in
-    fun id -> Unique_name.translate u id
+    fun id -> Atd.Unique_name.translate u id
   in
   {
     create_variable;
@@ -443,7 +443,7 @@ let double_spaced blocks =
   spaced ~spacer:[Line ""; Line ""] blocks
 
 (*
-   Representations of ATD type '(key * value) list' in JSON and Python.
+   Representations of ATD type '(string * value) list' in JSON and Python.
    Key type or value type are provided when it's useful.
 *)
 type assoc_kind =

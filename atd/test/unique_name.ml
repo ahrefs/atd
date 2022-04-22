@@ -2,7 +2,7 @@
    Unit tests for the Unique_name module.
 *)
 
-module U = Atdpy.Unique_name
+module U = Atd.Unique_name
 
 let test_reserved_identifiers () =
   let u =

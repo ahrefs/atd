@@ -386,6 +386,7 @@ class Root:
     assoc2: List[Tuple[str, int]]
     assoc3: Dict[float, int]
     assoc4: Dict[str, int]
+    nullables: List[Optional[int]]
     maybe: Optional[int] = None
     answer: int = 42
 
@@ -405,6 +406,7 @@ class Root:
                 assoc2=_atd_read_assoc_object_into_list(_atd_read_int)(x['assoc2']) if 'assoc2' in x else _atd_missing_json_field('Root', 'assoc2'),
                 assoc3=_atd_read_assoc_array_into_dict(_atd_read_float, _atd_read_int)(x['assoc3']) if 'assoc3' in x else _atd_missing_json_field('Root', 'assoc3'),
                 assoc4=_atd_read_assoc_object_into_dict(_atd_read_int)(x['assoc4']) if 'assoc4' in x else _atd_missing_json_field('Root', 'assoc4'),
+                nullables=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['nullables']) if 'nullables' in x else _atd_missing_json_field('Root', 'nullables'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
             )
@@ -425,6 +427,7 @@ class Root:
         res['assoc2'] = _atd_write_assoc_list_to_object(_atd_write_int)(self.assoc2)
         res['assoc3'] = _atd_write_assoc_dict_to_array(_atd_write_float, _atd_write_int)(self.assoc3)
         res['assoc4'] = _atd_write_assoc_dict_to_object(_atd_write_int)(self.assoc4)
+        res['nullables'] = _atd_write_list(_atd_write_nullable(_atd_write_int))(self.nullables)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['answer'] = _atd_write_int(self.answer)

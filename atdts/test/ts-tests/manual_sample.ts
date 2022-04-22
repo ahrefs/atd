@@ -124,47 +124,59 @@ function _atd_bad_ts(expected_type: string, json_value: any) {
                   ` type '${expected_type}' was expected: '${value_str}'`)
 }
 
-function _atd_read_unit(x: any) {
+function _atd_read_unit(x: any): null {
   if (x === null)
-    return x
-  else
+    return null
+  else {
     _atd_bad_json('null', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_bool(x: any): boolean {
   if (typeof x === 'boolean')
     return x
-  else
+  else {
     _atd_bad_json('boolean', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_int(x: any): Int {
   if (Number.isInteger(x))
     return x
-  else
+  else {
     _atd_bad_json('integer', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_float(x: any): number {
   if (isFinite(x))
     return x
-  else
+  else {
     _atd_bad_json('number', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_read_string(x: any): string {
   if (typeof x === 'string')
     return x
-  else
+  else {
     _atd_bad_json('str', x)
+    throw new Error('impossible')
+  }
 }
 
-function _atd_read_list<T>(read_elt: (any) => T): (any) => T[] {
+function _atd_read_list<T>(read_elt: (elt: any) => T): (elts: any) => T[] {
   function read_list(elts: any): T[] {
     if (Array.isArray(elts))
       return elts.map(read_elt)
-    else
+    else {
       _atd_bad_json('array', elts)
+      throw new Error('impossible')
+    }
   }
   return read_list
 }
@@ -172,44 +184,56 @@ function _atd_read_list<T>(read_elt: (any) => T): (any) => T[] {
 function _atd_write_unit(x: any) {
   if (x === null)
     return x
-  else
+  else {
     _atd_bad_ts('null', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_bool(x: any): boolean {
   if (typeof x === 'boolean')
     return x
-  else
+  else {
     _atd_bad_ts('boolean', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_int(x: any): Int {
   if (Number.isInteger(x))
     return x
-  else
+  else {
     _atd_bad_ts('integer', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_float(x: any): number {
   if (isFinite(x))
     return x
-  else
+  else {
     _atd_bad_ts('number', x)
+    throw new Error('impossible')
+  }
 }
 
 function _atd_write_string(x: any): string {
   if (typeof x === 'string')
     return x
-  else
+  else {
     _atd_bad_ts('string', x)
+    throw new Error('impossible')
+  }
 }
 
-function _atd_write_list<T>(write_elt: (T) => any): (elts: T[]) => any {
+function _atd_write_list<T>(write_elt: (x: T) => any): (elts: T[]) => any {
   function write_list(elts: T[]): any {
     if (Array.isArray(elts))
       return elts.map(write_elt)
-    else
+    else {
       _atd_bad_json('array', elts)
+      throw new Error('impossible')
+    }
   }
   return write_list
 }

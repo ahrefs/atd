@@ -267,8 +267,8 @@ function _atd_read_option<T>(read_elt: (x: any, context: any) => T):
 }
 
 function _atd_read_nullable<T>(read_elt: (x: any, context: any) => T):
-  (x: any, context: any) => T {
-  function read_nullable(x: any, context: any): T {
+  (x: any, context: any) => T | null {
+  function read_nullable(x: any, context: any): T | null {
     if (x === null)
       return null
     else
@@ -387,9 +387,9 @@ function _atd_write_option<T>(write_elt: (x: T, context: any) => any):
   return write_option
 }
 
-function _atd_write_nullable<T>(write_elt: (x: T, context: any) => any):
-  (elts: T, context: any) => any {
-  function write_option(x: T, context: any): any {
+function _atd_write_nullable<T>(write_elt: (x: T | null, context: any) => any):
+  (x: T | null, context: any) => any {
+  function write_option(x: T | null, context: any): any {
     if (x === null)
       return null
     else

@@ -19,6 +19,9 @@ test:
 	$(MAKE) clean-for-dune
 	# Run atdts to convert ATD -> TypeScript
 	$(DUNE) runtest -f; status=$$?; \
+          if [ "$$status" != 0 ]; then \
+            echo "Run 'dune promote' to accept diffs, if any."; \
+          fi; \
 	  ln -s ../../../_build/default/atdts/test/ts-tests/everything.ts \
 	    test/ts-tests/everything.ts && \
 	  exit "$$status"

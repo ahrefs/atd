@@ -3,7 +3,7 @@
 import * as API from "./everything"
 import * as fs from "fs"
 
-function assert(is_true: boolean, errmsg) {
+function assert(is_true: boolean, errmsg: string) {
   if (!is_true) {
     throw new Error(errmsg)
   }

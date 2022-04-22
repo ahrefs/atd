@@ -20,9 +20,6 @@ sudo apt-get install -y \
   python-is-python3 \
   scala
 
-# For atdts
-npm install npx typescript @types/node
-
 # For atdpy
 pip install pytest mypy flake8
 
@@ -51,6 +48,3 @@ python3 -m mypy --version
 
 echo 'check js'
 js --version
-
-echo 'check tsc'
-tsc --version

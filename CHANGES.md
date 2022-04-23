@@ -1,4 +1,4 @@
-Next release
+2.5.0 (2022-04-23)
 ------------------
 
 * atdpy: make `atdpy --version` print the version of atdpy itself

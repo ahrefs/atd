@@ -3,6 +3,10 @@
 import * as API from "./everything"
 import * as fs from "fs"
 
+// Check that types are exported
+const a: API.Int = 0
+const b: API.Option<string> = null
+
 function assert(is_true: boolean, errmsg: string) {
   if (!is_true) {
     throw new Error(errmsg)

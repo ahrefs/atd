@@ -146,9 +146,9 @@ export function readPair(x: any, context: any = x): Pair {
 // Runtime library
 /////////////////////////////////////////////////////////////////////
 
-type Int = number
+export type Int = number
 
-type Option<T> = null | { value: T }
+export type Option<T> = null | { value: T }
 
 function _atd_missing_json_field(type_name: string, json_field_name: string) {
     throw new Error(`missing field '${json_field_name}'` +

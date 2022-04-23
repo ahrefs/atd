@@ -15,7 +15,7 @@ all:
 .PHONY: setup
 setup:
 	opam update
-	./scripts/install-opam-dependencies
+	opam install --deps-only --with-test --with-doc ./*.opam
 
 # Build and test everything in a Docker container, producing an
 # image named 'atd'.

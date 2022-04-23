@@ -13,4 +13,5 @@ opam repo add --all-switches -k git \
 opam repo remove default
 # no need for 'opam update'
 
-./scripts/install-opam-dependencies
+# Install opam dependencies
+opam install --deps-only --with-test --with-doc ./*.opam

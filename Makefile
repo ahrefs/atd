@@ -41,7 +41,12 @@ docker-build:
 # to support all the target languages.
 .PHONY: test
 test:
-	$(DUNE) runtest -f
+	$(MAKE) test-ts
+	$(MAKE) test-ocaml
+	$(MAKE) test-scala
+	$(MAKE) test-java
+	$(MAKE) test-python
+	$(MAKE) test-ts
 
 # Test the OCaml code used by all the backends
 test-common:
@@ -72,6 +77,12 @@ test-java:
 test-python:
 	$(MAKE) test-common
 	$(MAKE) -C atdpy test
+
+# Test only the TypeScript backend
+.PHONY: test-ts
+test-ts:
+	$(MAKE) test-common
+	$(MAKE) -C atdts test
 
 ############################################################################
 

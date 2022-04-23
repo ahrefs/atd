@@ -225,7 +225,7 @@ function _atd_read_string(x: any, context: any): string {
   if (typeof x === 'string')
     return x
   else {
-    _atd_bad_json('str', x, context)
+    _atd_bad_json('string', x, context)
     throw new Error('impossible')
   }
 }

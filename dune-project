@@ -166,7 +166,7 @@ automatically handled")
  (description "Python/mypy code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.3.0))
+  (atd (>= 2.5.0))
   (atdgen (>= 2.3.0))
   (cmdliner (>= 1.1.0))
   re
@@ -190,7 +190,7 @@ bucklescript backend")
  (description "TypeScript code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.3.0))
+  (atd (>= 2.5.0))
   (atdgen (>= 2.3.0))
   (cmdliner (>= 1.1.0))
   re

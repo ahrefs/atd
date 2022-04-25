@@ -12,8 +12,10 @@ module S = Set.Make (String)
 let load_defs l =
   let tbl = Predef.make_table () in
   List.iter (
-    fun ((_, (k, pl, _), _) as td) ->
-      Hashtbl.add tbl k (List.length pl, Some td)
+    function
+    | Type ((_, (k, pl, _), _) as td) ->
+        Hashtbl.add tbl k (List.length pl, Some td)
+    | Import _ -> ()
   ) l;
   tbl
 
@@ -29,11 +31,11 @@ let keep_last_defined get_name l =
   l
 
 let get_field_name : field -> string = function
-    `Field (_, (k, _, _), _) -> k
-  | `Inherit _ -> assert false
+  | Field (_, (k, _, _), _) -> k
+  | Inherit _ -> assert false
 
 let get_variant_name : variant -> string = function
-    Variant (_, (k, _), _) -> k
+  | Variant (_, (k, _), _) -> k
   | Inherit _ -> assert false
 
 
@@ -106,8 +108,8 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
           Name (loc, (loc2, k, expanded_args), a)
 
   and subst_field param = function
-      `Field (loc, k, t) -> [ `Field (loc, k, subst false param t) ]
-    | `Inherit (_, t) as x ->
+    | Field (loc, k, t) -> [ Field (loc, k, subst false param t) ]
+    | Inherit (_, t) as x ->
         (match subst true param t with
            Record (_, vl, _) ->
              if inherit_fields then vl
@@ -135,12 +137,11 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
 let expand_module_body
     ?inherit_fields
     ?inherit_variants
-    (l : Ast.module_body) =
-  let td_list = List.map (function (Ast.Type td) -> td) l in
-  let tbl = load_defs td_list in
-  let td_list =
-    List.map (
-      fun (loc, name, t) ->
-        (loc, name, expand ?inherit_fields ?inherit_variants tbl t)
-    ) td_list in
-  List.map (fun td -> Ast.Type td) td_list
+    (module_items : Ast.module_body) =
+  let tbl = load_defs module_items in
+  List.map (
+    function
+    | Type (loc, name, t) ->
+        Type (loc, name, expand ?inherit_fields ?inherit_variants tbl t)
+    | Import _ as x -> x
+  ) module_items

@@ -103,8 +103,8 @@ and mapping_of_variant = function
       }
 
 and mapping_of_field ocaml_field_prefix = function
-  | `Inherit _ -> assert false
-  | `Field (f_loc, (f_name, f_kind, an), x) ->
+  | Inherit _ -> assert false
+  | Field (f_loc, (f_name, f_kind, an), x) ->
       let { Ox_mapping.ocaml_default; unwrapped } =
         Ox_mapping.analyze_field Biniou f_loc f_kind an in
       { f_loc
@@ -128,7 +128,10 @@ let def_of_atd atd =
     ~mapping_of_expr ~def:Biniou.Def
 
 let defs_of_atd_module l =
-  List.map (function Atd.Ast.Type def -> def_of_atd def) l
+  List.filter_map (function
+    | Atd.Ast.Type def -> Some (def_of_atd def)
+    | Atd.Ast.Import _ -> None
+  ) l
 
 let defs_of_atd_modules l =
   List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l

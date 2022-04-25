@@ -132,9 +132,15 @@ package object %s {
     suf;
   fun () -> output_string out "\n}\n"
 
-let rec trans_module env items = List.fold_left trans_outer env items
+let rec trans_module env items =
+  List.fold_left (fun env item ->
+    match item with
+    | A.Import _ -> env
+    | Type x -> trans_outer env x
+  )
+    env items
 
-and trans_outer env (A.Type (_, (name, _, annots), atd_ty)) =
+and trans_outer env ((_, (name, _, annots), atd_ty) : A.type_def) =
   match unwrap atd_ty with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
@@ -223,9 +229,10 @@ object %s {"
 and trans_record my_name env (loc, fields, annots) =
   (* Remove `Inherit values *)
   let fields = List.map
-      (function
-        | `Field _ as f -> f
-        | `Inherit _ -> assert false
+      (fun (x : A.field) ->
+         match x with
+         | Field f -> `Field f
+         | Inherit _ -> assert false
       )
       fields in
   (* Translate field types *)

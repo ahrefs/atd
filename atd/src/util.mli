@@ -94,7 +94,7 @@ val load_string :
   (** Read ATD data from a string. Options: see [read_lexbuf]. *)
 
 val tsort :
-  Ast.module_body -> (bool * Ast.module_body) list
+  Ast.module_body -> Ast.module_body * (bool * Ast.module_body) list
   (**
      Topological sort for dependency analysis.
      [tsort] splits definitions into mutually-recursive groups,
@@ -102,4 +102,6 @@ val tsort :
      of its own group or previous groups.
      The boolean flags indicate groups of one or more
      mutually recursive definitions.
+
+     The result is the pair (imports, sorted groups of type definitions).
   *)

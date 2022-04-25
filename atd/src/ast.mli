@@ -42,9 +42,24 @@ and module_body = module_item list
     *)
 
 and module_item =
+  | Import of import
   | Type of type_def
-      (** There is currently only one kind of module items,
-          that is single type definitions. *)
+
+(** Require the existence of another ATD module.
+    The concrete syntax is [import external_name as local_name].
+    The annotations specify language-specific options such as where to
+    find the implementation or alternate names. *)
+and import = {
+  loc: loc;
+  (** The name of the ATD module. *)
+  name: string;
+  (** The local used to identify the imported ATD module.
+      Typically, this is an abbreviation as in
+      [import bubble_gum_factory_api as bg].
+  *)
+  alias: string option;
+  annot: annot
+}
 
 and type_def = loc * (string * type_param * annot) * type_expr
     (** A type definition. *)
@@ -153,8 +168,8 @@ v}
 and simple_field = (loc * (string * field_kind * annot) * type_expr)
 
 and field =
-    [ `Field of simple_field
-    | `Inherit of (loc * type_expr) ]
+    | Field of simple_field
+    | Inherit of (loc * type_expr)
       (**
          A single record field or an [inherit] statement.
          [`Inherit] statements can be expanded into fields using {!Atd_inherit}
@@ -224,6 +239,7 @@ val visit :
   ?module_head: ((module_head -> unit) -> module_head -> unit) ->
   ?module_body: ((module_body -> unit) -> module_body -> unit) ->
   ?module_item: ((module_item -> unit) -> module_item -> unit) ->
+  ?import: (import -> unit) ->
   ?type_def: ((type_def -> unit) -> type_def -> unit) ->
   ?type_expr: ((type_expr -> unit) -> type_expr -> unit) ->
   ?variant: ((variant -> unit) -> variant -> unit) ->
@@ -290,3 +306,18 @@ val is_parametrized : type_expr -> bool
   *)
 
 val is_required : field_kind -> bool
+
+val local_name_of_import : import -> string
+  (** Extract the name of the imported module, taking into account the
+      possible aliasing. *)
+
+val map_type_defs :
+  module_item list -> (type_def list -> 'a) -> module_item list * 'a
+  (** Map type definitions to something else and return the
+      list of imports (untouched) and the result of mapping the
+      type definitions. *)
+
+val rewrite_type_defs :
+  module_item list -> (type_def list -> type_def list) -> module_item list
+  (** Map type definitions to another list of type definitions.
+      The imports end up at the beginning of the list of module items. *)

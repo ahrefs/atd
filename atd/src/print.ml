@@ -104,7 +104,16 @@ let make_closures format_annot =
 
   let rec format_module_item (x : module_item) =
     match x with
-      Type (_, (s, param, a), t) ->
+    | Import { loc = _; name; alias; annot } ->
+        let opt_alias =
+          match alias with
+          | None -> []
+          | Some local_name -> [make_atom ("as " ^ local_name)]
+        in
+        make_atom "import" :: make_atom name :: opt_alias
+        |> horizontal_sequence
+        |> append_annots annot
+    | Type (_, (s, param, a), t) ->
         let left =
           if a = [] then
             let l =
@@ -209,7 +218,7 @@ let make_closures format_annot =
 
   and format_field x =
     match x with
-      `Field (_, (k, fk, a), t) ->
+    | Field (_, (k, fk, a), t) ->
         Label (
           (horizontal_sequence0 [
              append_annots a (make_atom (string_of_field k fk));
@@ -217,7 +226,7 @@ let make_closures format_annot =
            ], label),
           format_type_expr t
         )
-    | `Inherit (_, t) -> format_inherit t
+    | Inherit (_, t) -> format_inherit t
 
   and format_variant x =
     match x with

@@ -154,8 +154,8 @@ let rec mapvar_expr
       Name (loc, (loc2, k, List.map (mapvar_expr f) args), a)
 
 and mapvar_field f = function
-    `Field (loc, k, t) -> `Field (loc, k, mapvar_expr f t)
-  | `Inherit (loc, t) -> `Inherit (loc, mapvar_expr f t)
+  | Field (loc, k, t) -> Field (loc, k, mapvar_expr f t)
+  | Inherit (loc, t) -> Inherit (loc, mapvar_expr f t)
 
 and mapvar_variant f = function
   | Variant (loc, k, opt_t) ->
@@ -428,8 +428,8 @@ let expand ?(keep_poly = false) (l : type_def list)
     Hashtbl.replace tbl name (i, n_param, None, Some td')
 
   and subst_field env = function
-      `Field (loc, k, t) -> `Field (loc, k, subst env t)
-    | `Inherit (loc, t) -> `Inherit (loc, subst env t)
+    | Field (loc, k, t) -> Field (loc, k, subst env t)
+    | Inherit (loc, t) -> Inherit (loc, subst env t)
 
   and subst_variant env = function
       Variant (loc, k, opt_t) as x ->
@@ -522,8 +522,8 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
         Name (loc, (loc2, subst k, List.map replace l), a)
 
   and replace_field = function
-      `Field (loc, k, t) -> `Field (loc, k, replace t)
-    | `Inherit (loc, t) -> `Inherit (loc, replace t)
+    | Field (loc, k, t) -> Field (loc, k, replace t)
+    | Inherit (loc, t) -> Inherit (loc, replace t)
 
   and replace_variant = function
       Variant (loc, k, opt_t) as x ->
@@ -589,11 +589,10 @@ let standardize_type_names
   List.map (fun (loc, x, t) -> (loc, x, replace_type_names subst t)) l
 
 
-let expand_module_body ?(prefix = "_") ?keep_poly ?(debug = false) l =
-  let td_list = List.map (function (Type td) -> td) l in
+let expand_type_defs ?(prefix = "_") ?keep_poly ?(debug = false) td_list =
   let (td_list, original_types) = expand ?keep_poly td_list in
   let td_list =
     if debug then td_list
     else standardize_type_names ~prefix ~original_types td_list
   in
-  (List.map (fun td -> (Type td)) td_list, original_types)
+  (td_list, original_types)

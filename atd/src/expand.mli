@@ -11,11 +11,11 @@ type original_types = (string, string * int) Hashtbl.t
     for most uses of expand_module_body.
 *)
 
-val expand_module_body :
+val expand_type_defs :
   ?prefix:string ->
   ?keep_poly:bool ->
   ?debug:bool ->
-  Ast.module_body -> Ast.module_body * original_types
+  Ast.type_def list -> Ast.type_def list * original_types
 (**
    Monomorphization of type expressions.
 

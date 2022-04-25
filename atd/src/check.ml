@@ -28,17 +28,17 @@ let check_inheritance tbl (t0 : type_expr) =
   let rec check kind inherited (t : type_expr) =
     match t with
       Sum (_, vl, _) when kind = `Sum ->
-        List.iter (
-          function
-            Inherit (_, t) -> check kind inherited t
+        List.iter (fun (x : variant) ->
+          match x with
+          | Inherit (_, t) -> check kind inherited t
           | Variant _ -> ()
         ) vl
 
     | Record (_, fl, _) when kind = `Record ->
-        List.iter (
-          function
-            `Inherit (_, t) -> check kind inherited t
-          | `Field _ -> ()
+        List.iter (fun (x : field) ->
+          match x with
+            | Inherit (_, t) -> check kind inherited t
+            | Field _ -> ()
         ) fl
 
     | Sum _
@@ -129,14 +129,14 @@ let check_type_expr tbl tvars (t : type_expr) =
         check t
 
   and check_field accu = function
-      `Field (loc, (k, _, _), t) ->
+    | Field (loc, (k, _, _), t) ->
         if Hashtbl.mem accu k then
           error_at loc
             (sprintf "Multiple definitions of the same field %s" k);
         Hashtbl.add accu k ();
         check t
 
-    | `Inherit (_, t) ->
+    | Inherit (_, t) ->
         (* overriding is allowed, for now without a warning *)
         check t
   in
@@ -150,21 +150,24 @@ let check (l : Ast.module_body) =
 
   (* first pass: put all definitions in the table *)
   List.iter (
-    function Type ((loc, (k, pl, _), _) as x) ->
-      if Hashtbl.mem tbl k then
-        if Hashtbl.mem predef k then
-          error_at loc
-            (sprintf "%s is a predefined type, it cannot be redefined." k)
+    function
+    | Type ((loc, (k, pl, _), _) as x) ->
+        if Hashtbl.mem tbl k then
+          if Hashtbl.mem predef k then
+            error_at loc
+              (sprintf "%s is a predefined type, it cannot be redefined." k)
+          else
+            error_at loc
+              (sprintf "Type %s is defined for the second time." k)
         else
-          error_at loc
-            (sprintf "Type %s is defined for the second time." k)
-      else
-        Hashtbl.add tbl k (List.length pl, Some x)
+          Hashtbl.add tbl k (List.length pl, Some x)
+    | Import _ -> ()
   ) l;
 
   (* second pass: check existence and arity of types in type expressions,
      check that inheritance is not cyclic *)
-  List.iter (
-    function (Ast.Type (_, (_, tvars, _), t)) ->
-      check_type_expr tbl tvars t
+  List.iter (function
+    | Ast.Type (_, (_, tvars, _), t) ->
+        check_type_expr tbl tvars t
+    | Import _ -> ()
   ) l

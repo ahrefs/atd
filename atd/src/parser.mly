@@ -201,9 +201,9 @@ field_list:
 field:
 | fn = field_name a = annot COLON t = type_expr
     { let k, fk = fn in
-      `Field (($startpos, $endpos), (k, fk, a), t) }
+      Field (($startpos, $endpos), (k, fk, a), t) }
 | INHERIT t = type_expr
-    { `Inherit (($startpos, $endpos), t) }
+    { Inherit (($startpos, $endpos), t) }
 | field_name annot COLON _e=error
     { syntax_error "Expecting type expression after ':'"
         $startpos(_e) $endpos(_e) }

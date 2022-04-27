@@ -67,7 +67,7 @@ type json_repr =
    This must hold all the valid annotations of the form
    '<json ...>'.
 *)
-let annot_schema_json : Atd.Annot.schema = [
+let annot_schema_json : Annot.schema = [
   {
     section = "json";
     fields = [
@@ -104,7 +104,7 @@ let json_precision_of_string s =
   with _ -> None
 
 let get_json_precision an =
-  Atd.Annot.get_opt_field
+  Annot.get_opt_field
     ~parse:json_precision_of_string
     ~sections:["json"]
     ~field:"precision"
@@ -112,7 +112,7 @@ let get_json_precision an =
 
 let get_json_float an : json_float =
   match
-    Atd.Annot.get_field
+    Annot.get_field
       ~parse:json_float_of_string
       ~default:`Float
       ~sections:["json"]
@@ -135,14 +135,14 @@ let json_list_of_string s : json_list option =
 *)
 let get_json_adapter an =
   let ocaml_adapter =
-    Atd.Annot.get_opt_field
+    Annot.get_opt_field
       ~parse:(fun s -> Some s)
       ~sections:["json"]
       ~field:"adapter.ocaml"
       an
   in
   let java_adapter =
-    Atd.Annot.get_opt_field
+    Annot.get_opt_field
       ~parse:(fun s -> Some s)
       ~sections:["json"]
       ~field:"adapter.java"
@@ -152,10 +152,10 @@ let get_json_adapter an =
     java_adapter }
 
 let get_json_open_enum an =
-  Atd.Annot.get_flag ~sections:["json"] ~field:"open_enum" an
+  Annot.get_flag ~sections:["json"] ~field:"open_enum" an
 
 let get_json_lowercase_tags an =
-  Atd.Annot.get_flag ~sections:["json"] ~field:"lowercase_tags" an
+  Annot.get_flag ~sections:["json"] ~field:"lowercase_tags" an
 
 let get_json_sum an = {
   json_sum_adapter = get_json_adapter an;
@@ -164,7 +164,7 @@ let get_json_sum an = {
 }
 
 let get_json_list an =
-  Atd.Annot.get_field
+  Annot.get_field
     ~parse:json_list_of_string
     ~default:Array
     ~sections:["json"]
@@ -172,7 +172,7 @@ let get_json_list an =
     an
 
 let get_json_cons default an =
-  Atd.Annot.get_field
+  Annot.get_field
     ~parse:(fun s -> Some s)
     ~default
     ~sections:["json"]
@@ -180,7 +180,7 @@ let get_json_cons default an =
     an
 
 let get_json_fname default an =
-  Atd.Annot.get_field
+  Annot.get_field
     ~parse:(fun s -> Some s)
     ~default
     ~sections:["json"]
@@ -188,7 +188,7 @@ let get_json_fname default an =
     an
 
 let get_json_keep_nulls an =
-  Atd.Annot.get_flag
+  Annot.get_flag
     ~sections:["json"]
     ~field:"keep_nulls"
     an
@@ -199,5 +199,3 @@ let get_json_record an =
     json_record_adapter = get_json_adapter an;
   }
 
-let tests = [
-]

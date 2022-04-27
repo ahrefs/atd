@@ -58,18 +58,16 @@ type json_repr =
   | Variant of json_variant
   | Wrap
 
-val annot_schema_json : Atd.Annot.schema
+val annot_schema_json : Annot.schema
 
-val get_json_list : Atd.Annot.t -> json_list
+val get_json_list : Annot.t -> json_list
 
-val get_json_float : Atd.Annot.t -> json_float
+val get_json_float : Annot.t -> json_float
 
-val get_json_cons : string -> Atd.Annot.t -> string
+val get_json_cons : string -> Annot.t -> string
 
-val get_json_fname : string -> Atd.Annot.t -> string
+val get_json_fname : string -> Annot.t -> string
 
-val get_json_record : Atd.Annot.t -> json_record
+val get_json_record : Annot.t -> json_record
 
-val get_json_sum : Atd.Annot.t -> json_sum
-
-val tests : (string * (unit -> bool)) list
+val get_json_sum : Annot.t -> json_sum

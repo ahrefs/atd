@@ -82,6 +82,7 @@
   (alcotest :with-test)
   (odoc :with-doc)
   (re (>= 1.9.0))
+  yojson
  )
  (synopsis "Parser for the ATD data format description language")
  (description "\

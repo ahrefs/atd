@@ -18,8 +18,8 @@
     "point": {
       "type": "array",
       "minItems": 2,
-      "additionalItems": false,
-      "items": [ { "type": "number" }, { "type": "number" } ]
+      "items": false,
+      "prefixItems": [ { "type": "number" }, { "type": "number" } ]
     },
     "kinds": {
       "type": "array",
@@ -30,8 +30,8 @@
       "items": {
         "type": "array",
         "minItems": 2,
-        "additionalItems": false,
-        "items": [ { "type": "number" }, { "type": "integer" } ]
+        "items": false,
+        "prefixItems": [ { "type": "number" }, { "type": "integer" } ]
       }
     },
     "assoc2": {
@@ -45,8 +45,8 @@
           {
             "type": "array",
             "minItems": 2,
-            "additionalItems": false,
-            "items": [ { "const": "Some" }, { "type": "integer" } ]
+            "items": false,
+            "prefixItems": [ { "const": "Some" }, { "type": "integer" } ]
           },
           { "const": "None" }
         ]
@@ -64,15 +64,15 @@
         {
           "type": "array",
           "minItems": 2,
-          "additionalItems": false,
-          "items": [ { "const": "Thing" }, { "type": "integer" } ]
+          "items": false,
+          "prefixItems": [ { "const": "Thing" }, { "type": "integer" } ]
         },
         { "const": "wow" },
         {
           "type": "array",
           "minItems": 2,
-          "additionalItems": false,
-          "items": [
+          "items": false,
+          "prefixItems": [
             { "const": "!!!" },
             { "type": "array", "items": { "type": "string" } }
           ]
@@ -83,8 +83,8 @@
     "pair": {
       "type": "array",
       "minItems": 2,
-      "additionalItems": false,
-      "items": [ { "type": "string" }, { "type": "integer" } ]
+      "items": false,
+      "prefixItems": [ { "type": "string" }, { "type": "integer" } ]
     }
   }
 }

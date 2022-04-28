@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Translated by atdcat from 'schema.atd'",
+  "type": "object",
+  "required": [
+    "ID", "items", "aliased", "point", "kinds", "assoc1", "assoc2"
+  ],
+  "properties": {
+    "ID": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "integer" } }
+    },
+    "maybe": { "type": "integer" },
+    "extras": { "type": "array", "items": { "type": "integer" } },
+    "answer": { "type": "integer" },
+    "aliased": { "$ref": "#/definitions/alias" },
+    "point": {
+      "type": "array",
+      "minItems": 2,
+      "additionalItems": false,
+      "items": [ { "type": "number" }, { "type": "number" } ]
+    },
+    "kinds": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/different_kinds_of_things" }
+    },
+    "assoc1": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "additionalItems": false,
+        "items": [ { "type": "number" }, { "type": "integer" } ]
+      }
+    },
+    "assoc2": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "additionalItems": false,
+        "items": [ { "type": "string" }, { "type": "integer" } ]
+      }
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "array",
+            "minItems": 2,
+            "additionalItems": false,
+            "items": [ { "const": "Some" }, { "type": "integer" } ]
+          },
+          { "const": "None" }
+        ]
+      }
+    },
+    "nullables": {
+      "type": "array",
+      "items": { "type": [ "integer", "null" ] }
+    }
+  },
+  "definitions": {
+    "different_kinds_of_things": {
+      "oneOf": [
+        { "const": "Root" },
+        {
+          "type": "array",
+          "minItems": 2,
+          "additionalItems": false,
+          "items": [ { "const": "Thing" }, { "type": "integer" } ]
+        },
+        { "const": "wow" },
+        {
+          "type": "array",
+          "minItems": 2,
+          "additionalItems": false,
+          "items": [
+            { "const": "!!!" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        }
+      ]
+    },
+    "alias": { "type": "array", "items": { "type": "integer" } },
+    "pair": {
+      "type": "array",
+      "minItems": 2,
+      "additionalItems": false,
+      "items": [ { "type": "string" }, { "type": "integer" } ]
+    }
+  }
+}

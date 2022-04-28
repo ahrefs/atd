@@ -4,6 +4,6 @@
 
 (** Translate an ATD AST to a JSON Schema. *)
 val print :
-  ?root_id_uri:string ->
   src_name:string ->
+  root_type:string ->
   out_channel -> Ast.full_module -> unit

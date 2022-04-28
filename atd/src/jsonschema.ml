@@ -31,23 +31,22 @@ and object_ = {
 and property = string * type_expr
 
 type def = {
-  id: string;
+  name: string;
   description: string option;
   type_expr: type_expr;
 }
 
 (* The root of a JSON Schema *)
 type t = {
-  root_id: string;
-  root_description: string;
   schema: string;
+  root_def: def;
   defs: def list;
 }
 
-let make_id root_id_uri type_name =
-  root_id_uri ^ "/" ^ type_name
+let make_id type_name =
+  "#/definitions/" ^ type_name
 
-let trans_type_expr ~root_id_uri (x : Ast.type_expr) : type_expr =
+let trans_type_expr (x : Ast.type_expr) : type_expr =
   let rec trans_type_expr (x : Ast.type_expr) : type_expr =
     match x with
     | Sum (loc, vl, an) ->
@@ -116,32 +115,42 @@ let trans_type_expr ~root_id_uri (x : Ast.type_expr) : type_expr =
          | "int" -> Integer
          | "float" -> Number
          | "string" -> String
-         | _ -> Ref (make_id root_id_uri name)
+         | _ -> Ref (make_id name)
         )
   in
   trans_type_expr x
 
 let trans_item
-    ~root_id_uri
     (Type (loc, (name, param, an), e) : module_item) : def =
-  let id = make_id root_id_uri name in
   if param <> [] then
     error_at loc "unsupported: parametrized types";
   {
-    id;
+    name;
     description = None;
-    type_expr = trans_type_expr ~root_id_uri e;
+    type_expr = trans_type_expr e;
   }
 
 let trans_full_module
-    ?(root_id_uri = "/schemas")
     ~src_name
+    ~root_type
     ((_head, body) : full_module) : t =
-  let defs = List.map (trans_item ~root_id_uri) body in
+  let defs = List.map trans_item body in
+  let root_defs, defs = List.partition (fun x -> x.name = root_type) defs in
+  let root_def =
+    match root_defs with
+    | [x] -> x
+    | [] ->
+        failwith
+          (sprintf "Cannot find definition for the requested root type '%s'"
+             root_type)
+    | _ ->
+        failwith (sprintf "Found multiple definitions for type '%s'" root_type)
+  in
+  let description = sprintf "Translated by atdcat from %s" src_name in
+  let root_def = { root_def with description = Some description } in
   {
-    root_id = root_id_uri;
     schema = "https://json-schema.org/draft/2020-12/schema";
-    root_description = sprintf "Translated by atdcat from %s" src_name;
+    root_def = root_def;
     defs;
   }
 
@@ -155,7 +164,7 @@ let string s = `String s
 let opt field_name f x =
   match x with
   | None -> []
-  | Some x -> ["required", f x]
+  | Some x -> [field_name, f x]
 
 let make_type_property ~is_nullable name =
   if is_nullable then
@@ -211,24 +220,29 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
 and type_expr_to_json ?(is_nullable = false) (x : type_expr) : json =
   `Assoc (type_expr_to_assoc ~is_nullable x)
 
-let def_to_json (x : def) : json =
-  `Assoc (List.flatten [
-    ["$id", `String x.id];
-    opt "description" string x.description;
-    type_expr_to_assoc x.type_expr;
-  ])
+let def_to_json (x : def) =
+  x.name, `Assoc (
+    List.flatten [
+      opt "description" string x.description;
+      type_expr_to_assoc x.type_expr;
+    ]
+  )
 
 let to_json (x : t) : json =
-  `Assoc [
-    "$id", `String x.root_id;
-    "$schema", `String x.schema;
-    "description", `String x.root_description;
-    "$defs", `List (List.map def_to_json x.defs);
-  ]
+  let root_def =
+    match def_to_json x.root_def with
+    | _, `Assoc fields -> fields
+    | _ -> assert false
+  in
+  `Assoc (
+    ("$schema", `String x.schema)
+    :: root_def
+    @ ["definitions", `Assoc (List.map (fun x -> def_to_json x) x.defs)]
+  )
 
-let print ?(root_id_uri = "/schemas") ~src_name oc ast =
+let print ~src_name ~root_type oc ast =
   ast
-  |> trans_full_module ~root_id_uri ~src_name
+  |> trans_full_module ~src_name ~root_type
   |> to_json
   |> Yojson.Safe.pretty_to_channel oc;
   output_char oc '\n'

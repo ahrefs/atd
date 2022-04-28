@@ -3,7 +3,7 @@ open Atd.Import
 type out_format =
   | Atd
   | Ocaml of string (* output file name [why?] *)
-  | Jsonschema
+  | Jsonschema of string (* root type *)
 
 let html_of_doc loc s =
   let doc = Atd.Doc.parse_text loc s in
@@ -77,7 +77,7 @@ let print ~src_name ~html_doc ~out_format ~out_channel:oc ast =
     match out_format with
     | Atd -> print_atd ~html_doc
     | Ocaml name -> print_ml ~name
-    | Jsonschema -> Atd.Jsonschema.print ?root_id_uri:None ~src_name
+    | Jsonschema root_type -> Atd.Jsonschema.print ~src_name ~root_type
   in
   f oc ast
 
@@ -129,9 +129,9 @@ let () =
     "
           expand `inherit' statements in sum types";
 
-    "-jsonschema", Arg.Unit (fun () -> out_format := Jsonschema),
-    "
-          translate the ATD file to JSON Schema";
+    "-jsonschema", Arg.String (fun s -> out_format := Jsonschema s),
+    "<root type name>
+          translate the ATD file to JSON Schema.";
 
     "-ml", Arg.String (fun s -> out_format := Ocaml s),
     "<name>
@@ -167,8 +167,13 @@ let () =
   let msg = sprintf "Usage: %s FILE" Sys.argv.(0) in
   Arg.parse options (fun file -> input_files := file :: !input_files) msg;
   try
-    let inherit_fields = !inherit_fields || !out_format = Jsonschema in
-    let inherit_variants = !inherit_variants || !out_format = Jsonschema in
+    let force_inherit =
+      match !out_format with
+      | Jsonschema _ -> true
+      | _ -> false
+    in
+    let inherit_fields = !inherit_fields || force_inherit in
+    let inherit_variants = !inherit_variants || force_inherit in
     let ast =
       parse
         ~expand: !expand

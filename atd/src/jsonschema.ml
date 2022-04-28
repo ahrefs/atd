@@ -207,8 +207,15 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
       [
         make_type_property ~is_nullable "array";
         "minItems", `Int (List.length xs);
-        "additionalItems", `Bool false;
-        "items", `List (List.map type_expr_to_json xs);
+
+        (* "items" used to be called "additionalItems",
+           "prefixItems" used to be called "items"
+
+           according to
+           https://json-schema.org/understanding-json-schema/reference/array.html
+        *)
+        "items", `Bool false;
+        "prefixItems", `List (List.map type_expr_to_json xs);
       ]
   | Object x ->
       let properties =

@@ -38,7 +38,7 @@
      (diff schema.expected.json schema.json)
 
      ; Check that the JSON Schema is valid and compatible with some JSON data
-     (run jsonschema schema.json -i data.json)
+     (run python3 -m jsonschema schema.json -i data.json)
    )
  )
 )

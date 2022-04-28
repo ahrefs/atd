@@ -19,6 +19,7 @@ type type_expr =
   | Array of type_expr
   | Tuple of type_expr list (* a variation on 'array' *)
   | Object of object_
+  | Map of type_expr
   | Union of type_expr list
   | Nullable of type_expr
   | Const of json
@@ -93,8 +94,18 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
     | Tuple (loc, tl, an) ->
         Tuple (List.map (fun (loc, e, an) -> trans_type_expr e) tl)
     | List (loc, e, an) ->
-        (* TODO: handle <json repr="object"> *)
-        Array (trans_type_expr e)
+        let json_repr = Json.get_json_list an in
+        (match e, json_repr with
+         | _, Array ->
+             Array (trans_type_expr e)
+         | Tuple (loc, [(_, Name (_, (_, "string", _), _), _);
+                        (_, value, _)], an2), Object ->
+             Map (trans_type_expr value)
+         | _, Object ->
+             error_at loc
+               "This type expression is not of the form (string * _) list. \
+                It can't be represented as a JSON object."
+        )
     | Option (loc, e, an) ->
         (* usually not what the user intended *)
         let transpiled = Sum (loc, [
@@ -209,6 +220,11 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
         make_type_property ~is_nullable "object";
         "required", `List (List.map string x.required);
         "properties", `Assoc properties;
+      ]
+  | Map x ->
+      [
+        make_type_property ~is_nullable "object";
+        "additionalProperties", type_expr_to_json x
       ]
   | Union xs ->
       [ "oneOf", `List (List.map (type_expr_to_json ~is_nullable) xs) ]

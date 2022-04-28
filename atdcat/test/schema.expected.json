@@ -35,13 +35,8 @@
       }
     },
     "assoc2": {
-      "type": "array",
-      "items": {
-        "type": "array",
-        "minItems": 2,
-        "additionalItems": false,
-        "items": [ { "type": "string" }, { "type": "integer" } ]
-      }
+      "type": "object",
+      "additionalProperties": { "type": "integer" }
     },
     "options": {
       "type": "array",

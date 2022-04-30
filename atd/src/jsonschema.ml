@@ -2,6 +2,12 @@
    Translate ATD to JSON Schema (JSS)
 
    https://json-schema.org/draft/2020-12/json-schema-core.html
+
+   The translation is done in two passes:
+   1. Translation to an AST that models the constructs offered by JSON
+      Schema.
+   2. Translation of that AST to the JSON AST, which is not completely
+      straightforward.
 *)
 
 open Printf

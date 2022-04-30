@@ -9,6 +9,9 @@ open Ast
 
 type json = Yojson.Safe.t
 
+(* optional description field *)
+type opt_descr = (string * json) list
+
 type type_expr =
   | Ref of string
   | Null
@@ -22,14 +25,14 @@ type type_expr =
   | Map of type_expr
   | Union of type_expr list
   | Nullable of type_expr
-  | Const of json
+  | Const of json * opt_descr
 
 and object_ = {
   properties: property list;
   required: string list; (* list of the properties that are required *)
 }
 
-and property = string * type_expr
+and property = string * type_expr * opt_descr
 
 type def = {
   name: string;
@@ -47,10 +50,15 @@ type t = {
 let make_id type_name =
   "#/definitions/" ^ type_name
 
-let _trans_description loc an =
+let trans_description_simple loc an =
   match Doc.get_doc loc an with
   | None -> None
   | Some blocks -> Some (Doc.print_text blocks)
+
+let trans_description loc an =
+  match trans_description_simple loc an with
+  | None -> []
+  | Some doc -> ["description", `String doc]
 
 let trans_type_expr (x : Ast.type_expr) : type_expr =
   let rec trans_type_expr (x : Ast.type_expr) : type_expr =
@@ -60,11 +68,12 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
           match (x : variant) with
           | Variant (loc, (name, an), opt_e) ->
               let json_name = Json.get_json_cons name an in
+              let descr = trans_description loc an in
               (match opt_e with
-               | None -> Const (`String json_name)
+               | None -> Const (`String json_name, descr)
                | Some e ->
                    Tuple [
-                     Const (`String json_name);
+                     Const (`String json_name, descr);
                      trans_type_expr e;
                    ]
               )
@@ -87,7 +96,8 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
                   | Optional, Option (loc, e, an) -> e
                   | _, e -> e
                 in
-                ((json_name, trans_type_expr unwrapped_e), required)
+                let descr = trans_description loc an in
+                ((json_name, trans_type_expr unwrapped_e, descr), required)
             | `Inherit _ -> assert false
           ) fl
         in
@@ -140,16 +150,17 @@ let trans_item
     (Type (loc, (name, param, an), e) : module_item) : def =
   if param <> [] then
     error_at loc "unsupported: parametrized types";
+  let description = trans_description_simple loc an in
   {
     name;
-    description = None;
+    description;
     type_expr = trans_type_expr e;
   }
 
 let trans_full_module
     ~src_name
     ~root_type
-    ((_head, body) : full_module) : t =
+    ((head, body) : full_module) : t =
   let defs = List.map trans_item body in
   let root_defs, defs = List.partition (fun x -> x.name = root_type) defs in
   let root_def =
@@ -162,7 +173,23 @@ let trans_full_module
     | _ ->
         failwith (sprintf "Found multiple definitions for type '%s'" root_type)
   in
-  let description = sprintf "Translated by atdcat from %s" src_name in
+  let description =
+    (* We have 3 kinds of documentation to fit in a single 'description'
+       field:
+       - "translated by atdcat"
+       - description of the whole module
+       - description of the root type
+    *)
+    let loc, an = head in
+    let auto_comment = sprintf "Translated by atdcat from %s." src_name in
+    [
+      Some auto_comment;
+      trans_description_simple loc an;
+      root_def.description
+    ]
+    |> List.filter_map (fun x -> x)
+    |> String.concat "\n\n"
+  in
   let root_def = { root_def with description = Some description } in
   {
     schema = "https://json-schema.org/draft/2020-12/schema";
@@ -224,8 +251,8 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
       ]
   | Object x ->
       let properties =
-        List.map (fun (name, x) ->
-          (name, type_expr_to_json x)
+        List.map (fun (name, x, descr) ->
+          (name, type_expr_to_json ~descr x)
         ) x.properties
       in
       [
@@ -242,11 +269,14 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
       [ "oneOf", `List (List.map (type_expr_to_json ~is_nullable) xs) ]
   | Nullable x ->
       type_expr_to_assoc ~is_nullable:true x
-  | Const json ->
-      [ "const", json ]
+  | Const (json, descr) ->
+      descr @ [ "const", json ]
 
-and type_expr_to_json ?(is_nullable = false) (x : type_expr) : json =
-  `Assoc (type_expr_to_assoc ~is_nullable x)
+and type_expr_to_json
+    ?(is_nullable = false)
+    ?(descr = [])
+    (x : type_expr) : json =
+  `Assoc (descr @ type_expr_to_assoc ~is_nullable x)
 
 let def_to_json (x : def) =
   x.name, `Assoc (

@@ -8,8 +8,8 @@ this is line 2
 ">
 
 type different_kinds_of_things = [
-  | Root
-  | Thing of int
+  | Root <doc text="this is Root">
+  | Thing <doc text="this is Thing"> of int
   | WOW <json name="wow">
   | Amaze <json name="!!!"> of string list
 ]

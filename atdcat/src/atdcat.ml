@@ -51,13 +51,14 @@ let strip all sections x =
   Atd.Ast.map_all_annot filter x
 
 let parse
+    ~annot_schema
     ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
     ~strip_all ~strip_sections files =
   let l =
     List.map (
       fun file ->
         fst (
-          Atd.Util.load_file ~expand ~keep_poly ~xdebug
+          Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
             ~inherit_fields ~inherit_variants file
         )
     ) files
@@ -167,15 +168,16 @@ let () =
   let msg = sprintf "Usage: %s FILE" Sys.argv.(0) in
   Arg.parse options (fun file -> input_files := file :: !input_files) msg;
   try
-    let force_inherit =
+    let force_inherit, annot_schema =
       match !out_format with
-      | Jsonschema _ -> true
-      | _ -> false
+      | Jsonschema _ -> true, Atd.Jsonschema.annot_schema
+      | _ -> false, []
     in
     let inherit_fields = !inherit_fields || force_inherit in
     let inherit_variants = !inherit_variants || force_inherit in
     let ast =
       parse
+        ~annot_schema
         ~expand: !expand
         ~keep_poly: !keep_poly
         ~xdebug: !xdebug

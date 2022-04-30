@@ -263,6 +263,9 @@ let to_json (x : t) : json =
     @ ["definitions", `Assoc (List.map (fun x -> def_to_json x) x.defs)]
   )
 
+let annot_schema =
+  Json.annot_schema_json @ Doc.annot_schema
+
 let print ~src_name ~root_type oc ast =
   ast
   |> trans_full_module ~src_name ~root_type

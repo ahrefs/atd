@@ -7,9 +7,16 @@ type different_kinds_of_things = [
   | Amaze <json name="!!!"> of string list
 ]
 
-type root = {
-  id <json name="ID">: string;
-  items: int list list;
+type root
+ <doc text="This is the root object.">
+ = {
+  id
+    <json name="ID">
+    <doc text="This is the 'id' field.">
+    : string;
+  items
+    <doc text="An example of JSON value is {{[[1, 2], [3], [4, 5, 6]]}}">
+    : int list list;
   ?maybe: int option;
   ~extras: int list;
   ~answer: int;

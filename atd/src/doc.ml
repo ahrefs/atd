@@ -16,13 +16,29 @@ let parse_text loc s =
     failwith (Printf.sprintf "%s:\nInvalid format for doc.text %S:\n%s"
                 (Ast.string_of_loc loc) s (Printexc.to_string e))
 
-(* TODO: define a validation schema for the <doc ...> annotations. *)
+(*
+   This must hold all the valid annotations of the form
+   '<doc ...>'.
+*)
+let annot_schema : Annot.schema = [
+  {
+    section = "doc";
+    fields = [
+      Module_head, "text";
+      Type_def, "text";
+      Variant, "text";
+      Field, "text";
+      (* Tolerate but deprecate?
+      Type_expr, "text"; *)
+    ]
+  }
+]
+
 let get_doc loc an : doc option =
   Annot.get_opt_field
     ~parse:(fun s -> Some (parse_text loc s))
     ~sections:["doc"]
     ~field:"text" an
-
 
 (* Conversion to HTML *)
 

@@ -1,5 +1,12 @@
 (* Input ATD file for testing the translation to JSON Schema *)
 
+<doc text="This is the title. Here's a code block:
+{{{
+this is line 1
+this is line 2
+}}}
+">
+
 type different_kinds_of_things = [
   | Root
   | Thing of int
@@ -8,14 +15,15 @@ type different_kinds_of_things = [
 ]
 
 type root
- <doc text="This is the root object.">
+ <doc text="This is the root object. For example, the empty object {{ {} }}
+            is invalid.">
  = {
   id
     <json name="ID">
     <doc text="This is the 'id' field.">
     : string;
   items
-    <doc text="An example of JSON value is {{[[1, 2], [3], [4, 5, 6]]}}">
+    <doc text="An example of JSON value is {{ [[1, 2], [3], [4, 5, 6]] }}">
     : int list list;
   ?maybe: int option;
   ~extras: int list;

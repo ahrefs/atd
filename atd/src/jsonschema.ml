@@ -47,6 +47,11 @@ type t = {
 let make_id type_name =
   "#/definitions/" ^ type_name
 
+let _trans_description loc an =
+  match Doc.get_doc loc an with
+  | None -> None
+  | Some blocks -> Some (Doc.print_text blocks)
+
 let trans_type_expr (x : Ast.type_expr) : type_expr =
   let rec trans_type_expr (x : Ast.type_expr) : type_expr =
     match x with

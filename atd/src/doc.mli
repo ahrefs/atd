@@ -52,6 +52,12 @@ type doc = block list
 (** Parse the contents of a doc.text annotation. *)
 val parse_text : Ast.loc -> string -> doc
 
+(** Print documentation in ATD's "text" format.
+    This performs whitespace normalization, i.e. some non-significant
+    whitespace is removed and newlines are inserted if needed
+    to ensure that [{{{] and [}}}] are on their own line. *)
+val print_text : doc -> string
+
 (** This is for checking the placement of <doc ...> annotations. *)
 val annot_schema : Annot.schema
 

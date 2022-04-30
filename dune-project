@@ -82,6 +82,7 @@
   (alcotest :with-test)
   (odoc :with-doc)
   (re (>= 1.9.0))
+  yojson
  )
  (synopsis "Parser for the ATD data format description language")
  (description "\
@@ -166,8 +167,7 @@ automatically handled")
  (description "Python/mypy code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.5.0))
-  (atdgen (>= 2.3.0))
+  (atd (>= 2.6.0))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)
@@ -190,8 +190,7 @@ bucklescript backend")
  (description "TypeScript code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.5.0))
-  (atdgen (>= 2.3.0))
+  (atd (>= 2.6.0))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)

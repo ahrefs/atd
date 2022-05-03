@@ -5,6 +5,7 @@
  (name atd)
  (public_name atd)
  (libraries
+   re
    easy-format
    unix
    yojson

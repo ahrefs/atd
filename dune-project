@@ -82,7 +82,7 @@
   (alcotest :with-test)
   (odoc :with-doc)
   (re (>= 1.9.0))
-  yojson
+  (yojson (>= 1.6.0))
  )
  (synopsis "Parser for the ATD data format description language")
  (description "\
@@ -95,7 +95,7 @@ formats. "))
  (name atdgen)
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.3.0))
+  (atd (>= 2.6.0))
   (atdgen-runtime (>= 2.0.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))

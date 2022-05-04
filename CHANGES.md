@@ -1,4 +1,4 @@
-Next release
+2.6.0 (2022-05-03)
 ------------------
 
 * atdcat: add option `-jsonschema` to translate from ATD to JSON

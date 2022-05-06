@@ -58,6 +58,11 @@ type test = Test.test = {
 
 type tup = Test.tup
 
+type test_field_prefix = Test.test_field_prefix = {
+  theprefix_hello (*atd hello *): bool;
+  theprefix_world (*atd world *): int
+}
+
 type star_rating = Test.star_rating
 
 type 'a generic = 'a Test.generic = { x294623: int }
@@ -529,6 +534,33 @@ val read_tup :
 val tup_of_string :
   string -> tup
   (** Deserialize JSON data of type {!tup}. *)
+
+
+val write_test_field_prefix :
+  Bi_outbuf.t -> test_field_prefix -> unit
+  (** Output a JSON value of type {!test_field_prefix}. *)
+
+val string_of_test_field_prefix :
+  ?len:int -> test_field_prefix -> string
+  (** Serialize a value of type {!test_field_prefix}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read_test_field_prefix :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> test_field_prefix
+  (** Input JSON data of type {!test_field_prefix}. *)
+
+val test_field_prefix_of_string :
+  string -> test_field_prefix
+  (** Deserialize JSON data of type {!test_field_prefix}. *)
+
+val create_test_field_prefix :
+  theprefix_hello: bool ->
+  theprefix_world: int ->
+  unit -> test_field_prefix
+  (** Create a record of type {!test_field_prefix}. *)
 
 
 val write_star_rating :

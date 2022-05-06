@@ -1,1 +1,1 @@
-let version = "%%VERSION%%"
+../../atd/src/version.ml

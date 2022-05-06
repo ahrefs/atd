@@ -10,6 +10,7 @@ open Atd.Import
 open Easy_format
 open Atd.Ast
 open Mapping
+module Json = Atd.Json
 
 type pp_convs =
   | Camlp4 of string list
@@ -133,6 +134,52 @@ let path_of_target (target : target) =
     | Json -> [ "ocaml_json"; "ocaml" ]
     | Bucklescript -> ["ocaml_bs"; "ocaml"]
     | Validate -> [ "ocaml_validate"; "ocaml" ]
+
+(*
+   This must hold all the valid annotations of the form
+   '<ocaml ...>' or '<ocaml_TARGET>' (see above for the target names).
+*)
+let annot_schema_ocaml : Atd.Annot.schema_section =
+  {
+    section = "ocaml";
+    fields = [
+      Type_def, "attr";
+      Type_def, "from";
+      Type_def, "module";
+      Type_def, "predef";
+      Type_def, "t";
+      Type_expr, "field_prefix";
+      Type_expr, "module";
+      Type_expr, "repr";
+      Type_expr, "t";
+      Type_expr, "unwrap";
+      Type_expr, "valid";
+      Type_expr, "validator";
+      Type_expr, "wrap";
+      Variant, "name";
+      Cell, "default";
+      Field, "default";
+      Field, "mutable";
+      Field, "name";
+      Field, "repr";
+    ]
+  }
+
+let annot_schema_of_target (target : target) : Atd.Annot.schema =
+  let section_names = path_of_target target in
+  let ocaml_sections =
+    List.map
+      (fun section -> { annot_schema_ocaml with section }) section_names
+  in
+  let other_section =
+    match target with
+    | Default -> []
+    | Biniou -> Biniou.annot_schema_biniou
+    | Json -> Json.annot_schema_json
+    | Bucklescript -> Json.annot_schema_json
+    | Validate -> []
+  in
+  ocaml_sections @ other_section
 
 let get_ocaml_int target an =
   let path = path_of_target target in
@@ -332,6 +379,12 @@ let get_ocaml_module_and_t target default_name an =
   |> Option.map (fun (type_module, main_module) ->
   (type_module, main_module, get_ocaml_t target default_name an))
 
+let get_type_attrs an =
+  Atd.Annot.get_fields
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    an
 
 (*
   OCaml syntax tree
@@ -356,7 +409,8 @@ type ocaml_def = {
   o_def_name : (string * ocaml_type_param);
   o_def_alias : (string * ocaml_type_param) option;
   o_def_expr : ocaml_expr option;
-  o_def_doc : Atd.Doc.doc option
+  o_def_doc : Atd.Doc.doc option;
+  o_def_attrs : string list;
 }
 
 type ocaml_module_item =
@@ -375,7 +429,6 @@ let is_ocaml_keyword = function
   | "struct" | "then" | "to" | "true" | "try" | "type" | "val" | "virtual"
   | "when" | "while" | "with" -> true
   | _ -> false
-
 
 (*
   Mapping from ATD to OCaml
@@ -490,7 +543,8 @@ let map_def
         o_def_name = (s, param);
         o_def_alias = alias;
         o_def_expr = x;
-        o_def_doc = doc
+        o_def_doc = doc;
+        o_def_attrs = get_type_attrs an1;
       }
 
 
@@ -706,6 +760,12 @@ let rec format_module_item pp_convs
   let alias = def.o_def_alias in
   let expr = def.o_def_expr in
   let doc = def.o_def_doc in
+  (* TODO: currently replacing, globally set pp_convs, maybe should merge? *)
+  let pp_convs =
+    match def.o_def_attrs with
+    | [] -> pp_convs
+    | attrs -> Ppx attrs
+  in
   let append_if b s1 s2 =
     if b then s1 ^ s2
     else s1

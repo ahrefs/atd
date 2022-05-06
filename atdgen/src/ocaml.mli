@@ -63,6 +63,8 @@ module Repr : sig
     | Def of atd_ocaml_def
 end
 
+val annot_schema_of_target : target -> Atd.Annot.schema
+
 val get_ocaml_sum : target -> Atd.Annot.t -> atd_ocaml_sum
 val get_ocaml_record : target -> Atd.Annot.t -> atd_ocaml_record
 val get_ocaml_field_prefix : target -> Atd.Annot.t -> string

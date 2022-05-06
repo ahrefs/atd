@@ -15,7 +15,25 @@ all:
 .PHONY: setup
 setup:
 	opam update
-	opam install --deps-only ./*.opam
+	./scripts/install-opam-dependencies
+
+# Build and test everything in a Docker container, producing an
+# image named 'atd'.
+# This is split into two steps because installing the dependencies takes
+# forever each time.
+.PHONY: docker
+docker:
+	$(MAKE) docker-deps
+	$(MAKE) docker-build
+
+# This takes a while and has nothing to do with atd.
+.PHONY: docker-deps
+docker-deps:
+	docker build -t atd-deps -f dockerfiles/atd-deps.dockerfile .
+
+.PHONY: docker-build
+docker-build:
+	docker build -t atd -f dockerfiles/atd.dockerfile .
 
 ############################# Testing #####################################
 
@@ -23,7 +41,12 @@ setup:
 # to support all the target languages.
 .PHONY: test
 test:
-	$(DUNE) runtest -f
+	$(MAKE) test-ts
+	$(MAKE) test-ocaml
+	$(MAKE) test-scala
+	$(MAKE) test-java
+	$(MAKE) test-python
+	$(MAKE) test-ts
 
 # Test the OCaml code used by all the backends
 test-common:
@@ -49,6 +72,18 @@ test-java:
 	$(MAKE) test-common
 	$(MAKE) -C atdj test
 
+# Test only the Python backend
+.PHONY: test-python
+test-python:
+	$(MAKE) test-common
+	$(MAKE) -C atdpy test
+
+# Test only the TypeScript backend
+.PHONY: test-ts
+test-ts:
+	$(MAKE) test-common
+	$(MAKE) -C atdts test
+
 ############################################################################
 
 .PHONY: js
@@ -58,6 +93,8 @@ js:
 .PHONY: clean
 clean:
 	$(DUNE) clean
+	$(MAKE) -C atdpy clean
+	rm -rf tmp
 
 .PHONY: all-supported-ocaml-versions
 all-supported-ocaml-versions:
@@ -67,15 +104,27 @@ all-supported-ocaml-versions:
 doc:
 	cd doc && sphinx-build . _build
 
+# Run documentation server.
+# See setup instructions in CONTRIBUTING.md
 .PHONY: livedoc
 livedoc:
-	cd doc && sphinx-autobuild . _build \
-	  -p 8888 -q  --host $(shell hostname) -r '\.#.*'
+	$(MAKE) doc
+	python3 -m http.server 8888 --directory doc/_build
 
-package := atd
+# Prepare the opam files for a release. They're derived from 'dune-project'
+# and from the template specified in the root 'dune' file..
+#
+.PHONY: opam-files
+opam-files:
+	$(DUNE) build *.opam
+
+# This is only part of the release process.
+# See complete release instructions in CONTRIBUTING.md.
+#
 .PHONY: opam-release
 opam-release:
-	dune-release distrib --skip-build --skip-lint --skip-tests -n $(package)
-	dune-release publish distrib --verbose -n $(package)
-	dune-release opam pkg -n $(package)
-	dune-release opam submit -n $(package)
+	dune-release tag
+	dune-release distrib
+	dune-release publish
+	dune-release opam pkg
+	dune-release opam submit

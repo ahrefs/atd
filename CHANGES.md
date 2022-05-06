@@ -1,3 +1,9 @@
+2.6.1 (2022-XX-XX)
+------------------
+
+* Add ability to specify JSON/OCaml adapter with the arbitrary code
+  using `<json adapter.to_ocaml="..." adapter.from_ocaml="...">`
+
 2.6.0 (2022-05-03)
 ------------------
 

@@ -127,12 +127,16 @@ let rec get_writer_name
       "Yojson.Safe.write_null"
   | Bool (_, Bool, Bool) ->
       "Yojson.Safe.write_bool"
-  | Int (_, Int o, Int) ->
+  | Int (_, Int o, Int j) ->
       (match o with
          Int -> "Yojson.Safe.write_int"
        | Char ->  "Atdgen_runtime.Oj_run.write_int8"
        | Int32 -> "Atdgen_runtime.Oj_run.write_int32"
-       | Int64 -> "Atdgen_runtime.Oj_run.write_int64"
+       | Int64 ->
+           (match j with
+            | String -> "Atdgen_runtime.Oj_run.write_int64"
+            | Int -> "Atdgen_runtime.Oj_run.write_int64_as_int"
+           )
        | Float -> "Atdgen_runtime.Oj_run.write_float_as_int"
       )
 
@@ -196,7 +200,7 @@ let rec get_reader_name
   match x with
     Unit (_, Unit, Unit) -> "Atdgen_runtime.Oj_run.read_null"
   | Bool (_, Bool, Bool) -> "Atdgen_runtime.Oj_run.read_bool"
-  | Int (_, Int o, Int) ->
+  | Int (_, Int o, Int _) ->
       (match o with
          Int -> "Atdgen_runtime.Oj_run.read_int"
        | Char -> "Atdgen_runtime.Oj_run.read_int8"

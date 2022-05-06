@@ -17,6 +17,7 @@ val write_nullable : 'a write -> 'a option write
 val write_int8 : char write
 val write_int32 : int32 write
 val write_int64 : int64 write
+val write_int64_as_int : int64 write
 
 type 'a read = Yojson.lexer_state -> Lexing.lexbuf -> 'a
 

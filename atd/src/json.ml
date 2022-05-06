@@ -77,8 +77,8 @@ let annot_schema_json : Annot.schema = [
     section = "json";
     fields = [
       Type_expr, "adapter.ocaml";
-      Type_expr, "adapter.ocaml_normalize";
-      Type_expr, "adapter.ocaml_restore";
+      Type_expr, "adapter.to_ocaml";
+      Type_expr, "adapter.from_ocaml";
       Type_expr, "keep_nulls";
       Type_expr, "open_enum";
       Type_expr, "precision";
@@ -152,8 +152,8 @@ let get_json_adapter an =
   let get_loc field = Annot.get_loc_exn ~sections:["json"] ~field an in
   let ocaml_adapter =
     let field_module = "adapter.ocaml" in
-    let field_normalize = "adapter.ocaml_normalize" in
-    let field_restore = "adapter.ocaml_restore" in
+    let field_normalize = "adapter.to_ocaml" in
+    let field_restore = "adapter.from_ocaml" in
     match
       get_field field_module,
       get_field field_normalize,

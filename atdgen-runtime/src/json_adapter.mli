@@ -79,8 +79,8 @@ end
 (** Alternatively, function-based definition of the JSON adapter is supported.
     For example, an ATD annotation
     [<json
-       adapter.ocaml_normalize="Atdgen_runtime.Json_adapter.normalize_type_field \"type\""
-       adapter.ocaml_restore="Atdgen_runtime.Json_adapter.restore_type_field \"type\"">]
+       adapter.to_ocaml="Atdgen_runtime.Json_adapter.normalize_type_field \"type\""
+       adapter.from_ocaml="Atdgen_runtime.Json_adapter.restore_type_field \"type\"">]
     specifies two functions [Yojson.Safe.t -> Yojson.Safe.t]
     and in this case functionally equivalent to
     [<json

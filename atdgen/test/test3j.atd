@@ -35,8 +35,8 @@ type adapted = [
 type adapted_f = [
   | FA <json name="fa"> of a
   | FB <json name="fb"> of b
-] <json adapter.ocaml_normalize="Atdgen_runtime.Json_adapter.normalize_type_field \"type\""
-        adapter.ocaml_restore="Atdgen_runtime.Json_adapter.restore_type_field \"type\"">
+] <json adapter.to_ocaml="Atdgen_runtime.Json_adapter.normalize_type_field \"type\""
+        adapter.from_ocaml="Atdgen_runtime.Json_adapter.restore_type_field \"type\"">
 
 type a = {
   thing: string;

@@ -9,6 +9,8 @@ DUNE ?= dune
 # via opam.
 .PHONY: all
 all:
+	rm -f atdpy/test/python-tests/everything.py
+	rm -f atdts/test/ts-tests/everything.ts
 	$(DUNE) build
 
 # Install the OCaml dependencies for the build.

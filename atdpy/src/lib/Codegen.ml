@@ -774,9 +774,10 @@ let record env ~class_decorators loc name (fields : field list) an =
   let py_class_name = class_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
+    List.map (fun (x : field) ->
+      match x with
+      | Field x -> x
+      | Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   (*

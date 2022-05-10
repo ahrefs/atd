@@ -102,42 +102,7 @@ let make_closures format_annot =
         )
   in
 
-  let rec format_module_item (x : module_item) =
-    match x with
-    | Import { loc = _; name; alias; annot } ->
-        let opt_alias =
-          match alias with
-          | None -> []
-          | Some local_name -> [make_atom ("as " ^ local_name)]
-        in
-        make_atom "import" :: make_atom name :: opt_alias
-        |> horizontal_sequence
-        |> append_annots annot
-    | Type (_, (s, param, a), t) ->
-        let left =
-          if a = [] then
-            let l =
-              make_atom "type" ::
-              prepend_type_param param
-                [ make_atom (s ^ " =") ]
-            in
-            horizontal_sequence l
-          else
-            let l =
-              make_atom "type"
-              :: prepend_type_param param [ make_atom s ]
-            in
-            let x = append_annots a (horizontal_sequence l) in
-            horizontal_sequence [ x; make_atom "=" ]
-        in
-        Label (
-          (left, label),
-          format_type_expr t
-        )
-
-
-
-  and prepend_type_param l tl =
+  let rec prepend_type_param l tl =
     match l with
       [] -> tl
     | _ ->
@@ -153,7 +118,7 @@ let make_closures format_annot =
     match l with
       [] -> tl
     | _ ->
-        let x =
+        let x : t =
           match l with
             [t] -> format_type_expr t
           | l -> List (("(", ",", ")", plist), List.map format_type_expr l)
@@ -246,15 +211,50 @@ let make_closures format_annot =
     | Inherit (_, t) -> format_inherit t
   in
 
-  let format_full_module ((_, an), l) =
+  let format_import ({ loc = _; name; alias; annot } : import) =
+    let opt_alias =
+      match alias with
+      | None -> []
+      | Some local_name -> [make_atom ("as " ^ local_name)]
+    in
+    make_atom "import" :: make_atom name :: opt_alias
+    |> horizontal_sequence
+    |> append_annots annot
+  in
+
+  let format_type_def ((_, (s, param, a), t) : type_def) =
+    let left =
+      if a = [] then
+        let l =
+          make_atom "type" ::
+          prepend_type_param param
+            [ make_atom (s ^ " =") ]
+        in
+        horizontal_sequence l
+      else
+        let l =
+          make_atom "type"
+          :: prepend_type_param param [ make_atom s ]
+        in
+        let x = append_annots a (horizontal_sequence l) in
+        horizontal_sequence [ x; make_atom "=" ]
+    in
+    Label (
+      (left, label),
+      format_type_expr t
+    )
+  in
+
+  let format_full_module (x : full_module) =
     Easy_format.List (
       ("", "", "", rlist),
-      List.map format_annot an @ List.map format_module_item l
+      List.map format_annot (snd x.module_head)
+      @ List.map format_import x.imports
+      @ List.map format_type_def x.type_defs
     )
   in
 
   format_full_module, format_type_name, format_type_expr
-
 
 
 let format ?(annot = default_annot) x =

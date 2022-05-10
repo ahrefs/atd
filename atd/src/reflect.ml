@@ -129,38 +129,42 @@ and print_type_inst buf (loc, s, l) =
     s
     (print_list print_type_expr) l
 
-let print_module_item buf (x : Ast.module_item) =
-  match x with
-  | Ast.Import { loc; name; alias; annot } ->
-      bprintf buf "Import { loc = %a; name = %S; alias = %a; annot = %a }"
-        print_loc loc
-        name
-        (print_opt print_qstring) alias
-        print_annot_list annot
-  | Ast.Type (loc, (name, param, a), x) ->
-      bprintf buf "Type (%a, (%S, %a, %a), %a)"
-        print_loc loc
-        name (print_list print_qstring) param print_annot_list a
-        print_type_expr x
+let print_import buf ({ loc; name; alias; annot } : Ast.import) =
+  bprintf buf "{ loc = %a; name = %S; alias = %a; annot = %a }"
+    print_loc loc
+    name
+    (print_opt print_qstring) alias
+    print_annot_list annot
 
-let print_module_body buf l =
+let print_type_def buf ((loc, (name, param, a), x) : Ast.type_def) =
+  bprintf buf "(%a, (%S, %a, %a), %a)"
+    print_loc loc
+    name (print_list print_qstring) param print_annot_list a
+    print_type_expr x
+
+let print_list print_item buf l =
   bprintf buf "[\n";
   List.iter (fun x ->
-               print_module_item buf x;
-               bprintf buf ";\n"
-            ) l;
+    print_item buf x;
+    bprintf buf ";\n"
+  ) l;
   bprintf buf "]\n"
 
-let print_module_body_def buf name l =
+let print_imports_def buf name l =
   bprintf buf "\
-let %s_body : Ast.module_body =
+let %s_imports : Ast.imports list =
   let loc = Ast.dummy_loc in
 %a
-
-let %s = %s_body (* for backward compatibility with atd <= 1.0.1 *)
 "
-    name print_module_body l
-    name name
+    name (print_list print_import) l
+
+let print_type_defs_def buf name l =
+  bprintf buf "\
+let %s_type_defs : Ast.type_defs list =
+  let loc = Ast.dummy_loc in
+%a
+"
+    name (print_list print_type_def) l
 
 let print_module_head_def buf name an =
   bprintf buf "\
@@ -170,11 +174,15 @@ let %s_head : Ast.module_head =
 "
     name print_annot_list an
 
-let print_full_module_def buf name ((_, an), l) =
-  print_module_head_def buf name an;
-  print_module_body_def buf name l;
+let print_full_module_def buf name (x : Ast.full_module) =
+  print_module_head_def buf name (snd x.module_head);
+  print_imports_def buf name x.imports;
+  print_type_defs_def buf name x.type_defs;
   bprintf buf "\
-let %s_full : Ast.full_module =
-  (%s_head, %s_body)
+let %s_full : Ast.full_module = {
+  module_head = %s_head;
+  imports = %s_imports;
+  type_defs = %s_type_defs;
+}
 "
-    name name name
+    name name name name

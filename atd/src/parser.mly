@@ -14,7 +14,7 @@
 
 %token TYPE EQ OP_PAREN CL_PAREN OP_BRACK CL_BRACK OP_CURL CL_CURL
        SEMICOLON COMMA COLON STAR OF EOF BAR LT GT INHERIT
-       QUESTION TILDE DOT
+       QUESTION TILDE DOT IMPORT AS
 %token < string > STRING LIDENT UIDENT TIDENT
 
 %start full_module
@@ -22,7 +22,15 @@
 %%
 
 full_module:
-| x = annot  y = module_body { ((($startpos(x), $endpos(x)), x), y) }
+| an = annot  items = module_body
+               { let loc = ($startpos(an), $endpos(an)) in
+                 let imports, type_defs = Ast.split_module_items in
+                 {
+                   module_head = (loc, an);
+                   imports;
+                   type_defs;
+                 }
+               }
 ;
 
 module_body:
@@ -64,9 +72,9 @@ lident_path:
 ;
 
 module_item:
-
 | TYPE p = type_param s = LIDENT a = annot EQ t = type_expr
-                               { Type (($startpos, $endpos), (s, p, a), t) }
+                               { (Type (($startpos, $endpos), (s, p, a), t)
+                                  : module_item) }
 
 | TYPE type_param LIDENT annot EQ _e=error
     { syntax_error "Expecting type expression" $startpos(_e) $endpos(_e) }
@@ -74,6 +82,17 @@ module_item:
     { syntax_error "Expecting '='" $startpos(_e) $endpos(_e) }
 | TYPE _e=error
     { syntax_error "Expecting type name" $startpos(_e) $endpos(_e) }
+| IMPORT name = LIDENT alias = alias annot = annot
+                               { let loc = ($startpos, $endpos) in
+                                 (Import { loc; name; alias; annot }
+                                  : module_item) }
+| IMPORT _e=error
+    { syntax_error "Expecting ATD module name" $startpos(_e) $endpos(_e) }
+;
+
+alias:
+| AS name = LIDENT   { Some name }
+|                    { None }
 ;
 
 type_param:

@@ -8,11 +8,13 @@ let dummy_loc = (Lexing.dummy_pos, Lexing.dummy_pos)
 
 exception Atd_error of string
 
-type full_module = module_head * module_body
+type full_module = {
+  module_head: module_head;
+  imports: import list;
+  type_defs: type_def list;
+}
 
 and module_head = loc * annot
-
-and module_body = module_item list
 
 and annot = annot_section list
 
@@ -21,10 +23,6 @@ and annot_section = string * (loc * annot_field list)
 and annot_field = string * (loc * string option)
 
 and type_def = loc * (string * type_param * annot) * type_expr
-
-and module_item =
-  | Import of import
-  | Type of type_def
 
 and import = {
   loc: loc;
@@ -69,11 +67,13 @@ and field =
   | Field of simple_field
   | Inherit of (loc * type_expr)
 
+type module_item =
+  | Import of import
+  | Type of type_def
+
 type any =
   | Full_module of full_module
-  | Module_head of module_head
-  | Module_body of module_body
-  | Module_item of module_item
+  | Import of import
   | Type_def of type_def
   | Type_expr of type_expr
   | Variant of variant
@@ -121,20 +121,20 @@ and amap_field f = function
 and amap_cell f (loc, x, a) =
   (loc, amap_type_expr f x, f a)
 
-let amap_module_item f x =
-  match x with
-  | Import x ->
-      Import { x with annot = f x.annot }
-  | Type (loc, (name, param, a), x) ->
-      Type (loc, (name, param, f a), amap_type_expr f x)
+let amap_import f x =
+  { x with annot = f x.annot }
+
+let amap_type_def f (loc, (name, param, a), x) =
+  (loc, (name, param, f a), amap_type_expr f x)
 
 let amap_head f (loc, a) = (loc, f a)
 
-let amap_body f l =
-  List.map (amap_module_item f) l
-
-let map_all_annot f ((head, body) : full_module) =
-  (amap_head f head, amap_body f body)
+let map_all_annot f (x : full_module) =
+  {
+    module_head = amap_head f x.module_head;
+    imports = List.map (amap_import f) x.imports;
+    type_defs = List.map (amap_type_def f) x.type_defs;
+  }
 
 let set_type_expr_loc loc = function
   | Sum (_, a, b) -> Sum (loc, a, b)
@@ -198,9 +198,7 @@ let map_annot f = function
 type visitor_hooks = {
   full_module: (full_module -> unit) -> full_module -> unit;
   module_head: (module_head -> unit) -> module_head -> unit;
-  module_body: (module_body -> unit) -> module_body -> unit;
-  module_item: (module_item -> unit) -> module_item -> unit;
-  import: import -> unit;
+  import: (import -> unit) -> import -> unit;
   type_def: (type_def -> unit) -> type_def -> unit;
   type_expr: (type_expr -> unit) -> type_expr -> unit;
   variant: (variant -> unit) -> variant -> unit;
@@ -248,40 +246,27 @@ and visit_cell hooks x =
   let cont (loc, x, a) = visit_type_expr hooks x in
   hooks.cell cont x
 
+let visit_module_head hooks x =
+  hooks.module_head (fun _ -> ()) x
+
 let visit_import hooks x =
-  hooks.import x
+  hooks.import (fun _ -> ()) x
 
 let visit_type_def hooks x =
   let cont (loc, (name, param, a), x) = visit_type_expr hooks x in
   hooks.type_def cont x
 
-let visit_module_item hooks x =
-  let cont = function
-    | Import x -> visit_import hooks x
-    | Type x -> visit_type_def hooks x
-  in
-  hooks.module_item cont x
-
-let visit_module_head hooks x =
-  let cont x = () in
-  hooks.module_head cont x
-
-let visit_module_body hooks x =
-  let cont x = List.iter (visit_module_item hooks) x in
-  hooks.module_body cont x
-
-let visit_full_module hooks x =
-  let cont (head, body) =
-    visit_module_head hooks head;
-    visit_module_body hooks body
+let visit_full_module hooks (x : full_module) =
+  let cont (x : full_module) =
+    visit_module_head hooks x.module_head;
+    List.iter (visit_import hooks) x.imports;
+    List.iter (visit_type_def hooks) x.type_defs
   in
   hooks.full_module cont x
 
 let visit
   ?(full_module = fun cont x -> cont x)
-  ?(module_head = fun cont x -> cont x)
-  ?(module_body = fun cont x -> cont x)
-  ?(module_item = fun cont x -> cont x)
+  ?(module_head = fun _ -> ())
   ?(import = fun _ -> ())
   ?(type_def = fun cont x -> cont x)
   ?(type_expr = fun cont x -> cont x)
@@ -292,8 +277,6 @@ let visit
   let hooks : visitor_hooks = {
     full_module;
     module_head;
-    module_body;
-    module_item;
     import;
     type_def;
     type_expr;
@@ -304,9 +287,7 @@ let visit
   let visit (any : any) =
     match any with
     | Full_module x -> visit_full_module hooks x
-    | Module_head x -> visit_module_head hooks x
-    | Module_body x -> visit_module_body hooks x
-    | Module_item x -> visit_module_item hooks x
+    | Import x -> visit_import hooks x
     | Type_def x -> visit_type_def hooks x
     | Type_expr x -> visit_type_expr hooks x
     | Variant x -> visit_variant hooks x
@@ -317,6 +298,7 @@ let visit
 
 let fold_annot
   ?module_head
+  ?import
   ?type_def
   ?type_expr
   ?variant
@@ -334,7 +316,8 @@ let fold_annot
   in
   let visitor =
     visit
-      ~module_head:(fold module_head (fun (_, an) -> an))
+      ~module_head:(fold module_head fun (_, an) -> module_head an)
+      ~import:(fold import (fun (_, _, an) -> an))
       ~type_def:(fold type_def (fun (_, (_, _, an), _) -> an))
       ~type_expr:(fold type_expr annot_of_type_expr)
       ~variant:(fold variant annot_of_variant)
@@ -425,14 +408,9 @@ let local_name_of_import (x : import) =
   | None -> x.name
   | Some local_name -> local_name
 
-let map_type_defs (items : module_item list) f =
-  let imports, type_defs =
-    List.partition (function Import _ -> true | Type _ -> false) items
-  in
-  let td_list =
-    List.map (function Type x -> x | Import _ -> assert false) type_defs in
-  imports, f td_list
-
-let rewrite_type_defs (items : module_item list) f =
-  let imports, new_type_defs = map_type_defs items f in
-  imports @ List.map (fun td -> Type td) new_type_defs
+let split_module_items (items : module_item list) =
+  List.fold_right (fun x (imports, defs) ->
+    match x with
+    | Import x -> (x :: imports, defs)
+    | Type x -> (imports, x :: defs)
+  ) items []

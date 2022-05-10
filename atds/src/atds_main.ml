@@ -55,7 +55,10 @@ let main () =
     env with
     module_items =
       List.map
-        (function (Atd.Ast.Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
+        (function
+          | Atd.Ast.Import { loc; _ } ->
+              Atd.Ast.error_at loc "unsupported: import"
+          | Atd.Ast.Type (_, (name, _, _), atd_ty) -> (name, atd_ty))
         atd_module
   } in
 

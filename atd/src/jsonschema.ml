@@ -89,7 +89,7 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
         let fields =
           List.map (fun (x : field) ->
             match x with
-            | `Field ((loc, (name, kind, an), e) : simple_field) ->
+            | Field ((loc, (name, kind, an), e) : simple_field) ->
                 let json_name = Json.get_json_fname name an in
                 let required =
                   match kind with
@@ -104,7 +104,7 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
                 in
                 let descr = trans_description loc an in
                 ((json_name, trans_type_expr unwrapped_e, descr), required)
-            | `Inherit _ -> assert false
+            | Inherit _ -> assert false
           ) fl
         in
         let properties = List.map fst fields in
@@ -152,21 +152,24 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
   in
   trans_type_expr x
 
-let trans_item
-    (Type (loc, (name, param, an), e) : module_item) : def =
-  if param <> [] then
-    error_at loc "unsupported: parametrized types";
-  let description = trans_description_simple loc an in
-  {
-    name;
-    description;
-    type_expr = trans_type_expr e;
-  }
+let trans_item (x : module_item) : def =
+  match x with
+  | Import { loc; _ } ->
+      error_at loc "unsupported: import"
+  | Type (loc, (name, param, an), e) ->
+      if param <> [] then
+        error_at loc "unsupported: parametrized types";
+      let description = trans_description_simple loc an in
+      {
+        name;
+        description;
+        type_expr = trans_type_expr e;
+      }
 
 let trans_full_module
     ~src_name
     ~root_type
-    ((head, body) : full_module) : t =
+    (x : full_module) : t =
   let defs = List.map trans_item body in
   let root_defs, defs = List.partition (fun x -> x.name = root_type) defs in
   let root_def =

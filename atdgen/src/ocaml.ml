@@ -481,8 +481,8 @@ and map_variant ~kind target (x : variant) : ocaml_variant =
 
 and map_field target ocaml_field_prefix (x : field) : ocaml_field =
   match x with
-    `Inherit _ -> assert false
-  | `Field (loc, (atd_fname, _, an), x) ->
+    Inherit _ -> assert false
+  | Field (loc, (atd_fname, _, an), x) ->
       let ocaml_fname =
         get_ocaml_fname target (ocaml_field_prefix ^ atd_fname) an in
       if is_ocaml_keyword ocaml_fname then

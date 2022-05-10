@@ -144,30 +144,25 @@ let check_type_expr tbl tvars (t : type_expr) =
   check t
 
 
-let check (l : Ast.module_body) =
+let check (x : Ast.full_module) =
   let predef = Predef.make_table () in
   let tbl = Hashtbl.copy predef in
 
   (* first pass: put all definitions in the table *)
-  List.iter (
-    function
-    | Type ((loc, (k, pl, _), _) as x) ->
-        if Hashtbl.mem tbl k then
-          if Hashtbl.mem predef k then
-            error_at loc
-              (sprintf "%s is a predefined type, it cannot be redefined." k)
-          else
-            error_at loc
-              (sprintf "Type %s is defined for the second time." k)
-        else
-          Hashtbl.add tbl k (List.length pl, Some x)
-    | Import _ -> ()
-  ) l;
+  List.iter (fun ((loc, (k, pl, _), _) as x) ->
+    if Hashtbl.mem tbl k then
+      if Hashtbl.mem predef k then
+        error_at loc
+          (sprintf "%s is a predefined type, it cannot be redefined." k)
+      else
+        error_at loc
+          (sprintf "Type %s is defined for the second time." k)
+    else
+      Hashtbl.add tbl k (List.length pl, Some x)
+  ) x.type_defs;
 
   (* second pass: check existence and arity of types in type expressions,
      check that inheritance is not cyclic *)
-  List.iter (function
-    | Ast.Type (_, (_, tvars, _), t) ->
-        check_type_expr tbl tvars t
-    | Import _ -> ()
-  ) l
+  List.iter (fun (_, (_, tvars, _), t) ->
+    check_type_expr tbl tvars t
+  ) x.type_defs

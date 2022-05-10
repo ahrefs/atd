@@ -27,23 +27,15 @@ and annot_field = string * (loc * string option)
     (** An annotation field,
         i.e. a key with an optional value within an annotation. *)
 
-
-type full_module = module_head * module_body
+type full_module = {
+  module_head: module_head;
+  imports: import list;
+  type_defs: type_def list;
+}
     (** Contents of an ATD file. *)
 
 and module_head = loc * annot
     (** The head of an ATD file is just a list of annotations. *)
-
-and module_body = module_item list
-    (** The body of an ATD file is a list of type definitions.
-        Type definitions are implicitely mutually
-        recursive. They can be sorted based on dependencies
-        using {!Atd.Util.tsort}.
-    *)
-
-and module_item =
-  | Import of import
-  | Type of type_def
 
 (** Require the existence of another ATD module.
     The concrete syntax is [import external_name as local_name].
@@ -177,11 +169,14 @@ and field =
          offered by the {!Atd.Util} functions.
       *)
 
+(** Parsing only *)
+type module_item =
+  | Import of import
+  | Type of type_def
+
 type any =
   | Full_module of full_module
-  | Module_head of module_head
-  | Module_body of module_body
-  | Module_item of module_item
+  | Import of import
   | Type_def of type_def
   | Type_expr of type_expr
   | Variant of variant
@@ -236,9 +231,6 @@ val map_all_annot : (annot -> annot) -> full_module -> full_module
 
 val visit :
   ?full_module: ((full_module -> unit) -> full_module -> unit) ->
-  ?module_head: ((module_head -> unit) -> module_head -> unit) ->
-  ?module_body: ((module_body -> unit) -> module_body -> unit) ->
-  ?module_item: ((module_item -> unit) -> module_item -> unit) ->
   ?import: (import -> unit) ->
   ?type_def: ((type_def -> unit) -> type_def -> unit) ->
   ?type_expr: ((type_expr -> unit) -> type_expr -> unit) ->
@@ -273,6 +265,7 @@ v}
 
 val fold_annot :
   ?module_head: (module_head -> annot -> 'a -> 'a) ->
+  ?import: (import -> annot -> 'a -> 'a) ->
   ?type_def: (type_def -> annot -> 'a -> 'a) ->
   ?type_expr: (type_expr -> annot -> 'a -> 'a) ->
   ?variant: (variant -> annot -> 'a -> 'a) ->
@@ -310,14 +303,3 @@ val is_required : field_kind -> bool
 val local_name_of_import : import -> string
   (** Extract the name of the imported module, taking into account the
       possible aliasing. *)
-
-val map_type_defs :
-  module_item list -> (type_def list -> 'a) -> module_item list * 'a
-  (** Map type definitions to something else and return the
-      list of imports (untouched) and the result of mapping the
-      type definitions. *)
-
-val rewrite_type_defs :
-  module_item list -> (type_def list -> type_def list) -> module_item list
-  (** Map type definitions to another list of type definitions.
-      The imports end up at the beginning of the list of module items. *)

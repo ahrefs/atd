@@ -712,16 +712,10 @@ let make_ocaml_files
           stdin
   in
 
-  let tsort =
-    if all_rec then
-      function m -> [ (true, m) ]
-    else
-      Atd.Util.tsort
-  in
-  let m1 = tsort m0 in
+  let imports, m1 = Atd.Util.tsort ~all_rec m0 in
   let defs1 = Oj_mapping.defs_of_atd_modules m1 ~target in
   let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_poly:true m0
+    Atd.Expand.expand_type_defs ~keep_poly:true m0
   in
   let m2 = tsort m1' in
   (* m0 = original type definitions

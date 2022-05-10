@@ -16,15 +16,12 @@ let read_lexbuf
     else
       body
   in
-  let imports, type_defs, original_types =
-    let imports, (type_defs, original_types) =
+  let imports, (type_defs, original_types) =
+    if expand then
       Ast.map_type_defs body
         (Expand.expand_type_defs ?keep_poly ~debug: xdebug)
-    in
-    if expand then
-      imports, type_defs, original_types
     else
-      imports, type_defs, Hashtbl.create 0
+      Ast.map_type_defs body (fun type_defs -> (type_defs, Hashtbl.create 0))
   in
   let body =
     imports @ List.map (fun td -> Ast.Type td) type_defs
@@ -84,30 +81,19 @@ let load_string
 
 module Tsort = Sort.Make (
   struct
-    type t = Ast.module_item
+    type t = Ast.type_def
     type id = string (* type name *)
-
-    let id def =
-      match def with
-      | Ast.Type (_, (name, _, _), _) -> name
-      | Ast.Import _ -> assert false
-
+    let id (_, (name, _, _), _) = name
     let to_string name = name
   end
 )
 
-let tsort l0 =
+let tsort type_defs0 =
   let ignorable = [ "unit"; "bool"; "int"; "float"; "string"; "abstract" ] in
-  let imports, type_defs0 =
-    List.partition (function Ast.Import _ -> true | Ast.Type _ -> false) l0
-  in
   let type_defs =
-    List.map (
-      function
-      | Ast.Type (_, (_, _, _), x) as def ->
-          let deps = Ast.extract_type_names ~ignorable x in
-          (def, deps)
-      | Ast.Import _ -> assert false
+    List.map (fun ((_, (_, _, _), x) as def) ->
+      let deps = Ast.extract_type_names ~ignorable x in
+      (def, deps)
     ) type_defs0
   in
-  (imports, List.rev (Tsort.sort type_defs))
+  List.rev (Tsort.sort type_defs)

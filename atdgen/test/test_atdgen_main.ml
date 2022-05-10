@@ -567,6 +567,29 @@ let test_adapted () =
   check (expected_a = rewritten_a);
   check (expected_b = rewritten_b)
 
+let test_adapted_f () =
+  section "read and write a variant represented as a json object \
+           with a `type` field (pair of functions)";
+  let json_a = {| {
+    "type": "fa",
+    "thing": "abc",
+    "other_thing": true,
+    "ignored": 555
+  } |} in
+  let json_b =  {| {
+    "thing": 123,
+    "type": "fb",
+    "other_thing": true
+  } |} in
+  let expected_a = {|{"type":"fa","thing":"abc","other_thing":true}|} in
+  let expected_b = {|{"type":"fb","thing":123}|} in
+  let a = Test3j_j.adapted_f_of_string json_a in
+  let b = Test3j_j.adapted_f_of_string json_b in
+  let rewritten_a = Test3j_j.string_of_adapted_f a in
+  let rewritten_b = Test3j_j.string_of_adapted_f b in
+  check (expected_a = rewritten_a);
+  check (expected_b = rewritten_b)
+
 let test_one_field () =
   section "test variants represented with single-field json objects";
   let a_json = {| {"a": true} |} in
@@ -675,6 +698,7 @@ let all_tests = [
   test_json_float_decimals;
   test_patch;
   test_adapted;
+  test_adapted_f;
   test_one_field;
   test_tag_field_emulation;
   test_tag_field_emulation_with_catchall;

@@ -36,6 +36,7 @@ type type_expr =
 and object_ = {
   properties: property list;
   required: string list; (* list of the properties that are required *)
+  xprop: bool; (* whether to allow extra fields; default is true *)
 }
 
 and property = string * type_expr * opt_descr
@@ -66,7 +67,7 @@ let trans_description loc an =
   | None -> []
   | Some doc -> ["description", `String doc]
 
-let trans_type_expr (x : Ast.type_expr) : type_expr =
+let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
   let rec trans_type_expr (x : Ast.type_expr) : type_expr =
     match x with
     | Sum (loc, vl, an) ->
@@ -111,7 +112,11 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
         let required =
           List.filter_map (fun (_, required) -> required) fields
         in
-        Object { properties; required }
+        Object {
+          properties;
+          required;
+          xprop;
+        }
     | Tuple (loc, tl, an) ->
         Tuple (List.map (fun (loc, e, an) -> trans_type_expr e) tl)
     | List (loc, e, an) ->
@@ -153,6 +158,7 @@ let trans_type_expr (x : Ast.type_expr) : type_expr =
   trans_type_expr x
 
 let trans_item
+    ~xprop
     (Type (loc, (name, param, an), e) : module_item) : def =
   if param <> [] then
     error_at loc "unsupported: parametrized types";
@@ -160,14 +166,15 @@ let trans_item
   {
     name;
     description;
-    type_expr = trans_type_expr e;
+    type_expr = trans_type_expr ~xprop e;
   }
 
 let trans_full_module
+    ~xprop
     ~src_name
     ~root_type
     ((head, body) : full_module) : t =
-  let defs = List.map trans_item body in
+  let defs = List.map (trans_item ~xprop) body in
   let root_defs, defs = List.partition (fun x -> x.name = root_type) defs in
   let root_def =
     match root_defs with
@@ -261,10 +268,15 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
           (name, type_expr_to_json ~descr x)
         ) x.properties
       in
-      [
-        make_type_property ~is_nullable "object";
-        "required", `List (List.map string x.required);
-        "properties", `Assoc properties;
+      let additional_properties =
+        if x.xprop then [] (* true *)
+        else [ "additionalProperties", `Bool false ]
+      in
+      List.flatten [
+        [make_type_property ~is_nullable "object"];
+        ["required", `List (List.map string x.required)];
+        additional_properties;
+        ["properties", `Assoc properties];
       ]
   | Map x ->
       [
@@ -282,7 +294,9 @@ and type_expr_to_json
     ?(is_nullable = false)
     ?(descr = [])
     (x : type_expr) : json =
-  `Assoc (descr @ type_expr_to_assoc ~is_nullable x)
+  `Assoc (
+    descr @ type_expr_to_assoc ~is_nullable x
+  )
 
 let def_to_json (x : def) =
   x.name, `Assoc (
@@ -307,9 +321,9 @@ let to_json (x : t) : json =
 let annot_schema =
   Json.annot_schema_json @ Doc.annot_schema
 
-let print ~src_name ~root_type oc ast =
+let print ?(xprop = true) ~src_name ~root_type oc ast =
   ast
-  |> trans_full_module ~src_name ~root_type
+  |> trans_full_module ~xprop ~src_name ~root_type
   |> to_json
   |> Yojson.Safe.pretty_to_channel oc;
   output_char oc '\n'

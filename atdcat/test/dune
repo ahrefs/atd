@@ -51,7 +51,7 @@
      (run python3 -m jsonschema schema.json -i data.json)
 
      ; Check that validation fails due to an extra property in the JSON data
-     (with-accepted-exit-codes (not 0)
+     (with-accepted-exit-codes 1
        (run python3 -m jsonschema schema-no-xprop.json -i data.json)
      )
    )

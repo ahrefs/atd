@@ -26,6 +26,13 @@
  (deps schema.atd)
  (action (run %{bin:atdcat} %{deps} -o %{targets} -jsonschema root)))
 
+; Same, with some options for a different JSON Schema output
+(rule
+ (targets schema-no-xprop.json)
+ (deps schema.atd)
+ (action (run %{bin:atdcat} %{deps} -o %{targets} -jsonschema root
+                -no-additional-properties)))
+
 (rule
  (alias runtest)
  (deps
@@ -37,8 +44,16 @@
      ; Check JSON Schema output
      (diff schema.expected.json schema.json)
 
+     ; Check JSON Schema output
+     (diff schema-no-xprop.expected.json schema-no-xprop.json)
+
      ; Check that the JSON Schema is valid and compatible with some JSON data
      (run python3 -m jsonschema schema.json -i data.json)
+
+     ; Check that validation fails due to an extra property in the JSON data
+     (with-accepted-exit-codes 1
+       (run python3 -m jsonschema schema-no-xprop.json -i data.json)
+     )
    )
  )
 )

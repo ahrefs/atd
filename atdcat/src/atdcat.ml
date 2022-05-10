@@ -73,12 +73,12 @@ let parse
   let m = first_head, List.flatten bodies in
   strip strip_all strip_sections m
 
-let print ~src_name ~html_doc ~out_format ~out_channel:oc ast =
+let print ~xprop ~src_name ~html_doc ~out_format ~out_channel:oc ast =
   let f =
     match out_format with
     | Atd -> print_atd ~html_doc
     | Ocaml name -> print_ml ~name
-    | Jsonschema root_type -> Atd.Jsonschema.print ~src_name ~root_type
+    | Jsonschema root_type -> Atd.Jsonschema.print ~xprop ~src_name ~root_type
   in
   f oc ast
 
@@ -94,6 +94,7 @@ let () =
   let strip_sections = ref [] in
   let strip_all = ref false in
   let out_format = ref Atd in
+  let allow_additional_properties = ref true in
   let html_doc = ref false in
   let input_files = ref [] in
   let output_file = ref None in
@@ -133,6 +134,12 @@ let () =
     "-jsonschema", Arg.String (fun s -> out_format := Jsonschema s),
     "<root type name>
           translate the ATD file to JSON Schema.";
+
+    "-no-additional-properties",
+    Arg.Unit (fun () -> allow_additional_properties := false),
+    "
+          emit a JSON Schema that doesn't tolerate extra fields on JSON
+          objects.";
 
     "-ml", Arg.String (fun s -> out_format := Ocaml s),
     "<name>
@@ -199,6 +206,7 @@ let () =
       | _ -> "multiple files"
     in
     print
+      ~xprop: !allow_additional_properties
       ~src_name
       ~html_doc: !html_doc
       ~out_format: !out_format

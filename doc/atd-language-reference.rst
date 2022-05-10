@@ -245,6 +245,8 @@ of ``atdcat -help``:
 ::
 
   Usage: atdcat FILE
+    -o <path>
+            write to this file instead of stdout
     -x 
             make type expressions monomorphic
     -xk 
@@ -258,6 +260,11 @@ of ``atdcat -help``:
             expand `inherit' statements in records
     -iv 
             expand `inherit' statements in sum types
+    -jsonschema <root type name>
+            translate the ATD file to JSON Schema.
+    -no-additional-properties 
+            emit a JSON Schema that doesn't tolerate extra fields on JSON
+            objects.
     -ml <name>
             output the ocaml code of the ATD abstract syntax tree
     -html-doc 

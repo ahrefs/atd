@@ -244,48 +244,49 @@ of ``atdcat -help``:
 
 ::
 
-Usage: _build/install/default/bin/atdcat FILE
-  -o <path>
-          write to this file instead of stdout
-  -x 
-          make type expressions monomorphic
-  -xk 
-          keep parametrized type definitions and imply -x.
-          Default is to return only monomorphic type definitions
-  -xd 
-          debug mode implying -x
-  -i 
-          expand all 'inherit' statements
-  -if 
-          expand 'inherit' statements in records
-  -iv 
-          expand 'inherit' statements in sum types
-  -jsonschema <root type name>
-          translate the ATD file to JSON Schema.
-  -jsonschema-no-additional-properties 
-          emit a JSON Schema that doesn't tolerate extra fields on JSON
-          objects.
-  -jsonschema-version { draft-2019-09 | draft-2020-12 }
-          specify which version of the JSON Schema standard to target.
-          Default: latest supported version, which is currently 'draft-2020-12'.
-  -ml <name>
-          output the ocaml code of the ATD abstract syntax tree
-  -html-doc 
-          replace directly <doc html="..."> by (*html ... *)
-          or replace <doc text="..."> by (*html ... *)
-          where the contents are formatted as HTML
-          using <p>, <code> and <pre>.
-          This is suitable input for "caml2html -ext html:cat"
-          which converts ATD files into HTML.
-  -strip NAME1[,NAME2,...]
-          remove all annotations of the form <NAME1 ...>,
-          <NAME2 ...>, etc.
-  -strip-all 
-          remove all annotations
-  -version 
-          print the version of atd and exit
-  -help  Display this list of options
-  --help  Display this list of options
+  Usage: _build/install/default/bin/atdcat FILE
+    -o <path>
+            write to this file instead of stdout
+    -x 
+            make type expressions monomorphic
+    -xk 
+            keep parametrized type definitions and imply -x.
+            Default is to return only monomorphic type definitions
+    -xd 
+            debug mode implying -x
+    -i 
+            expand all 'inherit' statements
+    -if 
+            expand 'inherit' statements in records
+    -iv 
+            expand 'inherit' statements in sum types
+    -jsonschema <root type name>
+            translate the ATD file to JSON Schema.
+    -jsonschema-no-additional-properties 
+            emit a JSON Schema that doesn't tolerate extra fields on JSON
+            objects.
+    -jsonschema-version { draft-2019-09 | draft-2020-12 }
+            specify which version of the JSON Schema standard to target.
+            Default: latest supported version, which is currently
+            'draft-2020-12  '.
+    -ml <name>
+            output the ocaml code of the ATD abstract syntax tree
+    -html-doc 
+            replace directly <doc html="..."> by (*html ... *)
+            or replace <doc text="..."> by (*html ... *)
+            where the contents are formatted as HTML
+            using <p>, <code> and <pre>.
+            This is suitable input for "caml2html -ext html:cat"
+            which converts ATD files into HTML.
+    -strip NAME1[,NAME2,...]
+            remove all annotations of the form <NAME1 ...>,
+            <NAME2 ...>, etc.
+    -strip-all 
+            remove all annotations
+    -version 
+            print the version of atd and exit
+    -help  Display this list of options
+    --help  Display this list of options
 
 ATD language
 ------------

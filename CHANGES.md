@@ -3,8 +3,14 @@ Next release
 
 * Add ability to specify JSON/OCaml adapter with the arbitrary code
   using `<json adapter.to_ocaml="..." adapter.from_ocaml="...">` (#184).
-* atdcat: add option `-no-additional-properties` for JSON Schema
-  output to specify that JSON objects may not have extra properties (#293).
+* atdcat: add option `-jsonschema-no-additional-properties` for JSON Schema
+  output to specify that JSON objects may not have extra properties
+  (#293, #294).
+* atdcat: add `title` field to JSON Schema output containing the name
+  of root type (#294).
+* atdcat: add command-line option to choose the version of JSON Schema
+  to target. Options are the latest version "Draft 2020-12" and the
+  previous version "Draft 2019-09" (#294).
 
 2.6.0 (2022-05-03)
 ------------------

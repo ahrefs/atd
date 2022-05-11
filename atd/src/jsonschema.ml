@@ -178,6 +178,7 @@ let trans_item
   }
 
 let trans_full_module
+    ~version
     ~xprop
     ~src_name
     ~root_type
@@ -212,8 +213,13 @@ let trans_full_module
     |> String.concat "\n\n"
   in
   let root_def = { root_def with description = Some description } in
+  let version_url =
+    match version with
+    | Draft_2019_09 -> "https://json-schema.org/draft/2019-09/schema"
+    | Draft_2020_12 -> "https://json-schema.org/draft/2020-12/schema"
+  in
   {
-    schema = "https://json-schema.org/draft/2020-12/schema";
+    schema = version_url;
     root_def = root_def;
     defs;
   }
@@ -343,7 +349,7 @@ let print
     ?(xprop = true)
     ~src_name ~root_type oc ast =
   ast
-  |> trans_full_module ~xprop ~src_name ~root_type
+  |> trans_full_module ~version ~xprop ~src_name ~root_type
   |> to_json ~version
   |> Yojson.Safe.pretty_to_channel oc;
   output_char oc '\n'

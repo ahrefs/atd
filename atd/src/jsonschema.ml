@@ -331,7 +331,16 @@ let def_to_json ~version (x : def) =
 let to_json ~version (x : t) : json =
   let root_def =
     match def_to_json ~version x.root_def with
-    | _, `Assoc fields -> fields
+    | _, `Assoc fields ->
+        (* json-schema-to-typescript (command json2ts) will use the 'title'
+           field to generate a name for the root type since otherwise it
+           doesn't have a name. That's why we populate the 'title' field
+           like this.
+           This probably interferes with other tools that expect an actual
+           title. Note that the documentation extracted from the
+           ATD <doc ...> header goes into 'description', not 'title'.
+        *)
+        ("title", `String x.root_def.name) :: fields
     | _ -> assert false
   in
   `Assoc (

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
   "description":
     "Translated by atdcat from 'schema.atd'.\n\nThis is the title. Here's a code block:\n\n{{{\nthis is line 1\nthis is line 2\n}}}\n\nThis is the root object. For example, the empty object {{ {} }} is invalid.",
   "type": "object",

@@ -520,7 +520,12 @@ Type name          Intended use
                    may be applied, as specified by
                    language-specific annotations.
 
-``abstract``       Type defined elsewhere
+``abstract``       Unspecified type. By default, this is meant to
+                   accept any data that is syntaxically valid, such as
+                   any JSON data that could be parsed successfully.
+                   With the help of ATD annotations, this can be
+                   used to express types not supported by the ATD
+                   language such as "either a boolean or a string".
 ================== =========================================================
 
 

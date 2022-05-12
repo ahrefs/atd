@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
   "title": "root",
   "description":
     "Translated by atdcat from 'schema.atd'.\n\nThis is the title. Here's a code block:\n\n{{{\nthis is line 1\nthis is line 2\n}}}\n\nThis is the root object. For example, the empty object {{ {} }} is invalid.",
@@ -7,7 +7,6 @@
   "required": [
     "ID", "items", "aliased", "point", "kinds", "assoc1", "assoc2"
   ],
-  "additionalProperties": false,
   "properties": {
     "ID": { "description": "This is the 'id' field.", "type": "string" },
     "items": {
@@ -23,8 +22,8 @@
     "point": {
       "type": "array",
       "minItems": 2,
-      "items": false,
-      "prefixItems": [ { "type": "number" }, { "type": "number" } ]
+      "additionalItems": false,
+      "items": [ { "type": "number" }, { "type": "number" } ]
     },
     "kinds": {
       "type": "array",
@@ -35,8 +34,8 @@
       "items": {
         "type": "array",
         "minItems": 2,
-        "items": false,
-        "prefixItems": [ { "type": "number" }, { "type": "integer" } ]
+        "additionalItems": false,
+        "items": [ { "type": "number" }, { "type": "integer" } ]
       }
     },
     "assoc2": {
@@ -50,8 +49,8 @@
           {
             "type": "array",
             "minItems": 2,
-            "items": false,
-            "prefixItems": [ { "const": "Some" }, { "type": "integer" } ]
+            "additionalItems": false,
+            "items": [ { "const": "Some" }, { "type": "integer" } ]
           },
           { "const": "None" }
         ]
@@ -69,8 +68,8 @@
         {
           "type": "array",
           "minItems": 2,
-          "items": false,
-          "prefixItems": [
+          "additionalItems": false,
+          "items": [
             { "description": "this is Thing", "const": "Thing" },
             { "type": "integer" }
           ]
@@ -79,8 +78,8 @@
         {
           "type": "array",
           "minItems": 2,
-          "items": false,
-          "prefixItems": [
+          "additionalItems": false,
+          "items": [
             { "const": "!!!" },
             { "type": "array", "items": { "type": "string" } }
           ]
@@ -91,8 +90,8 @@
     "pair": {
       "type": "array",
       "minItems": 2,
-      "items": false,
-      "prefixItems": [ { "type": "string" }, { "type": "integer" } ]
+      "additionalItems": false,
+      "items": [ { "type": "string" }, { "type": "integer" } ]
     }
   }
 }

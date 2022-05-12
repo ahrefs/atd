@@ -13,6 +13,14 @@
 open Printf
 open Ast
 
+type version =
+  | Draft_2019_09
+  | Draft_2020_12
+
+(* Change this to the latest version whenever a new version becomes
+   available, as promised by --help. *)
+let default_version = Draft_2020_12
+
 type json = Yojson.Safe.t
 
 (* optional description field *)
@@ -170,6 +178,7 @@ let trans_item
   }
 
 let trans_full_module
+    ~version
     ~xprop
     ~src_name
     ~root_type
@@ -204,8 +213,13 @@ let trans_full_module
     |> String.concat "\n\n"
   in
   let root_def = { root_def with description = Some description } in
+  let version_url =
+    match version with
+    | Draft_2019_09 -> "https://json-schema.org/draft/2019-09/schema"
+    | Draft_2020_12 -> "https://json-schema.org/draft/2020-12/schema"
+  in
   {
-    schema = "https://json-schema.org/draft/2020-12/schema";
+    schema = version_url;
     root_def = root_def;
     defs;
   }
@@ -228,7 +242,7 @@ let make_type_property ~is_nullable name =
   else
     ("type", `String name)
 
-let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
+let rec type_expr_to_assoc ?(is_nullable = false) ~version (x : type_expr)
   : (string * json) list =
   match x with
   | Ref s ->
@@ -246,26 +260,33 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
   | Array x ->
       [
         make_type_property ~is_nullable "array";
-        "items", type_expr_to_json x
+        "items", type_expr_to_json ~version x
       ]
   | Tuple xs ->
-      [
-        make_type_property ~is_nullable "array";
-        "minItems", `Int (List.length xs);
-
-        (* "items" used to be called "additionalItems",
-           "prefixItems" used to be called "items"
-
-           according to
-           https://json-schema.org/understanding-json-schema/reference/array.html
-        *)
-        "items", `Bool false;
-        "prefixItems", `List (List.map type_expr_to_json xs);
-      ]
+      let shared =
+        [
+          make_type_property ~is_nullable "array";
+          "minItems", `Int (List.length xs);
+        ]
+      in
+      let tail =
+        match version with
+        | Draft_2020_12 ->
+            [
+              "items", `Bool false;
+              "prefixItems", `List (List.map (type_expr_to_json ~version) xs);
+            ]
+        | Draft_2019_09 ->
+            [
+              "additionalItems", `Bool false;
+              "items", `List (List.map (type_expr_to_json ~version) xs);
+            ]
+      in
+      shared @ tail
   | Object x ->
       let properties =
         List.map (fun (name, x, descr) ->
-          (name, type_expr_to_json ~descr x)
+          (name, type_expr_to_json ~descr ~version x)
         ) x.properties
       in
       let additional_properties =
@@ -281,49 +302,63 @@ let rec type_expr_to_assoc ?(is_nullable = false) (x : type_expr)
   | Map x ->
       [
         make_type_property ~is_nullable "object";
-        "additionalProperties", type_expr_to_json x
+        "additionalProperties", type_expr_to_json ~version x
       ]
   | Union xs ->
-      [ "oneOf", `List (List.map (type_expr_to_json ~is_nullable) xs) ]
+      [ "oneOf", `List (List.map (type_expr_to_json ~is_nullable ~version) xs) ]
   | Nullable x ->
-      type_expr_to_assoc ~is_nullable:true x
+      type_expr_to_assoc ~is_nullable:true ~version x
   | Const (json, descr) ->
       descr @ [ "const", json ]
 
 and type_expr_to_json
     ?(is_nullable = false)
     ?(descr = [])
+    ~version
     (x : type_expr) : json =
   `Assoc (
-    descr @ type_expr_to_assoc ~is_nullable x
+    descr @ type_expr_to_assoc ~is_nullable ~version x
   )
 
-let def_to_json (x : def) =
+let def_to_json ~version (x : def) =
   x.name, `Assoc (
     List.flatten [
       opt "description" string x.description;
-      type_expr_to_assoc x.type_expr;
+      type_expr_to_assoc ~version x.type_expr;
     ]
   )
 
-let to_json (x : t) : json =
+let to_json ~version (x : t) : json =
   let root_def =
-    match def_to_json x.root_def with
-    | _, `Assoc fields -> fields
+    match def_to_json ~version x.root_def with
+    | _, `Assoc fields ->
+        (* json-schema-to-typescript (command json2ts) will use the 'title'
+           field to generate a name for the root type since otherwise it
+           doesn't have a name. That's why we populate the 'title' field
+           like this.
+           This probably interferes with other tools that expect an actual
+           title. Note that the documentation extracted from the
+           ATD <doc ...> header goes into 'description', not 'title'.
+        *)
+        ("title", `String x.root_def.name) :: fields
     | _ -> assert false
   in
   `Assoc (
     ("$schema", `String x.schema)
     :: root_def
-    @ ["definitions", `Assoc (List.map (fun x -> def_to_json x) x.defs)]
+    @ ["definitions",
+       `Assoc (List.map (fun x -> def_to_json ~version x) x.defs)]
   )
 
 let annot_schema =
   Json.annot_schema_json @ Doc.annot_schema
 
-let print ?(xprop = true) ~src_name ~root_type oc ast =
+let print
+    ?(version = default_version)
+    ?(xprop = true)
+    ~src_name ~root_type oc ast =
   ast
-  |> trans_full_module ~xprop ~src_name ~root_type
-  |> to_json
+  |> trans_full_module ~version ~xprop ~src_name ~root_type
+  |> to_json ~version
   |> Yojson.Safe.pretty_to_channel oc;
   output_char oc '\n'

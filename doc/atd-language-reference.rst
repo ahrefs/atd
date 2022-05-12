@@ -244,7 +244,7 @@ of ``atdcat -help``:
 
 ::
 
-  Usage: atdcat FILE
+  Usage: _build/install/default/bin/atdcat FILE
     -o <path>
             write to this file instead of stdout
     -x 
@@ -255,16 +255,20 @@ of ``atdcat -help``:
     -xd 
             debug mode implying -x
     -i 
-            expand all `inherit' statements
+            expand all 'inherit' statements
     -if 
-            expand `inherit' statements in records
+            expand 'inherit' statements in records
     -iv 
-            expand `inherit' statements in sum types
+            expand 'inherit' statements in sum types
     -jsonschema <root type name>
             translate the ATD file to JSON Schema.
-    -no-additional-properties 
+    -jsonschema-no-additional-properties 
             emit a JSON Schema that doesn't tolerate extra fields on JSON
             objects.
+    -jsonschema-version { draft-2019-09 | draft-2020-12 }
+            specify which version of the JSON Schema standard to target.
+            Default: latest supported version, which is currently
+            'draft-2020-12  '.
     -ml <name>
             output the ocaml code of the ATD abstract syntax tree
     -html-doc 

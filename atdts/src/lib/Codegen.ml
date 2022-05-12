@@ -599,7 +599,7 @@ let ts_type_name env (name : string) =
   | "int" -> "Int"
   | "float" -> "number"
   | "string" -> "string"
-  | "abstract" -> (* not supported *) "any"
+  | "abstract" -> "any"
   | user_defined -> type_name env user_defined
 
 let rec type_name_of_expr env (e : type_expr) : string =
@@ -652,6 +652,7 @@ let rec get_default_default (e : type_expr) : string option =
        | "int" -> Some "0"
        | "float" -> Some "0.0"
        | "string" -> Some {|""|}
+       | "abstract" -> Some "null"
        | _ -> None
       )
   | Name _ -> None
@@ -707,6 +708,7 @@ let rec json_reader env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
+       | "abstract" -> "((x: any): any => x)"
        | _ -> reader_name env name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -753,6 +755,7 @@ let rec json_writer env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
+       | "abstract" -> "((x: any): any => x)"
        | _ -> writer_name env name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

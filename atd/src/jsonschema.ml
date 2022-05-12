@@ -40,6 +40,7 @@ type type_expr =
   | Union of type_expr list
   | Nullable of type_expr
   | Const of json * opt_descr
+  | Any
 
 and object_ = {
   properties: property list;
@@ -160,6 +161,7 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
          | "int" -> Integer
          | "float" -> Number
          | "string" -> String
+         | "abstract" -> Any
          | _ -> Ref (make_id name)
         )
   in
@@ -257,6 +259,8 @@ let rec type_expr_to_assoc ?(is_nullable = false) ~version (x : type_expr)
       [ make_type_property ~is_nullable "number" ]
   | String ->
       [ make_type_property ~is_nullable "string" ]
+  | Any ->
+      []
   | Array x ->
       [
         make_type_property ~is_nullable "array";

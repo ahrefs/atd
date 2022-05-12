@@ -25,6 +25,7 @@ type root = {
   assoc3: (float * int) list <python repr="dict">;
   assoc4: (string * int) list <json repr="object"> <python repr="dict">;
   nullables: int nullable list;
+  untyped_things: abstract list;
   (*options: int option list;*)
 }
 

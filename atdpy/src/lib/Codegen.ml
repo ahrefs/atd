@@ -478,7 +478,7 @@ let py_type_name env (name : string) =
   | "int" -> "int"
   | "float" -> "float"
   | "string" -> "str"
-  | "abstract" -> (* not supported *) "Any"
+  | "abstract" -> "Any"
   | user_defined -> class_name env user_defined
 
 let option_is_not_implemented loc =
@@ -536,6 +536,7 @@ let rec get_default_default
        | "int" -> Some "0"
        | "float" -> Some "0.0"
        | "string" -> Some {|""|}
+       | "abstract" -> Some "None"
        | _ -> None
       )
   | Name _ -> None
@@ -611,6 +612,7 @@ let rec json_writer env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
+       | "abstract" -> "(lambda x: x)"
        | _ -> "(lambda x: x.to_json())")
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -691,6 +693,7 @@ let rec json_reader env (e : type_expr) =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
+       | "abstract" -> "(lambda x: x)"
        | _ -> sprintf "%s.from_json" (class_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

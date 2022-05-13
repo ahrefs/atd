@@ -45,6 +45,7 @@ type json_sum = {
 
 (** The different kinds of ATD nodes with their json-specific options. *)
 type json_repr =
+  | Abstract
   | Bool
   | Cell
   | Def

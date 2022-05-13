@@ -100,6 +100,8 @@ let rec mapping_of_expr (x : type_expr) =
            Float (loc, Float, Float j)
        | "string" ->
            String (loc, String, String)
+       | "abstract" ->
+           Abstract (loc, Abstract, Abstract)
        | s ->
            Name (loc, s, List.map mapping_of_expr l, None, None)
       )

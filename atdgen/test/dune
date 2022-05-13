@@ -309,6 +309,29 @@
  (deps    test_ppx.atd)
  (action  (run %{bin:atdgen} -t %{deps})))
 
+(rule
+ (targets test_abstract_t.ml test_abstract_t.mli)
+ (deps    test_abstract.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
+(rule
+ (targets test_abstract_j.ml test_abstract_j.mli)
+ (deps    test_abstract.atd)
+ (action  (run %{bin:atdgen} -j %{deps})))
+
+(rule
+ (alias runtest)
+ (package atdgen)
+ (action
+   (progn
+     (diff test_abstract_t.expected.mli test_abstract_t.mli)
+     (diff test_abstract_j.expected.mli test_abstract_j.mli)
+     (diff test_abstract_t.expected.ml test_abstract_t.ml)
+     (diff test_abstract_j.expected.ml test_abstract_j.ml)
+   )
+ )
+)
+
 (executables
  (libraries atd atdgen-runtime biniou yojson)
  (names test_atdgen_main)
@@ -332,6 +355,8 @@
   test_atdgen_main
   test_lib
   test_ppx_t
+  test_abstract_t
+  test_abstract_j
   ))
 
 (rule

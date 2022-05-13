@@ -50,6 +50,7 @@ type json_sum = {
    into (json_repr * json_adapter).
 *)
 type json_repr =
+  | Abstract
   | Bool
   | Cell
   | Def

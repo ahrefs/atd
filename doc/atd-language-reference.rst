@@ -521,7 +521,7 @@ Type name          Intended use
                    language-specific annotations.
 
 ``abstract``       Unspecified type. By default, this is meant to
-                   accept any data that is syntaxically valid, such as
+                   accept any data that is syntactically valid, such as
                    any JSON data that could be parsed successfully.
                    With the help of ATD annotations, this can be
                    used to express types not supported by the ATD

@@ -1,0 +1,9 @@
+(* File untypable.atd *)
+
+type obj_list = obj list
+
+type obj = {
+  ?label: string option;
+  ?labels: string list option;
+  value: abstract  (* requires ATD >= 2.6.0 *)
+}

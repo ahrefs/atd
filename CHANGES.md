@@ -1,4 +1,4 @@
-Next release
+2.7.0 (2022-05-17)
 ------------------
 
 * Add ability to specify JSON/OCaml adapter with the arbitrary code

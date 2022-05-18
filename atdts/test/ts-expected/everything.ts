@@ -32,6 +32,7 @@ export type Root = {
   assoc4: Map<string, Int>;
   options: Option<Int>[];
   nullables: (Int | null)[];
+  untyped_things: any[];
 }
 
 export type Alias = Int[]
@@ -102,6 +103,7 @@ export function writeRoot(x: Root, context: any = x): any {
     'assoc4': _atd_write_required_field('Root', 'assoc4', _atd_write_assoc_map_to_object(_atd_write_int), x.assoc4, x),
     'options': _atd_write_field_with_default(_atd_write_array(_atd_write_option(_atd_write_int)), [], x.options, x),
     'nullables': _atd_write_field_with_default(_atd_write_array(_atd_write_int), [], x.nullables, x),
+    'untyped_things': _atd_write_required_field('Root', 'untyped_things', _atd_write_array(((x: any): any => x)), x.untyped_things, x),
   };
 }
 
@@ -122,6 +124,7 @@ export function readRoot(x: any, context: any = x): Root {
     assoc4: _atd_read_required_field('Root', 'assoc4', _atd_read_assoc_object_into_map(_atd_read_int), x['assoc4'], x),
     options: _atd_read_field_with_default(_atd_read_array(_atd_read_option(_atd_read_int)), [], x['options'], x),
     nullables: _atd_read_field_with_default(_atd_read_array(_atd_read_nullable(_atd_read_int)), [], x['nullables'], x),
+    untyped_things: _atd_read_required_field('Root', 'untyped_things', _atd_read_array(((x: any): any => x)), x['untyped_things'], x),
   };
 }
 

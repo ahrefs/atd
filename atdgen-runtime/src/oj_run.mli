@@ -27,6 +27,7 @@ val read_int8 : char read
 val read_int32 : int32 read
 val read_int64 : int64 read
 val read_string : string read
+val read_json : Yojson.Safe.t read
 val read_array : 'a read -> 'a array read
 val read_assoc_list : 'a read -> 'b read -> ('a * 'b) list read
 val read_assoc_array : 'a read -> 'b read -> ('a * 'b) array read

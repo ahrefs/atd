@@ -59,7 +59,8 @@
     "nullables": {
       "type": "array",
       "items": { "type": [ "integer", "null" ] }
-    }
+    },
+    "untyped_things": { "type": "array", "items": {} }
   },
   "definitions": {
     "different_kinds_of_things": {

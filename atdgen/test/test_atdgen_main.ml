@@ -472,16 +472,6 @@ let test_json_streams () =
   in
   check (l = l'')
 
-let test_raw_json () =
-  section "raw json";
-  let x = { Test3j_t.foo = 12345;
-            bar = `List [ `Int 12; `String "abc" ];
-            baz = `Bool false }
-  in
-  let s = Test3j_j.string_of_t x in
-  let x' = Test3j_j.t_of_string s in
-  check (x = x')
-
 let test_wrapping_ints () =
   section "ocaml wrapping - ints";
   let x = Test_lib.Natural.wrap 7 in
@@ -668,6 +658,31 @@ let test_encoding_decoding_int64 () =
   let decoded = Test_int64_enc_j.int64_of_string encoded in
   check (decoded = Int64.max_int)
 
+let test_raw_json () =
+  section "raw json";
+  let x = { Test3j_t.foo = 12345;
+            bar = `List [ `Int 12; `String "abc" ];
+            baz = `Bool false }
+  in
+  let s = Test3j_j.string_of_t x in
+  let x' = Test3j_j.t_of_string s in
+  check (x = x')
+
+let test_abstract_types () =
+  section "abstract types";
+  let input = ["a", 1; "b", 2] in
+  let encoded = Test_abstract_j.string_of_int_assoc_list input in
+  let decoded = Test_abstract_j.int_assoc_list_of_string encoded in
+  check (decoded = input)
+
+(* see also 'test_raw_json' which uses the legacy, more complicated way *)
+let test_untyped_json () =
+  section "untyped json";
+  let input = {|["hello",42,{}]|} in
+  let decoded = Test_abstract_j.any_items_of_string input in
+  let encoded = Test_abstract_j.string_of_any_items decoded in
+  check (encoded = input)
+
 let all_tests = [
   test_ocaml_internals;
   test_biniou_missing_field;
@@ -706,6 +721,8 @@ let all_tests = [
   test_ambiguous_record;
   test_encoding_int64;
   test_encoding_decoding_int64;
+  test_abstract_types;
+  test_untyped_json;
 ]
 
 (* TODO: use Alcotest to run the test suite. *)

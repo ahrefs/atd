@@ -153,6 +153,9 @@ let rec get_writer_name
   | String (_, String, String) ->
       "Yojson.Safe.write_string"
 
+  | Abstract (_, Abstract, Abstract) ->
+      "Yojson.Safe.write_json"
+
   | Tvar (_, s) -> "write_" ^ (Ox_emit.name_of_var s)
 
   | Name (_, s, args, None, None) ->
@@ -170,7 +173,9 @@ let rec get_writer_name
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
-  | _ -> assert false
+  | Unit _ | Bool _ | Int _ | Float _ | String _ | Abstract _
+  | Sum _ | Record _ | Tuple _ | List _ | Option _ | Nullable _
+  | Wrap _ | Name _ | External _ -> assert false
 
 
 let get_left_writer_name p name param =
@@ -204,6 +209,8 @@ let rec get_reader_name
 
   | String (_, String, String) -> "Atdgen_runtime.Oj_run.read_string"
 
+  | Abstract (_, Abstract, Abstract) -> "Atdgen_runtime.Oj_run.read_json"
+
   | Tvar (_, s) -> "read_" ^ Ox_emit.name_of_var s
 
   | Name (_, s, args, None, None) ->
@@ -221,7 +228,9 @@ let rec get_reader_name
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
-  | _ -> assert false
+  | Unit _ | Bool _ | Int _ | Float _ | String _ | Abstract _
+  | Sum _ | Record _ | Tuple _ | List _ | Option _ | Nullable _
+  | Wrap _ | Name _ | External _ -> assert false
 
 
 let get_left_reader_name p name param =
@@ -258,6 +267,7 @@ let rec make_writer ?type_constraint p (x : Oj_mapping.t) : Indent.t list =
   | Int _
   | Float _
   | String _
+  | Abstract _
   | Name _
   | External _
   | Tvar _ -> [ Line (get_writer_name p x) ]
@@ -386,7 +396,8 @@ let rec make_writer ?type_constraint p (x : Oj_mapping.t) : Indent.t list =
            ]
       )
 
-  | _ -> assert false
+  | Sum _ | Record _ | Tuple _ | List _ | Option _ | Nullable _ | Wrap _ ->
+      assert false
 
 
 and make_variant_writer p ~tick ~open_enum x : Indent.t list =
@@ -599,6 +610,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
   | Int _
   | Float _
   | String _
+  | Abstract _
   | Name _
   | External _
   | Tvar _ -> [ Line (get_reader_name p x) ]
@@ -768,7 +780,8 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
            ]
       )
 
-  | _ -> assert false
+  | Sum _ | Record _ | Tuple _ | List _ | Option _ | Nullable _ | Wrap _ ->
+      assert false
 
 (*
    Return a pair (optional json constructor, expression) to be converted

@@ -158,6 +158,10 @@ let read_string p lb =
   Yojson.Safe.read_space p lb;
   Yojson.Safe.read_string p lb
 
+let read_json p lb =
+  Yojson.Safe.read_space p lb;
+  Yojson.Safe.read_json p lb
+
 let read_list read_item p lb =
   Yojson.Safe.read_space p lb;
   Yojson.Safe.read_list read_item p lb

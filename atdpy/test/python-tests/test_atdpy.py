@@ -80,6 +80,7 @@ def test_everything_to_json() -> None:
             "h": 8,
         },
         nullables=[12, None, 34],
+        untyped_things=[[["hello"]], {}, None, 123],
     )
     a_str = a_obj.to_json_string(indent=2)
     print(a_str)
@@ -157,6 +158,16 @@ def test_everything_to_json() -> None:
     12,
     null,
     34
+  ],
+  "untyped_things": [
+    [
+      [
+        "hello"
+      ]
+    ],
+    {},
+    null,
+    123
   ],
   "answer": 42
 }"""

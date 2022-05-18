@@ -11,6 +11,10 @@ Next release
 * atdcat: add command-line option to choose the version of JSON Schema
   to target. Options are the latest version "Draft 2020-12" and the
   previous version "Draft 2019-09" (#294).
+* ATD language: the `abstract` built-in can now be used like any
+  other type to hold untyped data, if the implementation supports it.
+  The supported targets so far are OCaml/JSON (atdgen), Python
+  (atdpy), TypeScript (atdts), JSON Schema (atdcat) (#295).
 
 2.6.0 (2022-05-03)
 ------------------

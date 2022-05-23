@@ -263,7 +263,7 @@ let make_record_creator deref x =
         sprintf "\
 val create_%s :%s
   unit -> %s
-  (** Create a record of type {!%s}. *)
+  (** Create a record of type {!type:%s}. *)
 
 "
           s (String.concat "" intf_params)

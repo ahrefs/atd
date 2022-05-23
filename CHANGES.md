@@ -1,3 +1,8 @@
+Next release
+------------------
+
+* atdgen: use odoc syntax to disambiguate clashing names (#296).
+
 2.7.0 (2022-05-17)
 ------------------
 

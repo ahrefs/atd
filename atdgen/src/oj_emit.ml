@@ -59,7 +59,7 @@ let make_ocaml_json_intf ~with_create buf deref defs =
     bprintf buf "\
 val write_%s :%s
   Bi_outbuf.t -> %s -> unit
-  (** Output a JSON value of type {!%s}. *)
+  (** Output a JSON value of type {!type:%s}. *)
 
 "
       s writer_params
@@ -69,7 +69,7 @@ val write_%s :%s
     bprintf buf "\
 val string_of_%s :%s
   ?len:int -> %s -> string
-  (** Serialize a value of type {!%s}
+  (** Serialize a value of type {!type:%s}
       into a JSON string.
       @param len specifies the initial length
                  of the buffer used internally.
@@ -83,7 +83,7 @@ val string_of_%s :%s
     bprintf buf "\
 val read_%s :%s
   Yojson.Safe.lexer_state -> Lexing.lexbuf -> %s
-  (** Input JSON data of type {!%s}. *)
+  (** Input JSON data of type {!type:%s}. *)
 
 "
       s reader_params
@@ -93,7 +93,7 @@ val read_%s :%s
     bprintf buf "\
 val %s_of_string :%s
   string -> %s
-  (** Deserialize JSON data of type {!%s}. *)
+  (** Deserialize JSON data of type {!type:%s}. *)
 
 "
       s reader_params

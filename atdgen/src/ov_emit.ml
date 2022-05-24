@@ -37,7 +37,7 @@ let make_ocaml_validate_intf ~with_create buf deref defs =
       bprintf buf "\
 val validate_%s :%s
   Atdgen_runtime.Util.Validation.path -> %s -> Atdgen_runtime.Util.Validation.error option
-  (** Validate a value of type {!%s}. *)
+  (** Validate a value of type {!type:%s}. *)
 
 "
         s validator_params

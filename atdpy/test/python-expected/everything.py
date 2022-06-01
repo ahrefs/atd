@@ -241,7 +241,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-@dataclass
 class Root_:
     """Original type: kind = [ ... | Root | ... ]"""
 
@@ -258,7 +257,6 @@ class Root_:
         return json.dumps(self.to_json(), **kw)
 
 
-@dataclass
 @dataclass
 class Thing:
     """Original type: kind = [ ... | Thing of ... | ... ]"""
@@ -278,7 +276,6 @@ class Thing:
 
 
 @dataclass
-@dataclass
 class WOW:
     """Original type: kind = [ ... | WOW | ... ]"""
 
@@ -295,7 +292,6 @@ class WOW:
         return json.dumps(self.to_json(), **kw)
 
 
-@dataclass
 @dataclass
 class Amaze:
     """Original type: kind = [ ... | Amaze of ... | ... ]"""
@@ -500,7 +496,6 @@ class Pair:
 
 
 @dataclass(frozen=True)
-@dataclass
 class A:
     """Original type: frozen = [ ... | A | ... ]"""
 
@@ -518,7 +513,6 @@ class A:
 
 
 @dataclass(frozen=True)
-@dataclass
 class B:
     """Original type: frozen = [ ... | B of ... | ... ]"""
 

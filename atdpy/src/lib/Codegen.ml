@@ -918,12 +918,13 @@ let alias_wrapper env ~class_decorators name type_expr =
     ]
   ]
 
-let case_class env type_name
+let case_class env ~class_decorators type_name
     (loc, orig_name, unique_name, an, opt_e) =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
       [
+        Inline class_decorators;
         Line "@dataclass";
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
@@ -952,6 +953,7 @@ let case_class env type_name
       ]
   | Some e ->
       [
+        Inline class_decorators;
         Line "@dataclass";
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
@@ -1116,7 +1118,7 @@ let sum env ~class_decorators loc name cases =
     ) cases
   in
   let case_classes =
-    List.map (fun x -> Inline (case_class env name x)) cases
+    List.map (fun x -> Inline (case_class env ~class_decorators name x)) cases
     |> double_spaced
   in
   let container_class = sum_container env ~class_decorators loc name cases in

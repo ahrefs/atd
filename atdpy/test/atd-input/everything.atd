@@ -9,6 +9,12 @@ type kind = [
   | Amaze <json name="!!!"> of string list
 ]
 
+type frozen
+  <python decorator="dataclass(frozen=True)"> = [
+  | A
+  | B of int
+]
+
 type root = {
   id <json name="ID">: string;
   await: bool;

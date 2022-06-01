@@ -925,7 +925,6 @@ let case_class env ~class_decorators type_name
   | None ->
       [
         Inline class_decorators;
-        Line "@dataclass";
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
           Line (sprintf {|"""Original type: %s = [ ... | %s | ... ]"""|}
@@ -954,7 +953,6 @@ let case_class env ~class_decorators type_name
   | Some e ->
       [
         Inline class_decorators;
-        Line "@dataclass";
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
           Line (sprintf {|"""Original type: %s = [ ... | %s of ... | ... ]"""|}

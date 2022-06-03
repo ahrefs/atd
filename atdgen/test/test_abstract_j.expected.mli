@@ -12,7 +12,7 @@ type 'x abs2 = 'x Testj.abs2
 type 'x abs1 = 'x Testj.abs1
 
 val write_int_assoc_list :
-  Bi_outbuf.t -> int_assoc_list -> unit
+  Buffer.t -> int_assoc_list -> unit
   (** Output a JSON value of type {!type:int_assoc_list}. *)
 
 val string_of_int_assoc_list :
@@ -32,7 +32,7 @@ val int_assoc_list_of_string :
   (** Deserialize JSON data of type {!type:int_assoc_list}. *)
 
 val write_any_items :
-  Bi_outbuf.t -> any_items -> unit
+  Buffer.t -> any_items -> unit
   (** Output a JSON value of type {!type:any_items}. *)
 
 val string_of_any_items :
@@ -52,12 +52,12 @@ val any_items_of_string :
   (** Deserialize JSON data of type {!type:any_items}. *)
 
 val write_abs2 :
-  (Bi_outbuf.t -> 'x -> unit) ->
-  Bi_outbuf.t -> 'x abs2 -> unit
+  (Buffer.t -> 'x -> unit) ->
+  Buffer.t -> 'x abs2 -> unit
   (** Output a JSON value of type {!type:abs2}. *)
 
 val string_of_abs2 :
-  (Bi_outbuf.t -> 'x -> unit) ->
+  (Buffer.t -> 'x -> unit) ->
   ?len:int -> 'x abs2 -> string
   (** Serialize a value of type {!type:abs2}
       into a JSON string.
@@ -76,12 +76,12 @@ val abs2_of_string :
   (** Deserialize JSON data of type {!type:abs2}. *)
 
 val write_abs1 :
-  (Bi_outbuf.t -> 'x -> unit) ->
-  Bi_outbuf.t -> 'x abs1 -> unit
+  (Buffer.t -> 'x -> unit) ->
+  Buffer.t -> 'x abs1 -> unit
   (** Output a JSON value of type {!type:abs1}. *)
 
 val string_of_abs1 :
-  (Bi_outbuf.t -> 'x -> unit) ->
+  (Buffer.t -> 'x -> unit) ->
   ?len:int -> 'x abs1 -> string
   (** Serialize a value of type {!type:abs1}
       into a JSON string.

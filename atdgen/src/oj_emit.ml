@@ -467,7 +467,7 @@ and make_record_writer p a record_kind =
            ; json_fname ; optional ; unwrapped } as field) ->
         let f_value = unwrap_f_value field p in
         let write_field_tag =
-          sprintf "Buffer.add_string ob %S;"
+          sprintf "  Buffer.add_string ob %S;"
             (make_json_string json_fname ^ ":")
         in
         let app v =

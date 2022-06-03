@@ -15,9 +15,9 @@ let write_int_assoc_list = (
   Testj.write_int_assoc_list
 )
 let string_of_int_assoc_list ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
+  let ob = Buffer.create len in
   write_int_assoc_list ob x;
-  Bi_outbuf.contents ob
+  Buffer.contents ob
 let read_int_assoc_list = (
   Testj.read_int_assoc_list
 )
@@ -29,9 +29,9 @@ let write__1 = (
   )
 )
 let string_of__1 ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
+  let ob = Buffer.create len in
   write__1 ob x;
-  Bi_outbuf.contents ob
+  Buffer.contents ob
 let read__1 = (
   Atdgen_runtime.Oj_run.read_list (
     Atdgen_runtime.Oj_run.read_json
@@ -43,9 +43,9 @@ let write_any_items = (
   write__1
 )
 let string_of_any_items ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
+  let ob = Buffer.create len in
   write_any_items ob x;
-  Bi_outbuf.contents ob
+  Buffer.contents ob
 let read_any_items = (
   read__1
 )
@@ -55,9 +55,9 @@ let write_abs2 write__x = (
   Testj.write_abs2 write__x
 )
 let string_of_abs2 write__x ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
+  let ob = Buffer.create len in
   write_abs2 write__x ob x;
-  Bi_outbuf.contents ob
+  Buffer.contents ob
 let read_abs2 read__x = (
   Testj.read_abs2 read__x
 )
@@ -67,9 +67,9 @@ let write_abs1 write__x = (
   Testj.write_abs1 write__x
 )
 let string_of_abs1 write__x ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
+  let ob = Buffer.create len in
   write_abs1 write__x ob x;
-  Bi_outbuf.contents ob
+  Buffer.contents ob
 let read_abs1 read__x = (
   Testj.read_abs1 read__x
 )

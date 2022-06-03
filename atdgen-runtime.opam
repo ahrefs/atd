@@ -25,11 +25,10 @@ license: "MIT"
 homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
-  "ocaml" {>= "4.02"}
-  "dune" {>= "1.11"}
-  "yojson" {>= "1.7.0"}
+  "dune" {>= "2.8"}
+  "ocaml" {>= "4.08"}
+  "yojson" {>= "2.0.1"}
   "biniou" {>= "1.0.6"}
-  "camlp-streams"
   "odoc" {with-doc}
 ]
 dev-repo: "git+https://github.com/ahrefs/atd.git"

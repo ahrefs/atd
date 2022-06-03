@@ -2,7 +2,7 @@
 
 exception Error of string
 
-type 'a write = Bi_outbuf.t -> 'a -> unit
+type 'a write = Buffer.t -> 'a -> unit
 
 val error : string -> _
 

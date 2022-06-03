@@ -124,9 +124,8 @@ This package should be used only in conjunction with the atdgen code
 generator")
  (depends
   (ocaml (>= 4.08))
-  (yojson (and (>= 1.7.0) (< 2.0.0)))
+  (yojson (>= 2.0.1))
   (biniou (>= 1.0.6))
-  camlp-streams
   (odoc :with-doc)))
 
 (package

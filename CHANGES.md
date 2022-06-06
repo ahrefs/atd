@@ -2,6 +2,7 @@ Next release
 ------------------
 
 * atdgen: use odoc syntax to disambiguate clashing names (#296).
+* atdpy: propagate decorators on sum types to all constructor classes
 
 2.7.0 (2022-05-17)
 ------------------

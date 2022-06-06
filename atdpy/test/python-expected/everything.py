@@ -493,3 +493,73 @@ class Pair:
 
     def to_json_string(self, **kw: Any) -> str:
         return json.dumps(self.to_json(), **kw)
+
+
+@dataclass(frozen=True)
+class A:
+    """Original type: frozen = [ ... | A | ... ]"""
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return 'A'
+
+    @staticmethod
+    def to_json() -> Any:
+        return 'A'
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass(frozen=True)
+class B:
+    """Original type: frozen = [ ... | B of ... | ... ]"""
+
+    value: int
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return 'B'
+
+    def to_json(self) -> Any:
+        return ['B', _atd_write_int(self.value)]
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass(frozen=True)
+class Frozen:
+    """Original type: frozen = [ ... ]"""
+
+    value: Union[A, B]
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return self.value.kind
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'Frozen':
+        if isinstance(x, str):
+            if x == 'A':
+                return cls(A())
+            _atd_bad_json('Frozen', x)
+        if isinstance(x, List) and len(x) == 2:
+            cons = x[0]
+            if cons == 'B':
+                return cls(B(_atd_read_int(x[1])))
+            _atd_bad_json('Frozen', x)
+        _atd_bad_json('Frozen', x)
+
+    def to_json(self) -> Any:
+        return self.value.to_json()
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'Frozen':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)

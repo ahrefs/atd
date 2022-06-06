@@ -398,3 +398,6 @@ The generated Python class will start like this:
    @dataclass
    class Thing:
        ...
+
+If extra class decorators are specifed on a sum type, the python classes generated
+for the constructors of the sum type will also have the extra class decorators.

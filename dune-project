@@ -96,7 +96,7 @@ formats. "))
  (depends
   (ocaml (>= 4.08))
   (atd (>= 2.7.0))
-  (atdgen-runtime (>= 2.0.0))
+  (atdgen-runtime (>= 2.1.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
   (yojson (>= 1.7.0))

@@ -320,14 +320,21 @@
  (action  (run %{bin:atdgen} -j %{deps})))
 
 (rule
+ (targets test_abstract_v.ml test_abstract_v.mli)
+ (deps    test_abstract.atd)
+ (action  (run %{bin:atdgen} -v %{deps})))
+
+(rule
  (alias runtest)
  (package atdgen)
  (action
    (progn
      (diff test_abstract_t.expected.mli test_abstract_t.mli)
      (diff test_abstract_j.expected.mli test_abstract_j.mli)
+     (diff test_abstract_v.expected.mli test_abstract_v.mli)
      (diff test_abstract_t.expected.ml test_abstract_t.ml)
      (diff test_abstract_j.expected.ml test_abstract_j.ml)
+     (diff test_abstract_v.expected.ml test_abstract_v.ml)
    )
  )
 )

@@ -404,6 +404,10 @@ val validate_even_natural :
   Atdgen_runtime.Util.Validation.path -> even_natural -> Atdgen_runtime.Util.Validation.error option
   (** Validate a value of type {!type:even_natural}. *)
 
+val validate_def :
+  Atdgen_runtime.Util.Validation.path -> def -> Atdgen_runtime.Util.Validation.error option
+  (** Validate a value of type {!type:def}. *)
+
 val validate_char :
   Atdgen_runtime.Util.Validation.path -> char -> Atdgen_runtime.Util.Validation.error option
   (** Validate a value of type {!type:char}. *)

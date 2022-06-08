@@ -68,9 +68,9 @@ export function readDifferentKindsOfThings(x: any, context: any = x): DifferentK
     _atd_check_json_tuple(2, x, context)
     switch (x[0]) {
       case 'Thing':
-        return { kind: 'Thing', value: _atd_write_int(x[1], x) }
+        return { kind: 'Thing', value: _atd_read_int(x[1], x) }
       case '!!!':
-        return { kind: 'Amaze', value: _atd_write_array(_atd_write_string)(x[1], x) }
+        return { kind: 'Amaze', value: _atd_read_array(_atd_read_string)(x[1], x) }
       default:
         _atd_bad_json('DifferentKindsOfThings', x, context)
         throw new Error('impossible')

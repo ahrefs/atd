@@ -1,8 +1,8 @@
 Next release
 ------------------
 
-- atdgen: update `abstract` type validation to accept all input by default (#301)
-
+* atdgen: update `abstract` type validation to accept all input by default (#301)
+* atdts: fix reader for case type (#302)
 
 2.8.0 (2022-06-06)
 ------------------

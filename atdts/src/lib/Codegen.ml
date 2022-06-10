@@ -886,7 +886,7 @@ let read_case env loc orig_name an opt_e =
         Block [
           Line (sprintf "return { kind: '%s', value: %s(x[1], x) }"
                   (single_esc orig_name)
-                  (json_writer env e))
+                  (json_reader env e))
         ]
       ]
 

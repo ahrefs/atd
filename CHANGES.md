@@ -1,3 +1,8 @@
+UNRELEASED
+------------------
+
+* atdts: fix reader for case type (#302)
+
 2.8.0 (2022-06-06)
 ------------------
 

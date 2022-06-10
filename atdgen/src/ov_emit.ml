@@ -149,7 +149,8 @@ let rec get_validator_name
   | Bool (_, Bool, v)
   | Int (_, Int _, v)
   | Float (_, Float, v)
-  | String (_, String, v) ->
+  | String (_, String, v)
+  | Abstract (_, Abstract, v) ->
       (match v with
          (None, true) -> return_true_paren
        | (Some s, true) -> s
@@ -202,6 +203,7 @@ let rec make_validator (x : ov_mapping) : Indent.t list =
   | String _
   | Name _
   | External _
+  | Abstract _
   | Tvar _ -> [ Line (get_validator_name x) ]
 
   | Sum (_, a, Sum x, (v, shallow)) ->

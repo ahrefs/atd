@@ -661,6 +661,7 @@ let rec ocaml_of_expr_mapping (x : (Repr.t, _) mapping) : ocaml_expr =
       `Name (s, List.map ocaml_of_expr_mapping l)
   | Tvar (_, s) ->
       `Tvar s
+  | Abstract _ -> `Name ("Yojson.Safe.t", [])
   | _ -> assert false
 
 and ocaml_of_variant_mapping x =

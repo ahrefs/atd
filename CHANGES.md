@@ -1,3 +1,9 @@
+Next release
+------------------
+
+- atdgen: update `abstract` type validation to accept all input by default (#301)
+
+
 2.8.0 (2022-06-06)
 ------------------
 

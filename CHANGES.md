@@ -1,3 +1,8 @@
+2.10.0 (XXXX-XX-XX)
+-------------------
+
+* atdgen: support `<json repr="int">` for `int64` values
+
 2.9.1 (2022-06-10)
 ------------------
 

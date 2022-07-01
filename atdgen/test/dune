@@ -61,6 +61,11 @@
 (rule
  (alias runtest)
  (package atdgen)
+ (action (diff test_int64_as_int_j.expected.ml test_int64_as_int_j.ml)))
+
+(rule
+ (alias runtest)
+ (package atdgen)
  (action (diff testj.expected.ml testj.ml)))
 
 (rule
@@ -231,7 +236,7 @@
  (alias runtest)
  (package atdgen)
  (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
- 
+
  ;; inline records are not allowed within poly variant, but allowed in classic
 
 (rule
@@ -317,6 +322,11 @@
 (rule
  (targets test_abstract_j.ml test_abstract_j.mli)
  (deps    test_abstract.atd)
+ (action  (run %{bin:atdgen} -j %{deps})))
+
+(rule
+ (targets test_int64_as_int_j.ml test_int64_as_int_j.mli)
+ (deps    test_int64_as_int.atd)
  (action  (run %{bin:atdgen} -j %{deps})))
 
 (rule

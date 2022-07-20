@@ -95,6 +95,7 @@ formats. "))
  (name atdgen)
  (depends
   (ocaml (>= 4.08))
+  (alcotest :with-test)
   (atd (>= 2.7.0))
   (atdgen-runtime (>= 2.1.0))
   (atdgen-codec-runtime :with-test)

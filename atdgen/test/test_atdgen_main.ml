@@ -587,7 +587,7 @@ let test_ambiguous_record () =
   check ((x, x') = (x2, x2'))
 
 let test_polymorphic_wrap () =
-  let json_in = {|["1", ["2"]]|} in
+  let json_in = {|["1", "2"]|} in
   let x =
     Test_polymorphic_wrap_j.t_of_string Yojson.Safe.read_string json_in in
   let json_out =
@@ -648,7 +648,7 @@ let all_tests : (string * (unit -> unit)) list = [
   "validators4", test_validators4;
   "json files", test_json_files;
   "json streams", test_json_streams;
-  "", test_raw_json;
+  "raw JSON", test_raw_json;
   "ocaml wrapping - ints", test_wrapping_ints;
   "ocaml wrapping - double wrapping", test_double_wrapping;
   "ocaml wrapping - with validation", test_wrapping_with_validation;

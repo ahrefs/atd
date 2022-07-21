@@ -383,7 +383,7 @@ and read_r = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 1 then (
             match String.unsafe_get s pos with
               | 'a' -> (
@@ -444,7 +444,7 @@ and read_r = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 1 then (
               match String.unsafe_get s pos with
                 | 'a' -> (
@@ -610,7 +610,7 @@ and read_poly read__x read__y = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 3 then (
             match String.unsafe_get s pos with
               | 'f' -> (
@@ -672,7 +672,7 @@ and read_poly read__x read__y = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 3 then (
               match String.unsafe_get s pos with
                 | 'f' -> (
@@ -1031,7 +1031,7 @@ let read_val1 = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 6 && String.unsafe_get s pos = 'v' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'l' && String.unsafe_get s (pos+3) = '1' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'x' then (
             0
           )
@@ -1063,7 +1063,7 @@ let read_val1 = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 6 && String.unsafe_get s pos = 'v' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'l' && String.unsafe_get s (pos+3) = '1' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'x' then (
               0
             )
@@ -1200,7 +1200,7 @@ let read_val2 = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 6 && String.unsafe_get s pos = 'v' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'l' && String.unsafe_get s (pos+3) = '2' && String.unsafe_get s (pos+4) = '_' then (
             match String.unsafe_get s (pos+5) with
               | 'x' -> (
@@ -1252,7 +1252,7 @@ let read_val2 = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 6 && String.unsafe_get s pos = 'v' && String.unsafe_get s (pos+1) = 'a' && String.unsafe_get s (pos+2) = 'l' && String.unsafe_get s (pos+3) = '2' && String.unsafe_get s (pos+4) = '_' then (
               match String.unsafe_get s (pos+5) with
                 | 'x' -> (
@@ -1950,7 +1950,7 @@ let read_mixed_record = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           match len with
             | 6 -> (
                 if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'd' then (
@@ -2256,7 +2256,7 @@ let read_mixed_record = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             match len with
               | 6 -> (
                   if String.unsafe_get s pos = 'f' && String.unsafe_get s (pos+1) = 'i' && String.unsafe_get s (pos+2) = 'e' && String.unsafe_get s (pos+3) = 'l' && String.unsafe_get s (pos+4) = 'd' then (
@@ -2786,7 +2786,7 @@ let read_test = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 2 && String.unsafe_get s pos = 'x' then (
             match String.unsafe_get s (pos+1) with
               | '0' -> (
@@ -2873,7 +2873,7 @@ let read_test = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 2 && String.unsafe_get s pos = 'x' then (
               match String.unsafe_get s (pos+1) with
                 | '0' -> (
@@ -3076,7 +3076,7 @@ let read_test_field_prefix = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 5 then (
             match String.unsafe_get s pos with
               | 'h' -> (
@@ -3138,7 +3138,7 @@ let read_test_field_prefix = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 5 then (
               match String.unsafe_get s pos with
                 | 'h' -> (
@@ -3249,7 +3249,7 @@ let read__30 = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 7 && String.unsafe_get s pos = 'x' && String.unsafe_get s (pos+1) = '2' && String.unsafe_get s (pos+2) = '9' && String.unsafe_get s (pos+3) = '4' && String.unsafe_get s (pos+4) = '6' && String.unsafe_get s (pos+5) = '2' && String.unsafe_get s (pos+6) = '3' then (
             0
           )
@@ -3281,7 +3281,7 @@ let read__30 = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 7 && String.unsafe_get s pos = 'x' && String.unsafe_get s (pos+1) = '2' && String.unsafe_get s (pos+2) = '9' && String.unsafe_get s (pos+3) = '4' && String.unsafe_get s (pos+4) = '6' && String.unsafe_get s (pos+5) = '2' && String.unsafe_get s (pos+6) = '3' then (
               0
             )
@@ -3361,7 +3361,7 @@ let read_some_record = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 10 && String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'd' then (
             0
           )
@@ -3393,7 +3393,7 @@ let read_some_record = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 10 && String.unsafe_get s pos = 's' && String.unsafe_get s (pos+1) = 'o' && String.unsafe_get s (pos+2) = 'm' && String.unsafe_get s (pos+3) = 'e' && String.unsafe_get s (pos+4) = '_' && String.unsafe_get s (pos+5) = 'f' && String.unsafe_get s (pos+6) = 'i' && String.unsafe_get s (pos+7) = 'e' && String.unsafe_get s (pos+8) = 'l' && String.unsafe_get s (pos+9) = 'd' then (
               0
             )
@@ -3481,7 +3481,7 @@ let read_precision = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 7 then (
             match String.unsafe_get s pos with
               | 'l' -> (
@@ -3567,7 +3567,7 @@ let read_precision = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 7 then (
               match String.unsafe_get s pos with
                 | 'l' -> (
@@ -4065,7 +4065,7 @@ let read_generic read__a = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 7 && String.unsafe_get s pos = 'x' && String.unsafe_get s (pos+1) = '2' && String.unsafe_get s (pos+2) = '9' && String.unsafe_get s (pos+3) = '4' && String.unsafe_get s (pos+4) = '6' && String.unsafe_get s (pos+5) = '2' && String.unsafe_get s (pos+6) = '3' then (
             0
           )
@@ -4097,7 +4097,7 @@ let read_generic read__a = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 7 && String.unsafe_get s pos = 'x' && String.unsafe_get s (pos+1) = '2' && String.unsafe_get s (pos+2) = '9' && String.unsafe_get s (pos+3) = '4' && String.unsafe_get s (pos+4) = '6' && String.unsafe_get s (pos+5) = '2' && String.unsafe_get s (pos+6) = '3' then (
               0
             )
@@ -4175,7 +4175,7 @@ let read_floats = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 3 && String.unsafe_get s pos = 'f' then (
             match String.unsafe_get s (pos+1) with
               | '3' -> (
@@ -4237,7 +4237,7 @@ let read_floats = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 3 && String.unsafe_get s pos = 'f' then (
               match String.unsafe_get s (pos+1) with
                 | '3' -> (
@@ -4546,7 +4546,7 @@ let read_extended = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 2 && String.unsafe_get s pos = 'b' then (
             match String.unsafe_get s (pos+1) with
               | '0' -> (
@@ -4642,7 +4642,7 @@ let read_extended = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 2 && String.unsafe_get s pos = 'b' then (
               match String.unsafe_get s (pos+1) with
                 | '0' -> (
@@ -4910,7 +4910,7 @@ let read_base = (
       let f =
         fun s pos len ->
           if pos < 0 || len < 0 || pos + len > String.length s then
-            invalid_arg "out-of-bounds substring position or length";
+            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
           if len = 2 && String.unsafe_get s pos = 'b' then (
             match String.unsafe_get s (pos+1) with
               | '0' -> (
@@ -4960,7 +4960,7 @@ let read_base = (
         let f =
           fun s pos len ->
             if pos < 0 || len < 0 || pos + len > String.length s then
-              invalid_arg "out-of-bounds substring position or length";
+              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
             if len = 2 && String.unsafe_get s pos = 'b' then (
               match String.unsafe_get s (pos+1) with
                 | '0' -> (

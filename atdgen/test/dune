@@ -340,7 +340,13 @@
 )
 
 (executables
- (libraries atd atdgen-runtime biniou yojson)
+ (libraries
+   alcotest
+   atd
+   atdgen-runtime
+   biniou
+   yojson
+ )
  (names test_atdgen_main)
  (modules
   test

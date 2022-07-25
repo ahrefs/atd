@@ -1,3 +1,9 @@
+Master
+------------------
+
+* atdts: fix nullable object field writer (#312)
+
+
 2.9.1 (2022-06-10)
 ------------------
 

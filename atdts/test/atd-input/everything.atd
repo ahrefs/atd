@@ -25,8 +25,13 @@ type root = {
   ~options: int option list;
   ~nullables: int nullable list;
   untyped_things: abstract list;
+  foo: foo nullable;
 }
 
 type alias = int list
 
 type pair = (string * int)
+
+type foo = {
+  foo: string;
+}

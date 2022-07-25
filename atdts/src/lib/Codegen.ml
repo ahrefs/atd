@@ -473,7 +473,7 @@ function _atd_write_option<T>(write_elt: (x: T, context: any) => any):
   return write_option
 }
 
-function _atd_write_nullable<T>(write_elt: (x: T | null, context: any) => any):
+function _atd_write_nullable<T>(write_elt: (x: T, context: any) => any):
   (x: T | null, context: any) => any {
   function write_option(x: T | null, context: any): any {
     if (x === null)
@@ -749,7 +749,8 @@ let rec json_writer env e =
              (json_writer env value)
       )
   | Option (loc, e, an) -> sprintf "_atd_write_option(%s)" (json_writer env e)
-  | Nullable (loc, e, an) -> json_writer env e
+  | Nullable (loc, e, an) ->
+      sprintf "_atd_write_nullable(%s)" (json_writer env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_writer env e
   | Name (loc, (loc2, name, []), an) ->

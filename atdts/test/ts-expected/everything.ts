@@ -33,11 +33,16 @@ export type Root = {
   options: Option<Int>[];
   nullables: (Int | null)[];
   untyped_things: any[];
+  foo: (Foo | null);
 }
 
 export type Alias = Int[]
 
 export type Pair = [string, Int]
+
+export type Foo = {
+  foo: string;
+}
 
 export function writeDifferentKindsOfThings(x: DifferentKindsOfThings, context: any = x): any {
   switch (x.kind) {
@@ -104,6 +109,7 @@ export function writeRoot(x: Root, context: any = x): any {
     'options': _atd_write_field_with_default(_atd_write_array(_atd_write_option(_atd_write_int)), [], x.options, x),
     'nullables': _atd_write_field_with_default(_atd_write_array(_atd_write_int), [], x.nullables, x),
     'untyped_things': _atd_write_required_field('Root', 'untyped_things', _atd_write_array(((x: any): any => x)), x.untyped_things, x),
+    'foo': _atd_write_required_field('Root', 'foo', _atd_write_nullable(writeFoo), x.foo, x),
   };
 }
 
@@ -125,6 +131,7 @@ export function readRoot(x: any, context: any = x): Root {
     options: _atd_read_field_with_default(_atd_read_array(_atd_read_option(_atd_read_int)), [], x['options'], x),
     nullables: _atd_read_field_with_default(_atd_read_array(_atd_read_nullable(_atd_read_int)), [], x['nullables'], x),
     untyped_things: _atd_read_required_field('Root', 'untyped_things', _atd_read_array(((x: any): any => x)), x['untyped_things'], x),
+    foo: _atd_read_required_field('Root', 'foo', _atd_read_nullable(readFoo), x['foo'], x),
   };
 }
 
@@ -142,6 +149,18 @@ export function writePair(x: Pair, context: any = x): any {
 
 export function readPair(x: any, context: any = x): Pair {
   return ((x, context): [string, Int] => { _atd_check_json_tuple(2, x, context); return [_atd_read_string(x[0], x), _atd_read_int(x[1], x)] })(x, context);
+}
+
+export function writeFoo(x: Foo, context: any = x): any {
+  return {
+    'foo': _atd_write_required_field('Foo', 'foo', _atd_write_string, x.foo, x),
+  };
+}
+
+export function readFoo(x: any, context: any = x): Foo {
+  return {
+    foo: _atd_read_required_field('Foo', 'foo', _atd_read_string, x['foo'], x),
+  };
 }
 
 
@@ -425,7 +444,7 @@ function _atd_write_option<T>(write_elt: (x: T, context: any) => any):
   return write_option
 }
 
-function _atd_write_nullable<T>(write_elt: (x: T | null, context: any) => any):
+function _atd_write_nullable<T>(write_elt: (x: T, context: any) => any):
   (x: T | null, context: any) => any {
   function write_option(x: T | null, context: any): any {
     if (x === null)

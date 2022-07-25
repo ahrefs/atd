@@ -19,6 +19,10 @@ type json_adapter = {
 
 val no_adapter : json_adapter
 
+type json_int =
+  | Int
+  | String
+
 type json_float =
   | Float of int option (* max decimal places *)
   | Int
@@ -52,7 +56,7 @@ type json_repr =
   | External
   | Field of json_field
   | Float of json_float
-  | Int
+  | Int of json_int
   | List of json_list
   | Nullable
   | Option
@@ -69,6 +73,8 @@ val annot_schema_json : Annot.schema
 val get_json_list : Annot.t -> json_list
 
 val get_json_float : Annot.t -> json_float
+
+val get_json_int : Annot.t -> json_int
 
 val get_json_cons : string -> Annot.t -> string
 

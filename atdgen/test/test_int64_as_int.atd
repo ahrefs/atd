@@ -1,0 +1,2 @@
+type i = int <ocaml repr="int64">
+type i1 = int <ocaml repr="int64"><json repr="int">

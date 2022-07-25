@@ -644,6 +644,32 @@ Example:
 
     type unixtime = float <json repr="int">
 
+Int64
+~~~~~
+
+Position: after ``int`` type annotated with ``<ocaml repr="int64">``
+
+Values: ``int``
+
+Semantics: sepcifies an ``int64`` value that will be represented in JSON
+as integer as opposite to the default safe string representation. Note,
+that this may be the unsafe choice, depending on the environment where the
+target JSON will be parsed. For example, the ``Int64.max_int`` value parsed
+in Node.js:
+
+.. code::
+
+    Welcome to Node.js v17.8.0.
+    Type ".help" for more information.
+    > JSON.parse("9223372036854775807");
+    9223372036854776000
+
+Example:
+
+.. code:: ocaml
+
+    type bigint = int <ocaml repr="int64"> <json repr="int">
+
 Field ``tag_field``
 """""""""""""""""""
 

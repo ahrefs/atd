@@ -100,7 +100,7 @@ formats. "))
   (atdgen-runtime (>= 2.1.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
-  (yojson (and (>= 1.7.0) (< 2.0.0)))
+  (yojson (>= 2.0.1))
   (odoc :with-doc)
   re
  )
@@ -124,7 +124,7 @@ This package should be used only in conjunction with the atdgen code
 generator")
  (depends
   (ocaml (>= 4.08))
-  (yojson (>= 2.0.1))
+  (yojson (>= 2.0.2))
   (biniou (>= 1.0.6))
   (odoc :with-doc)))
 

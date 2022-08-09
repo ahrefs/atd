@@ -107,7 +107,7 @@ export function writeRoot(x: Root, context: any = x): any {
     'assoc3': _atd_write_required_field('Root', 'assoc3', _atd_write_assoc_map_to_array(_atd_write_float, _atd_write_int), x.assoc3, x),
     'assoc4': _atd_write_required_field('Root', 'assoc4', _atd_write_assoc_map_to_object(_atd_write_int), x.assoc4, x),
     'options': _atd_write_field_with_default(_atd_write_array(_atd_write_option(_atd_write_int)), [], x.options, x),
-    'nullables': _atd_write_field_with_default(_atd_write_array(_atd_write_int), [], x.nullables, x),
+    'nullables': _atd_write_field_with_default(_atd_write_array(_atd_write_nullable(_atd_write_int)), [], x.nullables, x),
     'untyped_things': _atd_write_required_field('Root', 'untyped_things', _atd_write_array(((x: any): any => x)), x.untyped_things, x),
     'foo': _atd_write_required_field('Root', 'foo', _atd_write_nullable(writeFoo), x.foo, x),
   };

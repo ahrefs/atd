@@ -55,7 +55,8 @@ function test_everything() {
     ]),
     options: [{value:10}, null, {value:88}],
     nullables: [13, 71],
-    untyped_things: [{}, [["hello"]], 123]
+    untyped_things: [{}, [["hello"]], 123],
+    foo: null,
   }
   const a_str = JSON.stringify(API.writeRoot(a_obj), null, 2)
   save('a_str', a_str)

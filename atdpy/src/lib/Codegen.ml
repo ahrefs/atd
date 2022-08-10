@@ -195,6 +195,8 @@ methods and functions to convert data from/to JSON.
 # Disable flake8 entirely on this file:
 # flake8: noqa
 
+# Import annotations to allow forward references
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
@@ -1168,19 +1170,8 @@ let module_body env x =
   |> List.rev
   |> spaced
 
-let extract_definition_names (items : A.module_body) =
-  List.map (fun (Type (loc, (name, param, an), e)) -> name) items
-
 let definition_group ~atd_filename env
     (is_recursive, (items: A.module_body)) : B.t =
-  if is_recursive then
-    A.error (
-      sprintf "recursive definitions are not supported by atdpy \
-               at this time: types %s in %S"
-        (extract_definition_names items
-         |> String.concat ", ")
-        atd_filename
-    );
   [
     Inline (module_body env items);
   ]

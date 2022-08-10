@@ -1,5 +1,5 @@
-Master
-------------------
+2.10.0 (2022-08-09)
+-------------------
 
 * atdgen: use Yojson 2.0 API (#299)
 * atdpy: Support recursive definitions (#315)

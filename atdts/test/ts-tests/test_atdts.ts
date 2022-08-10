@@ -158,7 +158,8 @@ ${a_str}`
       ]
     ],
     123
-  ]
+  ],
+  "foo": null
 }`
   save('b_str', b_str)
   const b_obj = API.readRoot(JSON.parse(a_str))

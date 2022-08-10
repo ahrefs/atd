@@ -43,7 +43,7 @@ type adapted_f = Test3j_t.adapted_f
 type adapted = Test3j_t.adapted
 
 val write_rec_type :
-  Bi_outbuf.t -> rec_type -> unit
+  Buffer.t -> rec_type -> unit
   (** Output a JSON value of type {!type:rec_type}. *)
 
 val string_of_rec_type :
@@ -63,7 +63,7 @@ val rec_type_of_string :
   (** Deserialize JSON data of type {!type:rec_type}. *)
 
 val write_unixtime_list :
-  Bi_outbuf.t -> unixtime_list -> unit
+  Buffer.t -> unixtime_list -> unit
   (** Output a JSON value of type {!type:unixtime_list}. *)
 
 val string_of_unixtime_list :
@@ -83,7 +83,7 @@ val unixtime_list_of_string :
   (** Deserialize JSON data of type {!type:unixtime_list}. *)
 
 val write_json :
-  Bi_outbuf.t -> json -> unit
+  Buffer.t -> json -> unit
   (** Output a JSON value of type {!type:json}. *)
 
 val string_of_json :
@@ -103,7 +103,7 @@ val json_of_string :
   (** Deserialize JSON data of type {!type:json}. *)
 
 val write_tf_variant2 :
-  Bi_outbuf.t -> tf_variant2 -> unit
+  Buffer.t -> tf_variant2 -> unit
   (** Output a JSON value of type {!type:tf_variant2}. *)
 
 val string_of_tf_variant2 :
@@ -123,7 +123,7 @@ val tf_variant2_of_string :
   (** Deserialize JSON data of type {!type:tf_variant2}. *)
 
 val write_tf_variant :
-  Bi_outbuf.t -> tf_variant -> unit
+  Buffer.t -> tf_variant -> unit
   (** Output a JSON value of type {!type:tf_variant}. *)
 
 val string_of_tf_variant :
@@ -143,7 +143,7 @@ val tf_variant_of_string :
   (** Deserialize JSON data of type {!type:tf_variant}. *)
 
 val write_tf_record2 :
-  Bi_outbuf.t -> tf_record2 -> unit
+  Buffer.t -> tf_record2 -> unit
   (** Output a JSON value of type {!type:tf_record2}. *)
 
 val string_of_tf_record2 :
@@ -163,7 +163,7 @@ val tf_record2_of_string :
   (** Deserialize JSON data of type {!type:tf_record2}. *)
 
 val write_tf_record :
-  Bi_outbuf.t -> tf_record -> unit
+  Buffer.t -> tf_record -> unit
   (** Output a JSON value of type {!type:tf_record}. *)
 
 val string_of_tf_record :
@@ -183,7 +183,7 @@ val tf_record_of_string :
   (** Deserialize JSON data of type {!type:tf_record}. *)
 
 val write_dyn :
-  Bi_outbuf.t -> dyn -> unit
+  Buffer.t -> dyn -> unit
   (** Output a JSON value of type {!type:dyn}. *)
 
 val string_of_dyn :
@@ -203,7 +203,7 @@ val dyn_of_string :
   (** Deserialize JSON data of type {!type:dyn}. *)
 
 val write_t :
-  Bi_outbuf.t -> t -> unit
+  Buffer.t -> t -> unit
   (** Output a JSON value of type {!type:t}. *)
 
 val string_of_t :
@@ -223,7 +223,7 @@ val t_of_string :
   (** Deserialize JSON data of type {!type:t}. *)
 
 val write_sf_adapted :
-  Bi_outbuf.t -> sf_adapted -> unit
+  Buffer.t -> sf_adapted -> unit
   (** Output a JSON value of type {!type:sf_adapted}. *)
 
 val string_of_sf_adapted :
@@ -243,7 +243,7 @@ val sf_adapted_of_string :
   (** Deserialize JSON data of type {!type:sf_adapted}. *)
 
 val write_sample_open_enum :
-  Bi_outbuf.t -> sample_open_enum -> unit
+  Buffer.t -> sample_open_enum -> unit
   (** Output a JSON value of type {!type:sample_open_enum}. *)
 
 val string_of_sample_open_enum :
@@ -263,7 +263,7 @@ val sample_open_enum_of_string :
   (** Deserialize JSON data of type {!type:sample_open_enum}. *)
 
 val write_sample_open_enums :
-  Bi_outbuf.t -> sample_open_enums -> unit
+  Buffer.t -> sample_open_enums -> unit
   (** Output a JSON value of type {!type:sample_open_enums}. *)
 
 val string_of_sample_open_enums :
@@ -283,7 +283,7 @@ val sample_open_enums_of_string :
   (** Deserialize JSON data of type {!type:sample_open_enums}. *)
 
 val write_patch :
-  Bi_outbuf.t -> patch -> unit
+  Buffer.t -> patch -> unit
   (** Output a JSON value of type {!type:patch}. *)
 
 val string_of_patch :
@@ -303,7 +303,7 @@ val patch_of_string :
   (** Deserialize JSON data of type {!type:patch}. *)
 
 val write_b :
-  Bi_outbuf.t -> b -> unit
+  Buffer.t -> b -> unit
   (** Output a JSON value of type {!type:b}. *)
 
 val string_of_b :
@@ -323,7 +323,7 @@ val b_of_string :
   (** Deserialize JSON data of type {!type:b}. *)
 
 val write_a :
-  Bi_outbuf.t -> a -> unit
+  Buffer.t -> a -> unit
   (** Output a JSON value of type {!type:a}. *)
 
 val string_of_a :
@@ -343,7 +343,7 @@ val a_of_string :
   (** Deserialize JSON data of type {!type:a}. *)
 
 val write_adapted_f :
-  Bi_outbuf.t -> adapted_f -> unit
+  Buffer.t -> adapted_f -> unit
   (** Output a JSON value of type {!type:adapted_f}. *)
 
 val string_of_adapted_f :
@@ -363,7 +363,7 @@ val adapted_f_of_string :
   (** Deserialize JSON data of type {!type:adapted_f}. *)
 
 val write_adapted :
-  Bi_outbuf.t -> adapted -> unit
+  Buffer.t -> adapted -> unit
   (** Output a JSON value of type {!type:adapted}. *)
 
 val string_of_adapted :

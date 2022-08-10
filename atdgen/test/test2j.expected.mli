@@ -5,14 +5,14 @@ open Test2
 open Testj
 
 val write_poly :
-  (Bi_outbuf.t -> 'aa -> unit) ->
-  (Bi_outbuf.t -> 'bb -> unit) ->
-  Bi_outbuf.t -> ('aa, 'bb) poly -> unit
+  (Buffer.t -> 'aa -> unit) ->
+  (Buffer.t -> 'bb -> unit) ->
+  Buffer.t -> ('aa, 'bb) poly -> unit
   (** Output a JSON value of type {!type:poly}. *)
 
 val string_of_poly :
-  (Bi_outbuf.t -> 'aa -> unit) ->
-  (Bi_outbuf.t -> 'bb -> unit) ->
+  (Buffer.t -> 'aa -> unit) ->
+  (Buffer.t -> 'bb -> unit) ->
   ?len:int -> ('aa, 'bb) poly -> string
   (** Serialize a value of type {!type:poly}
       into a JSON string.
@@ -34,7 +34,7 @@ val poly_of_string :
 
 
 val write_poly_int2 :
-  Bi_outbuf.t -> poly_int2 -> unit
+  Buffer.t -> poly_int2 -> unit
   (** Output a JSON value of type {!type:poly_int2}. *)
 
 val string_of_poly_int2 :
@@ -55,7 +55,7 @@ val poly_int2_of_string :
 
 
 val write_test2 :
-  Bi_outbuf.t -> test2 -> unit
+  Buffer.t -> test2 -> unit
   (** Output a JSON value of type {!type:test2}. *)
 
 val string_of_test2 :
@@ -82,7 +82,7 @@ val create_test2 :
 
 
 val write_poly_int_string :
-  Bi_outbuf.t -> poly_int_string -> unit
+  Buffer.t -> poly_int_string -> unit
   (** Output a JSON value of type {!type:poly_int_string}. *)
 
 val string_of_poly_int_string :

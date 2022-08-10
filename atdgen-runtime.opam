@@ -65,9 +65,8 @@ bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
   "dune" {>= "2.8"}
   "ocaml" {>= "4.08"}
-  "yojson" {>= "1.7.0" & < "2.0.0"}
+  "yojson" {>= "2.0.2"}
   "biniou" {>= "1.0.6"}
-  "camlp-streams"
   "odoc" {with-doc}
 ]
 dev-repo: "git+https://github.com/ahrefs/atd.git"

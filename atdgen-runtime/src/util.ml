@@ -84,6 +84,12 @@ struct
     in
     input_file fname (fun ic -> from_channel ?buf ~fname:fname0 ?lnum read ic)
 
+  (* seq_unfold is Seq.unfold, needed for ocaml < 4.11 *)
+  let rec seq_unfold f u () =
+    match f u with
+    | None -> Seq.Nil
+    | Some (x, u') -> Seq.Cons (x, seq_unfold f u')
+
   let seq_from_lexbuf ?(fin = fun () -> ()) read ls lexbuf =
     let f () =
       try
@@ -97,7 +103,8 @@ struct
             (try fin () with _ -> ());
             raise e
     in
-    Seq.unfold f ()
+    (* Seq.unfold is only available from ocaml 4.11 *)
+    seq_unfold f ()
 
   let seq_from_string ?buf ?fin ?fname ?lnum read ic =
     let lexbuf = Lexing.from_string ic in

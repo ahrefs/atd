@@ -1,6 +1,7 @@
 Master
 ------------------
 
+* atdpy: Support recursive definitions
 * atdts: fix nullable object field writer (#312)
 
 

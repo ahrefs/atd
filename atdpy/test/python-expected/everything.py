@@ -7,6 +7,7 @@ methods and functions to convert data from/to JSON.
 # Disable flake8 entirely on this file:
 # flake8: noqa
 
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
@@ -238,6 +239,40 @@ def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
 # This was inserted by the user.
 import deco
 from dataclasses import dataclass
+
+
+@dataclass
+class RecursiveClass:
+    """Original type: recursive_class = { ... }"""
+
+    id: int
+    flag: bool
+    children: List[RecursiveClass]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'RecursiveClass':
+        if isinstance(x, dict):
+            return cls(
+                id=_atd_read_int(x['id']) if 'id' in x else _atd_missing_json_field('RecursiveClass', 'id'),
+                flag=_atd_read_bool(x['flag']) if 'flag' in x else _atd_missing_json_field('RecursiveClass', 'flag'),
+                children=_atd_read_list(RecursiveClass.from_json)(x['children']) if 'children' in x else _atd_missing_json_field('RecursiveClass', 'children'),
+            )
+        else:
+            _atd_bad_json('RecursiveClass', x)
+
+    def to_json(self) -> Any:
+        res: Dict[str, Any] = {}
+        res['id'] = _atd_write_int(self.id)
+        res['flag'] = _atd_write_bool(self.flag)
+        res['children'] = _atd_write_list((lambda x: x.to_json()))(self.children)
+        return res
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'RecursiveClass':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
 
 
 @dataclass

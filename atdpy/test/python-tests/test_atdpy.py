@@ -196,5 +196,34 @@ def test_pair() -> None:
             )
 
 
+def test_recursive_class() -> None:
+    child1 = e.RecursiveClass(id=1, flag=True, children=[])
+    child2 = e.RecursiveClass(id=2, flag=True, children=[])
+    a_obj = e.RecursiveClass(id=0, flag=False, children=[child1, child2])
+    a_str = a_obj.to_json_string(indent=2)
+
+    b_str = """{
+  "id": 0,
+  "flag": false,
+  "children": [
+    {
+      "id": 1,
+      "flag": true,
+      "children": []
+    },
+    {
+      "id": 2,
+      "flag": true,
+      "children": []
+    }
+  ]
+}"""
+    b_obj = e.RecursiveClass.from_json_string(a_str)
+    b_str2 = b_obj.to_json_string(indent=2)
+
+    assert b_str == b_str2
+    assert b_str2 == a_str
+
+
 # print updated json
 test_everything_to_json()

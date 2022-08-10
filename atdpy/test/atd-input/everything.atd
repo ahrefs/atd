@@ -44,3 +44,9 @@ type require_field <python decorator="deco.deco1"
                            decorator="dataclass(order=True)"> = {
   req: string;
 }
+
+type recursive_class = {
+  id: int;
+  flag: bool;
+  children: recursive_class list;
+}

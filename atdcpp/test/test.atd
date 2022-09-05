@@ -1,3 +1,23 @@
-type foo = {
-  name: string;
+type basic = {
+  a_string: string;
+  a_float: float;
+  an_int: int;
+  a_tuple: (string * float * int);
+  a_bool: bool;
+}
+
+type optionals = {
+  a_string: string option;
+  a_float: float option;
+  an_int: int option;
+  a_tuple: (string * float * int) option;
+  a_bool: bool option;
+}
+
+type nullables = {
+  a_string: string nullable;
+  a_float: float nullable;
+  an_int: int nullable;
+  a_tuple: (string * float * int) nullable;
+  a_bool: bool nullable;
 }

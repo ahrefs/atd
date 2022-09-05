@@ -1,0 +1,10 @@
+(executable
+ (name Atdcpp_main)
+ (public_name atdcpp)
+ (package atdcpp)
+ (libraries
+   cmdliner
+   atdcpp
+   atd
+ )
+)

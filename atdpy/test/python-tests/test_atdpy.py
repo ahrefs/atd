@@ -81,6 +81,13 @@ def test_everything_to_json() -> None:
         },
         nullables=[12, None, 34],
         untyped_things=[[["hello"]], {}, None, 123],
+        parametrized_record=e.X1(
+            field_a=42,
+            field_b=[9.9, 8.8],
+        ),
+        parametrized_tuple=e.X2(
+            (e.Kind(e.WOW()), e.Kind(e.WOW()), 100)
+        )
     )
     a_str = a_obj.to_json_string(indent=2)
     print(a_str)
@@ -168,6 +175,18 @@ def test_everything_to_json() -> None:
     {},
     null,
     123
+  ],
+  "parametrized_record": {
+    "field_a": 42,
+    "field_b": [
+      9.9,
+      8.8
+    ]
+  },
+  "parametrized_tuple": [
+    "wow",
+    "wow",
+    100
   ],
   "answer": 42
 }"""

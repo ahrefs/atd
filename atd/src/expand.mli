@@ -13,6 +13,7 @@ type original_types = (string, string * int) Hashtbl.t
 
 val expand_module_body :
   ?prefix:string ->
+  ?keep_builtins:bool ->
   ?keep_poly:bool ->
   ?debug:bool ->
   Ast.module_body -> Ast.module_body * original_types
@@ -20,6 +21,10 @@ val expand_module_body :
    Monomorphization of type expressions.
 
    @param prefix prefix to use for new type names. Default is ["_"].
+
+   @param keep_builtins preserve occurrences of the built-in parametrized
+   types such as [list] or [option].
+   Default is [false].
 
    @param keep_poly return definitions for the parametrized types.
    Default is [false].

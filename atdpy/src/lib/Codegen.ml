@@ -74,7 +74,14 @@ let to_camel_case s =
         Buffer.add_char buf c;
         start_word := false
   done;
-  Buffer.contents buf
+  let name = Buffer.contents buf in
+  if name = "" then "X"
+  else
+    (* Make sure we don't start with a digit. This happens with
+       generated identifiers like '_42'. *)
+    match name.[0] with
+    | 'A'..'Z' | 'a'..'z' | '_' -> name
+    | _ -> "X" ^ name
 
 (* Use CamelCase as recommended by PEP 8. *)
 let class_name env id =
@@ -1215,7 +1222,10 @@ let run_file src_path =
   let (atd_head, atd_module), _original_types =
     Atd.Util.load_file
       ~annot_schema
-      ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
+      ~expand:true (* monomorphization = eliminate parametrized type defs *)
+      ~inherit_fields:true
+      ~inherit_variants:true
+      src_path
   in
   let head = Python_annot.get_python_json_text (snd atd_head) in
   to_file ~atd_filename:src_name ~head atd_module dst_path

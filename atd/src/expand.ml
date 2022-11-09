@@ -245,7 +245,8 @@ let add_annot (x : type_expr) a : type_expr =
   Ast.map_annot (fun a0 -> Annot.merge (a @ a0)) x
 
 
-let expand ?(keep_poly = false) (l : type_def list)
+let expand
+    ?(keep_builtins = true) ?(keep_poly = false) (l : type_def list)
   : type_def list * original_types =
 
   let seqnum, tbl = init_table () in
@@ -265,27 +266,42 @@ let expand ?(keep_poly = false) (l : type_def list)
     | List (loc as loc2, t, a)
     | Name (loc, (loc2, "list", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "list" [t'] a
+        if keep_builtins then
+          List (loc2, t', a)
+        else
+          subst_type_name loc loc2 "list" [t'] a
 
     | Option (loc as loc2, t, a)
     | Name (loc, (loc2, "option", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "option" [t'] a
+        if keep_builtins then
+          Option (loc2, t', a)
+        else
+          subst_type_name loc loc2 "option" [t'] a
 
     | Nullable (loc as loc2, t, a)
     | Name (loc, (loc2, "nullable", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "nullable" [t'] a
+        if keep_builtins then
+          Nullable (loc2, t', a)
+        else
+          subst_type_name loc loc2 "nullable" [t'] a
 
     | Shared (loc as loc2, t, a)
     | Name (loc, (loc2, "shared", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "shared" [t'] a
+        if keep_builtins then
+          Shared (loc2, t', a)
+        else
+          subst_type_name loc loc2 "shared" [t'] a
 
     | Wrap (loc as loc2, t, a)
     | Name (loc, (loc2, "wrap", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "wrap" [t'] a
+        if keep_builtins then
+          Wrap (loc2, t', a)
+        else
+          subst_type_name loc loc2 "wrap" [t'] a
 
     | Tvar (_, s) as x -> Option.value (List.assoc s env) ~default:x
 
@@ -428,7 +444,7 @@ let expand ?(keep_poly = false) (l : type_def list)
     Hashtbl.replace tbl name (i, n_param, None, Some td')
 
   and subst_field env = function
-      `Field (loc, k, t) -> `Field (loc, k, subst env t)
+    | `Field (loc, k, t) -> `Field (loc, k, subst env t)
     | `Inherit (loc, t) -> `Inherit (loc, subst env t)
 
   and subst_variant env = function
@@ -589,9 +605,10 @@ let standardize_type_names
   List.map (fun (loc, x, t) -> (loc, x, replace_type_names subst t)) l
 
 
-let expand_module_body ?(prefix = "_") ?keep_poly ?(debug = false) l =
+let expand_module_body
+    ?(prefix = "_") ?keep_builtins ?keep_poly ?(debug = false) l =
   let td_list = List.map (function (Type td) -> td) l in
-  let (td_list, original_types) = expand ?keep_poly td_list in
+  let (td_list, original_types) = expand ?keep_builtins ?keep_poly td_list in
   let td_list =
     if debug then td_list
     else standardize_type_names ~prefix ~original_types td_list

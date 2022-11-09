@@ -15,6 +15,13 @@ type frozen
   | B of int
 ]
 
+type ('a, 'b) parametrized_record = {
+  field_a: 'a;
+  ~field_b: 'b list;
+}
+
+type 'a parametrized_tuple = ('a * 'a * int)
+
 type root = {
   id <json name="ID">: string;
   await: bool;
@@ -33,6 +40,8 @@ type root = {
   nullables: int nullable list;
   untyped_things: abstract list;
   (*options: int option list;*)
+  parametrized_record: (int, float) parametrized_record;
+  parametrized_tuple: kind parametrized_tuple;
 }
 
 type alias = int list

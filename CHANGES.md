@@ -1,3 +1,10 @@
+* atdcat: The -x option no longer expands the built-in parametrized types
+  such as 'int list'. We could have preserved the old behavior but the new 
+  behavior seems generally better. If this is breaks people's code, we could
+  add a command-line option to choose between the new or the old behavior. 
+  (#303)
+* atdpy: Support parametrized type definitions (#303)
+
 2.10.0 (2022-08-09)
 -------------------
 

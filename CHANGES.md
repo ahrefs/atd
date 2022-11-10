@@ -1,5 +1,5 @@
 * atdpy: Support parametrized type definitions (#303)
-* atdpy: Support options approximately by treating them as nullables
+* atdpy: Support options approximately by treating them as nullables (#320)
 
 2.10.0 (2022-08-09)
 -------------------

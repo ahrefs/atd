@@ -397,3 +397,119 @@ let is_required = function
   | Optional
   | With_default -> false
   | Required -> true
+
+module Map = struct
+
+  type mappers = {
+    (* TODO: support other node types *)
+    type_expr: type_expr -> type_expr;
+  }
+
+  let default_mappers = {
+    type_expr = (fun x -> x);
+  }
+
+  let rec type_expr m (x : type_expr) : type_expr =
+    match m.type_expr x with
+    | Sum (loc, variant_list, an) ->
+       Sum (loc, List.map (variant m) variant_list, an)
+
+    | Record (loc, field_list, an) ->
+       Record (loc, List.map (field m) field_list, an)
+
+    | Tuple (loc, cells, an) ->
+       let cells =
+         List.map (fun (loc, x, an) -> (loc, type_expr m x, an)) cells in
+       Tuple (loc, cells, an)
+
+    | List (loc, x, an) ->
+       List (loc, type_expr m x, an)
+
+    | Option (loc, x, an) ->
+       Option (loc, type_expr m x, an)
+
+    | Nullable (loc, x, an) ->
+       Nullable (loc, type_expr m x, an)
+
+    | Shared (loc, x, an) ->
+       Shared (loc, type_expr m x, an)
+
+    | Wrap (loc, x, an) ->
+       Wrap (loc, type_expr m x, an)
+
+    | Name (loc, (loc2, name, args), an) ->
+       let args = List.map (type_expr m) args in
+       Name (loc, (loc2, name, args), an)
+
+    | Tvar (_, _) as x -> x
+
+  and variant m x =
+    match x with
+    | Variant (loc, name, Some x) -> Variant (loc, name, Some (type_expr m x))
+    | Variant _ as x -> x
+    | Inherit (loc, x) -> Inherit (loc, type_expr m x)
+
+  and field m x =
+    match x with
+    | `Field (loc, k, x) -> `Field (loc, k, type_expr m x)
+    | `Inherit (loc, x) -> `Inherit (loc, type_expr m x)
+
+  let type_def m (loc, (name, params, an), x) =
+    (loc, (name, params, an), type_expr m x)
+
+  let module_item m x =
+    match x with
+    | Type x -> Type (type_def m x)
+
+  let module_body m x =
+    List.map (module_item m) x
+
+  let full_module m (head, body) =
+    (head, module_body m body)
+end
+
+let use_only_specific_variants x =
+  let type_expr x =
+    match x with
+    | Name (loc, (loc2, name, [arg]), an) ->
+        (match name with
+        | "list" -> List (loc, arg, an)
+        | "option" -> Option (loc, arg, an)
+        | "nullable" -> Nullable (loc, arg, an)
+        | "shared" -> Shared (loc, arg, an)
+        | "wrap" -> Wrap (loc, arg, an)
+        | _ -> x)
+
+    | Name (loc, (loc2, name, _), an) as x ->
+        x
+
+    | Sum _
+    | Record _
+    | Tuple _
+    | Tvar _
+    | List _
+    | Option _
+    | Nullable _
+    | Shared _
+    | Wrap _ as x -> x
+  in
+  let mappers = { Map.type_expr } in
+  Map.full_module mappers x
+
+let use_only_name_variant x =
+  let type_expr x =
+    match x with
+    | List (loc, arg, an) -> Name (loc, (loc, "list", [arg]), an)
+    | Option (loc, arg, an) -> Name (loc, (loc, "option", [arg]), an)
+    | Nullable (loc, arg, an) -> Name (loc, (loc, "nullable", [arg]), an)
+    | Shared (loc, arg, an) -> Name (loc, (loc, "shared", [arg]), an)
+
+    | Name _
+    | Sum _
+    | Record _
+    | Tuple _
+    | Tvar _
+    | Wrap _ as x -> x
+  in
+  let mappers = { Map.type_expr } in
+  Map.full_module mappers x

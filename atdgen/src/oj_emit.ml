@@ -1355,7 +1355,7 @@ let make_ocaml_files
   let m1 = tsort m0 in
   let defs1 = Oj_mapping.defs_of_atd_modules m1 ~target in
   let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_poly:true m0
+    Atd.Expand.expand_module_body ~keep_builtins:false ~keep_poly:true m0
   in
   let m2 = tsort m1' in
   (* m0 = original type definitions

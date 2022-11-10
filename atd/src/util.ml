@@ -1,6 +1,9 @@
 let read_lexbuf
     ?annot_schema
-    ?(expand = false) ?keep_poly ?(xdebug = false)
+    ?(expand = false)
+    ?keep_builtins
+    ?keep_poly
+    ?(xdebug = false)
     ?(inherit_fields = false)
     ?(inherit_variants = false)
     ?(pos_fname = "")
@@ -17,7 +20,8 @@ let read_lexbuf
       body
   in
   let (body, original_types) =
-    if expand then Expand.expand_module_body ?keep_poly ~debug: xdebug body
+    if expand then
+      Expand.expand_module_body ?keep_builtins ?keep_poly ~debug: xdebug body
     else (body, Hashtbl.create 0)
   in
   let full_module = (head, body) in
@@ -29,7 +33,8 @@ let read_lexbuf
   (full_module, original_types)
 
 let read_channel
-    ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants
+    ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+    ?inherit_fields ?inherit_variants
     ?pos_fname ?pos_lnum
     ic =
   let lexbuf = Lexing.from_channel ic in
@@ -39,11 +44,12 @@ let read_channel
     else
       pos_fname
   in
-  read_lexbuf ?annot_schema ?expand ?keep_poly ?xdebug
+  read_lexbuf ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
 
 let load_file
-    ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants
+    ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+    ?inherit_fields ?inherit_variants
     ?pos_fname ?pos_lnum
     file =
   let ic = open_in file in
@@ -56,8 +62,8 @@ let load_file
     in
     let ast =
       read_channel
-        ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields
-        ?inherit_variants ?pos_fname ?pos_lnum ic
+        ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+        ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum ic
     in
     finally ();
     ast
@@ -66,11 +72,12 @@ let load_file
     raise e
 
 let load_string
-    ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants
+    ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+    ?inherit_fields ?inherit_variants
     ?pos_fname ?pos_lnum
     s =
   let lexbuf = Lexing.from_string s in
-  read_lexbuf ?annot_schema ?expand ?keep_poly ?xdebug
+  read_lexbuf ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
 
 module Tsort = Sort.Make (

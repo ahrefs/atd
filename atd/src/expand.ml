@@ -59,8 +59,8 @@ open Import
 
 open Ast
 
-module S = Set.Make (String)
-module M = Map.Make (String)
+module S = Stdlib.Set.Make (String)
+module M = Stdlib.Map.Make (String)
 
 
 (*
@@ -246,7 +246,7 @@ let add_annot (x : type_expr) a : type_expr =
 
 
 let expand
-    ?(keep_builtins = true) ?(keep_poly = false) (l : type_def list)
+    ?(keep_builtins = false) ?(keep_poly = false) (l : type_def list)
   : type_def list * original_types =
 
   let seqnum, tbl = init_table () in
@@ -267,7 +267,7 @@ let expand
     | Name (loc, (loc2, "list", [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          List (loc2, t', a)
+          Name (loc, (loc2, "list", [t']), a)
         else
           subst_type_name loc loc2 "list" [t'] a
 
@@ -275,7 +275,7 @@ let expand
     | Name (loc, (loc2, "option", [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Option (loc2, t', a)
+          Name (loc, (loc2, "option", [t']), a)
         else
           subst_type_name loc loc2 "option" [t'] a
 
@@ -283,7 +283,7 @@ let expand
     | Name (loc, (loc2, "nullable", [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Nullable (loc2, t', a)
+          Name (loc, (loc2, "nullable", [t']), a)
         else
           subst_type_name loc loc2 "nullable" [t'] a
 
@@ -291,7 +291,7 @@ let expand
     | Name (loc, (loc2, "shared", [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Shared (loc2, t', a)
+          Name (loc, (loc2, "shared", [t']), a)
         else
           subst_type_name loc loc2 "shared" [t'] a
 
@@ -299,7 +299,7 @@ let expand
     | Name (loc, (loc2, "wrap", [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Wrap (loc2, t', a)
+          Name (loc, (loc2, "wrap", [t']), a)
         else
           subst_type_name loc loc2 "wrap" [t'] a
 

@@ -3,6 +3,7 @@
 val read_lexbuf :
   ?annot_schema:Annot.schema ->
   ?expand:bool ->
+  ?keep_builtins:bool ->
   ?keep_poly:bool ->
   ?xdebug:bool ->
   ?inherit_fields:bool ->
@@ -58,6 +59,7 @@ val read_lexbuf :
 val read_channel :
   ?annot_schema:Annot.schema ->
   ?expand:bool ->
+  ?keep_builtins:bool ->
   ?keep_poly:bool ->
   ?xdebug:bool ->
   ?inherit_fields:bool ->
@@ -71,6 +73,7 @@ val read_channel :
 val load_file :
   ?annot_schema:Annot.schema ->
   ?expand:bool ->
+  ?keep_builtins:bool ->
   ?keep_poly:bool ->
   ?xdebug:bool ->
   ?inherit_fields:bool ->
@@ -84,6 +87,7 @@ val load_file :
 val load_string :
   ?annot_schema:Annot.schema ->
   ?expand:bool ->
+  ?keep_builtins:bool ->
   ?keep_poly:bool ->
   ?xdebug:bool ->
   ?inherit_fields:bool ->

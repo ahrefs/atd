@@ -394,7 +394,9 @@ let rec get_writer_name
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
-  | _ -> assert false
+  | Unit _ | Bool _ | Int _ | Float _ | String _ | Abstract _
+  | Sum _ | Record _ | Tuple _ | List _ | Option _ | Nullable _
+  | Wrap _ | Name _ | External _ -> assert false
 
 let write_with_adapter adapter writer =
   match adapter.Json.ocaml_adapter with

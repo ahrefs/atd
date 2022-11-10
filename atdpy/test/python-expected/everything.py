@@ -407,6 +407,58 @@ class Alias:
 
 
 @dataclass
+class X2:
+    """Original type: _2"""
+
+    value: Tuple[Kind, Kind, int]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'X2':
+        return cls((lambda x: (Kind.from_json(x[0]), Kind.from_json(x[1]), _atd_read_int(x[2])) if isinstance(x, list) and len(x) == 3 else _atd_bad_json('array of length 3', x))(x))
+
+    def to_json(self) -> Any:
+        return (lambda x: [(lambda x: x.to_json())(x[0]), (lambda x: x.to_json())(x[1]), _atd_write_int(x[2])] if isinstance(x, tuple) and len(x) == 3 else _atd_bad_python('tuple of length 3', x))(self.value)
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'X2':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class X1:
+    """Original type: _1 = { ... }"""
+
+    field_a: int
+    field_b: List[float]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'X1':
+        if isinstance(x, dict):
+            return cls(
+                field_a=_atd_read_int(x['field_a']) if 'field_a' in x else _atd_missing_json_field('X1', 'field_a'),
+                field_b=_atd_read_list(_atd_read_float)(x['field_b']) if 'field_b' in x else [],
+            )
+        else:
+            _atd_bad_json('X1', x)
+
+    def to_json(self) -> Any:
+        res: Dict[str, Any] = {}
+        res['field_a'] = _atd_write_int(self.field_a)
+        res['field_b'] = _atd_write_list(_atd_write_float)(self.field_b)
+        return res
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'X1':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
 class Root:
     """Original type: root = { ... }"""
 
@@ -424,6 +476,8 @@ class Root:
     assoc4: Dict[str, int]
     nullables: List[Optional[int]]
     untyped_things: List[Any]
+    parametrized_record: X1
+    parametrized_tuple: X2
     maybe: Optional[int] = None
     answer: int = 42
 
@@ -445,6 +499,8 @@ class Root:
                 assoc4=_atd_read_assoc_object_into_dict(_atd_read_int)(x['assoc4']) if 'assoc4' in x else _atd_missing_json_field('Root', 'assoc4'),
                 nullables=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['nullables']) if 'nullables' in x else _atd_missing_json_field('Root', 'nullables'),
                 untyped_things=_atd_read_list((lambda x: x))(x['untyped_things']) if 'untyped_things' in x else _atd_missing_json_field('Root', 'untyped_things'),
+                parametrized_record=X1.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
+                parametrized_tuple=X2.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
             )
@@ -467,6 +523,8 @@ class Root:
         res['assoc4'] = _atd_write_assoc_dict_to_object(_atd_write_int)(self.assoc4)
         res['nullables'] = _atd_write_list(_atd_write_nullable(_atd_write_int))(self.nullables)
         res['untyped_things'] = _atd_write_list((lambda x: x))(self.untyped_things)
+        res['parametrized_record'] = (lambda x: x.to_json())(self.parametrized_record)
+        res['parametrized_tuple'] = (lambda x: x.to_json())(self.parametrized_tuple)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['answer'] = _atd_write_int(self.answer)

@@ -1,3 +1,5 @@
+* atdpy: Support parametrized type definitions (#303)
+
 2.10.0 (2022-08-09)
 -------------------
 

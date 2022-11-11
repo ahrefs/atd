@@ -77,11 +77,16 @@ let enumerate_suffixes () =
   in
   get_suffix
 
-let register env src =
+let register ?preferred_translation env src =
+  let pref_dst =
+    match preferred_translation with
+    | None -> src
+    | Some x -> x
+  in
   let get_suffix = enumerate_suffixes () in
   let rec find_available_suffix () =
     let suffix = get_suffix () in
-    let dst = src ^ suffix in
+    let dst = pref_dst ^ suffix in
     let dst =
       (* assume that safe_prefix is not a prefix of a reserved prefix *)
       if has_reserved_prefix env dst then
@@ -102,10 +107,10 @@ let register env src =
 let translate_only env src =
   Hashtbl.find_opt env.translations src
 
-let translate env src =
+let translate ?preferred_translation env src =
   match translate_only env src with
   | Some dst -> dst
-  | None -> register env src
+  | None -> register ?preferred_translation env src
 
 let reverse_translate env dst =
   Hashtbl.find_opt env.reverse_translations dst

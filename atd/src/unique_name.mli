@@ -59,7 +59,9 @@ val create : t -> string -> string
     Repeated calls of this function on the same input will produce
     the same output as the previous times.
 *)
-val translate : t -> string -> string
+val translate :
+  ?preferred_translation:string ->
+  t -> string -> string
 
 (** Return whether a name exists in the source space. If it exists, return
     its translation to the destination space. *)

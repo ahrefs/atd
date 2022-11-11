@@ -407,20 +407,20 @@ class Alias:
 
 
 @dataclass
-class X2:
-    """Original type: _2"""
+class KindParametrizedTuple:
+    """Original type: _kind_parametrized_tuple"""
 
     value: Tuple[Kind, Kind, int]
 
     @classmethod
-    def from_json(cls, x: Any) -> 'X2':
+    def from_json(cls, x: Any) -> 'KindParametrizedTuple':
         return cls((lambda x: (Kind.from_json(x[0]), Kind.from_json(x[1]), _atd_read_int(x[2])) if isinstance(x, list) and len(x) == 3 else _atd_bad_json('array of length 3', x))(x))
 
     def to_json(self) -> Any:
         return (lambda x: [(lambda x: x.to_json())(x[0]), (lambda x: x.to_json())(x[1]), _atd_write_int(x[2])] if isinstance(x, tuple) and len(x) == 3 else _atd_bad_python('tuple of length 3', x))(self.value)
 
     @classmethod
-    def from_json_string(cls, x: str) -> 'X2':
+    def from_json_string(cls, x: str) -> 'KindParametrizedTuple':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:
@@ -428,21 +428,21 @@ class X2:
 
 
 @dataclass
-class X1:
-    """Original type: _1 = { ... }"""
+class IntFloatParametrizedRecord:
+    """Original type: _int_float_parametrized_record = { ... }"""
 
     field_a: int
     field_b: List[float]
 
     @classmethod
-    def from_json(cls, x: Any) -> 'X1':
+    def from_json(cls, x: Any) -> 'IntFloatParametrizedRecord':
         if isinstance(x, dict):
             return cls(
-                field_a=_atd_read_int(x['field_a']) if 'field_a' in x else _atd_missing_json_field('X1', 'field_a'),
+                field_a=_atd_read_int(x['field_a']) if 'field_a' in x else _atd_missing_json_field('IntFloatParametrizedRecord', 'field_a'),
                 field_b=_atd_read_list(_atd_read_float)(x['field_b']) if 'field_b' in x else [],
             )
         else:
-            _atd_bad_json('X1', x)
+            _atd_bad_json('IntFloatParametrizedRecord', x)
 
     def to_json(self) -> Any:
         res: Dict[str, Any] = {}
@@ -451,7 +451,7 @@ class X1:
         return res
 
     @classmethod
-    def from_json_string(cls, x: str) -> 'X1':
+    def from_json_string(cls, x: str) -> 'IntFloatParametrizedRecord':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:
@@ -477,8 +477,8 @@ class Root:
     nullables: List[Optional[int]]
     options: List[Optional[int]]
     untyped_things: List[Any]
-    parametrized_record: X1
-    parametrized_tuple: X2
+    parametrized_record: IntFloatParametrizedRecord
+    parametrized_tuple: KindParametrizedTuple
     maybe: Optional[int] = None
     answer: int = 42
 
@@ -501,8 +501,8 @@ class Root:
                 nullables=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['nullables']) if 'nullables' in x else _atd_missing_json_field('Root', 'nullables'),
                 options=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['options']) if 'options' in x else _atd_missing_json_field('Root', 'options'),
                 untyped_things=_atd_read_list((lambda x: x))(x['untyped_things']) if 'untyped_things' in x else _atd_missing_json_field('Root', 'untyped_things'),
-                parametrized_record=X1.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
-                parametrized_tuple=X2.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
+                parametrized_record=IntFloatParametrizedRecord.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
+                parametrized_tuple=KindParametrizedTuple.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
             )

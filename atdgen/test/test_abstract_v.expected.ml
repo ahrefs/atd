@@ -14,13 +14,13 @@ type 'x abs1 = 'x Test_abstract_t.abs1
 let validate_int_assoc_list = (
   Testj.validate_int_assoc_list
 )
-let validate__1 = (
+let validate__abstract_list = (
   Atdgen_runtime.Ov_run.validate_list (
     (fun _ _ -> None)
   )
 )
 let validate_any_items = (
-  validate__1
+  validate__abstract_list
 )
 let validate_any = (
   (fun _ _ -> None)

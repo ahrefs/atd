@@ -166,33 +166,33 @@ type 'a abs2 = 'a list
 
 type 'a abs1 = 'a list
 
-let _19_tag = Bi_io.array_tag
-let write_untagged__19 _a_tag write_untagged__a write__a = (
+let _a_list_tag = Bi_io.array_tag
+let write_untagged__a_list _a_tag write_untagged__a write__a = (
   Atdgen_runtime.Ob_run.write_untagged_list
     _a_tag
     (
       write_untagged__a
     )
 )
-let write__19 _a_tag write_untagged__a write__a ob x =
+let write__a_list _a_tag write_untagged__a write__a ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__19 _a_tag write_untagged__a write__a ob x
-let string_of__19 _a_tag write_untagged__a write__a ?(len = 1024) x =
+  write_untagged__a_list _a_tag write_untagged__a write__a ob x
+let string_of__a_list _a_tag write_untagged__a write__a ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__19 _a_tag write_untagged__a write__a ob x;
+  write__a_list _a_tag write_untagged__a write__a ob x;
   Bi_outbuf.contents ob
-let get__19_reader get__a_reader read__a = (
+let get__a_list_reader get__a_reader read__a = (
   Atdgen_runtime.Ob_run.get_list_reader (
     get__a_reader
   )
 )
-let read__19 get__a_reader read__a = (
+let read__a_list get__a_reader read__a = (
   Atdgen_runtime.Ob_run.read_list (
     get__a_reader
   )
 )
-let _19_of_string get__a_reader read__a ?pos s =
-  read__19 get__a_reader read__a (Bi_inbuf.from_string ?pos s)
+let _a_list_of_string get__a_reader read__a ?pos s =
+  read__a_list get__a_reader read__a (Bi_inbuf.from_string ?pos s)
 let rec p'_tag = Bi_io.variant_tag
 and write_untagged_p' _a_tag write_untagged__a write__a : Bi_outbuf.t -> 'a p' -> unit = (
   fun ob x ->
@@ -420,18 +420,188 @@ and read_r = (
 )
 and r_of_string ?pos s =
   read_r (Bi_inbuf.from_string ?pos s)
-let rec _20_tag = Bi_io.num_variant_tag
-and write_untagged__20 _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x = (
+let rec _test_variant_list_tag = Bi_io.array_tag
+and write_untagged__test_variant_list ob x = (
+  Atdgen_runtime.Ob_run.write_untagged_list
+    test_variant_tag
+    (
+      write_untagged_test_variant
+    )
+) ob x
+and write__test_variant_list ob x =
+  Bi_io.write_tag ob Bi_io.array_tag;
+  write_untagged__test_variant_list ob x
+and string_of__test_variant_list ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__test_variant_list ob x;
+  Bi_outbuf.contents ob
+and test_variant_tag = Bi_io.variant_tag
+and write_untagged_test_variant = (
+  fun ob x ->
+    match x with
+      | `Case1 -> Bi_outbuf.add_char4 ob 'T' 'N' '+' 'a'
+      | `Case2 x ->
+        Bi_outbuf.add_char4 ob '\212' 'N' '+' 'b';
+        (
+          Bi_io.write_svint
+        ) ob x
+      | `Case3 x ->
+        Bi_outbuf.add_char4 ob '\212' 'N' '+' 'c';
+        (
+          Bi_io.write_string
+        ) ob x
+      | `Case4 x ->
+        Bi_outbuf.add_char4 ob '\212' 'N' '+' 'd';
+        (
+          write__test_variant_list
+        ) ob x
+)
+and write_test_variant ob x =
+  Bi_io.write_tag ob Bi_io.variant_tag;
+  write_untagged_test_variant ob x
+and string_of_test_variant ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write_test_variant ob x;
+  Bi_outbuf.contents ob
+let rec get__test_variant_list_reader tag = (
+  Atdgen_runtime.Ob_run.get_list_reader (
+    get_test_variant_reader
+  )
+) tag
+and read__test_variant_list ib = (
+  Atdgen_runtime.Ob_run.read_list (
+    get_test_variant_reader
+  )
+) ib
+and _test_variant_list_of_string ?pos s =
+  read__test_variant_list (Bi_inbuf.from_string ?pos s)
+and get_test_variant_reader = (
+  fun tag ->
+    if tag <> 23 then Atdgen_runtime.Ob_run.read_error () else
+      fun ib ->
+        Bi_io.read_hashtag ib (fun ib h has_arg ->
+          match h, has_arg with
+            | -733074591, false -> `Case1
+            | -733074590, true -> (`Case2 (
+                (
+                  Atdgen_runtime.Ob_run.read_int
+                ) ib
+              ))
+            | -733074589, true -> (`Case3 (
+                (
+                  Atdgen_runtime.Ob_run.read_string
+                ) ib
+              ))
+            | -733074588, true -> (`Case4 (
+                (
+                  read__test_variant_list
+                ) ib
+              ))
+            | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
+        )
+)
+and read_test_variant = (
+  fun ib ->
+    if Bi_io.read_tag ib <> 23 then Atdgen_runtime.Ob_run.read_error_at ib;
+    Bi_io.read_hashtag ib (fun ib h has_arg ->
+      match h, has_arg with
+        | -733074591, false -> `Case1
+        | -733074590, true -> (`Case2 (
+            (
+              Atdgen_runtime.Ob_run.read_int
+            ) ib
+          ))
+        | -733074589, true -> (`Case3 (
+            (
+              Atdgen_runtime.Ob_run.read_string
+            ) ib
+          ))
+        | -733074588, true -> (`Case4 (
+            (
+              read__test_variant_list
+            ) ib
+          ))
+        | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
+    )
+)
+and test_variant_of_string ?pos s =
+  read_test_variant (Bi_inbuf.from_string ?pos s)
+let rec _int_p_tag = Bi_io.variant_tag
+and write_untagged__int_p : Bi_outbuf.t -> _ p' -> unit = (
+  fun ob x ->
+    match x with
+      | A -> Bi_outbuf.add_char4 ob '\000' '\000' '\000' 'A'
+      | Bb x ->
+        Bi_outbuf.add_char4 ob '\128' '\000' '9' '\224';
+        (
+          write__int_p
+        ) ob x
+      | Ccccc x ->
+        Bi_outbuf.add_char4 ob '\213' '\148' 's' '\003';
+        (
+          Bi_io.write_svint
+        ) ob x
+)
+and write__int_p ob x =
+  Bi_io.write_tag ob Bi_io.variant_tag;
+  write_untagged__int_p ob x
+and string_of__int_p ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__int_p ob x;
+  Bi_outbuf.contents ob
+let rec get__int_p_reader = (
+  fun tag ->
+    if tag <> 23 then Atdgen_runtime.Ob_run.read_error () else
+      fun ib ->
+        Bi_io.read_hashtag ib (fun ib h has_arg ->
+          match h, has_arg with
+            | 65, false -> (A : _ p')
+            | 14816, true -> (Bb (
+                (
+                  read__int_p
+                ) ib
+              ) : _ p')
+            | -711691517, true -> (Ccccc (
+                (
+                  Atdgen_runtime.Ob_run.read_int
+                ) ib
+              ) : _ p')
+            | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
+        )
+)
+and read__int_p = (
+  fun ib ->
+    if Bi_io.read_tag ib <> 23 then Atdgen_runtime.Ob_run.read_error_at ib;
+    Bi_io.read_hashtag ib (fun ib h has_arg ->
+      match h, has_arg with
+        | 65, false -> (A : _ p')
+        | 14816, true -> (Bb (
+            (
+              read__int_p
+            ) ib
+          ) : _ p')
+        | -711691517, true -> (Ccccc (
+            (
+              Atdgen_runtime.Ob_run.read_int
+            ) ib
+          ) : _ p')
+        | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
+    )
+)
+and _int_p_of_string ?pos s =
+  read__int_p (Bi_inbuf.from_string ?pos s)
+let rec _a_b_poly_option_tag = Bi_io.num_variant_tag
+and write_untagged__a_b_poly_option _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x = (
   Atdgen_runtime.Ob_run.write_untagged_option (
     write_poly _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b
   )
 ) ob x
-and write__20 _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x =
+and write__a_b_poly_option _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__20 _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x
-and string_of__20 _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ?(len = 1024) x =
+  write_untagged__a_b_poly_option _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x
+and string_of__a_b_poly_option _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__20 _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x;
+  write__a_b_poly_option _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x;
   Bi_outbuf.contents ob
 and poly_tag = Bi_io.record_tag
 and write_untagged_poly _x_tag write_untagged__x write__x _y_tag write_untagged__y write__y : Bi_outbuf.t -> ('x, 'y) poly -> unit = (
@@ -439,11 +609,11 @@ and write_untagged_poly _x_tag write_untagged__x write__x _y_tag write_untagged_
     Bi_vint.write_uvint ob 2;
     Bi_outbuf.add_char4 ob '\128' 'M' '\202' '\135';
     (
-      write__19 _x_tag write_untagged__x write__x
+      write__a_list _x_tag write_untagged__x write__x
     ) ob x.fst;
     Bi_outbuf.add_char4 ob '\128' 'W' '\163' 'i';
     (
-      write__20 _x_tag write_untagged__x write__x _y_tag write_untagged__y write__y
+      write__a_b_poly_option _x_tag write_untagged__x write__x _y_tag write_untagged__y write__y
     ) ob x.snd;
 )
 and write_poly _x_tag write_untagged__x write__x _y_tag write_untagged__y write__y ob x =
@@ -453,7 +623,7 @@ and string_of_poly _x_tag write_untagged__x write__x _y_tag write_untagged__y wr
   let ob = Bi_outbuf.create len in
   write_poly _x_tag write_untagged__x write__x _y_tag write_untagged__y write__y ob x;
   Bi_outbuf.contents ob
-let rec get__20_reader get__a_reader read__a get__b_reader read__b = (
+let rec get__a_b_poly_option_reader get__a_reader read__a get__b_reader read__b = (
   fun tag ->
     if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
@@ -468,7 +638,7 @@ let rec get__20_reader get__a_reader read__a get__b_reader read__b = (
             )
           | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-and read__20 get__a_reader read__a get__b_reader read__b = (
+and read__a_b_poly_option get__a_reader read__a get__b_reader read__b = (
   fun ib ->
     if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
     match Char.code (Bi_inbuf.read_char ib) with
@@ -482,8 +652,8 @@ and read__20 get__a_reader read__a get__b_reader read__b = (
         )
       | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-and _20_of_string get__a_reader read__a get__b_reader read__b ?pos s =
-  read__20 get__a_reader read__a get__b_reader read__b (Bi_inbuf.from_string ?pos s)
+and _a_b_poly_option_of_string get__a_reader read__a get__b_reader read__b ?pos s =
+  read__a_b_poly_option get__a_reader read__a get__b_reader read__b (Bi_inbuf.from_string ?pos s)
 and get_poly_reader get__x_reader read__x get__y_reader read__y = (
   fun tag ->
     if tag <> 21 then Atdgen_runtime.Ob_run.read_error () else
@@ -497,14 +667,14 @@ and get_poly_reader get__x_reader read__x get__y_reader read__y = (
             | 5098119 ->
               field_fst := (
                 (
-                  read__19 get__x_reader read__x
+                  read__a_list get__x_reader read__x
                 ) ib
               );
               bits0 := !bits0 lor 0x1;
             | 5743465 ->
               field_snd := (
                 (
-                  read__20 get__x_reader read__x get__y_reader read__y
+                  read__a_b_poly_option get__x_reader read__x get__y_reader read__y
                 ) ib
               );
               bits0 := !bits0 lor 0x2;
@@ -530,14 +700,14 @@ and read_poly get__x_reader read__x get__y_reader read__y = (
         | 5098119 ->
           field_fst := (
             (
-              read__19 get__x_reader read__x
+              read__a_list get__x_reader read__x
             ) ib
           );
           bits0 := !bits0 lor 0x1;
         | 5743465 ->
           field_snd := (
             (
-              read__20 get__x_reader read__x get__y_reader read__y
+              read__a_b_poly_option get__x_reader read__x get__y_reader read__y
             ) ib
           );
           bits0 := !bits0 lor 0x2;
@@ -553,176 +723,6 @@ and read_poly get__x_reader read__x get__y_reader read__y = (
 )
 and poly_of_string get__x_reader read__x get__y_reader read__y ?pos s =
   read_poly get__x_reader read__x get__y_reader read__y (Bi_inbuf.from_string ?pos s)
-let rec _2_tag = Bi_io.array_tag
-and write_untagged__2 ob x = (
-  Atdgen_runtime.Ob_run.write_untagged_list
-    test_variant_tag
-    (
-      write_untagged_test_variant
-    )
-) ob x
-and write__2 ob x =
-  Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__2 ob x
-and string_of__2 ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write__2 ob x;
-  Bi_outbuf.contents ob
-and test_variant_tag = Bi_io.variant_tag
-and write_untagged_test_variant = (
-  fun ob x ->
-    match x with
-      | `Case1 -> Bi_outbuf.add_char4 ob 'T' 'N' '+' 'a'
-      | `Case2 x ->
-        Bi_outbuf.add_char4 ob '\212' 'N' '+' 'b';
-        (
-          Bi_io.write_svint
-        ) ob x
-      | `Case3 x ->
-        Bi_outbuf.add_char4 ob '\212' 'N' '+' 'c';
-        (
-          Bi_io.write_string
-        ) ob x
-      | `Case4 x ->
-        Bi_outbuf.add_char4 ob '\212' 'N' '+' 'd';
-        (
-          write__2
-        ) ob x
-)
-and write_test_variant ob x =
-  Bi_io.write_tag ob Bi_io.variant_tag;
-  write_untagged_test_variant ob x
-and string_of_test_variant ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write_test_variant ob x;
-  Bi_outbuf.contents ob
-let rec get__2_reader tag = (
-  Atdgen_runtime.Ob_run.get_list_reader (
-    get_test_variant_reader
-  )
-) tag
-and read__2 ib = (
-  Atdgen_runtime.Ob_run.read_list (
-    get_test_variant_reader
-  )
-) ib
-and _2_of_string ?pos s =
-  read__2 (Bi_inbuf.from_string ?pos s)
-and get_test_variant_reader = (
-  fun tag ->
-    if tag <> 23 then Atdgen_runtime.Ob_run.read_error () else
-      fun ib ->
-        Bi_io.read_hashtag ib (fun ib h has_arg ->
-          match h, has_arg with
-            | -733074591, false -> `Case1
-            | -733074590, true -> (`Case2 (
-                (
-                  Atdgen_runtime.Ob_run.read_int
-                ) ib
-              ))
-            | -733074589, true -> (`Case3 (
-                (
-                  Atdgen_runtime.Ob_run.read_string
-                ) ib
-              ))
-            | -733074588, true -> (`Case4 (
-                (
-                  read__2
-                ) ib
-              ))
-            | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
-        )
-)
-and read_test_variant = (
-  fun ib ->
-    if Bi_io.read_tag ib <> 23 then Atdgen_runtime.Ob_run.read_error_at ib;
-    Bi_io.read_hashtag ib (fun ib h has_arg ->
-      match h, has_arg with
-        | -733074591, false -> `Case1
-        | -733074590, true -> (`Case2 (
-            (
-              Atdgen_runtime.Ob_run.read_int
-            ) ib
-          ))
-        | -733074589, true -> (`Case3 (
-            (
-              Atdgen_runtime.Ob_run.read_string
-            ) ib
-          ))
-        | -733074588, true -> (`Case4 (
-            (
-              read__2
-            ) ib
-          ))
-        | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
-    )
-)
-and test_variant_of_string ?pos s =
-  read_test_variant (Bi_inbuf.from_string ?pos s)
-let rec _1_tag = Bi_io.variant_tag
-and write_untagged__1 : Bi_outbuf.t -> _ p' -> unit = (
-  fun ob x ->
-    match x with
-      | A -> Bi_outbuf.add_char4 ob '\000' '\000' '\000' 'A'
-      | Bb x ->
-        Bi_outbuf.add_char4 ob '\128' '\000' '9' '\224';
-        (
-          write__1
-        ) ob x
-      | Ccccc x ->
-        Bi_outbuf.add_char4 ob '\213' '\148' 's' '\003';
-        (
-          Bi_io.write_svint
-        ) ob x
-)
-and write__1 ob x =
-  Bi_io.write_tag ob Bi_io.variant_tag;
-  write_untagged__1 ob x
-and string_of__1 ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write__1 ob x;
-  Bi_outbuf.contents ob
-let rec get__1_reader = (
-  fun tag ->
-    if tag <> 23 then Atdgen_runtime.Ob_run.read_error () else
-      fun ib ->
-        Bi_io.read_hashtag ib (fun ib h has_arg ->
-          match h, has_arg with
-            | 65, false -> (A : _ p')
-            | 14816, true -> (Bb (
-                (
-                  read__1
-                ) ib
-              ) : _ p')
-            | -711691517, true -> (Ccccc (
-                (
-                  Atdgen_runtime.Ob_run.read_int
-                ) ib
-              ) : _ p')
-            | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
-        )
-)
-and read__1 = (
-  fun ib ->
-    if Bi_io.read_tag ib <> 23 then Atdgen_runtime.Ob_run.read_error_at ib;
-    Bi_io.read_hashtag ib (fun ib h has_arg ->
-      match h, has_arg with
-        | 65, false -> (A : _ p')
-        | 14816, true -> (Bb (
-            (
-              read__1
-            ) ib
-          ) : _ p')
-        | -711691517, true -> (Ccccc (
-            (
-              Atdgen_runtime.Ob_run.read_int
-            ) ib
-          ) : _ p')
-        | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
-    )
-)
-and _1_of_string ?pos s =
-  read__1 (Bi_inbuf.from_string ?pos s)
 let validated_string_check_tag = Bi_io.string_tag
 let write_untagged_validated_string_check = (
   Bi_io.write_untagged_string
@@ -742,36 +742,36 @@ let read_validated_string_check = (
 )
 let validated_string_check_of_string ?pos s =
   read_validated_string_check (Bi_inbuf.from_string ?pos s)
-let _31_tag = Bi_io.array_tag
-let write_untagged__31 = (
+let _x_5640b64_tag = Bi_io.array_tag
+let write_untagged__x_5640b64 = (
   Atdgen_runtime.Ob_run.write_untagged_list
     Bi_io.string_tag
     (
       Bi_io.write_untagged_string
     )
 )
-let write__31 ob x =
+let write__x_5640b64 ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__31 ob x
-let string_of__31 ?(len = 1024) x =
+  write_untagged__x_5640b64 ob x
+let string_of__x_5640b64 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__31 ob x;
+  write__x_5640b64 ob x;
   Bi_outbuf.contents ob
-let get__31_reader = (
+let get__x_5640b64_reader = (
   Atdgen_runtime.Ob_run.get_list_reader (
     Atdgen_runtime.Ob_run.get_string_reader
   )
 )
-let read__31 = (
+let read__x_5640b64 = (
   Atdgen_runtime.Ob_run.read_list (
     Atdgen_runtime.Ob_run.get_string_reader
   )
 )
-let _31_of_string ?pos s =
-  read__31 (Bi_inbuf.from_string ?pos s)
+let _x_5640b64_of_string ?pos s =
+  read__x_5640b64 (Bi_inbuf.from_string ?pos s)
 let validate_me_tag = Bi_io.array_tag
 let write_untagged_validate_me = (
-  write_untagged__31
+  write_untagged__x_5640b64
 )
 let write_validate_me ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -781,10 +781,10 @@ let string_of_validate_me ?(len = 1024) x =
   write_validate_me ob x;
   Bi_outbuf.contents ob
 let get_validate_me_reader = (
-  get__31_reader
+  get__x_5640b64_reader
 )
 let read_validate_me = (
-  read__31
+  read__x_5640b64
 )
 let validate_me_of_string ?pos s =
   read_validate_me (Bi_inbuf.from_string ?pos s)
@@ -855,20 +855,20 @@ let read_val1 = (
 )
 let val1_of_string ?pos s =
   read_val1 (Bi_inbuf.from_string ?pos s)
-let _16_tag = Bi_io.num_variant_tag
-let write_untagged__16 = (
+let _val1_option_tag = Bi_io.num_variant_tag
+let write_untagged__val1_option = (
   Atdgen_runtime.Ob_run.write_untagged_option (
     write_val1
   )
 )
-let write__16 ob x =
+let write__val1_option ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__16 ob x
-let string_of__16 ?(len = 1024) x =
+  write_untagged__val1_option ob x
+let string_of__val1_option ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__16 ob x;
+  write__val1_option ob x;
   Bi_outbuf.contents ob
-let get__16_reader = (
+let get__val1_option_reader = (
   fun tag ->
     if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
@@ -883,7 +883,7 @@ let get__16_reader = (
             )
           | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let read__16 = (
+let read__val1_option = (
   fun ib ->
     if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
     match Char.code (Bi_inbuf.read_char ib) with
@@ -897,8 +897,8 @@ let read__16 = (
         )
       | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let _16_of_string ?pos s =
-  read__16 (Bi_inbuf.from_string ?pos s)
+let _val1_option_of_string ?pos s =
+  read__val1_option (Bi_inbuf.from_string ?pos s)
 let val2_tag = Bi_io.record_tag
 let write_untagged_val2 : Bi_outbuf.t -> val2 -> unit = (
   fun ob x ->
@@ -995,36 +995,36 @@ let read_val2 = (
 )
 let val2_of_string ?pos s =
   read_val2 (Bi_inbuf.from_string ?pos s)
-let _29_tag = Bi_io.array_tag
-let write_untagged__29 = (
+let _x_6089809_tag = Bi_io.array_tag
+let write_untagged__x_6089809 = (
   Atdgen_runtime.Ob_run.write_untagged_list
     Bi_io.float64_tag
     (
       Bi_io.write_untagged_float64
     )
 )
-let write__29 ob x =
+let write__x_6089809 ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__29 ob x
-let string_of__29 ?(len = 1024) x =
+  write_untagged__x_6089809 ob x
+let string_of__x_6089809 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__29 ob x;
+  write__x_6089809 ob x;
   Bi_outbuf.contents ob
-let get__29_reader = (
+let get__x_6089809_reader = (
   Atdgen_runtime.Ob_run.get_list_reader (
     Atdgen_runtime.Ob_run.get_float64_reader
   )
 )
-let read__29 = (
+let read__x_6089809 = (
   Atdgen_runtime.Ob_run.read_list (
     Atdgen_runtime.Ob_run.get_float64_reader
   )
 )
-let _29_of_string ?pos s =
-  read__29 (Bi_inbuf.from_string ?pos s)
+let _x_6089809_of_string ?pos s =
+  read__x_6089809 (Bi_inbuf.from_string ?pos s)
 let unixtime_list_tag = Bi_io.array_tag
 let write_untagged_unixtime_list = (
-  write_untagged__29
+  write_untagged__x_6089809
 )
 let write_unixtime_list ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -1034,27 +1034,27 @@ let string_of_unixtime_list ?(len = 1024) x =
   write_unixtime_list ob x;
   Bi_outbuf.contents ob
 let get_unixtime_list_reader = (
-  get__29_reader
+  get__x_6089809_reader
 )
 let read_unixtime_list = (
-  read__29
+  read__x_6089809
 )
 let unixtime_list_of_string ?pos s =
   read_unixtime_list (Bi_inbuf.from_string ?pos s)
-let _3_tag = Bi_io.num_variant_tag
-let write_untagged__3 = (
+let _int_nullable_tag = Bi_io.num_variant_tag
+let write_untagged__int_nullable = (
   Atdgen_runtime.Ob_run.write_untagged_option (
     Bi_io.write_svint
   )
 )
-let write__3 ob x =
+let write__int_nullable ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__3 ob x
-let string_of__3 ?(len = 1024) x =
+  write_untagged__int_nullable ob x
+let string_of__int_nullable ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__3 ob x;
+  write__int_nullable ob x;
   Bi_outbuf.contents ob
-let get__3_reader = (
+let get__int_nullable_reader = (
   fun tag ->
     if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
@@ -1069,7 +1069,7 @@ let get__3_reader = (
             )
           | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let read__3 = (
+let read__int_nullable = (
   fun ib ->
     if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
     match Char.code (Bi_inbuf.read_char ib) with
@@ -1083,8 +1083,8 @@ let read__3 = (
         )
       | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let _3_of_string ?pos s =
-  read__3 (Bi_inbuf.from_string ?pos s)
+let _int_nullable_of_string ?pos s =
+  read__int_nullable (Bi_inbuf.from_string ?pos s)
 let date_tag = Bi_io.tuple_tag
 let write_untagged_date = (
   fun ob x ->
@@ -1096,12 +1096,12 @@ let write_untagged_date = (
     );
     (
       let _, x, _ = x in (
-        write__3
+        write__int_nullable
       ) ob x
     );
     (
       let _, _, x = x in (
-        write__3
+        write__int_nullable
       ) ob x
     );
 )
@@ -1125,12 +1125,12 @@ let get_date_reader = (
         in
         let x1 =
           (
-            read__3
+            read__int_nullable
           ) ib
         in
         let x2 =
           (
-            read__3
+            read__int_nullable
           ) ib
         in
         for i = 3 to len - 1 do Bi_io.skip ib done;
@@ -1148,12 +1148,12 @@ let read_date = (
     in
     let x1 =
       (
-        read__3
+        read__int_nullable
       ) ib
     in
     let x2 =
       (
-        read__3
+        read__int_nullable
       ) ib
     in
     for i = 3 to len - 1 do Bi_io.skip ib done;
@@ -1161,118 +1161,101 @@ let read_date = (
 )
 let date_of_string ?pos s =
   read_date (Bi_inbuf.from_string ?pos s)
-let _9_tag = Bi_io.array_tag
-let write_untagged__9 = (
-  Atdgen_runtime.Ob_run.write_untagged_array
-    Bi_io.string_tag
-    (
-      Bi_io.write_untagged_string
-    )
-)
-let write__9 ob x =
-  Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__9 ob x
-let string_of__9 ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write__9 ob x;
-  Bi_outbuf.contents ob
-let get__9_reader = (
-  Atdgen_runtime.Ob_run.get_array_reader (
-    Atdgen_runtime.Ob_run.get_string_reader
-  )
-)
-let read__9 = (
-  Atdgen_runtime.Ob_run.read_array (
-    Atdgen_runtime.Ob_run.get_string_reader
-  )
-)
-let _9_of_string ?pos s =
-  read__9 (Bi_inbuf.from_string ?pos s)
-let _8_tag = Bi_io.num_variant_tag
-let write_untagged__8 = (
-  Atdgen_runtime.Ob_run.write_untagged_option (
-    Bi_io.write_bool
-  )
-)
-let write__8 ob x =
-  Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__8 ob x
-let string_of__8 ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write__8 ob x;
-  Bi_outbuf.contents ob
-let get__8_reader = (
-  fun tag ->
-    if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
-      fun ib ->
-        match Char.code (Bi_inbuf.read_char ib) with
-          | 0 -> None
-          | 0x80 ->
-            Some (
-              (
-                Atdgen_runtime.Ob_run.read_bool
-              )
-                ib
-            )
-          | _ -> Atdgen_runtime.Ob_run.read_error_at ib
-)
-let read__8 = (
-  fun ib ->
-    if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
-    match Char.code (Bi_inbuf.read_char ib) with
-      | 0 -> None
-      | 0x80 ->
-        Some (
-          (
-            Atdgen_runtime.Ob_run.read_bool
-          )
-            ib
-        )
-      | _ -> Atdgen_runtime.Ob_run.read_error_at ib
-)
-let _8_of_string ?pos s =
-  read__8 (Bi_inbuf.from_string ?pos s)
-let _7_tag = Bi_io.array_tag
-let write_untagged__7 = (
+let _x_adbef7e_tag = Bi_io.array_tag
+let write_untagged__x_adbef7e = (
   Atdgen_runtime.Ob_run.write_untagged_array
     Bi_io.float64_tag
     (
       Bi_io.write_untagged_float64
     )
 )
-let write__7 ob x =
+let write__x_adbef7e ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__7 ob x
-let string_of__7 ?(len = 1024) x =
+  write_untagged__x_adbef7e ob x
+let string_of__x_adbef7e ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__7 ob x;
+  write__x_adbef7e ob x;
   Bi_outbuf.contents ob
-let get__7_reader = (
+let get__x_adbef7e_reader = (
   Atdgen_runtime.Ob_run.get_array_reader (
     Atdgen_runtime.Ob_run.get_float64_reader
   )
 )
-let read__7 = (
+let read__x_adbef7e = (
   Atdgen_runtime.Ob_run.read_array (
     Atdgen_runtime.Ob_run.get_float64_reader
   )
 )
-let _7_of_string ?pos s =
-  read__7 (Bi_inbuf.from_string ?pos s)
-let _6_tag = Bi_io.num_variant_tag
-let write_untagged__6 = (
+let _x_adbef7e_of_string ?pos s =
+  read__x_adbef7e (Bi_inbuf.from_string ?pos s)
+let _x_20d39e2_tag = Bi_io.array_tag
+let write_untagged__x_20d39e2 = (
+  Atdgen_runtime.Ob_run.write_untagged_array
+    Bi_io.string_tag
+    (
+      Bi_io.write_untagged_string
+    )
+)
+let write__x_20d39e2 ob x =
+  Bi_io.write_tag ob Bi_io.array_tag;
+  write_untagged__x_20d39e2 ob x
+let string_of__x_20d39e2 ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__x_20d39e2 ob x;
+  Bi_outbuf.contents ob
+let get__x_20d39e2_reader = (
+  Atdgen_runtime.Ob_run.get_array_reader (
+    Atdgen_runtime.Ob_run.get_string_reader
+  )
+)
+let read__x_20d39e2 = (
+  Atdgen_runtime.Ob_run.read_array (
+    Atdgen_runtime.Ob_run.get_string_reader
+  )
+)
+let _x_20d39e2_of_string ?pos s =
+  read__x_20d39e2 (Bi_inbuf.from_string ?pos s)
+let _unit_list_tag = Bi_io.array_tag
+let write_untagged__unit_list = (
+  Atdgen_runtime.Ob_run.write_untagged_list
+    Bi_io.unit_tag
+    (
+      Bi_io.write_untagged_unit
+    )
+)
+let write__unit_list ob x =
+  Bi_io.write_tag ob Bi_io.array_tag;
+  write_untagged__unit_list ob x
+let string_of__unit_list ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__unit_list ob x;
+  Bi_outbuf.contents ob
+let get__unit_list_reader = (
+  Atdgen_runtime.Ob_run.get_list_reader (
+    Atdgen_runtime.Ob_run.get_unit_reader
+  )
+)
+let read__unit_list = (
+  Atdgen_runtime.Ob_run.read_list (
+    Atdgen_runtime.Ob_run.get_unit_reader
+  )
+)
+let _unit_list_of_string ?pos s =
+  read__unit_list (Bi_inbuf.from_string ?pos s)
+let _string_option_tag = Bi_io.num_variant_tag
+let write_untagged__string_option = (
   Atdgen_runtime.Ob_run.write_untagged_option (
     Bi_io.write_string
   )
 )
-let write__6 ob x =
+let write__string_option ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__6 ob x
-let string_of__6 ?(len = 1024) x =
+  write_untagged__string_option ob x
+let string_of__string_option ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__6 ob x;
+  write__string_option ob x;
   Bi_outbuf.contents ob
-let get__6_reader = (
+let get__string_option_reader = (
   fun tag ->
     if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
@@ -1287,7 +1270,7 @@ let get__6_reader = (
             )
           | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let read__6 = (
+let read__string_option = (
   fun ib ->
     if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
     match Char.code (Bi_inbuf.read_char ib) with
@@ -1301,66 +1284,49 @@ let read__6 = (
         )
       | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let _6_of_string ?pos s =
-  read__6 (Bi_inbuf.from_string ?pos s)
-let _5_tag = Bi_io.num_variant_tag
-let write_untagged__5 = (
-  Atdgen_runtime.Ob_run.write_untagged_option (
-    Bi_io.write_float64
+let _string_option_of_string ?pos s =
+  read__string_option (Bi_inbuf.from_string ?pos s)
+let _string_option_list_tag = Bi_io.array_tag
+let write_untagged__string_option_list = (
+  Atdgen_runtime.Ob_run.write_untagged_list
+    _string_option_tag
+    (
+      write_untagged__string_option
+    )
+)
+let write__string_option_list ob x =
+  Bi_io.write_tag ob Bi_io.array_tag;
+  write_untagged__string_option_list ob x
+let string_of__string_option_list ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__string_option_list ob x;
+  Bi_outbuf.contents ob
+let get__string_option_list_reader = (
+  Atdgen_runtime.Ob_run.get_list_reader (
+    get__string_option_reader
   )
 )
-let write__5 ob x =
-  Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__5 ob x
-let string_of__5 ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write__5 ob x;
-  Bi_outbuf.contents ob
-let get__5_reader = (
-  fun tag ->
-    if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
-      fun ib ->
-        match Char.code (Bi_inbuf.read_char ib) with
-          | 0 -> None
-          | 0x80 ->
-            Some (
-              (
-                Atdgen_runtime.Ob_run.read_float64
-              )
-                ib
-            )
-          | _ -> Atdgen_runtime.Ob_run.read_error_at ib
+let read__string_option_list = (
+  Atdgen_runtime.Ob_run.read_list (
+    get__string_option_reader
+  )
 )
-let read__5 = (
-  fun ib ->
-    if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
-    match Char.code (Bi_inbuf.read_char ib) with
-      | 0 -> None
-      | 0x80 ->
-        Some (
-          (
-            Atdgen_runtime.Ob_run.read_float64
-          )
-            ib
-        )
-      | _ -> Atdgen_runtime.Ob_run.read_error_at ib
-)
-let _5_of_string ?pos s =
-  read__5 (Bi_inbuf.from_string ?pos s)
-let _4_tag = Bi_io.num_variant_tag
-let write_untagged__4 = (
+let _string_option_list_of_string ?pos s =
+  read__string_option_list (Bi_inbuf.from_string ?pos s)
+let _int_option_tag = Bi_io.num_variant_tag
+let write_untagged__int_option = (
   Atdgen_runtime.Ob_run.write_untagged_option (
     Bi_io.write_svint
   )
 )
-let write__4 ob x =
+let write__int_option ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__4 ob x
-let string_of__4 ?(len = 1024) x =
+  write_untagged__int_option ob x
+let string_of__int_option ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__4 ob x;
+  write__int_option ob x;
   Bi_outbuf.contents ob
-let get__4_reader = (
+let get__int_option_reader = (
   fun tag ->
     if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
@@ -1375,7 +1341,7 @@ let get__4_reader = (
             )
           | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let read__4 = (
+let read__int_option = (
   fun ib ->
     if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
     match Char.code (Bi_inbuf.read_char ib) with
@@ -1389,62 +1355,96 @@ let read__4 = (
         )
       | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let _4_of_string ?pos s =
-  read__4 (Bi_inbuf.from_string ?pos s)
-let _11_tag = Bi_io.array_tag
-let write_untagged__11 = (
-  Atdgen_runtime.Ob_run.write_untagged_list
-    _6_tag
-    (
-      write_untagged__6
-    )
+let _int_option_of_string ?pos s =
+  read__int_option (Bi_inbuf.from_string ?pos s)
+let _float_option_tag = Bi_io.num_variant_tag
+let write_untagged__float_option = (
+  Atdgen_runtime.Ob_run.write_untagged_option (
+    Bi_io.write_float64
+  )
 )
-let write__11 ob x =
-  Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__11 ob x
-let string_of__11 ?(len = 1024) x =
+let write__float_option ob x =
+  Bi_io.write_tag ob Bi_io.num_variant_tag;
+  write_untagged__float_option ob x
+let string_of__float_option ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__11 ob x;
+  write__float_option ob x;
   Bi_outbuf.contents ob
-let get__11_reader = (
-  Atdgen_runtime.Ob_run.get_list_reader (
-    get__6_reader
+let get__float_option_reader = (
+  fun tag ->
+    if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
+      fun ib ->
+        match Char.code (Bi_inbuf.read_char ib) with
+          | 0 -> None
+          | 0x80 ->
+            Some (
+              (
+                Atdgen_runtime.Ob_run.read_float64
+              )
+                ib
+            )
+          | _ -> Atdgen_runtime.Ob_run.read_error_at ib
+)
+let read__float_option = (
+  fun ib ->
+    if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
+    match Char.code (Bi_inbuf.read_char ib) with
+      | 0 -> None
+      | 0x80 ->
+        Some (
+          (
+            Atdgen_runtime.Ob_run.read_float64
+          )
+            ib
+        )
+      | _ -> Atdgen_runtime.Ob_run.read_error_at ib
+)
+let _float_option_of_string ?pos s =
+  read__float_option (Bi_inbuf.from_string ?pos s)
+let _bool_option_tag = Bi_io.num_variant_tag
+let write_untagged__bool_option = (
+  Atdgen_runtime.Ob_run.write_untagged_option (
+    Bi_io.write_bool
   )
 )
-let read__11 = (
-  Atdgen_runtime.Ob_run.read_list (
-    get__6_reader
-  )
-)
-let _11_of_string ?pos s =
-  read__11 (Bi_inbuf.from_string ?pos s)
-let _10_tag = Bi_io.array_tag
-let write_untagged__10 = (
-  Atdgen_runtime.Ob_run.write_untagged_list
-    Bi_io.unit_tag
-    (
-      Bi_io.write_untagged_unit
-    )
-)
-let write__10 ob x =
-  Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__10 ob x
-let string_of__10 ?(len = 1024) x =
+let write__bool_option ob x =
+  Bi_io.write_tag ob Bi_io.num_variant_tag;
+  write_untagged__bool_option ob x
+let string_of__bool_option ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__10 ob x;
+  write__bool_option ob x;
   Bi_outbuf.contents ob
-let get__10_reader = (
-  Atdgen_runtime.Ob_run.get_list_reader (
-    Atdgen_runtime.Ob_run.get_unit_reader
-  )
+let get__bool_option_reader = (
+  fun tag ->
+    if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
+      fun ib ->
+        match Char.code (Bi_inbuf.read_char ib) with
+          | 0 -> None
+          | 0x80 ->
+            Some (
+              (
+                Atdgen_runtime.Ob_run.read_bool
+              )
+                ib
+            )
+          | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let read__10 = (
-  Atdgen_runtime.Ob_run.read_list (
-    Atdgen_runtime.Ob_run.get_unit_reader
-  )
+let read__bool_option = (
+  fun ib ->
+    if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
+    match Char.code (Bi_inbuf.read_char ib) with
+      | 0 -> None
+      | 0x80 ->
+        Some (
+          (
+            Atdgen_runtime.Ob_run.read_bool
+          )
+            ib
+        )
+      | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let _10_of_string ?pos s =
-  read__10 (Bi_inbuf.from_string ?pos s)
+let _bool_option_of_string ?pos s =
+  read__bool_option (Bi_inbuf.from_string ?pos s)
 let mixed_record_tag = Bi_io.record_tag
 let write_untagged_mixed_record : Bi_outbuf.t -> mixed_record -> unit = (
   fun ob x ->
@@ -1474,7 +1474,7 @@ let write_untagged_mixed_record : Bi_outbuf.t -> mixed_record -> unit = (
     );
     Bi_outbuf.add_char4 ob '\128' '\142' '\142' '8';
     (
-      write__6
+      write__string_option
     ) ob x.field2;
     Bi_outbuf.add_char4 ob '\128' '\142' '\142' '9';
     (
@@ -1482,7 +1482,7 @@ let write_untagged_mixed_record : Bi_outbuf.t -> mixed_record -> unit = (
     ) ob x.field3;
     Bi_outbuf.add_char4 ob '\128' '\142' '\142' ':';
     (
-      write__7
+      write__x_adbef7e
     ) ob x.field4;
     (match x_field5 with None -> () | Some x ->
       Bi_outbuf.add_char4 ob '\128' '\142' '\142' ';';
@@ -1502,7 +1502,7 @@ let write_untagged_mixed_record : Bi_outbuf.t -> mixed_record -> unit = (
     ) ob x.field7;
     Bi_outbuf.add_char4 ob '\128' '\142' '\142' '>';
     (
-      write__9
+      write__x_20d39e2
     ) ob x.field8;
     Bi_outbuf.add_char4 ob '\128' '\142' '\142' '?';
     (
@@ -1552,11 +1552,11 @@ let write_untagged_mixed_record : Bi_outbuf.t -> mixed_record -> unit = (
     );
     Bi_outbuf.add_char4 ob '\252' '-' '\226' '\027';
     (
-      write__10
+      write__unit_list
     ) ob x.field12;
     Bi_outbuf.add_char4 ob '\252' '-' '\226' '\028';
     (
-      write__11
+      write__string_option_list
     ) ob x.field13;
     Bi_outbuf.add_char4 ob '\252' '-' '\226' '\029';
     (
@@ -1612,7 +1612,7 @@ let get_mixed_record_reader = (
             | 9342520 ->
               field_field2 := (
                 (
-                  read__6
+                  read__string_option
                 ) ib
               );
               bits0 := !bits0 lor 0x1;
@@ -1626,7 +1626,7 @@ let get_mixed_record_reader = (
             | 9342522 ->
               field_field4 := (
                 (
-                  read__7
+                  read__x_adbef7e
                 ) ib
               );
               bits0 := !bits0 lor 0x4;
@@ -1656,7 +1656,7 @@ let get_mixed_record_reader = (
             | 9342526 ->
               field_field8 := (
                 (
-                  read__9
+                  read__x_20d39e2
                 ) ib
               );
               bits0 := !bits0 lor 0x10;
@@ -1718,14 +1718,14 @@ let get_mixed_record_reader = (
             | -64101861 ->
               field_field12 := (
                 (
-                  read__10
+                  read__unit_list
                 ) ib
               );
               bits0 := !bits0 lor 0x80;
             | -64101860 ->
               field_field13 := (
                 (
-                  read__11
+                  read__string_option_list
                 ) ib
               );
               bits0 := !bits0 lor 0x100;
@@ -1800,7 +1800,7 @@ let read_mixed_record = (
         | 9342520 ->
           field_field2 := (
             (
-              read__6
+              read__string_option
             ) ib
           );
           bits0 := !bits0 lor 0x1;
@@ -1814,7 +1814,7 @@ let read_mixed_record = (
         | 9342522 ->
           field_field4 := (
             (
-              read__7
+              read__x_adbef7e
             ) ib
           );
           bits0 := !bits0 lor 0x4;
@@ -1844,7 +1844,7 @@ let read_mixed_record = (
         | 9342526 ->
           field_field8 := (
             (
-              read__9
+              read__x_20d39e2
             ) ib
           );
           bits0 := !bits0 lor 0x10;
@@ -1906,14 +1906,14 @@ let read_mixed_record = (
         | -64101861 ->
           field_field12 := (
             (
-              read__10
+              read__unit_list
             ) ib
           );
           bits0 := !bits0 lor 0x80;
         | -64101860 ->
           field_field13 := (
             (
-              read__11
+              read__string_option_list
             ) ib
           );
           bits0 := !bits0 lor 0x100;
@@ -1949,58 +1949,31 @@ let read_mixed_record = (
 )
 let mixed_record_of_string ?pos s =
   read_mixed_record (Bi_inbuf.from_string ?pos s)
-let _13_tag = Bi_io.array_tag
-let write_untagged__13 = (
-  Atdgen_runtime.Ob_run.write_untagged_array
-    mixed_record_tag
-    (
-      write_untagged_mixed_record
-    )
-)
-let write__13 ob x =
-  Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__13 ob x
-let string_of__13 ?(len = 1024) x =
-  let ob = Bi_outbuf.create len in
-  write__13 ob x;
-  Bi_outbuf.contents ob
-let get__13_reader = (
-  Atdgen_runtime.Ob_run.get_array_reader (
-    get_mixed_record_reader
-  )
-)
-let read__13 = (
-  Atdgen_runtime.Ob_run.read_array (
-    get_mixed_record_reader
-  )
-)
-let _13_of_string ?pos s =
-  read__13 (Bi_inbuf.from_string ?pos s)
-let _12_tag = Bi_io.table_tag
-let write_untagged__12 = (
+let _x_d88f1c8_tag = Bi_io.table_tag
+let write_untagged__x_d88f1c8 = (
   fun ob x ->
     let len = Array.length x in
     Bi_vint.write_uvint ob len;
     if len > 0 then (
       Bi_vint.write_uvint ob 15;
       Bi_io.write_hashtag ob (9342518) true;
-      Bi_io.write_tag ob _4_tag;
+      Bi_io.write_tag ob _int_option_tag;
       Bi_io.write_hashtag ob (9342519) true;
-      Bi_io.write_tag ob _5_tag;
+      Bi_io.write_tag ob _float_option_tag;
       Bi_io.write_hashtag ob (9342520) true;
-      Bi_io.write_tag ob _6_tag;
+      Bi_io.write_tag ob _string_option_tag;
       Bi_io.write_hashtag ob (9342521) true;
       Bi_io.write_tag ob Bi_io.int64_tag;
       Bi_io.write_hashtag ob (9342522) true;
-      Bi_io.write_tag ob _7_tag;
+      Bi_io.write_tag ob _x_adbef7e_tag;
       Bi_io.write_hashtag ob (9342523) true;
-      Bi_io.write_tag ob _8_tag;
+      Bi_io.write_tag ob _bool_option_tag;
       Bi_io.write_hashtag ob (9342524) true;
-      Bi_io.write_tag ob _6_tag;
+      Bi_io.write_tag ob _string_option_tag;
       Bi_io.write_hashtag ob (9342525) true;
       Bi_io.write_tag ob test_variant_tag;
       Bi_io.write_hashtag ob (9342526) true;
-      Bi_io.write_tag ob _9_tag;
+      Bi_io.write_tag ob _x_20d39e2_tag;
       Bi_io.write_hashtag ob (9342527) true;
       Bi_io.write_tag ob Bi_io.tuple_tag;
       Bi_io.write_hashtag ob (-64101863) true;
@@ -2008,22 +1981,22 @@ let write_untagged__12 = (
       Bi_io.write_hashtag ob (-64101862) true;
       Bi_io.write_tag ob Bi_io.bool_tag;
       Bi_io.write_hashtag ob (-64101861) true;
-      Bi_io.write_tag ob _10_tag;
+      Bi_io.write_tag ob _unit_list_tag;
       Bi_io.write_hashtag ob (-64101860) true;
-      Bi_io.write_tag ob _11_tag;
+      Bi_io.write_tag ob _string_option_list_tag;
       Bi_io.write_hashtag ob (-64101859) true;
       Bi_io.write_tag ob date_tag;
       Atdgen_runtime.Ob_run.array_iter2 (fun ob x ->
         (
-          write_untagged__4
+          write_untagged__int_option
         )
           ob x.field0;
         (
-          write_untagged__5
+          write_untagged__float_option
         )
           ob x.field1;
         (
-          write_untagged__6
+          write_untagged__string_option
         )
           ob x.field2;
         (
@@ -2031,15 +2004,15 @@ let write_untagged__12 = (
         )
           ob x.field3;
         (
-          write_untagged__7
+          write_untagged__x_adbef7e
         )
           ob x.field4;
         (
-          write_untagged__8
+          write_untagged__bool_option
         )
           ob x.field5;
         (
-          write_untagged__6
+          write_untagged__string_option
         )
           ob x.field6;
         (
@@ -2047,7 +2020,7 @@ let write_untagged__12 = (
         )
           ob x.field7;
         (
-          write_untagged__9
+          write_untagged__x_20d39e2
         )
           ob x.field8;
         (
@@ -2094,11 +2067,11 @@ let write_untagged__12 = (
         )
           ob x.field11;
         (
-          write_untagged__10
+          write_untagged__unit_list
         )
           ob x.field12;
         (
-          write_untagged__11
+          write_untagged__string_option_list
         )
           ob x.field13;
         (
@@ -2108,14 +2081,14 @@ let write_untagged__12 = (
       ) ob x;
     );
 )
-let write__12 ob x =
+let write__x_d88f1c8 ob x =
   Bi_io.write_tag ob Bi_io.table_tag;
-  write_untagged__12 ob x
-let string_of__12 ?(len = 1024) x =
+  write_untagged__x_d88f1c8 ob x
+let string_of__x_d88f1c8 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__12 ob x;
+  write__x_d88f1c8 ob x;
   Bi_outbuf.contents ob
-let get__12_reader = (
+let get__x_d88f1c8_reader = (
   function
     | 25 -> 
       (fun ib ->
@@ -2148,7 +2121,7 @@ let get__12_reader = (
                   | 9342518 ->
                     let read =
                       (
-                        get__4_reader
+                        get__int_option_reader
                       )
                         tag
                     in
@@ -2156,7 +2129,7 @@ let get__12_reader = (
                   | 9342519 ->
                     let read =
                       (
-                        get__5_reader
+                        get__float_option_reader
                       )
                         tag
                     in
@@ -2165,7 +2138,7 @@ let get__12_reader = (
                     bits0 := !bits0 lor 0x1;
                     let read =
                       (
-                        get__6_reader
+                        get__string_option_reader
                       )
                         tag
                     in
@@ -2183,7 +2156,7 @@ let get__12_reader = (
                     bits0 := !bits0 lor 0x4;
                     let read =
                       (
-                        get__7_reader
+                        get__x_adbef7e_reader
                       )
                         tag
                     in
@@ -2191,7 +2164,7 @@ let get__12_reader = (
                   | 9342523 ->
                     let read =
                       (
-                        get__8_reader
+                        get__bool_option_reader
                       )
                         tag
                     in
@@ -2199,7 +2172,7 @@ let get__12_reader = (
                   | 9342524 ->
                     let read =
                       (
-                        get__6_reader
+                        get__string_option_reader
                       )
                         tag
                     in
@@ -2217,7 +2190,7 @@ let get__12_reader = (
                     bits0 := !bits0 lor 0x10;
                     let read =
                       (
-                        get__9_reader
+                        get__x_20d39e2_reader
                       )
                         tag
                     in
@@ -2288,7 +2261,7 @@ let get__12_reader = (
                     bits0 := !bits0 lor 0x80;
                     let read =
                       (
-                        get__10_reader
+                        get__unit_list_reader
                       )
                         tag
                     in
@@ -2297,7 +2270,7 @@ let get__12_reader = (
                     bits0 := !bits0 lor 0x100;
                     let read =
                       (
-                        get__11_reader
+                        get__string_option_list_reader
                       )
                         tag
                     in
@@ -2349,7 +2322,7 @@ let get__12_reader = (
       )
     | _ -> Atdgen_runtime.Ob_run.read_error ()
 )
-let read__12 = (
+let read__x_d88f1c8 = (
   fun ib ->
     match Bi_io.read_tag ib with
       | 25 -> 
@@ -2382,7 +2355,7 @@ let read__12 = (
                   | 9342518 ->
                     let read =
                       (
-                        get__4_reader
+                        get__int_option_reader
                       )
                         tag
                     in
@@ -2390,7 +2363,7 @@ let read__12 = (
                   | 9342519 ->
                     let read =
                       (
-                        get__5_reader
+                        get__float_option_reader
                       )
                         tag
                     in
@@ -2399,7 +2372,7 @@ let read__12 = (
                     bits0 := !bits0 lor 0x1;
                     let read =
                       (
-                        get__6_reader
+                        get__string_option_reader
                       )
                         tag
                     in
@@ -2417,7 +2390,7 @@ let read__12 = (
                     bits0 := !bits0 lor 0x4;
                     let read =
                       (
-                        get__7_reader
+                        get__x_adbef7e_reader
                       )
                         tag
                     in
@@ -2425,7 +2398,7 @@ let read__12 = (
                   | 9342523 ->
                     let read =
                       (
-                        get__8_reader
+                        get__bool_option_reader
                       )
                         tag
                     in
@@ -2433,7 +2406,7 @@ let read__12 = (
                   | 9342524 ->
                     let read =
                       (
-                        get__6_reader
+                        get__string_option_reader
                       )
                         tag
                     in
@@ -2451,7 +2424,7 @@ let read__12 = (
                     bits0 := !bits0 lor 0x10;
                     let read =
                       (
-                        get__9_reader
+                        get__x_20d39e2_reader
                       )
                         tag
                     in
@@ -2522,7 +2495,7 @@ let read__12 = (
                     bits0 := !bits0 lor 0x80;
                     let read =
                       (
-                        get__10_reader
+                        get__unit_list_reader
                       )
                         tag
                     in
@@ -2531,7 +2504,7 @@ let read__12 = (
                     bits0 := !bits0 lor 0x100;
                     let read =
                       (
-                        get__11_reader
+                        get__string_option_list_reader
                       )
                         tag
                     in
@@ -2580,10 +2553,37 @@ let read__12 = (
         ) ib
       | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let _12_of_string ?pos s =
-  read__12 (Bi_inbuf.from_string ?pos s)
-let _14_tag = Bi_io.array_tag
-let write_untagged__14 = (
+let _x_d88f1c8_of_string ?pos s =
+  read__x_d88f1c8 (Bi_inbuf.from_string ?pos s)
+let _x_7de077c_tag = Bi_io.array_tag
+let write_untagged__x_7de077c = (
+  Atdgen_runtime.Ob_run.write_untagged_array
+    mixed_record_tag
+    (
+      write_untagged_mixed_record
+    )
+)
+let write__x_7de077c ob x =
+  Bi_io.write_tag ob Bi_io.array_tag;
+  write_untagged__x_7de077c ob x
+let string_of__x_7de077c ?(len = 1024) x =
+  let ob = Bi_outbuf.create len in
+  write__x_7de077c ob x;
+  Bi_outbuf.contents ob
+let get__x_7de077c_reader = (
+  Atdgen_runtime.Ob_run.get_array_reader (
+    get_mixed_record_reader
+  )
+)
+let read__x_7de077c = (
+  Atdgen_runtime.Ob_run.read_array (
+    get_mixed_record_reader
+  )
+)
+let _x_7de077c_of_string ?pos s =
+  read__x_7de077c (Bi_inbuf.from_string ?pos s)
+let _x_c393fa9_tag = Bi_io.array_tag
+let write_untagged__x_c393fa9 = (
   Atdgen_runtime.Ob_run.write_untagged_list
     Bi_io.tuple_tag
     (
@@ -2591,24 +2591,24 @@ let write_untagged__14 = (
         Bi_vint.write_uvint ob 2;
         (
           let x, _ = x in (
-            write__12
+            write__x_d88f1c8
           ) ob x
         );
         (
           let _, x = x in (
-            write__13
+            write__x_7de077c
           ) ob x
         );
     )
 )
-let write__14 ob x =
+let write__x_c393fa9 ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__14 ob x
-let string_of__14 ?(len = 1024) x =
+  write_untagged__x_c393fa9 ob x
+let string_of__x_c393fa9 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__14 ob x;
+  write__x_c393fa9 ob x;
   Bi_outbuf.contents ob
-let get__14_reader = (
+let get__x_c393fa9_reader = (
   Atdgen_runtime.Ob_run.get_list_reader (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -2617,19 +2617,19 @@ let get__14_reader = (
           if len < 2 then Atdgen_runtime.Ob_run.missing_tuple_fields len [ 0; 1 ];
           let x0 =
             (
-              read__12
+              read__x_d88f1c8
             ) ib
           in
           let x1 =
             (
-              read__13
+              read__x_7de077c
             ) ib
           in
           for i = 2 to len - 1 do Bi_io.skip ib done;
           (x0, x1)
   )
 )
-let read__14 = (
+let read__x_c393fa9 = (
   Atdgen_runtime.Ob_run.read_list (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -2638,23 +2638,23 @@ let read__14 = (
           if len < 2 then Atdgen_runtime.Ob_run.missing_tuple_fields len [ 0; 1 ];
           let x0 =
             (
-              read__12
+              read__x_d88f1c8
             ) ib
           in
           let x1 =
             (
-              read__13
+              read__x_7de077c
             ) ib
           in
           for i = 2 to len - 1 do Bi_io.skip ib done;
           (x0, x1)
   )
 )
-let _14_of_string ?pos s =
-  read__14 (Bi_inbuf.from_string ?pos s)
+let _x_c393fa9_of_string ?pos s =
+  read__x_c393fa9 (Bi_inbuf.from_string ?pos s)
 let mixed_tag = Bi_io.array_tag
 let write_untagged_mixed = (
-  write_untagged__14
+  write_untagged__x_c393fa9
 )
 let write_mixed ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -2664,40 +2664,40 @@ let string_of_mixed ?(len = 1024) x =
   write_mixed ob x;
   Bi_outbuf.contents ob
 let get_mixed_reader = (
-  get__14_reader
+  get__x_c393fa9_reader
 )
 let read_mixed = (
-  read__14
+  read__x_c393fa9
 )
 let mixed_of_string ?pos s =
   read_mixed (Bi_inbuf.from_string ?pos s)
-let _15_tag = Bi_io.array_tag
-let write_untagged__15 = (
+let _mixed_record_list_tag = Bi_io.array_tag
+let write_untagged__mixed_record_list = (
   Atdgen_runtime.Ob_run.write_untagged_list
     mixed_record_tag
     (
       write_untagged_mixed_record
     )
 )
-let write__15 ob x =
+let write__mixed_record_list ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__15 ob x
-let string_of__15 ?(len = 1024) x =
+  write_untagged__mixed_record_list ob x
+let string_of__mixed_record_list ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__15 ob x;
+  write__mixed_record_list ob x;
   Bi_outbuf.contents ob
-let get__15_reader = (
+let get__mixed_record_list_reader = (
   Atdgen_runtime.Ob_run.get_list_reader (
     get_mixed_record_reader
   )
 )
-let read__15 = (
+let read__mixed_record_list = (
   Atdgen_runtime.Ob_run.read_list (
     get_mixed_record_reader
   )
 )
-let _15_of_string ?pos s =
-  read__15 (Bi_inbuf.from_string ?pos s)
+let _mixed_record_list_of_string ?pos s =
+  read__mixed_record_list (Bi_inbuf.from_string ?pos s)
 let test_tag = Bi_io.record_tag
 let write_untagged_test : Bi_outbuf.t -> test -> unit = (
   fun ob x ->
@@ -2725,7 +2725,7 @@ let write_untagged_test : Bi_outbuf.t -> test -> unit = (
     ) ob x.x2;
     Bi_outbuf.add_char4 ob '\128' '\000' 'h' '\187';
     (
-      write__15
+      write__mixed_record_list
     ) ob x.x3;
     Bi_outbuf.add_char4 ob '\128' '\000' 'h' '\188';
     (
@@ -2778,7 +2778,7 @@ let get_test_reader = (
             | 26811 ->
               field_x3 := (
                 (
-                  read__15
+                  read__mixed_record_list
                 ) ib
               );
               bits0 := !bits0 lor 0x2;
@@ -2840,7 +2840,7 @@ let read_test = (
         | 26811 ->
           field_x3 := (
             (
-              read__15
+              read__mixed_record_list
             ) ib
           );
           bits0 := !bits0 lor 0x2;
@@ -3035,8 +3035,8 @@ let read_star_rating = (
 )
 let star_rating_of_string ?pos s =
   read_star_rating (Bi_inbuf.from_string ?pos s)
-let _30_tag = Bi_io.record_tag
-let write_untagged__30 : Bi_outbuf.t -> _ generic -> unit = (
+let _string_generic_tag = Bi_io.record_tag
+let write_untagged__string_generic : Bi_outbuf.t -> _ generic -> unit = (
   fun ob x ->
     Bi_vint.write_uvint ob 1;
     Bi_outbuf.add_char4 ob '\240' 'G' '\003' '\130';
@@ -3044,14 +3044,14 @@ let write_untagged__30 : Bi_outbuf.t -> _ generic -> unit = (
       Bi_io.write_svint
     ) ob x.x294623;
 )
-let write__30 ob x =
+let write__string_generic ob x =
   Bi_io.write_tag ob Bi_io.record_tag;
-  write_untagged__30 ob x
-let string_of__30 ?(len = 1024) x =
+  write_untagged__string_generic ob x
+let string_of__string_generic ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__30 ob x;
+  write__string_generic ob x;
   Bi_outbuf.contents ob
-let get__30_reader = (
+let get__string_generic_reader = (
   fun tag ->
     if tag <> 21 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
@@ -3076,7 +3076,7 @@ let get__30_reader = (
           }
          : _ generic)
 )
-let read__30 = (
+let read__string_generic = (
   fun ib ->
     if Bi_io.read_tag ib <> 21 then Atdgen_runtime.Ob_run.read_error_at ib;
     let field_x294623 = ref (Obj.magic (Sys.opaque_identity 0.0)) in
@@ -3100,11 +3100,11 @@ let read__30 = (
       }
      : _ generic)
 )
-let _30_of_string ?pos s =
-  read__30 (Bi_inbuf.from_string ?pos s)
+let _string_generic_of_string ?pos s =
+  read__string_generic (Bi_inbuf.from_string ?pos s)
 let specialized_tag = Bi_io.record_tag
 let write_untagged_specialized = (
-  write_untagged__30
+  write_untagged__string_generic
 )
 let write_specialized ob x =
   Bi_io.write_tag ob Bi_io.record_tag;
@@ -3114,10 +3114,10 @@ let string_of_specialized ?(len = 1024) x =
   write_specialized ob x;
   Bi_outbuf.contents ob
 let get_specialized_reader = (
-  get__30_reader
+  get__string_generic_reader
 )
 let read_specialized = (
-  read__30
+  read__string_generic
 )
 let specialized_of_string ?pos s =
   read_specialized (Bi_inbuf.from_string ?pos s)
@@ -3301,7 +3301,7 @@ let precision_of_string ?pos s =
   read_precision (Bi_inbuf.from_string ?pos s)
 let p''_tag = Bi_io.variant_tag
 let write_untagged_p'' = (
-  write_untagged__1
+  write_untagged__int_p
 )
 let write_p'' ob x =
   Bi_io.write_tag ob Bi_io.variant_tag;
@@ -3311,27 +3311,27 @@ let string_of_p'' ?(len = 1024) x =
   write_p'' ob x;
   Bi_outbuf.contents ob
 let get_p''_reader = (
-  get__1_reader
+  get__int_p_reader
 )
 let read_p'' = (
-  read__1
+  read__int_p
 )
 let p''_of_string ?pos s =
   read_p'' (Bi_inbuf.from_string ?pos s)
-let _18_tag = Bi_io.num_variant_tag
-let write_untagged__18 = (
+let _x_bee1b88_tag = Bi_io.num_variant_tag
+let write_untagged__x_bee1b88 = (
   Atdgen_runtime.Ob_run.write_untagged_option (
     Bi_io.write_svint
   )
 )
-let write__18 ob x =
+let write__x_bee1b88 ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
-  write_untagged__18 ob x
-let string_of__18 ?(len = 1024) x =
+  write_untagged__x_bee1b88 ob x
+let string_of__x_bee1b88 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__18 ob x;
+  write__x_bee1b88 ob x;
   Bi_outbuf.contents ob
-let get__18_reader = (
+let get__x_bee1b88_reader = (
   fun tag ->
     if tag <> 22 then Atdgen_runtime.Ob_run.read_error () else
       fun ib ->
@@ -3346,7 +3346,7 @@ let get__18_reader = (
             )
           | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let read__18 = (
+let read__x_bee1b88 = (
   fun ib ->
     if Bi_io.read_tag ib <> 22 then Atdgen_runtime.Ob_run.read_error_at ib;
     match Char.code (Bi_inbuf.read_char ib) with
@@ -3360,11 +3360,11 @@ let read__18 = (
         )
       | _ -> Atdgen_runtime.Ob_run.read_error_at ib
 )
-let _18_of_string ?pos s =
-  read__18 (Bi_inbuf.from_string ?pos s)
+let _x_bee1b88_of_string ?pos s =
+  read__x_bee1b88 (Bi_inbuf.from_string ?pos s)
 let option_validation_tag = Bi_io.num_variant_tag
 let write_untagged_option_validation = (
-  write_untagged__18
+  write_untagged__x_bee1b88
 )
 let write_option_validation ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
@@ -3374,35 +3374,35 @@ let string_of_option_validation ?(len = 1024) x =
   write_option_validation ob x;
   Bi_outbuf.contents ob
 let get_option_validation_reader = (
-  get__18_reader
+  get__x_bee1b88_reader
 )
 let read_option_validation = (
-  read__18
+  read__x_bee1b88
 )
 let option_validation_of_string ?pos s =
   read_option_validation (Bi_inbuf.from_string ?pos s)
-let _28_tag = some_record_tag
-let write_untagged__28 = (
+let _some_record_wrap_tag = some_record_tag
+let write_untagged__some_record_wrap = (
   write_untagged_some_record
 )
-let write__28 ob x =
+let write__some_record_wrap ob x =
   Bi_io.write_tag ob some_record_tag;
-  write_untagged__28 ob x
-let string_of__28 ?(len = 1024) x =
+  write_untagged__some_record_wrap ob x
+let string_of__some_record_wrap ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__28 ob x;
+  write__some_record_wrap ob x;
   Bi_outbuf.contents ob
-let get__28_reader = (
+let get__some_record_wrap_reader = (
   get_some_record_reader
 )
-let read__28 = (
+let read__some_record_wrap = (
   read_some_record
 )
-let _28_of_string ?pos s =
-  read__28 (Bi_inbuf.from_string ?pos s)
+let _some_record_wrap_of_string ?pos s =
+  read__some_record_wrap (Bi_inbuf.from_string ?pos s)
 let no_real_wrap_tag = some_record_tag
 let write_untagged_no_real_wrap = (
-  write_untagged__28
+  write_untagged__some_record_wrap
 )
 let write_no_real_wrap ob x =
   Bi_io.write_tag ob some_record_tag;
@@ -3412,44 +3412,44 @@ let string_of_no_real_wrap ?(len = 1024) x =
   write_no_real_wrap ob x;
   Bi_outbuf.contents ob
 let get_no_real_wrap_reader = (
-  get__28_reader
+  get__some_record_wrap_reader
 )
 let read_no_real_wrap = (
-  read__28
+  read__some_record_wrap
 )
 let no_real_wrap_of_string ?pos s =
   read_no_real_wrap (Bi_inbuf.from_string ?pos s)
-let _26_tag = Bi_io.svint_tag
-let write_untagged__26 = (
+let _x_e48509c_tag = Bi_io.svint_tag
+let write_untagged__x_e48509c = (
   fun ob x -> (
     let x = ( Test_lib.Natural.unwrap ) x in (
       Bi_io.write_untagged_svint
     ) ob x)
 )
-let write__26 ob x =
+let write__x_e48509c ob x =
   Bi_io.write_tag ob Bi_io.svint_tag;
-  write_untagged__26 ob x
-let string_of__26 ?(len = 1024) x =
+  write_untagged__x_e48509c ob x
+let string_of__x_e48509c ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__26 ob x;
+  write__x_e48509c ob x;
   Bi_outbuf.contents ob
-let get__26_reader = (
+let get__x_e48509c_reader = (
   fun tag ib ->
     ( Test_lib.Natural.wrap ) ((
       Atdgen_runtime.Ob_run.get_int_reader
     ) tag ib)
 )
-let read__26 = (
+let read__x_e48509c = (
   fun ib ->
     ( Test_lib.Natural.wrap ) ((
       Atdgen_runtime.Ob_run.read_int
     ) ib)
 )
-let _26_of_string ?pos s =
-  read__26 (Bi_inbuf.from_string ?pos s)
+let _x_e48509c_of_string ?pos s =
+  read__x_e48509c (Bi_inbuf.from_string ?pos s)
 let natural_tag = Bi_io.svint_tag
 let write_untagged_natural = (
-  write_untagged__26
+  write_untagged__x_e48509c
 )
 let write_natural ob x =
   Bi_io.write_tag ob Bi_io.svint_tag;
@@ -3459,44 +3459,44 @@ let string_of_natural ?(len = 1024) x =
   write_natural ob x;
   Bi_outbuf.contents ob
 let get_natural_reader = (
-  get__26_reader
+  get__x_e48509c_reader
 )
 let read_natural = (
-  read__26
+  read__x_e48509c
 )
 let natural_of_string ?pos s =
   read_natural (Bi_inbuf.from_string ?pos s)
-let _24_tag = Bi_io.string_tag
-let write_untagged__24 = (
+let _x_2596d76_tag = Bi_io.string_tag
+let write_untagged__x_2596d76 = (
   fun ob x -> (
     let x = ( function `Id s -> s ) x in (
       Bi_io.write_untagged_string
     ) ob x)
 )
-let write__24 ob x =
+let write__x_2596d76 ob x =
   Bi_io.write_tag ob Bi_io.string_tag;
-  write_untagged__24 ob x
-let string_of__24 ?(len = 1024) x =
+  write_untagged__x_2596d76 ob x
+let string_of__x_2596d76 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__24 ob x;
+  write__x_2596d76 ob x;
   Bi_outbuf.contents ob
-let get__24_reader = (
+let get__x_2596d76_reader = (
   fun tag ib ->
     ( fun s -> `Id s ) ((
       Atdgen_runtime.Ob_run.get_string_reader
     ) tag ib)
 )
-let read__24 = (
+let read__x_2596d76 = (
   fun ib ->
     ( fun s -> `Id s ) ((
       Atdgen_runtime.Ob_run.read_string
     ) ib)
 )
-let _24_of_string ?pos s =
-  read__24 (Bi_inbuf.from_string ?pos s)
+let _x_2596d76_of_string ?pos s =
+  read__x_2596d76 (Bi_inbuf.from_string ?pos s)
 let id_tag = Bi_io.string_tag
 let write_untagged_id = (
-  write_untagged__24
+  write_untagged__x_2596d76
 )
 let write_id ob x =
   Bi_io.write_tag ob Bi_io.string_tag;
@@ -3506,15 +3506,15 @@ let string_of_id ?(len = 1024) x =
   write_id ob x;
   Bi_outbuf.contents ob
 let get_id_reader = (
-  get__24_reader
+  get__x_2596d76_reader
 )
 let read_id = (
-  read__24
+  read__x_2596d76
 )
 let id_of_string ?pos s =
   read_id (Bi_inbuf.from_string ?pos s)
-let _25_tag = Bi_io.array_tag
-let write_untagged__25 = (
+let _x_b6e4b4c_tag = Bi_io.array_tag
+let write_untagged__x_b6e4b4c = (
   Atdgen_runtime.Ob_run.write_untagged_list
     Bi_io.tuple_tag
     (
@@ -3532,14 +3532,14 @@ let write_untagged__25 = (
         );
     )
 )
-let write__25 ob x =
+let write__x_b6e4b4c ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__25 ob x
-let string_of__25 ?(len = 1024) x =
+  write_untagged__x_b6e4b4c ob x
+let string_of__x_b6e4b4c ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__25 ob x;
+  write__x_b6e4b4c ob x;
   Bi_outbuf.contents ob
-let get__25_reader = (
+let get__x_b6e4b4c_reader = (
   Atdgen_runtime.Ob_run.get_list_reader (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -3560,7 +3560,7 @@ let get__25_reader = (
           (x0, x1)
   )
 )
-let read__25 = (
+let read__x_b6e4b4c = (
   Atdgen_runtime.Ob_run.read_list (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -3581,11 +3581,11 @@ let read__25 = (
           (x0, x1)
   )
 )
-let _25_of_string ?pos s =
-  read__25 (Bi_inbuf.from_string ?pos s)
+let _x_b6e4b4c_of_string ?pos s =
+  read__x_b6e4b4c (Bi_inbuf.from_string ?pos s)
 let json_map_tag = Bi_io.array_tag
 let write_untagged_json_map = (
-  write_untagged__25
+  write_untagged__x_b6e4b4c
 )
 let write_json_map ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -3595,16 +3595,16 @@ let string_of_json_map ?(len = 1024) x =
   write_json_map ob x;
   Bi_outbuf.contents ob
 let get_json_map_reader = (
-  get__25_reader
+  get__x_b6e4b4c_reader
 )
 let read_json_map = (
-  read__25
+  read__x_b6e4b4c
 )
 let json_map_of_string ?pos s =
   read_json_map (Bi_inbuf.from_string ?pos s)
 let intopt_tag = Bi_io.num_variant_tag
 let write_untagged_intopt = (
-  write_untagged__4
+  write_untagged__int_option
 )
 let write_intopt ob x =
   Bi_io.write_tag ob Bi_io.num_variant_tag;
@@ -3614,15 +3614,15 @@ let string_of_intopt ?(len = 1024) x =
   write_intopt ob x;
   Bi_outbuf.contents ob
 let get_intopt_reader = (
-  get__4_reader
+  get__int_option_reader
 )
 let read_intopt = (
-  read__4
+  read__int_option
 )
 let intopt_of_string ?pos s =
   read_intopt (Bi_inbuf.from_string ?pos s)
-let _21_tag = Bi_io.array_tag
-let write_untagged__21 = (
+let _x_547263f_tag = Bi_io.array_tag
+let write_untagged__x_547263f = (
   Atdgen_runtime.Ob_run.write_untagged_list
     Bi_io.tuple_tag
     (
@@ -3640,14 +3640,14 @@ let write_untagged__21 = (
         );
     )
 )
-let write__21 ob x =
+let write__x_547263f ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__21 ob x
-let string_of__21 ?(len = 1024) x =
+  write_untagged__x_547263f ob x
+let string_of__x_547263f ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__21 ob x;
+  write__x_547263f ob x;
   Bi_outbuf.contents ob
-let get__21_reader = (
+let get__x_547263f_reader = (
   Atdgen_runtime.Ob_run.get_list_reader (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -3668,7 +3668,7 @@ let get__21_reader = (
           (x0, x1)
   )
 )
-let read__21 = (
+let read__x_547263f = (
   Atdgen_runtime.Ob_run.read_list (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -3689,11 +3689,11 @@ let read__21 = (
           (x0, x1)
   )
 )
-let _21_of_string ?pos s =
-  read__21 (Bi_inbuf.from_string ?pos s)
+let _x_547263f_of_string ?pos s =
+  read__x_547263f (Bi_inbuf.from_string ?pos s)
 let int_assoc_list_tag = Bi_io.array_tag
 let write_untagged_int_assoc_list = (
-  write_untagged__21
+  write_untagged__x_547263f
 )
 let write_int_assoc_list ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -3703,15 +3703,15 @@ let string_of_int_assoc_list ?(len = 1024) x =
   write_int_assoc_list ob x;
   Bi_outbuf.contents ob
 let get_int_assoc_list_reader = (
-  get__21_reader
+  get__x_547263f_reader
 )
 let read_int_assoc_list = (
-  read__21
+  read__x_547263f
 )
 let int_assoc_list_of_string ?pos s =
   read_int_assoc_list (Bi_inbuf.from_string ?pos s)
-let _22_tag = Bi_io.array_tag
-let write_untagged__22 = (
+let _x_0a94e5e_tag = Bi_io.array_tag
+let write_untagged__x_0a94e5e = (
   Atdgen_runtime.Ob_run.write_untagged_array
     Bi_io.tuple_tag
     (
@@ -3729,14 +3729,14 @@ let write_untagged__22 = (
         );
     )
 )
-let write__22 ob x =
+let write__x_0a94e5e ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__22 ob x
-let string_of__22 ?(len = 1024) x =
+  write_untagged__x_0a94e5e ob x
+let string_of__x_0a94e5e ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__22 ob x;
+  write__x_0a94e5e ob x;
   Bi_outbuf.contents ob
-let get__22_reader = (
+let get__x_0a94e5e_reader = (
   Atdgen_runtime.Ob_run.get_array_reader (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -3757,7 +3757,7 @@ let get__22_reader = (
           (x0, x1)
   )
 )
-let read__22 = (
+let read__x_0a94e5e = (
   Atdgen_runtime.Ob_run.read_array (
     fun tag ->
       if tag <> 20 then Atdgen_runtime.Ob_run.read_error () else
@@ -3778,11 +3778,11 @@ let read__22 = (
           (x0, x1)
   )
 )
-let _22_of_string ?pos s =
-  read__22 (Bi_inbuf.from_string ?pos s)
+let _x_0a94e5e_of_string ?pos s =
+  read__x_0a94e5e (Bi_inbuf.from_string ?pos s)
 let int_assoc_array_tag = Bi_io.array_tag
 let write_untagged_int_assoc_array = (
-  write_untagged__22
+  write_untagged__x_0a94e5e
 )
 let write_int_assoc_array ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -3792,10 +3792,10 @@ let string_of_int_assoc_array ?(len = 1024) x =
   write_int_assoc_array ob x;
   Bi_outbuf.contents ob
 let get_int_assoc_array_reader = (
-  get__22_reader
+  get__x_0a94e5e_reader
 )
 let read_int_assoc_array = (
-  read__22
+  read__x_0a94e5e
 )
 let int_assoc_array_of_string ?pos s =
   read_int_assoc_array (Bi_inbuf.from_string ?pos s)
@@ -4061,33 +4061,33 @@ let read_floats = (
 )
 let floats_of_string ?pos s =
   read_floats (Bi_inbuf.from_string ?pos s)
-let _17_tag = Bi_io.array_tag
-let write_untagged__17 = (
+let _string_list_tag = Bi_io.array_tag
+let write_untagged__string_list = (
   Atdgen_runtime.Ob_run.write_untagged_list
     Bi_io.string_tag
     (
       Bi_io.write_untagged_string
     )
 )
-let write__17 ob x =
+let write__string_list ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__17 ob x
-let string_of__17 ?(len = 1024) x =
+  write_untagged__string_list ob x
+let string_of__string_list ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__17 ob x;
+  write__string_list ob x;
   Bi_outbuf.contents ob
-let get__17_reader = (
+let get__string_list_reader = (
   Atdgen_runtime.Ob_run.get_list_reader (
     Atdgen_runtime.Ob_run.get_string_reader
   )
 )
-let read__17 = (
+let read__string_list = (
   Atdgen_runtime.Ob_run.read_list (
     Atdgen_runtime.Ob_run.get_string_reader
   )
 )
-let _17_of_string ?pos s =
-  read__17 (Bi_inbuf.from_string ?pos s)
+let _string_list_of_string ?pos s =
+  read__string_list (Bi_inbuf.from_string ?pos s)
 let extended_tuple_tag = Bi_io.tuple_tag
 let write_untagged_extended_tuple = (
   fun ob x ->
@@ -4109,7 +4109,7 @@ let write_untagged_extended_tuple = (
     );
     (
       let _, _, _, x, _, _ = x in (
-        write__4
+        write__int_option
       ) ob x
     );
     (
@@ -4119,7 +4119,7 @@ let write_untagged_extended_tuple = (
     );
     (
       let _, _, _, _, _, x = x in (
-        write__17
+        write__string_list
       ) ob x
     );
 )
@@ -4153,7 +4153,7 @@ let get_extended_tuple_reader = (
         in
         let x3 =
           (
-            read__4
+            read__int_option
           ) ib
         in
         let x4 =
@@ -4163,7 +4163,7 @@ let get_extended_tuple_reader = (
         in
         let x5 =
           if len >= 6 then (
-            read__17
+            read__string_list
           ) ib
           else
             []
@@ -4193,7 +4193,7 @@ let read_extended_tuple = (
     in
     let x3 =
       (
-        read__4
+        read__int_option
       ) ib
     in
     let x4 =
@@ -4203,7 +4203,7 @@ let read_extended_tuple = (
     in
     let x5 =
       if len >= 6 then (
-        read__17
+        read__string_list
       ) ib
       else
         []
@@ -4242,7 +4242,7 @@ let write_untagged_extended : Bi_outbuf.t -> extended -> unit = (
     );
     Bi_outbuf.add_char4 ob '\128' '\000' 'U' '\146';
     (
-      write__6
+      write__string_option
     ) ob x.b4x;
     if x_b5x != 0.5 then (
       Bi_outbuf.add_char4 ob '\128' '\000' 'U' '\147';
@@ -4304,7 +4304,7 @@ let get_extended_reader = (
             | 21906 ->
               field_b4x := (
                 (
-                  read__6
+                  read__string_option
                 ) ib
               );
               bits0 := !bits0 lor 0x8;
@@ -4373,7 +4373,7 @@ let read_extended = (
         | 21906 ->
           field_b4x := (
             (
-              read__6
+              read__string_option
             ) ib
           );
           bits0 := !bits0 lor 0x8;
@@ -4399,37 +4399,37 @@ let read_extended = (
 )
 let extended_of_string ?pos s =
   read_extended (Bi_inbuf.from_string ?pos s)
-let _27_tag = natural_tag
-let write_untagged__27 = (
+let _x_a08e9e5_tag = natural_tag
+let write_untagged__x_a08e9e5 = (
   fun ob x -> (
     let x = ( Test_lib.Even_natural.unwrap ) x in (
       write_untagged_natural
     ) ob x)
 )
-let write__27 ob x =
+let write__x_a08e9e5 ob x =
   Bi_io.write_tag ob natural_tag;
-  write_untagged__27 ob x
-let string_of__27 ?(len = 1024) x =
+  write_untagged__x_a08e9e5 ob x
+let string_of__x_a08e9e5 ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__27 ob x;
+  write__x_a08e9e5 ob x;
   Bi_outbuf.contents ob
-let get__27_reader = (
+let get__x_a08e9e5_reader = (
   fun tag ib ->
     ( Test_lib.Even_natural.wrap ) ((
       get_natural_reader
     ) tag ib)
 )
-let read__27 = (
+let read__x_a08e9e5 = (
   fun ib ->
     ( Test_lib.Even_natural.wrap ) ((
       read_natural
     ) ib)
 )
-let _27_of_string ?pos s =
-  read__27 (Bi_inbuf.from_string ?pos s)
+let _x_a08e9e5_of_string ?pos s =
+  read__x_a08e9e5 (Bi_inbuf.from_string ?pos s)
 let even_natural_tag = natural_tag
 let write_untagged_even_natural = (
-  write_untagged__27
+  write_untagged__x_a08e9e5
 )
 let write_even_natural ob x =
   Bi_io.write_tag ob natural_tag;
@@ -4439,10 +4439,10 @@ let string_of_even_natural ?(len = 1024) x =
   write_even_natural ob x;
   Bi_outbuf.contents ob
 let get_even_natural_reader = (
-  get__27_reader
+  get__x_a08e9e5_reader
 )
 let read_even_natural = (
-  read__27
+  read__x_a08e9e5
 )
 let even_natural_of_string ?pos s =
   read_even_natural (Bi_inbuf.from_string ?pos s)
@@ -4634,36 +4634,36 @@ let read_base = (
 )
 let base_of_string ?pos s =
   read_base (Bi_inbuf.from_string ?pos s)
-let _23_tag = Bi_io.array_tag
-let write_untagged__23 _a_tag write_untagged__a write__a = (
+let _x_f9e3589_tag = Bi_io.array_tag
+let write_untagged__x_f9e3589 _a_tag write_untagged__a write__a = (
   Atdgen_runtime.Ob_run.write_untagged_array
     _a_tag
     (
       write_untagged__a
     )
 )
-let write__23 _a_tag write_untagged__a write__a ob x =
+let write__x_f9e3589 _a_tag write_untagged__a write__a ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
-  write_untagged__23 _a_tag write_untagged__a write__a ob x
-let string_of__23 _a_tag write_untagged__a write__a ?(len = 1024) x =
+  write_untagged__x_f9e3589 _a_tag write_untagged__a write__a ob x
+let string_of__x_f9e3589 _a_tag write_untagged__a write__a ?(len = 1024) x =
   let ob = Bi_outbuf.create len in
-  write__23 _a_tag write_untagged__a write__a ob x;
+  write__x_f9e3589 _a_tag write_untagged__a write__a ob x;
   Bi_outbuf.contents ob
-let get__23_reader get__a_reader read__a = (
+let get__x_f9e3589_reader get__a_reader read__a = (
   Atdgen_runtime.Ob_run.get_array_reader (
     get__a_reader
   )
 )
-let read__23 get__a_reader read__a = (
+let read__x_f9e3589 get__a_reader read__a = (
   Atdgen_runtime.Ob_run.read_array (
     get__a_reader
   )
 )
-let _23_of_string get__a_reader read__a ?pos s =
-  read__23 get__a_reader read__a (Bi_inbuf.from_string ?pos s)
+let _x_f9e3589_of_string get__a_reader read__a ?pos s =
+  read__x_f9e3589 get__a_reader read__a (Bi_inbuf.from_string ?pos s)
 let array_tag = Bi_io.array_tag
 let write_untagged_array _a_tag write_untagged__a write__a = (
-  write_untagged__23 _a_tag write_untagged__a write__a
+  write_untagged__x_f9e3589 _a_tag write_untagged__a write__a
 )
 let write_array _a_tag write_untagged__a write__a ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -4673,16 +4673,16 @@ let string_of_array _a_tag write_untagged__a write__a ?(len = 1024) x =
   write_array _a_tag write_untagged__a write__a ob x;
   Bi_outbuf.contents ob
 let get_array_reader get__a_reader read__a = (
-  get__23_reader get__a_reader read__a
+  get__x_f9e3589_reader get__a_reader read__a
 )
 let read_array get__a_reader read__a = (
-  read__23 get__a_reader read__a
+  read__x_f9e3589 get__a_reader read__a
 )
 let array_of_string get__a_reader read__a ?pos s =
   read_array get__a_reader read__a (Bi_inbuf.from_string ?pos s)
 let abs3_tag = Bi_io.array_tag
 let write_untagged_abs3 _a_tag write_untagged__a write__a = (
-  write_untagged__19 _a_tag write_untagged__a write__a
+  write_untagged__a_list _a_tag write_untagged__a write__a
 )
 let write_abs3 _a_tag write_untagged__a write__a ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -4692,16 +4692,16 @@ let string_of_abs3 _a_tag write_untagged__a write__a ?(len = 1024) x =
   write_abs3 _a_tag write_untagged__a write__a ob x;
   Bi_outbuf.contents ob
 let get_abs3_reader get__a_reader read__a = (
-  get__19_reader get__a_reader read__a
+  get__a_list_reader get__a_reader read__a
 )
 let read_abs3 get__a_reader read__a = (
-  read__19 get__a_reader read__a
+  read__a_list get__a_reader read__a
 )
 let abs3_of_string get__a_reader read__a ?pos s =
   read_abs3 get__a_reader read__a (Bi_inbuf.from_string ?pos s)
 let abs2_tag = Bi_io.array_tag
 let write_untagged_abs2 _a_tag write_untagged__a write__a = (
-  write_untagged__19 _a_tag write_untagged__a write__a
+  write_untagged__a_list _a_tag write_untagged__a write__a
 )
 let write_abs2 _a_tag write_untagged__a write__a ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -4711,16 +4711,16 @@ let string_of_abs2 _a_tag write_untagged__a write__a ?(len = 1024) x =
   write_abs2 _a_tag write_untagged__a write__a ob x;
   Bi_outbuf.contents ob
 let get_abs2_reader get__a_reader read__a = (
-  get__19_reader get__a_reader read__a
+  get__a_list_reader get__a_reader read__a
 )
 let read_abs2 get__a_reader read__a = (
-  read__19 get__a_reader read__a
+  read__a_list get__a_reader read__a
 )
 let abs2_of_string get__a_reader read__a ?pos s =
   read_abs2 get__a_reader read__a (Bi_inbuf.from_string ?pos s)
 let abs1_tag = Bi_io.array_tag
 let write_untagged_abs1 _a_tag write_untagged__a write__a = (
-  write_untagged__19 _a_tag write_untagged__a write__a
+  write_untagged__a_list _a_tag write_untagged__a write__a
 )
 let write_abs1 _a_tag write_untagged__a write__a ob x =
   Bi_io.write_tag ob Bi_io.array_tag;
@@ -4730,10 +4730,10 @@ let string_of_abs1 _a_tag write_untagged__a write__a ?(len = 1024) x =
   write_abs1 _a_tag write_untagged__a write__a ob x;
   Bi_outbuf.contents ob
 let get_abs1_reader get__a_reader read__a = (
-  get__19_reader get__a_reader read__a
+  get__a_list_reader get__a_reader read__a
 )
 let read_abs1 get__a_reader read__a = (
-  read__19 get__a_reader read__a
+  read__a_list get__a_reader read__a
 )
 let abs1_of_string get__a_reader read__a ?pos s =
   read_abs1 get__a_reader read__a (Bi_inbuf.from_string ?pos s)

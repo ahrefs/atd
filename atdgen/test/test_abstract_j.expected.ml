@@ -23,31 +23,31 @@ let read_int_assoc_list = (
 )
 let int_assoc_list_of_string s =
   read_int_assoc_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__1 = (
+let write__abstract_list = (
   Atdgen_runtime.Oj_run.write_list (
     Yojson.Safe.write_json
   )
 )
-let string_of__1 ?(len = 1024) x =
+let string_of__abstract_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__1 ob x;
+  write__abstract_list ob x;
   Buffer.contents ob
-let read__1 = (
+let read__abstract_list = (
   Atdgen_runtime.Oj_run.read_list (
     Atdgen_runtime.Oj_run.read_json
   )
 )
-let _1_of_string s =
-  read__1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _abstract_list_of_string s =
+  read__abstract_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_any_items = (
-  write__1
+  write__abstract_list
 )
 let string_of_any_items ?(len = 1024) x =
   let ob = Buffer.create len in
   write_any_items ob x;
   Buffer.contents ob
 let read_any_items = (
-  read__1
+  read__abstract_list
 )
 let any_items_of_string s =
   read_any_items (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

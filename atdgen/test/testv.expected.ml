@@ -157,7 +157,7 @@ type 'a abs2 = 'a Test.abs2
 
 type 'a abs1 = 'a Test.abs1
 
-let validate__19 validate__a = (
+let validate__a_list validate__a = (
   Atdgen_runtime.Ov_run.validate_list (
     validate__a
   )
@@ -204,7 +204,16 @@ and validate_r : _ -> r -> _ = (
           validate_p
         ) (`Field "c" :: path) x.c
 )
-let rec validate__20 validate__a validate__b path x = (
+let rec validate__test_variant_list path x = (
+  fun _ _ -> None
+) path x
+and validate_test_variant path x = (
+  fun _ _ -> None
+) path x
+let rec validate__int_p path (x : _ p') = (
+  fun _ _ -> None
+) path x
+let rec validate__a_b_poly_option validate__a validate__b path x = (
   Atdgen_runtime.Ov_run.validate_option (
     validate_poly validate__a validate__b
   )
@@ -213,24 +222,15 @@ and validate_poly validate__x validate__y : _ -> ('x, 'y) poly -> _ = (
   fun path x ->
     match
       (
-        validate__19 validate__x
+        validate__a_list validate__x
       ) (`Field "fst" :: path) x.fst
     with
       | Some _ as err -> err
       | None ->
         (
-          validate__20 validate__x validate__y
+          validate__a_b_poly_option validate__x validate__y
         ) (`Field "snd" :: path) x.snd
 )
-let rec validate__2 path x = (
-  fun _ _ -> None
-) path x
-and validate_test_variant path x = (
-  fun _ _ -> None
-) path x
-let rec validate__1 path (x : _ p') = (
-  fun _ _ -> None
-) path x
 let validate_validated_string_check = (
   fun path x ->
     let msg = "Failed check by fun s -> s = \"abc\"" in
@@ -239,7 +239,7 @@ let validate_validated_string_check = (
     else
       Some (Atdgen_runtime.Util.Validation.error ~msg path)
 )
-let validate__31 = (
+let validate__x_5640b64 = (
   (fun path x ->
     (match ( fun path x ->
     let msg = "Failed check by fun l -> true" in
@@ -262,7 +262,7 @@ let validate__31 = (
   )
 )
 let validate_validate_me = (
-  validate__31
+  validate__x_5640b64
 )
 let validate_val1 : _ -> val1 -> _ = (
   fun path x ->
@@ -270,7 +270,7 @@ let validate_val1 : _ -> val1 -> _ = (
       fun path _ -> Some (Atdgen_runtime.Util.Validation.error path)
     ) (`Field "val1_x" :: path) x.val1_x
 )
-let validate__16 = (
+let validate__val1_option = (
   Atdgen_runtime.Ov_run.validate_option (
     validate_val1
   )
@@ -285,61 +285,61 @@ let validate_val2 : _ -> val2 -> _ = (
       | Some _ as err -> err
       | None ->
         (
-          validate__16
+          validate__val1_option
         ) (`Field "val2_y" :: path) x.val2_y
 )
-let validate__29 = (
+let validate__x_6089809 = (
   fun _ _ -> None
 )
 let validate_unixtime_list = (
-  validate__29
+  validate__x_6089809
 )
-let validate__3 = (
+let validate__int_nullable = (
   fun _ _ -> None
 )
 let validate_date = (
   fun _ _ -> None
 )
-let validate__9 = (
+let validate__x_adbef7e = (
   fun _ _ -> None
 )
-let validate__8 = (
+let validate__x_20d39e2 = (
   fun _ _ -> None
 )
-let validate__7 = (
+let validate__unit_list = (
   fun _ _ -> None
 )
-let validate__6 = (
+let validate__string_option = (
   fun _ _ -> None
 )
-let validate__5 = (
+let validate__string_option_list = (
   fun _ _ -> None
 )
-let validate__4 = (
+let validate__int_option = (
   fun _ _ -> None
 )
-let validate__11 = (
+let validate__float_option = (
   fun _ _ -> None
 )
-let validate__10 = (
+let validate__bool_option = (
   fun _ _ -> None
 )
 let validate_mixed_record : _ -> mixed_record -> _ = (
   fun _ _ -> None
 )
-let validate__13 = (
+let validate__x_d88f1c8 = (
   fun _ _ -> None
 )
-let validate__12 = (
+let validate__x_7de077c = (
   fun _ _ -> None
 )
-let validate__14 = (
+let validate__x_c393fa9 = (
   fun _ _ -> None
 )
 let validate_mixed = (
-  validate__14
+  validate__x_c393fa9
 )
-let validate__15 = (
+let validate__mixed_record_list = (
   fun _ _ -> None
 )
 let validate_test : _ -> test -> _ = (
@@ -359,11 +359,11 @@ let validate_star_rating = (
     else
       Some (Atdgen_runtime.Util.Validation.error ~msg path)
 )
-let validate__30 : _ -> _ generic -> _ = (
+let validate__string_generic : _ -> _ generic -> _ = (
   fun _ _ -> None
 )
 let validate_specialized = (
-  validate__30
+  validate__string_generic
 )
 let validate_some_record : _ -> some_record -> _ = (
   fun path x ->
@@ -375,38 +375,38 @@ let validate_precision : _ -> precision -> _ = (
   fun _ _ -> None
 )
 let validate_p'' = (
-  validate__1
+  validate__int_p
 )
-let validate__18 = (
+let validate__x_bee1b88 = (
   Atdgen_runtime.Ov_run.validate_option (
     fun path _ -> Some (Atdgen_runtime.Util.Validation.error path)
   )
 )
 let validate_option_validation = (
-  validate__18
+  validate__x_bee1b88
 )
-let validate__28 = (
+let validate__some_record_wrap = (
   validate_some_record
 )
 let validate_no_real_wrap = (
-  validate__28
+  validate__some_record_wrap
 )
-let validate__26 = (
+let validate__x_e48509c = (
   fun _ _ -> None
 )
 let validate_natural = (
-  validate__26
+  validate__x_e48509c
 )
-let validate__24 = (
+let validate__x_2596d76 = (
   fun path x ->
                        match x with
                          `Id "" -> failwith "empty"
                        | _ -> None
 )
 let validate_id = (
-  validate__24
+  validate__x_2596d76
 )
-let validate__25 = (
+let validate__x_b6e4b4c = (
   Atdgen_runtime.Ov_run.validate_list (
     fun path x ->
       (let x, _ = x in
@@ -417,22 +417,22 @@ let validate__25 = (
   )
 )
 let validate_json_map = (
-  validate__25
+  validate__x_b6e4b4c
 )
 let validate_intopt = (
-  validate__4
+  validate__int_option
 )
-let validate__21 = (
+let validate__x_547263f = (
   fun _ _ -> None
 )
 let validate_int_assoc_list = (
-  validate__21
+  validate__x_547263f
 )
-let validate__22 = (
+let validate__x_0a94e5e = (
   fun _ _ -> None
 )
 let validate_int_assoc_array = (
-  validate__22
+  validate__x_0a94e5e
 )
 let validate_int8 = (
   (fun _ _ -> None)
@@ -452,7 +452,7 @@ let validate_generic validate__a : _ -> 'a generic -> _ = (
 let validate_floats : _ -> floats -> _ = (
   fun _ _ -> None
 )
-let validate__17 = (
+let validate__string_list = (
   fun _ _ -> None
 )
 let validate_extended_tuple = (
@@ -470,11 +470,11 @@ let validate_extended : _ -> extended -> _ = (
         if x = false then None else Some (Atdgen_runtime.Util.Validation.error path)
         ) (`Field "b1x" :: path) x.b1x
 )
-let validate__27 = (
+let validate__x_a08e9e5 = (
   fun _ _ -> None
 )
 let validate_even_natural = (
-  validate__27
+  validate__x_a08e9e5
 )
 let validate_def = (
   (fun _ _ -> None)
@@ -488,22 +488,22 @@ let validate_base_tuple = (
 let validate_base : _ -> base -> _ = (
   fun _ _ -> None
 )
-let validate__23 validate__a = (
+let validate__x_f9e3589 validate__a = (
   Atdgen_runtime.Ov_run.validate_array (
     validate__a
   )
 )
 let validate_array validate__a = (
-  validate__23 validate__a
+  validate__x_f9e3589 validate__a
 )
 let validate_abs3 validate__a = (
-  validate__19 validate__a
+  validate__a_list validate__a
 )
 let validate_abs2 validate__a = (
-  validate__19 validate__a
+  validate__a_list validate__a
 )
 let validate_abs1 validate__a = (
-  validate__19 validate__a
+  validate__a_list validate__a
 )
 let create_r 
   ~a

@@ -256,14 +256,14 @@ and read_mutual_recurse2 = (
 )
 and mutual_recurse2_of_string s =
   read_mutual_recurse2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let rec write__5 ob x = (
+let rec write__recurse_list ob x = (
   Atdgen_runtime.Oj_run.write_list (
     write_recurse
   )
 ) ob x
-and string_of__5 ?(len = 1024) x =
+and string_of__recurse_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__5 ob x;
+  write__recurse_list ob x;
   Buffer.contents ob
 and write_recurse : _ -> recurse -> _ = (
   fun ob (x : recurse) ->
@@ -275,7 +275,7 @@ and write_recurse : _ -> recurse -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"recurse_items\":";
     (
-      write__5
+      write__recurse_list
     )
       ob x.recurse_items;
     Buffer.add_char ob '}';
@@ -284,13 +284,13 @@ and string_of_recurse ?(len = 1024) x =
   let ob = Buffer.create len in
   write_recurse ob x;
   Buffer.contents ob
-let rec read__5 p lb = (
+let rec read__recurse_list p lb = (
   Atdgen_runtime.Oj_run.read_list (
     read_recurse
   )
 ) p lb
-and _5_of_string s =
-  read__5 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+and _recurse_list_of_string s =
+  read__recurse_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 and read_recurse = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
@@ -319,7 +319,7 @@ and read_recurse = (
             field_recurse_items := (
               Some (
                 (
-                  read__5
+                  read__recurse_list
                 ) p lb
               )
             );
@@ -350,7 +350,7 @@ and read_recurse = (
               field_recurse_items := (
                 Some (
                   (
-                    read__5
+                    read__recurse_list
                   ) p lb
                 )
               );
@@ -653,26 +653,26 @@ let read_v1 = (
 )
 let v1_of_string s =
   read_v1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__6 = (
+let write__x_547263f = (
   Atdgen_runtime.Oj_run.write_assoc_list (
     Yojson.Safe.write_string
   ) (
     Yojson.Safe.write_int
   )
 )
-let string_of__6 ?(len = 1024) x =
+let string_of__x_547263f ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__6 ob x;
+  write__x_547263f ob x;
   Buffer.contents ob
-let read__6 = (
+let read__x_547263f = (
   Atdgen_runtime.Oj_run.read_assoc_list (
     Atdgen_runtime.Oj_run.read_string
   ) (
     Atdgen_runtime.Oj_run.read_int
   )
 )
-let _6_of_string s =
-  read__6 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _x_547263f_of_string s =
+  read__x_547263f (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_using_object : _ -> using_object -> _ = (
   fun ob (x : using_object) ->
     Buffer.add_char ob '{';
@@ -683,7 +683,7 @@ let write_using_object : _ -> using_object -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"f\":";
     (
-      write__6
+      write__x_547263f
     )
       ob x.f;
     Buffer.add_char ob '}';
@@ -720,7 +720,7 @@ let read_using_object = (
             field_f := (
               Some (
                 (
-                  read__6
+                  read__x_547263f
                 ) p lb
               )
             );
@@ -751,7 +751,7 @@ let read_using_object = (
               field_f := (
                 Some (
                   (
-                    read__6
+                    read__x_547263f
                   ) p lb
                 )
               );
@@ -894,38 +894,38 @@ let read_single_tuple = (
 )
 let single_tuple_of_string s =
   read_single_tuple (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__2 = (
+let write__x_2596d76 = (
   fun ob x -> (
     let x = ( function `Id s -> s ) x in (
       Yojson.Safe.write_string
     ) ob x)
 )
-let string_of__2 ?(len = 1024) x =
+let string_of__x_2596d76 ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__2 ob x;
+  write__x_2596d76 ob x;
   Buffer.contents ob
-let read__2 = (
+let read__x_2596d76 = (
   fun p lb ->
     let x = (
       Atdgen_runtime.Oj_run.read_string
     ) p lb in
     ( fun s -> `Id s ) x
 )
-let _2_of_string s =
-  read__2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _x_2596d76_of_string s =
+  read__x_2596d76 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_id = (
-  write__2
+  write__x_2596d76
 )
 let string_of_id ?(len = 1024) x =
   let ob = Buffer.create len in
   write_id ob x;
   Buffer.contents ob
 let read_id = (
-  read__2
+  read__x_2596d76
 )
 let id_of_string s =
   read_id (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__3 = (
+let write__unit_simple_var = (
   fun ob x ->
     match x with
       | `Foo x ->
@@ -961,11 +961,11 @@ let write__3 = (
         ) ob x;
         Buffer.add_char ob ']'
 )
-let string_of__3 ?(len = 1024) x =
+let string_of__unit_simple_var ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__3 ob x;
+  write__unit_simple_var ob x;
   Buffer.contents ob
-let read__3 = (
+let read__unit_simple_var = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     match Yojson.Safe.start_any_variant p lb with
@@ -1133,33 +1133,33 @@ let read__3 = (
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
 )
-let _3_of_string s =
-  read__3 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__4 = (
+let _unit_simple_var_of_string s =
+  read__unit_simple_var (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__unit_simple_var_list = (
   Atdgen_runtime.Oj_run.write_list (
-    write__3
+    write__unit_simple_var
   )
 )
-let string_of__4 ?(len = 1024) x =
+let string_of__unit_simple_var_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__4 ob x;
+  write__unit_simple_var_list ob x;
   Buffer.contents ob
-let read__4 = (
+let read__unit_simple_var_list = (
   Atdgen_runtime.Oj_run.read_list (
-    read__3
+    read__unit_simple_var
   )
 )
-let _4_of_string s =
-  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _unit_simple_var_list_of_string s =
+  read__unit_simple_var_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_simple_vars = (
-  write__4
+  write__unit_simple_var_list
 )
 let string_of_simple_vars ?(len = 1024) x =
   let ob = Buffer.create len in
   write_simple_vars ob x;
   Buffer.contents ob
 let read_simple_vars = (
-  read__4
+  read__unit_simple_var_list
 )
 let simple_vars_of_string s =
   read_simple_vars (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
@@ -2096,31 +2096,31 @@ let read_pair read__a read__b = (
 )
 let pair_of_string read__a read__b s =
   read_pair read__a read__b (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__1 write__a write__b = (
+let write__a_b_pair_list write__a write__b = (
   Atdgen_runtime.Oj_run.write_list (
     write_pair write__a write__a
   )
 )
-let string_of__1 write__a write__b ?(len = 1024) x =
+let string_of__a_b_pair_list write__a write__b ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__1 write__a write__b ob x;
+  write__a_b_pair_list write__a write__b ob x;
   Buffer.contents ob
-let read__1 read__a read__b = (
+let read__a_b_pair_list read__a read__b = (
   Atdgen_runtime.Oj_run.read_list (
     read_pair read__a read__a
   )
 )
-let _1_of_string read__a read__b s =
-  read__1 read__a read__b (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _a_b_pair_list_of_string read__a read__b s =
+  read__a_b_pair_list read__a read__b (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_pairs write__a = (
-  write__1 write__a write__a
+  write__a_b_pair_list write__a write__a
 )
 let string_of_pairs write__a ?(len = 1024) x =
   let ob = Buffer.create len in
   write_pairs write__a ob x;
   Buffer.contents ob
 let read_pairs read__a = (
-  read__1 read__a read__a
+  read__a_b_pair_list read__a read__a
 )
 let pairs_of_string read__a s =
   read_pairs read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

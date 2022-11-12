@@ -42,14 +42,14 @@ type adapted_f = Test3j_t.adapted_f
 
 type adapted = Test3j_t.adapted
 
-let rec write__4 ob x = (
+let rec write__rec_type_list ob x = (
   Atdgen_runtime.Oj_run.write_list (
     write_rec_type
   )
 ) ob x
-and string_of__4 ?(len = 1024) x =
+and string_of__rec_type_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__4 ob x;
+  write__rec_type_list ob x;
   Buffer.contents ob
 and write_rec_type ob (x : rec_type) = (
   Atdgen_runtime.Oj_run.write_with_adapter Json_adapters.Identity.restore (
@@ -62,7 +62,7 @@ and write_rec_type ob (x : rec_type) = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"more\":";
       (
-        write__4
+        write__rec_type_list
       )
         ob x.more;
       Buffer.add_char ob '}';
@@ -72,13 +72,13 @@ and string_of_rec_type ?(len = 1024) x =
   let ob = Buffer.create len in
   write_rec_type ob x;
   Buffer.contents ob
-let rec read__4 p lb = (
+let rec read__rec_type_list p lb = (
   Atdgen_runtime.Oj_run.read_list (
     read_rec_type
   )
 ) p lb
-and _4_of_string s =
-  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+and _rec_type_list_of_string s =
+  read__rec_type_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 and read_rec_type p lb = (
   Atdgen_runtime.Oj_run.read_with_adapter Json_adapters.Identity.normalize (
     fun p lb ->
@@ -108,7 +108,7 @@ and read_rec_type p lb = (
               field_more := (
                 Some (
                   (
-                    read__4
+                    read__rec_type_list
                   ) p lb
                 )
               );
@@ -139,7 +139,7 @@ and read_rec_type p lb = (
                 field_more := (
                   Some (
                     (
-                      read__4
+                      read__rec_type_list
                     ) p lb
                   )
                 );
@@ -160,31 +160,31 @@ and read_rec_type p lb = (
 ) p lb
 and rec_type_of_string s =
   read_rec_type (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__1 = (
+let write__x_69cec3c = (
   Atdgen_runtime.Oj_run.write_list (
     Atdgen_runtime.Oj_run.write_float_as_int
   )
 )
-let string_of__1 ?(len = 1024) x =
+let string_of__x_69cec3c ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__1 ob x;
+  write__x_69cec3c ob x;
   Buffer.contents ob
-let read__1 = (
+let read__x_69cec3c = (
   Atdgen_runtime.Oj_run.read_list (
     Atdgen_runtime.Oj_run.read_number
   )
 )
-let _1_of_string s =
-  read__1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _x_69cec3c_of_string s =
+  read__x_69cec3c (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_unixtime_list = (
-  write__1
+  write__x_69cec3c
 )
 let string_of_unixtime_list ?(len = 1024) x =
   let ob = Buffer.create len in
   write_unixtime_list ob x;
   Buffer.contents ob
 let read_unixtime_list = (
-  read__1
+  read__x_69cec3c
 )
 let unixtime_list_of_string s =
   read_unixtime_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
@@ -200,16 +200,16 @@ let read_json = (
 )
 let json_of_string s =
   read_json (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__5 = (
+let write__json_nullable = (
   Atdgen_runtime.Oj_run.write_nullable (
     write_json
   )
 )
-let string_of__5 ?(len = 1024) x =
+let string_of__json_nullable ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__5 ob x;
+  write__json_nullable ob x;
   Buffer.contents ob
-let read__5 = (
+let read__json_nullable = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     (if Yojson.Safe.read_null_if_possible p lb then None
@@ -217,8 +217,8 @@ let read__5 = (
       read_json
     ) p lb) : _ option)
 )
-let _5_of_string s =
-  read__5 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _json_nullable_of_string s =
+  read__json_nullable (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tf_variant2 = (
   fun ob x ->
     match x with
@@ -247,7 +247,7 @@ let write_tf_variant2 = (
             Buffer.add_char ob ',';
             (let _, x = x in
             (
-              write__5
+              write__json_nullable
             ) ob x
             );
             Buffer.add_char ob ']';
@@ -305,7 +305,7 @@ let read_tf_variant2 = (
                       let x1 =
                         let x =
                           (
-                            read__5
+                            read__json_nullable
                           ) p lb
                         in
                         incr len;
@@ -389,7 +389,7 @@ let read_tf_variant2 = (
                       let x1 =
                         let x =
                           (
-                            read__5
+                            read__json_nullable
                           ) p lb
                         in
                         incr len;
@@ -1171,44 +1171,44 @@ let read_sample_open_enum = (
 )
 let sample_open_enum_of_string s =
   read_sample_open_enum (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__6 = (
+let write__sample_open_enum_list = (
   Atdgen_runtime.Oj_run.write_list (
     write_sample_open_enum
   )
 )
-let string_of__6 ?(len = 1024) x =
+let string_of__sample_open_enum_list ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__6 ob x;
+  write__sample_open_enum_list ob x;
   Buffer.contents ob
-let read__6 = (
+let read__sample_open_enum_list = (
   Atdgen_runtime.Oj_run.read_list (
     read_sample_open_enum
   )
 )
-let _6_of_string s =
-  read__6 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _sample_open_enum_list_of_string s =
+  read__sample_open_enum_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_sample_open_enums = (
-  write__6
+  write__sample_open_enum_list
 )
 let string_of_sample_open_enums ?(len = 1024) x =
   let ob = Buffer.create len in
   write_sample_open_enums ob x;
   Buffer.contents ob
 let read_sample_open_enums = (
-  read__6
+  read__sample_open_enum_list
 )
 let sample_open_enums_of_string s =
   read_sample_open_enums (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__2 = (
+let write__int_nullable = (
   Atdgen_runtime.Oj_run.write_nullable (
     Yojson.Safe.write_int
   )
 )
-let string_of__2 ?(len = 1024) x =
+let string_of__int_nullable ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__2 ob x;
+  write__int_nullable ob x;
   Buffer.contents ob
-let read__2 = (
+let read__int_nullable = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     (if Yojson.Safe.read_null_if_possible p lb then None
@@ -1216,18 +1216,18 @@ let read__2 = (
       Atdgen_runtime.Oj_run.read_int
     ) p lb) : _ option)
 )
-let _2_of_string s =
-  read__2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__3 = (
+let _int_nullable_of_string s =
+  read__int_nullable (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__int_nullable_option = (
   Atdgen_runtime.Oj_run.write_std_option (
-    write__2
+    write__int_nullable
   )
 )
-let string_of__3 ?(len = 1024) x =
+let string_of__int_nullable_option ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__3 ob x;
+  write__int_nullable_option ob x;
   Buffer.contents ob
-let read__3 = (
+let read__int_nullable_option = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     match Yojson.Safe.start_any_variant p lb with
@@ -1240,7 +1240,7 @@ let read__3 = (
             | "Some" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
-                  read__2
+                  read__int_nullable
                 ) p lb
               in
               Yojson.Safe.read_space p lb;
@@ -1263,7 +1263,7 @@ let read__3 = (
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
               let x = (
-                  read__2
+                  read__int_nullable
                 ) p lb
               in
               Yojson.Safe.read_space p lb;
@@ -1273,8 +1273,8 @@ let read__3 = (
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
 )
-let _3_of_string s =
-  read__3 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _int_nullable_option_of_string s =
+  read__int_nullable_option (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_patch : _ -> patch -> _ = (
   fun ob (x : patch) ->
     Buffer.add_char ob '{';
@@ -1286,7 +1286,7 @@ let write_patch : _ -> patch -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"patch1\":";
       (
-        write__2
+        write__int_nullable
       )
         ob x;
     );
@@ -1297,7 +1297,7 @@ let write_patch : _ -> patch -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"patch2\":";
       (
-        write__2
+        write__int_nullable
       )
         ob x;
     );
@@ -1308,7 +1308,7 @@ let write_patch : _ -> patch -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"patch3\":";
       (
-        write__2
+        write__int_nullable
       )
         ob x;
     );
@@ -1360,7 +1360,7 @@ let read_patch = (
             field_patch1 := (
               Some (
                 (
-                  read__2
+                  read__int_nullable
                 ) p lb
               )
             );
@@ -1368,7 +1368,7 @@ let read_patch = (
             field_patch2 := (
               Some (
                 (
-                  read__2
+                  read__int_nullable
                 ) p lb
               )
             );
@@ -1376,7 +1376,7 @@ let read_patch = (
             field_patch3 := (
               Some (
                 (
-                  read__2
+                  read__int_nullable
                 ) p lb
               )
             );
@@ -1419,7 +1419,7 @@ let read_patch = (
               field_patch1 := (
                 Some (
                   (
-                    read__2
+                    read__int_nullable
                   ) p lb
                 )
               );
@@ -1427,7 +1427,7 @@ let read_patch = (
               field_patch2 := (
                 Some (
                   (
-                    read__2
+                    read__int_nullable
                   ) p lb
                 )
               );
@@ -1435,7 +1435,7 @@ let read_patch = (
               field_patch3 := (
                 Some (
                   (
-                    read__2
+                    read__int_nullable
                   ) p lb
                 )
               );

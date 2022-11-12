@@ -16,40 +16,40 @@ let read_poly read__aa read__bb = (
 )
 let poly_of_string read__aa read__bb s =
   read_poly read__aa read__bb (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__1 = (
+let write__int_int_poly = (
   write_poly Yojson.Safe.write_int Yojson.Safe.write_int
 )
-let string_of__1 ?(len = 1024) x =
+let string_of__int_int_poly ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__1 ob x;
+  write__int_int_poly ob x;
   Buffer.contents ob
-let read__1 = (
+let read__int_int_poly = (
   read_poly Atdgen_runtime.Oj_run.read_int Atdgen_runtime.Oj_run.read_int
 )
-let _1_of_string s =
-  read__1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _int_int_poly_of_string s =
+  read__int_int_poly (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_poly_int2 = (
-  write__1
+  write__int_int_poly
 )
 let string_of_poly_int2 ?(len = 1024) x =
   let ob = Buffer.create len in
   write_poly_int2 ob x;
   Buffer.contents ob
 let read_poly_int2 = (
-  read__1
+  read__int_int_poly
 )
 let poly_int2_of_string s =
   read_poly_int2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__3 = (
+let write__string_option = (
   Atdgen_runtime.Oj_run.write_std_option (
     Yojson.Safe.write_string
   )
 )
-let string_of__3 ?(len = 1024) x =
+let string_of__string_option ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__3 ob x;
+  write__string_option ob x;
   Buffer.contents ob
-let read__3 = (
+let read__string_option = (
   fun p lb ->
     Yojson.Safe.read_space p lb;
     match Yojson.Safe.start_any_variant p lb with
@@ -95,20 +95,20 @@ let read__3 = (
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
 )
-let _3_of_string s =
-  read__3 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__4 = (
-  write_poly Yojson.Safe.write_int write__3
+let _string_option_of_string s =
+  read__string_option (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__int_string_option_poly = (
+  write_poly Yojson.Safe.write_int write__string_option
 )
-let string_of__4 ?(len = 1024) x =
+let string_of__int_string_option_poly ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__4 ob x;
+  write__int_string_option_poly ob x;
   Buffer.contents ob
-let read__4 = (
-  read_poly Atdgen_runtime.Oj_run.read_int read__3
+let read__int_string_option_poly = (
+  read_poly Atdgen_runtime.Oj_run.read_int read__string_option
 )
-let _4_of_string s =
-  read__4 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _int_string_option_poly_of_string s =
+  read__int_string_option_poly (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_test2 : _ -> test2 -> _ = (
   fun ob (x : test2) ->
     Buffer.add_char ob '{';
@@ -128,7 +128,7 @@ let write_test2 : _ -> test2 -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"test1\":";
     (
-      write__4
+      write__int_string_option_poly
     )
       ob x.test1;
     Buffer.add_char ob '}';
@@ -183,7 +183,7 @@ let read_test2 = (
             field_test1 := (
               Some (
                 (
-                  read__4
+                  read__int_string_option_poly
                 ) p lb
               )
             );
@@ -231,7 +231,7 @@ let read_test2 = (
               field_test1 := (
                 Some (
                   (
-                    read__4
+                    read__int_string_option_poly
                   ) p lb
                 )
               );
@@ -252,27 +252,27 @@ let read_test2 = (
 )
 let test2_of_string s =
   read_test2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write__2 = (
+let write__int_string_poly = (
   write_poly Yojson.Safe.write_int Yojson.Safe.write_string
 )
-let string_of__2 ?(len = 1024) x =
+let string_of__int_string_poly ?(len = 1024) x =
   let ob = Buffer.create len in
-  write__2 ob x;
+  write__int_string_poly ob x;
   Buffer.contents ob
-let read__2 = (
+let read__int_string_poly = (
   read_poly Atdgen_runtime.Oj_run.read_int Atdgen_runtime.Oj_run.read_string
 )
-let _2_of_string s =
-  read__2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let _int_string_poly_of_string s =
+  read__int_string_poly (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_poly_int_string = (
-  write__2
+  write__int_string_poly
 )
 let string_of_poly_int_string ?(len = 1024) x =
   let ob = Buffer.create len in
   write_poly_int_string ob x;
   Buffer.contents ob
 let read_poly_int_string = (
-  read__2
+  read__int_string_poly
 )
 let poly_int_string_of_string s =
   read_poly_int_string (Yojson.Safe.init_lexer ()) (Lexing.from_string s)

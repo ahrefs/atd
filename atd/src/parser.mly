@@ -22,21 +22,17 @@
 %%
 
 full_module:
-| an = annot  items = module_body
+| an = annot;
+  imports = list(import);
+  type_defs = list(type_def);
+  EOF
                { let loc = ($startpos(an), $endpos(an)) in
-                 let imports, type_defs = Ast.split_module_items in
                  {
                    module_head = (loc, an);
                    imports;
                    type_defs;
                  }
                }
-;
-
-module_body:
-| module_item module_body   { $1 :: $2 }
-| EOF                       { [] }
-| _e=error     { syntax_error "Syntax error" $startpos(_e) $endpos(_e) }
 ;
 
 annot:
@@ -71,10 +67,10 @@ lident_path:
 | LIDENT                 { [$1] }
 ;
 
-module_item:
+type_def:
 | TYPE p = type_param s = LIDENT a = annot EQ t = type_expr
-                               { (Type (($startpos, $endpos), (s, p, a), t)
-                                  : module_item) }
+                               { ((($startpos, $endpos), (s, p, a), t)
+                                  : type_def) }
 
 | TYPE type_param LIDENT annot EQ _e=error
     { syntax_error "Expecting type expression" $startpos(_e) $endpos(_e) }
@@ -82,10 +78,11 @@ module_item:
     { syntax_error "Expecting '='" $startpos(_e) $endpos(_e) }
 | TYPE _e=error
     { syntax_error "Expecting type name" $startpos(_e) $endpos(_e) }
+
+import:
 | IMPORT name = LIDENT alias = alias annot = annot
                                { let loc = ($startpos, $endpos) in
-                                 (Import { loc; name; alias; annot }
-                                  : module_item) }
+                                 ({ loc; name; alias; annot } : import) }
 | IMPORT _e=error
     { syntax_error "Expecting ATD module name" $startpos(_e) $endpos(_e) }
 ;

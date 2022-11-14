@@ -1,4 +1,5 @@
 open Atd.Import
+open Atd.Ast
 
 type out_format =
   | Atd
@@ -73,24 +74,24 @@ let parse
     ~annot_schema
     ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
     ~strip_all ~strip_sections files =
-  let l =
+  let modules =
     List.map (
-      fun file ->
-        fst (
-          Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
-            ~inherit_fields ~inherit_variants file
-        )
+      Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
+        ~inherit_fields ~inherit_variants
     ) files
   in
-  let heads, bodies = List.split l in
   let first_head =
     (* heads in other files than the first one are tolerated but ignored *)
-    match heads with
-        x :: _ -> x
+    match modules with
+        { module_head; _ } :: _ -> module_head
       | [] -> (Atd.Ast.dummy_loc, [])
   in
-  let m = first_head, List.flatten bodies in
-  strip strip_all strip_sections m
+  let module_ = {
+    module_head = first_head;
+    imports = List.map (fun x -> x.imports) modules |> List.flatten;
+    type_defs = List.map (fun x -> x.type_defs) modules |> List.flatten;
+  } in
+  strip strip_all strip_sections module_
 
 let print
     ~xprop ~jsonschema_version

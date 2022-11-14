@@ -67,10 +67,6 @@ and field =
   | Field of simple_field
   | Inherit of (loc * type_expr)
 
-type module_item =
-  | Import of import
-  | Type of type_def
-
 type any =
   | Full_module of full_module
   | Import of import
@@ -197,7 +193,6 @@ let map_annot f = function
 
 type visitor_hooks = {
   full_module: (full_module -> unit) -> full_module -> unit;
-  module_head: (module_head -> unit) -> module_head -> unit;
   import: (import -> unit) -> import -> unit;
   type_def: (type_def -> unit) -> type_def -> unit;
   type_expr: (type_expr -> unit) -> type_expr -> unit;
@@ -246,9 +241,6 @@ and visit_cell hooks x =
   let cont (loc, x, a) = visit_type_expr hooks x in
   hooks.cell cont x
 
-let visit_module_head hooks x =
-  hooks.module_head (fun _ -> ()) x
-
 let visit_import hooks x =
   hooks.import (fun _ -> ()) x
 
@@ -258,7 +250,6 @@ let visit_type_def hooks x =
 
 let visit_full_module hooks (x : full_module) =
   let cont (x : full_module) =
-    visit_module_head hooks x.module_head;
     List.iter (visit_import hooks) x.imports;
     List.iter (visit_type_def hooks) x.type_defs
   in
@@ -266,8 +257,7 @@ let visit_full_module hooks (x : full_module) =
 
 let visit
   ?(full_module = fun cont x -> cont x)
-  ?(module_head = fun _ -> ())
-  ?(import = fun _ -> ())
+  ?(import = fun cont x -> cont x)
   ?(type_def = fun cont x -> cont x)
   ?(type_expr = fun cont x -> cont x)
   ?(variant = fun cont x -> cont x)
@@ -276,7 +266,6 @@ let visit
   () =
   let hooks : visitor_hooks = {
     full_module;
-    module_head;
     import;
     type_def;
     type_expr;
@@ -297,7 +286,7 @@ let visit
   visit
 
 let fold_annot
-  ?module_head
+  ?full_module
   ?import
   ?type_def
   ?type_expr
@@ -316,8 +305,9 @@ let fold_annot
   in
   let visitor =
     visit
-      ~module_head:(fold module_head fun (_, an) -> module_head an)
-      ~import:(fold import (fun (_, _, an) -> an))
+      ~full_module:(fold full_module
+                      (fun { module_head = (_, an); _ } -> an))
+      ~import:(fold import (fun imp -> imp.annot))
       ~type_def:(fold type_def (fun (_, (_, _, an), _) -> an))
       ~type_expr:(fold type_expr annot_of_type_expr)
       ~variant:(fold variant annot_of_variant)
@@ -408,13 +398,6 @@ let local_name_of_import (x : import) =
   | None -> x.name
   | Some local_name -> local_name
 
-let split_module_items (items : module_item list) =
-  List.fold_right (fun x (imports, defs) ->
-    match x with
-    | Import x -> (x :: imports, defs)
-    | Type x -> (imports, x :: defs)
-  ) items []
-
 module Map = struct
 
   type mappers = {
@@ -466,23 +449,17 @@ module Map = struct
     | Variant _ as x -> x
     | Inherit (loc, x) -> Inherit (loc, type_expr m x)
 
-  and field m x =
+  and field m (x : field) =
     match x with
-    | `Field (loc, k, x) -> `Field (loc, k, type_expr m x)
-    | `Inherit (loc, x) -> `Inherit (loc, type_expr m x)
+    | Field (loc, k, x) -> Field (loc, k, type_expr m x)
+    | Inherit (loc, x) -> Inherit (loc, type_expr m x)
 
   let type_def m (loc, (name, params, an), x) =
     (loc, (name, params, an), type_expr m x)
 
-  let module_item m x =
-    match x with
-    | Type x -> Type (type_def m x)
-
-  let module_body m x =
-    List.map (module_item m) x
-
-  let full_module m (head, body) =
-    (head, module_body m body)
+  let full_module m { module_head; imports; type_defs } =
+    let type_defs = List.map (type_def m) type_defs in
+    { module_head; imports; type_defs }
 end
 
 let use_only_specific_variants x =

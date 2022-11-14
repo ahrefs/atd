@@ -993,8 +993,11 @@ let ocaml_of_expr x : string =
   Easy_format.Pretty.to_string (format_type_expr x)
 
 let ocaml_of_atd ?(pp_convs=Ppx_deriving []) ~target ~type_aliases
-    (head, (l : (bool * module_body) list)) : string =
+    (head, imports, (l : (bool * type_def list) list)) : string =
   let head = format_head head in
+  (* TODO: figure out what to do with the imports. Add them to a table
+     and check that all references to external modules were imported. *)
+  let imports = format_imports imports in
   let bodies =
     List.map (fun (is_rec, m) ->
                 (is_rec, map_module ~target ~type_aliases m)) l

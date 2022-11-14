@@ -98,7 +98,9 @@ val ocaml_of_atd
   : ?pp_convs:pp_convs
   -> target:target
   -> type_aliases:string option
-  -> (Atd.Ast.loc * Atd.Ast.annot) * (bool * Atd.Ast.module_body) list
+  -> ((Atd.Ast.loc * Atd.Ast.annot)
+      * Atd.Ast.import list
+      * (bool * Atd.Ast.type_def list) list)
   -> string
 
 type create_fields =

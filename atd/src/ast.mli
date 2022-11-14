@@ -169,11 +169,6 @@ and field =
          offered by the {!Atd.Util} functions.
       *)
 
-(** Parsing only *)
-type module_item =
-  | Import of import
-  | Type of type_def
-
 type any =
   | Full_module of full_module
   | Import of import
@@ -231,7 +226,7 @@ val map_all_annot : (annot -> annot) -> full_module -> full_module
 
 val visit :
   ?full_module: ((full_module -> unit) -> full_module -> unit) ->
-  ?import: (import -> unit) ->
+  ?import: ((import -> unit) -> import -> unit) ->
   ?type_def: ((type_def -> unit) -> type_def -> unit) ->
   ?type_expr: ((type_expr -> unit) -> type_expr -> unit) ->
   ?variant: ((variant -> unit) -> variant -> unit) ->
@@ -264,7 +259,7 @@ v}
   *)
 
 val fold_annot :
-  ?module_head: (module_head -> annot -> 'a -> 'a) ->
+  ?full_module: (full_module -> annot -> 'a -> 'a) ->
   ?import: (import -> annot -> 'a -> 'a) ->
   ?type_def: (type_def -> annot -> 'a -> 'a) ->
   ?type_expr: (type_expr -> annot -> 'a -> 'a) ->
@@ -319,8 +314,6 @@ module Map : sig
   val variant : mappers -> variant -> variant
   val field : mappers -> field -> field
   val type_def : mappers -> type_def -> type_def
-  val module_item : mappers -> module_item -> module_item
-  val module_body : mappers -> module_body -> module_body
   val full_module : mappers -> full_module -> full_module
 end
 

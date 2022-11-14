@@ -11,28 +11,31 @@ let read_lexbuf
     lexbuf =
 
   Lexer.init_fname lexbuf pos_fname pos_lnum;
-  let head, body = Parser.full_module Lexer.token lexbuf in
-  Check.check body;
-  let body =
+  let full_module = Parser.full_module Lexer.token lexbuf in
+  Check.check full_module;
+  let type_defs =
     if inherit_fields || inherit_variants then
-      Inherit.expand_module_body ~inherit_fields ~inherit_variants body
+      Inherit.expand_module_body ~inherit_fields ~inherit_variants
+        full_module.imports full_module.type_defs
     else
-      body
+      full_module.type_defs
   in
-  let imports, (type_defs, (body, original_types)) =
+  let type_defs =
     if expand then
-      Ast.map_type_defs body
-        (Expand.expand_type_defs ?keep_builtins ?keep_poly ~debug: xdebug)
+      Expand.expand_type_defs ?keep_builtins ?keep_poly ~debug: xdebug
+        type_defs
     else
-      Ast.map_type_defs body (fun type_defs -> (type_defs, Hashtbl.create 0))
+      type_defs
   in
-  let full_module = (head, body) in
+  let full_module =
+    { full_module with type_defs }
+  in
   (match annot_schema with
    | None -> ()
    | Some schema ->
        Annot.validate schema (Ast.Full_module full_module)
   );
-  (full_module, original_types)
+  full_module
 
 let read_channel
     ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
@@ -91,12 +94,15 @@ module Tsort = Sort.Make (
   end
 )
 
-let tsort type_defs0 =
+let tsort ?(all_rec = false) type_defs0 =
   let ignorable = [ "unit"; "bool"; "int"; "float"; "string"; "abstract" ] in
-  let type_defs =
-    List.map (fun ((_, (_, _, _), x) as def) ->
-      let deps = Ast.extract_type_names ~ignorable x in
-      (def, deps)
-    ) type_defs0
-  in
-  List.rev (Tsort.sort type_defs)
+  if all_rec then
+    [(true, type_defs0)]
+  else
+    let type_defs =
+      List.map (fun ((_, (_, _, _), x) as def) ->
+        let deps = Ast.extract_type_names ~ignorable x in
+        (def, deps)
+      ) type_defs0
+    in
+    List.rev (Tsort.sort type_defs)

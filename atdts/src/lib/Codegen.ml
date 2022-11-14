@@ -95,7 +95,7 @@ let rec unwrap e =
   match e with
   | Wrap (loc, e, an) -> unwrap e
   | Shared (loc, e, an) -> not_implemented loc "cyclic references"
-  | Tvar (loc, name) -> not_implemented loc "parametrized type"
+  | Tvar _
   | Sum _
   | Record _
   | Tuple _
@@ -625,7 +625,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
   | Name (loc, (loc2, name, []), an) -> ts_type_name env name
-  | Name (loc, _, _) -> not_implemented loc "parametrized types"
+  | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 and type_name_of_tuple env cells : string =
@@ -710,7 +710,7 @@ let rec json_reader env e =
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
        | "abstract" -> "((x: any): any => x)"
        | _ -> reader_name env name)
-  | Name (loc, _, _) -> not_implemented loc "parametrized types"
+  | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 (*
@@ -1187,9 +1187,15 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let (atd_head, atd_module), _original_types =
+  let full_module, _original_types =
     Atd.Util.load_file
       ~annot_schema
-      ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
+      ~expand:true (* monomorphization *)
+      ~keep_builtins:true
+      ~inherit_fields:true
+      ~inherit_variants:true
+      src_path
   in
+  let full_module = Atd.Ast.use_only_specific_variants full_module in
+  let atd_head, atd_module = full_module in
   to_file ~atd_filename:src_name atd_module dst_path

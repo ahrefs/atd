@@ -266,7 +266,6 @@ let _default_format, default_format_type_name, default_format_type_expr =
 
 let string_of_type_name name args an =
   let x = default_format_type_name name args an in
-
   Easy_format.Pretty.to_string x
 
 let string_of_type_expr expr =

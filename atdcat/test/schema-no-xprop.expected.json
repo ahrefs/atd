@@ -6,6 +6,7 @@
   "required": [
     "ID", "items", "aliased", "point", "kinds", "assoc1", "assoc2"
   ],
+  "additionalProperties": false,
   "properties": {
     "ID": { "description": "This is the 'id' field.", "type": "string" },
     "items": {

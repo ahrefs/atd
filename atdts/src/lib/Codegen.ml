@@ -95,7 +95,7 @@ let rec unwrap e =
   match e with
   | Wrap (loc, e, an) -> unwrap e
   | Shared (loc, e, an) -> not_implemented loc "cyclic references"
-  | Tvar (loc, name) -> not_implemented loc "parametrized type"
+  | Tvar _
   | Sum _
   | Record _
   | Tuple _
@@ -473,7 +473,7 @@ function _atd_write_option<T>(write_elt: (x: T, context: any) => any):
   return write_option
 }
 
-function _atd_write_nullable<T>(write_elt: (x: T | null, context: any) => any):
+function _atd_write_nullable<T>(write_elt: (x: T, context: any) => any):
   (x: T | null, context: any) => any {
   function write_option(x: T | null, context: any): any {
     if (x === null)
@@ -599,7 +599,7 @@ let ts_type_name env (name : string) =
   | "int" -> "Int"
   | "float" -> "number"
   | "string" -> "string"
-  | "abstract" -> (* not supported *) "any"
+  | "abstract" -> "any"
   | user_defined -> type_name env user_defined
 
 let rec type_name_of_expr env (e : type_expr) : string =
@@ -625,7 +625,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
   | Name (loc, (loc2, name, []), an) -> ts_type_name env name
-  | Name (loc, _, _) -> not_implemented loc "parametrized types"
+  | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 and type_name_of_tuple env cells : string =
@@ -652,6 +652,7 @@ let rec get_default_default (e : type_expr) : string option =
        | "int" -> Some "0"
        | "float" -> Some "0.0"
        | "string" -> Some {|""|}
+       | "abstract" -> Some "null"
        | _ -> None
       )
   | Name _ -> None
@@ -707,8 +708,9 @@ let rec json_reader env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
+       | "abstract" -> "((x: any): any => x)"
        | _ -> reader_name env name)
-  | Name (loc, _, _) -> not_implemented loc "parametrized types"
+  | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 (*
@@ -747,12 +749,14 @@ let rec json_writer env e =
              (json_writer env value)
       )
   | Option (loc, e, an) -> sprintf "_atd_write_option(%s)" (json_writer env e)
-  | Nullable (loc, e, an) -> json_writer env e
+  | Nullable (loc, e, an) ->
+      sprintf "_atd_write_nullable(%s)" (json_writer env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_writer env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
+       | "abstract" -> "((x: any): any => x)"
        | _ -> writer_name env name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -883,7 +887,7 @@ let read_case env loc orig_name an opt_e =
         Block [
           Line (sprintf "return { kind: '%s', value: %s(x[1], x) }"
                   (single_esc orig_name)
-                  (json_writer env e))
+                  (json_reader env e))
         ]
       ]
 
@@ -1183,9 +1187,15 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let (atd_head, atd_module), _original_types =
+  let full_module, _original_types =
     Atd.Util.load_file
       ~annot_schema
-      ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
+      ~expand:true (* monomorphization *)
+      ~keep_builtins:true
+      ~inherit_fields:true
+      ~inherit_variants:true
+      src_path
   in
+  let full_module = Atd.Ast.use_only_specific_variants full_module in
+  let atd_head, atd_module = full_module in
   to_file ~atd_filename:src_name atd_module dst_path

@@ -118,7 +118,7 @@ and read_mutual_recurse2 js = (
     )
   )
 ) js
-let rec write__5 js = (
+let rec write__recurse_list js = (
   Atdgen_codec_runtime.Encode.list (
     write_recurse
   )
@@ -130,7 +130,7 @@ and write_recurse js = (
       [
           Atdgen_codec_runtime.Encode.field
             (
-            write__5
+            write__recurse_list
             )
           ~name:"recurse_items"
           t.recurse_items
@@ -138,7 +138,7 @@ and write_recurse js = (
     )
   )
 ) js
-let rec read__5 js = (
+let rec read__recurse_list js = (
   Atdgen_codec_runtime.Decode.list (
     read_recurse
   )
@@ -150,7 +150,7 @@ and read_recurse js = (
           recurse_items =
             Atdgen_codec_runtime.Decode.decode
             (
-              read__5
+              read__recurse_list
               |> Atdgen_codec_runtime.Decode.field "recurse_items"
             ) json;
       } : recurse)
@@ -284,7 +284,7 @@ let read_v1 = (
       )
   ]
 )
-let write__6 = (
+let write__x_547263f = (
   Atdgen_codec_runtime.Encode.make (fun (t : _) ->
     t |>
     List.map (
@@ -299,7 +299,7 @@ let write__6 = (
     Atdgen_codec_runtime.Encode.obj
   )
 )
-let read__6 = (
+let read__x_547263f = (
   Atdgen_codec_runtime.Decode.obj_list (
     Atdgen_codec_runtime.Decode.int
   )
@@ -311,7 +311,7 @@ let write_using_object = (
       [
           Atdgen_codec_runtime.Encode.field
             (
-            write__6
+            write__x_547263f
             )
           ~name:"f"
           t.f
@@ -326,7 +326,7 @@ let read_using_object = (
           f =
             Atdgen_codec_runtime.Decode.decode
             (
-              read__6
+              read__x_547263f
               |> Atdgen_codec_runtime.Decode.field "f"
             ) json;
       } : using_object)
@@ -360,22 +360,22 @@ let read_single_tuple = (
       )
   ]
 )
-let write__2 = (
+let write__x_2596d76 = (
     Atdgen_codec_runtime.Encode.string
   |> Atdgen_codec_runtime.Encode.contramap (function `Id s -> s)
 )
-let read__2 = (
+let read__x_2596d76 = (
   (
     Atdgen_codec_runtime.Decode.string
   ) |> (Atdgen_codec_runtime.Decode.map (fun s -> `Id s))
 )
 let write_id = (
-  write__2
+  write__x_2596d76
 )
 let read_id = (
-  read__2
+  read__x_2596d76
 )
-let write__3 = (
+let write__unit_simple_var = (
   Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
     | `Foo x ->
     Atdgen_codec_runtime.Encode.constr1 "Foo" (
@@ -399,7 +399,7 @@ let write__3 = (
     ) x
   )
 )
-let read__3 = (
+let read__unit_simple_var = (
   Atdgen_codec_runtime.Decode.enum
   [
       (
@@ -442,21 +442,21 @@ let read__3 = (
       )
   ]
 )
-let write__4 = (
+let write__unit_simple_var_list = (
   Atdgen_codec_runtime.Encode.list (
-    write__3
+    write__unit_simple_var
   )
 )
-let read__4 = (
+let read__unit_simple_var_list = (
   Atdgen_codec_runtime.Decode.list (
-    read__3
+    read__unit_simple_var
   )
 )
 let write_simple_vars = (
-  write__4
+  write__unit_simple_var_list
 )
 let read_simple_vars = (
-  read__4
+  read__unit_simple_var_list
 )
 let write_simple_var write__a = (
   Atdgen_codec_runtime.Encode.make (fun (x : _) -> match x with
@@ -728,21 +728,21 @@ let read_pair read__a read__b = (
     )
   )
 )
-let write__1 write__a write__b = (
+let write__a_b_pair_list write__a write__b = (
   Atdgen_codec_runtime.Encode.list (
     write_pair write__a write__a
   )
 )
-let read__1 read__a read__b = (
+let read__a_b_pair_list read__a read__b = (
   Atdgen_codec_runtime.Decode.list (
     read_pair read__a read__a
   )
 )
 let write_pairs write__a = (
-  write__1 write__a write__a
+  write__a_b_pair_list write__a write__a
 )
 let read_pairs read__a = (
-  read__1 read__a read__a
+  read__a_b_pair_list read__a read__a
 )
 let write_label = (
   Atdgen_codec_runtime.Encode.string

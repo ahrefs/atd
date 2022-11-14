@@ -74,7 +74,14 @@ let to_camel_case s =
         Buffer.add_char buf c;
         start_word := false
   done;
-  Buffer.contents buf
+  let name = Buffer.contents buf in
+  if name = "" then "X"
+  else
+    (* Make sure we don't start with a digit. This happens with
+       generated identifiers like '_42'. *)
+    match name.[0] with
+    | 'A'..'Z' | 'a'..'z' | '_' -> name
+    | _ -> "X" ^ name
 
 (* Use CamelCase as recommended by PEP 8. *)
 let class_name env id =
@@ -195,6 +202,8 @@ methods and functions to convert data from/to JSON.
 # Disable flake8 entirely on this file:
 # flake8: noqa
 
+# Import annotations to allow forward references
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
@@ -478,12 +487,8 @@ let py_type_name env (name : string) =
   | "int" -> "int"
   | "float" -> "float"
   | "string" -> "str"
-  | "abstract" -> (* not supported *) "Any"
+  | "abstract" -> "Any"
   | user_defined -> class_name env user_defined
-
-let option_is_not_implemented loc =
-  not_implemented loc "true option type (did you forget a '?' \
-                       before the field name?)"
 
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
@@ -496,7 +501,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
       in
       sprintf "Tuple[%s]" (String.concat ", " type_names)
   | List (loc, e, an) ->
-      (match assoc_kind loc e an with
+     (match assoc_kind loc e an with
        | Array_list
        | Object_list _ ->
            sprintf "List[%s]"
@@ -513,7 +518,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
   | Name (loc, (loc2, name, []), an) -> py_type_name env name
-  | Name (loc, _, _) -> not_implemented loc "parametrized types"
+  | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 let rec get_default_default
@@ -525,7 +530,7 @@ let rec get_default_default
   | List _ ->
       if mutable_ok then Some "[]"
       else None
-  | Option _ -> None
+  | Option _
   | Nullable _ -> Some "None"
   | Shared (loc, e, an) -> get_default_default ~mutable_ok e
   | Wrap (loc, e, an) -> get_default_default ~mutable_ok e
@@ -536,6 +541,7 @@ let rec get_default_default
        | "int" -> Some "0"
        | "float" -> Some "0.0"
        | "string" -> Some {|""|}
+       | "abstract" -> Some "None"
        | _ -> None
       )
   | Name _ -> None
@@ -603,7 +609,7 @@ let rec json_writer env e =
            sprintf "_atd_write_assoc_list_to_object(%s)"
              (json_writer env value)
       )
-  | Option (loc, e, an) -> option_is_not_implemented loc
+  | Option (loc, e, an)
   | Nullable (loc, e, an) ->
       sprintf "_atd_write_nullable(%s)" (json_writer env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
@@ -611,6 +617,7 @@ let rec json_writer env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
+       | "abstract" -> "(lambda x: x)"
        | _ -> "(lambda x: x.to_json())")
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -683,7 +690,7 @@ let rec json_reader env (e : type_expr) =
            sprintf "_atd_read_assoc_object_into_list(%s)"
              (json_reader env value)
       )
-  | Option (loc, e, an) -> option_is_not_implemented loc
+  | Option (loc, e, an)
   | Nullable (loc, e, an) ->
       sprintf "_atd_read_nullable(%s)" (json_reader env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
@@ -691,6 +698,7 @@ let rec json_reader env (e : type_expr) =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
+       | "abstract" -> "(lambda x: x)"
        | _ -> sprintf "%s.from_json" (class_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -916,13 +924,13 @@ let alias_wrapper env ~class_decorators name type_expr =
     ]
   ]
 
-let case_class env type_name
+let case_class env ~class_decorators type_name
     (loc, orig_name, unique_name, an, opt_e) =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
       [
-        Line "@dataclass";
+        Inline class_decorators;
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
           Line (sprintf {|"""Original type: %s = [ ... | %s | ... ]"""|}
@@ -950,7 +958,7 @@ let case_class env type_name
       ]
   | Some e ->
       [
-        Line "@dataclass";
+        Inline class_decorators;
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
           Line (sprintf {|"""Original type: %s = [ ... | %s of ... | ... ]"""|}
@@ -1114,7 +1122,7 @@ let sum env ~class_decorators loc name cases =
     ) cases
   in
   let case_classes =
-    List.map (fun x -> Inline (case_class env name x)) cases
+    List.map (fun x -> Inline (case_class env ~class_decorators name x)) cases
     |> double_spaced
   in
   let container_class = sum_container env ~class_decorators loc name cases in
@@ -1166,19 +1174,8 @@ let module_body env x =
   |> List.rev
   |> spaced
 
-let extract_definition_names (items : A.module_body) =
-  List.map (fun (Type (loc, (name, param, an), e)) -> name) items
-
 let definition_group ~atd_filename env
     (is_recursive, (items: A.module_body)) : B.t =
-  if is_recursive then
-    A.error (
-      sprintf "recursive definitions are not supported by atdpy \
-               at this time: types %s in %S"
-        (extract_definition_names items
-         |> String.concat ", ")
-        atd_filename
-    );
   [
     Inline (module_body env items);
   ]
@@ -1219,10 +1216,16 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let (atd_head, atd_module), _original_types =
+  let full_module, _original_types =
     Atd.Util.load_file
       ~annot_schema
-      ~expand:false ~inherit_fields:true ~inherit_variants:true src_path
+      ~expand:true (* monomorphization = eliminate parametrized type defs *)
+      ~keep_builtins:true
+      ~inherit_fields:true
+      ~inherit_variants:true
+      src_path
   in
+  let full_module = Atd.Ast.use_only_specific_variants full_module in
+  let (atd_head, atd_module) = full_module in
   let head = Python_annot.get_python_json_text (snd atd_head) in
   to_file ~atd_filename:src_name ~head atd_module dst_path

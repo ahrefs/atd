@@ -7,6 +7,8 @@ methods and functions to convert data from/to JSON.
 # Disable flake8 entirely on this file:
 # flake8: noqa
 
+# Import annotations to allow forward references
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
@@ -241,6 +243,40 @@ from dataclasses import dataclass
 
 
 @dataclass
+class RecursiveClass:
+    """Original type: recursive_class = { ... }"""
+
+    id: int
+    flag: bool
+    children: List[RecursiveClass]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'RecursiveClass':
+        if isinstance(x, dict):
+            return cls(
+                id=_atd_read_int(x['id']) if 'id' in x else _atd_missing_json_field('RecursiveClass', 'id'),
+                flag=_atd_read_bool(x['flag']) if 'flag' in x else _atd_missing_json_field('RecursiveClass', 'flag'),
+                children=_atd_read_list(RecursiveClass.from_json)(x['children']) if 'children' in x else _atd_missing_json_field('RecursiveClass', 'children'),
+            )
+        else:
+            _atd_bad_json('RecursiveClass', x)
+
+    def to_json(self) -> Any:
+        res: Dict[str, Any] = {}
+        res['id'] = _atd_write_int(self.id)
+        res['flag'] = _atd_write_bool(self.flag)
+        res['children'] = _atd_write_list((lambda x: x.to_json()))(self.children)
+        return res
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'RecursiveClass':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
 class Root_:
     """Original type: kind = [ ... | Root | ... ]"""
 
@@ -371,6 +407,58 @@ class Alias:
 
 
 @dataclass
+class KindParametrizedTuple:
+    """Original type: _kind_parametrized_tuple"""
+
+    value: Tuple[Kind, Kind, int]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'KindParametrizedTuple':
+        return cls((lambda x: (Kind.from_json(x[0]), Kind.from_json(x[1]), _atd_read_int(x[2])) if isinstance(x, list) and len(x) == 3 else _atd_bad_json('array of length 3', x))(x))
+
+    def to_json(self) -> Any:
+        return (lambda x: [(lambda x: x.to_json())(x[0]), (lambda x: x.to_json())(x[1]), _atd_write_int(x[2])] if isinstance(x, tuple) and len(x) == 3 else _atd_bad_python('tuple of length 3', x))(self.value)
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'KindParametrizedTuple':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class IntFloatParametrizedRecord:
+    """Original type: _int_float_parametrized_record = { ... }"""
+
+    field_a: int
+    field_b: List[float]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'IntFloatParametrizedRecord':
+        if isinstance(x, dict):
+            return cls(
+                field_a=_atd_read_int(x['field_a']) if 'field_a' in x else _atd_missing_json_field('IntFloatParametrizedRecord', 'field_a'),
+                field_b=_atd_read_list(_atd_read_float)(x['field_b']) if 'field_b' in x else [],
+            )
+        else:
+            _atd_bad_json('IntFloatParametrizedRecord', x)
+
+    def to_json(self) -> Any:
+        res: Dict[str, Any] = {}
+        res['field_a'] = _atd_write_int(self.field_a)
+        res['field_b'] = _atd_write_list(_atd_write_float)(self.field_b)
+        return res
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'IntFloatParametrizedRecord':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
 class Root:
     """Original type: root = { ... }"""
 
@@ -387,6 +475,10 @@ class Root:
     assoc3: Dict[float, int]
     assoc4: Dict[str, int]
     nullables: List[Optional[int]]
+    options: List[Optional[int]]
+    untyped_things: List[Any]
+    parametrized_record: IntFloatParametrizedRecord
+    parametrized_tuple: KindParametrizedTuple
     maybe: Optional[int] = None
     answer: int = 42
 
@@ -407,6 +499,10 @@ class Root:
                 assoc3=_atd_read_assoc_array_into_dict(_atd_read_float, _atd_read_int)(x['assoc3']) if 'assoc3' in x else _atd_missing_json_field('Root', 'assoc3'),
                 assoc4=_atd_read_assoc_object_into_dict(_atd_read_int)(x['assoc4']) if 'assoc4' in x else _atd_missing_json_field('Root', 'assoc4'),
                 nullables=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['nullables']) if 'nullables' in x else _atd_missing_json_field('Root', 'nullables'),
+                options=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['options']) if 'options' in x else _atd_missing_json_field('Root', 'options'),
+                untyped_things=_atd_read_list((lambda x: x))(x['untyped_things']) if 'untyped_things' in x else _atd_missing_json_field('Root', 'untyped_things'),
+                parametrized_record=IntFloatParametrizedRecord.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
+                parametrized_tuple=KindParametrizedTuple.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
             )
@@ -428,6 +524,10 @@ class Root:
         res['assoc3'] = _atd_write_assoc_dict_to_array(_atd_write_float, _atd_write_int)(self.assoc3)
         res['assoc4'] = _atd_write_assoc_dict_to_object(_atd_write_int)(self.assoc4)
         res['nullables'] = _atd_write_list(_atd_write_nullable(_atd_write_int))(self.nullables)
+        res['options'] = _atd_write_list(_atd_write_nullable(_atd_write_int))(self.options)
+        res['untyped_things'] = _atd_write_list((lambda x: x))(self.untyped_things)
+        res['parametrized_record'] = (lambda x: x.to_json())(self.parametrized_record)
+        res['parametrized_tuple'] = (lambda x: x.to_json())(self.parametrized_tuple)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['answer'] = _atd_write_int(self.answer)
@@ -486,6 +586,76 @@ class Pair:
 
     @classmethod
     def from_json_string(cls, x: str) -> 'Pair':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass(frozen=True)
+class A:
+    """Original type: frozen = [ ... | A | ... ]"""
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return 'A'
+
+    @staticmethod
+    def to_json() -> Any:
+        return 'A'
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass(frozen=True)
+class B:
+    """Original type: frozen = [ ... | B of ... | ... ]"""
+
+    value: int
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return 'B'
+
+    def to_json(self) -> Any:
+        return ['B', _atd_write_int(self.value)]
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass(frozen=True)
+class Frozen:
+    """Original type: frozen = [ ... ]"""
+
+    value: Union[A, B]
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return self.value.kind
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'Frozen':
+        if isinstance(x, str):
+            if x == 'A':
+                return cls(A())
+            _atd_bad_json('Frozen', x)
+        if isinstance(x, List) and len(x) == 2:
+            cons = x[0]
+            if cons == 'B':
+                return cls(B(_atd_read_int(x[1])))
+            _atd_bad_json('Frozen', x)
+        _atd_bad_json('Frozen', x)
+
+    def to_json(self) -> Any:
+        return self.value.to_json()
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'Frozen':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:

@@ -1,6 +1,9 @@
 let read_lexbuf
     ?annot_schema
-    ?(expand = false) ?keep_poly ?(xdebug = false)
+    ?(expand = false)
+    ?keep_builtins
+    ?keep_poly
+    ?(xdebug = false)
     ?(inherit_fields = false)
     ?(inherit_variants = false)
     ?(pos_fname = "")
@@ -16,15 +19,12 @@ let read_lexbuf
     else
       body
   in
-  let imports, (type_defs, original_types) =
+  let imports, (type_defs, (body, original_types)) =
     if expand then
       Ast.map_type_defs body
-        (Expand.expand_type_defs ?keep_poly ~debug: xdebug)
+        (Expand.expand_type_defs ?keep_builtins ?keep_poly ~debug: xdebug)
     else
       Ast.map_type_defs body (fun type_defs -> (type_defs, Hashtbl.create 0))
-  in
-  let body =
-    imports @ List.map (fun td -> Ast.Type td) type_defs
   in
   let full_module = (head, body) in
   (match annot_schema with
@@ -35,7 +35,8 @@ let read_lexbuf
   (full_module, original_types)
 
 let read_channel
-    ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants
+    ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+    ?inherit_fields ?inherit_variants
     ?pos_fname ?pos_lnum
     ic =
   let lexbuf = Lexing.from_channel ic in
@@ -45,11 +46,12 @@ let read_channel
     else
       pos_fname
   in
-  read_lexbuf ?annot_schema ?expand ?keep_poly ?xdebug
+  read_lexbuf ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
 
 let load_file
-    ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants
+    ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+    ?inherit_fields ?inherit_variants
     ?pos_fname ?pos_lnum
     file =
   let ic = open_in file in
@@ -62,8 +64,8 @@ let load_file
     in
     let ast =
       read_channel
-        ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields
-        ?inherit_variants ?pos_fname ?pos_lnum ic
+        ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+        ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum ic
     in
     finally ();
     ast
@@ -72,11 +74,12 @@ let load_file
     raise e
 
 let load_string
-    ?annot_schema ?expand ?keep_poly ?xdebug ?inherit_fields ?inherit_variants
+    ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
+    ?inherit_fields ?inherit_variants
     ?pos_fname ?pos_lnum
     s =
   let lexbuf = Lexing.from_string s in
-  read_lexbuf ?annot_schema ?expand ?keep_poly ?xdebug
+  read_lexbuf ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
 
 module Tsort = Sort.Make (

@@ -122,10 +122,7 @@ let rec get_reader_name
 let read_with_adapter adapter reader =
   match adapter.Json.ocaml_adapter with
   | None -> reader
-  | Some adapter_path ->
-      let normalize =
-        Oj_mapping.json_normalizer_of_adapter_path adapter_path
-      in
+  | Some { normalize; _ } ->
       [
         Line (
           sprintf "%s %s (" (decoder_ident "adapter") normalize
@@ -397,13 +394,14 @@ let rec get_writer_name
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
-  | _ -> assert false
+  | Unit _ | Bool _ | Int _ | Float _ | String _ | Abstract _
+  | Sum _ | Record _ | Tuple _ | List _ | Option _ | Nullable _
+  | Wrap _ | Name _ | External _ -> assert false
 
 let write_with_adapter adapter writer =
   match adapter.Json.ocaml_adapter with
   | None -> writer
-  | Some adapter_path ->
-      let restore = Oj_mapping.json_restorer_of_adapter_path adapter_path in
+  | Some { restore; _ } ->
       [
         Line (
           sprintf "%s %s (" (encoder_ident "adapter") restore

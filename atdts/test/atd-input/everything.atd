@@ -8,6 +8,13 @@ type different_kinds_of_things = [
 (* TS keyword *)
 type this = int
 
+type ('a, 'b) parametrized_record = {
+  field_a: 'a;
+  ~field_b: 'b list;
+}
+
+type 'a parametrized_tuple = ('a * 'a * int)
+
 type root = {
   id <json name="ID">: string;
   this: this;
@@ -24,8 +31,16 @@ type root = {
   assoc4: (string * int) list <json repr="object"> <ts repr="map">;
   ~options: int option list;
   ~nullables: int nullable list;
+  untyped_things: abstract list;
+  foo: foo nullable;
+  parametrized_record: (int, float) parametrized_record;
+  parametrized_tuple: different_kinds_of_things parametrized_tuple;
 }
 
 type alias = int list
 
 type pair = (string * int)
+
+type foo = {
+  foo: string;
+}

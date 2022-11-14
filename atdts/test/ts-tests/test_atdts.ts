@@ -54,7 +54,21 @@ function test_everything() {
       ["h", 8],
     ]),
     options: [{value:10}, null, {value:88}],
-    nullables: [13, 71]
+    nullables: [13, 71],
+    untyped_things: [{}, [["hello"]], 123],
+    foo: null,
+    parametrized_record: {
+      field_a: 42,
+      field_b: [
+        9.9,
+        8.8
+      ]
+    },
+    parametrized_tuple: [
+      { kind: 'WOW' },
+      { kind: 'WOW' },
+      100
+    ],
   }
   const a_str = JSON.stringify(API.writeRoot(a_obj), null, 2)
   save('a_str', a_str)
@@ -147,6 +161,28 @@ ${a_str}`
   "nullables": [
     13,
     71
+  ],
+  "untyped_things": [
+    {},
+    [
+      [
+        "hello"
+      ]
+    ],
+    123
+  ],
+  "foo": null,
+  "parametrized_record": {
+    "field_a": 42,
+    "field_b": [
+      9.9,
+      8.8
+    ]
+  },
+  "parametrized_tuple": [
+    "wow",
+    "wow",
+    100
   ]
 }`
   save('b_str', b_str)

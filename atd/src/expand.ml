@@ -59,8 +59,8 @@ open Import
 
 open Ast
 
-module S = Set.Make (String)
-module M = Map.Make (String)
+module S = Stdlib.Set.Make (String)
+module M = Stdlib.Map.Make (String)
 
 
 (*
@@ -212,7 +212,9 @@ let make_type_name loc orig_name args an =
   in
   let normalized_args = List.map (mapvar_expr assign_name) args in
   let new_name =
-    "@(" ^ Print.string_of_type_name orig_name normalized_args an ^ ")" in
+    sprintf "@(%s)"
+      (Print.string_of_type_name orig_name normalized_args an)
+  in
   let mapping = List.rev !mapping in
   let new_args =
     List.map (fun (old_s, _) -> Tvar (loc, old_s)) mapping in
@@ -245,7 +247,8 @@ let add_annot (x : type_expr) a : type_expr =
   Ast.map_annot (fun a0 -> Annot.merge (a @ a0)) x
 
 
-let expand ?(keep_poly = false) (l : type_def list)
+let expand
+    ?(keep_builtins = false) ?(keep_poly = false) (l : type_def list)
   : type_def list * original_types =
 
   let seqnum, tbl = init_table () in
@@ -265,27 +268,42 @@ let expand ?(keep_poly = false) (l : type_def list)
     | List (loc as loc2, t, a)
     | Name (loc, (loc2, "list", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "list" [t'] a
+        if keep_builtins then
+          Name (loc, (loc2, "list", [t']), a)
+        else
+          subst_type_name loc loc2 "list" [t'] a
 
     | Option (loc as loc2, t, a)
     | Name (loc, (loc2, "option", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "option" [t'] a
+        if keep_builtins then
+          Name (loc, (loc2, "option", [t']), a)
+        else
+          subst_type_name loc loc2 "option" [t'] a
 
     | Nullable (loc as loc2, t, a)
     | Name (loc, (loc2, "nullable", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "nullable" [t'] a
+        if keep_builtins then
+          Name (loc, (loc2, "nullable", [t']), a)
+        else
+          subst_type_name loc loc2 "nullable" [t'] a
 
     | Shared (loc as loc2, t, a)
     | Name (loc, (loc2, "shared", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "shared" [t'] a
+        if keep_builtins then
+          Name (loc, (loc2, "shared", [t']), a)
+        else
+          subst_type_name loc loc2 "shared" [t'] a
 
     | Wrap (loc as loc2, t, a)
     | Name (loc, (loc2, "wrap", [t]), a) ->
         let t' = subst env t in
-        subst_type_name loc loc2 "wrap" [t'] a
+        if keep_builtins then
+          Name (loc, (loc2, "wrap", [t']), a)
+        else
+          subst_type_name loc loc2 "wrap" [t'] a
 
     | Tvar (_, s) as x -> Option.value (List.assoc s env) ~default:x
 
@@ -535,35 +553,101 @@ let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
   in
   replace t
 
+(* Prefer MD5 over Hashtbl.hash because it won't change. *)
+let hex_hash_string s =
+  Digest.string s
+  |> Digest.to_hex
+  |> fun s -> String.sub s 0 7
+
+(*
+   Remove punctuation and non-ascii symbols from a name and replace them
+   with underscores. The original case is preserved.
+   The result is of the form [A-Za-z][A-Za-z0-9_]+.
+
+   Example:
+
+     "@((@(bool wrap_) * type_) option)" -> "bool_wrap_type_option"
+
+   The original name can contain ATD annotations. It would be nice to
+   ignore them but it's not clear how. Ideally we want this:
+
+        "@(string list <ocaml valid='fun l -> true'>)"
+     -> "string_list"
+
+   But we get this:
+
+     "true_6a9832c"
+
+   Since it's misleading, when we see a suspected annotation, we
+   use just "x" followed by a hash of the original contents.
+   The hash has the property of making the name stable i.e. it is unlikely
+   to change when unrelated type definitions change.
+
+     "x_6a9832c"
+*)
+let suggest_good_name =
+  let rex = Re.Pcre.regexp "([^a-zA-Z0-9])+" in
+  fun name_with_punct ->
+    let components =
+      Re.Pcre.split ~rex name_with_punct
+      |> List.filter ((<>) "")
+    in
+    let full_name = String.concat "_" components in
+    let hash = hex_hash_string full_name in
+    let name =
+      if String.contains name_with_punct '<' then
+        (* Avoid misleading names to due ATD annotations embedded in the
+           type name. See earlier comments. *)
+        "x_" ^ hash
+      else if List.length components > 5 then
+        (* Avoid insanely long type names *)
+        match List.rev components with
+        | [] -> assert false
+        | [_] -> assert false
+        | main :: rev_details ->
+            (* Place the hash after the main name rather than before because
+               it often starts with a digit which would have to be prefixed
+               by an extra letter so it can be a valid name. *)
+            main ^ "_" ^ hash
+      else
+        (* A full name that's not too long and makes sense such as
+           'int_bracket' for the type 'int bracket'. *)
+        String.concat "_" components
+    in
+    (* Ensure the name starts with a letter. *)
+    if name = "" then "x"
+    else
+      match name.[0] with
+      | 'a'..'z' | 'A'..'Z' -> name
+      | _ (* digit *) -> "x" ^ name
 
 let standardize_type_names
-    ~prefix ~original_types (l : type_def list) : type_def list =
-
-  let new_id =
-    let n = ref 0 in
-    let rec f tbl =
-      incr n;
-      let id = prefix ^ string_of_int !n in
-      if Hashtbl.mem tbl id then f tbl
-      else id
-    in
-    f
+    ~prefix ~original_types (defs : type_def list) : type_def list =
+  let reserved_identifiers =
+    List.map (fun (k, _, _) -> k) Predef.list
+    @ List.filter_map (fun (_, (k, _, _), _) ->
+      if is_special k then None
+      else Some k
+    ) defs
   in
-
-  let tbl = Hashtbl.create 50 in
-  List.iter (fun (k, _, _) -> Hashtbl.add tbl k k) Predef.list;
-  List.iter (
-    fun (_, (k, _, _), _) ->
-      if not (is_special k) then (
-        Hashtbl.add tbl k k
-      )
-  ) l;
+  let name_registry =
+    Unique_name.init
+      ~reserved_identifiers
+      ~reserved_prefixes:[]
+      ~safe_prefix:""
+  in
+  (* The value v of the type is for extracting a good, short fallback name *)
+  let new_id id =
+    (* The leading underscore is used to identify generated type names
+       in other places. *)
+    Unique_name.translate
+      name_registry
+      ~preferred_translation:(prefix ^ suggest_good_name id)
+      id
+  in
   let replace_name k =
-    try Hashtbl.find tbl k
-    with Not_found ->
-      assert (is_special k);
-      let k' = new_id tbl in
-      Hashtbl.add tbl k k';
+    if is_special k then
+      let k' = new_id k in
       begin try
           let orig_info = Hashtbl.find original_types k in
           Hashtbl.remove original_types k;
@@ -572,24 +656,32 @@ let standardize_type_names
           assert false (* Must have been added during expand *)
       end;
       k'
+    else
+      k
   in
-  let l =
+  let defs =
     List.map (
       fun (loc, (k, pl, a), t) ->
         let k' = replace_name k in
         (loc, (k', pl, a), t)
-    ) l
+    ) defs
   in
-  let subst s =
-    try Hashtbl.find tbl s
-    with Not_found ->
-      (* must have been defined as abstract *)
-      s
+  let subst id =
+    match Unique_name.translate_only name_registry id with
+    | Some x -> x
+    | None ->
+        (* must have been defined as abstract *)
+        id
   in
-  List.map (fun (loc, x, t) -> (loc, x, replace_type_names subst t)) l
+  List.map (fun (loc, x, t) -> (loc, x, replace_type_names subst t)) defs
 
 
-let expand_type_defs ?(prefix = "_") ?keep_poly ?(debug = false) td_list =
+let expand_type_defs
+    ?(prefix = "_")
+    ?keep_builtins
+    ?keep_poly
+    ?(debug = false)
+    td_list =
   let (td_list, original_types) = expand ?keep_poly td_list in
   let td_list =
     if debug then td_list

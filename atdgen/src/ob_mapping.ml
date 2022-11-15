@@ -127,11 +127,8 @@ let def_of_atd atd =
   Ox_emit.def_of_atd atd ~target:Biniou ~external_:Biniou.External
     ~mapping_of_expr ~def:Biniou.Def
 
-let defs_of_atd_module l =
-  List.filter_map (function
-    | Atd.Ast.Type def -> Some (def_of_atd def)
-    | Atd.Ast.Import _ -> None
+let defs_of_def_groups l =
+  List.map (fun (is_rec, defs) ->
+    let defs = List.map def_of_atd defs  in
+    (is_rec, defs)
   ) l
-
-let defs_of_atd_modules l =
-  List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l

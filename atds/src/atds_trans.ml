@@ -132,15 +132,10 @@ package object %s {
     suf;
   fun () -> output_string out "\n}\n"
 
-let rec trans_module env items =
-  List.fold_left (fun env item ->
-    match item with
-    | A.Import _ -> env
-    | Type x -> trans_outer env x
-  )
-    env items
+let rec trans_module env (module_ : A.module_) =
+  List.fold_left (fun env x -> trans_type_def env x) env module_.type_defs
 
-and trans_outer env ((_, (name, _, annots), atd_ty) : A.type_def) =
+and trans_type_def env ((_, (name, _, annots), atd_ty) : A.type_def) =
   match unwrap atd_ty with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)

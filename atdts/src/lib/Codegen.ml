@@ -1187,7 +1187,7 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let full_module, _original_types =
+  let module_, _original_types =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization *)
@@ -1196,6 +1196,6 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module = Atd.Ast.use_only_specific_variants full_module in
-  let atd_head, atd_module = full_module in
+  let module_ = Atd.Ast.use_only_specific_variants module_ in
+  let atd_head, atd_module = module_ in
   to_file ~atd_filename:src_name atd_module dst_path

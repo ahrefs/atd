@@ -24,7 +24,7 @@ let rec norm_ty ?(unwrap_option = false) env atd_ty =
       (match name with
        | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
        | _ ->
-           (match List.assoc name env.module_items with
+           (match List.assoc name env.type_defs with
             | Some x -> norm_ty env x
             | None ->
                 eprintf "Warning: unknown type %s\n%!" name;

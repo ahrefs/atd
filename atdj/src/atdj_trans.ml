@@ -299,22 +299,24 @@ import org.json.*;
     env.package;
   out
 
-let rec trans_module env items = List.fold_left trans_outer env items
+let rec trans_module env (module_ : A.module_) =
+  (match module_.imports with
+   | x :: _ ->
+       A.error_at x.loc "unsupported: import"
+   | [] -> ()
+  );
+  List.fold_left trans_type_def env module_.type_defs
 
-and trans_outer env (x : A.module_item) =
-  match x with
-  | A.Import { loc; _ } ->
-      A.error_at loc "unsupported: import"
-  | A.Type (_, (name, _, _), atd_ty) ->
-      match unwrap atd_ty with
-      | Sum (loc, v, a) ->
-          trans_sum name env (loc, v, a)
-      | Record (loc, v, a) ->
-          trans_record name env (loc, v, a)
-      | Name (_, (_, _name, _), _) ->
-          (* Don't translate primitive types at the top-level *)
-          env
-      | x -> type_not_supported x
+and trans_type_def env ((_, (name, _, _), atd_ty) : A.type_def) =
+  match unwrap atd_ty with
+  | Sum (loc, v, a) ->
+      trans_sum name env (loc, v, a)
+  | Record (loc, v, a) ->
+      trans_record name env (loc, v, a)
+  | Name (_, (_, _name, _), _) ->
+      (* Don't translate primitive types at the top-level *)
+      env
+  | x -> type_not_supported x
 
 (* Translation of sum types.  For a sum type
  *
@@ -575,7 +577,7 @@ public class %s implements Atdj {
     ) fields;
 
   List.iter
-    (function ((loc, (field_name, _, annots), _) : simple_field) ->
+    (function ((loc, (field_name, _, annots), _) : A.simple_field) ->
        let field_name = get_java_field_name field_name annots in
        let java_ty = List.assoc_exn field_name java_tys in
        output_string out (javadoc loc annots "  ");

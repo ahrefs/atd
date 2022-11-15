@@ -10,8 +10,8 @@ module S = Set.Make (String)
 
 let load_defs (l : type_def list) =
   let tbl = Predef.make_table () in
-  List.iter (fun ((_, (k, pl, _), _) as td) ->
-    Hashtbl.add tbl k (List.length pl, Some td)
+  List.iter (fun (td : type_def) ->
+    Hashtbl.add tbl td.name (List.length td.param, Some td)
   ) l;
   tbl
 
@@ -90,10 +90,10 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
     | Name (loc, (loc2, k, args), a) ->
         let expanded_args = List.map (subst false param) args in
         if deref then
-          let _, vars, _, t =
+          let vars, t =
             try
               match Hashtbl.find tbl k with
-                _, Some (_, (k, vars, a), t) -> k, vars, a, t
+                _, Some (x : type_def) -> x.param, x.value
               | _, None -> failwith ("Cannot inherit from type " ^ k)
             with Not_found ->
               failwith ("Missing type definition for " ^ k)
@@ -137,6 +137,8 @@ let expand_module_body
   (* TODO: use 'imports' to improve error messages when a user expects
      'inherit' to work on imported types *)
   let tbl = load_defs defs in
-  List.map (fun (loc, name, t) ->
-    (loc, name, expand ?inherit_fields ?inherit_variants tbl t)
+  List.map (fun (x : type_def) ->
+    { x with
+      value = expand ?inherit_fields ?inherit_variants tbl x.value;
+    }
   ) defs

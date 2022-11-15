@@ -348,15 +348,15 @@ let expand
         assert false (* All original type definitions must
                         have been put in the table initially *)
     in
-    let ((_, _, _) as td') =
+    let (td' : type_def) =
       match orig_opt_td with
         None ->
           assert false (* Original type definitions must all exist,
                           even for predefined types and abstract types. *)
-      | Some (_, (k, pl, def_an), t) ->
-          assert (k = orig_name);
+      | Some (x : type_def) ->
+          assert (x.name = orig_name);
           let new_params = vars_of_int n_param in
-          let t = add_annot t an0 in
+          let t = add_annot x.value an0 in
           let t = set_type_expr_loc loc t in
 
             (*
@@ -391,7 +391,7 @@ let expand
               'y -> 'a
 
             *)
-          let env = List.map2 (fun var value -> (var, value)) pl args in
+          let env = List.map2 (fun var value -> (var, value)) x.param args in
 
           let t' =
             if is_abstract t then
@@ -400,7 +400,7 @@ let expand
                   use 'a t and preserve "t"
                 *)
               let t =
-                expr_of_lvalue loc orig_name pl
+                expr_of_lvalue loc orig_name x.param
                   (Ast.annot_of_type_expr t)
               in
               subst_only_args env t
@@ -411,7 +411,13 @@ let expand
               else
                 t'
           in
-          (loc, (name, new_params, def_an), t')
+          ({ x with
+             loc;
+             name;
+             param = new_params;
+             annot = x.annot;
+             value = t';
+           } : type_def)
     in
     Hashtbl.replace tbl name (i, n_param, None, Some td')
 
@@ -456,24 +462,24 @@ let expand
 
   (* first pass: add all original definitions to the table *)
   List.iter (
-    fun ((_, (k, pl, _), _) as td) ->
+    fun (x : type_def) ->
       incr seqnum;
       let i = !seqnum in
-      let n = List.length pl in
-      Hashtbl.add tbl k (i, n, Some td, None)
+      let n = List.length x.param in
+      Hashtbl.add tbl x.name (i, n, Some x, None)
   ) l;
 
   (* second pass: perform substitutions and insert new definitions *)
   List.iter (
-    fun ((loc, (k, pl, a), t) as td) ->
-      if pl = [] || keep_poly then (
+    fun (td : type_def) ->
+      if td.param = [] || keep_poly then (
         let (i, n, _, _) =
-          try Hashtbl.find tbl k
+          try Hashtbl.find tbl td.name
           with Not_found -> assert false
         in
-        let t' = subst [] t in
-        let td' = (loc, (k, pl, a), t') in
-        Hashtbl.replace tbl k (i, n, Some td, Some td')
+        let t' = subst [] td.value in
+        let td' = { td with value = t' } in
+        Hashtbl.replace tbl td.name (i, n, Some td, Some td')
       )
   ) l;
 
@@ -594,10 +600,11 @@ let suggest_good_name =
 let standardize_type_names
     ~prefix (defs : type_def list) : type_def list =
   let reserved_identifiers =
-    List.map (fun (k, _, _) -> k) Predef.list
-    @ List.filter_map (fun (_, (k, _, _), _) ->
-      if is_special k then None
-      else Some k
+    List.map (fun (name, _, _) -> name) Predef.list
+    @ List.filter_map (fun (x : type_def) ->
+      let name = x.name in
+      if is_special name then None
+      else Some name
     ) defs
   in
   let name_registry =
@@ -623,9 +630,8 @@ let standardize_type_names
   in
   let defs =
     List.map (
-      fun (loc, (k, pl, a), t) ->
-        let k' = replace_name k in
-        (loc, (k', pl, a), t)
+      fun (x : type_def) ->
+        { x with name = replace_name x.name }
     ) defs
   in
   let subst id =
@@ -635,8 +641,9 @@ let standardize_type_names
         (* must have been defined as abstract *)
         id
   in
-  List.map (fun (loc, x, t) -> (loc, x, replace_type_names subst t)) defs
-
+  List.map (fun (x : type_def) ->
+    { x with value = replace_type_names subst x.value }
+  ) defs
 
 let expand_type_defs
     ?(prefix = "_")

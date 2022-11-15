@@ -24,10 +24,7 @@ val opt_annot_def : string option -> string -> string
 
 val insert_annot : string option -> string
 
-val get_type_constraint
-  : original_types:(string, string * int) Hashtbl.t
-  -> ('a, 'b) Mapping.def
-  -> string
+val get_type_constraint : ('a, 'b) Mapping.def -> string
 
 (** Determine whether the start of the given block of code was annotated
     with the "fun" tag, indicating that it represents a lambda (anonymous
@@ -52,9 +49,7 @@ val get_let : is_rec:bool -> is_first:bool -> string * string
 val write_opens : Buffer.t -> string list -> unit
 
 val def_of_atd
-  : Atd.Ast.loc
-    * (string * string list * Atd.Annot.t)
-    * Atd.Ast.type_expr
+  : Atd.Ast.type_def
   -> target:Ocaml.target
   -> def:'a
   -> external_:'a

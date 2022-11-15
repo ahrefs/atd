@@ -57,7 +57,7 @@ let print_atd ~html_doc oc ast =
 
 let print_ml ~name oc ast =
   let buf = Buffer.create 1000 in
-  Atd.Reflect.print_full_module_def buf name ast;
+  Atd.Reflect.print_module_def buf name ast;
   output_string oc (Buffer.contents buf);
   output_string oc "\n"
 

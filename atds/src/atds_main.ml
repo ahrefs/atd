@@ -47,19 +47,16 @@ let main () =
   );
 
   (* Parse ATD file *)
-  let (atd_head, atd_module), _original_types =
+  let module_ =
     Atd.Util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in
   let env = {
     env with
-    module_items =
+    type_defs =
       List.map
-        (function
-          | Atd.Ast.Import { loc; _ } ->
-              Atd.Ast.error_at loc "unsupported: import"
-          | Atd.Ast.Type (_, (name, _, _), atd_ty) -> (name, atd_ty))
-        atd_module
+        (fun (_, (name, _, _), atd_ty) -> (name, atd_ty))
+        module_.type_defs
   } in
 
   let close_package = Atds_trans.open_package env in
@@ -68,7 +65,7 @@ let main () =
   Atds_helper.output_atds env;
 
   (* Generate classes from ATD definition *)
-  let _ = Atds_trans.trans_module env atd_module in
+  let _ = Atds_trans.trans_module env module_ in
 
   close_package()
 

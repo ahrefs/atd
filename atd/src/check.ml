@@ -13,7 +13,7 @@ let get_kind = function
   | Record _ -> `Record
   | _ -> `Other
 
-let check_inheritance tbl (t0 : type_expr) =
+let check_inheritance def_tbl (t0 : type_expr) =
   let not_a kind _ =
     let msg =
       sprintf "Cannot inherit from non-%s type"
@@ -55,12 +55,12 @@ let check_inheritance tbl (t0 : type_expr) =
           error_at (loc_of_type_expr t0) "Cyclic inheritance"
         else
           let (_arity, opt_def) =
-            try Hashtbl.find tbl k
+            try Hashtbl.find def_tbl k
             with Not_found -> error_at loc ("Undefined type " ^ k)
           in
           (match opt_def with
              None -> ()
-           | Some (_, _, t) -> check kind (k :: inherited) t
+           | Some x -> check kind (x.name :: inherited) x.value
           )
 
     | Tvar _ ->
@@ -71,15 +71,15 @@ let check_inheritance tbl (t0 : type_expr) =
   check (get_kind t0) (add_name [] t0) t0
 
 
-let check_type_expr tbl tvars (t : type_expr) =
+let check_type_expr def_tbl tvars (t : type_expr) =
   let rec check : type_expr -> unit = function
       Sum (_, vl, _) as x ->
         List.iter (check_variant (Hashtbl.create 10)) vl;
-        check_inheritance tbl x
+        check_inheritance def_tbl x
 
     | Record (_, fl, _) as x ->
         List.iter (check_field (Hashtbl.create 10)) fl;
-        check_inheritance tbl x
+        check_inheritance def_tbl x
 
     | Tuple (_, tl, _) -> List.iter (fun (_, x, _) -> check x) tl
     | List (_, t, _) -> check t
@@ -95,7 +95,7 @@ let check_type_expr tbl tvars (t : type_expr) =
         assert (k <> "list" && k <> "option"
                 && k <> "nullable" && k <> "shared" && k <> "wrap");
         let (arity, _opt_def) =
-          try Hashtbl.find tbl k
+          try Hashtbl.find def_tbl k
           with Not_found -> error_at loc ("Undefined type " ^ k)
         in
         let n = List.length tal in
@@ -144,25 +144,27 @@ let check_type_expr tbl tvars (t : type_expr) =
   check t
 
 
-let check (x : Ast.full_module) =
+let check (x : Ast.module_) =
   let predef = Predef.make_table () in
   let tbl = Hashtbl.copy predef in
 
   (* first pass: put all definitions in the table *)
-  List.iter (fun ((loc, (k, pl, _), _) as x) ->
-    if Hashtbl.mem tbl k then
-      if Hashtbl.mem predef k then
+  List.iter (fun (x : type_def) ->
+    let name = x.name in
+    let loc = x.loc in
+    if Hashtbl.mem tbl name then
+      if Hashtbl.mem predef name then
         error_at loc
-          (sprintf "%s is a predefined type, it cannot be redefined." k)
+          (sprintf "%s is a predefined type, it cannot be redefined." name)
       else
         error_at loc
-          (sprintf "Type %s is defined for the second time." k)
+          (sprintf "Type %s is defined for the second time." name)
     else
-      Hashtbl.add tbl k (List.length pl, Some x)
+      Hashtbl.add tbl name (List.length x.param, Some x)
   ) x.type_defs;
 
   (* second pass: check existence and arity of types in type expressions,
      check that inheritance is not cyclic *)
-  List.iter (fun (_, (_, tvars, _), t) ->
-    check_type_expr tbl tvars t
+  List.iter (fun (x : type_def) ->
+    check_type_expr tbl x.param x.value
   ) x.type_defs

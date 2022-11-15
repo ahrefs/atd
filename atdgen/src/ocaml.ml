@@ -427,10 +427,7 @@ type ocaml_def = {
   o_def_attrs : string list;
 }
 
-type ocaml_module_item =
-    [ `Type of ocaml_def ]
-
-type ocaml_module_body = ocaml_module_item list
+type ocaml_module_body = ocaml_def list
 
 (* https://ocaml.org/manual/lex.html#sss:keywords *)
 let is_ocaml_keyword = function
@@ -513,14 +510,14 @@ and map_field target ocaml_field_prefix (x : field) : ocaml_field =
 
 (* hack to deal with legacy behavior *)
 let lhs_has_possibly_relevant_annotation
-    ((loc, (name, param, an1), x) : type_def) =
+    (x : type_def) =
   List.exists
-    (fun target -> get_ocaml_module_and_t target name an1 <> None)
+    (fun target -> get_ocaml_module_and_t target x.name x.annot <> None)
     all_targets
 
 (* hack to deal with legacy behavior *)
-let rhs_is_just_abstract ((loc, (name, param, an1), x) : type_def) =
-  match x with
+let rhs_is_just_abstract (x : type_def) =
+  match x.value with
   | Atd.Ast.Name (_, (loc, "abstract", type_params), an2) ->
       if type_params <> [] then
         Error.error loc "\"abstract\" takes no type parameters";
@@ -562,17 +559,20 @@ let is_abstract_def (x : type_def) =
 let map_def
     ~(target : target)
     ~(type_aliases : string option)
-    ((loc, (s, param, an1), x) as def : type_def) : ocaml_def option =
-  if is_ocaml_keyword s then
+    (td : type_def) : ocaml_def option =
+  let name = td.name in
+  let an1 = td.annot in
+  let loc = td.loc in
+  if is_ocaml_keyword name then
     Error.error loc
-      ("\"" ^ s ^ "\" cannot be used as type name (reserved OCaml keyword)");
+      ("\"" ^ name ^ "\" cannot be used as type name (reserved OCaml keyword)");
   let is_predef = get_ocaml_predef target an1 in
-  let is_abstract = is_abstract_def def in
+  let is_abstract = is_abstract_def td in
   let define_alias =
     if is_predef || is_abstract || type_aliases <> None then
-      match get_ocaml_module_and_t target s an1, type_aliases with
+      match get_ocaml_module_and_t target name an1, type_aliases with
           Some (types_module, _, s), _ -> Some (types_module, s)
-        | None, Some types_module -> Some (types_module, s)
+        | None, Some types_module -> Some (types_module, name)
 
         | None, None -> None
     else
@@ -581,7 +581,7 @@ let map_def
   if is_predef && define_alias = None then
     None
   else
-    let an2 = Atd.Ast.annot_of_type_expr x in
+    let an2 = Atd.Ast.annot_of_type_expr td.value in
     let an = an1 @ an2 in
     let doc = Atd.Doc.get_doc loc an in
     let alias, x =
@@ -593,16 +593,16 @@ let map_def
                  type foo = { hello: string }
             *)
             if is_abstract then (None, None)
-            else (None, Some (map_expr target param x))
+            else (None, Some (map_expr target td.param td.value))
         | Some (module_path, ext_name) ->
             (*
                  type foo = Bar_t.foo = { hello: string }
                or
                  type foo = Bar_t.foo = Alpha | Beta of int
             *)
-            let alias = Some (module_path ^ "." ^ ext_name, param) in
+            let alias = Some (module_path ^ "." ^ ext_name, td.param) in
             let x =
-              match map_expr target param x with
+              match map_expr target td.param td.value with
                   `Sum (Classic, _)
                 | `Record (Record, _) as x -> Some x
                 | _ -> None
@@ -613,19 +613,12 @@ let map_def
       None
     else
       Some {
-        o_def_name = (s, param);
+        o_def_name = (name, td.param);
         o_def_alias = alias;
         o_def_expr = x;
         o_def_doc = doc;
         o_def_attrs = get_type_attrs an1;
       }
-
-
-let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
-  List.filter_map (
-    fun (Atd.Ast.Type td) ->
-      Option.map (fun x -> `Type x) (map_def ~target ~type_aliases td)
-  ) l
 
 
 (*
@@ -685,8 +678,6 @@ and ocaml_of_field_mapping x =
 (*
   Pretty-printing
 *)
-
-
 
 let rlist = { list with
                 wrap_body = `Force_breaks;
@@ -828,7 +819,7 @@ let format_pp_conv_node node = function
     Label ((node, label), make_atom converters)
 
 let rec format_module_item pp_convs
-    is_first (`Type def : ocaml_module_item) =
+    is_first (def : ocaml_def) =
   let type_ = if is_first then "type" else "and" in
   let s, param = def.o_def_name in
   let alias = def.o_def_alias in
@@ -993,14 +984,20 @@ let ocaml_of_expr x : string =
   Easy_format.Pretty.to_string (format_type_expr x)
 
 let ocaml_of_atd ?(pp_convs=Ppx_deriving []) ~target ~type_aliases
-    (head, imports, (l : (bool * type_def list) list)) : string =
+    (head, _imports, (defs : (bool * type_def list) list)) : string =
   let head = format_head head in
   (* TODO: figure out what to do with the imports. Add them to a table
      and check that all references to external modules were imported. *)
-  let imports = format_imports imports in
+(*
+  let imports = check_imports imports in
+*)
   let bodies =
-    List.map (fun (is_rec, m) ->
-                (is_rec, map_module ~target ~type_aliases m)) l
+    List.map (fun (is_rec, type_defs) ->
+      let type_defs =
+        List.filter_map (map_def ~target ~type_aliases) type_defs
+      in
+      (is_rec,type_defs)
+    ) defs
   in
   let body = format_module_bodies pp_convs bodies in
   let x = format_all (head @ body) in

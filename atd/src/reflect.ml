@@ -136,11 +136,13 @@ let print_import buf ({ loc; name; alias; annot } : Ast.import) =
     (print_opt print_qstring) alias
     print_annot_list annot
 
-let print_type_def buf ((loc, (name, param, a), x) : Ast.type_def) =
-  bprintf buf "(%a, (%S, %a, %a), %a)"
-    print_loc loc
-    name (print_list print_qstring) param print_annot_list a
-    print_type_expr x
+let rec print_type_def buf (x: Ast.type_def) =
+  bprintf buf "{ loc = %a; name = %S; param = %a; annot = %a; \
+                 value = %a; orig = %a; } "
+    print_loc x.loc
+    x.name (print_list print_qstring) x.param print_annot_list x.annot
+    print_type_expr x.value
+    (print_opt print_type_def) x.orig
 
 let print_list print_item buf l =
   bprintf buf "[\n";
@@ -174,12 +176,12 @@ let %s_head : Ast.module_head =
 "
     name print_annot_list an
 
-let print_full_module_def buf name (x : Ast.full_module) =
+let print_module_def buf name (x : Ast.module_) =
   print_module_head_def buf name (snd x.module_head);
   print_imports_def buf name x.imports;
   print_type_defs_def buf name x.type_defs;
   bprintf buf "\
-let %s_full : Ast.full_module = {
+let %s_full : Ast.module_ = {
   module_head = %s_head;
   imports = %s_imports;
   type_defs = %s_type_defs;

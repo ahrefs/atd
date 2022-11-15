@@ -203,7 +203,7 @@ let validate_section sec root =
       )
   in
   Ast.fold_annot
-    ~full_module:(check in_module_head)
+    ~module_:(check in_module_head)
     ~import:(check in_import)
     ~type_def:(check in_type_def)
     ~type_expr:(check in_type_expr)

@@ -138,8 +138,8 @@ and mapping_of_variant = function
       }
 
 and mapping_of_field ocaml_field_prefix = function
-  | `Inherit _ -> assert false
-  | `Field (f_loc, (f_name, f_kind, an), x) ->
+  | Inherit _ -> assert false
+  | Field (f_loc, (f_name, f_kind, an), x) ->
       let { Ox_mapping.ocaml_default; unwrapped } =
         Ox_mapping.analyze_field Json f_loc f_kind an in
       { f_loc
@@ -159,16 +159,19 @@ and mapping_of_field ocaml_field_prefix = function
             }
       }
 
-let defs_of_atd_modules l ~(target : Ocaml.target)=
+let defs_of_atd_def_groups def_groups ~(target : Ocaml.target)=
   (match target with
    | Json
    | Bucklescript -> ()
    | t -> invalid_arg "target must be json or bucklescript");
-  List.map (fun (is_rec, l) ->
-    ( is_rec
-    , List.map (function Atd.Ast.Type atd ->
-        Ox_emit.def_of_atd atd ~target ~external_:Json.External
-          ~mapping_of_expr ~def:Json.Def
-      ) l
+  List.map (fun (is_rec, defs) ->
+    (is_rec,
+     List.map (function (def : type_def) ->
+        Ox_emit.def_of_atd def
+          ~target
+          ~external_:Json.External
+          ~mapping_of_expr
+          ~def:Json.Def
+      ) defs
     )
-  ) l
+  ) def_groups

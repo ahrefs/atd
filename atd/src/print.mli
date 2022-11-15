@@ -4,7 +4,7 @@ val default_annot : Ast.annot_section -> Easy_format.t
 
 val format :
   ?annot: (Ast.annot_section -> Easy_format.t) ->
-  Ast.full_module -> Easy_format.t
+  Ast.module_ -> Easy_format.t
   (** Pretty-printing. Use the functions of the [Easy_format.Pretty]
       module to convert an [Easy_format.t] into a string
       or add it to a channel or buffer.

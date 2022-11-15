@@ -323,7 +323,7 @@ let get_left_reader_name p name param =
   let args = List.map (fun s -> Mapping.Tvar (Atd.Ast.dummy_loc, s)) param in
   get_reader_name p (Mapping.Name (Atd.Ast.dummy_loc, name, args, None, None))
 
-let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
+let make_ocaml_bs_reader p is_rec let1 _let2
     (def : (_, _) Mapping.def) =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
@@ -331,7 +331,7 @@ let make_ocaml_bs_reader p ~original_types is_rec let1 _let2
   let read = get_left_reader_name p name param in
   let type_annot =
     if Ox_emit.needs_type_annot x then (
-      Some (Ox_emit.get_type_constraint ~original_types def)
+      Some (Ox_emit.get_type_constraint def)
     ) else (
       None
     )
@@ -593,13 +593,13 @@ and make_sum_writer ?type_annot (p : param)
   ; Block cases
   ; Line ")"]
 
-let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
+let make_ocaml_bs_writer p is_rec let1 _let2
     (def : (_, _) Mapping.def) =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
   let type_annot =
     if Ox_emit.needs_type_annot x then (
-      Some (Ox_emit.get_type_constraint ~original_types def)
+      Some (Ox_emit.get_type_constraint def)
     ) else (
       None
     )
@@ -620,7 +620,6 @@ let make_ocaml_bs_writer p ~original_types is_rec let1 _let2
 
 let make_ocaml_bs_impl
     ~with_create
-    ~original_types
     buf deref defs =
   let p = {deref = deref;} in
   defs
@@ -631,12 +630,12 @@ let make_ocaml_bs_impl
     let writers =
       List.map_first (fun ~is_first def ->
         let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-        make_ocaml_bs_writer p ~original_types is_rec let1 let2 def
+        make_ocaml_bs_writer p is_rec let1 let2 def
       ) l in
     let readers =
       List.map_first (fun ~is_first def ->
         let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-        make_ocaml_bs_reader p ~original_types is_rec let1 let2 def
+        make_ocaml_bs_reader p is_rec let1 let2 def
       ) l
     in
     List.flatten (writers @ readers))
@@ -649,7 +648,6 @@ let make_ml
     ~with_typedefs
     ~with_create
     ~with_fundefs
-    ~original_types
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -659,7 +657,7 @@ let make_ml
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_bs_impl ~with_create ~original_types buf deref defs;
+    make_ocaml_bs_impl ~with_create buf deref defs;
   Buffer.contents buf
 
 let make_mli
@@ -668,7 +666,6 @@ let make_mli
     ~with_typedefs
     ~with_create
     ~with_fundefs
-    ~original_types:_
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
@@ -733,11 +730,11 @@ let make_ocaml_files
 [@@@ocaml.warning "-27-32-33-35-39"]|} src
   in
   let ml =
-    make_ml ~opens ~header ~with_typedefs ~with_create ~with_fundefs ~original_types
+    make_ml ~opens ~header ~with_typedefs ~with_create ~with_fundefs
       ocaml_typedefs (Mapping.make_deref defs) defs
   in
   let mli =
-    make_mli ~opens ~header ~with_typedefs ~with_create ~with_fundefs ~original_types
+    make_mli ~opens ~header ~with_typedefs ~with_create ~with_fundefs
       ocaml_typedefs (Mapping.make_deref defs1) defs1
   in
   Ox_emit.write_ocaml out mli ml

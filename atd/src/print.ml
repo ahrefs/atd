@@ -222,30 +222,30 @@ let make_closures format_annot =
     |> append_annots annot
   in
 
-  let format_type_def ((_, (s, param, a), t) : type_def) =
+  let format_type_def (x : type_def) =
     let left =
-      if a = [] then
+      if x.annot = [] then
         let l =
           make_atom "type" ::
-          prepend_type_param param
-            [ make_atom (s ^ " =") ]
+          prepend_type_param x.param
+            [ make_atom (x.name ^ " =") ]
         in
         horizontal_sequence l
       else
         let l =
           make_atom "type"
-          :: prepend_type_param param [ make_atom s ]
+          :: prepend_type_param x.param [ make_atom x.name ]
         in
-        let x = append_annots a (horizontal_sequence l) in
+        let x = append_annots x.annot (horizontal_sequence l) in
         horizontal_sequence [ x; make_atom "=" ]
     in
     Label (
       (left, label),
-      format_type_expr t
+      format_type_expr x.value
     )
   in
 
-  let format_full_module (x : full_module) =
+  let format_module (x : module_) =
     Easy_format.List (
       ("", "", "", rlist),
       List.map format_annot (snd x.module_head)
@@ -254,7 +254,7 @@ let make_closures format_annot =
     )
   in
 
-  format_full_module, format_type_name, format_type_expr
+  format_module, format_type_name, format_type_expr
 
 
 let format ?(annot = default_annot) x =

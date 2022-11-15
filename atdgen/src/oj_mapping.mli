@@ -4,7 +4,7 @@ type t = (Ocaml.Repr.t, Atd.Json.json_repr) Mapping.mapping
 type variant_mapping =
   (Ocaml.Repr.t, Atd.Json.json_repr) Mapping.variant_mapping
 
-val defs_of_atd_modules
-  : ('a * Atd.Ast.module_body) list
+val defs_of_atd_def_groups
+  : (bool * Atd.Ast.type_def list) list
   -> target:Ocaml.target
-  -> ('a * (Ocaml.Repr.t, Atd.Json.json_repr) Mapping.def list) list
+  -> (bool * (Ocaml.Repr.t, Atd.Json.json_repr) Mapping.def list) list

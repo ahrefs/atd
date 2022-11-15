@@ -12,14 +12,14 @@ type ty =
   ]
 
 type env_t = {
-  module_items : (string * Atd.Ast.type_expr) list;
+  type_defs    : (string * Atd.Ast.type_expr) list;
   package      : string;
   package_dir  : string;
   input_file   : string option;
 }
 
 let default_env = {
-  module_items = [];
+  type_defs    = [];
   package      = "out";
   package_dir  = "out";
   input_file   = None;

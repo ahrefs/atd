@@ -27,7 +27,7 @@ and annot_field = string * (loc * string option)
     (** An annotation field,
         i.e. a key with an optional value within an annotation. *)
 
-type full_module = {
+type module_ = {
   module_head: module_head;
   imports: import list;
   type_defs: type_def list;
@@ -53,11 +53,20 @@ and import = {
   annot: annot
 }
 
-and type_def = loc * (string * type_param * annot) * type_expr
-    (** A type definition. *)
+(** A type definition. *)
+and type_def = {
+  loc: loc;
+  name: string;
+  param: type_param;
+  annot: annot;
+  value: type_expr;
+  (* Polymorphic type definition from which this definition has been derived
+     through monomorphization, if applicable. *)
+  orig: type_def option;
+}
 
+(** List of type variables without the tick. *)
 and type_param = string list
-    (** List of type variables without the tick. *)
 
 and type_expr =
     | Sum of loc * variant list * annot
@@ -170,7 +179,7 @@ and field =
       *)
 
 type any =
-  | Full_module of full_module
+  | Module of module_
   | Import of import
   | Type_def of type_def
   | Type_expr of type_expr
@@ -219,13 +228,13 @@ val map_annot : (annot -> annot) -> type_expr -> type_expr
      This is a shallow transformation. Sub-expressions are not affected.
   *)
 
-val map_all_annot : (annot -> annot) -> full_module -> full_module
+val map_all_annot : (annot -> annot) -> module_ -> module_
   (**
      Replacement of all annotations occurring in an ATD module.
   *)
 
 val visit :
-  ?full_module: ((full_module -> unit) -> full_module -> unit) ->
+  ?module_: ((module_ -> unit) -> module_ -> unit) ->
   ?import: ((import -> unit) -> import -> unit) ->
   ?type_def: ((type_def -> unit) -> type_def -> unit) ->
   ?type_expr: ((type_expr -> unit) -> type_expr -> unit) ->
@@ -236,8 +245,8 @@ val visit :
   (any -> unit)
   (** Create a function that will visit all the nodes of a tree by default.
       Each optional field defines what to do when encountering a node
-      of a particular kind. For example, the [full_module] that you provide
-      would be applied as [full_module cont x]. The [cont] function
+      of a particular kind. For example, the [module_] that you provide
+      would be applied as [module_ cont x]. The [cont] function
       must be called for the visitor to continue down the tree, if this
       is desired. Arbitrary code can be executed before or after
       the call to [cont]. [cont] may be called on a modified version
@@ -254,12 +263,12 @@ val visit :
       )
       ()
   in
-  visitor (Full_module root)
+  visitor (Module root)
 v}
   *)
 
 val fold_annot :
-  ?full_module: (full_module -> annot -> 'a -> 'a) ->
+  ?module_: (module_ -> annot -> 'a -> 'a) ->
   ?import: (import -> annot -> 'a -> 'a) ->
   ?type_def: (type_def -> annot -> 'a -> 'a) ->
   ?type_expr: (type_expr -> annot -> 'a -> 'a) ->
@@ -314,13 +323,13 @@ module Map : sig
   val variant : mappers -> variant -> variant
   val field : mappers -> field -> field
   val type_def : mappers -> type_def -> type_def
-  val full_module : mappers -> full_module -> full_module
+  val module_ : mappers -> module_ -> module_
 end
 
-val use_only_specific_variants : full_module -> full_module
+val use_only_specific_variants : module_ -> module_
   (** Use the dedicated variants [Int], [List], etc. instead of the generic
       variant [Name]. *)
 
-val use_only_name_variant : full_module -> full_module
+val use_only_name_variant : module_ -> module_
   (** Use the generic variant [Name] instead of the dedicated variants
       [Int], [List], etc. *)

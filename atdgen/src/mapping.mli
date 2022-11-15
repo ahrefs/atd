@@ -60,6 +60,9 @@ type ('a, 'b) def = {
   def_value : ('a, 'b) mapping option;
   def_arepr : 'a;
   def_brepr : 'b;
+
+  (* Original type definition *)
+  def_orig: Atd.Ast.type_def;
 }
 
 val as_abstract : Atd.Ast.type_expr -> (loc * Atd.Ast.annot) option

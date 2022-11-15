@@ -3,6 +3,6 @@
 type ob_mapping =
     (Ocaml.Repr.t, Biniou.biniou_repr) Mapping.mapping
 
-val defs_of_atd_modules
-  : ('a * Atd.Ast.module_body) list
-  -> ('a * (Ocaml.Repr.t, Biniou.biniou_repr) Mapping.def list) list
+val defs_of_def_groups
+  : (bool * Atd.Ast.type_def list) list
+  -> (bool * (Ocaml.Repr.t, Biniou.biniou_repr) Mapping.def list) list

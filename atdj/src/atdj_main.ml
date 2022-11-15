@@ -62,29 +62,29 @@ let main () =
   );
 
   (* Parse ATD file *)
-  let (atd_head, atd_module), _original_types =
+  let module_ =
     Atd.Util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in
   let env = {
     env with
-    module_items =
+    Atdj_env.type_defs =
       List.map
-        (function (Atd.Ast.Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
-        atd_module
+        (function (_, (name, _, _), atd_ty) -> (name, atd_ty))
+        module_.type_defs
   } in
 
   (* Create package directories *)
   let env = { env with package_dir = make_package_dirs env.package } in
 
   (* Generate classes from ATD definition *)
-  let env = Atdj_trans.trans_module env atd_module in
+  let env = Atdj_trans.trans_module env module_ in
 
   (* Output helper classes *)
   Atdj_helper.output_util env;
   Atdj_helper.output_atdj env;
 
-  Atdj_helper.output_package_javadoc env atd_head
+  Atdj_helper.output_package_javadoc env module_.module_head
 
 
 let () =

@@ -167,29 +167,25 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
   in
   trans_type_expr x
 
-let trans_item
+let trans_def
     ~xprop
-    (x : module_item) : def =
-  match x with
-  | Import { loc; _ } ->
-      error_at loc "unsupported: import"
-  | Type (loc, (name, param, an), e) ->
-      if param <> [] then
-        error_at loc "unsupported: parametrized types";
-      let description = trans_description_simple loc an in
-      {
-        name;
-        description;
-        type_expr = trans_type_expr ~xprop e;
-      }
+    (x : type_def) : def =
+  if x.param <> [] then
+    error_at x.loc "unsupported: parametrized types";
+  let description = trans_description_simple x.loc x.annot in
+  {
+    name = x.name;
+    description;
+    type_expr = trans_type_expr ~xprop x.value;
+  }
 
-let trans_full_module
+let trans_module
     ~version
     ~xprop
     ~src_name
     ~root_type
-    ((head, body) : full_module) : t =
-  let defs = List.map (trans_item ~xprop) body in
+    (module_ : module_) : t =
+  let defs = List.map (trans_def ~xprop) module_.type_defs in
   let root_defs, defs = List.partition (fun x -> x.name = root_type) defs in
   let root_def =
     match root_defs with
@@ -208,7 +204,7 @@ let trans_full_module
        - description of the whole module
        - description of the root type
     *)
-    let loc, an = head in
+    let loc, an = module_.module_head in
     let auto_comment = sprintf "Translated by atdcat from %s." src_name in
     [
       Some auto_comment;
@@ -366,7 +362,7 @@ let print
     ?(xprop = true)
     ~src_name ~root_type oc ast =
   ast
-  |> trans_full_module ~version ~xprop ~src_name ~root_type
+  |> trans_module ~version ~xprop ~src_name ~root_type
   |> to_json ~version
   |> Yojson.Safe.pretty_to_channel oc;
   output_char oc '\n'

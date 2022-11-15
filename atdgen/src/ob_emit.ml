@@ -1201,10 +1201,10 @@ and make_table_reader deref ~ocaml_version loc list_kind x =
     ]
   ]
 
-let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
+let make_ocaml_biniou_writer deref is_rec let1 let2 def =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint def in
   let param = def.def_param in
   let tag = get_biniou_tag (deref x) in
   let write_untagged = get_left_writer_name ~tagged:false name param in
@@ -1246,11 +1246,11 @@ let make_ocaml_biniou_writer ~original_types deref is_rec let1 let2 def =
     ]
   ]
 
-let make_ocaml_biniou_reader ~original_types ~ocaml_version
+let make_ocaml_biniou_reader ~ocaml_version
     deref is_rec let1 let2 def =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint def in
   let param = def.def_param in
   let get_reader = get_left_reader_name ~tagged:false name param in
   let read = get_left_reader_name ~tagged:true name param in
@@ -1286,7 +1286,7 @@ let make_ocaml_biniou_reader ~original_types ~ocaml_version
     ]
   ]
 
-let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
+let make_ocaml_biniou_impl ~with_create ~ocaml_version
     buf deref defs =
   defs
   |> List.concat_map (fun (is_rec, l) ->
@@ -1295,14 +1295,14 @@ let make_ocaml_biniou_impl ~with_create ~original_types ~ocaml_version
       List.map_first (fun ~is_first def ->
           let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
           make_ocaml_biniou_writer
-            ~original_types deref is_rec let1 let2 def
+            deref is_rec let1 let2 def
       ) l
     in
     let readers =
       List.map_first (fun ~is_first def ->
           let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
           make_ocaml_biniou_reader ~ocaml_version
-            ~original_types deref is_rec let1 let2 def
+            deref is_rec let1 let2 def
       ) l
     in
     List.flatten (writers @ readers))
@@ -1329,7 +1329,7 @@ let make_mli
   Buffer.contents buf
 
 let make_ml
-    ~header ~opens ~with_typedefs ~with_create ~with_fundefs ~original_types
+    ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~ocaml_version
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
@@ -1341,7 +1341,7 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then
     make_ocaml_biniou_impl
-      ~with_create ~original_types ~ocaml_version
+      ~with_create ~ocaml_version
       buf deref defs;
   Buffer.contents buf
 
@@ -1358,7 +1358,7 @@ let make_ocaml_files
     ~ocaml_version
     ~pp_convs
     atd_file out =
-  let ((head, m0), _) =
+  let module_ =
     match atd_file with
       Some file ->
         Atd.Util.load_file
@@ -1375,23 +1375,24 @@ let make_ocaml_files
   in
   let tsort =
     if all_rec then
-      function m -> [ (true, m) ]
+      fun ?all_rec:_ type_defs -> [ (true, type_defs) ]
     else
       Atd.Util.tsort
   in
-  let m1 = tsort m0 in
-  let defs1 = defs_of_atd_modules m1 in
+  let def_groups1 = tsort module_.type_defs in
+  let defs1 = Ob_mapping.defs_of_def_groups def_groups1 in
   Xb_emit.check defs1;
-  let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_poly:true m0
+  let def_groups2 =
+    Atd.Expand.expand_type_defs ~keep_poly:true module_.type_defs
+    |> tsort
   in
-  let m2 = tsort m1' in
-  (* m0 = original type definitions
-     m1 = original type definitions after dependency analysis
-     m2 = monomorphic type definitions after dependency analysis *)
+  (* module.type_defs = original type definitions
+     def_groups1 = original type definitions after dependency analysis
+     def_groups2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs ~target ~type_aliases (head, m1) in
-  let defs = defs_of_atd_modules m2 in
+    Ocaml.ocaml_of_atd ~pp_convs ~target ~type_aliases
+      (module_.module_head, module_.imports, def_groups1) in
+  let defs = Ob_mapping.defs_of_def_groups def_groups2 in
   let header =
     let src =
       match atd_file with
@@ -1407,7 +1408,7 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~original_types ~ocaml_version ocaml_typedefs
+      ~ocaml_version ocaml_typedefs
       (Mapping.make_deref defs) defs
   in
   Ox_emit.write_ocaml out mli ml

@@ -17,11 +17,11 @@
        QUESTION TILDE DOT IMPORT AS
 %token < string > STRING LIDENT UIDENT TIDENT
 
-%start full_module
-%type < Ast.full_module > full_module
+%start module_
+%type < Ast.module_ > module_
 %%
 
-full_module:
+module_:
 | an = annot;
   imports = list(import);
   type_defs = list(type_def);
@@ -69,8 +69,17 @@ lident_path:
 
 type_def:
 | TYPE p = type_param s = LIDENT a = annot EQ t = type_expr
-                               { ((($startpos, $endpos), (s, p, a), t)
-                                  : type_def) }
+                               { let loc = ($startpos, $endpos) in
+                                 let orig : type_def = {
+                                   loc;
+                                   name = s;
+                                   param = p;
+                                   annot = a;
+                                   value = t;
+                                   orig = None;
+                                 } in
+                                 ({ orig with orig = Some orig } : type_def)
+                               }
 
 | TYPE type_param LIDENT annot EQ _e=error
     { syntax_error "Expecting type expression" $startpos(_e) $endpos(_e) }

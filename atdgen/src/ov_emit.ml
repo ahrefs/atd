@@ -339,10 +339,10 @@ and make_record_validator a record_kind =
   in
   forall validate_fields
 
-let make_ocaml_validator ~original_types is_rec let1 def =
+let make_ocaml_validator is_rec let1 def =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint def in
   let param = def.def_param in
   let validate = get_left_validator_name name param in
   let validator_expr = make_validator x in
@@ -364,14 +364,14 @@ let make_ocaml_validator ~original_types is_rec let1 def =
   ]
 
 
-let make_ocaml_validate_impl ~with_create ~original_types buf deref defs =
+let make_ocaml_validate_impl ~with_create buf deref defs =
   defs
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter (fun x -> x.def_value <> None) l in
     let validators =
       List.map_first (fun ~is_first def ->
         let let1, _ = Ox_emit.get_let ~is_rec ~is_first in
-        make_ocaml_validator ~original_types is_rec let1 def
+        make_ocaml_validator is_rec let1 def
       ) l
     in
     List.flatten validators)
@@ -399,7 +399,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ~original_types ocaml_typedefs deref defs =
+    ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
   bprintf buf "%s\n" header;
   Ox_emit.write_opens buf opens;
@@ -408,7 +408,7 @@ let make_ml
   if with_typedefs && with_fundefs then
     bprintf buf "\n";
   if with_fundefs then
-    make_ocaml_validate_impl ~with_create ~original_types buf deref defs;
+    make_ocaml_validate_impl ~with_create buf deref defs;
   Buffer.contents buf
 
 let make_ocaml_files
@@ -424,7 +424,7 @@ let make_ocaml_files
     ~ocaml_version:_
     ~pp_convs
     atd_file out =
-  let ((head, m0), _) =
+  let module_ =
     match atd_file with
       Some file ->
         Atd.Util.load_file
@@ -441,23 +441,24 @@ let make_ocaml_files
   in
   let tsort =
     if all_rec then
-      function m -> [ (true, m) ]
+      fun ?all_rec:_ type_defs -> [ (true, type_defs) ]
     else
       Atd.Util.tsort
   in
-  let m1 = tsort m0
+  let def_groups1 = tsort module_.type_defs in
+  let defs1 = Ov_mapping.defs_of_def_groups def_groups1 in
+  let def_groups2 =
+    Atd.Expand.expand_type_defs ~keep_poly:true module_.type_defs
+    |> tsort
   in
-  let defs1 = Ov_mapping.defs_of_atd_modules m1 in
-  let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_poly:true m0
-  in
-  let m2 = tsort m1' in
-  (* m0 = original type definitions
-     m1 = original type definitions after dependency analysis
-     m2 = monomorphic type definitions after dependency analysis *)
+  (* module_.type_defs = original type definitions
+     def_groups1 = original type definitions after dependency analysis
+     def_groups2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs ~target ~type_aliases (head, m1) in
-  let defs = Ov_mapping.defs_of_atd_modules m2 in
+    Ocaml.ocaml_of_atd ~pp_convs ~target ~type_aliases
+      (module_.module_head, module_.imports, def_groups1)
+  in
+  let defs2 = Ov_mapping.defs_of_def_groups def_groups2 in
   let header =
     let src =
       match atd_file with
@@ -473,6 +474,6 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~original_types ocaml_typedefs (Mapping.make_deref defs) defs
+      ocaml_typedefs (Mapping.make_deref defs2) defs2
   in
   Ox_emit.write_ocaml out mli ml

@@ -32,12 +32,12 @@ let schema : Atd.Annot.schema = [
 
 let test_valid_input atd_input =
   let root = Atd.Util.load_string atd_input in
-  Atd.Annot.validate schema (Atd.Ast.Full_module root)
+  Atd.Annot.validate schema (Atd.Ast.Module root)
 
 let test_invalid_input atd_input =
   let root = Atd.Util.load_string atd_input in
   try
-    Atd.Annot.validate schema (Atd.Ast.Full_module root);
+    Atd.Annot.validate schema (Atd.Ast.Module root);
     assert false
   with Atd.Ast.Atd_error msg ->
     printf "Error (expected): %s\n%!" msg

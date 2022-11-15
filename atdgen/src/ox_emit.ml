@@ -183,14 +183,15 @@ let anon_param_type_name s n_param =
       let params = String.concat ", " (Array.to_list underscores) in
       "(" ^ params ^ ") " ^ s
 
-(* Get a type expression that uses the original user-given name (e.g. not _1) *)
-let get_type_constraint ~original_types def =
-  try
-    let (poly_name, n_params) = Hashtbl.find original_types def.def_name in
-    anon_param_type_name poly_name n_params
-  with Not_found ->
-    get_full_type_name def
-
+(* Get a type expression that uses the original user-given name
+   (e.g. not _1) *)
+let get_type_constraint def =
+  match def.def_orig.orig with
+  | None ->
+      (* get_full_type_name def *)
+      assert false
+  | Some x ->
+      anon_param_type_name x.name (List.length x.param)
 
 (* Classic variants and records need type annotations in order to allow
    constructor/field name disambiguation *)
@@ -314,12 +315,16 @@ let write_opens buf l =
   List.iter (fun s -> bprintf buf "open %s\n" s) l;
   bprintf buf "\n"
 
-let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
+let def_of_atd (td : Atd.Ast.type_def) ~target ~def ~external_
     ~mapping_of_expr =
+  let name = td.name in
+  let param = td.param in
+  let loc = td.loc in
+  let an = td.annot in
   let ocaml_predef = Ocaml.get_ocaml_predef target an in
   let doc = Atd.Doc.get_doc loc an in
   let o =
-    match as_abstract x with
+    match as_abstract td.value with
       Some (_, _) ->
         Ocaml.get_ocaml_module_and_t target name an
         |> Option.map (fun (types_module, main_module, ext_name) ->
@@ -328,7 +333,7 @@ let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
             (loc, name, args,
              Ocaml.Repr.External (types_module, main_module, ext_name),
              external_))
-    | None -> Some (mapping_of_expr x)
+    | None -> Some (mapping_of_expr td.value)
   in
   {
     def_loc = loc;
@@ -339,6 +344,7 @@ let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
       Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
                        ocaml_ddoc = doc };
     def_brepr = def;
+    def_orig = td;
   }
 
 let maybe_write_creator_impl ~with_create deref buf defs =

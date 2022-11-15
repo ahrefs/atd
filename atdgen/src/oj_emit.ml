@@ -1172,10 +1172,10 @@ and make_tuple_reader p a =
     ];
   ]
 
-let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
+let make_ocaml_json_writer p is_rec let1 let2 def =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint def in
   let param = def.def_param in
   let write = get_left_writer_name p name param in
   let to_string = get_left_to_string_name p name param in
@@ -1206,10 +1206,10 @@ let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
     ]
   ]
 
-let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
+let make_ocaml_json_reader p is_rec let1 let2 def =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint def in
   let param = def.def_param in
   let read = get_left_reader_name p name param in
   let of_string = get_left_of_string_name p name param in
@@ -1245,7 +1245,7 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
 
 let make_ocaml_json_impl
     ~std ~unknown_field_handler
-    ~with_create ~force_defaults ~preprocess_input ~original_types
+    ~with_create ~force_defaults ~preprocess_input
     ~ocaml_version
     buf deref defs =
   let p =
@@ -1262,13 +1262,13 @@ let make_ocaml_json_impl
     let writers =
       List.map_first (fun ~is_first def ->
         let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-        make_ocaml_json_writer p ~original_types is_rec let1 let2 def
+        make_ocaml_json_writer p is_rec let1 let2 def
       ) l
     in
     let readers =
       List.map_first (fun ~is_first def ->
         let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-        make_ocaml_json_reader p ~original_types is_rec let1 let2 def
+        make_ocaml_json_reader p is_rec let1 let2 def
       ) l
     in
     List.flatten (writers @ readers))
@@ -1296,7 +1296,7 @@ let make_mli
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~std ~unknown_field_handler
-    ~force_defaults ~preprocess_input ~original_types
+    ~force_defaults ~preprocess_input
     ~ocaml_version
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
@@ -1309,7 +1309,7 @@ let make_ml
   if with_fundefs then
     make_ocaml_json_impl
       ~std ~unknown_field_handler
-      ~with_create ~force_defaults ~preprocess_input ~original_types
+      ~with_create ~force_defaults ~preprocess_input
       ~ocaml_version
       buf deref defs;
   Buffer.contents buf
@@ -1381,7 +1381,7 @@ let make_ocaml_files
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~std ~unknown_field_handler
-      ~force_defaults ~preprocess_input ~original_types
+      ~force_defaults ~preprocess_input
       ~ocaml_version
       ocaml_typedefs (Mapping.make_deref defs) defs
   in

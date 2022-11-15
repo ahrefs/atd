@@ -54,6 +54,7 @@ type ('a, 'b) def = {
   def_value : ('a, 'b) mapping option;
   def_arepr : 'a;
   def_brepr : 'b;
+  def_orig : Atd.Ast.type_def;
 }
 
 let as_abstract = function

@@ -4,46 +4,62 @@
 
 open Ast
 
+let set_orig (x : type_def) = { x with orig = Some x }
+
 let list_def : type_def =
   let loc = dummy_loc in
-  (
-    loc,
-    ("list", ["a"], []),
-    List (loc, Tvar (loc, "a"), [])
-  )
+  set_orig {
+    loc;
+    name = "list";
+    param = ["a"];
+    annot = [];
+    value = List (loc, Tvar (loc, "a"), []);
+    orig = None;
+  }
 
 let option_def : type_def =
   let loc = dummy_loc in
-  (
-    loc,
-    ("option", ["a"], []),
-    Option (loc, Tvar (loc, "a"), [])
-  )
+  set_orig {
+    loc;
+    name = "option";
+    param = ["a"];
+    annot = [];
+    value = Option (loc, Tvar (loc, "a"), []);
+    orig = None;
+  }
 
 let nullable_def : type_def =
   let loc = dummy_loc in
-  (
-    loc,
-    ("nullable", ["a"], []),
-    Nullable (loc, Tvar (loc, "a"), [])
-  )
+  set_orig {
+    loc;
+    name = "nullable";
+    param = ["a"];
+    annot = [];
+    value = Nullable (loc, Tvar (loc, "a"), []);
+    orig = None;
+  }
 
 let shared_def : type_def =
   let loc = dummy_loc in
-  (
-    loc,
-    ("shared", ["a"], []),
-    Shared (loc, Tvar (loc, "a"), [])
-  )
+  set_orig {
+    loc;
+    name = "shared";
+    param = ["a"];
+    annot = [];
+    value = Shared (loc, Tvar (loc, "a"), []);
+    orig = None;
+  }
 
 let wrap_def : type_def =
   let loc = dummy_loc in
-  (
-    loc,
-    ("wrap", ["a"], []),
-    Wrap (loc, Tvar (loc, "a"), [])
-  )
-
+  set_orig {
+    loc;
+    name = "wrap";
+    param = ["a"];
+    annot = [];
+    value = Wrap (loc, Tvar (loc, "a"), []);
+    orig = None;
+  }
 
 let list = [
     "unit", 0, None;

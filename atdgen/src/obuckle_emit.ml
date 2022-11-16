@@ -1,4 +1,4 @@
-open Atd.Import
+open Atd.Stdlib_extra
 open Indent
 module Json = Atd.Json
 

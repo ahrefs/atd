@@ -3,7 +3,7 @@
   (xb means X-Biniou)
 *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Mapping
 
 type 'a expr = ('a, Biniou.biniou_repr) Mapping.mapping

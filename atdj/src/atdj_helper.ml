@@ -1,6 +1,6 @@
 (* Helper classes *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Atdj_env
 
 let output_atdj env =

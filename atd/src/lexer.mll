@@ -1,6 +1,6 @@
 
 {
-  open Import
+  open Stdlib_extra
   open Lexing
   open Parser
 

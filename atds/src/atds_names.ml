@@ -1,4 +1,4 @@
-open Atd.Import
+open Atd.Stdlib_extra
 (* Names *)
 
 let to_camel_case (s : string) =

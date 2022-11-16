@@ -3,7 +3,7 @@
   (ox means OCaml-X)
 *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Mapping
 module Json = Atd.Json
 

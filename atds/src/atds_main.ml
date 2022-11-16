@@ -1,6 +1,6 @@
 (* Main *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Atds_env
 
 let args_spec env = Arg.align

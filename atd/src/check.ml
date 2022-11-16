@@ -1,6 +1,6 @@
 (* Semantic verification *)
 
-open Import
+open Stdlib_extra
 
 open Ast
 
@@ -56,7 +56,8 @@ let check_inheritance def_tbl (t0 : type_expr) =
         else
           let (_arity, opt_def) =
             try Hashtbl.find def_tbl k
-            with Not_found -> error_at loc ("Undefined type " ^ k)
+            with Not_found -> error_at loc ("Undefined type "
+                                            ^ Print.string_of_type_name k)
           in
           (match opt_def with
              None -> ()
@@ -92,18 +93,21 @@ let check_type_expr def_tbl tvars (t : type_expr) =
     | Wrap (_, t, _) -> check t
 
     | Name (_, (loc, k, tal), _) ->
-        assert (k <> "list" && k <> "option"
-                && k <> "nullable" && k <> "shared" && k <> "wrap");
+        assert (k <> TN ["list"] && k <> TN ["option"]
+                && k <> TN ["nullable"] && k <> TN ["shared"]
+                && k <> TN ["wrap"]);
         let (arity, _opt_def) =
           try Hashtbl.find def_tbl k
-          with Not_found -> error_at loc ("Undefined type " ^ k)
+          with Not_found -> error_at loc ("Undefined type " ^ Print.tn k)
         in
         let n = List.length tal in
         if arity <> n then
           error_at loc (sprintf "Type %s was defined to take %i parameters, \
                                  but %i argument%s."
-                          k arity n (if n > 1 then "s are given"
-                                     else " is given")
+                          (Print.tn k)
+                          arity n
+                          (if n > 1 then "s are given"
+                           else " is given")
                        );
 
         List.iter check tal

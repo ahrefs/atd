@@ -1,4 +1,4 @@
-open Atd.Import
+open Atd.Stdlib_extra
 open Atdgen_emit
 
 let append l1 l2 =

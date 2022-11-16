@@ -3,7 +3,7 @@
 *)
 
 
-open Import
+open Stdlib_extra
 open Ast
 
 module S = Set.Make (String)
@@ -59,23 +59,23 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
         )
 
     | List (loc, t, a)
-    | Name (loc, (_, "list", [t]), a) ->
+    | Name (loc, (_, TN ["list"], [t]), a) ->
         List (loc, subst false param t, a)
 
     | Option (loc, t, a)
-    | Name (loc, (_, "option", [t]), a) ->
+    | Name (loc, (_, TN ["option"], [t]), a) ->
         Option (loc, subst false param t, a)
 
     | Nullable (loc, t, a)
-    | Name (loc, (_, "nullable", [t]), a) ->
+    | Name (loc, (_, TN ["nullable"], [t]), a) ->
         Nullable (loc, subst false param t, a)
 
     | Shared (loc, t, a)
-    | Name (loc, (_, "shared", [t]), a) ->
+    | Name (loc, (_, TN ["shared"], [t]), a) ->
         Shared (loc, subst false param t, a)
 
     | Wrap (loc, t, a)
-    | Name (loc, (_, "wrap", [t]), a) ->
+    | Name (loc, (_, TN ["wrap"], [t]), a) ->
         Wrap (loc, subst false param t, a)
 
     | Tvar (_, s) -> Option.value (List.assoc s param) ~default:t
@@ -87,9 +87,11 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
             try
               match Hashtbl.find tbl k with
                 _, Some (x : type_def) -> x.param, x.value
-              | _, None -> failwith ("Cannot inherit from type " ^ k)
+              | _, None -> failwith ("Cannot inherit from type "
+                                     ^ Print.tn k)
             with Not_found ->
-              failwith ("Missing type definition for " ^ k)
+              failwith ("Missing type definition for "
+                        ^ Print.tn k)
           in
           let param = List.combine vars expanded_args in
           subst true param t

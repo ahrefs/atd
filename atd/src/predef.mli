@@ -7,9 +7,9 @@
     while the simple types like [bool] and [int] have an entry in the list
     but no associated definition ([None]).
 *)
-val list : (string * int * Ast.type_def option) list
+val list : (Ast.type_name * int * Ast.type_def option) list
 
-type table = (string, int * Ast.type_def option) Hashtbl.t
+type table = (Ast.type_name, int * Ast.type_def option) Hashtbl.t
 
 (** Create a lookup table from the list of predefined type definitions
     and extra definitions. *)
@@ -23,7 +23,7 @@ val make_table : Ast.type_def list -> table
     for ["list"].
 *)
 val get_original_definition :
-  table -> string -> (int * Ast.type_def option) option
+  table -> Ast.type_name -> (int * Ast.type_def option) option
 
 (** Determine the type construct by returning the right-handside of the
     original type definition associated with type alias.
@@ -33,7 +33,7 @@ val get_original_definition :
     one type parameter.
 *)
 val get_construct :
-  table -> string -> (int * Ast.type_expr) option
+  table -> Ast.type_name -> (int * Ast.type_expr) option
 
 (** Determine the type construct associated with a type expression.
     The result may be [Name] only if it's a predefined type. If a type

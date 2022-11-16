@@ -69,6 +69,8 @@ let default_format_annot (s, (_, l)) =
         ]
       )
 
+let string_of_type_name (TN path) = String.concat "." path
+let tn = string_of_type_name
 
 let string_of_field k = function
     Required -> k
@@ -165,7 +167,7 @@ let format ?(format_annot = default_format_annot) any =
         format_type_name "wrap" [t] a
 
     | Name (_, (_, name, args), a) ->
-        format_type_name name args a
+        format_type_name (tn name) args a
 
     | Tvar (_, name) ->
         make_atom ("'" ^ name)
@@ -211,13 +213,13 @@ let format ?(format_annot = default_format_annot) any =
     | Inherit (_, t) -> format_inherit t
   in
 
-  let format_import ({ loc = _; name; alias; annot } : import) =
+  let format_import ({ loc = _; path; alias; name; annot } : import) =
     let opt_alias =
       match alias with
       | None -> []
       | Some local_name -> [make_atom ("as " ^ local_name)]
     in
-    make_atom "import" :: make_atom name :: opt_alias
+    make_atom "import" :: make_atom (String.concat "." path) :: opt_alias
     |> horizontal_sequence
     |> append_annots annot
   in
@@ -228,13 +230,13 @@ let format ?(format_annot = default_format_annot) any =
         let l =
           make_atom "type" ::
           prepend_type_param x.param
-            [ make_atom (x.name ^ " =") ]
+            [ make_atom (tn x.name ^ " =") ]
         in
         horizontal_sequence l
       else
         let l =
           make_atom "type"
-          :: prepend_type_param x.param [ make_atom x.name ]
+          :: prepend_type_param x.param [ make_atom (tn x.name) ]
         in
         let x = append_annots x.annot (horizontal_sequence l) in
         horizontal_sequence [ x; make_atom "=" ]
@@ -271,6 +273,6 @@ let to_string ?format_annot x =
   format ?format_annot x
   |> Easy_format.Pretty.to_string
 
-let string_of_type_name name args an =
+let string_of_type_inst name args an =
   let loc = dummy_loc in
   to_string (Type_expr (Name (loc, (loc, name, args), an)))

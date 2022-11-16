@@ -55,7 +55,7 @@
 
 *)
 
-open Import
+open Stdlib_extra
 
 open Ast
 
@@ -99,28 +99,28 @@ let rec mapvar_expr
              a)
   | List (loc, t, a) ->
       List (loc, mapvar_expr f t, a)
-  | Name (loc, (loc2, "list", [t]), a) ->
-      Name (loc, (loc2, "list", [mapvar_expr f t]), a)
+  | Name (loc, (loc2, TN ["list"], [t]), a) ->
+      Name (loc, (loc2, TN ["list"], [mapvar_expr f t]), a)
 
   | Option (loc, t, a) ->
       Option (loc, mapvar_expr f t, a)
-  | Name (loc, (loc2, "option", [t]), a) ->
-      Name (loc, (loc2, "option", [mapvar_expr f t]), a)
+  | Name (loc, (loc2, TN ["option"], [t]), a) ->
+      Name (loc, (loc2, TN ["option"], [mapvar_expr f t]), a)
 
   | Nullable (loc, t, a) ->
       Nullable (loc, mapvar_expr f t, a)
-  | Name (loc, (loc2, "nullable", [t]), a) ->
-      Name (loc, (loc2, "nullable", [mapvar_expr f t]), a)
+  | Name (loc, (loc2, TN ["nullable"], [t]), a) ->
+      Name (loc, (loc2, TN ["nullable"], [mapvar_expr f t]), a)
 
   | Shared (loc, t, a) ->
       Shared (loc, mapvar_expr f t, a)
-  | Name (loc, (loc2, "shared", [t]), a) ->
-      Name (loc, (loc2, "shared", [mapvar_expr f t]), a)
+  | Name (loc, (loc2, TN ["shared"], [t]), a) ->
+      Name (loc, (loc2, TN ["shared"], [mapvar_expr f t]), a)
 
   | Wrap (loc, t, a) ->
       Wrap (loc, mapvar_expr f t, a)
-  | Name (loc, (loc2, "wrap", [t]), a) ->
-      Name (loc, (loc2, "wrap", [mapvar_expr f t]), a)
+  | Name (loc, (loc2, TN ["wrap"], [t]), a) ->
+      Name (loc, (loc2, TN ["wrap"], [mapvar_expr f t]), a)
 
   | Tvar (loc, s) -> Tvar (loc, f s)
 
@@ -146,8 +146,10 @@ let var_of_int i =
 
 let vars_of_int n = List.init n var_of_int
 
-let is_special s = String.length s > 0 && s.[0] = '@'
-
+let is_special name =
+  match name with
+  | TN [s] -> String.length s > 0 && s.[0] = '@'
+  | TN _ -> false
 
 (*
   Standardize a type expression by numbering the type variables
@@ -186,8 +188,8 @@ let make_type_name loc orig_name args an =
   in
   let normalized_args = List.map (mapvar_expr assign_name) args in
   let new_name =
-    sprintf "@(%s)"
-      (Print.string_of_type_name orig_name normalized_args an)
+    TN [sprintf "@(%s)"
+          (Print.string_of_type_inst orig_name normalized_args an)]
   in
   let mapping = List.rev !mapping in
   let new_args =
@@ -199,7 +201,7 @@ let make_type_name loc orig_name args an =
 
 let is_abstract (x : type_expr) =
   match x with
-    Name (_, (_, "abstract", _), _) -> true
+    Name (_, (_, TN ["abstract"], _), _) -> true
   | _ -> false
 
 let expr_of_lvalue loc name param annot =
@@ -238,44 +240,44 @@ let expand
                List.map (fun (loc, x, a) -> (loc, subst env x, a)) tl, a)
 
     | List (loc as loc2, t, a)
-    | Name (loc, (loc2, "list", [t]), a) ->
+    | Name (loc, (loc2, TN ["list"], [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Name (loc, (loc2, "list", [t']), a)
+          Name (loc, (loc2, TN ["list"], [t']), a)
         else
-          subst_type_name loc loc2 "list" [t'] a
+          subst_type_name loc loc2 (TN ["list"]) [t'] a
 
     | Option (loc as loc2, t, a)
-    | Name (loc, (loc2, "option", [t]), a) ->
+    | Name (loc, (loc2, TN ["option"], [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Name (loc, (loc2, "option", [t']), a)
+          Name (loc, (loc2, TN ["option"], [t']), a)
         else
-          subst_type_name loc loc2 "option" [t'] a
+          subst_type_name loc loc2 (TN ["option"]) [t'] a
 
     | Nullable (loc as loc2, t, a)
-    | Name (loc, (loc2, "nullable", [t]), a) ->
+    | Name (loc, (loc2, TN ["nullable"], [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Name (loc, (loc2, "nullable", [t']), a)
+          Name (loc, (loc2, TN ["nullable"], [t']), a)
         else
-          subst_type_name loc loc2 "nullable" [t'] a
+          subst_type_name loc loc2 (TN ["nullable"]) [t'] a
 
     | Shared (loc as loc2, t, a)
-    | Name (loc, (loc2, "shared", [t]), a) ->
+    | Name (loc, (loc2, TN ["shared"], [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Name (loc, (loc2, "shared", [t']), a)
+          Name (loc, (loc2, TN ["shared"], [t']), a)
         else
-          subst_type_name loc loc2 "shared" [t'] a
+          subst_type_name loc loc2 (TN ["shared"]) [t'] a
 
     | Wrap (loc as loc2, t, a)
-    | Name (loc, (loc2, "wrap", [t]), a) ->
+    | Name (loc, (loc2, TN ["wrap"], [t]), a) ->
         let t' = subst env t in
         if keep_builtins then
-          Name (loc, (loc2, "wrap", [t']), a)
+          Name (loc, (loc2, TN ["wrap"], [t']), a)
         else
-          subst_type_name loc loc2 "wrap" [t'] a
+          subst_type_name loc loc2 (TN ["wrap"]) [t'] a
 
     | Tvar (_, s) as x -> Option.value (List.assoc s env) ~default:x
 
@@ -435,23 +437,23 @@ let expand
 
   and subst_only_args env = function
       List (loc, t, a)
-    | Name (loc, (_, "list", [t]), a) ->
+    | Name (loc, (_, TN ["list"], [t]), a) ->
         List (loc, subst env t, a)
 
     | Option (loc, t, a)
-    | Name (loc, (_, "option", [t]), a) ->
+    | Name (loc, (_, TN ["option"], [t]), a) ->
         Option (loc, subst env t, a)
 
     | Nullable (loc, t, a)
-    | Name (loc, (_, "nullable", [t]), a) ->
+    | Name (loc, (_, TN ["nullable"], [t]), a) ->
         Nullable (loc, subst env t, a)
 
     | Shared (loc, t, a)
-    | Name (loc, (_, "shared", [t]), a) ->
+    | Name (loc, (_, TN ["shared"], [t]), a) ->
         Shared (loc, subst env t, a)
 
     | Wrap (loc, t, a)
-    | Name (loc, (_, "wrap", [t]), a) ->
+    | Name (loc, (_, TN ["wrap"], [t]), a) ->
         Wrap (loc, subst env t, a)
 
     | Name (loc, (loc2, name, args), an) ->
@@ -499,7 +501,8 @@ let expand
 
 
 
-let replace_type_names (subst : string -> string) (t : type_expr) : type_expr =
+let replace_type_names
+    (subst : type_name -> type_name) (t : type_expr) : type_expr =
   let rec replace (t : type_expr) : type_expr =
     match t with
       Sum (loc, vl, a) -> Sum (loc, List.map replace_variant vl, a)
@@ -600,11 +603,11 @@ let suggest_good_name =
 let standardize_type_names
     ~prefix (defs : type_def list) : type_def list =
   let reserved_identifiers =
-    List.map (fun (name, _, _) -> name) Predef.list
+    List.map (fun (name, _, _) -> Print.tn name) Predef.list
     @ List.filter_map (fun (x : type_def) ->
       let name = x.name in
       if is_special name then None
-      else Some name
+      else Some (Print.tn name)
     ) defs
   in
   let name_registry =
@@ -617,10 +620,14 @@ let standardize_type_names
   let new_id id =
     (* The leading underscore is used to identify generated type names
        in other places. *)
-    Unique_name.translate
-      name_registry
-      ~preferred_translation:(prefix ^ suggest_good_name id)
-      id
+    let str_id = Print.tn id in
+    let new_str_id =
+      Unique_name.translate
+        name_registry
+        ~preferred_translation:(prefix ^ suggest_good_name str_id)
+        str_id
+    in
+    TN [new_str_id]
   in
   let replace_name k =
     if is_special k then
@@ -635,11 +642,15 @@ let standardize_type_names
     ) defs
   in
   let subst id =
-    match Unique_name.translate_only name_registry id with
-    | Some x -> x
-    | None ->
-        (* must have been defined as abstract *)
-        id
+    match id with
+    | TN [name] ->
+        (match Unique_name.translate_only name_registry name with
+         | Some x -> TN [x]
+         | None ->
+             (* must have been defined as abstract *)
+             id
+        )
+    | TN _ as x -> x
   in
   List.map (fun (x : type_def) ->
     { x with value = replace_type_names subst x.value }

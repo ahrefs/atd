@@ -1,4 +1,4 @@
-open Import
+open Stdlib_extra
 open Lexing
 
 
@@ -24,7 +24,7 @@ and annot_field = string * (loc * string option)
 
 and type_def = {
   loc: loc;
-  name: string;
+  name: type_name;
   param: type_param;
   annot: annot;
   value: type_expr;
@@ -33,8 +33,9 @@ and type_def = {
 
 and import = {
   loc: loc;
-  name: string;
+  path: string list;
   alias: string option;
+  name: string;
   annot: annot
 }
 
@@ -55,7 +56,9 @@ and type_expr =
      the only predefined types with a type
      parameter (and no special syntax). *)
 
-and type_inst = loc * string * type_expr list
+and type_inst = loc * type_name * type_expr list
+
+and type_name = TN of string list
 
 and variant =
   | Variant of loc * (string * annot) * type_expr option
@@ -371,7 +374,10 @@ and fold_field f (x : field) acc =
   | Inherit (_, type_expr) -> fold f type_expr acc
 
 
-module Type_names = Set.Make (String)
+module Type_names = Set.Make (struct
+  type t = type_name
+  let compare = Stdlib.compare
+end)
 
 let extract_type_names ?(ignorable = []) x =
   let ign s = List.mem s ignorable in
@@ -474,11 +480,11 @@ let use_only_specific_variants x =
     match x with
     | Name (loc, (loc2, name, [arg]), an) ->
         (match name with
-        | "list" -> List (loc, arg, an)
-        | "option" -> Option (loc, arg, an)
-        | "nullable" -> Nullable (loc, arg, an)
-        | "shared" -> Shared (loc, arg, an)
-        | "wrap" -> Wrap (loc, arg, an)
+        | TN ["list"] -> List (loc, arg, an)
+        | TN ["option"] -> Option (loc, arg, an)
+        | TN ["nullable"] -> Nullable (loc, arg, an)
+        | TN ["shared"] -> Shared (loc, arg, an)
+        | TN ["wrap"] -> Wrap (loc, arg, an)
         | _ -> x)
 
     | Name (loc, (loc2, name, _), an) as x ->
@@ -500,10 +506,10 @@ let use_only_specific_variants x =
 let use_only_name_variant x =
   let type_expr x =
     match x with
-    | List (loc, arg, an) -> Name (loc, (loc, "list", [arg]), an)
-    | Option (loc, arg, an) -> Name (loc, (loc, "option", [arg]), an)
-    | Nullable (loc, arg, an) -> Name (loc, (loc, "nullable", [arg]), an)
-    | Shared (loc, arg, an) -> Name (loc, (loc, "shared", [arg]), an)
+    | List (loc, arg, an) -> Name (loc, (loc, TN ["list"], [arg]), an)
+    | Option (loc, arg, an) -> Name (loc, (loc, TN ["option"], [arg]), an)
+    | Nullable (loc, arg, an) -> Name (loc, (loc, TN ["nullable"], [arg]), an)
+    | Shared (loc, arg, an) -> Name (loc, (loc, TN ["shared"], [arg]), an)
 
     | Name _
     | Sum _
@@ -514,3 +520,18 @@ let use_only_name_variant x =
   in
   let mappers = { Map.type_expr } in
   Map.module_ mappers x
+
+let create_import ~loc ~path ?alias ~annot () : import =
+  let name =
+    match path, alias with
+    | [], _ -> invalid_arg "Ast.create_import: empty path"
+    | name :: _, None -> name
+    | _ :: _, Some override -> override
+  in
+  {
+    loc;
+    path;
+    alias;
+    name;
+    annot;
+  }

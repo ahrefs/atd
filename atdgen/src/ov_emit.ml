@@ -2,7 +2,7 @@
   Validators of OCaml data whose types are defined using ATD.
 *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Indent
 
 open Atd.Ast

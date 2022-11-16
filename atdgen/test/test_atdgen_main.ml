@@ -2,7 +2,7 @@
    Unit tests for atdgen
 *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 
 (* deprecated. Use the type-aware functions from Alcotest for better
    error reporting, e.g.

@@ -1,4 +1,4 @@
-open Atd.Import
+open Atd.Stdlib_extra
 
 type loc = Atd.Ast.loc
 

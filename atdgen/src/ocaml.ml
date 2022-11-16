@@ -5,7 +5,7 @@
   This is derived from the ATD pretty-printer (atd_print.ml).
 *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 
 open Easy_format
 open Atd.Ast

@@ -2,7 +2,7 @@
    Utilities for interpreting annotations of type Ast.annot.
 *)
 
-open Import
+open Stdlib_extra
 
 type t = Ast.annot
 

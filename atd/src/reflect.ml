@@ -2,7 +2,7 @@
   Conversion of an ATD tree to OCaml source code for that value.
 *)
 
-open Import
+open Stdlib_extra
 
 let print_loc buf (_, _) =
   bprintf buf "loc"
@@ -123,24 +123,26 @@ and print_field_kind buf fk =
      | Optional -> "Optional"
      | With_default -> "With_default")
 
-and print_type_inst buf (loc, s, l) =
+and print_type_inst buf (loc, name, l) =
   bprintf buf "(%a, %S, %a)"
     print_loc loc
-    s
+    (Print.tn name)
     (print_list print_type_expr) l
 
-let print_import buf ({ loc; name; alias; annot } : Ast.import) =
-  bprintf buf "{ loc = %a; name = %S; alias = %a; annot = %a }"
+let print_import buf ({ loc; path; alias; name; annot } : Ast.import) =
+  bprintf buf "{ loc = %a; path = %a; alias = %a; name = %S; annot = %a }"
     print_loc loc
-    name
+    (print_list print_qstring) path
     (print_opt print_qstring) alias
+    name
     print_annot_list annot
 
 let rec print_type_def buf (x: Ast.type_def) =
   bprintf buf "{ loc = %a; name = %S; param = %a; annot = %a; \
                  value = %a; orig = %a; } "
     print_loc x.loc
-    x.name (print_list print_qstring) x.param print_annot_list x.annot
+    (Print.tn x.name)
+    (print_list print_qstring) x.param print_annot_list x.annot
     print_type_expr x.value
     (print_opt print_type_def) x.orig
 

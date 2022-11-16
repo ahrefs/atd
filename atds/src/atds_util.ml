@@ -1,6 +1,6 @@
 (* Utilities *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Atds_env
 
 (* Get rid of `wrap' constructors that we don't support on the Java side yet.

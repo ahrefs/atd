@@ -1,6 +1,6 @@
 (* Helper classes *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Atds_env
 
 (* TODO: Extract to to a plain file? *)

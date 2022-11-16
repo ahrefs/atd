@@ -3,7 +3,7 @@
 *)
 
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Indent
 
 open Atd.Ast

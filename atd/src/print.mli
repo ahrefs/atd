@@ -14,7 +14,14 @@ val to_string :
   ?format_annot: (Ast.annot_section -> Easy_format.t) ->
   Ast.any -> string
 
-val string_of_type_name :
-  string -> Ast.type_expr list -> Ast.annot -> string
-  (** Convert a type name with its arguments and its annotations
-      into a string. *)
+(** Convert a type name with its arguments and its annotations
+    into a string. *)
+val string_of_type_inst :
+  Ast.type_name -> Ast.type_expr list -> Ast.annot -> string
+
+(** Concatenate the components of a type name into a string.
+    For example, [TN ["foo"; "bar"]] gives ["foo.bar"]. *)
+val string_of_type_name : Ast.type_name -> string
+
+(** Shorthand for [string_of_type_name] *)
+val tn : Ast.type_name -> string

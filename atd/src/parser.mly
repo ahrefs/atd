@@ -4,7 +4,7 @@
    requires menhir.
 */
 %{
-  open Import
+  open Stdlib_extra
   open Ast
 
   let syntax_error s pos1 pos2 =
@@ -68,11 +68,15 @@ lident_path:
 ;
 
 type_def:
-| TYPE p = type_param s = LIDENT a = annot EQ t = type_expr
+| TYPE;
+  p = type_param;
+  s = LIDENT;
+  a = annot EQ;
+  t = type_expr
                                { let loc = ($startpos, $endpos) in
                                  let orig : type_def = {
                                    loc;
-                                   name = s;
+                                   name = TN [s];
                                    param = p;
                                    annot = a;
                                    value = t;
@@ -89,10 +93,14 @@ type_def:
     { syntax_error "Expecting type name" $startpos(_e) $endpos(_e) }
 
 import:
-| IMPORT name = LIDENT alias = alias annot = annot
-                               { let loc = ($startpos, $endpos) in
-                                 ({ loc; name; alias; annot } : import) }
-| IMPORT _e=error
+| IMPORT;
+  path = separated_nonempty_list(DOT, LIDENT);
+  alias = alias;
+  annot = annot;
+                     { let loc = ($startpos, $endpos) in
+                       (Ast.create_import
+                          ~loc ~path ?alias ~annot () : import) }
+| IMPORT; _e=error
     { syntax_error "Expecting ATD module name" $startpos(_e) $endpos(_e) }
 ;
 
@@ -131,16 +139,17 @@ type_expr:
 | OP_PAREN l = cartesian_product CL_PAREN a = annot
      { Tuple (($startpos, $endpos), l, a) }
 
-| x = type_inst a = annot
+| x = type_inst;
+  a = annot
      { let pos1 = $startpos in
        let pos2 = $endpos in
        let loc = (pos1, pos2) in
        let _, name, args = x in
        match name, args with
-           "list", [x] -> List (loc, x, a)
-         | "option", [x] -> Option (loc, x, a)
-         | "nullable", [x] -> Nullable (loc, x, a)
-         | "shared", [x] ->
+         | TN ["list"], [x] -> List (loc, x, a)
+         | TN ["option"], [x] -> Option (loc, x, a)
+         | TN ["nullable"], [x] -> Nullable (loc, x, a)
+         | TN ["shared"], [x] ->
              let a =
                if Annot.has_field ~sections:["share"] ~field:"id" a then
                  (* may cause ID clashes if not used properly *)
@@ -150,10 +159,11 @@ type_expr:
                    ~section:"share" ~field:"id" (Some (Annot.create_id ())) a
              in
              Shared (loc, x, a)
-         | "wrap", [x] -> Wrap (loc, x, a)
+         | TN ["wrap"], [x] -> Wrap (loc, x, a)
 
-         | ("list"|"option"|"nullable"|"shared"|"wrap"), _ ->
-             syntax_error (sprintf "%s expects one argument" name) pos1 pos2
+         | TN ["list"|"option"|"nullable"|"shared"|"wrap"], _ ->
+             syntax_error (sprintf "%s expects one argument"
+                             (Print.tn name)) pos1 pos2
 
          | _ -> (Name (loc, x, a) : type_expr) }
 
@@ -179,7 +189,9 @@ annot_expr:
 ;
 
 type_inst:
-| l = type_args s = LIDENT  { (($startpos, $endpos), s, l) }
+| args = type_args;
+  path = separated_nonempty_list(DOT, LIDENT)
+                                   { (($startpos, $endpos), TN path, args) }
 ;
 
 type_args:

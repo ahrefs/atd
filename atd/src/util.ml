@@ -88,14 +88,21 @@ let load_string
 module Tsort = Sort.Make (
   struct
     type t = Ast.type_def
-    type id = string (* type name *)
+    type id = Ast.type_name
     let id (x : t) = x.name
-    let to_string name = name
+    let to_string name = Print.tn name
   end
 )
 
 let tsort ?(all_rec = false) type_defs0 =
-  let ignorable = [ "unit"; "bool"; "int"; "float"; "string"; "abstract" ] in
+  let ignorable : Ast.type_name list = [
+    TN ["unit"];
+    TN ["bool"];
+    TN ["int"];
+    TN ["float"];
+    TN ["string"];
+    TN ["abstract"]
+  ] in
   if all_rec then
     [(true, type_defs0)]
   else

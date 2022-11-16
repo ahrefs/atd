@@ -41,22 +41,33 @@ and module_head = loc * annot
     The concrete syntax is [import external_name as local_name].
     The annotations specify language-specific options such as where to
     find the implementation or alternate names. *)
-and import = {
+and import = private {
   loc: loc;
-  (** The name of the ATD module. *)
-  name: string;
-  (** The local used to identify the imported ATD module.
-      Typically, this is an abbreviation as in
-      [import bubble_gum_factory_api as bg].
-  *)
+
+  path: string list;
+    (** The full name of the ATD module.
+        Unless an alias is specified, the local name of the module is
+        the last component e.g. [import foo.bar] imports module [foo.bar]
+        which is known locally as just [bar]. *)
+
   alias: string option;
+    (** The local name used to identify the imported ATD module, overriding
+        the default name.
+        Typically, this is an abbreviation as in
+        [import bubble_gum_factory_api as bg].
+    *)
+
+  name: string;
+    (** The local name of the module. It's the value of [alias] if there is
+        one, otherwise it's the last component of [path]. *)
+
   annot: annot
 }
 
 (** A type definition. *)
 and type_def = {
   loc: loc;
-  name: string;
+  name: type_name;
   param: type_param;
   annot: annot;
   value: type_expr;
@@ -105,8 +116,10 @@ and type_expr =
          - [Tvar]: a type variable identifier without the tick
       *)
 
-and type_inst = loc * string * type_expr list
-    (** A type name and its arguments *)
+and type_inst = loc * type_name * type_expr list
+    (** A dot-separated type name and its arguments *)
+
+and type_name = TN of string list
 
 and variant =
   | Variant of loc * (string * annot) * type_expr option
@@ -188,6 +201,13 @@ type any =
   | Field of field
   (** Type for any kind of node, used to define a visitor root.
       Also used to simplify the interface of the [Print] module. *)
+
+val create_import :
+  loc:loc ->
+  path:string list ->
+  ?alias:string ->
+  annot:annot ->
+  unit -> import
 
 val loc_of_type_expr : type_expr -> loc
   (** Extract the source location of any type expression. *)
@@ -290,8 +310,8 @@ val fold : (type_expr -> 'a -> 'a) -> type_expr -> 'a -> 'a
   *)
 
 val extract_type_names :
-  ?ignorable : string list ->
-  type_expr -> string list
+  ?ignorable : type_name list ->
+  type_expr -> type_name list
   (**
      Extract all the type names occurring in a type expression
      under [`Name], without duplicates.

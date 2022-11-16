@@ -1,4 +1,4 @@
-open Atd.Import
+open Atd.Stdlib_extra
 open Atd.Ast
 
 type out_format =
@@ -109,7 +109,7 @@ let print
 let split_on_comma =
   Re.Str.split_delim (Re.Str.regexp ",")
 
-let () =
+let run () =
   let expand = ref false in
   let keep_poly = ref false in
   let xdebug = ref false in
@@ -209,6 +209,7 @@ let () =
   in
   let msg = sprintf "Usage: %s FILE" Sys.argv.(0) in
   Arg.parse options (fun file -> input_files := file :: !input_files) msg;
+  Printexc.record_backtrace true;
   try
     let force_inherit, annot_schema =
       match !out_format with
@@ -254,4 +255,12 @@ let () =
       flush stdout;
       eprintf "%s\n%!" msg;
       exit 1
-  | e -> raise e
+  | e ->
+      let trace = Printexc.get_backtrace () in
+      flush stdout;
+      eprintf "Exception %s:\n%s%!"
+        (Printexc.to_string e)
+        trace;
+      exit 1
+
+let () = run ()

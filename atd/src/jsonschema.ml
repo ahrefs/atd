@@ -64,7 +64,7 @@ type t = {
 }
 
 let make_id type_name =
-  "#/definitions/" ^ type_name
+  "#/definitions/" ^ Print.tn type_name
 
 let trans_description_simple loc an =
   match Doc.get_doc loc an with
@@ -133,7 +133,7 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
         (match e, json_repr with
          | _, Array ->
              Array (trans_type_expr e)
-         | Tuple (loc, [(_, Name (_, (_, "string", _), _), _);
+         | Tuple (loc, [(_, Name (_, (_, TN ["string"], _), _), _);
                         (_, value, _)], an2), Object ->
              Map (trans_type_expr value)
          | _, Object ->
@@ -156,12 +156,12 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
     | Tvar (loc, name) -> error_at loc "unsupported: parametrized types"
     | Name (loc, (loc2, name, args), a) ->
         (match name with
-         | "unit" -> Null
-         | "bool" -> Boolean
-         | "int" -> Integer
-         | "float" -> Number
-         | "string" -> String
-         | "abstract" -> Any
+         | TN ["unit"] -> Null
+         | TN ["bool"] -> Boolean
+         | TN ["int"] -> Integer
+         | TN ["float"] -> Number
+         | TN ["string"] -> String
+         | TN ["abstract"] -> Any
          | _ -> Ref (make_id name)
         )
   in
@@ -174,7 +174,7 @@ let trans_def
     error_at x.loc "unsupported: parametrized types";
   let description = trans_description_simple x.loc x.annot in
   {
-    name = x.name;
+    name = (Print.tn x.name);
     description;
     type_expr = trans_type_expr ~xprop x.value;
   }

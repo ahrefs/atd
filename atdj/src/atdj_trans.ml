@@ -307,8 +307,9 @@ let rec trans_module env (module_ : A.module_) =
   );
   List.fold_left trans_type_def env module_.type_defs
 
-and trans_type_def env ((_, (name, _, _), atd_ty) : A.type_def) =
-  match unwrap atd_ty with
+and trans_type_def env (x : A.type_def) =
+  let name = x.name in
+  match unwrap x.value with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
   | Record (loc, v, a) ->

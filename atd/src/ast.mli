@@ -186,7 +186,8 @@ type any =
   | Variant of variant
   | Cell of cell
   | Field of field
-  (** Type for any kind of node, used to define a visitor root. *)
+  (** Type for any kind of node, used to define a visitor root.
+      Also used to simplify the interface of the [Print] module. *)
 
 val loc_of_type_expr : type_expr -> loc
   (** Extract the source location of any type expression. *)

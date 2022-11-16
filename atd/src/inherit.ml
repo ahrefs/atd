@@ -8,13 +8,6 @@ open Ast
 
 module S = Set.Make (String)
 
-let load_defs (l : type_def list) =
-  let tbl = Predef.make_table () in
-  List.iter (fun (td : type_def) ->
-    Hashtbl.add tbl td.name (List.length td.param, Some td)
-  ) l;
-  tbl
-
 let keep_last_defined get_name l =
   let _, l =
     List.fold_right (
@@ -136,7 +129,7 @@ let expand_module_body
     (_imports : Ast.import list) (defs : Ast.type_def list) =
   (* TODO: use 'imports' to improve error messages when a user expects
      'inherit' to work on imported types *)
-  let tbl = load_defs defs in
+  let tbl = Predef.make_table defs in
   List.map (fun (x : type_def) ->
     { x with
       value = expand ?inherit_fields ?inherit_variants tbl x.value;

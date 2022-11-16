@@ -41,17 +41,17 @@ let format_html_comments ((section, (_, l)) as x) =
         | Some _ | None ->
             begin match List.assoc "text" l with
               | Some (loc, Some s) -> comment (html_of_doc loc s)
-              | Some _ | None -> Atd.Print.default_annot x
+              | Some _ | None -> Atd.Print.default_format_annot x
             end
       end
-  | _ -> Atd.Print.default_annot x
+  | _ -> Atd.Print.default_format_annot x
 
 let print_atd ~html_doc oc ast =
-  let annot =
+  let format_annot =
     if html_doc then Some format_html_comments
     else None
   in
-  let pp = Atd.Print.format ?annot ast in
+  let pp = Atd.Print.format ?format_annot ast in
   Easy_format.Pretty.to_channel oc pp;
   output_string oc "\n"
 
@@ -95,18 +95,16 @@ let parse
 
 let print
     ~xprop ~jsonschema_version
-    ~src_name ~html_doc ~out_format ~out_channel:oc ast =
-  let f =
-    match out_format with
-    | Atd -> print_atd ~html_doc
-    | Ocaml name -> print_ml ~name
-    | Jsonschema root_type ->
-        Atd.Jsonschema.print
-          ~xprop
-          ~version:jsonschema_version
-          ~src_name ~root_type
-  in
-  f oc ast
+    ~src_name ~html_doc ~out_format ~out_channel:oc module_ =
+  match out_format with
+  | Atd -> print_atd ~html_doc oc (Module module_)
+  | Ocaml name -> print_ml ~name oc module_
+  | Jsonschema root_type ->
+      Atd.Jsonschema.print
+        ~xprop
+        ~version:jsonschema_version
+        ~src_name ~root_type
+        oc module_
 
 let split_on_comma =
   Re.Str.split_delim (Re.Str.regexp ",")

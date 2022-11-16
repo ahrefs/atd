@@ -97,7 +97,7 @@ let create_class_name env name =
   let preferred_id = to_camel_case name in
   env.create_variable preferred_id
 
-let init_env () : env =
+let init_env (defs : type_def list) : env =
   let keywords = [
     (* Keywords
        https://docs.python.org/3/reference/lexical_analysis.html#keywords
@@ -522,7 +522,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 let rec get_default_default
-    ?(mutable_ok = true) (e : type_expr) : string option =
+    ?(mutable_ok = true) env (e : type_expr) : string option =
   match e with
   | Sum _
   | Record _
@@ -532,8 +532,8 @@ let rec get_default_default
       else None
   | Option _
   | Nullable _ -> Some "None"
-  | Shared (loc, e, an) -> get_default_default ~mutable_ok e
-  | Wrap (loc, e, an) -> get_default_default ~mutable_ok e
+  | Shared (loc, e, an) -> get_default_default ~mutable_ok env e
+  | Wrap (loc, e, an) -> get_default_default ~mutable_ok env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "unit" -> Some "None"
@@ -542,26 +542,28 @@ let rec get_default_default
        | "float" -> Some "0.0"
        | "string" -> Some {|""|}
        | "abstract" -> Some "None"
-       | _ -> None
+       | _ -> assert false
       )
-  | Name _ -> None
-  | Tvar _ -> None
+  | Name _ -> assert false
+  | Tvar _ -> assert false
 
 let get_python_default
-    ?mutable_ok (e : type_expr) (an : annot) : string option =
+    ?mutable_ok
+    env (e : type_expr) (an : annot) : string option =
   let user_default = Python_annot.get_python_default an in
   match user_default with
   | Some s -> Some s
-  | None -> get_default_default ?mutable_ok e
+  | None -> get_default_default ?mutable_ok env e
 
 (* see explanation where this function is used *)
 let has_no_class_inst_prop_default
+    env
     ((loc, (name, kind, an), e) : simple_field) =
   match kind with
   | Required -> true
   | Optional -> (* default is None *) false
   | With_default ->
-      match get_python_default ~mutable_ok:false e an with
+      match get_python_default env ~mutable_ok:false e an with
       | Some _ -> false
       | None ->
           (* There's either no default at all which is an error,
@@ -577,10 +579,11 @@ let unwrap_field_type loc field_name kind e =
   | Optional ->
       match e with
       | Option (loc, e, an) -> e
-      | _ ->
+      | e ->
           A.error_at loc
             (sprintf "the type of optional field '%s' should be of \
-                      the form 'xxx option'" field_name)
+                      the form 'xxx option'"
+               field_name)
 
 (*
    Instance variable that's really the name of the getter method created
@@ -746,7 +749,7 @@ let from_json_class_argument
           (single_esc json_name)
     | Optional -> "None"
     | With_default ->
-        match get_python_default e an with
+        match get_python_default env e an with
         | Some x -> x
         | None ->
             A.error_at loc
@@ -770,7 +773,7 @@ let inst_var_declaration
     | Required -> ""
     | Optional -> " = None"
     | With_default ->
-        match get_python_default ~mutable_ok:false unwrapped_e an with
+        match get_python_default ~mutable_ok:false env unwrapped_e an with
         | None -> ""
         | Some value -> sprintf " = %s" value
   in
@@ -778,7 +781,8 @@ let inst_var_declaration
     Line (sprintf "%s: %s%s" var_name type_name default)
   ]
 
-let record env ~class_decorators loc name (fields : field list) an =
+let record
+    env ~class_decorators loc name (fields : field list) an =
   let py_class_name = class_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
@@ -797,18 +801,20 @@ let record env ~class_decorators loc name (fields : field list) an =
   *)
   let fields =
     let no_default, with_default =
-      List.partition has_no_class_inst_prop_default fields in
+      List.partition (has_no_class_inst_prop_default env) fields in
     no_default @ with_default
   in
   let inst_var_declarations =
-    List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields
+    List.map (fun x ->
+      Inline (inst_var_declaration env trans_meth x)) fields
   in
   let json_object_body =
     List.map (fun x ->
       Inline (construct_json_field env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
-      Line (from_json_class_argument env trans_meth py_class_name x)
+      Line (from_json_class_argument
+              env trans_meth py_class_name x)
     ) fields in
   let from_json =
     [
@@ -1145,11 +1151,13 @@ let get_class_decorators an =
   else
     decorators @ ["dataclass"]
 
-let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
+let type_def env (x : A.type_def) : B.t =
+  let loc = x.loc in
+  let name = x.name in
+  if x.param <> [] then
     not_implemented loc "parametrized type";
   let class_decorators =
-    get_class_decorators an
+    get_class_decorators x.annot
     |> List.map (fun s -> Line ("@" ^ s))
   in
   let rec unwrap e =
@@ -1157,7 +1165,7 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     | Sum (loc, cases, an) ->
         sum env ~class_decorators loc name cases
     | Record (loc, fields, an) ->
-        record env  ~class_decorators loc name fields an
+        record env ~class_decorators loc name fields an
     | Tuple _
     | List _
     | Option _
@@ -1167,18 +1175,14 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     | Wrap (loc, e, an) -> unwrap e
     | Tvar _ -> not_implemented loc "parametrized type"
   in
-  unwrap e
-
-let module_body env x =
-  List.fold_left (fun acc (Type x) -> Inline (type_def env x) :: acc) [] x
-  |> List.rev
-  |> spaced
+  unwrap x.value
 
 let definition_group ~atd_filename env
-    (is_recursive, (items: A.module_body)) : B.t =
-  [
-    Inline (module_body env items);
-  ]
+    (_is_recursive, (defs: A.type_def list)) : B.t =
+  List.fold_left (fun acc x ->
+    Inline (type_def env x) :: acc) [] defs
+  |> List.rev
+  |> spaced
 
 (*
    Make sure that the types as defined in the atd file get a good name.
@@ -1189,20 +1193,23 @@ let definition_group ~atd_filename env
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_class_names env (items: A.module_body) =
+let reserve_good_class_names env (defs: A.type_def list) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (class_name env name))
-    items
+    (fun (x : type_def) -> ignore (class_name env x.name))
+    defs
 
-let to_file ~atd_filename ~head (items : A.module_body) dst_path =
-  let env = init_env () in
-  reserve_good_class_names env items;
+let to_file ~atd_filename ~head (defs : A.type_def list) dst_path =
+  let env = init_env defs in
+  reserve_good_class_names env defs;
   let head = List.map (fun s -> Line s) head in
   let python_defs =
-    Atd.Util.tsort items
+    Atd.Util.tsort defs
     |> List.map (fun x -> Inline (definition_group ~atd_filename env x))
   in
-  Line (fixed_size_preamble atd_filename) :: Inline head :: python_defs
+  [
+    Line (fixed_size_preamble atd_filename);
+    Inline head;
+  ] @ python_defs
   |> double_spaced
   |> Indent.to_file ~indent:4 dst_path
 
@@ -1216,7 +1223,7 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let module_, _original_types =
+  let module_ =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization = eliminate parametrized type defs *)
@@ -1226,6 +1233,7 @@ let run_file src_path =
       src_path
   in
   let module_ = Atd.Ast.use_only_specific_variants module_ in
-  let (atd_head, atd_module) = module_ in
-  let head = Python_annot.get_python_json_text (snd atd_head) in
-  to_file ~atd_filename:src_name ~head atd_module dst_path
+  let head = Python_annot.get_python_json_text (snd module_.module_head) in
+  if module_.imports <> [] then
+    failwith "not implemented: import";
+  to_file ~atd_filename:src_name ~head module_.type_defs dst_path

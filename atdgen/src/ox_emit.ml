@@ -186,12 +186,8 @@ let anon_param_type_name s n_param =
 (* Get a type expression that uses the original user-given name
    (e.g. not _1) *)
 let get_type_constraint def =
-  match def.def_orig.orig with
-  | None ->
-      (* get_full_type_name def *)
-      assert false
-  | Some x ->
-      anon_param_type_name x.name (List.length x.param)
+  let x = def.def_orig in
+  anon_param_type_name x.name (List.length x.param)
 
 (* Classic variants and records need type annotations in order to allow
    constructor/field name disambiguation *)
@@ -335,6 +331,11 @@ let def_of_atd (td : Atd.Ast.type_def) ~target ~def ~external_
              external_))
     | None -> Some (mapping_of_expr td.value)
   in
+  let def_orig =
+    match td.orig with
+    | None -> assert false
+    | Some x -> x
+  in
   {
     def_loc = loc;
     def_name = name;
@@ -344,7 +345,7 @@ let def_of_atd (td : Atd.Ast.type_def) ~target ~def ~external_
       Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
                        ocaml_ddoc = doc };
     def_brepr = def;
-    def_orig = td;
+    def_orig;
   }
 
 let maybe_write_creator_impl ~with_create deref buf defs =

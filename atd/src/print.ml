@@ -52,7 +52,7 @@ let format_prop (k, (_, opt)) =
         (make_atom (quote_string s))
       )
 
-let default_annot (s, (_, l)) =
+let default_format_annot (s, (_, l)) =
   match l with
     [] -> make_atom ("<" ^ s ^ ">")
   | l ->
@@ -76,7 +76,7 @@ let string_of_field k = function
   | With_default -> "~" ^ k
 
 
-let make_closures format_annot =
+let format ?(format_annot = default_format_annot) any =
 
   let append_annots (l : annot) x =
     match l with
@@ -145,7 +145,7 @@ let make_closures format_annot =
         append_annots a (
           List (
             ("(", "*", ")", lplist),
-            List.map format_tuple_field l
+            List.map format_cell l
           )
         )
 
@@ -178,7 +178,7 @@ let make_closures format_annot =
   and format_inherit t =
     horizontal_sequence [ make_atom "inherit"; format_type_expr t ]
 
-  and format_tuple_field (_, x, a) =
+  and format_cell (_, x, a) =
     prepend_colon_annots a (format_type_expr x)
 
   and format_field x =
@@ -254,20 +254,23 @@ let make_closures format_annot =
     )
   in
 
-  format_module, format_type_name, format_type_expr
+  let format_any (x : any) =
+    match x with
+    | Module x -> format_module x
+    | Import x -> format_import x
+    | Type_def x -> format_type_def x
+    | Type_expr x -> format_type_expr x
+    | Variant x -> format_variant x
+    | Cell x -> format_cell x
+    | Field x -> format_field x
+  in
 
+  format_any any
 
-let format ?(annot = default_annot) x =
-  let f, _, _ = make_closures annot in
-  f x
-
-let _default_format, default_format_type_name, default_format_type_expr =
-  make_closures default_annot
+let to_string ?format_annot x =
+  format ?format_annot x
+  |> Easy_format.Pretty.to_string
 
 let string_of_type_name name args an =
-  let x = default_format_type_name name args an in
-  Easy_format.Pretty.to_string x
-
-let string_of_type_expr expr =
-  let x = default_format_type_expr expr in
-  Easy_format.Pretty.to_string x
+  let loc = dummy_loc in
+  to_string (Type_expr (Name (loc, (loc, name, args), an)))

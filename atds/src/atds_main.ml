@@ -55,7 +55,7 @@ let main () =
     env with
     type_defs =
       List.map
-        (fun (_, (name, _, _), atd_ty) -> (name, atd_ty))
+        (fun (x : Atd.Ast.type_def) -> (x.name, x.value))
         module_.type_defs
   } in
 

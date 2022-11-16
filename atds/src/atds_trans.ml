@@ -135,14 +135,16 @@ package object %s {
 let rec trans_module env (module_ : A.module_) =
   List.fold_left (fun env x -> trans_type_def env x) env module_.type_defs
 
-and trans_type_def env ((_, (name, _, annots), atd_ty) : A.type_def) =
+and trans_type_def env (x : A.type_def) =
+  let name = x.name in
+  let atd_ty = x.value in
   match unwrap atd_ty with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
   | Record (loc, v, a) ->
       trans_record name env (loc, v, a)
   | Name _ | Tuple _ | List _ ->
-      trans_alias name env annots atd_ty
+      trans_alias name env x.annot atd_ty
   | x -> type_not_supported x
 
 (* Translation of sum types.  For a sum type

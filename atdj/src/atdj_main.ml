@@ -70,7 +70,7 @@ let main () =
     env with
     Atdj_env.type_defs =
       List.map
-        (function (_, (name, _, _), atd_ty) -> (name, atd_ty))
+        (fun (x : Atd.Ast.type_def) -> (x.name, x.value))
         module_.type_defs
   } in
 

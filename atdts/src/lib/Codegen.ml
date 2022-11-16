@@ -791,9 +791,10 @@ let field_def env ((loc, (name, kind, an), e) : simple_field) =
 let record_type env loc name (fields : field list) an =
   let ts_type_name = type_name env name in
   let fields =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
+    List.map (fun (x : field) ->
+      match x with
+      | Field x -> x
+      | Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   let field_defs =
@@ -854,10 +855,11 @@ let sum_type env loc name cases =
     Inline case_types;
   ]
 
-let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
-    not_implemented loc "parametrized type";
-  match unwrap e with
+let make_type_def env (x : A.type_def) : B.t =
+  if x.param <> [] then
+    not_implemented x.loc "parametrized type";
+  let name = x.name in
+  match unwrap x.value with
   | Sum (loc, variants, an) ->
       sum_type env loc name (flatten_variants variants)
   | Record (loc, fields, an) ->
@@ -866,7 +868,7 @@ let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   | List _
   | Option _
   | Nullable _
-  | Name _ -> alias_type env name e
+  | Name _ -> alias_type env name x.value
   | Shared (loc, e, an) -> assert false
   | Wrap (loc, e, an) -> assert false
   | Tvar _ -> assert false
@@ -979,9 +981,10 @@ let read_root_expr env ~ts_type_name e =
 
   | Record (loc, fields, an) ->
       let read_fields =
-        List.map (function
-          | `Inherit _ -> assert false
-          | `Field ((loc, (name, kind, an), e) : simple_field) ->
+        List.map (fun (x : field) ->
+          match x with
+          | Inherit _ -> assert false
+          | Field ((loc, (name, kind, an), e) : simple_field) ->
               let ts_name = trans env name in
               let json_name_lit =
                 Atd.Json.get_json_fname name an |> single_esc
@@ -1050,9 +1053,10 @@ let write_root_expr env ~ts_type_name e =
       ]
   | Record (loc, fields, an) ->
       let write_fields =
-        List.map (function
-          | `Inherit _ -> assert false
-          | `Field ((loc, (name, kind, an), e) : simple_field) ->
+        List.map (fun (x : field) ->
+          match x with
+          | Inherit _ -> assert false
+          | Field ((loc, (name, kind, an), e) : simple_field) ->
               let ts_name = trans env name in
               let json_name_lit =
                 sprintf "'%s'"
@@ -1131,11 +1135,11 @@ let make_writer env loc name an e =
     Line "}";
   ]
 
-let make_functions env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
-    not_implemented loc "parametrized type";
-  let writer = make_writer env loc name an e in
-  let reader = make_reader env loc name an e in
+let make_functions env (x : A.type_def) : B.t =
+  if x.param <> [] then
+    assert false;
+  let writer = make_writer env x.loc x.name x.annot x.value in
+  let reader = make_reader env x.loc x.name x.annot x.value in
   [
     Inline writer;
     Line "";
@@ -1151,22 +1155,21 @@ let make_functions env ((loc, (name, param, an), e) : A.type_def) : B.t =
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_type_names env (items: A.module_body) =
+let reserve_good_type_names env (defs: A.type_def list) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (type_name env name))
-    items
+    (fun (x : type_def) -> ignore (type_name env x.name))
+    defs
 
-let to_file ~atd_filename (items : A.module_body) dst_path =
+let to_file ~atd_filename (defs : A.type_def list) dst_path =
   let env = init_env () in
-  let atd_defs = List.map (fun (Type x) -> x) items in
-  reserve_good_type_names env items;
+  reserve_good_type_names env defs;
   let type_defs =
-    List.map (fun x -> Inline (make_type_def env x)) atd_defs
+    List.map (fun x -> Inline (make_type_def env x)) defs
   in
   let functions =
     List.map (fun x ->
       Inline (make_functions env x)
-    ) atd_defs
+    ) defs
   in
   [
     Line (runtime_start atd_filename);
@@ -1187,7 +1190,7 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let module_, _original_types =
+  let module_ =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization *)
@@ -1197,5 +1200,6 @@ let run_file src_path =
       src_path
   in
   let module_ = Atd.Ast.use_only_specific_variants module_ in
-  let atd_head, atd_module = module_ in
-  to_file ~atd_filename:src_name atd_module dst_path
+  if module_.imports <> [] then
+    failwith "not implemented: import";
+  to_file ~atd_filename:src_name module_.type_defs dst_path

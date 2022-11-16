@@ -1637,8 +1637,8 @@ let read_point = (
 )
 let point_of_string s =
   read_point (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write_param_similar write__a : _ -> 'a param_similar -> _ = (
-  fun ob (x : 'a param_similar) ->
+let write_param_similar write__a : _ -> _ param_similar -> _ = (
+  fun ob (x : _ param_similar) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1785,13 +1785,13 @@ let read_param_similar read__a = (
             data = (match !field_data with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "data");
             something = (match !field_something with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "something");
           }
-         : 'a param_similar)
+         : _ param_similar)
       )
 )
 let param_similar_of_string read__a s =
   read_param_similar read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write_param write__a : _ -> 'a param -> _ = (
-  fun ob (x : 'a param) ->
+let write_param write__a : _ -> _ param -> _ = (
+  fun ob (x : _ param) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -1938,13 +1938,13 @@ let read_param read__a = (
             data = (match !field_data with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "data");
             nothing = (match !field_nothing with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "nothing");
           }
-         : 'a param)
+         : _ param)
       )
 )
 let param_of_string read__a s =
   read_param read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write_pair write__a write__b : _ -> ('a, 'b) pair -> _ = (
-  fun ob (x : ('a, 'b) pair) ->
+let write_pair write__a write__b : _ -> (_, _) pair -> _ = (
+  fun ob (x : (_, _) pair) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -2091,7 +2091,7 @@ let read_pair read__a read__b = (
             left = (match !field_left with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "left");
             right = (match !field_right with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "right");
           }
-         : ('a, 'b) pair)
+         : (_, _) pair)
       )
 )
 let pair_of_string read__a read__b s =

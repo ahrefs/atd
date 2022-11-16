@@ -651,6 +651,6 @@ let expand_type_defs
     ?keep_poly
     ?(debug = false)
     td_list =
-  let td_list = expand ?keep_poly td_list in
+  let td_list = expand ?keep_builtins ?keep_poly td_list in
   if debug then td_list
   else standardize_type_names ~prefix td_list

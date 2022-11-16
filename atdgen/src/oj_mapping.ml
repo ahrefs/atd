@@ -159,7 +159,7 @@ and mapping_of_field ocaml_field_prefix = function
             }
       }
 
-let defs_of_atd_def_groups def_groups ~(target : Ocaml.target)=
+let defs_of_def_groups def_groups ~(target : Ocaml.target)=
   (match target with
    | Json
    | Bucklescript -> ()

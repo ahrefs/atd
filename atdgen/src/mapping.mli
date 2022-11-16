@@ -61,7 +61,7 @@ type ('a, 'b) def = {
   def_arepr : 'a;
   def_brepr : 'b;
 
-  (* Original type definition *)
+  (* Original (source) type definition before any specialization *)
   def_orig: Atd.Ast.type_def;
 }
 

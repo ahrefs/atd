@@ -439,17 +439,11 @@ let make_ocaml_files
           ?pos_fname ?pos_lnum
           stdin
   in
-  let tsort =
-    if all_rec then
-      fun ?all_rec:_ type_defs -> [ (true, type_defs) ]
-    else
-      Atd.Util.tsort
-  in
-  let def_groups1 = tsort module_.type_defs in
+  let def_groups1 = Atd.Util.tsort ~all_rec module_.type_defs in
   let defs1 = Ov_mapping.defs_of_def_groups def_groups1 in
   let def_groups2 =
     Atd.Expand.expand_type_defs ~keep_poly:true module_.type_defs
-    |> tsort
+    |> Atd.Util.tsort ~all_rec
   in
   (* module_.type_defs = original type definitions
      def_groups1 = original type definitions after dependency analysis

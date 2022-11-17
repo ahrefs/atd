@@ -27,13 +27,14 @@ let to_camel_case (s : string) =
  * underscores and capitalise any character that is immediately following
  * an underscore or digit.  We also capitalise the initial character
  * e.g. "foo_bar42baz" becomes "FooBar42Baz". *)
-let to_class_name str =
-  match str with
-    | "string" -> "String"
-    | "int"    -> "Integer"
-    | "bool"   -> "Boolean"
-    | "float"  -> "Double"
-    | _ -> to_camel_case str
+let to_class_name (name : Atd.Ast.type_name) =
+  match name with
+    | TN ["string"] -> "String"
+    | TN ["int"]    -> "Integer"
+    | TN ["bool"]   -> "Boolean"
+    | TN ["float"]  -> "Double"
+    | TN [str] -> to_camel_case str
+    | TN _ -> failwith ("imports are not supported: " ^ Atd.Print.tn name)
 
 let java_keywords = [
   "abstract";

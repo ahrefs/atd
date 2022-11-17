@@ -27,13 +27,14 @@ let to_camel_case (s : string) =
  * underscores and capitalise any character that is immediately following
  * an underscore or digit.  We also capitalise the initial character
  * e.g. "foo_bar42baz" becomes "FooBar42Baz". *)
-let to_class_name str =
-  match str with
-    | "string" -> "String"
-    | "int"    -> "Int"
-    | "bool"   -> "Boolean"
-    | "float"  -> "Double"
-    | _ -> to_camel_case str
+let to_class_name (name : Atd.Ast.type_name) =
+  match name with
+  | TN ["string"] -> "String"
+  | TN ["int"]    -> "Int"
+  | TN ["bool"]   -> "Boolean"
+  | TN ["float"]  -> "Double"
+  | TN [str] -> to_camel_case str
+  | TN _ -> failwith ("Imports aren't supported: " ^ Atd.Print.tn name)
 
 (* Per https://scala-lang.org/files/archive/spec/2.12/01-lexical-syntax.html *)
 let scala_keywords = [
@@ -110,24 +111,31 @@ let get_scala_field_name field_name annot =
     ~field:"name"
     annot
 
-let get_scala_variant_name field_name annot =
-  let lower_field_name = String.lowercase_ascii field_name in
-  let field_name =
+let get_lowercase_name name annot =
+  let lower_field_name = String.lowercase_ascii name in
+  let name =
     if is_scala_keyword lower_field_name then
-      field_name ^ "_"
+      name ^ "_"
     else
-      field_name
+      name
   in
-  let field_name =
+  let name =
     Atd.Annot.get_field
       ~parse:(fun s -> Some s)
-      ~default:field_name
+      ~default:name
       ~sections:["scala"]
       ~field:"name"
       annot
   in
-  to_camel_case field_name
+  to_camel_case name
 
+let get_scala_variant_name name annot =
+  get_lowercase_name name annot
+
+let get_scala_type_name (name : Atd.Ast.type_name) annot =
+  match name with
+  | TN [str] -> get_lowercase_name str annot
+  | TN _ -> failwith ("Imports are not supported: " ^ Atd.Print.tn name)
 
 let get_json_field_name field_name annot =
   Atd.Annot.get_field

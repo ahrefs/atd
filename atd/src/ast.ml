@@ -523,7 +523,7 @@ let use_only_name_variant x =
 
 let create_import ~loc ~path ?alias ~annot () : import =
   let name =
-    match path, alias with
+    match List.rev path, alias with
     | [], _ -> invalid_arg "Ast.create_import: empty path"
     | name :: _, None -> name
     | _ :: _, Some override -> override

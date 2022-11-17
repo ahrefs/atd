@@ -4,9 +4,11 @@
      text="This is a test.">
 
 import datetime
-import std.floob
+import fiz.buz.fleeb
+import fiz.buz.floob
+import floob as floob2
 
-type date_range = (datetime.date * datetime.date)
+type with_external_types = (datetime.date * floob.t * floob2.t)
 
 (* Double-quotes "\"" in comments must be matched. *)
 (* Don't worry about unmatched single quotes in comments. *)

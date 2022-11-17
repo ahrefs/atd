@@ -58,7 +58,7 @@ type ('a, 'b) def = {
 }
 
 let as_abstract = function
-    Atd.Ast.Name (_, (loc, "abstract", l), a) ->
+    Atd.Ast.Name (_, (loc, TN ["abstract"], l), a) ->
       if l <> [] then
         Error.error loc "\"abstract\" takes no type parameters";
       Some (loc, a)

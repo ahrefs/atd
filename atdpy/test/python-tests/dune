@@ -4,10 +4,12 @@
 (rule
   (targets
     allcaps.py
+    external_defs.py
     everything.py
   )
   (deps
     ../atd-input/ALLCAPS.atd
+    ../atd-input/external_defs.atd
     ../atd-input/everything.atd
   )
   (action

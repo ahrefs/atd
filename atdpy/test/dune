@@ -8,8 +8,14 @@
  (alias runtest)
  (package atdpy)
  (action
-   (diff python-expected/everything.py
-     python-tests/everything.py)))
+   (progn
+     (diff python-expected/external_defs.py
+       python-tests/external_defs.py)
+     (diff python-expected/everything.py
+       python-tests/everything.py)
+   )
+ )
+)
 
 ; 2. Run the generated Python code and check that is reads or writes JSON
 ;    data as expected.

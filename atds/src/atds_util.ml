@@ -16,12 +16,12 @@ let rec norm_ty env atd_ty =
   match atd_ty with
   | Atd.Ast.Name (_, (_, name, _), _) ->
       (match name with
-       | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
+       | TN ["bool" | "int" | "float" | "string" | "abstract"] -> atd_ty
        | _ ->
            (match List.assoc name env.type_defs with
             | Some x -> norm_ty env x
             | None ->
-                eprintf "Warning: unknown type %s\n%!" name;
+                eprintf "Warning: unknown type %s\n%!" (Atd.Print.tn name);
                 atd_ty)
       )
   | _ ->

@@ -14,6 +14,9 @@ from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
 import json
 
+# ATD modules
+import external_defs as ext
+
 ############################################################################
 # Private functions
 ############################################################################
@@ -270,6 +273,27 @@ class RecursiveClass:
 
     @classmethod
     def from_json_string(cls, x: str) -> 'RecursiveClass':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class UsesExternalType:
+    """Original type: uses_external_type"""
+
+    value: List[ext.A]
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'UsesExternalType':
+        return cls(_atd_read_list(ext.A.from_json)(x))
+
+    def to_json(self) -> Any:
+        return _atd_write_list((lambda x: x.to_json()))(self.value)
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'UsesExternalType':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:

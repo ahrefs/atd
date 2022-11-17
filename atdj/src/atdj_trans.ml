@@ -24,10 +24,10 @@ let json_of_atd env atd_ty =
   | List   _ -> "JSONArray"
   | Name (_, (_, ty, _), _) ->
       (match ty with
-       | "bool"   -> "boolean"
-       | "int"    -> "int"
-       | "float"  -> "double"
-       | "string" -> "String"
+       | TN ["bool"]   -> "boolean"
+       | TN ["int"]    -> "int"
+       | TN ["float"]  -> "double"
+       | TN ["string"] -> "String"
        | _        -> type_not_supported atd_ty
       )
   | x -> type_not_supported x
@@ -69,7 +69,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
            sprintf "new %s(%s)" java_ty src
        | Name (_, (_, ty, _), _) ->
            (match ty with
-            | "bool" | "int" | "float" | "string" -> src
+            | TN ["bool" | "int" | "float" | "string"] -> src
             | _  -> type_not_supported atd_ty
            )
        | x -> type_not_supported x
@@ -96,7 +96,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
 
        | Name (_, (_, ty, _), _) ->
            (match ty with
-            | "bool" | "int" | "float" | "string" ->
+            | TN ["bool" | "int" | "float" | "string"] ->
                 sprintf "%s%s = %s;\n" indent dst src
             | _  -> type_not_supported atd_ty
            )
@@ -155,10 +155,10 @@ let assign_field env (_, (atd_field_name, kind, annots), atd_ty) java_ty =
           (match norm_ty ~unwrap_option:true env atd_ty with
            | Name (_, (_, name, _), _) ->
                (match name with
-                | "bool" -> mk_else (Some "false")
-                | "int" -> mk_else (Some "0")
-                | "float" -> mk_else (Some "0.0")
-                | "string" -> mk_else (Some "\"\"")
+                | TN ["bool"] -> mk_else (Some "false")
+                | TN ["int"] -> mk_else (Some "0")
+                | TN ["float"] -> mk_else (Some "0.0")
+                | TN ["string"] -> mk_else (Some "\"\"")
                 | _ -> mk_else None (* TODO: fail if no default is provided *)
                )
            | List _ ->
@@ -188,7 +188,7 @@ let rec to_string env id atd_ty indent =
       ^ sprintf "%s    _out.append(\",\");\n" indent
       ^ sprintf "%s}\n" indent
       ^ sprintf "%s_out.append(\"]\");\n" indent
-  | Name (_, (_, "string", _), _) ->
+  | Name (_, (_, TN ["string"], _), _) ->
       (* TODO Check that this is the correct behaviour *)
       sprintf
         "%sUtil.writeJsonString(_out, %s);\n"
@@ -365,7 +365,7 @@ public class %s {
     return t;
   }
 "
-    my_name
+    (Atd.Print.tn my_name)
     class_name
     class_name;
 
@@ -377,7 +377,7 @@ public class %s {
     %s
   }
 "
-    my_name
+    (Atd.Print.tn my_name)
     (String.concat ", " tags);
 
   fprintf out "

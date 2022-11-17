@@ -12,7 +12,7 @@ type ty =
   ]
 
 type env_t = {
-  type_defs    : (string * Atd.Ast.type_expr) list;
+  type_defs    : (Atd.Ast.type_name * Atd.Ast.type_expr) list;
   package      : string;
   package_dir  : string;
   input_file   : string option;

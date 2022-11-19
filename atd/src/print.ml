@@ -69,8 +69,7 @@ let default_format_annot (s, (_, l)) =
         ]
       )
 
-let string_of_type_name (TN path) = String.concat "." path
-let tn = string_of_type_name
+let tn = Type_name.to_string
 
 let string_of_field k = function
     Required -> k

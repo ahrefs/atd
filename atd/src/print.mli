@@ -20,8 +20,6 @@ val string_of_type_inst :
   Ast.type_name -> Ast.type_expr list -> Ast.annot -> string
 
 (** Concatenate the components of a type name into a string.
-    For example, [TN ["foo"; "bar"]] gives ["foo.bar"]. *)
-val string_of_type_name : Ast.type_name -> string
-
-(** Shorthand for [string_of_type_name] *)
+    For example, [TN ["foo"; "bar"]] gives ["foo.bar"].
+    Shorthand for [Type_name.to_string]. *)
 val tn : Ast.type_name -> string

@@ -34,9 +34,9 @@ Consider using 'as' to give it a non-conflicting name.|}
   locals
 
 let resolve locals loc (x : type_name) =
-  match x with
-  | TN [base_name] -> None, base_name
-  | TN [module_name; base_name] ->
+  match Type_name.split x with
+  | None, base_name -> None, base_name
+  | Some module_name, base_name ->
       (match Hashtbl.find_opt locals module_name with
        | None ->
            error_at loc (sprintf
@@ -50,5 +50,3 @@ or
        | Some import ->
            Some import, base_name
       )
-  | TN [] -> assert false
-  | TN (_ :: _ :: _ :: _) -> assert false

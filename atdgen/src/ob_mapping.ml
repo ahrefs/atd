@@ -56,23 +56,23 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
       let json_t = Biniou.Wrap in
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
-  | Name (loc, (_, s, l), an) ->
-      (match s with
-         "unit" ->
+  | Name (loc, (_, name, l), an) ->
+      (match name with
+       | TN ["unit"] ->
            Unit (loc, Unit, Biniou.Unit)
-       | "bool" ->
+       | TN ["bool"] ->
            Bool (loc, Bool, Biniou.Bool)
-       | "int" ->
+       | TN ["int"] ->
            let o = Ocaml.get_ocaml_int Biniou an in
            let b = Biniou.get_biniou_int an in
            Int (loc, Int o, Biniou.Int b)
-       | "float" ->
+       | TN ["float"] ->
            let b = Biniou.get_biniou_float an in
            Float (loc, Float, Biniou.Float b)
-       | "string" ->
+       | TN ["string"] ->
            String (loc, String, Biniou.String)
-       | s ->
-           Name (loc, s, List.map mapping_of_expr l, None, None)
+       | name ->
+           Name (loc, name, List.map mapping_of_expr l, None, None)
       )
   | Tvar (loc, s) ->
       Tvar (loc, s)

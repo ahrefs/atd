@@ -87,21 +87,12 @@ val get_ocaml_module_and_t
 
 
 val get_implicit_ocaml_default
-  : (Repr.t, 'b) Mapping.mapping
+  : (Repr.t, 'b) Mapping.t
   -> string option
 
 val unwrap_option
-  :  ('b, 'c) Mapping.mapping
-  -> ('b, 'c) Mapping.mapping
-
-val ocaml_of_atd
-  : ?pp_convs:pp_convs
-  -> target:target
-  -> type_aliases:string option
-  -> ((Atd.Ast.loc * Atd.Ast.annot)
-      * Atd.Ast.import list
-      * (bool * Atd.Ast.type_def list) list)
-  -> string
+  :  ('b, 'c) Mapping.t
+  -> ('b, 'c) Mapping.t
 
 type create_fields =
   { intf_params: string
@@ -110,8 +101,8 @@ type create_fields =
   }
 
 val map_record_creator_field
-  : ((Repr.t, 'a) Mapping.mapping
-     -> (Repr.t, 'b) Mapping.mapping)
+  : ((Repr.t, 'a) Mapping.t
+     -> (Repr.t, 'b) Mapping.t)
   -> (Repr.t, 'a) Mapping.field_mapping
   -> create_fields
 

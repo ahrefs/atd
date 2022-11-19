@@ -58,7 +58,7 @@ and type_expr =
 
 and type_inst = loc * type_name * type_expr list
 
-and type_name = TN of string list
+and type_name = Type_name.t = TN of string list
 
 and variant =
   | Variant of loc * (string * annot) * type_expr option
@@ -373,11 +373,7 @@ and fold_field f (x : field) acc =
     Field (_, _, type_expr) -> fold f type_expr acc
   | Inherit (_, type_expr) -> fold f type_expr acc
 
-
-module Type_names = Set.Make (struct
-  type t = type_name
-  let compare = Stdlib.compare
-end)
+module Type_names = Set.Make (Type_name)
 
 let extract_type_names ?(ignorable = []) x =
   let ign s = List.mem s ignorable in
@@ -391,7 +387,7 @@ let extract_type_names ?(ignorable = []) x =
     fold (
       fun x acc ->
         match x with
-          Name (_, (_, name, _), _) -> add name acc
+        | Name (_, (_, name, _), _) -> add name acc
         | _ -> acc
     )
       x Type_names.empty

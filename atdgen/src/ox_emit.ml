@@ -323,11 +323,11 @@ let def_of_atd (td : Atd.Ast.type_def) ~target ~def ~external_
     match as_abstract td.value with
       Some (_, _) ->
         Ocaml.get_ocaml_module_and_t target name an
-        |> Option.map (fun (types_module, main_module, ext_name) ->
+        |> Option.map (fun (type_module, main_module, ext_name) ->
           let args = List.map (fun s -> Tvar (loc, s)) param in
           External
             (loc, name, args,
-             Ocaml.Repr.External (types_module, main_module, ext_name),
+             Ocaml.Repr.External { type_module; main_module; type_name },
              external_))
     | None -> Some (mapping_of_expr td.value)
   in

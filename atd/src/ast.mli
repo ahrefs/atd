@@ -119,7 +119,7 @@ and type_expr =
 and type_inst = loc * type_name * type_expr list
     (** A dot-separated type name and its arguments *)
 
-and type_name = TN of string list
+and type_name = Type_name.t = TN of string list
 
 and variant =
   | Variant of loc * (string * annot) * type_expr option

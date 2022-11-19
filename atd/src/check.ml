@@ -63,7 +63,7 @@ let check_inheritance env (t0 : type_expr) =
             match Imports.resolve env.imports loc name with
             | Some _, _base_name ->
                 error_at loc ("We cannot inherit from an external type: "
-                              ^ Print.string_of_type_name name)
+                              ^ Print.tn name)
             | None, base_name ->
                 try Hashtbl.find env.def_tbl name
                 with Not_found ->

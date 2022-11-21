@@ -10,8 +10,8 @@ open Atd.Ast
 open Mapping
 open Ob_mapping
 
-let target : Ocaml.target = Biniou
-let annot_schema = Ocaml.annot_schema_of_target target
+let target : Ocaml_repr.target = Biniou
+let annot_schema = Ocaml_annot.annot_schema_of_target target
 
 (*
   OCaml code generator (biniou readers and writers)

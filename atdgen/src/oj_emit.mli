@@ -14,7 +14,7 @@ val make_ocaml_files
   -> force_defaults:bool
   -> preprocess_input:string option
   -> ocaml_version:(int * int) option
-  -> pp_convs:Ocaml.pp_convs
+  -> pp_convs:Ocaml_repr.pp_convs
   -> string option
   -> Ox_emit.target
   -> unit

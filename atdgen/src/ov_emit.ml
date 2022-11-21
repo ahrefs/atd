@@ -8,9 +8,10 @@ open Indent
 open Atd.Ast
 open Mapping
 open Ov_mapping
+module R = Ocaml_repr
 
-let target : Ocaml.target = Validate
-let annot_schema = Ocaml.annot_schema_of_target target
+let target : R.target = Validate
+let annot_schema = Ocaml_annot.annot_schema_of_target target
 
 let make_ocaml_validate_intf ~with_create buf deref defs =
   List.concat_map snd defs
@@ -50,8 +51,8 @@ let get_fields a =
   let all =
     List.map (
       fun x ->
-        match x.f_arepr with
-          Ocaml.Repr.Field o -> (x, o.Ocaml.ocaml_fname)
+        match (x.f_arepr : R.t) with
+        | Field o -> (x, o.ocaml_fname)
         | _ -> assert false
     )
       (Array.to_list a)

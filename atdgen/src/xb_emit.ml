@@ -6,7 +6,7 @@
 open Atd.Stdlib_extra
 open Mapping
 
-type 'a expr = ('a, Biniou.biniou_repr) Mapping.mapping
+type 'a expr = ('a, Biniou.biniou_repr) Mapping.t
 type 'a def = ('a, Biniou.biniou_repr) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 

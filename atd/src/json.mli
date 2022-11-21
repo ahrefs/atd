@@ -54,6 +54,7 @@ type json_repr =
   | Float of json_float
   | Int
   | List of json_list
+  | Name (* type name *)
   | Nullable
   | Option
   | Record of json_record
@@ -62,7 +63,7 @@ type json_repr =
   | Tuple
   | Unit
   | Variant of json_variant
-  | Wrap
+  | Wrap (* opaque type *)
 
 val annot_schema_json : Annot.schema
 

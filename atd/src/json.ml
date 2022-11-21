@@ -59,6 +59,7 @@ type json_repr =
   | Float of json_float
   | Int
   | List of json_list
+  | Name
   | Nullable
   | Option
   | Record of json_record

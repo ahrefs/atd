@@ -1,15 +1,16 @@
 open Atd.Stdlib_extra
 open Indent
 module Json = Atd.Json
+module R = Ocaml_repr
 
 type param =
   { deref
-    : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping
-      -> (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
+    : (Ocaml_repr.t, Json.json_repr) Mapping.t
+      -> (Ocaml_repr.t, Json.json_repr) Mapping.t;
   }
 
-let target : Ocaml.target = Bucklescript
-let annot_schema = Ocaml.annot_schema_of_target target
+let target : Ocaml_repr.target = Bucklescript
+let annot_schema = Ocaml_annot.annot_schema_of_target target
 
 let open_enum_not_supported () =
   failwith "open_enum is not supported in bucklescript mode"
@@ -186,7 +187,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       let cases =
         Array.to_list a
         |> List.map
-          (fun (r : (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping) ->
+          (fun (r : (Ocaml_repr.t, Json.json_repr) Mapping.variant_mapping) ->
              let (o, j) =
                match r.var_arepr, r.var_brepr with
                | Ocaml.Repr.Variant o, Json.Variant j -> o, j
@@ -259,7 +260,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
 and make_record_reader ?type_annot
     (p : param)
     _loc
-    (a : (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping array)
+    (a : (Ocaml_repr.t, Json.json_repr) Mapping.field_mapping array)
     _json_options
   =
   let create_record =
@@ -558,12 +559,12 @@ and make_record_writer p a _record_kind =
   ]
 
 and make_sum_writer ?type_annot (p : param)
-    (sum : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping) =
+    (sum : (Ocaml_repr.t, Json.json_repr) Mapping.t) =
   let tick, a = destruct_sum (p.deref sum) in
   let cases =
     a
     |> Array.map (
-      fun (x : (Ocaml.Repr.t, Json.json_repr) Mapping.variant_mapping) ->
+      fun (x : (Ocaml_repr.t, Json.json_repr) Mapping.variant_mapping) ->
         let o, j =
           match x.var_arepr, x.var_brepr with
           | Ocaml.Repr.Variant o, Json.Variant j -> o, j
@@ -625,7 +626,7 @@ let make_ocaml_bs_impl
   defs
   |> List.concat_map (fun (is_rec, l) ->
     let l = List.filter
-        (fun (x : (Ocaml.Repr.t, Json.json_repr) Mapping.def) ->
+        (fun (x : (Ocaml_repr.t, Json.json_repr) Mapping.def) ->
            x.def_value <> None) l in
     let writers =
       List.map_first (fun ~is_first def ->

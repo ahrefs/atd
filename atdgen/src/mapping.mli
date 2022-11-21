@@ -28,7 +28,7 @@ type ('a, 'b) t =
   | Name of loc
             * Atd.Ast.type_name
             * ('a, 'b) t list
-            * 'a option * 'b option
+            * 'a * 'b
   | External of loc * string * ('a, 'b) t list * 'a * 'b
   | Tvar of loc * string
 

@@ -48,21 +48,15 @@ type atd_ocaml_def = {
   ocaml_ddoc : Atd.Doc.doc option;
 }
 
-let tick = function
-  | Poly -> "`"
-  | Classic -> ""
-
-let dot = function
-  | Record -> "."
-  | Object -> "#"
-
 type name = {
   (* Foo_t: OCaml module providing types *)
   type_module_name: string option;
   (* Foo_j or other suffix: OCaml module providing conversion functions. *)
   main_module_name: string option;
-  (* Simple type name without parameters *)
-  type_name: string;
+  (* Simple type name without parameters e.g. 'bar' *)
+  base_type_name: string;
+  (* Full type name with module, without parameters  e.g. 'Foo_t.bar' *)
+  full_type_name: string
 }
 
 type t =
@@ -88,43 +82,30 @@ type t =
 
 let ocaml_int_of_string s : atd_ocaml_int option =
   match s with
-      "int" -> Some Int
-    | "char" -> Some Char
-    | "int32" -> Some Int32
-    | "int64" -> Some Int64
-    | "float" -> Some Float
-    | _ -> None
-
-let string_of_ocaml_int (x : atd_ocaml_int) =
-  match x with
-      Int -> "int"
-    | Char -> "Char.t"
-    | Int32 -> "Int32.t"
-    | Int64 -> "Int64.t"
-    | Float -> "float"
+  | "int" -> Some Int
+  | "char" -> Some Char
+  | "int32" -> Some Int32
+  | "int64" -> Some Int64
+  | "float" -> Some Float
+  | _ -> None
 
 let ocaml_sum_of_string s : atd_ocaml_sum option =
   match s with
-      "classic" -> Some Classic
-    | "poly" -> Some Poly
-    | _ -> None
+  | "classic" -> Some Classic
+  | "poly" -> Some Poly
+  | _ -> None
 
 let ocaml_record_of_string s : atd_ocaml_record option =
   match s with
-      "record" -> Some Record
-    | "object" -> Some Object
-    | _ -> None
+  | "record" -> Some Record
+  | "object" -> Some Object
+  | _ -> None
 
 let ocaml_list_of_string s : atd_ocaml_list option =
   match s with
-      "list" -> Some List
-    | "array" -> Some Array
-    | _ -> None
-
-let string_of_ocaml_list (x : atd_ocaml_list) =
-  match x with
-      List -> "list"
-    | Array -> "Atdgen_runtime.Util.ocaml_array"
+  | "list" -> Some List
+  | "array" -> Some Array
+  | _ -> None
 
 let ocaml_module_suffix (target : target) =
   match target with
@@ -134,8 +115,46 @@ let ocaml_module_suffix (target : target) =
   | Bucklescript -> "_bs"
   | Validate -> "_v"
 
+let init_env (imports : Atd.Ast.import list) (target : target) =
+  let imports = Atd.Imports.load imports in
+  {
+    target;
+    imports;
+  }
+
 let ocaml_module_name target atd_name =
   String.capitalize_ascii atd_name ^ ocaml_module_suffix target
 
 let ocaml_type_module_name atd_name =
    ocaml_module_name Default atd_name
+
+let ocaml_modules_of_import env (x : Atd.Ast.import) =
+  let type_module_name = ocaml_type_module_name x.name in
+  let main_module_name = ocaml_module_name env.target x.name in
+  type_module_name, main_module_name
+
+let name (env : env) loc (name : Atd.Ast.type_name) : name =
+  let opt_module, base_type_name =
+    Atd.Imports.resolve env.imports loc name
+  in
+  let type_module_name, main_module_name, full_type_name =
+    match opt_module with
+    | Some x ->
+        let type_module_name, main_module_name =
+          ocaml_modules_of_import env x
+        in
+        let full_type_name = type_module_name ^ "." ^ base_type_name in
+        Some type_module_name, Some main_module_name, full_type_name
+    | None -> None, None, base_type_name
+  in
+  {
+    type_module_name;
+    main_module_name;
+    base_type_name;
+    full_type_name;
+  }
+
+let obj_unimplemented loc (x : atd_ocaml_record) =
+  match x with
+  | Record -> ()
+  | Object -> Error.error loc "Sorry, OCaml objects are not supported"

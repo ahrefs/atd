@@ -9,17 +9,14 @@ open Indent
 open Atd.Ast
 open Mapping
 module Json = Atd.Json
+module R = Ocaml_repr
 
-let target : Ocaml.target = Json
-let annot_schema = Ocaml.annot_schema_of_target target
-
-(*
-  OCaml code generator (json readers and writers)
-*)
+let target : Ocaml_repr.target = Json
+let annot_schema = Ocaml_annot.annot_schema_of_target target
 
 type param = {
-  deref : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
-    (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
+  deref : (R.t, Json.json_repr) Mapping.t ->
+    (R.t, Json.json_repr) Mapping.t;
   std : bool;
   unknown_field_handler : string option;
   (* Optional handler that takes a field name as argument
@@ -120,10 +117,10 @@ let make_json_string s = Yojson.Safe.to_string (`String s)
 *)
 let rec get_writer_name
     ?(paren = false)
-    ?(name_f = fun s -> "write_" ^ s)
+    ?(name_f = fun (x : string) -> "write_" ^ x)
     p (x : Oj_mapping.t) : string =
   match x with
-    Unit (_, Ocaml.Repr.Unit, Unit) ->
+    Unit (_, R.Unit, Unit) ->
       "Yojson.Safe.write_null"
   | Bool (_, Bool, Bool) ->
       "Yojson.Safe.write_bool"
@@ -158,18 +155,29 @@ let rec get_writer_name
 
   | Tvar (_, s) -> "write_" ^ (Ox_emit.name_of_var s)
 
-  | Name (_, s, args, None, None) ->
+  | Name (_, _, args, Name x, Name) ->
       let l = List.map (get_writer_name ~paren:true p) args in
-      let s = String.concat " " (name_f s :: l) in
+      let module_prefix =
+        match x.main_module_name with
+        | None -> ""
+        | Some x -> x ^ "."
+      in
+      let name = module_prefix ^ name_f x.base_type_name in
+      let s = String.concat " " (name :: l) in
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
   | External (_, _, args,
-              External (_, main_module, ext_name),
+              External x,
               External) ->
-      let f = main_module ^ "." ^ name_f ext_name in
+      let module_prefix =
+        match x.main_module_name with
+        | None -> ""
+        | Some x -> x ^ "."
+      in
+      let name = module_prefix ^ name_f x.base_type_name in
       let l = List.map (get_writer_name ~paren:true p) args in
-      let s = String.concat " " (f :: l) in
+      let s = String.concat " " (name :: l) in
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
@@ -730,7 +738,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           var_loc = loc;
           var_cons = "None";
           var_arg = None;
-          var_arepr = Ocaml.Repr.Variant { Ocaml.ocaml_cons = "None";
+          var_arepr = R.Variant { Ocaml.ocaml_cons = "None";
                                            ocaml_vdoc = None };
           var_brepr = Json.Variant { Json.json_cons = "None" };
         };
@@ -738,7 +746,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           var_loc = loc;
           var_cons = "Some";
           var_arg = Some x;
-          var_arepr = Ocaml.Repr.Variant { Ocaml.ocaml_cons = "Some";
+          var_arepr = R.Variant { Ocaml.ocaml_cons = "Some";
                                            ocaml_vdoc = None };
           var_brepr = Json.Variant { Json.json_cons = "Some" };
         };
@@ -1019,7 +1027,7 @@ and make_tuple_reader p a =
     Array.map (
       fun x ->
         match x.cel_arepr with
-          Ocaml.Repr.Cell f -> x, f.Ocaml.ocaml_default
+          R.Cell f -> x, f.Ocaml.ocaml_default
         | _ -> assert false
     ) a
   in

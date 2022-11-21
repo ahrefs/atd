@@ -3,7 +3,7 @@ open Atd.Ast
 open Mapping
 
 type ov_mapping =
-    (Ocaml.Repr.t, Validate.validate_repr) Mapping.mapping
+    (Ocaml_repr.t, Validate.validate_repr) Mapping.t
 
 (*
   Determine whether a type expression does not need validation.

@@ -59,7 +59,8 @@ and import = private {
 
   name: string;
     (** The local name of the module. It's the value of [alias] if there is
-        one, otherwise it's the last component of [path]. *)
+        one, otherwise it's the last component of [path].
+        It's a single path component, i.e. it doesn't contain periods. *)
 
   annot: annot
 }

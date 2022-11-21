@@ -7,8 +7,8 @@ open Atd.Stdlib_extra
 open Mapping
 module Json = Atd.Json
 
-type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
-type 'a def = (Ocaml.Repr.t, 'a) Mapping.def
+type 'a expr = (Ocaml_repr.t, 'a) Mapping.t
+type 'a def = (Ocaml_repr.t, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type name = (loc * loc * string)
@@ -81,7 +81,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
 and extract_names_from_variant root_loc (l, acc) x =
   let l =
     match x.var_arepr with
-      Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
+    | Variant v -> (root_loc, x.var_loc, v.ocaml_cons) :: l
     | _ -> assert false
   in
   match x.var_arg with
@@ -92,7 +92,7 @@ and extract_names_from_variant root_loc (l, acc) x =
 and extract_names_from_field root_loc (l, acc) x =
   let l =
     match x.f_arepr with
-      Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
+    | Field f -> (root_loc, x.f_loc, f.ocaml_fname) :: l
     | _ -> assert false
   in
   (l, extract_names_from_expr root_loc acc x.f_value)
@@ -382,11 +382,11 @@ let default_value x deref =
   | Optional, _ -> Some "None"
   | Required, _ -> None
 
-let include_intf (x : (Ocaml.Repr.t, _) Mapping.def) =
+let include_intf (x : (Ocaml_repr.t, _) Mapping.def) =
   x.def_name <> "" && x.def_name.[0] <> '_' && x.def_value <> None
 
 type field =
-  { mapping : (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping
+  { mapping : (Ocaml_repr.t, Json.json_repr) Mapping.field_mapping
   ; ocaml_fname : string
   ; json_fname : string
   ; ocaml_default : string option

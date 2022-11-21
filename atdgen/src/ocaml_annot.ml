@@ -68,8 +68,21 @@ let get_ocaml_int target an =
     ~field:"repr"
     an
 
-let get_ocaml_type_path (env : R.env) loc (atd_name : Atd.Ast.type_name) an =
-  let x =
+let get_ocaml_type_name
+    (env : R.env) loc (atd_name : Atd.Ast.type_name) an : R.t =
+  match atd_name with
+  | TN ["unit"] -> Unit
+  | TN ["bool"] -> Bool
+  | TN ["int"] -> Int (get_ocaml_int env.target an)
+  | TN ["float"] -> Float
+  | TN ["string"] -> String
+  | TN ["abstract"] -> Abstract
+  | TN _ -> Name (R.name env loc atd_name)
+
+(*
+let get_ocaml_type_path
+    (env : R.env) loc (atd_name : Atd.Ast.type_name) an : R.name =
+  let  =
     match atd_name with
     | TN ["unit"] -> `Unit
     | TN ["bool"] -> `Bool
@@ -93,6 +106,7 @@ let get_ocaml_type_path (env : R.env) loc (atd_name : Atd.Ast.type_name) an =
   | `String -> "string"
   | `Abstract -> "Yojson.Safe.t"
   | `Name s -> s
+*)
 
 let get_ocaml_sum target an =
   let path = path_of_target target in

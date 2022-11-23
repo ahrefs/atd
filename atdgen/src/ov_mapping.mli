@@ -1,8 +1,8 @@
 (** Decorated ATD AST for OCaml validators. *)
 
 type ov_mapping =
-    (Ocaml.Repr.t, Validate.validate_repr) Mapping.mapping
+    (Ocaml_repr.t, Validate.validate_repr) Mapping.t
 
-val defs_of_atd_modules
-  : ('a * Atd.Ast.module_body) list
-  -> ('a * (Ocaml.Repr.t, Validate.validate_repr) Mapping.def list) list
+val defs_of_def_groups
+  : (bool * Atd.Ast.type_def list) list
+  -> (bool * (Ocaml_repr.t, Validate.validate_repr) Mapping.def list) list

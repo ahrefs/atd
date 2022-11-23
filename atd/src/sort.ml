@@ -14,7 +14,7 @@
    http://scienceblogs.com/goodmath/2007/10/30/computing-strongly-connected-c/
 *)
 
-open Import
+open Stdlib_extra
 
 module type Param =
 sig

@@ -194,7 +194,7 @@ let read__a_list get__a_reader read__a = (
 let _a_list_of_string get__a_reader read__a ?pos s =
   read__a_list get__a_reader read__a (Bi_inbuf.from_string ?pos s)
 let rec p'_tag = Bi_io.variant_tag
-and write_untagged_p' _a_tag write_untagged__a write__a : Bi_outbuf.t -> 'a p' -> unit = (
+and write_untagged_p' _a_tag write_untagged__a write__a : Bi_outbuf.t -> _ p' -> unit = (
   fun ob x ->
     match x with
       | A -> Bi_outbuf.add_char4 ob '\000' '\000' '\000' 'A'
@@ -222,17 +222,17 @@ let rec get_p'_reader get__a_reader read__a = (
       fun ib ->
         Bi_io.read_hashtag ib (fun ib h has_arg ->
           match h, has_arg with
-            | 65, false -> (A : 'a p')
+            | 65, false -> (A : _ p')
             | 14816, true -> (Bb (
                 (
                   read_p' get__a_reader read__a
                 ) ib
-              ) : 'a p')
+              ) : _ p')
             | -711691517, true -> (Ccccc (
                 (
                   read__a
                 ) ib
-              ) : 'a p')
+              ) : _ p')
             | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
         )
 )
@@ -241,17 +241,17 @@ and read_p' get__a_reader read__a = (
     if Bi_io.read_tag ib <> 23 then Atdgen_runtime.Ob_run.read_error_at ib;
     Bi_io.read_hashtag ib (fun ib h has_arg ->
       match h, has_arg with
-        | 65, false -> (A : 'a p')
+        | 65, false -> (A : _ p')
         | 14816, true -> (Bb (
             (
               read_p' get__a_reader read__a
             ) ib
-          ) : 'a p')
+          ) : _ p')
         | -711691517, true -> (Ccccc (
             (
               read__a
             ) ib
-          ) : 'a p')
+          ) : _ p')
         | _ -> Atdgen_runtime.Ob_run.unsupported_variant h has_arg
     )
 )
@@ -604,7 +604,7 @@ and string_of__a_b_poly_option _a_tag write_untagged__a write__a _b_tag write_un
   write__a_b_poly_option _a_tag write_untagged__a write__a _b_tag write_untagged__b write__b ob x;
   Bi_outbuf.contents ob
 and poly_tag = Bi_io.record_tag
-and write_untagged_poly _x_tag write_untagged__x write__x _y_tag write_untagged__y write__y : Bi_outbuf.t -> ('x, 'y) poly -> unit = (
+and write_untagged_poly _x_tag write_untagged__x write__x _y_tag write_untagged__y write__y : Bi_outbuf.t -> (_, _) poly -> unit = (
   fun ob x ->
     Bi_vint.write_uvint ob 2;
     Bi_outbuf.add_char4 ob '\128' 'M' '\202' '\135';
@@ -686,7 +686,7 @@ and get_poly_reader get__x_reader read__x get__y_reader read__y = (
             fst = !field_fst;
             snd = !field_snd;
           }
-         : ('x, 'y) poly)
+         : (_, _) poly)
 )
 and read_poly get__x_reader read__x get__y_reader read__y = (
   fun ib ->
@@ -719,7 +719,7 @@ and read_poly get__x_reader read__x get__y_reader read__y = (
         fst = !field_fst;
         snd = !field_snd;
       }
-     : ('x, 'y) poly)
+     : (_, _) poly)
 )
 and poly_of_string get__x_reader read__x get__y_reader read__y ?pos s =
   read_poly get__x_reader read__x get__y_reader read__y (Bi_inbuf.from_string ?pos s)
@@ -3906,7 +3906,7 @@ let read_hello = (
 let hello_of_string ?pos s =
   read_hello (Bi_inbuf.from_string ?pos s)
 let generic_tag = Bi_io.record_tag
-let write_untagged_generic _a_tag write_untagged__a write__a : Bi_outbuf.t -> 'a generic -> unit = (
+let write_untagged_generic _a_tag write_untagged__a write__a : Bi_outbuf.t -> _ generic -> unit = (
   fun ob x ->
     Bi_vint.write_uvint ob 1;
     Bi_outbuf.add_char4 ob '\240' 'G' '\003' '\130';
@@ -3944,7 +3944,7 @@ let get_generic_reader get__a_reader read__a = (
           {
             x294623 = !field_x294623;
           }
-         : 'a generic)
+         : _ generic)
 )
 let read_generic get__a_reader read__a = (
   fun ib ->
@@ -3968,7 +3968,7 @@ let read_generic get__a_reader read__a = (
       {
         x294623 = !field_x294623;
       }
-     : 'a generic)
+     : _ generic)
 )
 let generic_of_string get__a_reader read__a ?pos s =
   read_generic get__a_reader read__a (Bi_inbuf.from_string ?pos s)

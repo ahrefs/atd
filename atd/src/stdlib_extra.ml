@@ -1,3 +1,7 @@
+(*
+   Various general-purpose utilities.
+*)
+
 module List = struct
   include List
 

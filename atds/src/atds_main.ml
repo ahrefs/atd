@@ -1,6 +1,6 @@
 (* Main *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Atds_env
 
 let args_spec env = Arg.align
@@ -47,16 +47,16 @@ let main () =
   );
 
   (* Parse ATD file *)
-  let (atd_head, atd_module), _original_types =
+  let module_ =
     Atd.Util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in
   let env = {
     env with
-    module_items =
+    type_defs =
       List.map
-        (function (Atd.Ast.Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
-        atd_module
+        (fun (x : Atd.Ast.type_def) -> (x.name, x.value))
+        module_.type_defs
   } in
 
   let close_package = Atds_trans.open_package env in
@@ -65,7 +65,7 @@ let main () =
   Atds_helper.output_atds env;
 
   (* Generate classes from ATD definition *)
-  let _ = Atds_trans.trans_module env atd_module in
+  let _ = Atds_trans.trans_module env module_ in
 
   close_package()
 

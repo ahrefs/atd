@@ -1,4 +1,4 @@
-open Atd.Import
+open Atd.Stdlib_extra
 open Atdj_names
 open Atdj_env
 open Atdj_util
@@ -24,10 +24,10 @@ let json_of_atd env atd_ty =
   | List   _ -> "JSONArray"
   | Name (_, (_, ty, _), _) ->
       (match ty with
-       | "bool"   -> "boolean"
-       | "int"    -> "int"
-       | "float"  -> "double"
-       | "string" -> "String"
+       | TN ["bool"]   -> "boolean"
+       | TN ["int"]    -> "int"
+       | TN ["float"]  -> "double"
+       | TN ["string"] -> "String"
        | _        -> type_not_supported atd_ty
       )
   | x -> type_not_supported x
@@ -69,7 +69,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
            sprintf "new %s(%s)" java_ty src
        | Name (_, (_, ty, _), _) ->
            (match ty with
-            | "bool" | "int" | "float" | "string" -> src
+            | TN ["bool" | "int" | "float" | "string"] -> src
             | _  -> type_not_supported atd_ty
            )
        | x -> type_not_supported x
@@ -96,7 +96,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
 
        | Name (_, (_, ty, _), _) ->
            (match ty with
-            | "bool" | "int" | "float" | "string" ->
+            | TN ["bool" | "int" | "float" | "string"] ->
                 sprintf "%s%s = %s;\n" indent dst src
             | _  -> type_not_supported atd_ty
            )
@@ -129,8 +129,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
  * check for the field and manually create a default.  If the field is present,
  * then we wrap its values as necessary.
 *)
-let assign_field env
-    (`Field (_, (atd_field_name, kind, annots), atd_ty)) java_ty =
+let assign_field env (_, (atd_field_name, kind, annots), atd_ty) java_ty =
   let json_field_name = get_json_field_name atd_field_name annots in
   let field_name = get_java_field_name atd_field_name annots in
   (* Check whether the field is optional *)
@@ -156,10 +155,10 @@ let assign_field env
           (match norm_ty ~unwrap_option:true env atd_ty with
            | Name (_, (_, name, _), _) ->
                (match name with
-                | "bool" -> mk_else (Some "false")
-                | "int" -> mk_else (Some "0")
-                | "float" -> mk_else (Some "0.0")
-                | "string" -> mk_else (Some "\"\"")
+                | TN ["bool"] -> mk_else (Some "false")
+                | TN ["int"] -> mk_else (Some "0")
+                | TN ["float"] -> mk_else (Some "0.0")
+                | TN ["string"] -> mk_else (Some "\"\"")
                 | _ -> mk_else None (* TODO: fail if no default is provided *)
                )
            | List _ ->
@@ -189,7 +188,7 @@ let rec to_string env id atd_ty indent =
       ^ sprintf "%s    _out.append(\",\");\n" indent
       ^ sprintf "%s}\n" indent
       ^ sprintf "%s_out.append(\"]\");\n" indent
-  | Name (_, (_, "string", _), _) ->
+  | Name (_, (_, TN ["string"], _), _) ->
       (* TODO Check that this is the correct behaviour *)
       sprintf
         "%sUtil.writeJsonString(_out, %s);\n"
@@ -200,15 +199,15 @@ let rec to_string env id atd_ty indent =
       sprintf "%s%s.toJsonBuffer(_out);\n" indent id
 
 (* Generate a toJsonBuffer command for a record field. *)
-let to_string_field env = function
-  | (`Field (_, (atd_field_name, kind, annots), atd_ty)) ->
-      let json_field_name = get_json_field_name atd_field_name annots in
-      let field_name = get_java_field_name atd_field_name annots in
-      let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
-      (* In the case of an optional field, create a predicate to test whether
-       * the field has its default value. *)
-      let if_part =
-        sprintf "
+let to_string_field env
+    ((_, (atd_field_name, kind, annots), atd_ty) : A.simple_field) =
+  let json_field_name = get_json_field_name atd_field_name annots in
+  let field_name = get_java_field_name atd_field_name annots in
+  let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
+  (* In the case of an optional field, create a predicate to test whether
+   * the field has its default value. *)
+  let if_part =
+    sprintf "
     if (%s != null) {
       if (_isFirst)
         _isFirst = false;
@@ -217,25 +216,25 @@ let to_string_field env = function
       _out.append(\"\\\"%s\\\":\");
 %s    }
 "
-          field_name
-          json_field_name
-          (to_string env field_name atd_ty "      ")
-      in
-      let else_part =
-        let is_opt =
-          match kind with
-          | A.Optional | With_default -> true
-          | Required -> false in
-        if is_opt then
-          ""
-        else
-          sprintf "    \
-                   else
+      field_name
+      json_field_name
+      (to_string env field_name atd_ty "      ")
+  in
+  let else_part =
+    let is_opt =
+      match kind with
+      | A.Optional | With_default -> true
+      | Required -> false in
+    if is_opt then
+      ""
+    else
+      sprintf "    \
+               else
       throw new JSONException(\"Uninitialized field %s\");
 "
-            field_name
-      in
-      if_part ^ else_part
+        field_name
+  in
+  if_part ^ else_part
 
 (* Generate a javadoc comment *)
 let javadoc loc annots indent =
@@ -300,10 +299,17 @@ import org.json.*;
     env.package;
   out
 
-let rec trans_module env items = List.fold_left trans_outer env items
+let rec trans_module env (module_ : A.module_) =
+  (match module_.imports with
+   | x :: _ ->
+       A.error_at x.loc "unsupported: import"
+   | [] -> ()
+  );
+  List.fold_left trans_type_def env module_.type_defs
 
-and trans_outer env (A.Type (_, (name, _, _), atd_ty)) =
-  match unwrap atd_ty with
+and trans_type_def env (x : A.type_def) =
+  let name = x.name in
+  match unwrap x.value with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
   | Record (loc, v, a) ->
@@ -359,7 +365,7 @@ public class %s {
     return t;
   }
 "
-    my_name
+    (Atd.Print.tn my_name)
     class_name
     class_name;
 
@@ -371,7 +377,7 @@ public class %s {
     %s
   }
 "
-    my_name
+    (Atd.Print.tn my_name)
     (String.concat ", " tags);
 
   fprintf out "
@@ -499,18 +505,18 @@ public class %s {
 and trans_record my_name env (loc, fields, annots) =
   (* Remove `Inherit values *)
   let fields = List.map
-      (function
-        | `Field _ as f -> f
-        | `Inherit _ -> assert false
+      (fun (x : A.field) ->
+         match x with
+        | Field f -> f
+        | Inherit _ -> assert false
       )
       fields in
   (* Translate field types *)
   let (java_tys, env) = List.fold_left
-      (fun (java_tys, env) -> function
-         | `Field (_, (field_name, _, annots), atd_ty) ->
-             let field_name = get_java_field_name field_name annots in
-             let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
-             ((field_name, java_ty) :: java_tys, env)
+      (fun (java_tys, env) (_, (field_name, _, annots), atd_ty) ->
+        let field_name = get_java_field_name field_name annots in
+        let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
+        ((field_name, java_ty) :: java_tys, env)
       )
       ([], env) fields in
   let java_tys = List.rev java_tys in
@@ -542,7 +548,7 @@ public class %s implements Atdj {
     class_name;
 
   let env = List.fold_left
-      (fun env (`Field (_, (field_name, _, annots), _) as field) ->
+      (fun env ((_, (field_name, _, annots), _) as field) ->
          let field_name = get_java_field_name field_name annots in
          let cmd =
            assign_field env field (List.assoc_exn field_name java_tys) in
@@ -572,7 +578,7 @@ public class %s implements Atdj {
     ) fields;
 
   List.iter
-    (function `Field (loc, (field_name, _, annots), _) ->
+    (function ((loc, (field_name, _, annots), _) : A.simple_field) ->
        let field_name = get_java_field_name field_name annots in
        let java_ty = List.assoc_exn field_name java_tys in
        output_string out (javadoc loc annots "  ");

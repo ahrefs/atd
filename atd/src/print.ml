@@ -52,7 +52,7 @@ let format_prop (k, (_, opt)) =
         (make_atom (quote_string s))
       )
 
-let default_annot (s, (_, l)) =
+let default_format_annot (s, (_, l)) =
   match l with
     [] -> make_atom ("<" ^ s ^ ">")
   | l ->
@@ -69,6 +69,7 @@ let default_annot (s, (_, l)) =
         ]
       )
 
+let tn = Type_name.to_string
 
 let string_of_field k = function
     Required -> k
@@ -76,7 +77,7 @@ let string_of_field k = function
   | With_default -> "~" ^ k
 
 
-let make_closures format_annot =
+let format ?(format_annot = default_format_annot) any =
 
   let append_annots (l : annot) x =
     match l with
@@ -102,33 +103,7 @@ let make_closures format_annot =
         )
   in
 
-  let rec format_module_item (x : module_item) =
-    match x with
-      Type (_, (s, param, a), t) ->
-        let left =
-          if a = [] then
-            let l =
-              make_atom "type" ::
-              prepend_type_param param
-                [ make_atom (s ^ " =") ]
-            in
-            horizontal_sequence l
-          else
-            let l =
-              make_atom "type"
-              :: prepend_type_param param [ make_atom s ]
-            in
-            let x = append_annots a (horizontal_sequence l) in
-            horizontal_sequence [ x; make_atom "=" ]
-        in
-        Label (
-          (left, label),
-          format_type_expr t
-        )
-
-
-
-  and prepend_type_param l tl =
+  let rec prepend_type_param l tl =
     match l with
       [] -> tl
     | _ ->
@@ -144,7 +119,7 @@ let make_closures format_annot =
     match l with
       [] -> tl
     | _ ->
-        let x =
+        let x : t =
           match l with
             [t] -> format_type_expr t
           | l -> List (("(", ",", ")", plist), List.map format_type_expr l)
@@ -171,7 +146,7 @@ let make_closures format_annot =
         append_annots a (
           List (
             ("(", "*", ")", lplist),
-            List.map format_tuple_field l
+            List.map format_cell l
           )
         )
 
@@ -191,7 +166,7 @@ let make_closures format_annot =
         format_type_name "wrap" [t] a
 
     | Name (_, (_, name, args), a) ->
-        format_type_name name args a
+        format_type_name (tn name) args a
 
     | Tvar (_, name) ->
         make_atom ("'" ^ name)
@@ -204,12 +179,12 @@ let make_closures format_annot =
   and format_inherit t =
     horizontal_sequence [ make_atom "inherit"; format_type_expr t ]
 
-  and format_tuple_field (_, x, a) =
+  and format_cell (_, x, a) =
     prepend_colon_annots a (format_type_expr x)
 
   and format_field x =
     match x with
-      `Field (_, (k, fk, a), t) ->
+    | Field (_, (k, fk, a), t) ->
         Label (
           (horizontal_sequence0 [
              append_annots a (make_atom (string_of_field k fk));
@@ -217,7 +192,7 @@ let make_closures format_annot =
            ], label),
           format_type_expr t
         )
-    | `Inherit (_, t) -> format_inherit t
+    | Inherit (_, t) -> format_inherit t
 
   and format_variant x =
     match x with
@@ -237,28 +212,66 @@ let make_closures format_annot =
     | Inherit (_, t) -> format_inherit t
   in
 
-  let format_full_module ((_, an), l) =
-    Easy_format.List (
-      ("", "", "", rlist),
-      List.map format_annot an @ List.map format_module_item l
+  let format_import ({ loc = _; path; alias; name; annot } : import) =
+    let opt_alias =
+      match alias with
+      | None -> []
+      | Some local_name -> [make_atom ("as " ^ local_name)]
+    in
+    make_atom "import" :: make_atom (String.concat "." path) :: opt_alias
+    |> horizontal_sequence
+    |> append_annots annot
+  in
+
+  let format_type_def (x : type_def) =
+    let left =
+      if x.annot = [] then
+        let l =
+          make_atom "type" ::
+          prepend_type_param x.param
+            [ make_atom (tn x.name ^ " =") ]
+        in
+        horizontal_sequence l
+      else
+        let l =
+          make_atom "type"
+          :: prepend_type_param x.param [ make_atom (tn x.name) ]
+        in
+        let x = append_annots x.annot (horizontal_sequence l) in
+        horizontal_sequence [ x; make_atom "=" ]
+    in
+    Label (
+      (left, label),
+      format_type_expr x.value
     )
   in
 
-  format_full_module, format_type_name, format_type_expr
+  let format_module (x : module_) =
+    Easy_format.List (
+      ("", "", "", rlist),
+      List.map format_annot (snd x.module_head)
+      @ List.map format_import x.imports
+      @ List.map format_type_def x.type_defs
+    )
+  in
 
+  let format_any (x : any) =
+    match x with
+    | Module x -> format_module x
+    | Import x -> format_import x
+    | Type_def x -> format_type_def x
+    | Type_expr x -> format_type_expr x
+    | Variant x -> format_variant x
+    | Cell x -> format_cell x
+    | Field x -> format_field x
+  in
 
+  format_any any
 
-let format ?(annot = default_annot) x =
-  let f, _, _ = make_closures annot in
-  f x
+let to_string ?format_annot x =
+  format ?format_annot x
+  |> Easy_format.Pretty.to_string
 
-let _default_format, default_format_type_name, default_format_type_expr =
-  make_closures default_annot
-
-let string_of_type_name name args an =
-  let x = default_format_type_name name args an in
-  Easy_format.Pretty.to_string x
-
-let string_of_type_expr expr =
-  let x = default_format_type_expr expr in
-  Easy_format.Pretty.to_string x
+let string_of_type_inst name args an =
+  let loc = dummy_loc in
+  to_string (Type_expr (Name (loc, (loc, name, args), an)))

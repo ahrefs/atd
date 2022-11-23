@@ -3,23 +3,20 @@
 *)
 
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Indent
 
 open Atd.Ast
 open Mapping
 module Json = Atd.Json
+module R = Ocaml_repr
 
-let target : Ocaml.target = Json
-let annot_schema = Ocaml.annot_schema_of_target target
-
-(*
-  OCaml code generator (json readers and writers)
-*)
+let target : Ocaml_repr.target = Json
+let annot_schema = Ocaml_annot.annot_schema_of_target target
 
 type param = {
-  deref : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
-    (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
+  deref : (R.t, Json.json_repr) Mapping.t ->
+    (R.t, Json.json_repr) Mapping.t;
   std : bool;
   unknown_field_handler : string option;
   (* Optional handler that takes a field name as argument
@@ -120,10 +117,10 @@ let make_json_string s = Yojson.Safe.to_string (`String s)
 *)
 let rec get_writer_name
     ?(paren = false)
-    ?(name_f = fun s -> "write_" ^ s)
+    ?(name_f = fun (x : string) -> "write_" ^ x)
     p (x : Oj_mapping.t) : string =
   match x with
-    Unit (_, Ocaml.Repr.Unit, Unit) ->
+    Unit (_, R.Unit, Unit) ->
       "Yojson.Safe.write_null"
   | Bool (_, Bool, Bool) ->
       "Yojson.Safe.write_bool"
@@ -158,18 +155,29 @@ let rec get_writer_name
 
   | Tvar (_, s) -> "write_" ^ (Ox_emit.name_of_var s)
 
-  | Name (_, s, args, None, None) ->
+  | Name (_, _, args, Name x, Name) ->
       let l = List.map (get_writer_name ~paren:true p) args in
-      let s = String.concat " " (name_f s :: l) in
+      let module_prefix =
+        match x.main_module_name with
+        | None -> ""
+        | Some x -> x ^ "."
+      in
+      let name = module_prefix ^ name_f x.base_type_name in
+      let s = String.concat " " (name :: l) in
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
   | External (_, _, args,
-              External (_, main_module, ext_name),
+              External x,
               External) ->
-      let f = main_module ^ "." ^ name_f ext_name in
+      let module_prefix =
+        match x.main_module_name with
+        | None -> ""
+        | Some x -> x ^ "."
+      in
+      let name = module_prefix ^ name_f x.base_type_name in
       let l = List.map (get_writer_name ~paren:true p) args in
-      let s = String.concat " " (f :: l) in
+      let s = String.concat " " (name :: l) in
       if paren && l <> [] then "(" ^ s ^ ")"
       else s
 
@@ -730,7 +738,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           var_loc = loc;
           var_cons = "None";
           var_arg = None;
-          var_arepr = Ocaml.Repr.Variant { Ocaml.ocaml_cons = "None";
+          var_arepr = R.Variant { Ocaml.ocaml_cons = "None";
                                            ocaml_vdoc = None };
           var_brepr = Json.Variant { Json.json_cons = "None" };
         };
@@ -738,7 +746,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
           var_loc = loc;
           var_cons = "Some";
           var_arg = Some x;
-          var_arepr = Ocaml.Repr.Variant { Ocaml.ocaml_cons = "Some";
+          var_arepr = R.Variant { Ocaml.ocaml_cons = "Some";
                                            ocaml_vdoc = None };
           var_brepr = Json.Variant { Json.json_cons = "Some" };
         };
@@ -1019,7 +1027,7 @@ and make_tuple_reader p a =
     Array.map (
       fun x ->
         match x.cel_arepr with
-          Ocaml.Repr.Cell f -> x, f.Ocaml.ocaml_default
+          R.Cell f -> x, f.Ocaml.ocaml_default
         | _ -> assert false
     ) a
   in
@@ -1172,10 +1180,10 @@ and make_tuple_reader p a =
     ];
   ]
 
-let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
+let make_ocaml_json_writer p is_rec let1 let2 def =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint def in
   let param = def.def_param in
   let write = get_left_writer_name p name param in
   let to_string = get_left_to_string_name p name param in
@@ -1206,10 +1214,10 @@ let make_ocaml_json_writer p ~original_types is_rec let1 let2 def =
     ]
   ]
 
-let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
+let make_ocaml_json_reader p is_rec let1 let2 def =
   let x = Option.value_exn def.def_value in
   let name = def.def_name in
-  let type_constraint = Ox_emit.get_type_constraint ~original_types def in
+  let type_constraint = Ox_emit.get_type_constraint def in
   let param = def.def_param in
   let read = get_left_reader_name p name param in
   let of_string = get_left_of_string_name p name param in
@@ -1245,7 +1253,7 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
 
 let make_ocaml_json_impl
     ~std ~unknown_field_handler
-    ~with_create ~force_defaults ~preprocess_input ~original_types
+    ~with_create ~force_defaults ~preprocess_input
     ~ocaml_version
     buf deref defs =
   let p =
@@ -1262,13 +1270,13 @@ let make_ocaml_json_impl
     let writers =
       List.map_first (fun ~is_first def ->
         let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-        make_ocaml_json_writer p ~original_types is_rec let1 let2 def
+        make_ocaml_json_writer p is_rec let1 let2 def
       ) l
     in
     let readers =
       List.map_first (fun ~is_first def ->
         let let1, let2 = Ox_emit.get_let ~is_rec ~is_first in
-        make_ocaml_json_reader p ~original_types is_rec let1 let2 def
+        make_ocaml_json_reader p is_rec let1 let2 def
       ) l
     in
     List.flatten (writers @ readers))
@@ -1296,7 +1304,7 @@ let make_mli
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
     ~std ~unknown_field_handler
-    ~force_defaults ~preprocess_input ~original_types
+    ~force_defaults ~preprocess_input
     ~ocaml_version
     ocaml_typedefs deref defs =
   let buf = Buffer.create 1000 in
@@ -1309,7 +1317,7 @@ let make_ml
   if with_fundefs then
     make_ocaml_json_impl
       ~std ~unknown_field_handler
-      ~with_create ~force_defaults ~preprocess_input ~original_types
+      ~with_create ~force_defaults ~preprocess_input
       ~ocaml_version
       buf deref defs;
   Buffer.contents buf
@@ -1330,7 +1338,7 @@ let make_ocaml_files
     ~ocaml_version
     ~pp_convs
     atd_file out =
-  let ((head, m0), _) =
+  let module_ =
     match atd_file with
       Some file ->
         Atd.Util.load_file
@@ -1345,25 +1353,20 @@ let make_ocaml_files
           ?pos_fname ?pos_lnum
           stdin
   in
-
-  let tsort =
-    if all_rec then
-      function m -> [ (true, m) ]
-    else
-      Atd.Util.tsort
+  let def_groups1 = Atd.Util.tsort ~all_rec module_.type_defs in
+  let defs1 = Oj_mapping.defs_of_def_groups def_groups1 ~target in
+  let def_groups2 =
+    Atd.Expand.expand_type_defs ~keep_builtins:false ~keep_poly:true
+      module_.type_defs
+    |> Atd.Util.tsort ~all_rec
   in
-  let m1 = tsort m0 in
-  let defs1 = Oj_mapping.defs_of_atd_modules m1 ~target in
-  let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_builtins:false ~keep_poly:true m0
-  in
-  let m2 = tsort m1' in
-  (* m0 = original type definitions
-     m1 = original type definitions after dependency analysis
-     m2 = monomorphic type definitions after dependency analysis *)
+  (* module.type_defs = original type definitions
+     def_groups1 = original type definitions after dependency analysis
+     def_groups2 = monomorphic type definitions after dependency analysis *)
   let ocaml_typedefs =
-    Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases (head, m1) in
-  let defs = Oj_mapping.defs_of_atd_modules m2 ~target in
+    Ocaml.ocaml_of_atd ~pp_convs ~target:Json ~type_aliases
+      (module_.module_head, module_.imports, def_groups1) in
+  let defs = Oj_mapping.defs_of_def_groups def_groups2 ~target in
   let header =
     let src =
       match atd_file with
@@ -1381,7 +1384,7 @@ let make_ocaml_files
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
       ~std ~unknown_field_handler
-      ~force_defaults ~preprocess_input ~original_types
+      ~force_defaults ~preprocess_input
       ~ocaml_version
       ocaml_typedefs (Mapping.make_deref defs) defs
   in

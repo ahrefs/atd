@@ -1,4 +1,4 @@
-open Atd.Import
+open Atd.Stdlib_extra
 open Atds_names
 open Atds_env
 open Atds_util
@@ -40,10 +40,10 @@ let declare_field env
         (match norm_ty env atd_ty with
          | Name (_, (_, name, _), _) ->
              (match name with
-              | "bool" -> Some "false"
-              | "int" -> Some "0"
-              | "float" -> Some "0.0"
-              | "string" -> Some "\"\""
+              | TN ["bool"] -> Some "false"
+              | TN ["int"] -> Some "0"
+              | TN ["float"] -> Some "0.0"
+              | TN ["string"] -> Some "\"\""
               | _ -> None (* TODO: fail if no default is provided *)
              )
          | List _ ->
@@ -132,16 +132,19 @@ package object %s {
     suf;
   fun () -> output_string out "\n}\n"
 
-let rec trans_module env items = List.fold_left trans_outer env items
+let rec trans_module env (module_ : A.module_) =
+  List.fold_left (fun env x -> trans_type_def env x) env module_.type_defs
 
-and trans_outer env (A.Type (_, (name, _, annots), atd_ty)) =
+and trans_type_def env (x : A.type_def) =
+  let name = x.name in
+  let atd_ty = x.value in
   match unwrap atd_ty with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
   | Record (loc, v, a) ->
       trans_record name env (loc, v, a)
   | Name _ | Tuple _ | List _ ->
-      trans_alias name env annots atd_ty
+      trans_alias name env x.annot atd_ty
   | x -> type_not_supported x
 
 (* Translation of sum types.  For a sum type
@@ -178,7 +181,7 @@ and trans_sum my_name env (_, vars, _) =
  */
 sealed abstract class %s extends Atds
 "
-    my_name
+    (Atd.Print.tn my_name)
     class_name;
 
   fprintf out "
@@ -186,7 +189,7 @@ sealed abstract class %s extends Atds
  * Define tags for sum type %s.
  */
 object %s {"
-    my_name
+    (Atd.Print.tn my_name)
     class_name;
 
   List.iter (fun (json_name, scala_name, opt_ty) ->
@@ -223,9 +226,10 @@ object %s {"
 and trans_record my_name env (loc, fields, annots) =
   (* Remove `Inherit values *)
   let fields = List.map
-      (function
-        | `Field _ as f -> f
-        | `Inherit _ -> assert false
+      (fun (x : A.field) ->
+         match x with
+         | Field f -> `Field f
+         | Inherit _ -> assert false
       )
       fields in
   (* Translate field types *)
@@ -271,7 +275,7 @@ and trans_record my_name env (loc, fields, annots) =
   env
 
 and trans_alias name env annots ty =
-  let scala_name = Atds_names.get_scala_variant_name name annots in
+  let scala_name = Atds_names.get_scala_type_name name annots in
   fprintf env.output "\ntype %s = %s\n" scala_name (trans_inner env ty);
   env
 

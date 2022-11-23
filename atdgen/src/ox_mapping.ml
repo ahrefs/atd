@@ -1,4 +1,4 @@
-open! Atd.Import
+open! Atd.Stdlib_extra
 open Atd.Ast
 
 type analyze_field =
@@ -8,7 +8,7 @@ type analyze_field =
 
 let analyze_field target loc (f_kind : field_kind) annot =
   let ocaml_default, unwrapped =
-    match f_kind, Ocaml.get_ocaml_default target annot with
+    match f_kind, Ocaml_annot.get_ocaml_default target annot with
       Required, None -> None, false
     | Optional, None -> Some "None", true
     | (Required | Optional), Some _ ->

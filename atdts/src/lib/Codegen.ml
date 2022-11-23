@@ -14,7 +14,7 @@ module B = Indent
 (* Mutable environment holding hash tables and such to avoid
    naming conflicts. *)
 type env = {
-  (* Global *)
+  imports: Atd.Imports.t;
   create_variable: string -> string;
   translate_variable: string -> string;
 }
@@ -68,14 +68,21 @@ let trans env id =
   env.translate_variable id
 
 (* Use CamelCase as customary for type names. *)
-let type_name env id =
-  trans env (to_camel_case id)
+let type_name env loc (name : type_name) =
+  let import, base_name = Atd.Imports.resolve env.imports loc name in
+  match import with
+  | None -> trans env (to_camel_case base_name)
+  | Some import -> not_implemented loc "imports"
 
-let writer_name _env name =
-  "write" ^ to_camel_case name
+let writer_name _env loc name =
+  match name with
+  | TN [str] -> "write" ^ to_camel_case str
+  | _ -> not_implemented loc "imports"
 
-let reader_name _env name =
-  "read" ^ to_camel_case name
+let reader_name _env loc name =
+  match name with
+  | TN [str] -> "read" ^ to_camel_case str
+  | _ -> not_implemented loc "imports"
 
 (* Insert blank lines *)
 let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
@@ -104,7 +111,8 @@ let rec unwrap e =
   | Nullable _
   | Name _ -> e
 
-let init_env () : env =
+let init_env (imports : import list) : env =
+  let imports = Atd.Imports.load imports in
   (* The list of "keywords" is extracted from
      https://github.com/microsoft/TypeScript/issues/2536#issuecomment-87194347
      In the current implementation, we don't use variables named by the
@@ -155,6 +163,7 @@ let init_env () : env =
     Atd.Unique_name.translate variables id
   in
   {
+    imports;
     create_variable;
     translate_variable;
   }
@@ -581,26 +590,26 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Map ->
       Array_map (key, value)
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, Map ->
       Object_map value
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, Array -> Object_array value
   | _, Array, Array -> Array_array
   | _, Object, _ -> error_at loc "not a (string * _) list"
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
 (* Map ATD built-in types to built-in TypeScript types *)
-let ts_type_name env (name : string) =
+let ts_type_name env loc (name : type_name) =
   match name with
-  | "unit" -> "Null"
-  | "bool" -> "boolean"
-  | "int" -> "Int"
-  | "float" -> "number"
-  | "string" -> "string"
-  | "abstract" -> "any"
-  | user_defined -> type_name env user_defined
+  | TN ["unit"] -> "Null"
+  | TN ["bool"] -> "boolean"
+  | TN ["int"] -> "Int"
+  | TN ["float"] -> "number"
+  | TN ["string"] -> "string"
+  | TN ["abstract"] -> "any"
+  | user_defined -> type_name env loc user_defined
 
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
@@ -624,7 +633,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Nullable (loc, e, an) -> sprintf "(%s | null)" (type_name_of_expr env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
-  | Name (loc, (loc2, name, []), an) -> ts_type_name env name
+  | Name (loc, (loc2, name, []), an) -> ts_type_name env loc2 name
   | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -647,12 +656,12 @@ let rec get_default_default (e : type_expr) : string option =
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "unit" -> Some "null"
-       | "bool" -> Some "false"
-       | "int" -> Some "0"
-       | "float" -> Some "0.0"
-       | "string" -> Some {|""|}
-       | "abstract" -> Some "null"
+       | TN ["unit"] -> Some "null"
+       | TN ["bool"] -> Some "false"
+       | TN ["int"] -> Some "0"
+       | TN ["float"] -> Some "0.0"
+       | TN ["string"] -> Some {|""|}
+       | TN ["abstract"] -> Some "null"
        | _ -> None
       )
   | Name _ -> None
@@ -707,9 +716,11 @@ let rec json_reader env e =
   | Wrap (loc, e, an) -> json_reader env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
-       | "abstract" -> "((x: any): any => x)"
-       | _ -> reader_name env name)
+       | TN ["bool" | "int" | "float" | "string" as str] ->
+           sprintf "_atd_read_%s" str
+       | TN ["abstract"] -> "((x: any): any => x)"
+       | TN [_] -> reader_name env loc2 name
+       | TN _ -> not_implemented loc2 "imports")
   | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -755,9 +766,11 @@ let rec json_writer env e =
   | Wrap (loc, e, an) -> json_writer env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
-       | "abstract" -> "((x: any): any => x)"
-       | _ -> writer_name env name)
+       | TN ["bool" | "int" | "float" | "string" as str] ->
+           sprintf "_atd_write_%s" str
+       | TN ["abstract"] -> "((x: any): any => x)"
+       | TN [_] -> writer_name env loc2 name
+       | TN _ -> not_implemented loc2 "imports")
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -788,12 +801,13 @@ let field_def env ((loc, (name, kind, an), e) : simple_field) =
     Line (sprintf "%s%s: %s;" field_name optional type_name)
   ]
 
-let record_type env loc name (fields : field list) an =
-  let ts_type_name = type_name env name in
+let record_type env loc (name : type_name) (fields : field list) an =
+  let ts_type_name = type_name env loc name in
   let fields =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
+    List.map (fun (x : field) ->
+      match x with
+      | Field x -> x
+      | Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   let field_defs =
@@ -805,8 +819,8 @@ let record_type env loc name (fields : field list) an =
     Line "}";
   ]
 
-let alias_type env name type_expr =
-  let ts_type_name = type_name env name in
+let alias_type env loc (name : type_name) type_expr =
+  let ts_type_name = type_name env loc name in
   let value_type = type_name_of_expr env type_expr in
   [
     Line (sprintf "export type %s = %s" ts_type_name value_type)
@@ -850,14 +864,15 @@ let sum_type env loc name cases =
     List.map (fun x -> Inline (case_type env name x)) cases
   in
   [
-    Line (sprintf "export type %s =" (type_name env name));
+    Line (sprintf "export type %s =" (type_name env loc name));
     Inline case_types;
   ]
 
-let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
-    not_implemented loc "parametrized type";
-  match unwrap e with
+let make_type_def env (x : A.type_def) : B.t =
+  if x.param <> [] then
+    not_implemented x.loc "parametrized type";
+  let name = x.name in
+  match unwrap x.value with
   | Sum (loc, variants, an) ->
       sum_type env loc name (flatten_variants variants)
   | Record (loc, fields, an) ->
@@ -866,7 +881,7 @@ let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   | List _
   | Option _
   | Nullable _
-  | Name _ -> alias_type env name e
+  | Name _ -> alias_type env x.loc name x.value
   | Shared (loc, e, an) -> assert false
   | Wrap (loc, e, an) -> assert false
   | Tvar _ -> assert false
@@ -979,9 +994,10 @@ let read_root_expr env ~ts_type_name e =
 
   | Record (loc, fields, an) ->
       let read_fields =
-        List.map (function
-          | `Inherit _ -> assert false
-          | `Field ((loc, (name, kind, an), e) : simple_field) ->
+        List.map (fun (x : field) ->
+          match x with
+          | Inherit _ -> assert false
+          | Field ((loc, (name, kind, an), e) : simple_field) ->
               let ts_name = trans env name in
               let json_name_lit =
                 Atd.Json.get_json_fname name an |> single_esc
@@ -1050,9 +1066,10 @@ let write_root_expr env ~ts_type_name e =
       ]
   | Record (loc, fields, an) ->
       let write_fields =
-        List.map (function
-          | `Inherit _ -> assert false
-          | `Field ((loc, (name, kind, an), e) : simple_field) ->
+        List.map (fun (x : field) ->
+          match x with
+          | Inherit _ -> assert false
+          | Field ((loc, (name, kind, an), e) : simple_field) ->
               let ts_name = trans env name in
               let json_name_lit =
                 sprintf "'%s'"
@@ -1110,8 +1127,8 @@ let write_root_expr env ~ts_type_name e =
   | Tvar _ -> assert false
 
 let make_reader env loc name an e =
-  let ts_type_name = type_name env name in
-  let ts_name = reader_name env name in
+  let ts_type_name = type_name env loc name in
+  let ts_name = reader_name env loc name in
   let read = read_root_expr env ~ts_type_name e in
   [
     Line (sprintf "export function %s(x: any, context: any = x): %s {"
@@ -1121,8 +1138,8 @@ let make_reader env loc name an e =
   ]
 
 let make_writer env loc name an e =
-  let ts_type_name = type_name env name in
-  let ts_name = writer_name env name in
+  let ts_type_name = type_name env loc name in
+  let ts_name = writer_name env loc name in
   let write = write_root_expr env ~ts_type_name e in
   [
     Line (sprintf "export function %s(x: %s, context: any = x): any {"
@@ -1131,11 +1148,11 @@ let make_writer env loc name an e =
     Line "}";
   ]
 
-let make_functions env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
-    not_implemented loc "parametrized type";
-  let writer = make_writer env loc name an e in
-  let reader = make_reader env loc name an e in
+let make_functions env (x : A.type_def) : B.t =
+  if x.param <> [] then
+    assert false;
+  let writer = make_writer env x.loc x.name x.annot x.value in
+  let reader = make_reader env x.loc x.name x.annot x.value in
   [
     Inline writer;
     Line "";
@@ -1151,22 +1168,21 @@ let make_functions env ((loc, (name, param, an), e) : A.type_def) : B.t =
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_type_names env (items: A.module_body) =
+let reserve_good_type_names env (defs: A.type_def list) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (type_name env name))
-    items
+    (fun (x : type_def) -> ignore (type_name env x.loc x.name))
+    defs
 
-let to_file ~atd_filename (items : A.module_body) dst_path =
-  let env = init_env () in
-  let atd_defs = List.map (fun (Type x) -> x) items in
-  reserve_good_type_names env items;
+let to_file ~atd_filename imports (defs : A.type_def list) dst_path =
+  let env = init_env imports in
+  reserve_good_type_names env defs;
   let type_defs =
-    List.map (fun x -> Inline (make_type_def env x)) atd_defs
+    List.map (fun x -> Inline (make_type_def env x)) defs
   in
   let functions =
     List.map (fun x ->
       Inline (make_functions env x)
-    ) atd_defs
+    ) defs
   in
   [
     Line (runtime_start atd_filename);
@@ -1187,7 +1203,7 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let full_module, _original_types =
+  let module_ =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization *)
@@ -1196,6 +1212,7 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module = Atd.Ast.use_only_specific_variants full_module in
-  let atd_head, atd_module = full_module in
-  to_file ~atd_filename:src_name atd_module dst_path
+  let module_ = Atd.Ast.use_only_specific_variants module_ in
+  if module_.imports <> [] then
+    failwith "not implemented: import";
+  to_file ~atd_filename:src_name module_.imports module_.type_defs dst_path

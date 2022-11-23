@@ -1,4 +1,4 @@
-open Import
+open Stdlib_extra
 open Lexing
 
 
@@ -8,11 +8,13 @@ let dummy_loc = (Lexing.dummy_pos, Lexing.dummy_pos)
 
 exception Atd_error of string
 
-type full_module = module_head * module_body
+type module_ = {
+  module_head: module_head;
+  imports: import list;
+  type_defs: type_def list;
+}
 
 and module_head = loc * annot
-
-and module_body = module_item list
 
 and annot = annot_section list
 
@@ -20,10 +22,22 @@ and annot_section = string * (loc * annot_field list)
 
 and annot_field = string * (loc * string option)
 
-and type_def = loc * (string * type_param * annot) * type_expr
+and type_def = {
+  loc: loc;
+  name: type_name;
+  param: type_param;
+  annot: annot;
+  value: type_expr;
+  orig: type_def option;
+}
 
-and module_item =
-  | Type of type_def
+and import = {
+  loc: loc;
+  path: string list;
+  alias: string option;
+  name: string;
+  annot: annot
+}
 
 and type_param = string list
 
@@ -42,7 +56,9 @@ and type_expr =
      the only predefined types with a type
      parameter (and no special syntax). *)
 
-and type_inst = loc * string * type_expr list
+and type_inst = loc * type_name * type_expr list
+
+and type_name = Type_name.t = TN of string list
 
 and variant =
   | Variant of loc * (string * annot) * type_expr option
@@ -58,14 +74,12 @@ and field_kind =
 and simple_field = (loc * (string * field_kind * annot) * type_expr)
 
 and field =
-  [ `Field of simple_field
-  | `Inherit of (loc * type_expr) ]
+  | Field of simple_field
+  | Inherit of (loc * type_expr)
 
 type any =
-  | Full_module of full_module
-  | Module_head of module_head
-  | Module_body of module_body
-  | Module_item of module_item
+  | Module of module_
+  | Import of import
   | Type_def of type_def
   | Type_expr of type_expr
   | Variant of variant
@@ -98,30 +112,35 @@ let rec amap_type_expr f = function
       Name (loc, (loc2, name, List.map (amap_type_expr f) args), f a)
 
 and amap_variant f = function
-    Variant (loc, (name, a), o) ->
+  | Variant (loc, (name, a), o) ->
       let o = Option.map (amap_type_expr f) o in
       Variant (loc, (name, f a), o)
   | Inherit (loc, x) ->
       Inherit (loc, amap_type_expr f x)
 
 and amap_field f = function
-    `Field (loc, (name, kind, a), x) ->
-      `Field (loc, (name, kind, f a), amap_type_expr f x)
-  | `Inherit (loc, x) ->
-      `Inherit (loc, amap_type_expr f x)
+  | Field (loc, (name, kind, a), x) ->
+      Field (loc, (name, kind, f a), amap_type_expr f x)
+  | Inherit (loc, x) ->
+      Inherit (loc, amap_type_expr f x)
+
 and amap_cell f (loc, x, a) =
   (loc, amap_type_expr f x, f a)
 
-let amap_module_item f (Type (loc, (name, param, a), x)) =
-  Type (loc, (name, param, f a), amap_type_expr f x)
+let amap_import f (x : import) =
+  { x with annot = f x.annot }
+
+let amap_type_def f (x : type_def) : type_def =
+  { x with value = amap_type_expr f x.value }
 
 let amap_head f (loc, a) = (loc, f a)
 
-let amap_body f l =
-  List.map (amap_module_item f) l
-
-let map_all_annot f ((head, body) : full_module) =
-  (amap_head f head, amap_body f body)
+let map_all_annot f (x : module_) =
+  {
+    module_head = amap_head f x.module_head;
+    imports = List.map (amap_import f) x.imports;
+    type_defs = List.map (amap_type_def f) x.type_defs;
+  }
 
 let set_type_expr_loc loc = function
   | Sum (_, a, b) -> Sum (loc, a, b)
@@ -166,8 +185,8 @@ let annot_of_variant (x : variant) =
 
 let annot_of_field (x : field) =
   match x with
-  | `Field (_, (_, _, an), _) -> an
-  | `Inherit _ -> []
+  | Field (_, (_, _, an), _) -> an
+  | Inherit _ -> []
 
 let map_annot f = function
   | Sum (loc, vl, a) ->  Sum (loc, vl, f a)
@@ -183,10 +202,8 @@ let map_annot f = function
       Name (loc, (loc2, name, args), f a)
 
 type visitor_hooks = {
-  full_module: (full_module -> unit) -> full_module -> unit;
-  module_head: (module_head -> unit) -> module_head -> unit;
-  module_body: (module_body -> unit) -> module_body -> unit;
-  module_item: (module_item -> unit) -> module_item -> unit;
+  module_: (module_ -> unit) -> module_ -> unit;
+  import: (import -> unit) -> import -> unit;
   type_def: (type_def -> unit) -> type_def -> unit;
   type_expr: (type_expr -> unit) -> type_expr -> unit;
   variant: (variant -> unit) -> variant -> unit;
@@ -224,9 +241,9 @@ and visit_variant hooks x =
 
 and visit_field hooks x =
   let cont x =
-    match x with
-    | `Field (loc, (name, kind, a), x) -> visit_type_expr hooks x
-    | `Inherit (loc, x) -> visit_type_expr hooks x
+    match (x : field) with
+    | Field (loc, (name, kind, a), x) -> visit_type_expr hooks x
+    | Inherit (loc, x) -> visit_type_expr hooks x
   in
   hooks.field cont x
 
@@ -234,34 +251,23 @@ and visit_cell hooks x =
   let cont (loc, x, a) = visit_type_expr hooks x in
   hooks.cell cont x
 
-let visit_type_def hooks x =
-  let cont (loc, (name, param, a), x) = visit_type_expr hooks x in
+let visit_import hooks x =
+  hooks.import (fun _ -> ()) x
+
+let visit_type_def hooks (x : type_def) =
+  let cont x = visit_type_expr hooks x.value in
   hooks.type_def cont x
 
-let visit_module_item hooks x =
-  let cont (Type x) = visit_type_def hooks x in
-  hooks.module_item cont x
-
-let visit_module_head hooks x =
-  let cont x = () in
-  hooks.module_head cont x
-
-let visit_module_body hooks x =
-  let cont x = List.iter (visit_module_item hooks) x in
-  hooks.module_body cont x
-
-let visit_full_module hooks x =
-  let cont (head, body) =
-    visit_module_head hooks head;
-    visit_module_body hooks body
+let visit_module hooks (x : module_) =
+  let cont (x : module_) =
+    List.iter (visit_import hooks) x.imports;
+    List.iter (visit_type_def hooks) x.type_defs
   in
-  hooks.full_module cont x
+  hooks.module_ cont x
 
 let visit
-  ?(full_module = fun cont x -> cont x)
-  ?(module_head = fun cont x -> cont x)
-  ?(module_body = fun cont x -> cont x)
-  ?(module_item = fun cont x -> cont x)
+  ?(module_ = fun cont x -> cont x)
+  ?(import = fun cont x -> cont x)
   ?(type_def = fun cont x -> cont x)
   ?(type_expr = fun cont x -> cont x)
   ?(variant = fun cont x -> cont x)
@@ -269,10 +275,8 @@ let visit
   ?(field = fun cont x -> cont x)
   () =
   let hooks : visitor_hooks = {
-    full_module;
-    module_head;
-    module_body;
-    module_item;
+    module_;
+    import;
     type_def;
     type_expr;
     variant;
@@ -281,10 +285,8 @@ let visit
   } in
   let visit (any : any) =
     match any with
-    | Full_module x -> visit_full_module hooks x
-    | Module_head x -> visit_module_head hooks x
-    | Module_body x -> visit_module_body hooks x
-    | Module_item x -> visit_module_item hooks x
+    | Module x -> visit_module hooks x
+    | Import x -> visit_import hooks x
     | Type_def x -> visit_type_def hooks x
     | Type_expr x -> visit_type_expr hooks x
     | Variant x -> visit_variant hooks x
@@ -294,7 +296,8 @@ let visit
   visit
 
 let fold_annot
-  ?module_head
+  ?module_
+  ?import
   ?type_def
   ?type_expr
   ?variant
@@ -312,8 +315,10 @@ let fold_annot
   in
   let visitor =
     visit
-      ~module_head:(fold module_head (fun (_, an) -> an))
-      ~type_def:(fold type_def (fun (_, (_, _, an), _) -> an))
+      ~module_:(fold module_
+                      (fun { module_head = (_, an); _ } -> an))
+      ~import:(fold import (fun (x : import) -> x.annot))
+      ~type_def:(fold type_def (fun (x : type_def) -> x.annot))
       ~type_expr:(fold type_expr annot_of_type_expr)
       ~variant:(fold variant annot_of_variant)
       ~cell:(fold cell (fun (_, _, an) -> an))
@@ -357,19 +362,18 @@ let rec fold (f : type_expr -> 'a -> 'a) (x : type_expr) acc =
   | Tvar (_, _string) ->
       acc
 
-and fold_variant f x acc =
+and fold_variant f (x : variant) acc =
   match x with
     Variant (_, _, Some type_expr) -> fold f type_expr acc
   | Variant _ -> acc
   | Inherit (_, type_expr) -> fold f type_expr acc
 
-and fold_field f x acc =
+and fold_field f (x : field) acc =
   match x with
-    `Field (_, _, type_expr) -> fold f type_expr acc
-  | `Inherit (_, type_expr) -> fold f type_expr acc
+    Field (_, _, type_expr) -> fold f type_expr acc
+  | Inherit (_, type_expr) -> fold f type_expr acc
 
-
-module Type_names = Set.Make (String)
+module Type_names = Set.Make (Type_name)
 
 let extract_type_names ?(ignorable = []) x =
   let ign s = List.mem s ignorable in
@@ -383,7 +387,7 @@ let extract_type_names ?(ignorable = []) x =
     fold (
       fun x acc ->
         match x with
-          Name (_, (_, name, _), _) -> add name acc
+        | Name (_, (_, name, _), _) -> add name acc
         | _ -> acc
     )
       x Type_names.empty
@@ -397,6 +401,11 @@ let is_required = function
   | Optional
   | With_default -> false
   | Required -> true
+
+let local_name_of_import (x : import) =
+  match x.alias with
+  | None -> x.name
+  | Some local_name -> local_name
 
 module Map = struct
 
@@ -449,23 +458,17 @@ module Map = struct
     | Variant _ as x -> x
     | Inherit (loc, x) -> Inherit (loc, type_expr m x)
 
-  and field m x =
+  and field m (x : field) =
     match x with
-    | `Field (loc, k, x) -> `Field (loc, k, type_expr m x)
-    | `Inherit (loc, x) -> `Inherit (loc, type_expr m x)
+    | Field (loc, k, x) -> Field (loc, k, type_expr m x)
+    | Inherit (loc, x) -> Inherit (loc, type_expr m x)
 
-  let type_def m (loc, (name, params, an), x) =
-    (loc, (name, params, an), type_expr m x)
+  let type_def m (x : type_def) : type_def =
+    { x with value = type_expr m x.value }
 
-  let module_item m x =
-    match x with
-    | Type x -> Type (type_def m x)
-
-  let module_body m x =
-    List.map (module_item m) x
-
-  let full_module m (head, body) =
-    (head, module_body m body)
+  let module_ m { module_head; imports; type_defs } =
+    let type_defs = List.map (type_def m) type_defs in
+    { module_head; imports; type_defs }
 end
 
 let use_only_specific_variants x =
@@ -473,11 +476,11 @@ let use_only_specific_variants x =
     match x with
     | Name (loc, (loc2, name, [arg]), an) ->
         (match name with
-        | "list" -> List (loc, arg, an)
-        | "option" -> Option (loc, arg, an)
-        | "nullable" -> Nullable (loc, arg, an)
-        | "shared" -> Shared (loc, arg, an)
-        | "wrap" -> Wrap (loc, arg, an)
+        | TN ["list"] -> List (loc, arg, an)
+        | TN ["option"] -> Option (loc, arg, an)
+        | TN ["nullable"] -> Nullable (loc, arg, an)
+        | TN ["shared"] -> Shared (loc, arg, an)
+        | TN ["wrap"] -> Wrap (loc, arg, an)
         | _ -> x)
 
     | Name (loc, (loc2, name, _), an) as x ->
@@ -494,15 +497,15 @@ let use_only_specific_variants x =
     | Wrap _ as x -> x
   in
   let mappers = { Map.type_expr } in
-  Map.full_module mappers x
+  Map.module_ mappers x
 
 let use_only_name_variant x =
   let type_expr x =
     match x with
-    | List (loc, arg, an) -> Name (loc, (loc, "list", [arg]), an)
-    | Option (loc, arg, an) -> Name (loc, (loc, "option", [arg]), an)
-    | Nullable (loc, arg, an) -> Name (loc, (loc, "nullable", [arg]), an)
-    | Shared (loc, arg, an) -> Name (loc, (loc, "shared", [arg]), an)
+    | List (loc, arg, an) -> Name (loc, (loc, TN ["list"], [arg]), an)
+    | Option (loc, arg, an) -> Name (loc, (loc, TN ["option"], [arg]), an)
+    | Nullable (loc, arg, an) -> Name (loc, (loc, TN ["nullable"], [arg]), an)
+    | Shared (loc, arg, an) -> Name (loc, (loc, TN ["shared"], [arg]), an)
 
     | Name _
     | Sum _
@@ -512,4 +515,19 @@ let use_only_name_variant x =
     | Wrap _ as x -> x
   in
   let mappers = { Map.type_expr } in
-  Map.full_module mappers x
+  Map.module_ mappers x
+
+let create_import ~loc ~path ?alias ~annot () : import =
+  let name =
+    match List.rev path, alias with
+    | [], _ -> invalid_arg "Ast.create_import: empty path"
+    | name :: _, None -> name
+    | _ :: _, Some override -> override
+  in
+  {
+    loc;
+    path;
+    alias;
+    name;
+    annot;
+  }

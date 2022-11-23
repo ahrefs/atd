@@ -2,6 +2,11 @@
 <python json_py.text="import deco">
 <python json_py.text="from dataclasses import dataclass">
 
+import external_defs as ext
+
+(* A list of objects whose type is defined in another ATD module. *)
+type uses_external_type = ext.a list
+
 type kind = [
   | Root (* class name conflict *)
   | Thing of int

@@ -3,6 +3,13 @@
 <doc html="<p>This <b>is</b> a test.</p>"
      text="This is a test.">
 
+import datetime
+import fiz.buz.fleeb
+import fiz.buz.floob
+import floob as floob2
+
+type with_external_types = (datetime.date * floob.t * floob2.t)
+
 (* Double-quotes "\"" in comments must be matched. *)
 (* Don't worry about unmatched single quotes in comments. *)
 type test_string_syntax = int

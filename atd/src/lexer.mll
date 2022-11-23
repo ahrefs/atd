@@ -1,6 +1,6 @@
 
 {
-  open Import
+  open Stdlib_extra
   open Lexing
   open Parser
 
@@ -104,6 +104,8 @@ rule token = parse
   | "?"      { QUESTION }
   | "~"      { TILDE }
   | "."      { DOT }
+  | "import" { IMPORT }
+  | "as"     { AS }
   | "type"   { TYPE }
   | "of"     { OF }
   | "inherit"   { INHERIT }

@@ -1,0 +1,5 @@
+(*
+   This ATD module is referenced from 'everything.atd'.
+*)
+
+type a = (int * int)

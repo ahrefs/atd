@@ -11,26 +11,31 @@ let read_lexbuf
     lexbuf =
 
   Lexer.init_fname lexbuf pos_fname pos_lnum;
-  let head, body = Parser.full_module Lexer.token lexbuf in
-  Check.check body;
-  let body =
+  let module_ = Parser.module_ Lexer.token lexbuf in
+  Check.check module_;
+  let type_defs =
     if inherit_fields || inherit_variants then
-      Inherit.expand_module_body ~inherit_fields ~inherit_variants body
+      Inherit.expand_module_body ~inherit_fields ~inherit_variants
+        module_.imports module_.type_defs
     else
-      body
+      module_.type_defs
   in
-  let (body, original_types) =
+  let type_defs =
     if expand then
-      Expand.expand_module_body ?keep_builtins ?keep_poly ~debug: xdebug body
-    else (body, Hashtbl.create 0)
+      Expand.expand_type_defs ?keep_builtins ?keep_poly ~debug: xdebug
+        type_defs
+    else
+      type_defs
   in
-  let full_module = (head, body) in
+  let module_ =
+    { module_ with type_defs }
+  in
   (match annot_schema with
    | None -> ()
    | Some schema ->
-       Annot.validate schema (Ast.Full_module full_module)
+       Annot.validate schema (Ast.Module module_)
   );
-  (full_module, original_types)
+  module_
 
 let read_channel
     ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
@@ -82,25 +87,29 @@ let load_string
 
 module Tsort = Sort.Make (
   struct
-    type t = Ast.module_item
-    type id = string (* type name *)
-
-    let id def =
-      let Ast.Type (_, (name, _, _), _) = def in
-      name
-
-    let to_string name = name
+    type t = Ast.type_def
+    type id = Ast.type_name
+    let id (x : t) = x.name
+    let to_string name = Print.tn name
   end
 )
 
-let tsort l0 =
-  let ignorable = [ "unit"; "bool"; "int"; "float"; "string"; "abstract" ] in
-  let l =
-    List.map (
-      fun def ->
-        let Ast.Type (_, (_, _, _), x) = def in
-        let deps = Ast.extract_type_names ~ignorable x in
-        (def, deps)
-    ) l0
-  in
-  List.rev (Tsort.sort l)
+let tsort ?(all_rec = false) type_defs0 =
+  let ignorable : Ast.type_name list = [
+    TN ["unit"];
+    TN ["bool"];
+    TN ["int"];
+    TN ["float"];
+    TN ["string"];
+    TN ["abstract"]
+  ] in
+  if all_rec then
+    [(true, type_defs0)]
+  else
+    let type_defs =
+      List.map (fun (x : Ast.type_def) ->
+        let deps = Ast.extract_type_names ~ignorable x.value in
+        (x, deps)
+      ) type_defs0
+    in
+    List.rev (Tsort.sort type_defs)

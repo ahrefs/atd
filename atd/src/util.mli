@@ -10,7 +10,7 @@ val read_lexbuf :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  Lexing.lexbuf -> Ast.full_module * Expand.original_types
+  Lexing.lexbuf -> Ast.module_
   (** Read an ATD file from a lexbuf. See also [read_channel], [load_file]
       and [load_string].
 
@@ -66,7 +66,7 @@ val read_channel :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  in_channel -> Ast.full_module * Expand.original_types
+  in_channel -> Ast.module_
   (** Read an ATD file from an [in_channel]. Options: see [read_lexbuf].
       The default [pos_fname] is set to ["<stdin>"] when appropriate. *)
 
@@ -80,7 +80,7 @@ val load_file :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  string -> Ast.full_module * Expand.original_types
+  string -> Ast.module_
   (** Read an ATD file. Options: see [read_lexbuf].
       The default [pos_fname] is the given input file name. *)
 
@@ -94,11 +94,12 @@ val load_string :
   ?inherit_variants:bool ->
   ?pos_fname:string ->
   ?pos_lnum:int ->
-  string -> Ast.full_module * Expand.original_types
+  string -> Ast.module_
   (** Read ATD data from a string. Options: see [read_lexbuf]. *)
 
 val tsort :
-  Ast.module_body -> (bool * Ast.module_body) list
+  ?all_rec:bool ->
+  Ast.type_def list -> (bool * Ast.type_def list) list
   (**
      Topological sort for dependency analysis.
      [tsort] splits definitions into mutually-recursive groups,
@@ -106,4 +107,7 @@ val tsort :
      of its own group or previous groups.
      The boolean flags indicate groups of one or more
      mutually recursive definitions.
+
+     @param all_rec assume all definitions are mutually dependent, skipping
+                    actual topological sorting.
   *)

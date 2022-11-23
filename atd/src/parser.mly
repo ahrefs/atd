@@ -4,7 +4,7 @@
    requires menhir.
 */
 %{
-  open Import
+  open Stdlib_extra
   open Ast
 
   let syntax_error s pos1 pos2 =
@@ -14,21 +14,25 @@
 
 %token TYPE EQ OP_PAREN CL_PAREN OP_BRACK CL_BRACK OP_CURL CL_CURL
        SEMICOLON COMMA COLON STAR OF EOF BAR LT GT INHERIT
-       QUESTION TILDE DOT
+       QUESTION TILDE DOT IMPORT AS
 %token < string > STRING LIDENT UIDENT TIDENT
 
-%start full_module
-%type < Ast.full_module > full_module
+%start module_
+%type < Ast.module_ > module_
 %%
 
-full_module:
-| x = annot  y = module_body { ((($startpos(x), $endpos(x)), x), y) }
-;
-
-module_body:
-| module_item module_body   { $1 :: $2 }
-| EOF                       { [] }
-| _e=error     { syntax_error "Syntax error" $startpos(_e) $endpos(_e) }
+module_:
+| an = annot;
+  imports = list(import);
+  type_defs = list(type_def);
+  EOF
+               { let loc = ($startpos(an), $endpos(an)) in
+                 {
+                   module_head = (loc, an);
+                   imports;
+                   type_defs;
+                 }
+               }
 ;
 
 annot:
@@ -63,10 +67,23 @@ lident_path:
 | LIDENT                 { [$1] }
 ;
 
-module_item:
-
-| TYPE p = type_param s = LIDENT a = annot EQ t = type_expr
-                               { Type (($startpos, $endpos), (s, p, a), t) }
+type_def:
+| TYPE;
+  p = type_param;
+  s = LIDENT;
+  a = annot EQ;
+  t = type_expr
+                               { let loc = ($startpos, $endpos) in
+                                 let orig : type_def = {
+                                   loc;
+                                   name = TN [s];
+                                   param = p;
+                                   annot = a;
+                                   value = t;
+                                   orig = None;
+                                 } in
+                                 ({ orig with orig = Some orig } : type_def)
+                               }
 
 | TYPE type_param LIDENT annot EQ _e=error
     { syntax_error "Expecting type expression" $startpos(_e) $endpos(_e) }
@@ -74,6 +91,22 @@ module_item:
     { syntax_error "Expecting '='" $startpos(_e) $endpos(_e) }
 | TYPE _e=error
     { syntax_error "Expecting type name" $startpos(_e) $endpos(_e) }
+
+import:
+| IMPORT;
+  path = separated_nonempty_list(DOT, LIDENT);
+  alias = alias;
+  annot = annot;
+                     { let loc = ($startpos, $endpos) in
+                       (Ast.create_import
+                          ~loc ~path ?alias ~annot () : import) }
+| IMPORT; _e=error
+    { syntax_error "Expecting ATD module name" $startpos(_e) $endpos(_e) }
+;
+
+alias:
+| AS name = LIDENT   { Some name }
+|                    { None }
 ;
 
 type_param:
@@ -106,16 +139,17 @@ type_expr:
 | OP_PAREN l = cartesian_product CL_PAREN a = annot
      { Tuple (($startpos, $endpos), l, a) }
 
-| x = type_inst a = annot
+| x = type_inst;
+  a = annot
      { let pos1 = $startpos in
        let pos2 = $endpos in
        let loc = (pos1, pos2) in
        let _, name, args = x in
        match name, args with
-           "list", [x] -> List (loc, x, a)
-         | "option", [x] -> Option (loc, x, a)
-         | "nullable", [x] -> Nullable (loc, x, a)
-         | "shared", [x] ->
+         | TN ["list"], [x] -> List (loc, x, a)
+         | TN ["option"], [x] -> Option (loc, x, a)
+         | TN ["nullable"], [x] -> Nullable (loc, x, a)
+         | TN ["shared"], [x] ->
              let a =
                if Annot.has_field ~sections:["share"] ~field:"id" a then
                  (* may cause ID clashes if not used properly *)
@@ -125,10 +159,11 @@ type_expr:
                    ~section:"share" ~field:"id" (Some (Annot.create_id ())) a
              in
              Shared (loc, x, a)
-         | "wrap", [x] -> Wrap (loc, x, a)
+         | TN ["wrap"], [x] -> Wrap (loc, x, a)
 
-         | ("list"|"option"|"nullable"|"shared"|"wrap"), _ ->
-             syntax_error (sprintf "%s expects one argument" name) pos1 pos2
+         | TN ["list"|"option"|"nullable"|"shared"|"wrap"], _ ->
+             syntax_error (sprintf "%s expects one argument"
+                             (Print.tn name)) pos1 pos2
 
          | _ -> (Name (loc, x, a) : type_expr) }
 
@@ -154,7 +189,9 @@ annot_expr:
 ;
 
 type_inst:
-| l = type_args s = LIDENT  { (($startpos, $endpos), s, l) }
+| args = type_args;
+  path = separated_nonempty_list(DOT, LIDENT)
+                                   { (($startpos, $endpos), TN path, args) }
 ;
 
 type_args:
@@ -201,9 +238,9 @@ field_list:
 field:
 | fn = field_name a = annot COLON t = type_expr
     { let k, fk = fn in
-      `Field (($startpos, $endpos), (k, fk, a), t) }
+      Field (($startpos, $endpos), (k, fk, a), t) }
 | INHERIT t = type_expr
-    { `Inherit (($startpos, $endpos), t) }
+    { Inherit (($startpos, $endpos), t) }
 | field_name annot COLON _e=error
     { syntax_error "Expecting type expression after ':'"
         $startpos(_e) $endpos(_e) }

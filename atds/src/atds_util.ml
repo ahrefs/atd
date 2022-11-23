@@ -1,6 +1,6 @@
 (* Utilities *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Atds_env
 
 (* Get rid of `wrap' constructors that we don't support on the Java side yet.
@@ -16,12 +16,12 @@ let rec norm_ty env atd_ty =
   match atd_ty with
   | Atd.Ast.Name (_, (_, name, _), _) ->
       (match name with
-       | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
+       | TN ["bool" | "int" | "float" | "string" | "abstract"] -> atd_ty
        | _ ->
-           (match List.assoc name env.module_items with
+           (match List.assoc name env.type_defs with
             | Some x -> norm_ty env x
             | None ->
-                eprintf "Warning: unknown type %s\n%!" name;
+                eprintf "Warning: unknown type %s\n%!" (Atd.Print.tn name);
                 atd_ty)
       )
   | _ ->

@@ -1,9 +1,9 @@
-open Atd.Import
+open Atd.Stdlib_extra
 open Atd.Ast
 open Mapping
 
 type ov_mapping =
-    (Ocaml.Repr.t, Validate.validate_repr) Mapping.mapping
+    (Ocaml_repr.t, Validate.validate_repr) Mapping.t
 
 (*
   Determine whether a type expression does not need validation.
@@ -269,7 +269,7 @@ and mapping_of_variant is_shallow = function
   | Inherit _ -> assert false
 
 and mapping_of_field is_shallow ocaml_field_prefix = function
-    `Field (loc, (s, fk, an), x) ->
+  | Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr is_shallow x in
       let ocaml_default =
         match fk, Ocaml.get_ocaml_default Validate an with
@@ -282,7 +282,8 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
             (* will try to determine implicit default value later *)
             None
       in
-      let ocaml_fname = Ocaml.get_ocaml_fname Validate (ocaml_field_prefix ^ s) an in
+      let ocaml_fname =
+        Ocaml.get_ocaml_fname Validate (ocaml_field_prefix ^ s) an in
       let ocaml_mutable = Ocaml.get_ocaml_mutable Validate an in
       let doc = Atd.Doc.get_doc loc an in
       { f_loc = loc;
@@ -300,25 +301,27 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
         f_brepr = (None, noval x && is_shallow x);
       }
 
-  | `Inherit _ -> assert false
+  | Inherit _ -> assert false
 
 
-let def_of_atd is_shallow (loc, (name, param, an), x) =
-  let ocaml_predef = Ocaml.get_ocaml_predef Validate an in
-  let doc = Atd.Doc.get_doc loc an in
+let def_of_atd is_shallow (td : type_def) =
+  let { loc; name; param; annot; value; _ } = td in
+  let ocaml_predef = Ocaml.get_ocaml_predef Validate annot in
+  let doc = Atd.Doc.get_doc loc annot in
   let o =
-    match as_abstract x with
+    match as_abstract value with
     | Some (_, an2) ->
-        (match Ocaml.get_ocaml_module_and_t Validate name an with
-          | None -> Some (mapping_of_expr is_shallow x)
+        (match Ocaml.get_ocaml_module_and_t Validate name annot with
+          | None -> Some (mapping_of_expr is_shallow value)
           | Some (types_module, main_module, ext_name) ->
               let args = List.map (fun s -> Tvar (loc, s)) param in
               Some (External (loc, name, args,
                               Ocaml.Repr.External (types_module, main_module, ext_name),
                               (Validate.get_validator an2, false))))
 
-    | None -> Some (mapping_of_expr is_shallow x)
+    | None -> Some (mapping_of_expr is_shallow value)
   in
+  let orig = match td.orig with None -> assert false | Some x -> x in
   {
     def_loc = loc;
     def_name = name;
@@ -328,11 +331,12 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
       Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
                        ocaml_ddoc = doc; };
     def_brepr = (None, false);
+    def_orig = orig;
   }
 
 let fill_def_tbl defs l =
   List.iter (
-    function Atd.Ast.Type (_, (name, _, _), x) -> Hashtbl.add defs name x
+    fun (x : type_def) -> Hashtbl.add defs x.name x.value
   ) l
 
 let init_def_tbl () =
@@ -343,10 +347,10 @@ let make_def_tbl2 l =
   List.iter (fun (_, l) -> fill_def_tbl defs l) l;
   defs
 
-let defs_of_atd_module_gen is_shallow l =
-  List.map (function Atd.Ast.Type def -> def_of_atd is_shallow def) l
-
-let defs_of_atd_modules l =
+let defs_of_def_groups l =
   let defs = make_def_tbl2 l in
   let is_shallow = make_is_shallow defs in
-  List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module_gen is_shallow l)) l
+  List.map (fun (is_rec, defs) ->
+    let defs = List.map (def_of_atd is_shallow) defs in
+    (is_rec, defs)
+  ) l

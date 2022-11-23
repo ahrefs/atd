@@ -27,30 +27,58 @@ and annot_field = string * (loc * string option)
     (** An annotation field,
         i.e. a key with an optional value within an annotation. *)
 
-
-type full_module = module_head * module_body
+type module_ = {
+  module_head: module_head;
+  imports: import list;
+  type_defs: type_def list;
+}
     (** Contents of an ATD file. *)
 
 and module_head = loc * annot
     (** The head of an ATD file is just a list of annotations. *)
 
-and module_body = module_item list
-    (** The body of an ATD file is a list of type definitions.
-        Type definitions are implicitely mutually
-        recursive. They can be sorted based on dependencies
-        using {!Atd.Util.tsort}.
+(** Require the existence of another ATD module.
+    The concrete syntax is [import external_name as local_name].
+    The annotations specify language-specific options such as where to
+    find the implementation or alternate names. *)
+and import = private {
+  loc: loc;
+
+  path: string list;
+    (** The full name of the ATD module.
+        Unless an alias is specified, the local name of the module is
+        the last component e.g. [import foo.bar] imports module [foo.bar]
+        which is known locally as just [bar]. *)
+
+  alias: string option;
+    (** The local name used to identify the imported ATD module, overriding
+        the default name.
+        Typically, this is an abbreviation as in
+        [import bubble_gum_factory_api as bg].
     *)
 
-and module_item =
-  | Type of type_def
-      (** There is currently only one kind of module items,
-          that is single type definitions. *)
+  name: string;
+    (** The local name of the module. It's the value of [alias] if there is
+        one, otherwise it's the last component of [path].
+        It's a single path component, i.e. it doesn't contain periods. *)
 
-and type_def = loc * (string * type_param * annot) * type_expr
-    (** A type definition. *)
+  annot: annot
+}
 
+(** A type definition. *)
+and type_def = {
+  loc: loc;
+  name: type_name;
+  param: type_param;
+  annot: annot;
+  value: type_expr;
+  (* Polymorphic type definition from which this definition has been derived
+     through monomorphization, if applicable. *)
+  orig: type_def option;
+}
+
+(** List of type variables without the tick. *)
 and type_param = string list
-    (** List of type variables without the tick. *)
 
 and type_expr =
     | Sum of loc * variant list * annot
@@ -89,8 +117,10 @@ and type_expr =
          - [Tvar]: a type variable identifier without the tick
       *)
 
-and type_inst = loc * string * type_expr list
-    (** A type name and its arguments *)
+and type_inst = loc * type_name * type_expr list
+    (** A dot-separated type name and its arguments *)
+
+and type_name = Type_name.t = TN of string list
 
 and variant =
   | Variant of loc * (string * annot) * type_expr option
@@ -153,8 +183,8 @@ v}
 and simple_field = (loc * (string * field_kind * annot) * type_expr)
 
 and field =
-    [ `Field of simple_field
-    | `Inherit of (loc * type_expr) ]
+    | Field of simple_field
+    | Inherit of (loc * type_expr)
       (**
          A single record field or an [inherit] statement.
          [`Inherit] statements can be expanded into fields using {!Atd_inherit}
@@ -163,16 +193,22 @@ and field =
       *)
 
 type any =
-  | Full_module of full_module
-  | Module_head of module_head
-  | Module_body of module_body
-  | Module_item of module_item
+  | Module of module_
+  | Import of import
   | Type_def of type_def
   | Type_expr of type_expr
   | Variant of variant
   | Cell of cell
   | Field of field
-  (** Type for any kind of node, used to define a visitor root. *)
+  (** Type for any kind of node, used to define a visitor root.
+      Also used to simplify the interface of the [Print] module. *)
+
+val create_import :
+  loc:loc ->
+  path:string list ->
+  ?alias:string ->
+  annot:annot ->
+  unit -> import
 
 val loc_of_type_expr : type_expr -> loc
   (** Extract the source location of any type expression. *)
@@ -214,16 +250,14 @@ val map_annot : (annot -> annot) -> type_expr -> type_expr
      This is a shallow transformation. Sub-expressions are not affected.
   *)
 
-val map_all_annot : (annot -> annot) -> full_module -> full_module
+val map_all_annot : (annot -> annot) -> module_ -> module_
   (**
      Replacement of all annotations occurring in an ATD module.
   *)
 
 val visit :
-  ?full_module: ((full_module -> unit) -> full_module -> unit) ->
-  ?module_head: ((module_head -> unit) -> module_head -> unit) ->
-  ?module_body: ((module_body -> unit) -> module_body -> unit) ->
-  ?module_item: ((module_item -> unit) -> module_item -> unit) ->
+  ?module_: ((module_ -> unit) -> module_ -> unit) ->
+  ?import: ((import -> unit) -> import -> unit) ->
   ?type_def: ((type_def -> unit) -> type_def -> unit) ->
   ?type_expr: ((type_expr -> unit) -> type_expr -> unit) ->
   ?variant: ((variant -> unit) -> variant -> unit) ->
@@ -233,8 +267,8 @@ val visit :
   (any -> unit)
   (** Create a function that will visit all the nodes of a tree by default.
       Each optional field defines what to do when encountering a node
-      of a particular kind. For example, the [full_module] that you provide
-      would be applied as [full_module cont x]. The [cont] function
+      of a particular kind. For example, the [module_] that you provide
+      would be applied as [module_ cont x]. The [cont] function
       must be called for the visitor to continue down the tree, if this
       is desired. Arbitrary code can be executed before or after
       the call to [cont]. [cont] may be called on a modified version
@@ -251,12 +285,13 @@ val visit :
       )
       ()
   in
-  visitor (Full_module root)
+  visitor (Module root)
 v}
   *)
 
 val fold_annot :
-  ?module_head: (module_head -> annot -> 'a -> 'a) ->
+  ?module_: (module_ -> annot -> 'a -> 'a) ->
+  ?import: (import -> annot -> 'a -> 'a) ->
   ?type_def: (type_def -> annot -> 'a -> 'a) ->
   ?type_expr: (type_expr -> annot -> 'a -> 'a) ->
   ?variant: (variant -> annot -> 'a -> 'a) ->
@@ -276,8 +311,8 @@ val fold : (type_expr -> 'a -> 'a) -> type_expr -> 'a -> 'a
   *)
 
 val extract_type_names :
-  ?ignorable : string list ->
-  type_expr -> string list
+  ?ignorable : type_name list ->
+  type_expr -> type_name list
   (**
      Extract all the type names occurring in a type expression
      under [`Name], without duplicates.
@@ -290,6 +325,10 @@ val is_parametrized : type_expr -> bool
   *)
 
 val is_required : field_kind -> bool
+
+val local_name_of_import : import -> string
+  (** Extract the name of the imported module, taking into account the
+      possible aliasing. *)
 
 (** Replace nodes by other nodes of the same type.
     First the user-given mapper is applied to a node,
@@ -306,15 +345,13 @@ module Map : sig
   val variant : mappers -> variant -> variant
   val field : mappers -> field -> field
   val type_def : mappers -> type_def -> type_def
-  val module_item : mappers -> module_item -> module_item
-  val module_body : mappers -> module_body -> module_body
-  val full_module : mappers -> full_module -> full_module
+  val module_ : mappers -> module_ -> module_
 end
 
-val use_only_specific_variants : full_module -> full_module
+val use_only_specific_variants : module_ -> module_
   (** Use the dedicated variants [Int], [List], etc. instead of the generic
       variant [Name]. *)
 
-val use_only_name_variant : full_module -> full_module
+val use_only_name_variant : module_ -> module_
   (** Use the generic variant [Name] instead of the dedicated variants
       [Int], [List], etc. *)

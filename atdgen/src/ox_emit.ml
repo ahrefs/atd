@@ -3,12 +3,12 @@
   (ox means OCaml-X)
 *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 open Mapping
 module Json = Atd.Json
 
-type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
-type 'a def = (Ocaml.Repr.t, 'a) Mapping.def
+type 'a expr = (Ocaml_repr.t, 'a) Mapping.t
+type 'a def = (Ocaml_repr.t, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list
 
 type name = (loc * loc * string)
@@ -81,7 +81,7 @@ let rec extract_names_from_expr ?(is_root = false) root_loc acc (x : 'a expr) =
 and extract_names_from_variant root_loc (l, acc) x =
   let l =
     match x.var_arepr with
-      Variant v -> (root_loc, x.var_loc, v.Ocaml.ocaml_cons) :: l
+    | Variant v -> (root_loc, x.var_loc, v.ocaml_cons) :: l
     | _ -> assert false
   in
   match x.var_arg with
@@ -92,7 +92,7 @@ and extract_names_from_variant root_loc (l, acc) x =
 and extract_names_from_field root_loc (l, acc) x =
   let l =
     match x.f_arepr with
-      Field f -> (root_loc, x.f_loc, f.Ocaml.ocaml_fname) :: l
+    | Field f -> (root_loc, x.f_loc, f.ocaml_fname) :: l
     | _ -> assert false
   in
   (l, extract_names_from_expr root_loc acc x.f_value)
@@ -183,14 +183,11 @@ let anon_param_type_name s n_param =
       let params = String.concat ", " (Array.to_list underscores) in
       "(" ^ params ^ ") " ^ s
 
-(* Get a type expression that uses the original user-given name (e.g. not _1) *)
-let get_type_constraint ~original_types def =
-  try
-    let (poly_name, n_params) = Hashtbl.find original_types def.def_name in
-    anon_param_type_name poly_name n_params
-  with Not_found ->
-    get_full_type_name def
-
+(* Get a type expression that uses the original user-given name
+   (e.g. not _1) *)
+let get_type_constraint def =
+  let x = def.def_orig in
+  anon_param_type_name x.name (List.length x.param)
 
 (* Classic variants and records need type annotations in order to allow
    constructor/field name disambiguation *)
@@ -314,21 +311,30 @@ let write_opens buf l =
   List.iter (fun s -> bprintf buf "open %s\n" s) l;
   bprintf buf "\n"
 
-let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
+let def_of_atd (td : Atd.Ast.type_def) ~target ~def ~external_
     ~mapping_of_expr =
+  let name = td.name in
+  let param = td.param in
+  let loc = td.loc in
+  let an = td.annot in
   let ocaml_predef = Ocaml.get_ocaml_predef target an in
   let doc = Atd.Doc.get_doc loc an in
   let o =
-    match as_abstract x with
+    match as_abstract td.value with
       Some (_, _) ->
         Ocaml.get_ocaml_module_and_t target name an
-        |> Option.map (fun (types_module, main_module, ext_name) ->
+        |> Option.map (fun (type_module, main_module, ext_name) ->
           let args = List.map (fun s -> Tvar (loc, s)) param in
           External
             (loc, name, args,
-             Ocaml.Repr.External (types_module, main_module, ext_name),
+             Ocaml.Repr.External { type_module; main_module; type_name },
              external_))
-    | None -> Some (mapping_of_expr x)
+    | None -> Some (mapping_of_expr td.value)
+  in
+  let def_orig =
+    match td.orig with
+    | None -> assert false
+    | Some x -> x
   in
   {
     def_loc = loc;
@@ -339,6 +345,7 @@ let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
       Ocaml.Repr.Def { Ocaml.ocaml_predef = ocaml_predef;
                        ocaml_ddoc = doc };
     def_brepr = def;
+    def_orig;
   }
 
 let maybe_write_creator_impl ~with_create deref buf defs =
@@ -375,11 +382,11 @@ let default_value x deref =
   | Optional, _ -> Some "None"
   | Required, _ -> None
 
-let include_intf (x : (Ocaml.Repr.t, _) Mapping.def) =
+let include_intf (x : (Ocaml_repr.t, _) Mapping.def) =
   x.def_name <> "" && x.def_name.[0] <> '_' && x.def_value <> None
 
 type field =
-  { mapping : (Ocaml.Repr.t, Json.json_repr) Mapping.field_mapping
+  { mapping : (Ocaml_repr.t, Json.json_repr) Mapping.field_mapping
   ; ocaml_fname : string
   ; json_fname : string
   ; ocaml_default : string option

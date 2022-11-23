@@ -2,7 +2,7 @@
   Mapping from ATD to "validate"
 *)
 
-open Atd.Import
+open Atd.Stdlib_extra
 
 type validate_repr = (string option * bool)
     (* (opt_v, b)

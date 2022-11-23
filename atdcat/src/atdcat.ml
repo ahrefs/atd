@@ -1,4 +1,5 @@
-open Atd.Import
+open Atd.Stdlib_extra
+open Atd.Ast
 
 type out_format =
   | Atd
@@ -40,23 +41,23 @@ let format_html_comments ((section, (_, l)) as x) =
         | Some _ | None ->
             begin match List.assoc "text" l with
               | Some (loc, Some s) -> comment (html_of_doc loc s)
-              | Some _ | None -> Atd.Print.default_annot x
+              | Some _ | None -> Atd.Print.default_format_annot x
             end
       end
-  | _ -> Atd.Print.default_annot x
+  | _ -> Atd.Print.default_format_annot x
 
 let print_atd ~html_doc oc ast =
-  let annot =
+  let format_annot =
     if html_doc then Some format_html_comments
     else None
   in
-  let pp = Atd.Print.format ?annot ast in
+  let pp = Atd.Print.format ?format_annot ast in
   Easy_format.Pretty.to_channel oc pp;
   output_string oc "\n"
 
 let print_ml ~name oc ast =
   let buf = Buffer.create 1000 in
-  Atd.Reflect.print_full_module_def buf name ast;
+  Atd.Reflect.print_module_def buf name ast;
   output_string oc (Buffer.contents buf);
   output_string oc "\n"
 
@@ -73,44 +74,42 @@ let parse
     ~annot_schema
     ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
     ~strip_all ~strip_sections files =
-  let l =
+  let modules =
     List.map (
-      fun file ->
-        fst (
-          Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
-            ~inherit_fields ~inherit_variants file
-        )
+      Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
+        ~inherit_fields ~inherit_variants
     ) files
   in
-  let heads, bodies = List.split l in
   let first_head =
     (* heads in other files than the first one are tolerated but ignored *)
-    match heads with
-        x :: _ -> x
+    match modules with
+        { module_head; _ } :: _ -> module_head
       | [] -> (Atd.Ast.dummy_loc, [])
   in
-  let m = first_head, List.flatten bodies in
-  strip strip_all strip_sections m
+  let module_ = {
+    module_head = first_head;
+    imports = List.map (fun x -> x.imports) modules |> List.flatten;
+    type_defs = List.map (fun x -> x.type_defs) modules |> List.flatten;
+  } in
+  strip strip_all strip_sections module_
 
 let print
     ~xprop ~jsonschema_version
-    ~src_name ~html_doc ~out_format ~out_channel:oc ast =
-  let f =
-    match out_format with
-    | Atd -> print_atd ~html_doc
-    | Ocaml name -> print_ml ~name
-    | Jsonschema root_type ->
-        Atd.Jsonschema.print
-          ~xprop
-          ~version:jsonschema_version
-          ~src_name ~root_type
-  in
-  f oc ast
+    ~src_name ~html_doc ~out_format ~out_channel:oc module_ =
+  match out_format with
+  | Atd -> print_atd ~html_doc oc (Module module_)
+  | Ocaml name -> print_ml ~name oc module_
+  | Jsonschema root_type ->
+      Atd.Jsonschema.print
+        ~xprop
+        ~version:jsonschema_version
+        ~src_name ~root_type
+        oc module_
 
 let split_on_comma =
   Re.Str.split_delim (Re.Str.regexp ",")
 
-let () =
+let run () =
   let expand = ref false in
   let keep_poly = ref false in
   let xdebug = ref false in
@@ -210,6 +209,7 @@ let () =
   in
   let msg = sprintf "Usage: %s FILE" Sys.argv.(0) in
   Arg.parse options (fun file -> input_files := file :: !input_files) msg;
+  Printexc.record_backtrace true;
   try
     let force_inherit, annot_schema =
       match !out_format with
@@ -255,4 +255,12 @@ let () =
       flush stdout;
       eprintf "%s\n%!" msg;
       exit 1
-  | e -> raise e
+  | e ->
+      let trace = Printexc.get_backtrace () in
+      flush stdout;
+      eprintf "Exception %s:\n%s%!"
+        (Printexc.to_string e)
+        trace;
+      exit 1
+
+let () = run ()

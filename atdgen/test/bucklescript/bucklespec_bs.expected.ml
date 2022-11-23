@@ -603,7 +603,7 @@ let read_point = (
     )
 )
 let write_param_similar write__a = (
-  Atdgen_codec_runtime.Encode.make (fun (t : 'a param_similar) ->
+  Atdgen_codec_runtime.Encode.make (fun (t : _ param_similar) ->
     (
     Atdgen_codec_runtime.Encode.obj
       [
@@ -640,12 +640,12 @@ let read_param_similar read__a = (
               Atdgen_codec_runtime.Decode.int
               |> Atdgen_codec_runtime.Decode.field "something"
             ) json;
-      } : 'a param_similar)
+      } : _ param_similar)
     )
   )
 )
 let write_param write__a = (
-  Atdgen_codec_runtime.Encode.make (fun (t : 'a param) ->
+  Atdgen_codec_runtime.Encode.make (fun (t : _ param) ->
     (
     Atdgen_codec_runtime.Encode.obj
       [
@@ -682,12 +682,12 @@ let read_param read__a = (
               Atdgen_codec_runtime.Decode.unit
               |> Atdgen_codec_runtime.Decode.field "nothing"
             ) json;
-      } : 'a param)
+      } : _ param)
     )
   )
 )
 let write_pair write__a write__b = (
-  Atdgen_codec_runtime.Encode.make (fun (t : ('a, 'b) pair) ->
+  Atdgen_codec_runtime.Encode.make (fun (t : (_, _) pair) ->
     (
     Atdgen_codec_runtime.Encode.obj
       [
@@ -724,7 +724,7 @@ let read_pair read__a read__b = (
               read__b
               |> Atdgen_codec_runtime.Decode.field "right"
             ) json;
-      } : ('a, 'b) pair)
+      } : (_, _) pair)
     )
   )
 )

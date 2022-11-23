@@ -3,19 +3,10 @@
 *)
 
 
-open Import
+open Stdlib_extra
 open Ast
 
 module S = Set.Make (String)
-
-
-let load_defs l =
-  let tbl = Predef.make_table () in
-  List.iter (
-    fun ((_, (k, pl, _), _) as td) ->
-      Hashtbl.add tbl k (List.length pl, Some td)
-  ) l;
-  tbl
 
 let keep_last_defined get_name l =
   let _, l =
@@ -29,11 +20,11 @@ let keep_last_defined get_name l =
   l
 
 let get_field_name : field -> string = function
-    `Field (_, (k, _, _), _) -> k
-  | `Inherit _ -> assert false
+  | Field (_, (k, _, _), _) -> k
+  | Inherit _ -> assert false
 
 let get_variant_name : variant -> string = function
-    Variant (_, (k, _), _) -> k
+  | Variant (_, (k, _), _) -> k
   | Inherit _ -> assert false
 
 
@@ -68,23 +59,23 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
         )
 
     | List (loc, t, a)
-    | Name (loc, (_, "list", [t]), a) ->
+    | Name (loc, (_, TN ["list"], [t]), a) ->
         List (loc, subst false param t, a)
 
     | Option (loc, t, a)
-    | Name (loc, (_, "option", [t]), a) ->
+    | Name (loc, (_, TN ["option"], [t]), a) ->
         Option (loc, subst false param t, a)
 
     | Nullable (loc, t, a)
-    | Name (loc, (_, "nullable", [t]), a) ->
+    | Name (loc, (_, TN ["nullable"], [t]), a) ->
         Nullable (loc, subst false param t, a)
 
     | Shared (loc, t, a)
-    | Name (loc, (_, "shared", [t]), a) ->
+    | Name (loc, (_, TN ["shared"], [t]), a) ->
         Shared (loc, subst false param t, a)
 
     | Wrap (loc, t, a)
-    | Name (loc, (_, "wrap", [t]), a) ->
+    | Name (loc, (_, TN ["wrap"], [t]), a) ->
         Wrap (loc, subst false param t, a)
 
     | Tvar (_, s) -> Option.value (List.assoc s param) ~default:t
@@ -92,13 +83,15 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
     | Name (loc, (loc2, k, args), a) ->
         let expanded_args = List.map (subst false param) args in
         if deref then
-          let _, vars, _, t =
+          let vars, t =
             try
               match Hashtbl.find tbl k with
-                _, Some (_, (k, vars, a), t) -> k, vars, a, t
-              | _, None -> failwith ("Cannot inherit from type " ^ k)
+                _, Some (x : type_def) -> x.param, x.value
+              | _, None -> failwith ("Cannot inherit from type "
+                                     ^ Print.tn k)
             with Not_found ->
-              failwith ("Missing type definition for " ^ k)
+              failwith ("Missing type definition for "
+                        ^ Print.tn k)
           in
           let param = List.combine vars expanded_args in
           subst true param t
@@ -106,8 +99,8 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
           Name (loc, (loc2, k, expanded_args), a)
 
   and subst_field param = function
-      `Field (loc, k, t) -> [ `Field (loc, k, subst false param t) ]
-    | `Inherit (_, t) as x ->
+    | Field (loc, k, t) -> [ Field (loc, k, subst false param t) ]
+    | Inherit (_, t) as x ->
         (match subst true param t with
            Record (_, vl, _) ->
              if inherit_fields then vl
@@ -135,12 +128,12 @@ let expand ?(inherit_fields = true) ?(inherit_variants = true) tbl t0 =
 let expand_module_body
     ?inherit_fields
     ?inherit_variants
-    (l : Ast.module_body) =
-  let td_list = List.map (function (Ast.Type td) -> td) l in
-  let tbl = load_defs td_list in
-  let td_list =
-    List.map (
-      fun (loc, name, t) ->
-        (loc, name, expand ?inherit_fields ?inherit_variants tbl t)
-    ) td_list in
-  List.map (fun td -> Ast.Type td) td_list
+    (_imports : Ast.import list) (defs : Ast.type_def list) =
+  (* TODO: use 'imports' to improve error messages when a user expects
+     'inherit' to work on imported types *)
+  let tbl = Predef.make_table defs in
+  List.map (fun (x : type_def) ->
+    { x with
+      value = expand ?inherit_fields ?inherit_variants tbl x.value;
+    }
+  ) defs

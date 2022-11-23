@@ -96,6 +96,7 @@ js:
 clean:
 	$(DUNE) clean
 	$(MAKE) -C atdpy clean
+	$(MAKE) -C atdts clean
 	rm -rf tmp
 
 .PHONY: all-supported-ocaml-versions

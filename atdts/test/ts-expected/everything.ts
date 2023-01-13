@@ -18,11 +18,16 @@ export type DifferentKindsOfThings =
 
 export type This = Int
 
+export type SimpleRecord = {
+  str: string;
+}
+
 export type Root = {
   id: string;
   this_: This;
   items: Int[][];
   maybe?: Int;
+  maybe2?: SimpleRecord;
   extras: Int[];
   answer: Int;
   aliased: Alias;
@@ -111,12 +116,25 @@ export function readThis(x: any, context: any = x): This {
   return _atd_read_int(x, context);
 }
 
+export function writeSimpleRecord(x: SimpleRecord, context: any = x): any {
+  return {
+    'str': _atd_write_required_field('SimpleRecord', 'str', _atd_write_string, x.str, x),
+  };
+}
+
+export function readSimpleRecord(x: any, context: any = x): SimpleRecord {
+  return {
+    str: _atd_read_required_field('SimpleRecord', 'str', _atd_read_string, x['str'], x),
+  };
+}
+
 export function writeRoot(x: Root, context: any = x): any {
   return {
     'ID': _atd_write_required_field('Root', 'id', _atd_write_string, x.id, x),
     'this': _atd_write_required_field('Root', 'this', writeThis, x.this_, x),
     'items': _atd_write_required_field('Root', 'items', _atd_write_array(_atd_write_array(_atd_write_int)), x.items, x),
     'maybe': _atd_write_optional_field(_atd_write_int, x.maybe, x),
+    'maybe2': _atd_write_optional_field(writeSimpleRecord, x.maybe2, x),
     'extras': _atd_write_field_with_default(_atd_write_array(_atd_write_int), [], x.extras, x),
     'answer': _atd_write_field_with_default(_atd_write_int, 42, x.answer, x),
     'aliased': _atd_write_required_field('Root', 'aliased', writeAlias, x.aliased, x),
@@ -142,6 +160,7 @@ export function readRoot(x: any, context: any = x): Root {
     this_: _atd_read_required_field('Root', 'this', readThis, x['this'], x),
     items: _atd_read_required_field('Root', 'items', _atd_read_array(_atd_read_array(_atd_read_int)), x['items'], x),
     maybe: _atd_read_optional_field(_atd_read_int, x['maybe'], x),
+    maybe2: _atd_read_optional_field(readSimpleRecord, x['maybe2'], x),
     extras: _atd_read_field_with_default(_atd_read_array(_atd_read_int), [], x['extras'], x),
     answer: _atd_read_field_with_default(_atd_read_int, 42, x['answer'], x),
     aliased: _atd_read_required_field('Root', 'aliased', readAlias, x['aliased'], x),

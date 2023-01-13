@@ -22,11 +22,16 @@ type ('a, 'b) parametrized_record = {
 
 type 'a parametrized_tuple = ('a * 'a * int)
 
+type simple_record = {
+  str: string;
+}
+
 type root = {
   id <json name="ID">: string;
   this: this;
   items: int list list;
   ?maybe: int option;
+  ?maybe2: simple_record option;
   ~extras: int list;
   ~answer <ts default="42">: int;
   aliased: alias;

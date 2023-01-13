@@ -544,7 +544,7 @@ function _atd_write_required_field<T>(type_name: string,
 }
 
 function _atd_write_optional_field<T>(write_elt: (x: T, context: any) => any,
-                                      x: T,
+                                      x: T | undefined,
                                       context: any): any {
   if (x === undefined || x === null)
     return x

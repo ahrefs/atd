@@ -3,6 +3,8 @@
 * atdts: Support parametrized type definitions (#303)
 * atdts: Fix incorrect type for TypeScript readers/writers generated
          for type `abstract`.
+* atdts: Fix incorrect type for TypeScript writers of optional fields.
+         It was working only in special cases such as `foo?: int`.
 
 2.10.0 (2022-08-09)
 -------------------

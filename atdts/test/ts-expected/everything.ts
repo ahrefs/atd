@@ -12,11 +12,11 @@ export type Anything = any
 
 export type DifferentKindsOfThings =
 | { kind: 'Root' }
-| { kind: 'Thing'; value: Int }
+| { kind: 'Thing'; value: number /*int*/ }
 | { kind: 'WOW' /* JSON: "wow" */ }
 | { kind: 'Amaze' /* JSON: "!!!" */; value: string[] }
 
-export type This = Int
+export type This = number /*int*/
 
 export type SimpleRecord = {
   str: string;
@@ -25,20 +25,20 @@ export type SimpleRecord = {
 export type Root = {
   id: string;
   this_: This;
-  items: Int[][];
-  maybe?: Int;
+  items: number /*int*/[][];
+  maybe?: number /*int*/;
   maybe2?: SimpleRecord;
-  extras: Int[];
-  answer: Int;
+  extras: number /*int*/[];
+  answer: number /*int*/;
   aliased: Alias;
   point: [number, number];
   kinds: DifferentKindsOfThings[];
-  assoc1: [number, Int][];
-  assoc2: [string, Int][];
-  assoc3: Map<number, Int>;
-  assoc4: Map<string, Int>;
-  options: Option<Int>[];
-  nullables: (Int | null)[];
+  assoc1: [number, number /*int*/][];
+  assoc2: [string, number /*int*/][];
+  assoc3: Map<number, number /*int*/>;
+  assoc4: Map<string, number /*int*/>;
+  options: Option<number /*int*/>[];
+  nullables: (number /*int*/ | null)[];
   untyped_things: any[];
   foo: (Foo | null);
   parametrized_record: IntFloatParametrizedRecord;
@@ -46,20 +46,20 @@ export type Root = {
   anything: Anything;
 }
 
-export type Alias = Int[]
+export type Alias = number /*int*/[]
 
-export type Pair = [string, Int]
+export type Pair = [string, number /*int*/]
 
 export type Foo = {
   foo: string;
 }
 
 export type IntFloatParametrizedRecord = {
-  field_a: Int;
+  field_a: number /*int*/;
   field_b: number[];
 }
 
-export type TupleE1a4b40 = [DifferentKindsOfThings, DifferentKindsOfThings, Int]
+export type TupleE1a4b40 = [DifferentKindsOfThings, DifferentKindsOfThings, number /*int*/]
 
 export function writeAnything(x: Anything, context: any = x): any {
   return ((x: any, context): any => x)(x, context);
@@ -166,7 +166,7 @@ export function readRoot(x: any, context: any = x): Root {
     aliased: _atd_read_required_field('Root', 'aliased', readAlias, x['aliased'], x),
     point: _atd_read_required_field('Root', 'point', ((x, context): [number, number] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_float(x[1], x)] }), x['point'], x),
     kinds: _atd_read_required_field('Root', 'kinds', _atd_read_array(readDifferentKindsOfThings), x['kinds'], x),
-    assoc1: _atd_read_required_field('Root', 'assoc1', _atd_read_array(((x, context): [number, Int] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_int(x[1], x)] })), x['assoc1'], x),
+    assoc1: _atd_read_required_field('Root', 'assoc1', _atd_read_array(((x, context): [number, number /*int*/] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_int(x[1], x)] })), x['assoc1'], x),
     assoc2: _atd_read_required_field('Root', 'assoc2', _atd_read_assoc_object_into_array(_atd_read_int), x['assoc2'], x),
     assoc3: _atd_read_required_field('Root', 'assoc3', _atd_read_assoc_array_into_map(_atd_read_float, _atd_read_int), x['assoc3'], x),
     assoc4: _atd_read_required_field('Root', 'assoc4', _atd_read_assoc_object_into_map(_atd_read_int), x['assoc4'], x),
@@ -193,7 +193,7 @@ export function writePair(x: Pair, context: any = x): any {
 }
 
 export function readPair(x: any, context: any = x): Pair {
-  return ((x, context): [string, Int] => { _atd_check_json_tuple(2, x, context); return [_atd_read_string(x[0], x), _atd_read_int(x[1], x)] })(x, context);
+  return ((x, context): [string, number /*int*/] => { _atd_check_json_tuple(2, x, context); return [_atd_read_string(x[0], x), _atd_read_int(x[1], x)] })(x, context);
 }
 
 export function writeFoo(x: Foo, context: any = x): any {
@@ -227,15 +227,13 @@ export function writeTupleE1a4b40(x: TupleE1a4b40, context: any = x): any {
 }
 
 export function readTupleE1a4b40(x: any, context: any = x): TupleE1a4b40 {
-  return ((x, context): [DifferentKindsOfThings, DifferentKindsOfThings, Int] => { _atd_check_json_tuple(3, x, context); return [readDifferentKindsOfThings(x[0], x), readDifferentKindsOfThings(x[1], x), _atd_read_int(x[2], x)] })(x, context);
+  return ((x, context): [DifferentKindsOfThings, DifferentKindsOfThings, number /*int*/] => { _atd_check_json_tuple(3, x, context); return [readDifferentKindsOfThings(x[0], x), readDifferentKindsOfThings(x[1], x), _atd_read_int(x[2], x)] })(x, context);
 }
 
 
 /////////////////////////////////////////////////////////////////////
 // Runtime library
 /////////////////////////////////////////////////////////////////////
-
-export type Int = number
 
 export type Option<T> = null | { value: T }
 
@@ -269,7 +267,7 @@ function _atd_bad_ts(expected_type: string, ts_value: any, context: any) {
                   ` Occurs in '${JSON.stringify(context)}'.`)
 }
 
-function _atd_check_json_tuple(len: Int, x: any, context: any) {
+function _atd_check_json_tuple(len: number /*int*/, x: any, context: any) {
   if (! Array.isArray(x) || x.length !== len)
     _atd_bad_json('tuple of length ' + len, x, context);
 }
@@ -292,7 +290,7 @@ function _atd_read_bool(x: any, context: any): boolean {
   }
 }
 
-function _atd_read_int(x: any, context: any): Int {
+function _atd_read_int(x: any, context: any): number /*int*/ {
   if (Number.isInteger(x))
     return x
   else {
@@ -473,7 +471,7 @@ function _atd_write_bool(x: any, context: any): boolean {
   }
 }
 
-function _atd_write_int(x: any, context: any): Int {
+function _atd_write_int(x: any, context: any): number /*int*/ {
   if (Number.isInteger(x))
     return x
   else {
@@ -582,7 +580,7 @@ function _atd_write_required_field<T>(type_name: string,
 }
 
 function _atd_write_optional_field<T>(write_elt: (x: T, context: any) => any,
-                                      x: T,
+                                      x: T | undefined,
                                       context: any): any {
   if (x === undefined || x === null)
     return x

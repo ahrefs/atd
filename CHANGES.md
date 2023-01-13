@@ -5,6 +5,9 @@
          for type `abstract`.
 * atdts: Fix incorrect type for TypeScript writers of optional fields.
          It was working only in special cases such as `foo?: int`.
+* atdts: Eliminate the type alias `type Int = number` since it was
+         more confusing than helpful. Occurrences of `Int` are replaced
+         by `number /*int*/`.
 
 2.10.0 (2022-08-09)
 -------------------

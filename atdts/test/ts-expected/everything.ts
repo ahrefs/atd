@@ -8,6 +8,8 @@
 //   of type 'Foo'.
 
 
+export type Anything = any
+
 export type DifferentKindsOfThings =
 | { kind: 'Root' }
 | { kind: 'Thing'; value: Int }
@@ -36,6 +38,7 @@ export type Root = {
   foo: (Foo | null);
   parametrized_record: IntFloatParametrizedRecord;
   parametrized_tuple: TupleE1a4b40;
+  anything: Anything;
 }
 
 export type Alias = Int[]
@@ -52,6 +55,14 @@ export type IntFloatParametrizedRecord = {
 }
 
 export type TupleE1a4b40 = [DifferentKindsOfThings, DifferentKindsOfThings, Int]
+
+export function writeAnything(x: Anything, context: any = x): any {
+  return ((x: any, context): any => x)(x, context);
+}
+
+export function readAnything(x: any, context: any = x): Anything {
+  return ((x: any, context): any => x)(x, context);
+}
 
 export function writeDifferentKindsOfThings(x: DifferentKindsOfThings, context: any = x): any {
   switch (x.kind) {
@@ -117,10 +128,11 @@ export function writeRoot(x: Root, context: any = x): any {
     'assoc4': _atd_write_required_field('Root', 'assoc4', _atd_write_assoc_map_to_object(_atd_write_int), x.assoc4, x),
     'options': _atd_write_field_with_default(_atd_write_array(_atd_write_option(_atd_write_int)), [], x.options, x),
     'nullables': _atd_write_field_with_default(_atd_write_array(_atd_write_nullable(_atd_write_int)), [], x.nullables, x),
-    'untyped_things': _atd_write_required_field('Root', 'untyped_things', _atd_write_array(((x: any): any => x)), x.untyped_things, x),
+    'untyped_things': _atd_write_required_field('Root', 'untyped_things', _atd_write_array(((x: any, context): any => x)), x.untyped_things, x),
     'foo': _atd_write_required_field('Root', 'foo', _atd_write_nullable(writeFoo), x.foo, x),
     'parametrized_record': _atd_write_required_field('Root', 'parametrized_record', writeIntFloatParametrizedRecord, x.parametrized_record, x),
     'parametrized_tuple': _atd_write_required_field('Root', 'parametrized_tuple', writeTupleE1a4b40, x.parametrized_tuple, x),
+    'anything': _atd_write_required_field('Root', 'anything', writeAnything, x.anything, x),
   };
 }
 
@@ -141,10 +153,11 @@ export function readRoot(x: any, context: any = x): Root {
     assoc4: _atd_read_required_field('Root', 'assoc4', _atd_read_assoc_object_into_map(_atd_read_int), x['assoc4'], x),
     options: _atd_read_field_with_default(_atd_read_array(_atd_read_option(_atd_read_int)), [], x['options'], x),
     nullables: _atd_read_field_with_default(_atd_read_array(_atd_read_nullable(_atd_read_int)), [], x['nullables'], x),
-    untyped_things: _atd_read_required_field('Root', 'untyped_things', _atd_read_array(((x: any): any => x)), x['untyped_things'], x),
+    untyped_things: _atd_read_required_field('Root', 'untyped_things', _atd_read_array(((x: any, context): any => x)), x['untyped_things'], x),
     foo: _atd_read_required_field('Root', 'foo', _atd_read_nullable(readFoo), x['foo'], x),
     parametrized_record: _atd_read_required_field('Root', 'parametrized_record', readIntFloatParametrizedRecord, x['parametrized_record'], x),
     parametrized_tuple: _atd_read_required_field('Root', 'parametrized_tuple', readTupleE1a4b40, x['parametrized_tuple'], x),
+    anything: _atd_read_required_field('Root', 'anything', readAnything, x['anything'], x),
   };
 }
 

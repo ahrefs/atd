@@ -1,3 +1,10 @@
+(*
+   ATD type definitions for testing their translation to TypeScript.
+*)
+
+(* Testing raw JSON. Should map to type 'any'. *)
+type anything = abstract
+
 type different_kinds_of_things = [
   | Root (* class name conflict *)
   | Thing of int
@@ -35,6 +42,7 @@ type root = {
   foo: foo nullable;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: different_kinds_of_things parametrized_tuple;
+  anything: anything;
 }
 
 type alias = int list

@@ -69,6 +69,10 @@ function test_everything() {
       { kind: 'WOW' },
       100
     ],
+    anything: {
+      any_a: 1234,
+      any_b: [ [], [[[]]], true, {}, null ]
+    },
   }
   const a_str = JSON.stringify(API.writeRoot(a_obj), null, 2)
   save('a_str', a_str)
@@ -183,7 +187,21 @@ ${a_str}`
     "wow",
     "wow",
     100
-  ]
+  ],
+  "anything": {
+    "any_a": 1234,
+    "any_b": [
+      [],
+      [
+        [
+          []
+        ]
+      ],
+      true,
+      {},
+      null
+    ]
+  }
 }`
   save('b_str', b_str)
   const b_obj = API.readRoot(JSON.parse(a_str))

@@ -708,7 +708,7 @@ let rec json_reader env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
-       | "abstract" -> "((x: any): any => x)"
+       | "abstract" -> "((x: any, context): any => x)"
        | _ -> reader_name env name)
   | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -756,7 +756,7 @@ let rec json_writer env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
-       | "abstract" -> "((x: any): any => x)"
+       | "abstract" -> "((x: any, context): any => x)"
        | _ -> writer_name env name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

@@ -1,6 +1,13 @@
 * atdpy: Support parametrized type definitions (#303)
 * atdpy: Support options approximately by treating them as nullables (#320)
 * atdts: Support parametrized type definitions (#303)
+* atdts: Fix incorrect type for TypeScript readers/writers generated
+         for type `abstract`.
+* atdts: Fix incorrect type for TypeScript writers of optional fields.
+         It was working only in special cases such as `foo?: int`.
+* atdts: Eliminate the type alias `type Int = number` since it was
+         more confusing than helpful. Occurrences of `Int` are replaced
+         by `number /*int*/`.
 
 2.10.0 (2022-08-09)
 -------------------

@@ -197,8 +197,6 @@ let runtime_end = {|
 // Runtime library
 /////////////////////////////////////////////////////////////////////
 
-export type Int = number
-
 export type Option<T> = null | { value: T }
 
 function _atd_missing_json_field(type_name: string, json_field_name: string) {
@@ -231,7 +229,7 @@ function _atd_bad_ts(expected_type: string, ts_value: any, context: any) {
                   ` Occurs in '${JSON.stringify(context)}'.`)
 }
 
-function _atd_check_json_tuple(len: Int, x: any, context: any) {
+function _atd_check_json_tuple(len: number /*int*/, x: any, context: any) {
   if (! Array.isArray(x) || x.length !== len)
     _atd_bad_json('tuple of length ' + len, x, context);
 }
@@ -254,7 +252,7 @@ function _atd_read_bool(x: any, context: any): boolean {
   }
 }
 
-function _atd_read_int(x: any, context: any): Int {
+function _atd_read_int(x: any, context: any): number /*int*/ {
   if (Number.isInteger(x))
     return x
   else {
@@ -435,7 +433,7 @@ function _atd_write_bool(x: any, context: any): boolean {
   }
 }
 
-function _atd_write_int(x: any, context: any): Int {
+function _atd_write_int(x: any, context: any): number /*int*/ {
   if (Number.isInteger(x))
     return x
   else {
@@ -544,7 +542,7 @@ function _atd_write_required_field<T>(type_name: string,
 }
 
 function _atd_write_optional_field<T>(write_elt: (x: T, context: any) => any,
-                                      x: T,
+                                      x: T | undefined,
                                       context: any): any {
   if (x === undefined || x === null)
     return x
@@ -596,7 +594,7 @@ let ts_type_name env (name : string) =
   match name with
   | "unit" -> "Null"
   | "bool" -> "boolean"
-  | "int" -> "Int"
+  | "int" -> "number /*int*/"
   | "float" -> "number"
   | "string" -> "string"
   | "abstract" -> "any"
@@ -708,7 +706,7 @@ let rec json_reader env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
-       | "abstract" -> "((x: any): any => x)"
+       | "abstract" -> "((x: any, context): any => x)"
        | _ -> reader_name env name)
   | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -756,7 +754,7 @@ let rec json_writer env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
-       | "abstract" -> "((x: any): any => x)"
+       | "abstract" -> "((x: any, context): any => x)"
        | _ -> writer_name env name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

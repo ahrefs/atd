@@ -8,50 +8,66 @@
 //   of type 'Foo'.
 
 
+export type Anything = any
+
 export type DifferentKindsOfThings =
 | { kind: 'Root' }
-| { kind: 'Thing'; value: Int }
+| { kind: 'Thing'; value: number /*int*/ }
 | { kind: 'WOW' /* JSON: "wow" */ }
 | { kind: 'Amaze' /* JSON: "!!!" */; value: string[] }
 
-export type This = Int
+export type This = number /*int*/
+
+export type SimpleRecord = {
+  str: string;
+}
 
 export type Root = {
   id: string;
   this_: This;
-  items: Int[][];
-  maybe?: Int;
-  extras: Int[];
-  answer: Int;
+  items: number /*int*/[][];
+  maybe?: number /*int*/;
+  maybe2?: SimpleRecord;
+  extras: number /*int*/[];
+  answer: number /*int*/;
   aliased: Alias;
   point: [number, number];
   kinds: DifferentKindsOfThings[];
-  assoc1: [number, Int][];
-  assoc2: [string, Int][];
-  assoc3: Map<number, Int>;
-  assoc4: Map<string, Int>;
-  options: Option<Int>[];
-  nullables: (Int | null)[];
+  assoc1: [number, number /*int*/][];
+  assoc2: [string, number /*int*/][];
+  assoc3: Map<number, number /*int*/>;
+  assoc4: Map<string, number /*int*/>;
+  options: Option<number /*int*/>[];
+  nullables: (number /*int*/ | null)[];
   untyped_things: any[];
   foo: (Foo | null);
   parametrized_record: IntFloatParametrizedRecord;
   parametrized_tuple: TupleE1a4b40;
+  anything: Anything;
 }
 
-export type Alias = Int[]
+export type Alias = number /*int*/[]
 
-export type Pair = [string, Int]
+export type Pair = [string, number /*int*/]
 
 export type Foo = {
   foo: string;
 }
 
 export type IntFloatParametrizedRecord = {
-  field_a: Int;
+  field_a: number /*int*/;
   field_b: number[];
 }
 
-export type TupleE1a4b40 = [DifferentKindsOfThings, DifferentKindsOfThings, Int]
+export type TupleE1a4b40 = [DifferentKindsOfThings, DifferentKindsOfThings, number /*int*/]
+
+export function writeAnything(x: Anything, context: any = x): any {
+  return ((x: any, context): any => x)(x, context);
+}
+
+export function readAnything(x: any, context: any = x): Anything {
+  return ((x: any, context): any => x)(x, context);
+}
 
 export function writeDifferentKindsOfThings(x: DifferentKindsOfThings, context: any = x): any {
   switch (x.kind) {
@@ -100,12 +116,25 @@ export function readThis(x: any, context: any = x): This {
   return _atd_read_int(x, context);
 }
 
+export function writeSimpleRecord(x: SimpleRecord, context: any = x): any {
+  return {
+    'str': _atd_write_required_field('SimpleRecord', 'str', _atd_write_string, x.str, x),
+  };
+}
+
+export function readSimpleRecord(x: any, context: any = x): SimpleRecord {
+  return {
+    str: _atd_read_required_field('SimpleRecord', 'str', _atd_read_string, x['str'], x),
+  };
+}
+
 export function writeRoot(x: Root, context: any = x): any {
   return {
     'ID': _atd_write_required_field('Root', 'id', _atd_write_string, x.id, x),
     'this': _atd_write_required_field('Root', 'this', writeThis, x.this_, x),
     'items': _atd_write_required_field('Root', 'items', _atd_write_array(_atd_write_array(_atd_write_int)), x.items, x),
     'maybe': _atd_write_optional_field(_atd_write_int, x.maybe, x),
+    'maybe2': _atd_write_optional_field(writeSimpleRecord, x.maybe2, x),
     'extras': _atd_write_field_with_default(_atd_write_array(_atd_write_int), [], x.extras, x),
     'answer': _atd_write_field_with_default(_atd_write_int, 42, x.answer, x),
     'aliased': _atd_write_required_field('Root', 'aliased', writeAlias, x.aliased, x),
@@ -117,10 +146,11 @@ export function writeRoot(x: Root, context: any = x): any {
     'assoc4': _atd_write_required_field('Root', 'assoc4', _atd_write_assoc_map_to_object(_atd_write_int), x.assoc4, x),
     'options': _atd_write_field_with_default(_atd_write_array(_atd_write_option(_atd_write_int)), [], x.options, x),
     'nullables': _atd_write_field_with_default(_atd_write_array(_atd_write_nullable(_atd_write_int)), [], x.nullables, x),
-    'untyped_things': _atd_write_required_field('Root', 'untyped_things', _atd_write_array(((x: any): any => x)), x.untyped_things, x),
+    'untyped_things': _atd_write_required_field('Root', 'untyped_things', _atd_write_array(((x: any, context): any => x)), x.untyped_things, x),
     'foo': _atd_write_required_field('Root', 'foo', _atd_write_nullable(writeFoo), x.foo, x),
     'parametrized_record': _atd_write_required_field('Root', 'parametrized_record', writeIntFloatParametrizedRecord, x.parametrized_record, x),
     'parametrized_tuple': _atd_write_required_field('Root', 'parametrized_tuple', writeTupleE1a4b40, x.parametrized_tuple, x),
+    'anything': _atd_write_required_field('Root', 'anything', writeAnything, x.anything, x),
   };
 }
 
@@ -130,21 +160,23 @@ export function readRoot(x: any, context: any = x): Root {
     this_: _atd_read_required_field('Root', 'this', readThis, x['this'], x),
     items: _atd_read_required_field('Root', 'items', _atd_read_array(_atd_read_array(_atd_read_int)), x['items'], x),
     maybe: _atd_read_optional_field(_atd_read_int, x['maybe'], x),
+    maybe2: _atd_read_optional_field(readSimpleRecord, x['maybe2'], x),
     extras: _atd_read_field_with_default(_atd_read_array(_atd_read_int), [], x['extras'], x),
     answer: _atd_read_field_with_default(_atd_read_int, 42, x['answer'], x),
     aliased: _atd_read_required_field('Root', 'aliased', readAlias, x['aliased'], x),
     point: _atd_read_required_field('Root', 'point', ((x, context): [number, number] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_float(x[1], x)] }), x['point'], x),
     kinds: _atd_read_required_field('Root', 'kinds', _atd_read_array(readDifferentKindsOfThings), x['kinds'], x),
-    assoc1: _atd_read_required_field('Root', 'assoc1', _atd_read_array(((x, context): [number, Int] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_int(x[1], x)] })), x['assoc1'], x),
+    assoc1: _atd_read_required_field('Root', 'assoc1', _atd_read_array(((x, context): [number, number /*int*/] => { _atd_check_json_tuple(2, x, context); return [_atd_read_float(x[0], x), _atd_read_int(x[1], x)] })), x['assoc1'], x),
     assoc2: _atd_read_required_field('Root', 'assoc2', _atd_read_assoc_object_into_array(_atd_read_int), x['assoc2'], x),
     assoc3: _atd_read_required_field('Root', 'assoc3', _atd_read_assoc_array_into_map(_atd_read_float, _atd_read_int), x['assoc3'], x),
     assoc4: _atd_read_required_field('Root', 'assoc4', _atd_read_assoc_object_into_map(_atd_read_int), x['assoc4'], x),
     options: _atd_read_field_with_default(_atd_read_array(_atd_read_option(_atd_read_int)), [], x['options'], x),
     nullables: _atd_read_field_with_default(_atd_read_array(_atd_read_nullable(_atd_read_int)), [], x['nullables'], x),
-    untyped_things: _atd_read_required_field('Root', 'untyped_things', _atd_read_array(((x: any): any => x)), x['untyped_things'], x),
+    untyped_things: _atd_read_required_field('Root', 'untyped_things', _atd_read_array(((x: any, context): any => x)), x['untyped_things'], x),
     foo: _atd_read_required_field('Root', 'foo', _atd_read_nullable(readFoo), x['foo'], x),
     parametrized_record: _atd_read_required_field('Root', 'parametrized_record', readIntFloatParametrizedRecord, x['parametrized_record'], x),
     parametrized_tuple: _atd_read_required_field('Root', 'parametrized_tuple', readTupleE1a4b40, x['parametrized_tuple'], x),
+    anything: _atd_read_required_field('Root', 'anything', readAnything, x['anything'], x),
   };
 }
 
@@ -161,7 +193,7 @@ export function writePair(x: Pair, context: any = x): any {
 }
 
 export function readPair(x: any, context: any = x): Pair {
-  return ((x, context): [string, Int] => { _atd_check_json_tuple(2, x, context); return [_atd_read_string(x[0], x), _atd_read_int(x[1], x)] })(x, context);
+  return ((x, context): [string, number /*int*/] => { _atd_check_json_tuple(2, x, context); return [_atd_read_string(x[0], x), _atd_read_int(x[1], x)] })(x, context);
 }
 
 export function writeFoo(x: Foo, context: any = x): any {
@@ -195,15 +227,13 @@ export function writeTupleE1a4b40(x: TupleE1a4b40, context: any = x): any {
 }
 
 export function readTupleE1a4b40(x: any, context: any = x): TupleE1a4b40 {
-  return ((x, context): [DifferentKindsOfThings, DifferentKindsOfThings, Int] => { _atd_check_json_tuple(3, x, context); return [readDifferentKindsOfThings(x[0], x), readDifferentKindsOfThings(x[1], x), _atd_read_int(x[2], x)] })(x, context);
+  return ((x, context): [DifferentKindsOfThings, DifferentKindsOfThings, number /*int*/] => { _atd_check_json_tuple(3, x, context); return [readDifferentKindsOfThings(x[0], x), readDifferentKindsOfThings(x[1], x), _atd_read_int(x[2], x)] })(x, context);
 }
 
 
 /////////////////////////////////////////////////////////////////////
 // Runtime library
 /////////////////////////////////////////////////////////////////////
-
-export type Int = number
 
 export type Option<T> = null | { value: T }
 
@@ -237,7 +267,7 @@ function _atd_bad_ts(expected_type: string, ts_value: any, context: any) {
                   ` Occurs in '${JSON.stringify(context)}'.`)
 }
 
-function _atd_check_json_tuple(len: Int, x: any, context: any) {
+function _atd_check_json_tuple(len: number /*int*/, x: any, context: any) {
   if (! Array.isArray(x) || x.length !== len)
     _atd_bad_json('tuple of length ' + len, x, context);
 }
@@ -260,7 +290,7 @@ function _atd_read_bool(x: any, context: any): boolean {
   }
 }
 
-function _atd_read_int(x: any, context: any): Int {
+function _atd_read_int(x: any, context: any): number /*int*/ {
   if (Number.isInteger(x))
     return x
   else {
@@ -441,7 +471,7 @@ function _atd_write_bool(x: any, context: any): boolean {
   }
 }
 
-function _atd_write_int(x: any, context: any): Int {
+function _atd_write_int(x: any, context: any): number /*int*/ {
   if (Number.isInteger(x))
     return x
   else {
@@ -550,7 +580,7 @@ function _atd_write_required_field<T>(type_name: string,
 }
 
 function _atd_write_optional_field<T>(write_elt: (x: T, context: any) => any,
-                                      x: T,
+                                      x: T | undefined,
                                       context: any): any {
   if (x === undefined || x === null)
     return x

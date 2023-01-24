@@ -1,6 +1,12 @@
 // Handwritten code that serves as a model for generated code.
 
 /*
+   TODO: don't disable tslint warnings here and change the code
+   such that it's mostly compliant with the recommended set of warnings.
+*/
+/* tslint:disable */
+
+/*
 export class Root_ {
   kind: 'Root';
   constructor() {
@@ -92,7 +98,7 @@ main({ kind: 'Thing', value: 42 });
 // main(new Root_());
 main({ kind: 'Root' });
 console.log(KindFromJSON(KindToJSON({ kind: 'Thing', value: 42 })))
-//_atd_missing_json_field('a', 'b')
+// _atd_missing_json_field('a', 'b')
 
 ////////////////////// Constant runtime library /////////////////////////////
 

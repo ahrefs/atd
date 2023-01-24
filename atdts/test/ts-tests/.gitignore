@@ -2,6 +2,6 @@
 /package-lock.json
 
 # Test output
-/a_str
-/b_str
-/b_str2
+/aStr
+/bStr
+/bStr2

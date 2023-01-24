@@ -1,13 +1,17 @@
 // Test JSON reading and writing against expectations.
 
+/* tslint:disable no-console  */
+
 import * as API from "./everything"
 import * as fs from "fs"
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Check that types are exported
 const aaa: API.Option<string> = null
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
-function assert(is_true: boolean, errmsg: string) {
-  if (!is_true) {
+function assert(isTrue: boolean, errmsg: string) {
+  if (!isTrue) {
     throw new Error(errmsg)
   }
 }
@@ -21,7 +25,7 @@ function save(file: string, data: string) {
 }
 
 function test_everything() {
-  const a_obj : API.Root = {
+  const aObj : API.Root = {
     id: "abc",
     this_: 100,
     items: [[], [1, 2]],
@@ -73,16 +77,16 @@ function test_everything() {
       any_b: [ [], [[[]]], true, {}, null ]
     },
   }
-  const a_str = JSON.stringify(API.writeRoot(a_obj), null, 2)
-  save('a_str', a_str)
+  const aStr = JSON.stringify(API.writeRoot(aObj), null, 2)
+  save('aStr', aStr)
 
   console.log(
-    `----- a_str (converted from original TS object) -----
-${a_str}`
+    `----- aStr (converted from original TS object) -----
+${aStr}`
   )
 
   // expected output (copy-pasted from an earlier run)
-  const b_str =
+  const bStr =
 `{
   "ID": "abc",
   "this": 100,
@@ -202,27 +206,27 @@ ${a_str}`
     ]
   }
 }`
-  save('b_str', b_str)
-  const b_obj = API.readRoot(JSON.parse(a_str))
-  const b_str2 = JSON.stringify(API.writeRoot(b_obj), null, 2)
-  save('b_str2', b_str2)
+  save('bStr', bStr)
+  const bObj = API.readRoot(JSON.parse(aStr))
+  const bStr2 = JSON.stringify(API.writeRoot(bObj), null, 2)
+  save('bStr2', bStr2)
 
   assert(
-    b_str === b_str2,
+    bStr === bStr2,
     `JSON mismatch:
------ expected (b_str) -----
-${b_str}
------ actual (b_str2) -----
-${b_str2}
+----- expected (bStr) -----
+${bStr}
+----- actual (bStr2) -----
+${bStr2}
 ---------------------------`
   )
   assert(
-    b_str2 === a_str,
+    bStr2 === aStr,
     `JSON mismatch:
------ expected (b_str2) -----
-${b_str2}
------ actual (a_str) -----
-${a_str}
+----- expected (bStr2) -----
+${bStr2}
+----- actual (aStr) -----
+${aStr}
 --------------------------`
   )
 }

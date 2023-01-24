@@ -192,7 +192,8 @@ let runtime_start atd_filename =
     of type 'Foo'.
 */
 
-/* tslint:disable */|}
+/* tslint:disable */
+/* eslint-disable */|}
     atd_filename
 
 let runtime_end = {|

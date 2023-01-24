@@ -10,6 +10,7 @@
 */
 
 /* tslint:disable */
+/* eslint-disable */
 
 export type Anything = any
 

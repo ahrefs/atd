@@ -4,7 +4,9 @@
    TODO: don't disable tslint warnings here and change the code
    such that it's mostly compliant with the recommended set of warnings.
 */
+
 /* tslint:disable */
+/* eslint-disable */
 
 /*
 export class Root_ {

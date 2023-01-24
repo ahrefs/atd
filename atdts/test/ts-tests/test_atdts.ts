@@ -1,12 +1,14 @@
 // Test JSON reading and writing against expectations.
 
-/* tslint:disable no-console */
+/* tslint:disable no-console  */
 
 import * as API from "./everything"
 import * as fs from "fs"
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Check that types are exported
 const aaa: API.Option<string> = null
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 function assert(isTrue: boolean, errmsg: string) {
   if (!isTrue) {

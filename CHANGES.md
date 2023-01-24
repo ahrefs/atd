@@ -8,8 +8,8 @@
 * atdts: Eliminate the type alias `type Int = number` since it was
          more confusing than helpful. Occurrences of `Int` are replaced
          by `number /*int*/`.
-* atdts: Disable all tslint rules in generated code so as to play well
-         with all tslint configurations.
+* atdts: Disable all tslint and eslint rules in generated code so as
+         to play well with all tslint and eslint configurations.
 
 2.10.0 (2022-08-09)
 -------------------

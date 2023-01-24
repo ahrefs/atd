@@ -53,3 +53,6 @@ python3 -m mypy --version
 
 echo 'check Node.js'
 node --version
+
+echo 'check npm'
+npm --version

@@ -1,4 +1,4 @@
-JS ?= js
+JS ?= node
 
 .PHONY: test
 test:

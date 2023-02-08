@@ -1,3 +1,6 @@
+2.11.0 (2023-02-08)
+-------------------
+
 * atdpy: Support parametrized type definitions (#303)
 * atdpy: Support options approximately by treating them as nullables (#320)
 * atdts: Support parametrized type definitions (#303)

@@ -105,9 +105,7 @@ let write_int32 ob x =
   Buffer.add_string ob (Int32.to_string x)
 
 let write_int64 ob x =
-  Buffer.add_char ob '"';
-  Buffer.add_string ob (Int64.to_string x);
-  Buffer.add_char ob '"'
+  Buffer.add_string ob (Int64.to_string x)
 
 let min_float = float min_int
 let max_float = float max_int

@@ -612,7 +612,7 @@ let test_polymorphic_wrap () =
 
 let test_encoding_int64 () =
   let encoded = Test_int64_enc_j.string_of_int64 Int64.max_int in
-  check (String.equal encoded {|"9223372036854775807"|})
+  check (String.equal encoded {|9223372036854775807|})
 
 let test_encoding_decoding_int64 () =
   let encoded = Test_int64_enc_j.string_of_int64 Int64.max_int in
@@ -683,7 +683,7 @@ let all_tests : (string * (unit -> unit)) list = [
   "test ambiguous record with json adapters", test_ambiguous_record;
   "test ambiguous classic variants with json adapters", test_ambiguous_classic_variants;
   "test wrapping of polymorphic types", test_polymorphic_wrap;
-  "json encoding int64 as string", test_encoding_int64;
+  "json encoding int64", test_encoding_int64;
   "json encoding & decoding int64", test_encoding_decoding_int64;
   "abstract types", test_abstract_types;
   "untyped json", test_untyped_json;

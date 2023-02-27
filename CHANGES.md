@@ -1,4 +1,5 @@
 2.12.0 (xxxx-xx-xx)
+-------------------
 
 * atdgen: Annotate generated code with types to disambiguate OCaml
   classic variants (#331)
@@ -8,6 +9,8 @@
   however, is still a nullable (`Optional`) to make things simpler for
   Python programmers. This prevents distinguishing `["Some", "None"]`
   from `"None"` which both translate to `None` in Python. (#332)
+* (BREAKING) atdgen: revert default encoding of int64 values as string (#330)
+* atdgen: Support `<json repr="string">` for `int` values (#330)
 
 2.11.0 (2023-02-08)
 -------------------

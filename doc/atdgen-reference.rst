@@ -644,6 +644,22 @@ Example:
 
     type unixtime = float <json repr="int">
 
+Ints
+~~~~
+
+Position: after ``int`` type 
+
+Values: ``string``
+
+Semantics: specifies a int value that must be represented in JSON as 
+a string.
+
+Example:
+
+.. code:: ocaml
+
+    type int64 = int <ocaml repr="int64"> <json repr="string">
+
 Field ``tag_field``
 """""""""""""""""""
 

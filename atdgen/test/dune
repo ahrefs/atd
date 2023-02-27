@@ -49,6 +49,16 @@
  (action  (run %{bin:atdgen} -t %{deps})))
 
 (rule
+ (targets test_int_t.ml test_int_t.mli)
+ (deps    test_int.atd)
+ (action  (run %{bin:atdgen} -t %{deps})))
+
+(rule
+ (targets test_int_j.ml test_int_j.mli)
+ (deps    test_int.atd)
+ (action  (run %{bin:atdgen} -j %{deps})))
+
+(rule
  (targets test_int_with_string_repr_t.ml test_int_with_string_repr_t.mli)
  (deps    test_int_with_string_repr.atd)
  (action  (run %{bin:atdgen} -t %{deps})))
@@ -381,6 +391,8 @@
   testv
   test_unit_biniou_t
   test_unit_biniou_b
+  test_int_t
+  test_int_j
   test_int_with_string_repr_t
   test_int_with_string_repr_j
   test_atdgen_main

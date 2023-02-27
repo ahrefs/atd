@@ -1,0 +1,4 @@
+type char = int <ocaml repr="char"> <json repr="string">
+type int32 = int <ocaml repr="int32"> <json repr="string">
+type int64 = int <ocaml repr="int64"> <json repr="string">
+type afloat = int <ocaml repr="float"> <json repr="string">

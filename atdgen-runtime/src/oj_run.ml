@@ -98,14 +98,34 @@ let write_nullable write_item ob = function
     None -> Buffer.add_string ob "null"
   | Some x -> write_item ob x
 
+let write_int_as_string ob x =
+  Buffer.add_char ob '"';
+  Yojson.Safe.write_int ob x;
+  Buffer.add_char ob '"'
+
 let write_int8 ob x =
   Yojson.Safe.write_int ob (int_of_char x)
+
+let write_int8_as_string ob x =
+  Buffer.add_char ob '"';
+  write_int8 ob x;
+  Buffer.add_char ob '"'
 
 let write_int32 ob x =
   Buffer.add_string ob (Int32.to_string x)
 
+let write_int32_as_string ob x =
+  Buffer.add_char ob '"';
+  write_int32 ob x;
+  Buffer.add_char ob '"'
+
 let write_int64 ob x =
   Buffer.add_string ob (Int64.to_string x)
+
+let write_int64_as_string ob x =
+  Buffer.add_char ob '"';
+  write_int64 ob x;
+  Buffer.add_char ob '"'
 
 let min_float = float min_int
 let max_float = float max_int
@@ -121,6 +141,11 @@ let write_float_as_int ob x =
       | FP_zero -> Buffer.add_string ob (Printf.sprintf "%.0f" x)
       | FP_infinite -> error "Cannot convert inf or -inf into a JSON int"
       | FP_nan -> error "Cannot convert NaN into a JSON int"
+
+let write_float_as_int_string ob x =
+  Buffer.add_char ob '"';
+  write_float_as_int ob x;
+  Buffer.add_char ob '"'
 
 type 'a read = Yojson.lexer_state -> Lexing.lexbuf -> 'a
 

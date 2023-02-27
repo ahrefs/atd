@@ -127,13 +127,18 @@ let rec get_writer_name
       "Yojson.Safe.write_null"
   | Bool (_, Bool, Bool) ->
       "Yojson.Safe.write_bool"
-  | Int (_, Int o, Int) ->
-      (match o with
-         Int -> "Yojson.Safe.write_int"
-       | Char ->  "Atdgen_runtime.Oj_run.write_int8"
-       | Int32 -> "Atdgen_runtime.Oj_run.write_int32"
-       | Int64 -> "Atdgen_runtime.Oj_run.write_int64"
-       | Float -> "Atdgen_runtime.Oj_run.write_float_as_int"
+  | Int (_, Int o, Int j) ->
+      (match o, j with
+       | Int, Int -> "Yojson.Safe.write_int"
+       | Int, String -> "Atdgen_runtime.Oj_run.write_int_as_string"
+       | Char, Int ->  "Atdgen_runtime.Oj_run.write_int8"
+       | Char, String ->  "Atdgen_runtime.Oj_run.write_int8_as_string"
+       | Int32, Int -> "Atdgen_runtime.Oj_run.write_int32"
+       | Int32, String -> "Atdgen_runtime.Oj_run.write_int32_as_string"
+       | Int64, Int -> "Atdgen_runtime.Oj_run.write_int64"
+       | Int64, String -> "Atdgen_runtime.Oj_run.write_int64_as_string"
+       | Float, Int -> "Atdgen_runtime.Oj_run.write_float_as_int"
+       | Float, String -> "Atdgen_runtime.Oj_run.write_float_as_int_string"
       )
 
   | Float (_, Float, Float j) ->
@@ -196,7 +201,7 @@ let rec get_reader_name
   match x with
     Unit (_, Unit, Unit) -> "Atdgen_runtime.Oj_run.read_null"
   | Bool (_, Bool, Bool) -> "Atdgen_runtime.Oj_run.read_bool"
-  | Int (_, Int o, Int) ->
+  | Int (_, Int o, Int _) ->
       (match o with
          Int -> "Atdgen_runtime.Oj_run.read_int"
        | Char -> "Atdgen_runtime.Oj_run.read_int8"

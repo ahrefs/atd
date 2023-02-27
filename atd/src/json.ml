@@ -2,6 +2,10 @@
   Mapping from ATD to JSON
 *)
 
+type json_int =
+   | Int
+   | String
+
 type json_float =
   | Float of int option (* max decimal places *)
   | Int
@@ -57,7 +61,7 @@ type json_repr =
   | External
   | Field of json_field
   | Float of json_float
-  | Int
+  | Int of json_int
   | List of json_list
   | Nullable
   | Option
@@ -107,6 +111,12 @@ let json_float_of_string s : [ `Float | `Int ] option =
     | "int" -> Some `Int
     | _ -> None
 
+let json_int_of_string s : [ `String | `Int ] option =
+  match s with
+      "int" -> Some `Int
+    | "string" -> Some `String
+    | _ -> None
+
 let json_precision_of_string s =
   try Some (int_of_string s)
   with _ -> None
@@ -129,6 +139,18 @@ let get_json_float an : json_float =
   with
       `Float -> Float (get_json_precision an)
     | `Int -> Int
+
+let get_json_int an : json_int =
+  match
+    Annot.get_field
+      ~parse:json_int_of_string
+      ~default:`Int
+      ~sections:["json"]
+      ~field:"repr"
+      an
+  with
+      `Int -> Int
+    | `String -> String
 
 let json_list_of_string s : json_list option =
   match s with

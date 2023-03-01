@@ -1,0 +1,13 @@
+type ambiguous = [
+  | Int of int
+  | String of string
+]
+  <json adapter.ocaml="Json_adapters.Identity">
+<ocaml repr="classic">
+
+type ambiguous' = [
+  | Int of int
+  | String of string
+]
+  <json adapter.ocaml="Json_adapters.Identity">
+<ocaml repr="classic">

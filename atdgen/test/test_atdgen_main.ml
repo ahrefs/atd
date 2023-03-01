@@ -586,6 +586,20 @@ let test_ambiguous_record () =
     Test_ambiguous_record_j.ambiguous'_of_string json_out' in
   check ((x, x') = (x2, x2'))
 
+let test_ambiguous_classic_variants () =
+  let json_in = {|["Int", 123]|} in
+  let json_in' = {|["Int", 456]|} in
+  let x, x' =
+    Test_ambiguous_variant_j.ambiguous_of_string json_in,
+    Test_ambiguous_variant_j.ambiguous'_of_string json_in' in
+  let json_out, json_out' =
+    Test_ambiguous_variant_j.string_of_ambiguous x,
+    Test_ambiguous_variant_j.string_of_ambiguous' x' in
+  let x2, x2' =
+    Test_ambiguous_variant_j.ambiguous_of_string json_out,
+    Test_ambiguous_variant_j.ambiguous'_of_string json_out' in
+  check ((x, x') = (x2, x2'))
+
 let test_polymorphic_wrap () =
   let json_in = {|["1", "2"]|} in
   let x =
@@ -667,6 +681,7 @@ let all_tests : (string * (unit -> unit)) list = [
    for unknown tags", test_tag_field_emulation_with_catchall;
   "test <json open_enum>", test_json_open_enum;
   "test ambiguous record with json adapters", test_ambiguous_record;
+  "test ambiguous classic variants with json adapters", test_ambiguous_classic_variants;
   "test wrapping of polymorphic types", test_polymorphic_wrap;
   "json encoding int64 as string", test_encoding_int64;
   "json encoding & decoding int64", test_encoding_decoding_int64;

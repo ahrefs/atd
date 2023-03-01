@@ -174,7 +174,7 @@ let read__a_list read__a = (
 let _a_list_of_string read__a s =
   read__a_list read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let rec write_p' write__a : _ -> 'a p' -> _ = (
-  fun ob x ->
+  fun ob (x : 'a p') ->
     match x with
       | A -> Buffer.add_string ob "<\"A\">"
       | Bb x ->
@@ -644,7 +644,7 @@ and read_test_variant = (
 and test_variant_of_string s =
   read_test_variant (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let rec write__int_p : _ -> _ p' -> _ = (
-  fun ob x ->
+  fun ob (x : _ p') ->
     match x with
       | A -> Buffer.add_string ob "<\"A\">"
       | Bb x ->

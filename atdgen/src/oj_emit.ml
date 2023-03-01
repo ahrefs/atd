@@ -287,8 +287,13 @@ let rec make_writer ?type_constraint p (x : Oj_mapping.t) : Indent.t list =
           )
         ]
       in
+      let xval =
+        match type_constraint with
+        | Some x -> sprintf "(x : %s)" x
+        | None -> "x"
+      in
       let standard_writer = [
-        Annot ("fun", Line "fun ob x ->");
+        Annot ("fun", Line (sprintf "fun ob %s ->" xval));
         Block body
       ] in
       let adapter = j.json_sum_adapter in

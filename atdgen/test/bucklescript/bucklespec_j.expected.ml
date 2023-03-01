@@ -371,7 +371,7 @@ and read_recurse = (
 and recurse_of_string s =
   read_recurse (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_variant2 : _ -> variant2 -> _ = (
-  fun ob x ->
+  fun ob (x : variant2) ->
     match x with
       | A -> Buffer.add_string ob "\"A\""
       | C -> Buffer.add_string ob "\"C\""
@@ -415,7 +415,7 @@ let read_variant2 = (
 let variant2_of_string s =
   read_variant2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_variant1 : _ -> variant1 -> _ = (
-  fun ob x ->
+  fun ob (x : variant1) ->
     match x with
       | A x ->
         Buffer.add_string ob "[\"A\",";
@@ -490,7 +490,7 @@ let read_valid = (
 let valid_of_string s =
   read_valid (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_v2 : _ -> v2 -> _ = (
-  fun ob x ->
+  fun ob (x : v2) ->
     match x with
       | V1_foo x ->
         Buffer.add_string ob "[\"V1_foo\",";
@@ -572,7 +572,7 @@ let read_v2 = (
 let v2_of_string s =
   read_v2 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_v1 : _ -> v1 -> _ = (
-  fun ob x ->
+  fun ob (x : v1) ->
     match x with
       | V1_foo x ->
         Buffer.add_string ob "[\"V1_foo\",";

@@ -13,7 +13,7 @@ type ambiguous = Test_ambiguous_variant_t.ambiguous =
 
 let write_ambiguous' : _ -> ambiguous' -> _ = (
   Atdgen_runtime.Oj_run.write_with_adapter Json_adapters.Identity.restore (
-    fun ob x ->
+    fun ob (x : ambiguous') ->
       match x with
         | Int x ->
           Buffer.add_string ob "[\"Int\",";
@@ -99,7 +99,7 @@ let ambiguous'_of_string s =
   read_ambiguous' (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_ambiguous : _ -> ambiguous -> _ = (
   Atdgen_runtime.Oj_run.write_with_adapter Json_adapters.Identity.restore (
-    fun ob x ->
+    fun ob (x : ambiguous) ->
       match x with
         | Int x ->
           Buffer.add_string ob "[\"Int\",";

@@ -1,6 +1,9 @@
 2.12.0 (xxxx-xx-xx)
 
-* atdgen: Annotate generated code with types to disambiguate OCaml classic variants (#331)
+* atdgen: Annotate generated code with types to disambiguate OCaml
+  classic variants (#331)
+* atdpy: Disable incorrect interpretation of option types and produce
+  a useful error message (#332)
 
 2.11.0 (2023-02-08)
 -------------------

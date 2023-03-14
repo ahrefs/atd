@@ -38,6 +38,7 @@ type root = {
   assoc3: (float * int) list <python repr="dict">;
   assoc4: (string * int) list <json repr="object"> <python repr="dict">;
   nullables: int nullable list;
+  options: int option list;
   untyped_things: abstract list;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;

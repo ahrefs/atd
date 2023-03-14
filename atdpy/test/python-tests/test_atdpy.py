@@ -168,9 +168,15 @@ def test_everything_to_json() -> None:
     34
   ],
   "options": [
-    56,
-    null,
-    78
+    [
+      "Some",
+      56
+    ],
+    "None",
+    [
+      "Some",
+      78
+    ]
   ],
   "untyped_things": [
     [

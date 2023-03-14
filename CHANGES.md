@@ -1,6 +1,13 @@
 2.12.0 (xxxx-xx-xx)
 
-* atdgen: Annotate generated code with types to disambiguate OCaml classic variants (#331)
+* atdgen: Annotate generated code with types to disambiguate OCaml
+  classic variants (#331)
+* atdpy: Support the option type more correctly so that it follows
+  ATD's convention for JSON encoding. This allows compatibility with
+  JSON produced by other tools of the ATD suite. The Python type,
+  however, is still a nullable (`Optional`) to make things simpler for
+  Python programmers. This prevents distinguishing `["Some", "None"]`
+  from `"None"` which both translate to `None` in Python. (#332)
 
 2.11.0 (2023-02-08)
 -------------------

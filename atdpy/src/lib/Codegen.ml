@@ -332,6 +332,19 @@ def _atd_read_nullable(read_elt: Callable[[Any], Any]) \
     return read_nullable
 
 
+def _atd_read_option(read_elt: Callable[[Any], Any]) \
+        -> Callable[[Optional[Any]], Optional[Any]]:
+    def read_option(x: Any) -> Any:
+        if x == 'None':
+            return None
+        elif isinstance(x, List) and len(x) == 2 and x[0] == 'Some':
+            return read_elt(x[1])
+        else:
+            _atd_bad_json('option', x)
+            raise AssertionError('impossible')  # keep mypy happy
+    return read_option
+
+
 def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
@@ -425,6 +438,16 @@ def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
         else:
             return write_elt(x)
     return write_nullable
+
+
+def _atd_write_option(write_elt: Callable[[Any], Any]) \
+        -> Callable[[Optional[Any]], Optional[Any]]:
+    def write_option(x: Any) -> Any:
+        if x is None:
+            return 'None'
+        else:
+            return ['Some', write_elt(x)]
+    return write_option
 
 
 ############################################################################
@@ -609,7 +632,8 @@ let rec json_writer env e =
            sprintf "_atd_write_assoc_list_to_object(%s)"
              (json_writer env value)
       )
-  | Option (loc, e, an)
+  | Option (loc, e, an) ->
+      sprintf "_atd_write_option(%s)" (json_writer env e)
   | Nullable (loc, e, an) ->
       sprintf "_atd_write_nullable(%s)" (json_writer env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
@@ -690,7 +714,8 @@ let rec json_reader env (e : type_expr) =
            sprintf "_atd_read_assoc_object_into_list(%s)"
              (json_reader env value)
       )
-  | Option (loc, e, an)
+  | Option (loc, e, an) ->
+      sprintf "_atd_read_option(%s)" (json_reader env e)
   | Nullable (loc, e, an) ->
       sprintf "_atd_read_nullable(%s)" (json_reader env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"

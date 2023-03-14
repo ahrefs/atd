@@ -137,6 +137,19 @@ def _atd_read_nullable(read_elt: Callable[[Any], Any]) \
     return read_nullable
 
 
+def _atd_read_option(read_elt: Callable[[Any], Any]) \
+        -> Callable[[Optional[Any]], Optional[Any]]:
+    def read_option(x: Any) -> Any:
+        if x == 'None':
+            return None
+        elif isinstance(x, List) and len(x) == 2 and x[0] == 'Some':
+            return read_elt(x[1])
+        else:
+            _atd_bad_json('option', x)
+            raise AssertionError('impossible')  # keep mypy happy
+    return read_option
+
+
 def _atd_write_unit(x: Any) -> None:
     if x is None:
         return x
@@ -230,6 +243,16 @@ def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
         else:
             return write_elt(x)
     return write_nullable
+
+
+def _atd_write_option(write_elt: Callable[[Any], Any]) \
+        -> Callable[[Optional[Any]], Optional[Any]]:
+    def write_option(x: Any) -> Any:
+        if x is None:
+            return 'None'
+        else:
+            return ['Some', write_elt(x)]
+    return write_option
 
 
 ############################################################################
@@ -499,7 +522,7 @@ class Root:
                 assoc3=_atd_read_assoc_array_into_dict(_atd_read_float, _atd_read_int)(x['assoc3']) if 'assoc3' in x else _atd_missing_json_field('Root', 'assoc3'),
                 assoc4=_atd_read_assoc_object_into_dict(_atd_read_int)(x['assoc4']) if 'assoc4' in x else _atd_missing_json_field('Root', 'assoc4'),
                 nullables=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['nullables']) if 'nullables' in x else _atd_missing_json_field('Root', 'nullables'),
-                options=_atd_read_list(_atd_read_nullable(_atd_read_int))(x['options']) if 'options' in x else _atd_missing_json_field('Root', 'options'),
+                options=_atd_read_list(_atd_read_option(_atd_read_int))(x['options']) if 'options' in x else _atd_missing_json_field('Root', 'options'),
                 untyped_things=_atd_read_list((lambda x: x))(x['untyped_things']) if 'untyped_things' in x else _atd_missing_json_field('Root', 'untyped_things'),
                 parametrized_record=IntFloatParametrizedRecord.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
                 parametrized_tuple=KindParametrizedTuple.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
@@ -524,7 +547,7 @@ class Root:
         res['assoc3'] = _atd_write_assoc_dict_to_array(_atd_write_float, _atd_write_int)(self.assoc3)
         res['assoc4'] = _atd_write_assoc_dict_to_object(_atd_write_int)(self.assoc4)
         res['nullables'] = _atd_write_list(_atd_write_nullable(_atd_write_int))(self.nullables)
-        res['options'] = _atd_write_list(_atd_write_nullable(_atd_write_int))(self.options)
+        res['options'] = _atd_write_list(_atd_write_option(_atd_write_int))(self.options)
         res['untyped_things'] = _atd_write_list((lambda x: x))(self.untyped_things)
         res['parametrized_record'] = (lambda x: x.to_json())(self.parametrized_record)
         res['parametrized_tuple'] = (lambda x: x.to_json())(self.parametrized_tuple)

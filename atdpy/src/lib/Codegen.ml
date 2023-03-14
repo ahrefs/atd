@@ -436,6 +436,10 @@ def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
 let not_implemented loc msg =
   A.error_at loc ("not implemented in atdpy: " ^ msg)
 
+let not_implemented_option loc =
+  not_implemented loc
+    "option outside of an optional field; use nullable instead"
+
 let todo hint =
   failwith ("TODO: " ^ hint)
 
@@ -609,7 +613,7 @@ let rec json_writer env e =
            sprintf "_atd_write_assoc_list_to_object(%s)"
              (json_writer env value)
       )
-  | Option (loc, e, an)
+  | Option (loc, e, an) -> not_implemented_option loc
   | Nullable (loc, e, an) ->
       sprintf "_atd_write_nullable(%s)" (json_writer env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
@@ -690,7 +694,7 @@ let rec json_reader env (e : type_expr) =
            sprintf "_atd_read_assoc_object_into_list(%s)"
              (json_reader env value)
       )
-  | Option (loc, e, an)
+  | Option (loc, e, an) -> not_implemented_option loc
   | Nullable (loc, e, an) ->
       sprintf "_atd_read_nullable(%s)" (json_reader env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"

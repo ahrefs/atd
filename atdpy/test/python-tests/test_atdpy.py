@@ -80,7 +80,6 @@ def test_everything_to_json() -> None:
             "h": 8,
         },
         nullables=[12, None, 34],
-        options=[56, None, 78],
         untyped_things=[[["hello"]], {}, None, 123],
         parametrized_record=e.IntFloatParametrizedRecord(
             field_a=42,
@@ -166,11 +165,6 @@ def test_everything_to_json() -> None:
     12,
     null,
     34
-  ],
-  "options": [
-    56,
-    null,
-    78
   ],
   "untyped_things": [
     [

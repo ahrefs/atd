@@ -610,13 +610,46 @@ let test_polymorphic_wrap () =
     Test_polymorphic_wrap_j.t_of_string Yojson.Safe.read_string json_out in
   check (x = x2)
 
-let test_encoding_int64 () =
-  let encoded = Test_int64_enc_j.string_of_int64 Int64.max_int in
-  check (String.equal encoded {|"9223372036854775807"|})
+let test_encoding_int () =
+  let encoded = Test_int_j.string_of_char 'A' in
+  check (String.equal encoded {|65|});
+  let encoded = Test_int_j.string_of_int32 Int32.max_int in
+  check (String.equal encoded {|2147483647|});
+  let encoded = Test_int_j.string_of_int64 Int64.max_int in
+  check (String.equal encoded {|9223372036854775807|});
+  let encoded = Test_int_j.string_of_afloat 123.456 in
+  check (String.equal encoded {|123|})
 
-let test_encoding_decoding_int64 () =
-  let encoded = Test_int64_enc_j.string_of_int64 Int64.max_int in
-  let decoded = Test_int64_enc_j.int64_of_string encoded in
+let test_encoding_decoding_int () =
+  let encoded = Test_int_j.string_of_char 'A' in
+  let decoded = Test_int_j.char_of_string encoded in
+  check (decoded = 'A');
+  let encoded = Test_int_j.string_of_int32 Int32.max_int in
+  let decoded = Test_int_j.int32_of_string encoded in
+  check (decoded = Int32.max_int);
+  let encoded = Test_int_j.string_of_int64 Int64.max_int in
+  let decoded = Test_int_j.int64_of_string encoded in
+  check (decoded = Int64.max_int)
+
+let test_encoding_int_with_string_repr () =
+  let encoded = Test_int_with_string_repr_j.string_of_char 'A' in
+  check (String.equal encoded {|"65"|});
+  let encoded = Test_int_with_string_repr_j.string_of_int32 Int32.max_int in
+  check (String.equal encoded {|"2147483647"|});
+  let encoded = Test_int_with_string_repr_j.string_of_int64 Int64.max_int in
+  check (String.equal encoded {|"9223372036854775807"|});
+  let encoded = Test_int_with_string_repr_j.string_of_afloat 123.456 in
+  check (String.equal encoded {|"123"|})
+
+let test_encoding_decoding_int_with_string_repr () =
+  let encoded = Test_int_with_string_repr_j.string_of_char 'A' in
+  let decoded = Test_int_with_string_repr_j.char_of_string encoded in
+  check (decoded = 'A');
+  let encoded = Test_int_with_string_repr_j.string_of_int32 Int32.max_int in
+  let decoded = Test_int_with_string_repr_j.int32_of_string encoded in
+  check (decoded = Int32.max_int);
+  let encoded = Test_int_with_string_repr_j.string_of_int64 Int64.max_int in
+  let decoded = Test_int_with_string_repr_j.int64_of_string encoded in
   check (decoded = Int64.max_int)
 
 let test_raw_json () =
@@ -683,8 +716,10 @@ let all_tests : (string * (unit -> unit)) list = [
   "test ambiguous record with json adapters", test_ambiguous_record;
   "test ambiguous classic variants with json adapters", test_ambiguous_classic_variants;
   "test wrapping of polymorphic types", test_polymorphic_wrap;
-  "json encoding int64 as string", test_encoding_int64;
-  "json encoding & decoding int64", test_encoding_decoding_int64;
+  "json encoding int", test_encoding_int;
+  "json encoding & decoding int", test_encoding_decoding_int;
+  "json encoding int with string representation", test_encoding_int_with_string_repr;
+  "json encoding & decoding int with string representation", test_encoding_decoding_int_with_string_repr;
   "abstract types", test_abstract_types;
   "untyped json", test_untyped_json;
 ]

@@ -9,14 +9,19 @@ val error : string -> _
 val write_list : 'a write -> 'a list write
 val write_array : 'a write -> 'a array write
 val write_float_as_int : float write
+val write_float_as_int_string : float write
 val write_assoc_list : 'a write -> 'b write -> ('a * 'b) list write
 val write_assoc_array : 'a write -> 'b write -> ('a * 'b) array write
 val write_option : 'a write -> 'a option write
 val write_std_option : 'a write -> 'a option write
 val write_nullable : 'a write -> 'a option write
+val write_int_as_string : int write
 val write_int8 : char write
+val write_int8_as_string : char write
 val write_int32 : int32 write
+val write_int32_as_string : int32 write
 val write_int64 : int64 write
+val write_int64_as_string : int64 write
 
 type 'a read = Yojson.lexer_state -> Lexing.lexbuf -> 'a
 

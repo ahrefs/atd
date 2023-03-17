@@ -1,0 +1,4 @@
+type char = int <ocaml repr="char"> (* json repr should default to the same type as atd (int) *)
+type int32 = int <ocaml repr="int32"> <json repr="int">
+type int64 = int <ocaml repr="int64"> <json repr="int">
+type afloat = int <ocaml repr="float"> <json repr="int">

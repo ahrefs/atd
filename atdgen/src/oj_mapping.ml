@@ -94,7 +94,8 @@ let rec mapping_of_expr (x : type_expr) =
            Bool (loc, Bool, Bool)
        | "int" ->
            let o = Ocaml.get_ocaml_int Json an in
-           Int (loc, Int o, Int)
+           let j = Json.get_json_int an in
+           Int (loc, Int o, Int j)
        | "float" ->
            let j = Json.get_json_float an in
            Float (loc, Float, Float j)

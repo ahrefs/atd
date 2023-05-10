@@ -106,10 +106,6 @@ def test_everything_to_json() -> None:
       2
     ]
   ],
-  "extras": [
-    17,
-    53
-  ],
   "aliased": [
     8,
     9,
@@ -200,6 +196,10 @@ def test_everything_to_json() -> None:
     "wow",
     100
   ],
+  "extras": [
+    17,
+    53
+  ],
   "answer": 42
 }"""
     b_obj = e.Root.from_json_string(a_str)
@@ -254,6 +254,19 @@ def test_recursive_class() -> None:
 
     assert b_str == b_str2
     assert b_str2 == a_str
+
+
+def test_default_list() -> None:
+    a = e.DefaultList(items=[])
+    assert a.items == []
+    b = e.DefaultList()
+    assert b.items == []
+    c = e.DefaultList.from_json_string("{}")
+    assert c.items == []
+    # We could emit '{}' instead of '{"items": []}' but it's more complicated
+    # and not always desired.
+    j = b.to_json_string()
+    assert j == '{"items": []}'
 
 
 # print updated json

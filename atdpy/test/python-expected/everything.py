@@ -9,7 +9,7 @@ methods and functions to convert data from/to JSON.
 
 # Import annotations to allow forward references
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
 import json
@@ -455,7 +455,7 @@ class IntFloatParametrizedRecord:
     """Original type: _int_float_parametrized_record = { ... }"""
 
     field_a: int
-    field_b: List[float]
+    field_b: List[float] = field(default_factory=lambda: [])
 
     @classmethod
     def from_json(cls, x: Any) -> 'IntFloatParametrizedRecord':
@@ -489,7 +489,6 @@ class Root:
     await_: bool
     x___init__: float
     items: List[List[int]]
-    extras: List[int]
     aliased: Alias
     point: Tuple[float, float]
     kinds: List[Kind]
@@ -503,7 +502,8 @@ class Root:
     parametrized_record: IntFloatParametrizedRecord
     parametrized_tuple: KindParametrizedTuple
     maybe: Optional[int] = None
-    answer: int = 42
+    extras: List[int] = field(default_factory=lambda: [])
+    answer: int = field(default_factory=lambda: 42)
 
     @classmethod
     def from_json(cls, x: Any) -> 'Root':
@@ -513,7 +513,6 @@ class Root:
                 await_=_atd_read_bool(x['await']) if 'await' in x else _atd_missing_json_field('Root', 'await'),
                 x___init__=_atd_read_float(x['__init__']) if '__init__' in x else _atd_missing_json_field('Root', '__init__'),
                 items=_atd_read_list(_atd_read_list(_atd_read_int))(x['items']) if 'items' in x else _atd_missing_json_field('Root', 'items'),
-                extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
                 aliased=Alias.from_json(x['aliased']) if 'aliased' in x else _atd_missing_json_field('Root', 'aliased'),
                 point=(lambda x: (_atd_read_float(x[0]), _atd_read_float(x[1])) if isinstance(x, list) and len(x) == 2 else _atd_bad_json('array of length 2', x))(x['point']) if 'point' in x else _atd_missing_json_field('Root', 'point'),
                 kinds=_atd_read_list(Kind.from_json)(x['kinds']) if 'kinds' in x else _atd_missing_json_field('Root', 'kinds'),
@@ -527,6 +526,7 @@ class Root:
                 parametrized_record=IntFloatParametrizedRecord.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
                 parametrized_tuple=KindParametrizedTuple.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
+                extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
             )
         else:
@@ -538,7 +538,6 @@ class Root:
         res['await'] = _atd_write_bool(self.await_)
         res['__init__'] = _atd_write_float(self.x___init__)
         res['items'] = _atd_write_list(_atd_write_list(_atd_write_int))(self.items)
-        res['extras'] = _atd_write_list(_atd_write_int)(self.extras)
         res['aliased'] = (lambda x: x.to_json())(self.aliased)
         res['point'] = (lambda x: [_atd_write_float(x[0]), _atd_write_float(x[1])] if isinstance(x, tuple) and len(x) == 2 else _atd_bad_python('tuple of length 2', x))(self.point)
         res['kinds'] = _atd_write_list((lambda x: x.to_json()))(self.kinds)
@@ -553,6 +552,7 @@ class Root:
         res['parametrized_tuple'] = (lambda x: x.to_json())(self.parametrized_tuple)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
+        res['extras'] = _atd_write_list(_atd_write_int)(self.extras)
         res['answer'] = _atd_write_int(self.answer)
         return res
 
@@ -679,6 +679,34 @@ class Frozen:
 
     @classmethod
     def from_json_string(cls, x: str) -> 'Frozen':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class DefaultList:
+    """Original type: default_list = { ... }"""
+
+    items: List[int] = field(default_factory=lambda: [])
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'DefaultList':
+        if isinstance(x, dict):
+            return cls(
+                items=_atd_read_list(_atd_read_int)(x['items']) if 'items' in x else [],
+            )
+        else:
+            _atd_bad_json('DefaultList', x)
+
+    def to_json(self) -> Any:
+        res: Dict[str, Any] = {}
+        res['items'] = _atd_write_list(_atd_write_int)(self.items)
+        return res
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'DefaultList':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:

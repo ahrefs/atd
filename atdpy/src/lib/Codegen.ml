@@ -204,7 +204,7 @@ methods and functions to convert data from/to JSON.
 
 # Import annotations to allow forward references
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
 
 import json
@@ -544,19 +544,16 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
-let rec get_default_default
-    ?(mutable_ok = true) (e : type_expr) : string option =
+let rec get_default_default (e : type_expr) : string option =
   match e with
   | Sum _
   | Record _
   | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
-  | List _ ->
-      if mutable_ok then Some "[]"
-      else None
+  | List _ -> Some "[]"
   | Option _
   | Nullable _ -> Some "None"
-  | Shared (loc, e, an) -> get_default_default ~mutable_ok e
-  | Wrap (loc, e, an) -> get_default_default ~mutable_ok e
+  | Shared (loc, e, an) -> get_default_default e
+  | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "unit" -> Some "None"
@@ -570,12 +567,11 @@ let rec get_default_default
   | Name _ -> None
   | Tvar _ -> None
 
-let get_python_default
-    ?mutable_ok (e : type_expr) (an : annot) : string option =
+let get_python_default (e : type_expr) (an : annot) : string option =
   let user_default = Python_annot.get_python_default an in
   match user_default with
   | Some s -> Some s
-  | None -> get_default_default ?mutable_ok e
+  | None -> get_default_default e
 
 (* see explanation where this function is used *)
 let has_no_class_inst_prop_default
@@ -584,7 +580,7 @@ let has_no_class_inst_prop_default
   | Required -> true
   | Optional -> (* default is None *) false
   | With_default ->
-      match get_python_default ~mutable_ok:false e an with
+      match get_python_default e an with
       | Some _ -> false
       | None ->
           (* There's either no default at all which is an error,
@@ -795,9 +791,13 @@ let inst_var_declaration
     | Required -> ""
     | Optional -> " = None"
     | With_default ->
-        match get_python_default ~mutable_ok:false unwrapped_e an with
+        match get_python_default unwrapped_e an with
         | None -> ""
-        | Some value -> sprintf " = %s" value
+        | Some x ->
+            (* This constructs ensures that a fresh default value is
+               evaluated for each class instanciation. It's important for
+               default lists since Python lists are mutable. *)
+            sprintf " = field(default_factory=lambda: %s)" x
   in
   [
     Line (sprintf "%s: %s%s" var_name type_name default)

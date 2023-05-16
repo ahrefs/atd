@@ -96,7 +96,7 @@ formats. "))
  (depends
   (ocaml (>= 4.08))
   (alcotest :with-test)
-  (atd (>= 2.11.0))
+  (atd (>= 2.12.0))
   (atdgen-runtime (>= 2.1.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))

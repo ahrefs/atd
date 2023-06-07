@@ -554,20 +554,6 @@ let get_dlang_default (e : type_expr) (an : annot) : string option =
   | Some s -> Some s
   | None -> get_default_default e
 
-(* see explanation where this function is used *)
-let has_no_class_inst_prop_default
-    ((loc, (name, kind, an), e) : simple_field) =
-  match kind with
-  | Required -> true
-  | Optional -> (* default is None *) false
-  | With_default ->
-      match get_dlang_default e an with
-      | Some _ -> false
-      | None ->
-          (* There's either no default at all which is an error,
-             or the default value is known to be mutable. *)
-          true
-
 (* If the field is '?foo: bar option', its python or json value has type
    'bar' rather than 'bar option'. *)
 let unwrap_field_type loc field_name kind e =
@@ -781,26 +767,14 @@ let inst_var_declaration
     Line (sprintf "%s: %s%s" var_name type_name default)
   ]
 
-let record env ~class_decorators loc name (fields : field list) an =
-  let py_class_name = class_name env name in
+let record env loc name (fields : field list) an =
+  let dlang_struct_name = class_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
     List.map (function
       | `Field x -> x
       | `Inherit _ -> (* expanded at loading time *) assert false)
       fields
-  in
-  (*
-     Reorder fields with no-defaults first as required by @dataclass.
-     Starting with Python 3.10, '@dataclass(kw_only=True)' solves this
-     problem and makes this reordering unnecessary.
-     TODO: remove once we require python >= 3.10. It could also be done
-     as command-line flag specifying the Python version.
-  *)
-  let fields =
-    let no_default, with_default =
-      List.partition has_no_class_inst_prop_default fields in
-    no_default @ with_default
   in
   let inst_var_declarations =
     List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields
@@ -810,13 +784,12 @@ let record env ~class_decorators loc name (fields : field list) an =
       Inline (construct_json_field env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
-      Line (from_json_class_argument env trans_meth py_class_name x)
+      Line (from_json_class_argument env trans_meth dlang_struct_name x)
     ) fields in
   let from_json =
     [
-      Line "@classmethod";
-      Line (sprintf "def from_json(cls, x: Any) -> '%s':"
-              (single_esc py_class_name));
+      Line (sprintf "%s fromJson(JSONValue j) {"
+              (single_esc dlang_struct_name));
       Block [
         Line "if isinstance(x, dict):";
         Block [
@@ -827,42 +800,44 @@ let record env ~class_decorators loc name (fields : field list) an =
         Line "else:";
         Block [
           Line (sprintf "_atd_bad_json('%s', x)"
-                  (single_esc py_class_name))
+                  (single_esc dlang_struct_name))
         ]
-      ]
+      ];
+      Line "}";
     ]
   in
   let to_json =
     [
-      Line "def to_json(self) -> Any:";
+      Line "JSONValue toJson() {";
       Block [
-        Line "res: Dict[str, Any] = {}";
+        Line ("JSONValue res = JSONValue.emptyObject;");
         Inline json_object_body;
-        Line "return res"
-      ]
+        Line "return res;"
+      ];
+      Line "}";
     ]
   in
   let from_json_string =
     [
-      Line "@classmethod";
-      Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
-              (single_esc py_class_name));
+      Line (sprintf "%s fromJsonString(string x) {"
+              (single_esc dlang_struct_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
-      ]
+      ];
+      Line "}";
     ]
   in
   let to_json_string =
     [
-      Line "def to_json_string(self, **kw: Any) -> str:";
+      Line "string toJsonString(%s obj) {";
       Block [
         Line "return json.dumps(self.to_json(), **kw)"
-      ]
+      ];
+      Line "}";
     ]
   in
   [
-    Inline class_decorators;
-    Line (sprintf "class %s:" py_class_name);
+    Line (sprintf "struct %s {" dlang_struct_name);
     Block (spaced [
       Line (sprintf {|"""Original type: %s = { ... }"""|} name);
       Inline inst_var_declarations;
@@ -870,7 +845,8 @@ let record env ~class_decorators loc name (fields : field list) an =
       Inline to_json;
       Inline from_json_string;
       Inline to_json_string;
-    ])
+    ]);
+    Line ("}");
   ]
 
 (*
@@ -890,11 +866,11 @@ class Foo:
     ...
 *)
 let alias_wrapper env ~class_decorators name type_expr =
-  let py_class_name = class_name env name in
+  let dlang_struct_name = class_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
     Inline class_decorators;
-    Line (sprintf "class %s:" py_class_name);
+    Line (sprintf "struct %s {" dlang_struct_name);
     Block [
       Line (sprintf {|"""Original type: %s"""|} name);
       Line "";
@@ -902,7 +878,7 @@ let alias_wrapper env ~class_decorators name type_expr =
       Line "";
       Line "@classmethod";
       Line (sprintf "def from_json(cls, x: Any) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc dlang_struct_name));
       Block [
         Line (sprintf "return cls(%s(x))" (json_reader env type_expr))
       ];
@@ -914,7 +890,7 @@ let alias_wrapper env ~class_decorators name type_expr =
       Line "";
       Line "@classmethod";
       Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
-              (single_esc py_class_name));
+              (single_esc dlang_struct_name));
       Block [
         Line "return cls.from_json(json.loads(x))"
       ];
@@ -922,7 +898,8 @@ let alias_wrapper env ~class_decorators name type_expr =
       Line "def to_json_string(self, **kw: Any) -> str:";
       Block [
         Line "return json.dumps(self.to_json(), **kw)"
-      ]
+      ];
+      Line "}"
     ]
   ]
 
@@ -1159,7 +1136,7 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     | Sum (loc, cases, an) ->
         sum env ~class_decorators loc name cases
     | Record (loc, fields, an) ->
-        record env  ~class_decorators loc name fields an
+        record env loc name fields an
     | Tuple _
     | List _
     | Option _

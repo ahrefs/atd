@@ -1,0 +1,7 @@
+(library
+ (name atdd)
+ (libraries
+   re
+   atd
+ )
+)

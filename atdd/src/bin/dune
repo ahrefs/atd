@@ -1,0 +1,10 @@
+(executable
+ (name Atdd_main)
+ (public_name atdd)
+ (package atdd)
+ (libraries
+   cmdliner
+   atdd
+   atd
+ )
+)

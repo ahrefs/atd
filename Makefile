@@ -10,6 +10,7 @@ DUNE ?= dune
 .PHONY: all
 all:
 	$(MAKE) -C atdpy clean-for-dune
+	$(MAKE) -C atdd clean-for-dune
 	$(MAKE) -C atdts clean-for-dune
 	$(DUNE) build
 

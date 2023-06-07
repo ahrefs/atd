@@ -195,3 +195,16 @@ bucklescript backend")
   re
   (alcotest :with-test)
   (odoc :with-doc)))
+
+
+(package
+ (name atdd)
+ (synopsis "DLang code generation for ATD APIs")
+ (description "DLang code generation for ATD APIs")
+ (depends
+  (ocaml (>= 4.08))
+  (atd (>= 2.11.0))
+  (cmdliner (>= 1.1.0))
+  re
+  (alcotest :with-test)
+  (odoc :with-doc)))

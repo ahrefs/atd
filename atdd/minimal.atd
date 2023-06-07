@@ -1,0 +1,6 @@
+type root = {
+  id <json name="ID">: string;
+  items: int list list;
+  ?maybe: int option;
+  ~extras: int list;
+}

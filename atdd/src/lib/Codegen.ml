@@ -454,7 +454,7 @@ let double_spaced blocks =
   spaced ~spacer:[Line ""; Line ""] blocks
 
 (*
-   Representations of ATD type '(string * value) list' in JSON and Python.
+   Representations of ATD type '(string * value) list' in JSON and Dlang.
    Key type or value type are provided when it's useful.
 *)
 type assoc_kind =
@@ -466,8 +466,8 @@ type assoc_kind =
 
 let assoc_kind loc (e : type_expr) an : assoc_kind =
   let json_repr = Atd.Json.get_json_list an in
-  let python_repr = Python_annot.get_python_assoc_repr an in
-  match e, json_repr, python_repr with
+  let dlang_repr = Dlang_annot.get_dlang_assoc_repr an in
+  match e, json_repr, dlang_repr with
   | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Dict ->
       Array_dict (key, value)
   | Tuple (loc,
@@ -481,15 +481,15 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | _, Object, _ -> error_at loc "not a (string * _) list"
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
-(* Map ATD built-in types to built-in mypy types *)
-let py_type_name env (name : string) =
+(* Map ATD built-in types to built-in Dlang types *)
+let dlang_type_name env (name : string) =
   match name with
-  | "unit" -> "None"
+  | "unit" -> "void"
   | "bool" -> "bool"
   | "int" -> "int"
   | "float" -> "float"
-  | "string" -> "str"
-  | "abstract" -> "Any"
+  | "string" -> "string"
+  | "abstract" -> "abstract" (* TODO : figure out *)
   | user_defined -> class_name env user_defined
 
 let rec type_name_of_expr env (e : type_expr) : string =
@@ -501,25 +501,25 @@ let rec type_name_of_expr env (e : type_expr) : string =
         xs
         |> List.map (fun (loc, x, an) -> type_name_of_expr env x)
       in
-      sprintf "Tuple[%s]" (String.concat ", " type_names)
+      sprintf "Tuple!(%s)" (String.concat ", " type_names)
   | List (loc, e, an) ->
      (match assoc_kind loc e an with
        | Array_list
        | Object_list _ ->
-           sprintf "List[%s]"
+           sprintf "%s[]"
              (type_name_of_expr env e)
        | Array_dict (key, value) ->
-           sprintf "Dict[%s, %s]"
+           sprintf "%s[%s]"
              (type_name_of_expr env key) (type_name_of_expr env value)
        | Object_dict value ->
-           sprintf "Dict[str, %s]"
+           sprintf "string[%s]" (* TODO : dubious*)
              (type_name_of_expr env value)
       )
-  | Option (loc, e, an) -> sprintf "Optional[%s]" (type_name_of_expr env e)
-  | Nullable (loc, e, an) -> sprintf "Optional[%s]" (type_name_of_expr env e)
-  | Shared (loc, e, an) -> not_implemented loc "shared"
+  | Option (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
+  | Nullable (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
+  | Shared (loc, e, an) -> not_implemented loc "shared" (* TODO *)
   | Wrap (loc, e, an) -> todo "wrap"
-  | Name (loc, (loc2, name, []), an) -> py_type_name env name
+  | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -530,24 +530,24 @@ let rec get_default_default (e : type_expr) : string option =
   | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
   | List _ -> Some "[]"
   | Option _
-  | Nullable _ -> Some "None"
+  | Nullable _ -> Some "null"
   | Shared (loc, e, an) -> get_default_default e
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "unit" -> Some "None"
-       | "bool" -> Some "False"
+       | "unit" -> Some "null"
+       | "bool" -> Some "false"
        | "int" -> Some "0"
        | "float" -> Some "0.0"
        | "string" -> Some {|""|}
-       | "abstract" -> Some "None"
+       | "abstract" -> Some "null"
        | _ -> None
       )
   | Name _ -> None
   | Tvar _ -> None
 
-let get_python_default (e : type_expr) (an : annot) : string option =
-  let user_default = Python_annot.get_python_default an in
+let get_dlang_default (e : type_expr) (an : annot) : string option =
+  let user_default = Dlang_annot.get_dlang_default an in
   match user_default with
   | Some s -> Some s
   | None -> get_default_default e
@@ -559,7 +559,7 @@ let has_no_class_inst_prop_default
   | Required -> true
   | Optional -> (* default is None *) false
   | With_default ->
-      match get_python_default e an with
+      match get_dlang_default e an with
       | Some _ -> false
       | None ->
           (* There's either no default at all which is an error,
@@ -588,6 +588,7 @@ let unwrap_field_type loc field_name kind e =
 let inst_var_name trans_meth field_name =
   trans_meth field_name
 
+(* TODO : done up to here *)
 let rec json_writer env e =
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
@@ -622,7 +623,7 @@ let rec json_writer env e =
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 (*
-   Convert python tuple to json list
+   Convert dlang tuple to json list
 
    (lambda x: [write0(x[0]), write1(x[1])] if isinstance(x, tuple) else error())
 *)
@@ -716,11 +717,7 @@ and tuple_reader env cells =
     ) cells
     |> String.concat ", "
   in
-  sprintf "(lambda x: (%s) \
-           if isinstance(x, list) and len(x) == %d \
-           else _atd_bad_json('array of length %d', x))"
-    tuple_body
-    len len
+  sprintf "(JSONValue x) => tuple(%s)" tuple_body
 
 let from_json_class_argument
     env trans_meth py_class_name ((loc, (name, kind, an), e) : simple_field) =
@@ -746,7 +743,7 @@ let from_json_class_argument
           (single_esc json_name)
     | Optional -> "None"
     | With_default ->
-        match get_python_default e an with
+        match get_dlang_default e an with
         | Some x -> x
         | None ->
             A.error_at loc
@@ -770,7 +767,7 @@ let inst_var_declaration
     | Required -> ""
     | Optional -> " = None"
     | With_default ->
-        match get_python_default unwrapped_e an with
+        match get_dlang_default unwrapped_e an with
         | None -> ""
         | Some x ->
             (* This constructs ensures that a fresh default value is
@@ -1140,7 +1137,7 @@ let uses_dataclass_decorator =
   fun s -> Re.Pcre.pmatch ~rex s
 
 let get_class_decorators an =
-  let decorators = Python_annot.get_python_decorators an in
+  let decorators = Dlang_annot.get_dlang_decorators an in
   (* Avoid duplicate use of the @dataclass decorator, which doesn't work
      if some options like frozen=True are used. *)
   if List.exists uses_dataclass_decorator decorators then
@@ -1215,7 +1212,7 @@ let run_file src_path =
     (if Filename.check_suffix src_name ".atd" then
        Filename.chop_suffix src_name ".atd"
      else
-       src_name) ^ ".py"
+       src_name) ^ ".d"
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
@@ -1230,5 +1227,5 @@ let run_file src_path =
   in
   let full_module = Atd.Ast.use_only_specific_variants full_module in
   let (atd_head, atd_module) = full_module in
-  let head = Python_annot.get_python_json_text (snd atd_head) in
+  let head = Dlang_annot.get_dlang_json_text (snd atd_head) in
   to_file ~atd_filename:src_name ~head atd_module dst_path

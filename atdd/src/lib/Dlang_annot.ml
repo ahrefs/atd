@@ -1,21 +1,21 @@
 (*
-   ATD annotations to be interpreted specifically by atdpy.
+   ATD annotations to be interpreted specifically by atdd.
 
-   Atdpy also honors json-related annotations defined in Atd.Json.
+   Atdd also honors json-related annotations defined in Atd.Json.
 *)
 
 type assoc_repr =
   | List
   | Dict
 
-let get_python_default an : string option =
+let get_dlang_default an : string option =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
-      ~sections:["python"]
+      ~sections:["dlang"]
       ~field:"default"
       an
 
-let get_python_assoc_repr an : assoc_repr =
+let get_dlang_assoc_repr an : assoc_repr =
   Atd.Annot.get_field
     ~parse:(function
       | "list" -> Some List
@@ -23,7 +23,7 @@ let get_python_assoc_repr an : assoc_repr =
       | _ -> None
     )
     ~default:List
-    ~sections:["python"]
+    ~sections:["dlang"]
     ~field:"repr"
     an
 
@@ -47,25 +47,25 @@ let get_python_assoc_repr an : assoc_repr =
    are left in charge of calling the origin method but the adapters
    are simple functions from json to json)
 *)
-let get_python_decorators an : string list =
+let get_dlang_decorators an : string list =
   Atd.Annot.get_fields
     ~parse:(fun s -> Some s)
-    ~sections:["python"]
+    ~sections:["dlang"]
     ~field:"decorator"
     an
 
 (* imports etc. *)
-let get_python_text an : string list =
+let get_dlang_text an : string list =
   Atd.Annot.get_fields
     ~parse:(fun s -> Some s)
-    ~sections:["python"]
+    ~sections:["dlang"]
     ~field:"text"
     an
 
-let get_python_json_text an : string list =
-  get_python_text an
+let get_dlang_json_text an : string list =
+  get_dlang_text an
   @ Atd.Annot.get_fields
     ~parse:(fun s -> Some s)
-    ~sections:["python"]
+    ~sections:["dlang"]
     ~field:"json_py.text"
     an

@@ -445,7 +445,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
            sprintf "%s[%s]"
              (type_name_of_expr env key) (type_name_of_expr env value)
        | Object_dict value ->
-           sprintf "string[%s]" (* TODO : dubious*)
+           sprintf "%s[string]"
              (type_name_of_expr env value)
       )
   | Option (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
@@ -507,7 +507,7 @@ let unwrap_field_type loc field_name kind e =
 let inst_var_name trans_meth field_name =
   trans_meth field_name
 
-let rec json_writer env e =
+let rec json_writer ?(nested=false) env e =
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
@@ -515,28 +515,28 @@ let rec json_writer env e =
   | List (loc, e, an) ->
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_write_list(%s)" (json_writer env e)
+           sprintf "%s_atd_write_list(%s)"  (if nested then "&" else "") (json_writer ~nested:true env e)
        | Array_dict (key, value) ->
-           sprintf "_atd_write_assoc_dict_to_array(%s, %s)"
-             (json_writer env key) (json_writer env value)
+           sprintf "%s_atd_write_assoc_dict_to_array(%s, %s)" (if nested then "&" else "")
+             (json_writer ~nested:true env key) (json_writer ~nested:true env value)
        | Object_dict value ->
-           sprintf "_atd_write_assoc_dict_to_object(%s)"
-             (json_writer env value)
+           sprintf "%s_atd_write_assoc_dict_to_object(%s)" (if nested then "&" else "")
+             (json_writer ~nested:true env value)
        | Object_list value ->
-           sprintf "_atd_write_assoc_list_to_object(%s)"
-             (json_writer env value)
+           sprintf "%s_atd_write_assoc_list_to_object(%s)" (if nested then "&" else "")
+             (json_writer ~nested:true env value)
       )
   | Option (loc, e, an) ->
-      sprintf "_atd_write_option(%s)" (json_writer env e)
+      sprintf "%s_atd_write_option(%s)" (if nested then "&" else "") (json_writer ~nested:true env e)
   | Nullable (loc, e, an) ->
-      sprintf "_atd_write_nullable(%s)" (json_writer env e)
+      sprintf "%s_atd_write_nullable(%s)"  (if nested then "&" else "") (json_writer ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
-  | Wrap (loc, e, an) -> json_writer env e
+  | Wrap (loc, e, an) -> json_writer ~nested:true env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
-       | "abstract" -> "(lambda x: x)"
-       | _ -> "(lambda x: x.to_json())")
+       | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_write_%s" (if nested then "&" else "") name
+       | "abstract" -> "(auto x => x)"
+       | _ -> "(auto x => x.to_json())")
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -552,7 +552,7 @@ and tuple_writer env (loc, cells, an) =
     ) cells
     |> String.concat ", "
   in
-  sprintf "(%s x) => array(%s)"
+  sprintf "(%s x) => JSONValue([%s])"
     (type_name_of_expr env (Tuple (loc, cells, an)))
     tuple_body
 
@@ -563,7 +563,7 @@ let construct_json_field env trans_meth
   let writer_function = json_writer env unwrapped_type in
   let assignment =
     [
-      Line (sprintf "res[\"%s\"] = %s(this.%s);"
+      Line (sprintf "res[\"%s\"] = %s(%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
               writer_function
               (inst_var_name trans_meth name))
@@ -574,7 +574,7 @@ let construct_json_field env trans_meth
   | With_default -> assignment
   | Optional ->
       [
-        Line (sprintf "if this.%s is not None:"
+        Line (sprintf "if (!%s.isNull)"
                 (inst_var_name trans_meth name));
         Block assignment
       ]
@@ -656,13 +656,13 @@ let from_json_class_argument
         sprintf "_atd_missing_json_field('%s', '%s')"
           (single_esc py_class_name)
           (single_esc json_name)
-    | Optional -> "None"
+    | Optional -> "null"
     | With_default ->
         match get_dlang_default e an with
         | Some x -> x
         | None ->
             A.error_at loc
-              (sprintf "missing default Python value for field '%s'"
+              (sprintf "missing default Dlang value for field '%s'"
                  name)
   in
   sprintf "obj.%s=%s(x['%s']) if '%s' in x else %s,"
@@ -680,7 +680,7 @@ let inst_var_declaration
   let default =
     match kind with
     | Required -> ""
-    | Optional -> " = None"
+    | Optional -> " = null"
     | With_default ->
         match get_dlang_default unwrapped_e an with
         | None -> ""
@@ -688,10 +688,10 @@ let inst_var_declaration
             (* This constructs ensures that a fresh default value is
                evaluated for each class instanciation. It's important for
                default lists since Python lists are mutable. *)
-            sprintf " = field(default_factory=lambda: %s)" x
+            sprintf " = %s" x
   in
   [
-    Line (sprintf "%s: %s%s" var_name type_name default)
+    Line (sprintf "%s %s%s;" type_name var_name default)
   ]
 
 let record env loc name (fields : field list) an =

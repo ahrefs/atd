@@ -592,7 +592,7 @@ let construct_json_field env trans_meth
   let writer_function = json_writer env unwrapped_type in
   let assignment =
     [
-      Line (sprintf "res[\"%s\"] = %s(%s);"
+      Line (sprintf "res[\"%s\"] = %s(obj.%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
               writer_function
               (inst_var_name trans_meth name))
@@ -756,7 +756,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json =
     [
-      Line (sprintf "JSONValue toJson(%s) {" (single_esc dlang_struct_name));
+      Line (sprintf "JSONValue toJson(%s obj) {" (single_esc dlang_struct_name));
       Block [
         Line ("JSONValue res;");
         Inline json_object_body;

@@ -803,38 +803,7 @@ let alias_wrapper env ~class_decorators name type_expr =
   let dlang_struct_name = class_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
-    Inline class_decorators;
-    Line (sprintf "struct %s {" dlang_struct_name);
-    Block [
-      Line (sprintf {|"""Original type: %s"""|} name);
-      Line "";
-      Line (sprintf "value: %s" value_type);
-      Line "";
-      Line "@classmethod";
-      Line (sprintf "def from_json(cls, x: Any) -> '%s':"
-              (single_esc dlang_struct_name));
-      Block [
-        Line (sprintf "return cls(%s(x))" (json_reader env type_expr))
-      ];
-      Line "";
-      Line "def to_json(self) -> Any:";
-      Block [
-        Line (sprintf "return %s(self.value)" (json_writer env type_expr))
-      ];
-      Line "";
-      Line "@classmethod";
-      Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
-              (single_esc dlang_struct_name));
-      Block [
-        Line "return cls.from_json(json.loads(x))"
-      ];
-      Line "";
-      Line "def to_json_string(self, **kw: Any) -> str:";
-      Block [
-        Line "return json.dumps(self.to_json(), **kw)"
-      ];
-      Line "}"
-    ]
+    Line (sprintf "alias %s = %s;" dlang_struct_name value_type);
   ]
 
 let case_class env ~class_decorators type_name

@@ -715,7 +715,7 @@ let record env loc name (fields : field list) an =
     ) fields in
   let from_json =
     [
-      Line (sprintf "static %s fromJson(JSONValue j) {"
+      Line (sprintf "static %s fromJson(JSONValue x) {"
               (single_esc dlang_struct_name));
       Block
         ([Line (sprintf "%s obj;" dlang_struct_name) ] @ from_json_class_arguments @
@@ -736,19 +736,23 @@ let record env loc name (fields : field list) an =
   in
   let from_json_string =
     [
-      Line (sprintf "%s fromJsonString(string x) {"
+      Line (sprintf "static %s fromJsonString(string x) {"
               (single_esc dlang_struct_name));
       Block [
-        Line "return cls.from_json(json.loads(x))"
+        Line "JSONValue res = parseJSON(x);";
+        Inline json_object_body;
+        Line "return res;"
       ];
       Line "}";
     ]
   in
   let to_json_string =
     [
-      Line "string toJsonString(%s obj) {";
+      Line (sprintf "string toJsonString(%s obj) {" dlang_struct_name);
       Block [
-        Line "return json.dumps(self.to_json(), **kw)"
+        Line ("JSONValue res;");
+        Inline json_object_body;
+        Line "return res.toString;"
       ];
       Line "}";
     ]

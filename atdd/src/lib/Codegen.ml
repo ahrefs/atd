@@ -760,7 +760,6 @@ let record env loc name (fields : field list) an =
   [
     Line (sprintf "struct %s {" dlang_struct_name);
     Block (spaced [
-      Line (sprintf {|"""Original type: %s = { ... }"""|} name);
       Inline inst_var_declarations;
     ]);
     Line ("}");
@@ -771,22 +770,6 @@ let record env loc name (fields : field list) an =
     Inline to_json_string;
   ]
 
-(*
-   A general-purpose wrapper that provides json-related methods for a type.
-   This is used for tuples and for type aliases e.g. 'type foo = bar array'.
-
-class Foo:
-  def __init__(self, x: T):
-    ...
-  def to_json(self):
-    ...
-  def from_json(x):
-    ...
-  def to_json_string(self):
-    ...
-  def from_json_string(x):
-    ...
-*)
 let alias_wrapper env ~class_decorators name type_expr =
   let dlang_struct_name = class_name env name in
   let value_type = type_name_of_expr env type_expr in

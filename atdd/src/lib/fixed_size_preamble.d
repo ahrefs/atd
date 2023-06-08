@@ -73,10 +73,10 @@ bool _atd_read_bool(JSONValue x)
         throw _atd_bad_json("bool", x);
 }
 
-long _atd_read_int(JSONValue x)
+int _atd_read_int(JSONValue x)
 {
     try
-        return x.integer;
+        return cast(int) x.integer;
     catch (JSONException e)
         throw _atd_bad_json("int", x);
 }
@@ -156,7 +156,7 @@ JSONValue _atd_write_bool(bool b)
     return JSONValue(b);
 }
 
-JSONValue _atd_write_int(long i)
+JSONValue _atd_write_int(int i)
 {
     return JSONValue(i);
 }

@@ -252,10 +252,10 @@ let fixed_size_preamble atd_filename =
           throw _atd_bad_json("bool", x);
   }
   
-  long _atd_read_int(JSONValue x)
+  int _atd_read_int(JSONValue x)
   {
       try
-          return x.integer;
+          return cast(int) x.integer;
       catch (JSONException e)
           throw _atd_bad_json("int", x);
   }
@@ -335,7 +335,7 @@ let fixed_size_preamble atd_filename =
       return JSONValue(b);
   }
   
-  JSONValue _atd_write_int(long i)
+  JSONValue _atd_write_int(int i)
   {
       return JSONValue(i);
   }

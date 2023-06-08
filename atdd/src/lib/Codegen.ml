@@ -181,18 +181,18 @@ let fixed_size_preamble atd_filename =
 
   // This implements classes for the types defined in '%s', providing
   // methods and functions to convert data from/to JSON.
-  //
   
   // ############################################################################
   // # Private functions
   // ############################################################################
   
-  import std.format;
-  import std.conv;
-  import std.json;
-  import std.typecons : tuple, Tuple, nullable, Nullable;
-  import std.array : array;
   import std.algorithm : map;
+  import std.array : array;
+  import std.conv;
+  import std.format;
+  import std.functional;
+  import std.json;
+  import std.typecons : nullable, Nullable, tuple, Tuple;
   
   class AtdException : Exception
   {
@@ -276,13 +276,18 @@ let fixed_size_preamble atd_filename =
           throw _atd_bad_json("string", x);
   }
   
-  auto _atd_read_list(T)(T function(JSONValue) readElements)
+  auto _atd_read_list(T)(T delegate(JSONValue) readElements)
   {
-      return (JSONValue[] list) { return array(list.map!readElements()); };
+      return (JSONValue jsonVal) { 
+          if (jsonVal.type != JSONType.array)
+              throw _atd_bad_json("array", jsonVal);
+          auto list = jsonVal.array;
+          return array(list.map!readElements()); 
+      };
   }
   
   auto _atd_read_object_to_assoc_array(V)(
-      V function(JSONValue) readValue)
+      V delegate(JSONValue) readValue)
   {
       auto fun = (JSONValue jsonVal) {
           if (jsonVal.type != JSONType.object)
@@ -296,7 +301,7 @@ let fixed_size_preamble atd_filename =
   }
   
   auto _atd_read_object_to_tuple_list(T)(
-      T function(JSONValue) readValue)
+      T delegate(JSONValue) readValue)
   {
       auto fun = (JSONValue jsonVal) {
           if (jsonVal.type != JSONType.object)
@@ -311,7 +316,7 @@ let fixed_size_preamble atd_filename =
   }
   
   // TODO probably need to change that
-  auto _atd_read_nullable(T)(T function(JSONValue) readElm)
+  auto _atd_read_nullable(T)(T delegate(JSONValue) readElm)
   {
       auto fun = (JSONValue e) {
           if (e.isNull)
@@ -350,13 +355,14 @@ let fixed_size_preamble atd_filename =
       return JSONValue(s);
   }
   
-  auto _atd_write_list(T)(JSONValue function(T) writeElm)
+  
+  auto _atd_write_list(T)(JSONValue delegate(T) writeElm)
   {
       return (T[] list) { return JSONValue(array(list.map!writeElm())); };
   }
   
   auto _atd_write_assoc_array_to_object(T)(
-      JSONValue function(T) writeValue)
+      JSONValue delegate(T) writeValue)
   {
       auto fun = (T[string] assocArr) {
           JSONValue[string] ret;
@@ -368,7 +374,7 @@ let fixed_size_preamble atd_filename =
   }
   
   auto _atd_write_tuple_list_to_object(T)(
-      JSONValue function(T) writeValue)
+      JSONValue delegate(T) writeValue)
   {
       auto fun = (Tuple!(string, T)[] tupList) {
           JSONValue[string] ret;
@@ -379,7 +385,7 @@ let fixed_size_preamble atd_filename =
       return fun;
   }
   
-  auto _atd_write_nullable(T)(JSONValue function(T) writeElm)
+  auto _atd_write_nullable(T)(JSONValue delegate(T) writeElm)
   {
       auto fun = (Nullable!T elm) {
           if (elm.isNull)

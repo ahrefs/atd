@@ -507,12 +507,11 @@ let unwrap_field_type loc field_name kind e =
 let inst_var_name trans_meth field_name =
   trans_meth field_name
 
-(* TODO : done up to here *)
 let rec json_writer env e =
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
-  | Tuple (loc, cells, an) -> tuple_writer env cells
+  | Tuple (loc, cells, an) -> tuple_writer env (loc, cells, an)
   | List (loc, e, an) ->
       (match assoc_kind loc e an with
        | Array_list ->
@@ -546,19 +545,17 @@ let rec json_writer env e =
 
    (lambda x: [write0(x[0]), write1(x[1])] if isinstance(x, tuple) else error())
 *)
-and tuple_writer env cells =
-  let len = List.length cells in
+and tuple_writer env (loc, cells, an) =
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
       sprintf "%s(x[%i])" (json_writer env e) i
     ) cells
     |> String.concat ", "
   in
-  sprintf "(lambda x: [%s] \
-           if isinstance(x, tuple) and len(x) == %d \
-           else _atd_bad_python('tuple of length %d', x))"
+  sprintf "(%s x) => array(%s)"
+    (type_name_of_expr env (Tuple (loc, cells, an)))
     tuple_body
-    len len
+
 
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =

@@ -550,26 +550,27 @@ let rec json_writer ?(nested=false) env e =
   | List (loc, e, an) ->
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "%s_atd_write_list(%s)"  (if nested then "&" else "") (json_writer ~nested:true env e)
+           sprintf "_atd_write_list(%s)" (json_writer ~nested:true env e)
        | Array_dict (key, value) ->
-           sprintf "%s_atd_write_assoc_dict_to_array(%s, %s)" (if nested then "&" else "")
+           sprintf "_atd_write_assoc_dict_to_array(%s, %s)"
              (json_writer ~nested:true env key) (json_writer ~nested:true env value)
        | Object_dict value ->
-           sprintf "%s_atd_write_assoc_dict_to_object(%s)" (if nested then "&" else "")
+           sprintf "_atd_write_assoc_dict_to_object(%s)"
              (json_writer ~nested:true env value)
        | Object_list value ->
-           sprintf "%s_atd_write_assoc_list_to_object(%s)" (if nested then "&" else "")
+           sprintf "_atd_write_assoc_list_to_object(%s)"
              (json_writer ~nested:true env value)
       )
   | Option (loc, e, an) ->
-      sprintf "%s_atd_write_option(%s)" (if nested then "&" else "") (json_writer ~nested:true env e)
+      sprintf "_atd_write_option(%s)"(json_writer ~nested:true env e)
   | Nullable (loc, e, an) ->
-      sprintf "%s_atd_write_nullable(%s)"  (if nested then "&" else "") (json_writer ~nested:true env e)
+      sprintf "_atd_write_nullable(%s)" (json_writer ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_writer ~nested:true env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_write_%s" (if nested then "&" else "") name
+       | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_write_%s%s" 
+       (if nested then "(&" else "")  name (if nested then ").toDelegate" else "")
        | "abstract" -> "(auto x => x)"
        | _ -> sprintf "((%s x) => x.toJson())" (dlang_type_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"

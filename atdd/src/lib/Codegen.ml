@@ -635,7 +635,7 @@ let construct_json_field env trans_meth
   let writer_function = json_writer env unwrapped_type in
   let assignment =
     [
-      Line (sprintf "res['%s'] = %s(self.%s)"
+      Line (sprintf "res[\"%s\"] = %s(self.%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
               writer_function
               (inst_var_name trans_meth name))
@@ -698,7 +698,6 @@ let rec json_reader env (e : type_expr) =
    (lambda x: (read0(x[0]), read1(x[1])) if isinstance(x, list) else error())
 *)
 and tuple_reader env cells =
-  let len = List.length cells in
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
       sprintf "%s(x[%i])" (json_reader env e) i
@@ -790,19 +789,9 @@ let record env loc name (fields : field list) an =
     [
       Line (sprintf "%s fromJson(JSONValue j) {"
               (single_esc dlang_struct_name));
-      Block [
-        Line "if isinstance(x, dict):";
-        Block [
-          Line "return cls(";
-          Block from_json_class_arguments;
-          Line ")"
-        ];
-        Line "else:";
-        Block [
-          Line (sprintf "_atd_bad_json('%s', x)"
-                  (single_esc dlang_struct_name))
-        ]
-      ];
+      Block
+        ([Line (sprintf "%s obj;" dlang_struct_name) ] @ from_json_class_arguments @
+      [Line "return obj;"]);
       Line "}";
     ]
   in
@@ -810,9 +799,9 @@ let record env loc name (fields : field list) an =
     [
       Line "JSONValue toJson() {";
       Block [
-        Line ("JSONValue res = JSONValue.emptyObject;");
+        Line ("JSONValue jj;");
         Inline json_object_body;
-        Line "return res;"
+        Line "return jj;"
       ];
       Line "}";
     ]

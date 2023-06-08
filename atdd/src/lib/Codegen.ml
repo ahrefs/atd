@@ -635,7 +635,7 @@ let construct_json_field env trans_meth
   let writer_function = json_writer env unwrapped_type in
   let assignment =
     [
-      Line (sprintf "res[\"%s\"] = %s(self.%s);"
+      Line (sprintf "res[\"%s\"] = %s(this.%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
               writer_function
               (inst_var_name trans_meth name))
@@ -646,7 +646,7 @@ let construct_json_field env trans_meth
   | With_default -> assignment
   | Optional ->
       [
-        Line (sprintf "if self.%s is not None:"
+        Line (sprintf "if this.%s is not None:"
                 (inst_var_name trans_meth name));
         Block assignment
       ]
@@ -708,7 +708,7 @@ and tuple_reader env cells =
 
 let from_json_class_argument
     env trans_meth py_class_name ((loc, (name, kind, an), e) : simple_field) =
-  let python_name = inst_var_name trans_meth name in
+  let dlang_name = inst_var_name trans_meth name in
   let json_name = Atd.Json.get_json_fname name an in
   let unwrapped_type =
     match kind with
@@ -737,8 +737,8 @@ let from_json_class_argument
               (sprintf "missing default Python value for field '%s'"
                  name)
   in
-  sprintf "%s=%s(x['%s']) if '%s' in x else %s,"
-    python_name
+  sprintf "obj.%s=%s(x['%s']) if '%s' in x else %s,"
+    dlang_name
     (json_reader env unwrapped_type)
     (single_esc json_name)
     (single_esc json_name)
@@ -787,7 +787,7 @@ let record env loc name (fields : field list) an =
     ) fields in
   let from_json =
     [
-      Line (sprintf "%s fromJson(JSONValue j) {"
+      Line (sprintf "static %s fromJson(JSONValue j) {"
               (single_esc dlang_struct_name));
       Block
         ([Line (sprintf "%s obj;" dlang_struct_name) ] @ from_json_class_arguments @
@@ -799,9 +799,9 @@ let record env loc name (fields : field list) an =
     [
       Line "JSONValue toJson() {";
       Block [
-        Line ("JSONValue jj;");
+        Line ("JSONValue res;");
         Inline json_object_body;
-        Line "return jj;"
+        Line "return res;"
       ];
       Line "}";
     ]

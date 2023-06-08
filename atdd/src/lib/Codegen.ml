@@ -82,20 +82,22 @@ let create_class_name env name =
 let init_env () : env =
   let keywords = [
     (* Keywords
-       https://docs.python.org/3/reference/lexical_analysis.html#keywords
+       https://dlang.org/spec/lex.html#keywords
     *)
-    "False"; "await"; "else"; "import"; "pass";
-    "None"; "break"; "except"; "in"; "raise";
-    "True"; "class"; "finally"; "is"; "return";
-    "and"; "continue"; "for"; "lambda"; "try";
-    "as"; "def"; "from"; "nonlocal"; "while";
-    "assert"; "del"; "global"; "not"; "with";
-    "async"; "elif"; "if"; "or"; "yield";
-
-    (* Soft keywords
-       https://docs.python.org/3/reference/lexical_analysis.html#soft-keywords
-    *)
-    "match"; "case"; "_";
+    "abstract";"alias";"align";"asm";"assert";"auto";"body";"bool";
+    "break";"byte";"case";"cast";"catch";"cdouble";"cent";"cfloat";
+    "char";"class";"const";"continue";"creal";"dchar";"debug";"default";
+    "delegate";"delete";"deprecated";"do";"double";"else";"enum";"export";
+    "extern";"false";"final";"finally";"float";"for";"foreach";"foreach_reverse";
+    "function";"goto";"idouble";"if";"ifloat";"immutable";"import";"in";
+      "inout";"int";"interface";"invariant";"ireal";"is";"lazy";"long";"macro";
+    "mixin";"module";"new";"nothrow";"null";"out";"override";"package";"pragma";
+    "private";"protected";"public";"pure";"real";"ref";"return";"scope";"shared";
+    "short";"static";"struct";"super";"switch";"synchronized";"template";"this";
+    "throw";"true";"try";"typeid";"typeof";"ubyte";"ucent";"uint";"ulong";"union";
+    "unittest";"ushort";"version";"void";"wchar";"while";"with";"__FILE__";"__FILE_FULL_PATH__";
+    "__MODULE__";"__LINE__";"__FUNCTION__";"__PRETTY_FUNCTION__";"__gshared";
+    "__traits";"__vector";"__parameters";
   ]
   in
   (* Various variables used in the generated code.

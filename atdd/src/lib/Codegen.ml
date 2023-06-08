@@ -204,7 +204,7 @@ let fixed_size_preamble atd_filename =
   
   void _atd_missing_json_field(string typeName, string jsonFieldName)
   {
-      throw new AtdException("missing field %s in JSON object of type %s".format(typeName, jsonFieldName));
+      throw new AtdException("missing field %%s in JSON object of type %%s".format(typeName, jsonFieldName));
   }
   
   // TODO check later if template is right way to go
@@ -217,7 +217,7 @@ let fixed_size_preamble atd_filename =
       }
   
       return new AtdException(
-          "incompatible JSON value where type '%s' was expected: %s".format(
+          "incompatible JSON value where type '%%s' was expected: %%s".format(
               expectedType, valueStr
       ));
   }
@@ -231,7 +231,7 @@ let fixed_size_preamble atd_filename =
       }
   
       return new AtdException(
-          "incompatible D value where type '%s' was expected: %s".format(
+          "incompatible D value where type '%%s' was expected: %%s".format(
               expectedType, valueStr
       ));
   }

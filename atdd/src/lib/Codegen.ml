@@ -682,7 +682,7 @@ let from_json_class_argument
   let else_body =
     match kind with
     | Required ->
-        sprintf "_atd_missing_json_field('%s', '%s')"
+        sprintf "_atd_missing_json_field(\"%s\", \"%s\")"
           (single_esc py_class_name)
           (single_esc json_name)
     | Optional -> "null"
@@ -694,10 +694,10 @@ let from_json_class_argument
               (sprintf "missing default Dlang value for field '%s'"
                  name)
   in
-  sprintf "obj.%s=%s(x['%s']) if '%s' in x else %s,"
+  sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
     dlang_name
-    (json_reader env unwrapped_type)
     (single_esc json_name)
+    (json_reader env unwrapped_type)
     (single_esc json_name)
     else_body
 

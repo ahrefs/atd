@@ -11,7 +11,7 @@
 import std.format;
 import std.conv;
 import std.json;
-import std.typecons : tuple, Tuple;
+import std.typecons : tuple, Tuple, nullable, Nullable;
 import std.array : array;
 import std.algorithm : map;
 
@@ -102,141 +102,138 @@ auto _atd_read_list(T)(T function(JSONValue) readElements)
     return (JSONValue[] list) { return array(list.map!readElements()); };
 }
 
-auto _atd_read_tuple_list_into_assoc_array(K, V)(
-    K function(JSONValue) readKey,
-    V function(JSONValue) readValue)
-{
-    auto innerFun = (Tuple!(JSONValue, JSONValue)[] tupList) {
-        V[K] ret;
-        foreach (tup; tupList)
-            ret[readKey(tup[0])] = readValue(tup[1]);
-        return ret;
-    };
-
-    return innerFun;
-}
-
-auto _atd_read_tuple_list_into_tuple_list(K, V)(
-    K function(JSONValue) readKey,
-    V function(JSONValue) readValue)
-{
-    auto fun = (Tuple!(JSONValue, JSONValue)[] tupList) {
-        auto ret = new Tuple!(K, V)[](tupList.length);
-        foreach (i, tup; tupList)
-            ret[i] = tuple(readKey(tup[0]), readValue(tup[1]));
-        return ret;
-    };
-    return fun;
-}
-
-// We cannot use JSONValue as key, so we probably don't want to use that
-// but the tuple versions
-auto _atd_read_assoc_array_into_assoc_array(V)(
-    string function(string) readKey,
+auto _atd_read_assoc_array(V)(
     V function(JSONValue) readValue)
 {
     auto fun = (JSONValue[string] assocArr) {
         V[string] ret;
         foreach (key, val; assocArr)
-            ret[readKey(key)] = readValue(val);
+            ret[key] = readValue(val);
         return ret;
     };
     return fun;
 }
 
-// ditto
-auto _atd_read_assoc_array_into_tuple_list(V)(
-    string function(string) readKey,
-    V function(JSONValue) readValue)
+// TODO probably need to change that
+auto _atd_read_nullable(T)(T function(JSONValue) readElm)
 {
-    auto fun = (JSONValue[string] assocArr) {
-        auto ret = new Tuple!(string, V)[](assocArr.length);
-        uint i = 0;
+    auto fun = (JSONValue e) {
+        if (e.isNull)
+            return Nullable!T.init;
+        else
+            return Nullable!T(readElm(e));
+    };
+    return fun;
+}
+
+// this whole set of function could be remplaced by one templated _atd_write_value function
+// not sure it is what we want though
+
+JSONValue _atd_write_unit(typeof(null) n)
+{
+    return JSONValue(null);
+}
+
+JSONValue _atd_write_bool(bool b)
+{
+    return JSONValue(b);
+}
+
+JSONValue _atd_write_int(long i)
+{
+    return JSONValue(i);
+}
+
+JSONValue _atd_write_float(float f)
+{
+    return JSONValue(f);
+}
+
+JSONValue _atd_write_string(string s)
+{
+    return JSONValue(s);
+}
+
+auto _atd_write_list(T)(JSONValue function(T) writeElm)
+{
+    return (T[] list) { return JSONValue(array(list.map!writeElm())); };
+}
+
+auto _atd_write_assoc_array(T)(
+    JSONValue function(T) writeValue)
+{
+    auto fun = (T[string] assocArr) {
+        JSONValue[string] ret;
         foreach (key, val; assocArr)
-            ret[i++] = tuple(readKey(key), readValue(val));
-        return ret;
+            ret[key] = writeValue(val);
+        return JSONValue(ret);
     };
     return fun;
 }
 
+auto _atd_write_nullable(T)(JSONValue function(T) writeElm)
+{
+    auto fun = (Nullable!T elm) {
+        if (elm.isNull)
+            return JSONValue(null);
+        else
+            return writeElm(elm.get);
+    };
+    return fun;
+}
+
+// ======================
+// ====== TESTS =========
+// ======================
 
 unittest
 {
     import std.stdio;
 
-    try
-        _atd_bad_json("bool", null);
-    catch (AtdException e)
-    {
-        writeln(e.msg);
-        assert(true);
-    }
+    auto l = [JSONValue(1), JSONValue(5)];
+
+    auto m = _atd_read_list(&_atd_read_int);
+    auto mm = _atd_write_list(&_atd_write_int);
+
+    auto read_l = m(l);
+    auto write_l = mm(read_l);
+
+    assert(write_l == JSONValue(l));
 }
 
 unittest
 {
     import std.stdio;
 
-    auto fp = (JSONValue c) { return c.integer * 4; };
-    auto m = _atd_read_list(fp);
-    JSONValue[] l = [
-        JSONValue(1), JSONValue(2), JSONValue(3), JSONValue(4), JSONValue(5)
-    ];
+    auto potentiallyNull = JSONValue(null);
+
+    auto m = _atd_read_nullable(&_atd_read_int);
+    auto mm = _atd_write_nullable(&_atd_write_int);
+
+    Nullable!long readN = m(potentiallyNull);
+    auto writeN = mm(readN);
+
+    assert(potentiallyNull == writeN);
 }
 
 unittest
 {
     import std.stdio;
 
-    auto m = _atd_read_tuple_list_into_assoc_array(&_atd_read_string, &_atd_read_int);
+    auto notNull = JSONValue(54);
 
-    auto l = [
-        tuple(JSONValue("hello"), JSONValue(1)),
-        tuple(JSONValue("there"), JSONValue(2)),
-        tuple(JSONValue("general"), JSONValue(3)),
-        tuple(JSONValue("kenobi"), JSONValue(4)),
-        tuple(JSONValue("haha"), JSONValue(5)),
-    ];
-    writeln(m(l));
+    auto m = _atd_read_nullable(&_atd_read_int);
+    auto mm = _atd_write_nullable(&_atd_write_int);
+
+    auto readv = m(notNull);
+    auto writev = mm(readv);
+
+    assert(notNull == writev);
 }
 
 unittest
 {
     import std.stdio;
-
-    auto m = _atd_read_tuple_list_into_tuple_list(&_atd_read_string, &_atd_read_int);
-
-    auto l = [
-        tuple(JSONValue("hello"), JSONValue(1)),
-        tuple(JSONValue("there"), JSONValue(2)),
-        tuple(JSONValue("general"), JSONValue(3)),
-        tuple(JSONValue("kenobi"), JSONValue(4)),
-        tuple(JSONValue("haha"), JSONValue(5)),
-    ];
-    writeln(m(l));
-}
-
-unittest
-{
-    import std.stdio;
-
-    auto m = _atd_read_assoc_array_into_assoc_array((string s) { return s; }, &_atd_read_int);
-
-    auto l = [
-        "hello": JSONValue(1),
-        "there": JSONValue(2),
-        "general": JSONValue(3),
-        "kenobi": JSONValue(4),
-        "haha": JSONValue(5),
-    ];
-    writeln(m(l));
-}
-
-unittest
-{
-    import std.stdio;
-
-    auto m = _atd_read_assoc_array_into_tuple_list((string s) { return s; }, &_atd_read_int);
 
     auto l = [
         "hello": JSONValue(1),
@@ -245,183 +242,12 @@ unittest
         "kenobi": JSONValue(4),
         "haha": JSONValue(5),
     ];
-    writeln(m(l));
+
+    auto m = _atd_read_assoc_array(&_atd_read_int);
+    auto mm = _atd_write_assoc_array(&_atd_write_int);
+
+    auto readv = m(l);
+    auto writev = mm(readv);
+
+    assert(writev == JSONValue(l));
 }
-
-// unittest
-// {
-//     import std.stdio;
-
-//     auto m = _atd_read_assoc_array_into_tuple_list(&_atd_read_string, &_atd_read_int);
-
-// auto l = [
-//     JSONValue("hello"): JSONValue(1),
-//     JSONValue("there"): JSONValue(2),
-//     JSONValue("general"): JSONValue(3),
-//     JSONValue("kenobi"): JSONValue(4),
-//     JSONValue("haha"): JSONValue(5),
-// ];
-//     writeln(m(l));
-// }
-
-unittest
-{
-    // import std.stdio;
-    // auto fp = (uint c) { return c * 4; };
-    // // Delegate d = int () { return x; };
-    // auto m = _atd_read_list(fp);
-
-    // uint[] l = cast(uint[]) [1, 2, 3, 4, 5];
-    // writeln(m(l));
-}
-
-// def _atd_read_assoc_array_into_dict(
-//             read_key: Callable[[Any], Any],
-//             read_value: Callable[[Any], Any],
-//         ) -> Callable[[List[Any]], Dict[Any, Any]]:
-//     def read_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
-//         if isinstance(elts, list):
-//             return {read_key(elt[0]): read_value(elt[1]) for elt in elts}
-//         else:
-//             _atd_bad_json('array', elts)
-//             raise AssertionError('impossible')  # keep mypy happy
-//     return read_assoc
-
-// def _atd_read_assoc_object_into_dict(
-//             read_value: Callable[[Any], Any]
-//         ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
-//     def read_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
-//         if isinstance(elts, dict):
-//             return {_atd_read_string(k): read_value(v)
-//                     for k, v in elts.items()}
-//         else:
-//             _atd_bad_json('object', elts)
-//             raise AssertionError('impossible')  # keep mypy happy
-//     return read_assoc
-
-// def _atd_read_assoc_object_into_list(
-//             read_value: Callable[[Any], Any]
-//         ) -> Callable[[Dict[str, Any]], List[Tuple[str, Any]]]:
-//     def read_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
-//         if isinstance(elts, dict):
-//             return [(_atd_read_string(k), read_value(v))
-//                     for k, v in elts.items()]
-//         else:
-//             _atd_bad_json('object', elts)
-//             raise AssertionError('impossible')  # keep mypy happy
-//     return read_assoc
-
-// def _atd_read_nullable(read_elt: Callable[[Any], Any]) \
-//         -> Callable[[Optional[Any]], Optional[Any]]:
-//     def read_nullable(x: Any) -> Any:
-//         if x is None:
-//             return None
-//         else:
-//             return read_elt(x)
-//     return read_nullable
-
-// def _atd_read_option(read_elt: Callable[[Any], Any]) \
-//         -> Callable[[Optional[Any]], Optional[Any]]:
-//     def read_option(x: Any) -> Any:
-//         if x == 'None':
-//             return None
-//         elif isinstance(x, List) and len(x) == 2 and x[0] == 'Some':
-//             return read_elt(x[1])
-//         else:
-//             _atd_bad_json('option', x)
-//             raise AssertionError('impossible')  # keep mypy happy
-//     return read_option
-
-// def _atd_write_unit(x: Any) -> None:
-//     if x is None:
-//         return x
-//     else:
-//         _atd_bad_python('unit', x)
-
-// def _atd_write_bool(x: Any) -> bool:
-//     if isinstance(x, bool):
-//         return x
-//     else:
-//         _atd_bad_python('bool', x)
-
-// def _atd_write_int(x: Any) -> int:
-//     if isinstance(x, int):
-//         return x
-//     else:
-//         _atd_bad_python('int', x)
-
-// def _atd_write_float(x: Any) -> float:
-//     if isinstance(x, (int, float)):
-//         return x
-//     else:
-//         _atd_bad_python('float', x)
-
-// def _atd_write_string(x: Any) -> str:
-//     if isinstance(x, str):
-//         return x
-//     else:
-//         _atd_bad_python('str', x)
-
-// def _atd_write_list(
-//             write_elt: Callable[[Any], Any]
-//         ) -> Callable[[List[Any]], List[Any]]:
-//     def write_list(elts: List[Any]) -> List[Any]:
-//         if isinstance(elts, list):
-//             return [write_elt(elt) for elt in elts]
-//         else:
-//             _atd_bad_python('list', elts)
-//     return write_list
-
-// def _atd_write_assoc_dict_to_array(
-//             write_key: Callable[[Any], Any],
-//             write_value: Callable[[Any], Any]
-//         ) -> Callable[[Dict[Any, Any]], List[Tuple[Any, Any]]]:
-//     def write_assoc(elts: Dict[str, Any]) -> List[Tuple[str, Any]]:
-//         if isinstance(elts, dict):
-//             return [(write_key(k), write_value(v)) for k, v in elts.items()]
-//         else:
-//             _atd_bad_python('Dict[str, <value type>]]', elts)
-//             raise AssertionError('impossible')  # keep mypy happy
-//     return write_assoc
-
-// def _atd_write_assoc_dict_to_object(
-//             write_value: Callable[[Any], Any]
-//         ) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
-//     def write_assoc(elts: Dict[str, Any]) -> Dict[str, Any]:
-//         if isinstance(elts, dict):
-//             return {_atd_write_string(k): write_value(v)
-//                     for k, v in elts.items()}
-//         else:
-//             _atd_bad_python('Dict[str, <value type>]', elts)
-//             raise AssertionError('impossible')  # keep mypy happy
-//     return write_assoc
-
-// def _atd_write_assoc_list_to_object(
-//             write_value: Callable[[Any], Any],
-//         ) -> Callable[[List[Any]], Dict[str, Any]]:
-//     def write_assoc(elts: List[List[Any]]) -> Dict[str, Any]:
-//         if isinstance(elts, list):
-//             return {_atd_write_string(elt[0]): write_value(elt[1])
-//                     for elt in elts}
-//         else:
-//             _atd_bad_python('List[Tuple[<key type>, <value type>]]', elts)
-//             raise AssertionError('impossible')  # keep mypy happy
-//     return write_assoc
-
-// def _atd_write_nullable(write_elt: Callable[[Any], Any]) \
-//         -> Callable[[Optional[Any]], Optional[Any]]:
-//     def write_nullable(x: Any) -> Any:
-//         if x is None:
-//             return None
-//         else:
-//             return write_elt(x)
-//     return write_nullable
-
-// def _atd_write_option(write_elt: Callable[[Any], Any]) \
-//         -> Callable[[Optional[Any]], Optional[Any]]:
-//     def write_option(x: Any) -> Any:
-//         if x is None:
-//             return 'None'
-//         else:
-//             return ['Some', write_elt(x)]
-//     return write_option

@@ -799,76 +799,44 @@ let record env loc name (fields : field list) an =
     Inline to_json_string;
   ]
 
-let alias_wrapper env ~class_decorators name type_expr =
+let alias_wrapper env  name type_expr =
   let dlang_struct_name = class_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
     Line (sprintf "alias %s = %s;" dlang_struct_name value_type);
   ]
 
-let case_class env ~class_decorators type_name
+let case_class env  type_name
     (loc, orig_name, unique_name, an, opt_e) =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
       [
-        Inline class_decorators;
-        Line (sprintf "class %s:" (trans env unique_name));
-        Block [
-          Line (sprintf {|"""Original type: %s = [ ... | %s | ... ]"""|}
+          Line (sprintf {|\\Original type: %s = [ ... | %s | ... ]|}
                   type_name
                   orig_name);
-          Line "";
-          Line "@property";
-          Line "def kind(self) -> str:";
-          Block [
-            Line {|"""Name of the class representing this variant."""|};
-            Line (sprintf "return '%s'" (trans env unique_name))
-          ];
-          Line "";
-          Line "@staticmethod";
-          Line "def to_json() -> Any:";
-          Block [
-            Line (sprintf "return '%s'" (single_esc json_name))
-          ];
-          Line "";
-          Line "def to_json_string(self, **kw: Any) -> str:";
-          Block [
-            Line "return json.dumps(self.to_json(), **kw)"
-          ]
+          Line (sprintf "struct %s {}" (trans env unique_name));
+          Line (sprintf "JSONValue to_json(%s e) {" orig_name);
+          Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
+          Line("}");
+          Line (sprintf "JSONValue to_json_string(%s e) {" orig_name);
+          Block[ Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
+          Line("}");
         ]
-      ]
   | Some e ->
       [
-        Inline class_decorators;
-        Line (sprintf "class %s:" (trans env unique_name));
-        Block [
-          Line (sprintf {|"""Original type: %s = [ ... | %s of ... | ... ]"""|}
+          Line (sprintf {|\\Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line "";
-          Line (sprintf "value: %s" (type_name_of_expr env e));
-          Line "";
-          Line "@property";
-          Line "def kind(self) -> str:";
-          Block [
-            Line {|"""Name of the class representing this variant."""|};
-            Line (sprintf "return '%s'" (trans env unique_name))
-          ];
-          Line "";
-          Line "def to_json(self) -> Any:";
-          Block [
-            Line (sprintf "return ['%s', %s(self.value)]"
-                    (single_esc json_name)
-                    (json_writer env e))
-          ];
-          Line "";
-          Line "def to_json_string(self, **kw: Any) -> str:";
-          Block [
-            Line "return json.dumps(self.to_json(), **kw)"
-          ]
+          Line (sprintf "struct %s { value %s; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
+          Line (sprintf "JSONValue to_json(%s e) {" orig_name);
+          Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Line("}");
+          Line (sprintf "JSONValue to_json_string(%s e) {" orig_name);
+          Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Line("}");
         ]
-      ]
+      
 
 let read_cases0 env loc name cases0 =
   let ifs =
@@ -876,10 +844,10 @@ let read_cases0 env loc name cases0 =
     |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
       let json_name = Atd.Json.get_json_cons orig_name an in
       Inline [
-        Line (sprintf "if x == '%s':" (single_esc json_name));
+        Line (sprintf "if (x.str == \"%s\") " (single_esc json_name));
         Block [
-          Line (sprintf "return cls(%s())" (trans env unique_name))
-        ]
+          Line (sprintf "return (%s());" (trans env unique_name))
+        ];
       ]
     )
   in
@@ -900,9 +868,9 @@ let read_cases1 env loc name cases1 =
       in
       let json_name = Atd.Json.get_json_cons orig_name an in
       Inline [
-        Line (sprintf "if cons == '%s':" (single_esc json_name));
+        Line (sprintf "if (cons == \"%s\")" (single_esc json_name));
         Block [
-          Line (sprintf "return cls(%s(%s(x[1])))"
+          Line (sprintf "return (%s(%s(x[1])))"
                   (trans env unique_name)
                   (json_reader env e))
         ]
@@ -915,7 +883,7 @@ let read_cases1 env loc name cases1 =
             (class_name env name |> single_esc))
   ]
 
-let sum_container env ~class_decorators loc name cases =
+let sum_container env  loc name cases =
   let py_class_name = class_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -931,8 +899,9 @@ let sum_container env ~class_decorators loc name cases =
   let cases0_block =
     if cases0 <> [] then
       [
-        Line "if isinstance(x, str):";
-        Block (read_cases0 env loc name cases0)
+        Line "if (x.type == JSONType.string) {";
+        Block (read_cases0 env loc name cases0);
+        Line "}";
       ]
     else
       []
@@ -940,9 +909,9 @@ let sum_container env ~class_decorators loc name cases =
   let cases1_block =
     if cases1 <> [] then
       [
-        Line "if isinstance(x, List) and len(x) == 2:";
+        Line "if (x.type == JSONType.array AND x.array.length == 2 AND x[0].type == JSONType.string)";
         Block [
-          Line "cons = x[0]";
+          Line "string cons = x[0].str";
           Inline (read_cases1 env loc name cases1)
         ]
       ]
@@ -950,22 +919,8 @@ let sum_container env ~class_decorators loc name cases =
       []
   in
   [
-    Inline class_decorators;
-    Line (sprintf "class %s:" py_class_name);
-    Block [
-      Line (sprintf {|"""Original type: %s = [ ... ]"""|} name);
-      Line "";
-      Line (sprintf "value: Union[%s]" type_list);
-      Line "";
-      Line "@property";
-      Line "def kind(self) -> str:";
-      Block [
-        Line {|"""Name of the class representing this variant."""|};
-        Line (sprintf "return self.value.kind")
-      ];
-      Line "";
-      Line "@classmethod";
-      Line (sprintf "def from_json(cls, x: Any) -> '%s':"
+    Line (sprintf "alias %s = SumType!(%s);" py_class_name type_list);
+      Line (sprintf "%s from_json(JSONValue x) {"
               (single_esc py_class_name));
       Block [
         Inline cases0_block;
@@ -974,26 +929,21 @@ let sum_container env ~class_decorators loc name cases =
                 (single_esc (class_name env name)))
       ];
       Line "";
-      Line "def to_json(self) -> Any:";
-      Block [
-        Line "return self.value.to_json()";
-      ];
-      Line "";
-      Line "@classmethod";
-      Line (sprintf "def from_json_string(cls, x: str) -> '%s':"
-              (single_esc py_class_name));
-      Block [
-        Line "return cls.from_json(json.loads(x))"
-      ];
-      Line "";
-      Line "def to_json_string(self, **kw: Any) -> str:";
-      Block [
-        Line "return json.dumps(self.to_json(), **kw)"
-      ]
-    ]
+    Line (sprintf "JSONValue to_json(%s x) {" (py_class_name));
+    Block [
+      Line "return x.match!(";
+        Line (
+                 List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+                   sprintf "(%s v) => v.to_json_string" (trans env unique_name)
+                 ) cases
+              |> String.concat ",\n");
+        Line ");"
+    ];
+      Line "}";
   ]
 
-let sum env ~class_decorators loc name cases =
+
+let sum env  loc name cases =
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1004,47 +954,30 @@ let sum env ~class_decorators loc name cases =
     ) cases
   in
   let case_classes =
-    List.map (fun x -> Inline (case_class env ~class_decorators name x)) cases
+    List.map (fun x -> Inline (case_class env name x)) cases
     |> double_spaced
   in
-  let container_class = sum_container env ~class_decorators loc name cases in
+  let container_class = sum_container env loc name cases in
   [
     Inline case_classes;
     Inline container_class;
   ]
   |> double_spaced
 
-let uses_dataclass_decorator =
-  let rex = Re.Pcre.regexp {|\A[ \t\r\n]*dataclass(\(|[ \t\r\n]|\z)|} in
-  fun s -> Re.Pcre.pmatch ~rex s
-
-let get_class_decorators an =
-  let decorators = Dlang_annot.get_dlang_decorators an in
-  (* Avoid duplicate use of the @dataclass decorator, which doesn't work
-     if some options like frozen=True are used. *)
-  if List.exists uses_dataclass_decorator decorators then
-    decorators
-  else
-    decorators @ ["dataclass"]
-
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
-  let class_decorators =
-    get_class_decorators an
-    |> List.map (fun s -> Line ("@" ^ s))
-  in
   let rec unwrap e =
     match e with
     | Sum (loc, cases, an) ->
-        sum env ~class_decorators loc name cases
+        sum env  loc name cases
     | Record (loc, fields, an) ->
         record env loc name fields an
     | Tuple _
     | List _
     | Option _
     | Nullable _
-    | Name _ -> alias_wrapper env ~class_decorators name e
+    | Name _ -> alias_wrapper env  name e
     | Shared _ -> not_implemented loc "cyclic references"
     | Wrap (loc, e, an) -> unwrap e
     | Tvar _ -> not_implemented loc "parametrized type"

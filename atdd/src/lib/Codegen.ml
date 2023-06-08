@@ -281,14 +281,31 @@ let fixed_size_preamble atd_filename =
       return (JSONValue[] list) { return array(list.map!readElements()); };
   }
   
-  auto _atd_read_assoc_array(V)(
+  auto _atd_read_object_to_assoc_array(V)(
       V function(JSONValue) readValue)
   {
-      auto fun = (JSONValue[string] assocArr) {
+      auto fun = (JSONValue jsonVal) {
+          if (jsonVal.type != JSONType.object)
+              throw _atd_bad_json("object", jsonVal);
           V[string] ret;
-          foreach (key, val; assocArr)
+          foreach (key, val; jsonVal.object)
               ret[key] = readValue(val);
           return ret;
+      };
+      return fun;
+  }
+  
+  auto _atd_read_object_to_tuple_list(T)(
+      T function(JSONValue) readValue)
+  {
+      auto fun = (JSONValue jsonVal) {
+          if (jsonVal.type != JSONType.object)
+              throw _atd_bad_json("object", jsonVal);
+          auto tupList = new Tuple!(string, T)[](jsonVal.object.length);
+          int i = 0;
+          foreach (key, val; jsonVal.object)
+              tupList[i++] = tuple(key, readValue(val));
+          return tupList;
       };
       return fun;
   }
@@ -338,13 +355,25 @@ let fixed_size_preamble atd_filename =
       return (T[] list) { return JSONValue(array(list.map!writeElm())); };
   }
   
-  auto _atd_write_assoc_array(T)(
+  auto _atd_write_assoc_array_to_object(T)(
       JSONValue function(T) writeValue)
   {
       auto fun = (T[string] assocArr) {
           JSONValue[string] ret;
           foreach (key, val; assocArr)
               ret[key] = writeValue(val);
+          return JSONValue(ret);
+      };
+      return fun;
+  }
+  
+  auto _atd_write_tuple_list_to_object(T)(
+      JSONValue function(T) writeValue)
+  {
+      auto fun = (Tuple!(string, T)[] tupList) {
+          JSONValue[string] ret;
+          foreach (tup; tupList)
+              ret[tup[0]] = writeValue(tup[1]);
           return JSONValue(ret);
       };
       return fun;

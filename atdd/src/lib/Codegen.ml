@@ -715,17 +715,19 @@ let record env loc name (fields : field list) an =
     ) fields in
   let from_json =
     [
-      Line (sprintf "static %s fromJson(JSONValue x) {"
-              (single_esc dlang_struct_name));
-      Block
-        ([Line (sprintf "%s obj;" dlang_struct_name) ] @ from_json_class_arguments @
-      [Line "return obj;"]);
+      Line (sprintf "%s fromJson(%s)(JSONValue x) {"
+              (single_esc dlang_struct_name) (single_esc dlang_struct_name));
+      Block [
+        Line (sprintf "%s obj;" dlang_struct_name);
+        Inline from_json_class_arguments;
+        Line "return obj;";
+      ];
       Line "}";
     ]
   in
   let to_json =
     [
-      Line "JSONValue toJson() {";
+      Line (sprintf "JSONValue toJson(%s) {" (single_esc dlang_struct_name));
       Block [
         Line ("JSONValue res;");
         Inline json_object_body;
@@ -736,22 +738,20 @@ let record env loc name (fields : field list) an =
   in
   let from_json_string =
     [
-      Line (sprintf "static %s fromJsonString(string x) {"
-              (single_esc dlang_struct_name));
+      Line (sprintf "%s fromJsonString(%s)(string x) {"
+              (single_esc dlang_struct_name) (single_esc dlang_struct_name));
       Block [
         Line "JSONValue res = parseJSON(x);";
-        Inline json_object_body;
-        Line "return res;"
+        Line(sprintf "return res.fromJson!%s;" (single_esc dlang_struct_name))
       ];
       Line "}";
     ]
   in
   let to_json_string =
     [
-      Line (sprintf "string toJsonString(%s obj) {" dlang_struct_name);
+      Line (sprintf "string toJsonString(%s) (%s obj) {" (single_esc dlang_struct_name) (single_esc dlang_struct_name));
       Block [
-        Line ("JSONValue res;");
-        Inline json_object_body;
+        Line ("JSONValue res = obj.toJson;");
         Line "return res.toString;"
       ];
       Line "}";
@@ -762,12 +762,13 @@ let record env loc name (fields : field list) an =
     Block (spaced [
       Line (sprintf {|"""Original type: %s = { ... }"""|} name);
       Inline inst_var_declarations;
-      Inline from_json;
-      Inline to_json;
-      Inline from_json_string;
-      Inline to_json_string;
     ]);
     Line ("}");
+    Line "";
+    Inline from_json;
+    Inline to_json;
+    Inline from_json_string;
+    Inline to_json_string;
   ]
 
 (*

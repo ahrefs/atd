@@ -479,7 +479,8 @@ let rec type_name_of_expr env (e : type_expr) : string =
              (type_name_of_expr env e)
        | Array_dict (key, value) ->
            sprintf "%s[%s]"
-             (type_name_of_expr env key) (type_name_of_expr env value)
+             (type_name_of_expr env value)
+             (type_name_of_expr env key)
        | Object_dict value ->
            sprintf "%s[string]"
              (type_name_of_expr env value)
@@ -556,10 +557,10 @@ let rec json_writer ?(nested=false) env e =
            sprintf "_atd_write_assoc_dict_to_array(%s, %s)"
              (json_writer ~nested:true env key) (json_writer ~nested:true env value)
        | Object_dict value ->
-           sprintf "_atd_write_assoc_dict_to_object(%s)"
+           sprintf "_atd_write_assoc_array_to_object(%s)"
              (json_writer ~nested:true env value)
        | Object_list value ->
-           sprintf "_atd_write_assoc_list_to_object(%s)"
+           sprintf "_atd_write_tuple_list_to_object(%s)"
              (json_writer ~nested:true env value)
       )
   | Option (loc, e, an) ->
@@ -638,13 +639,13 @@ let rec json_reader env (e : type_expr) =
            sprintf "_atd_read_list(%s)"
              (json_reader env e)
        | Array_dict (key, value) ->
-           sprintf "_atd_read_assoc_array_into_dict(%s, %s)"
+           sprintf "_atd_read_array_to_assoc_dict(%s, %s)"
              (json_reader env key) (json_reader env value)
        | Object_dict value ->
-           sprintf "_atd_read_assoc_object_into_dict(%s)"
+           sprintf "_atd_read_object_to_assoc_array(%s)"
              (json_reader env value)
        | Object_list value ->
-           sprintf "_atd_read_assoc_object_into_list(%s)"
+           sprintf "_atd_read_object_to_tuple_list(%s)"
              (json_reader env value)
       )
   | Option (loc, e, an) ->
@@ -661,11 +662,6 @@ let rec json_reader env (e : type_expr) =
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
-(*
-   Convert json list to python tuple
-
-   (lambda x: (read0(x[0]), read1(x[1])) if isinstance(x, list) else error())
-*)
 and tuple_reader env cells =
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
@@ -725,11 +721,7 @@ let inst_var_declaration
     | With_default ->
         match get_dlang_default unwrapped_e an with
         | None -> ""
-        | Some x ->
-            (* This constructs ensures that a fresh default value is
-               evaluated for each class instanciation. It's important for
-               default lists since Python lists are mutable. *)
-            sprintf " = %s" x
+        | Some x ->            sprintf " = %s" x
   in
   [
     Line (sprintf "%s %s%s;" type_name var_name default)
@@ -1037,11 +1029,11 @@ let to_file ~atd_filename ~head (items : A.module_body) dst_path =
   let env = init_env () in
   reserve_good_class_names env items;
   let head = List.map (fun s -> Line s) head in
-  let python_defs =
+  let dlang_defs =
     Atd.Util.tsort items
     |> List.map (fun x -> Inline (definition_group ~atd_filename env x))
   in
-  Line (fixed_size_preamble atd_filename) :: Inline head :: python_defs
+  Line (fixed_size_preamble atd_filename) :: Inline head :: dlang_defs
   |> double_spaced
   |> Indent.to_file ~indent:4 dst_path
 

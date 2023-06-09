@@ -192,6 +192,7 @@ let fixed_size_preamble atd_filename =
   import std.format;
   import std.functional;
   import std.json;
+  import std.sumtype;
   import std.typecons : nullable, Nullable, tuple, Tuple;
   
   class AtdException : Exception
@@ -860,7 +861,7 @@ let read_cases0 env loc name cases0 =
   in
   [
     Inline ifs;
-    Line (sprintf "_atd_bad_json('%s', x);"
+    Line (sprintf "throw _atd_bad_json(\"%s\", x);"
             (class_name env name |> single_esc))
   ]
 
@@ -886,7 +887,7 @@ let read_cases1 env loc name cases1 =
   in
   [
     Inline ifs;
-    Line (sprintf "_atd_bad_json('%s', x);"
+    Line (sprintf "throw _atd_bad_json(\"%s\", x);"
             (class_name env name |> single_esc))
   ]
 
@@ -916,7 +917,7 @@ let sum_container env  loc name cases =
   let cases1_block =
     if cases1 <> [] then
       [
-        Line "if (x.type == JSONType.array AND x.array.length == 2 AND x[0].type == JSONType.string) {";
+        Line "if (x.type == JSONType.array && x.array.length == 2 && x[0].type == JSONType.string) {";
         Block [
           Line "string cons = x[0].str;";
           Inline (read_cases1 env loc name cases1)
@@ -934,7 +935,7 @@ let sum_container env  loc name cases =
       Block [
         Inline cases0_block;
         Inline cases1_block;
-        Line (sprintf "_atd_bad_json('%s', x);"
+        Line (sprintf "throw _atd_bad_json(\"%s\", x);"
                 (single_esc (class_name env name)))
       ];
     Line "}";

@@ -13,6 +13,7 @@ import std.conv;
 import std.format;
 import std.functional;
 import std.json;
+import std.sumtype;
 import std.typecons : nullable, Nullable, tuple, Tuple;
 
 class AtdException : Exception

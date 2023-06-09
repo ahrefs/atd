@@ -822,7 +822,7 @@ let alias_wrapper env  name type_expr =
     Line (sprintf "JSONValue toJsonString(%s e) {"  dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");
-    Line (sprintf "%s fromJson(JSONValue e) {"  dlang_struct_name);
+    Line (sprintf "%s fromJson(%s)(JSONValue e) {"  dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
     Line("}");
   ]

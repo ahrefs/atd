@@ -130,8 +130,8 @@ let init_env () : env =
   let method_names () =
     Atd.Unique_name.init
       ~reserved_identifiers:(
-        ["from_json"; "to_json";
-         "from_json_string"; "to_json_string"]
+        ["fromJson"; "toJson";
+         "fromJsonString"; "toJsonString"]
         @ keywords
       )
       ~reserved_prefixes:["__"]
@@ -652,7 +652,7 @@ let rec json_reader env (e : type_expr) =
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
        | "abstract" -> "(lambda x: x)"
-       | _ -> sprintf "%s.from_json" (class_name env name))
+       | _ -> sprintf "%s.fromJson" (class_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -823,10 +823,10 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s {}" (trans env unique_name));
-          Line (sprintf "JSONValue to_json(%s e) {" orig_name);
+          Line (sprintf "JSONValue toJson(%s e) {" orig_name);
           Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
-          Line (sprintf "JSONValue to_json_string(%s e) {" orig_name);
+          Line (sprintf "JSONValue toJsonString(%s e) {" orig_name);
           Block[ Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
         ]
@@ -835,11 +835,11 @@ let case_class env  type_name
           Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e));
-          Line (sprintf "JSONValue to_json(%s e) {" orig_name);
+          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
+          Line (sprintf "JSONValue toJson(%s e) {" orig_name);
           Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
-          Line (sprintf "JSONValue to_json_string(%s e) {" orig_name);
+          Line (sprintf "JSONValue toJsonString(%s e) {" orig_name);
           Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
@@ -929,7 +929,7 @@ let sum_container env  loc name cases =
   [
     Line (sprintf "alias %s = SumType!(%s);" py_class_name type_list);
     Line "";
-      Line (sprintf "%s from_json(JSONValue x) {"
+      Line (sprintf "%s fromJson(JSONValue x) {"
               (single_esc py_class_name));
       Block [
         Inline cases0_block;
@@ -939,12 +939,12 @@ let sum_container env  loc name cases =
       ];
     Line "}";
     Line "";
-    Line (sprintf "JSONValue to_json(%s x) {" (py_class_name));
+    Line (sprintf "JSONValue toJson(%s x) {" (py_class_name));
     Block [
       Line "return x.match!(";
         Line (
                  List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-                   sprintf "(%s v) => v.to_json_string" (trans env unique_name)
+                   sprintf "(%s v) => v.toJsonString" (trans env unique_name)
                  ) cases
               |> String.concat ",\n");
         Line ");"

@@ -600,7 +600,7 @@ let construct_json_field env trans_meth
   let writer_function = json_writer env unwrapped_type in
   let assignment =
     [
-      Line (sprintf "res[\"%s\"] = %s(obj.%s);"
+      Line (sprintf "res[\"%s\"] = %s(obj.%s.get);"
               (Atd.Json.get_json_fname name an |> single_esc)
               writer_function
               (inst_var_name trans_meth name))
@@ -611,7 +611,7 @@ let construct_json_field env trans_meth
   | With_default -> assignment
   | Optional ->
       [
-        Line (sprintf "if (!%s.isNull)"
+        Line (sprintf "if (!obj.%s.isNull)"
                 (inst_var_name trans_meth name));
         Block assignment
       ]

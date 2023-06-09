@@ -459,7 +459,7 @@ let fixed_size_preamble atd_filename =
     atd_filename
 
 let not_implemented loc msg =
-  A.error_at loc ("not implemented in atdpy: " ^ msg)
+  A.error_at loc ("not implemented in atdd: " ^ msg)
 
 let todo hint =
   failwith ("TODO: " ^ hint)

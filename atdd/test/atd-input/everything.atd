@@ -1,7 +1,3 @@
-<python text="# This was inserted by the user.">
-<python json_py.text="import deco">
-<python json_py.text="from dataclasses import dataclass">
-
 type kind = [
   | Root (* class name conflict *)
   | Thing of int
@@ -9,8 +5,7 @@ type kind = [
   | Amaze <json name="!!!"> of string list
 ]
 
-type frozen
-  <python decorator="dataclass(frozen=True)"> = [
+type frozen = [
   | A
   | B of int
 ]
@@ -29,14 +24,14 @@ type root = {
   items: int list list;
   ?maybe: int option;
   ~extras: int list;
-  ~answer <python default="42">: int;
+  ~answer <dlang default="42">: int;
   aliased: alias;
   point: (float * float);
   kinds: kind list;
   assoc1: (float * int) list;
   assoc2: (string * int) list <json repr="object">;
-  assoc3: (float * int) list <python repr="dict">;
-  assoc4: (string * int) list <json repr="object"> <python repr="dict">;
+  assoc3: (float * int) list;
+  assoc4: (string * int) list <json repr="object">;
   nullables: int nullable list;
   options: int option list;
   untyped_things: abstract list;
@@ -48,9 +43,7 @@ type alias = int list
 
 type pair = (string * int)
 
-type require_field <python decorator="deco.deco1"
-                           decorator="deco.deco2(42)"
-                           decorator="dataclass(order=True)"> = {
+type require_field = {
   req: string;
 }
 

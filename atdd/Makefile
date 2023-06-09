@@ -18,13 +18,13 @@ build:
 test:
 	$(MAKE) clean-for-dune
 	$(DUNE) runtest -f; status=$$?; \
-	  ln -s ../../../_build/default/atdd/test/python-tests/everything.py \
-	    test/python-tests/everything.py && \
+	  ln -s ../../../_build/default/atdd/test/dlang-tests/everything.d \
+	    test/dlang-tests/everything.d && \
 	  exit "$$status"
 
 .PHONY: clean-for-dune
 clean-for-dune:
-	rm -f test/python-tests/everything.py
+	rm -f test/dlang-tests/everything.d
 
 .PHONY: clean
 clean:

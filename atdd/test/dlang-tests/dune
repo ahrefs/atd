@@ -1,28 +1,29 @@
 ;
-; Convert ATD -> Python
+; Convert ATD -> Dlang
 ;
 (rule
   (targets
-    allcaps.py
-    everything.py
+    allcaps.d
+    everything.d
   )
   (deps
     ../atd-input/ALLCAPS.atd
     ../atd-input/everything.atd
   )
   (action
-    (run %{bin:atdpy} %{deps})))
+    (run %{bin:atdd} %{deps})))
 
 ;
-; Typecheck and run the tests on the generated Python code.
+; Typecheck and run the tests on the generated Dlang code.
 ;
 (rule
  (alias runtest)
- (package atdpy)
+ (package atdd)
  (deps
-  everything.py
-  (glob_files *.py))
+  everything.d
+  (glob_files *.d))
  (action
+  ; TODO: update to run Dlang typechecker and unit testing
   (progn
    (run python3 -m flake8 .)
    (run python3 -m mypy --strict .)

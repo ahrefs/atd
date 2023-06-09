@@ -816,6 +816,15 @@ let alias_wrapper env  name type_expr =
   let value_type = type_name_of_expr env type_expr in
   [
     Line (sprintf "alias %s = %s;" dlang_struct_name value_type);
+    Line (sprintf "JSONValue toJson(%s e) {"  dlang_struct_name);
+    Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
+    Line("}");
+    Line (sprintf "JSONValue toJsonString(%s e) {"  dlang_struct_name);
+    Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
+    Line("}");
+    Line (sprintf "%s fromJson(JSONValue e) {"  dlang_struct_name);
+    Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
+    Line("}");
   ]
 
 let case_class env  type_name

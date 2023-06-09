@@ -589,7 +589,7 @@ and tuple_writer env (loc, cells, an) =
     ) cells
     |> String.concat ", "
   in
-  sprintf "(%s x) => JSONValue([%s])"
+  sprintf "((%s x) => JSONValue([%s]))"
     (type_name_of_expr env (Tuple (loc, cells, an)))
     tuple_body
 

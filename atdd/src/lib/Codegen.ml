@@ -823,10 +823,10 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s {}" (trans env unique_name));
-          Line (sprintf "JSONValue toJson(%s e) {" orig_name);
+          Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
-          Line (sprintf "JSONValue toJsonString(%s e) {" orig_name);
+          Line (sprintf "JSONValue toJsonString(%s e) {"  (trans env unique_name));
           Block[ Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
         ]
@@ -836,10 +836,10 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
-          Line (sprintf "JSONValue toJson(%s e) {" orig_name);
+          Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
-          Line (sprintf "JSONValue toJsonString(%s e) {" orig_name);
+          Line (sprintf "JSONValue toJsonString(%s e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
@@ -929,8 +929,8 @@ let sum_container env  loc name cases =
   [
     Line (sprintf "alias %s = SumType!(%s);" py_class_name type_list);
     Line "";
-      Line (sprintf "%s fromJson(JSONValue x) {"
-              (single_esc py_class_name));
+      Line (sprintf "%s fromJson(%s)(JSONValue x) {"
+              (single_esc py_class_name)               (single_esc py_class_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;

@@ -499,17 +499,17 @@ let rec get_default_default (e : type_expr) : string option =
   | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
   | List _ -> Some "[]"
   | Option _
-  | Nullable _ -> Some "null"
+  | Nullable _ -> None
   | Shared (loc, e, an) -> get_default_default e
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "unit" -> Some "null"
+       | "unit" -> None
        | "bool" -> Some "false"
        | "int" -> Some "0"
        | "float" -> Some "0.0"
        | "string" -> Some {|""|}
-       | "abstract" -> Some "null"
+       | "abstract" -> None
        | _ -> None
       )
   | Name _ -> None
@@ -716,8 +716,8 @@ let inst_var_declaration
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
-    | Required -> ""
-    | Optional -> " = null"
+    | Required
+    | Optional -> ""
     | With_default ->
         match get_dlang_default unwrapped_e an with
         | None -> ""

@@ -206,7 +206,7 @@ let fixed_size_preamble atd_filename =
       }
   }
   
-  void _atd_missing_json_field(string typeName, string jsonFieldName)
+  T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
       throw new AtdException("missing field %%s in JSON object of type %%s".format(typeName, jsonFieldName));
   }
@@ -761,7 +761,8 @@ let from_json_class_argument
   let else_body =
     match kind with
     | Required ->
-        sprintf "_atd_missing_json_field(\"%s\", \"%s\")"
+        sprintf "_atd_missing_json_field!(typeof(obj.%s))(\"%s\", \"%s\")"
+          dlang_name
           (single_esc py_class_name)
           (single_esc json_name)
     | Optional -> "null"

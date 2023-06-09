@@ -24,7 +24,7 @@ class AtdException : Exception
     }
 }
 
-void _atd_missing_json_field(string typeName, string jsonFieldName)
+T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
 {
     throw new AtdException("missing field %s in JSON object of type %s".format(typeName, jsonFieldName));
 }

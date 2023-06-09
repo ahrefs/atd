@@ -860,7 +860,7 @@ let read_cases0 env loc name cases0 =
   in
   [
     Inline ifs;
-    Line (sprintf "_atd_bad_json('%s', x)"
+    Line (sprintf "_atd_bad_json('%s', x);"
             (class_name env name |> single_esc))
   ]
 
@@ -877,7 +877,7 @@ let read_cases1 env loc name cases1 =
       Inline [
         Line (sprintf "if (cons == \"%s\")" (single_esc json_name));
         Block [
-          Line (sprintf "return (%s(%s(x[1])))"
+          Line (sprintf "return (%s(%s(x[1])));"
                   (trans env unique_name)
                   (json_reader env e))
         ]
@@ -886,7 +886,7 @@ let read_cases1 env loc name cases1 =
   in
   [
     Inline ifs;
-    Line (sprintf "_atd_bad_json('%s', x)"
+    Line (sprintf "_atd_bad_json('%s', x);"
             (class_name env name |> single_esc))
   ]
 
@@ -916,26 +916,29 @@ let sum_container env  loc name cases =
   let cases1_block =
     if cases1 <> [] then
       [
-        Line "if (x.type == JSONType.array AND x.array.length == 2 AND x[0].type == JSONType.string)";
+        Line "if (x.type == JSONType.array AND x.array.length == 2 AND x[0].type == JSONType.string) {";
         Block [
-          Line "string cons = x[0].str";
+          Line "string cons = x[0].str;";
           Inline (read_cases1 env loc name cases1)
-        ]
+        ];
+          Line "}";
       ]
     else
       []
   in
   [
     Line (sprintf "alias %s = SumType!(%s);" py_class_name type_list);
+    Line "";
       Line (sprintf "%s from_json(JSONValue x) {"
               (single_esc py_class_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
-        Line (sprintf "_atd_bad_json('%s', x)"
+        Line (sprintf "_atd_bad_json('%s', x);"
                 (single_esc (class_name env name)))
       ];
-      Line "";
+    Line "}";
+    Line "";
     Line (sprintf "JSONValue to_json(%s x) {" (py_class_name));
     Block [
       Line "return x.match!(";

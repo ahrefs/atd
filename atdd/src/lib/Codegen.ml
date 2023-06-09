@@ -572,7 +572,7 @@ let rec json_writer ?(nested=false) env e =
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_write_%s%s" 
        (if nested then "(&" else "")  name (if nested then ").toDelegate" else "")
-       | "abstract" -> "(auto x => x)"
+       | "abstract" -> "(auto x) => x"
        | _ -> sprintf "((%s x) => x.toJson())" (dlang_type_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

@@ -457,7 +457,7 @@ let dlang_type_name env (name : string) =
   | "int" -> "int"
   | "float" -> "float"
   | "string" -> "string"
-  | "abstract" -> "abstract" (* TODO : figure out *)
+  | "abstract" -> "JSONValue"
   | user_defined -> class_name env user_defined
 
 let rec type_name_of_expr env (e : type_expr) : string =
@@ -651,7 +651,7 @@ let rec json_reader env (e : type_expr) =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
-       | "abstract" -> "(lambda x: x)"
+       | "abstract" -> "((JSONValue x) => x)"
        | _ -> sprintf "%s.fromJson" (class_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

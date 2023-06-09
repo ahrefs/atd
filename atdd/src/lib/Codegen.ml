@@ -835,7 +835,7 @@ let case_class env  type_name
           Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s { value %s; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
+          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e));
           Line (sprintf "JSONValue to_json(%s e) {" orig_name);
           Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");

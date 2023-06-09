@@ -20,12 +20,9 @@
  (alias runtest)
  (package atdd)
  (deps
-  everything.d
   (glob_files *.d))
  (action
-  ; TODO: update to run Dlang typechecker and unit testing
+  ; TODO: ensure that compile check is run on unit tests, too
   (progn
-   (run ldc2)
-   ;(run python3 -m mypy --strict .)
-   ;(run python3 -m pytest .)
+   (run ldc2 %{deps})
   )))

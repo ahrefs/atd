@@ -838,10 +838,10 @@ let case_class env  type_name
                   orig_name);
           Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
           Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
           Line (sprintf "JSONValue toJsonString(%s e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([\"%s\", %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
       

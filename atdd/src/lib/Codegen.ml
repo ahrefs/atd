@@ -306,12 +306,12 @@ let fixed_size_preamble atd_filename =
       V delegate(JSONValue) readValue)
   {
       auto fun = (JSONValue jsonVal) {
-          if (jsonVal.type != JSONType.list)
+          if (jsonVal.type != JSONType.array)
               throw _atd_bad_json("list", jsonVal);
           V[K] ret;
           foreach (jsonInnerVal; jsonVal.object)
           {
-              if (jsonInnerVal.type != JSONType.list)
+              if (jsonInnerVal.type != JSONType.array)
                   throw _atd_bad_json("list", jsonInnerVal);
               ret[readKey(jsonInnerVal[0])] = readValue(jsonInnerVal[1]);
           }
@@ -335,7 +335,6 @@ let fixed_size_preamble atd_filename =
       return fun;
   }
   
-  // TODO probably need to change that
   auto _atd_read_nullable(T)(T delegate(JSONValue) readElm)
   {
       auto fun = (JSONValue e) {
@@ -343,6 +342,19 @@ let fixed_size_preamble atd_filename =
               return Nullable!T.init;
           else
               return Nullable!T(readElm(e));
+      };
+      return fun;
+  }
+  
+  auto _atd_read_option(T)(T delegate(JSONValue) readElm)
+  {
+      auto fun = (JSONValue e) {
+          if (e.type == JSONType.string && e.str == "None")
+              return Nullable!T.init;
+          else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
+              return Nullable!T(readElm(e));
+          else
+              throw _atd_bad_json("option", e);
       };
       return fun;
   }
@@ -424,6 +436,17 @@ let fixed_size_preamble atd_filename =
               return JSONValue(null);
           else
               return writeElm(elm.get);
+      };
+      return fun;
+  }
+  
+  auto _atd_write_option(T)(JSONValue delegate(T) writeElm)
+  {
+      auto fun = (Nullable!T elm) {
+          if (elm.isNull)
+              return JSONValue("None");
+          else
+              return JSONValue([JSONValue("Some"), writeElm(elm.get)]);
       };
       return fun;
   }

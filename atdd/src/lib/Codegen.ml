@@ -279,11 +279,11 @@ let fixed_size_preamble atd_filename =
   
   auto _atd_read_list(T)(T delegate(JSONValue) readElements)
   {
-      return (JSONValue jsonVal) { 
+      return (JSONValue jsonVal) {
           if (jsonVal.type != JSONType.array)
               throw _atd_bad_json("array", jsonVal);
           auto list = jsonVal.array;
-          return array(list.map!readElements()); 
+          return array(list.map!readElements());
       };
   }
   
@@ -296,6 +296,25 @@ let fixed_size_preamble atd_filename =
           V[string] ret;
           foreach (key, val; jsonVal.object)
               ret[key] = readValue(val);
+          return ret;
+      };
+      return fun;
+  }
+  
+  auto _atd_read_array_to_assoc_dict(K, V)(
+      K delegate(JSONValue) readKey,
+      V delegate(JSONValue) readValue)
+  {
+      auto fun = (JSONValue jsonVal) {
+          if (jsonVal.type != JSONType.list)
+              throw _atd_bad_json("list", jsonVal);
+          V[K] ret;
+          foreach (jsonInnerVal; jsonVal.object)
+          {
+              if (jsonInnerVal.type != JSONType.list)
+                  throw _atd_bad_json("list", jsonInnerVal);
+              ret[readKey(jsonInnerVal[0])] = readValue(jsonInnerVal[1]);
+          }
           return ret;
       };
       return fun;
@@ -356,7 +375,6 @@ let fixed_size_preamble atd_filename =
       return JSONValue(s);
   }
   
-  
   auto _atd_write_list(T)(JSONValue delegate(T) writeElm)
   {
       return (T[] list) { return JSONValue(array(list.map!writeElm())); };
@@ -369,6 +387,19 @@ let fixed_size_preamble atd_filename =
           JSONValue[string] ret;
           foreach (key, val; assocArr)
               ret[key] = writeValue(val);
+          return JSONValue(ret);
+      };
+      return fun;
+  }
+  
+  auto _atd_write_assoc_dict_to_array(K, V)(
+      JSONValue delegate(K) writeKey,
+      JSONValue delegate(V) writeValue)
+  {
+      auto fun = (V[K] assocArr) {
+          JSONValue[] ret;
+          foreach (key, val; assocArr)
+              ret ~= JSONValue[writeKey(key), writeValue(val)];
           return JSONValue(ret);
       };
       return fun;

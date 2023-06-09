@@ -100,11 +100,11 @@ string _atd_read_string(JSONValue x)
 
 auto _atd_read_list(T)(T delegate(JSONValue) readElements)
 {
-    return (JSONValue jsonVal) { 
+    return (JSONValue jsonVal) {
         if (jsonVal.type != JSONType.array)
             throw _atd_bad_json("array", jsonVal);
         auto list = jsonVal.array;
-        return array(list.map!readElements()); 
+        return array(list.map!readElements());
     };
 }
 
@@ -117,6 +117,25 @@ auto _atd_read_object_to_assoc_array(V)(
         V[string] ret;
         foreach (key, val; jsonVal.object)
             ret[key] = readValue(val);
+        return ret;
+    };
+    return fun;
+}
+
+auto _atd_read_array_to_assoc_dict(K, V)(
+    K delegate(JSONValue) readKey,
+    V delegate(JSONValue) readValue)
+{
+    auto fun = (JSONValue jsonVal) {
+        if (jsonVal.type != JSONType.list)
+            throw _atd_bad_json("list", jsonVal);
+        V[K] ret;
+        foreach (jsonInnerVal; jsonVal.object)
+        {
+            if (jsonInnerVal.type != JSONType.list)
+                throw _atd_bad_json("list", jsonInnerVal);
+            ret[readKey(jsonInnerVal[0])] = readValue(jsonInnerVal[1]);
+        }
         return ret;
     };
     return fun;
@@ -177,7 +196,6 @@ JSONValue _atd_write_string(string s)
     return JSONValue(s);
 }
 
-
 auto _atd_write_list(T)(JSONValue delegate(T) writeElm)
 {
     return (T[] list) { return JSONValue(array(list.map!writeElm())); };
@@ -190,6 +208,19 @@ auto _atd_write_assoc_array_to_object(T)(
         JSONValue[string] ret;
         foreach (key, val; assocArr)
             ret[key] = writeValue(val);
+        return JSONValue(ret);
+    };
+    return fun;
+}
+
+auto _atd_write_assoc_dict_to_array(K, V)(
+    JSONValue delegate(K) writeKey,
+    JSONValue delegate(V) writeValue)
+{
+    auto fun = (V[K] assocArr) {
+        JSONValue[] ret;
+        foreach (key, val; assocArr)
+            ret ~= JSONValue[writeKey(key), writeValue(val)];
         return JSONValue(ret);
     };
     return fun;
@@ -221,7 +252,6 @@ auto _atd_write_nullable(T)(JSONValue delegate(T) writeElm)
 // ======================
 // ====== TESTS =========
 // ======================
-
 
 unittest
 {

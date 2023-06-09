@@ -25,6 +25,7 @@
  (action
   ; TODO: update to run Dlang typechecker and unit testing
   (progn
-   (run python3 -m flake8 .)
-   (run python3 -m mypy --strict .)
-   (run python3 -m pytest .))))
+   (run ldc2)
+   ;(run python3 -m mypy --strict .)
+   ;(run python3 -m pytest .)
+  )))

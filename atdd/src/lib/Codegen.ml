@@ -819,7 +819,7 @@ let case_class env  type_name
   match opt_e with
   | None ->
       [
-          Line (sprintf {|\\Original type: %s = [ ... | %s | ... ]|}
+          Line (sprintf {|// Original type: %s = [ ... | %s | ... ]|}
                   type_name
                   orig_name);
           Line (sprintf "struct %s {}" (trans env unique_name));
@@ -832,7 +832,7 @@ let case_class env  type_name
         ]
   | Some e ->
       [
-          Line (sprintf {|\\Original type: %s = [ ... | %s of ... | ... ]|}
+          Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
           Line (sprintf "struct %s { value %s; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)

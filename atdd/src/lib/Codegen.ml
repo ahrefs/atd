@@ -733,7 +733,7 @@ and tuple_reader env cells =
     ) cells
     |> String.concat ", "
   in
-  sprintf "(JSONValue x) => tuple(%s)" tuple_body
+  sprintf "((JSONValue x) => tuple(%s))" tuple_body
 
 let from_json_class_argument
     env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
@@ -856,7 +856,7 @@ let alias_wrapper env  name type_expr =
     Line (sprintf "string toJsonString(%s e) {"  dlang_struct_name);
     Block [Line(sprintf "return %s(e).toString;" (json_writer env type_expr))];
     Line("}");
-    Line (sprintf "%s fromJson(%s)(JSONValue e) {"  dlang_struct_name dlang_struct_name);
+    Line (sprintf "%s fromJson(T : %s)(JSONValue e) {"  dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
     Line("}");
   ]

@@ -197,6 +197,8 @@ let fixed_size_preamble atd_filename =
   import std.sumtype;
   import std.typecons : nullable, Nullable, tuple, Tuple;
   
+private
+{
   class AtdException : Exception
   {
       this(string msg, string file = __FILE__, size_t line = __LINE__)
@@ -452,7 +454,7 @@ let fixed_size_preamble atd_filename =
       };
       return fun;
   }
-
+}
   // ############################################################################
   // # Public classes
   // ############################################################################

@@ -735,7 +735,11 @@ and tuple_reader env cells =
     ) cells
     |> String.concat ", "
   in
-  sprintf "((JSONValue x) => tuple(%s))" tuple_body
+  sprintf "((JSONValue x) { 
+    if (x.type != JSONType.array || x.array.length != %d)
+      throw _atd_bad_json(\"Tuple of size %d\", x);
+    return tuple(%s);
+  })" (List.length cells) (List.length cells) tuple_body
 
 let from_json_class_argument
     env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =

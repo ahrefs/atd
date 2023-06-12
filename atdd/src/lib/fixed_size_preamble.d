@@ -130,7 +130,7 @@ auto _atd_read_array_to_assoc_dict(K, V)(
         if (jsonVal.type != JSONType.array)
             throw _atd_bad_json("list", jsonVal);
         V[K] ret;
-        foreach (jsonInnerVal; jsonVal.object)
+        foreach (jsonInnerVal; jsonVal.array)
         {
             if (jsonInnerVal.type != JSONType.array)
                 throw _atd_bad_json("list", jsonInnerVal);
@@ -173,7 +173,7 @@ auto _atd_read_option(T)(T delegate(JSONValue) readElm)
         if (e.type == JSONType.string && e.str == "None")
             return Nullable!T.init;
         else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
-            return Nullable!T(readElm(e));
+            return Nullable!T(readElm(e[1]));
         else
             throw _atd_bad_json("option", e);
     };

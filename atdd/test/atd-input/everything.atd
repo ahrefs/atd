@@ -20,7 +20,10 @@ type 'a parametrized_tuple = ('a * 'a * int)
 type root = {
   id <json name="ID">: string;
   await: bool;
-  __init__: float;
+  integer: int;
+  __init__ : float;
+  ~float_with_auto_default: float;
+  ~float_with_default <dlang default="0.1">: float;
   items: int list list;
   ?maybe: int option;
   ~extras: int list;

@@ -313,7 +313,7 @@ private
           if (jsonVal.type != JSONType.array)
               throw _atd_bad_json("list", jsonVal);
           V[K] ret;
-          foreach (jsonInnerVal; jsonVal.object)
+          foreach (jsonInnerVal; jsonVal.array)
           {
               if (jsonInnerVal.type != JSONType.array)
                   throw _atd_bad_json("list", jsonInnerVal);
@@ -356,7 +356,7 @@ private
           if (e.type == JSONType.string && e.str == "None")
               return Nullable!T.init;
           else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
-              return Nullable!T(readElm(e));
+              return Nullable!T(readElm(e[1]));
           else
               throw _atd_bad_json("option", e);
       };
@@ -705,7 +705,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
              (json_reader ~nested:true env e)
        | Array_dict (key, value) ->
            sprintf "_atd_read_array_to_assoc_dict(%s, %s)"
-             (json_reader ~nested:true env key) (json_reader env value)
+             (json_reader ~nested:true env key) (json_reader ~nested:true env value)
        | Object_dict value ->
            sprintf "_atd_read_object_to_assoc_array(%s)"
              (json_reader ~nested:true env value)
@@ -724,7 +724,11 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
        | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_read_%s%s"
        (if nested then "(&" else "") name (if nested then ").toDelegate" else "")
        | "abstract" -> "((JSONValue x) => x)"
-       | _ -> sprintf "%s.fromJson" (struct_name env name))
+       | _ -> sprintf "%sfromJson!%s%s" 
+       (if nested then "(&" else "")
+       (struct_name env name)
+       (if nested then ").toDelegate" else "")
+       )
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -745,18 +749,6 @@ let from_json_class_argument
     env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
   let dlang_name = inst_var_name trans_meth name in
   let json_name = Atd.Json.get_json_fname name an in
-  let unwrapped_type =
-    match kind with
-    | Required
-    | With_default -> e
-    | Optional ->
-        match e with
-        | Option (loc, e, an) -> e
-        | _ ->
-            A.error_at loc
-              (sprintf "the type of optional field '%s' should be of \
-                        the form 'xxx option'" name)
-  in
   let else_body =
     match kind with
     | Required ->
@@ -764,7 +756,7 @@ let from_json_class_argument
           dlang_name
           (single_esc dlang_struct_name)
           (single_esc json_name)
-    | Optional -> "null"
+    | Optional -> (sprintf "typeof(obj.%s).init" dlang_name)
     | With_default ->
         match get_dlang_default e an with
         | Some x -> x
@@ -776,7 +768,7 @@ let from_json_class_argument
   sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
     dlang_name
     (single_esc json_name)
-    (json_reader env unwrapped_type)
+    (json_reader env e)
     (single_esc json_name)
     else_body
 
@@ -792,7 +784,7 @@ let inst_var_declaration
     | With_default ->
         match get_dlang_default unwrapped_e an with
         | None -> ""
-        | Some x ->            sprintf " = %s" x
+        | Some x -> sprintf " = %s" x
   in
   [
     Line (sprintf "%s %s%s;" type_name var_name default)
@@ -859,9 +851,6 @@ let alias_wrapper env  name type_expr =
     Line (sprintf "JSONValue toJson(%s e) {"  dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");
-    Line (sprintf "string toJsonString(%s e) {"  dlang_struct_name);
-    Block [Line(sprintf "return %s(e).toString;" (json_writer env type_expr))];
-    Line("}");
     Line (sprintf "%s fromJson(T : %s)(JSONValue e) {"  dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
     Line("}");
@@ -880,9 +869,6 @@ let case_class env  type_name
           Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
-          Line (sprintf "string toJsonString(%s e) {"  (trans env unique_name));
-          Block[ Line(sprintf "return JSONValue(\"%s\").toString;" (single_esc json_name))];
-          Line("}");
         ]
   | Some e ->
       [
@@ -892,9 +878,6 @@ let case_class env  type_name
           Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
           Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
-          Line("}");
-          Line (sprintf "string toJsonString(%s e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]).toString;" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
       
@@ -907,7 +890,7 @@ let read_cases0 env loc name cases0 =
       Inline [
         Line (sprintf "if (x.str == \"%s\") " (single_esc json_name));
         Block [
-          Line (sprintf "return (%s());" (trans env unique_name))
+          Line (sprintf "return %s(%s());" (struct_name env name) (trans env unique_name))
         ];
       ]
     )
@@ -931,7 +914,8 @@ let read_cases1 env loc name cases1 =
       Inline [
         Line (sprintf "if (cons == \"%s\")" (single_esc json_name));
         Block [
-          Line (sprintf "return (%s(%s(x[1])));"
+          Line (sprintf "return %s(%s(%s(x[1])));"
+                  (struct_name env name)
                   (trans env unique_name)
                   (json_reader env e))
         ]
@@ -983,8 +967,8 @@ let sum_container env  loc name cases =
   [
     Line (sprintf "alias %s = SumType!(%s);" dlang_struct_name type_list);
     Line "";
-      Line (sprintf "%s fromJson(%s)(JSONValue x) {"
-              (single_esc dlang_struct_name)               (single_esc dlang_struct_name));
+      Line (sprintf "%s fromJson(T : %s)(JSONValue x) {"
+              (single_esc dlang_struct_name) (single_esc dlang_struct_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;

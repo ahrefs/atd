@@ -17,7 +17,7 @@ type env = {
   (* Global *)
   create_variable: string -> string;
   translate_variable: string -> string;
-  (* Local to a class: instance variables, including method names *)
+  (* Local to a struct: instance variables, including method names *)
   translate_inst_variable: unit -> (string -> string);
 }
 
@@ -64,21 +64,20 @@ let to_camel_case s =
     | 'A'..'Z' | 'a'..'z' | '_' -> name
     | _ -> "X" ^ name
 
-(* Use CamelCase as recommended by PEP 8. *)
-let class_name env id =
+(* Use CamelCase *)
+let struct_name env id =
   trans env (to_camel_case id)
 
 (*
-   Create a class identifier that hasn't been seen yet.
+   Create a struct identifier that hasn't been seen yet.
    This is for internal disambiguation and still must translated using
-   the 'trans' function ('class_name' will not work due to trailing
+   the 'trans' function ('struct_name' will not work due to trailing
    underscores being added for disambiguation).
 *)
-let create_class_name env name =
+let create_struct_name env name =
   let preferred_id = to_camel_case name in
   env.create_variable preferred_id
 
-(* TODO : edit list of keywoard based on dlang *)
 let init_env () : env =
   let keywords = [
     (* Keywords
@@ -529,7 +528,7 @@ let dlang_type_name env (name : string) =
   | "float" -> "float"
   | "string" -> "string"
   | "abstract" -> "JSONValue"
-  | user_defined -> class_name env user_defined
+  | user_defined -> struct_name env user_defined
 
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
@@ -592,9 +591,9 @@ let get_dlang_default (e : type_expr) (an : annot) : string option =
   | Some s -> Some s
   | None -> get_default_default e
 
-(* If the field is '?foo: bar option', its python or json value has type
+(* If the field is '?foo: bar option', its dlang or json value has type
    'bar' rather than 'bar option'. *)
-let unwrap_field_type loc field_name kind e =
+let unwrap_field_type loc field_name kind e = (* todo : dubious for dlang*)
   match kind with
   | Required
   | With_default -> e
@@ -648,11 +647,6 @@ let rec json_writer ?(nested=false) env e =
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
-(*
-   Convert dlang tuple to json list
-
-   (lambda x: [write0(x[0]), write1(x[1])] if isinstance(x, tuple) else error())
-*)
 and tuple_writer env (loc, cells, an) =
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
@@ -663,7 +657,6 @@ and tuple_writer env (loc, cells, an) =
   sprintf "((%s x) => JSONValue([%s]))"
     (type_name_of_expr env (Tuple (loc, cells, an)))
     tuple_body
-
 
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
@@ -729,7 +722,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
        | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_read_%s%s"
        (if nested then "(&" else "") name (if nested then ").toDelegate" else "")
        | "abstract" -> "((JSONValue x) => x)"
-       | _ -> sprintf "%s.fromJson" (class_name env name))
+       | _ -> sprintf "%s.fromJson" (struct_name env name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -743,7 +736,7 @@ and tuple_reader env cells =
   sprintf "(JSONValue x) => tuple(%s)" tuple_body
 
 let from_json_class_argument
-    env trans_meth py_class_name ((loc, (name, kind, an), e) : simple_field) =
+    env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
   let dlang_name = inst_var_name trans_meth name in
   let json_name = Atd.Json.get_json_fname name an in
   let unwrapped_type =
@@ -763,7 +756,7 @@ let from_json_class_argument
     | Required ->
         sprintf "_atd_missing_json_field!(typeof(obj.%s))(\"%s\", \"%s\")"
           dlang_name
-          (single_esc py_class_name)
+          (single_esc dlang_struct_name)
           (single_esc json_name)
     | Optional -> "null"
     | With_default ->
@@ -800,7 +793,7 @@ let inst_var_declaration
   ]
 
 let record env loc name (fields : field list) an =
-  let dlang_struct_name = class_name env name in
+  let dlang_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
     List.map (function
@@ -853,15 +846,15 @@ let record env loc name (fields : field list) an =
   ]
 
 let alias_wrapper env  name type_expr =
-  let dlang_struct_name = class_name env name in
+  let dlang_struct_name = struct_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
     Line (sprintf "alias %s = %s;" dlang_struct_name value_type);
     Line (sprintf "JSONValue toJson(%s e) {"  dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");
-    Line (sprintf "JSONValue toJsonString(%s e) {"  dlang_struct_name);
-    Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
+    Line (sprintf "string toJsonString(%s e) {"  dlang_struct_name);
+    Block [Line(sprintf "return %s(e).toString;" (json_writer env type_expr))];
     Line("}");
     Line (sprintf "%s fromJson(%s)(JSONValue e) {"  dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
@@ -881,8 +874,8 @@ let case_class env  type_name
           Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
-          Line (sprintf "JSONValue toJsonString(%s e) {"  (trans env unique_name));
-          Block[ Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
+          Line (sprintf "string toJsonString(%s e) {"  (trans env unique_name));
+          Block[ Line(sprintf "return JSONValue(\"%s\").toString;" (single_esc json_name))];
           Line("}");
         ]
   | Some e ->
@@ -894,8 +887,8 @@ let case_class env  type_name
           Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
-          Line (sprintf "JSONValue toJsonString(%s e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Line (sprintf "string toJsonString(%s e) {"  (trans env unique_name));
+          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]).toString;" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
       
@@ -916,7 +909,7 @@ let read_cases0 env loc name cases0 =
   [
     Inline ifs;
     Line (sprintf "throw _atd_bad_json(\"%s\", x);"
-            (class_name env name |> single_esc))
+            (struct_name env name |> single_esc))
   ]
 
 let read_cases1 env loc name cases1 =
@@ -942,11 +935,11 @@ let read_cases1 env loc name cases1 =
   [
     Inline ifs;
     Line (sprintf "throw _atd_bad_json(\"%s\", x);"
-            (class_name env name |> single_esc))
+            (struct_name env name |> single_esc))
   ]
 
 let sum_container env  loc name cases =
-  let py_class_name = class_name env name in
+  let dlang_struct_name = struct_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
       trans env unique_name
@@ -982,24 +975,24 @@ let sum_container env  loc name cases =
       []
   in
   [
-    Line (sprintf "alias %s = SumType!(%s);" py_class_name type_list);
+    Line (sprintf "alias %s = SumType!(%s);" dlang_struct_name type_list);
     Line "";
       Line (sprintf "%s fromJson(%s)(JSONValue x) {"
-              (single_esc py_class_name)               (single_esc py_class_name));
+              (single_esc dlang_struct_name)               (single_esc dlang_struct_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
         Line (sprintf "throw _atd_bad_json(\"%s\", x);"
-                (single_esc (class_name env name)))
+                (single_esc (struct_name env name)))
       ];
     Line "}";
     Line "";
-    Line (sprintf "JSONValue toJson(%s x) {" (py_class_name));
+    Line (sprintf "JSONValue toJson(%s x) {" (dlang_struct_name));
     Block [
       Line "return x.match!(";
         Line (
                  List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-                   sprintf "(%s v) => v.toJsonString" (trans env unique_name)
+                   sprintf "(%s v) => v.toJson" (trans env unique_name)
                  ) cases
               |> String.concat ",\n");
         Line ");"
@@ -1013,7 +1006,7 @@ let sum env  loc name cases =
     List.map (fun (x : variant) ->
       match x with
       | Variant (loc, (orig_name, an), opt_e) ->
-          let unique_name = create_class_name env orig_name in
+          let unique_name = create_struct_name env orig_name in
           (loc, orig_name, unique_name, an, opt_e)
       | Inherit _ -> assert false
     ) cases
@@ -1062,21 +1055,21 @@ let definition_group ~atd_filename env
 
 (*
    Make sure that the types as defined in the atd file get a good name.
-   For example, type 'foo' should become class 'Foo'.
+   For example, type 'foo' should become struct 'Foo'.
    We do this because each case constructor of sum types will also
-   translate to a class in the same namespace. For example,
+   translate to a struct in the same namespace. For example,
    there may be a type like 'type bar = [ Foo | Bleep ]'.
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_class_names env (items: A.module_body) =
+let reserve_good_struct_names env (items: A.module_body) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (class_name env name))
+    (fun (Type (loc, (name, param, an), e)) -> ignore (struct_name env name))
     items
 
 let to_file ~atd_filename ~head (items : A.module_body) dst_path =
   let env = init_env () in
-  reserve_good_class_names env items;
+  reserve_good_struct_names env items;
   let head = List.map (fun s -> Line s) head in
   let dlang_defs =
     Atd.Util.tsort items

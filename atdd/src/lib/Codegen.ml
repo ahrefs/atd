@@ -679,11 +679,11 @@ let construct_json_field env trans_meth
       [
         Line (sprintf "if (!obj.%s.isNull)"
                 (inst_var_name trans_meth name));
-     Block [ Line(sprintf "res[\"%s\"] = %s(obj.%s.get);"
+     Block [ Line(sprintf "res[\"%s\"] = %s(%s)(obj.%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
-              writer_function
+              "_atd_write_option"
+              (json_writer ~nested:true env unwrapped_type)
               (inst_var_name trans_meth name))];
-
       ]
 
 (*

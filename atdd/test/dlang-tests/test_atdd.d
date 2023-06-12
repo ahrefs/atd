@@ -63,6 +63,7 @@ void setupTests()
         obj.items = [[], [1, 2]];
         obj.extras = [17, 53];
         obj.aliased = [1, 6, 8];
+        obj.maybe = 43;
         obj.point = tuple(4.3, 1.2);
         obj.assoc1 = [tuple(3.4f, 2), tuple(1.1f, 2)]; // Can be not ordered by key
         obj.assoc2 = [tuple("d", 3), tuple("e", 7)]; // Must be ordered by key because we lose ordering when writing
@@ -107,8 +108,13 @@ void setupTests()
         auto obj = DefaultList();
 
         auto newObj = obj.toJsonString.fromJsonString!DefaultList;
-
         assert(obj == newObj);
+    };
+
+    tests["defaultListInit"] = {
+        auto json = "{}";
+
+        json.fromJsonString!DefaultList;
     };
 
     tests["frozenDefaultA"] = {
@@ -135,6 +141,32 @@ void setupTests()
         auto json = "[\"B\"]";
 
         assertThrows({ json.fromJsonString!Frozen; });
+    };
+
+    tests["requireFieldLoop"] = {
+        auto obj = RequireField("test");
+
+        assert(obj == obj.toJsonString.fromJsonString!RequireField);
+    };
+
+    tests["requireFieldFails"] = {
+        auto json = "{}";
+
+        assertThrows({json.fromJsonString!RequireField;});
+    };
+
+    tests["requireFieldNotFail"] = {
+        auto json = "{ \"req\" : \"hello\"}";
+
+        json.fromJsonString!RequireField;
+    };
+
+    tests["recursiveClass"] = {
+        auto child1 = RecursiveClass(1, true, []);
+        auto child2 = RecursiveClass(2, true, []);
+        auto a_obj = RecursiveClass(0, false, [child1, child2]);
+
+        assert (a_obj == a_obj.toJsonString.fromJsonString!RecursiveClass);
     };
 }
 

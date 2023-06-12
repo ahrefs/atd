@@ -413,7 +413,7 @@ let fixed_size_preamble atd_filename =
       auto fun = (V[K] assocArr) {
           JSONValue[] ret;
           foreach (key, val; assocArr)
-              ret ~= JSONValue[writeKey(key), writeValue(val)];
+              ret ~= JSONValue([writeKey(key), writeValue(val)]);
           return JSONValue(ret);
       };
       return fun;

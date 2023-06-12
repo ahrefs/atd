@@ -232,7 +232,7 @@ auto _atd_write_assoc_dict_to_array(K, V)(
     auto fun = (V[K] assocArr) {
         JSONValue[] ret;
         foreach (key, val; assocArr)
-            ret ~= JSONValue[writeKey(key), writeValue(val)];
+            ret ~= JSONValue([writeKey(key), writeValue(val)]);
         return JSONValue(ret);
     };
     return fun;

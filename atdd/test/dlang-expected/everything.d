@@ -27,7 +27,7 @@
       }
   }
   
-  void _atd_missing_json_field(string typeName, string jsonFieldName)
+  T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
       throw new AtdException("missing field %s in JSON object of type %s".format(typeName, jsonFieldName));
   }
@@ -300,9 +300,9 @@ struct RecursiveClass {
 
 RecursiveClass fromJson(T : RecursiveClass)(JSONValue x) {
     RecursiveClass obj;
-    obj.id = ("id" in x) ? _atd_read_int(x["id"]) : _atd_missing_json_field("RecursiveClass", "id");
-    obj.flag = ("flag" in x) ? _atd_read_bool(x["flag"]) : _atd_missing_json_field("RecursiveClass", "flag");
-    obj.children = ("children" in x) ? _atd_read_list(RecursiveClass.fromJson)(x["children"]) : _atd_missing_json_field("RecursiveClass", "children");
+    obj.id = ("id" in x) ? _atd_read_int(x["id"]) : _atd_missing_json_field!(typeof(obj.id))("RecursiveClass", "id");
+    obj.flag = ("flag" in x) ? _atd_read_bool(x["flag"]) : _atd_missing_json_field!(typeof(obj.flag))("RecursiveClass", "flag");
+    obj.children = ("children" in x) ? _atd_read_list(RecursiveClass.fromJson)(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
     return obj;
 }
 JSONValue toJson(RecursiveClass obj) {
@@ -319,8 +319,8 @@ struct Root_ {}
 JSONValue toJson(Root_ e) {
     return JSONValue("Root");
 }
-JSONValue toJsonString(Root_ e) {
-    return JSONValue("Root");
+string toJsonString(Root_ e) {
+    return JSONValue("Root").toString;
 }
 
 
@@ -329,8 +329,8 @@ struct Thing { int value; }
 JSONValue toJson(Thing e) {
     return JSONValue([JSONValue("Thing"), _atd_write_int(e.value)]);
 }
-JSONValue toJsonString(Thing e) {
-    return JSONValue([JSONValue("Thing"), _atd_write_int(e.value)]);
+string toJsonString(Thing e) {
+    return JSONValue([JSONValue("Thing"), _atd_write_int(e.value)]).toString;
 }
 
 
@@ -339,8 +339,8 @@ struct WOW {}
 JSONValue toJson(WOW e) {
     return JSONValue("wow");
 }
-JSONValue toJsonString(WOW e) {
-    return JSONValue("wow");
+string toJsonString(WOW e) {
+    return JSONValue("wow").toString;
 }
 
 
@@ -349,8 +349,8 @@ struct Amaze { string[] value; }
 JSONValue toJson(Amaze e) {
     return JSONValue([JSONValue("!!!"), _atd_write_list((&_atd_write_string).toDelegate)(e.value)]);
 }
-JSONValue toJsonString(Amaze e) {
-    return JSONValue([JSONValue("!!!"), _atd_write_list((&_atd_write_string).toDelegate)(e.value)]);
+string toJsonString(Amaze e) {
+    return JSONValue([JSONValue("!!!"), _atd_write_list((&_atd_write_string).toDelegate)(e.value)]).toString;
 }
 
 
@@ -377,10 +377,10 @@ Kind fromJson(Kind)(JSONValue x) {
 
 JSONValue toJson(Kind x) {
     return x.match!(
-    (Root_ v) => v.toJsonString,
-(Thing v) => v.toJsonString,
-(WOW v) => v.toJsonString,
-(Amaze v) => v.toJsonString
+    (Root_ v) => v.toJson,
+(Thing v) => v.toJson,
+(WOW v) => v.toJson,
+(Amaze v) => v.toJson
     );
 }
 
@@ -389,8 +389,8 @@ alias Alias = int[];
 JSONValue toJson(Alias e) {
     return _atd_write_list((&_atd_write_int).toDelegate)(e);
 }
-JSONValue toJsonString(Alias e) {
-    return _atd_write_list((&_atd_write_int).toDelegate)(e);
+string toJsonString(Alias e) {
+    return _atd_write_list((&_atd_write_int).toDelegate)(e).toString;
 }
 Alias fromJson(Alias)(JSONValue e) {
     return _atd_read_list((&_atd_read_int).toDelegate)(e);
@@ -401,8 +401,8 @@ alias KindParametrizedTuple = Tuple!(Kind, Kind, int);
 JSONValue toJson(KindParametrizedTuple e) {
     return ((Tuple!(Kind, Kind, int) x) => JSONValue([((Kind x) => x.toJson())(x[0]), ((Kind x) => x.toJson())(x[1]), _atd_write_int(x[2])]))(e);
 }
-JSONValue toJsonString(KindParametrizedTuple e) {
-    return ((Tuple!(Kind, Kind, int) x) => JSONValue([((Kind x) => x.toJson())(x[0]), ((Kind x) => x.toJson())(x[1]), _atd_write_int(x[2])]))(e);
+string toJsonString(KindParametrizedTuple e) {
+    return ((Tuple!(Kind, Kind, int) x) => JSONValue([((Kind x) => x.toJson())(x[0]), ((Kind x) => x.toJson())(x[1]), _atd_write_int(x[2])]))(e).toString;
 }
 KindParametrizedTuple fromJson(KindParametrizedTuple)(JSONValue e) {
     return (JSONValue x) => tuple(Kind.fromJson(x[0]), Kind.fromJson(x[1]), _atd_read_int(x[2]))(e);
@@ -416,7 +416,7 @@ struct IntFloatParametrizedRecord {
 
 IntFloatParametrizedRecord fromJson(T : IntFloatParametrizedRecord)(JSONValue x) {
     IntFloatParametrizedRecord obj;
-    obj.field_a = ("field_a" in x) ? _atd_read_int(x["field_a"]) : _atd_missing_json_field("IntFloatParametrizedRecord", "field_a");
+    obj.field_a = ("field_a" in x) ? _atd_read_int(x["field_a"]) : _atd_missing_json_field!(typeof(obj.field_a))("IntFloatParametrizedRecord", "field_a");
     obj.field_b = ("field_b" in x) ? _atd_read_list((&_atd_read_float).toDelegate)(x["field_b"]) : [];
     return obj;
 }
@@ -441,8 +441,8 @@ struct Root {
     Kind[] kinds;
     Tuple!(float, int)[] assoc1;
     Tuple!(string, int)[] assoc2;
-    Tuple!(float, int)[] assoc3;
-    Tuple!(string, int)[] assoc4;
+    int[float] assoc3;
+    int[string] assoc4;
     Nullable!int[] nullables;
     Nullable!int[] options;
     JSONValue[] untyped_things;
@@ -452,25 +452,25 @@ struct Root {
 
 Root fromJson(T : Root)(JSONValue x) {
     Root obj;
-    obj.id = ("ID" in x) ? _atd_read_string(x["ID"]) : _atd_missing_json_field("Root", "ID");
-    obj.await = ("await" in x) ? _atd_read_bool(x["await"]) : _atd_missing_json_field("Root", "await");
-    obj.x___init__ = ("__init__" in x) ? _atd_read_float(x["__init__"]) : _atd_missing_json_field("Root", "__init__");
-    obj.items = ("items" in x) ? _atd_read_list(_atd_read_list((&_atd_read_int).toDelegate))(x["items"]) : _atd_missing_json_field("Root", "items");
+    obj.id = ("ID" in x) ? _atd_read_string(x["ID"]) : _atd_missing_json_field!(typeof(obj.id))("Root", "ID");
+    obj.await = ("await" in x) ? _atd_read_bool(x["await"]) : _atd_missing_json_field!(typeof(obj.await))("Root", "await");
+    obj.x___init__ = ("__init__" in x) ? _atd_read_float(x["__init__"]) : _atd_missing_json_field!(typeof(obj.x___init__))("Root", "__init__");
+    obj.items = ("items" in x) ? _atd_read_list(_atd_read_list((&_atd_read_int).toDelegate))(x["items"]) : _atd_missing_json_field!(typeof(obj.items))("Root", "items");
     obj.maybe = ("maybe" in x) ? _atd_read_int(x["maybe"]) : null;
     obj.extras = ("extras" in x) ? _atd_read_list((&_atd_read_int).toDelegate)(x["extras"]) : [];
     obj.answer = ("answer" in x) ? _atd_read_int(x["answer"]) : 42;
-    obj.aliased = ("aliased" in x) ? Alias.fromJson(x["aliased"]) : _atd_missing_json_field("Root", "aliased");
-    obj.point = ("point" in x) ? (JSONValue x) => tuple(_atd_read_float(x[0]), _atd_read_float(x[1]))(x["point"]) : _atd_missing_json_field("Root", "point");
-    obj.kinds = ("kinds" in x) ? _atd_read_list(Kind.fromJson)(x["kinds"]) : _atd_missing_json_field("Root", "kinds");
-    obj.assoc1 = ("assoc1" in x) ? _atd_read_list((JSONValue x) => tuple(_atd_read_float(x[0]), _atd_read_int(x[1])))(x["assoc1"]) : _atd_missing_json_field("Root", "assoc1");
-    obj.assoc2 = ("assoc2" in x) ? _atd_read_object_to_tuple_list((&_atd_read_int).toDelegate)(x["assoc2"]) : _atd_missing_json_field("Root", "assoc2");
-    obj.assoc3 = ("assoc3" in x) ? _atd_read_list((JSONValue x) => tuple(_atd_read_float(x[0]), _atd_read_int(x[1])))(x["assoc3"]) : _atd_missing_json_field("Root", "assoc3");
-    obj.assoc4 = ("assoc4" in x) ? _atd_read_object_to_tuple_list((&_atd_read_int).toDelegate)(x["assoc4"]) : _atd_missing_json_field("Root", "assoc4");
-    obj.nullables = ("nullables" in x) ? _atd_read_list(_atd_read_nullable((&_atd_read_int).toDelegate))(x["nullables"]) : _atd_missing_json_field("Root", "nullables");
-    obj.options = ("options" in x) ? _atd_read_list(_atd_read_option((&_atd_read_int).toDelegate))(x["options"]) : _atd_missing_json_field("Root", "options");
-    obj.untyped_things = ("untyped_things" in x) ? _atd_read_list(((JSONValue x) => x))(x["untyped_things"]) : _atd_missing_json_field("Root", "untyped_things");
-    obj.parametrized_record = ("parametrized_record" in x) ? IntFloatParametrizedRecord.fromJson(x["parametrized_record"]) : _atd_missing_json_field("Root", "parametrized_record");
-    obj.parametrized_tuple = ("parametrized_tuple" in x) ? KindParametrizedTuple.fromJson(x["parametrized_tuple"]) : _atd_missing_json_field("Root", "parametrized_tuple");
+    obj.aliased = ("aliased" in x) ? Alias.fromJson(x["aliased"]) : _atd_missing_json_field!(typeof(obj.aliased))("Root", "aliased");
+    obj.point = ("point" in x) ? (JSONValue x) => tuple(_atd_read_float(x[0]), _atd_read_float(x[1]))(x["point"]) : _atd_missing_json_field!(typeof(obj.point))("Root", "point");
+    obj.kinds = ("kinds" in x) ? _atd_read_list(Kind.fromJson)(x["kinds"]) : _atd_missing_json_field!(typeof(obj.kinds))("Root", "kinds");
+    obj.assoc1 = ("assoc1" in x) ? _atd_read_list((JSONValue x) => tuple(_atd_read_float(x[0]), _atd_read_int(x[1])))(x["assoc1"]) : _atd_missing_json_field!(typeof(obj.assoc1))("Root", "assoc1");
+    obj.assoc2 = ("assoc2" in x) ? _atd_read_object_to_tuple_list((&_atd_read_int).toDelegate)(x["assoc2"]) : _atd_missing_json_field!(typeof(obj.assoc2))("Root", "assoc2");
+    obj.assoc3 = ("assoc3" in x) ? _atd_read_array_to_assoc_dict((&_atd_read_float).toDelegate, _atd_read_int)(x["assoc3"]) : _atd_missing_json_field!(typeof(obj.assoc3))("Root", "assoc3");
+    obj.assoc4 = ("assoc4" in x) ? _atd_read_object_to_assoc_array((&_atd_read_int).toDelegate)(x["assoc4"]) : _atd_missing_json_field!(typeof(obj.assoc4))("Root", "assoc4");
+    obj.nullables = ("nullables" in x) ? _atd_read_list(_atd_read_nullable((&_atd_read_int).toDelegate))(x["nullables"]) : _atd_missing_json_field!(typeof(obj.nullables))("Root", "nullables");
+    obj.options = ("options" in x) ? _atd_read_list(_atd_read_option((&_atd_read_int).toDelegate))(x["options"]) : _atd_missing_json_field!(typeof(obj.options))("Root", "options");
+    obj.untyped_things = ("untyped_things" in x) ? _atd_read_list(((JSONValue x) => x))(x["untyped_things"]) : _atd_missing_json_field!(typeof(obj.untyped_things))("Root", "untyped_things");
+    obj.parametrized_record = ("parametrized_record" in x) ? IntFloatParametrizedRecord.fromJson(x["parametrized_record"]) : _atd_missing_json_field!(typeof(obj.parametrized_record))("Root", "parametrized_record");
+    obj.parametrized_tuple = ("parametrized_tuple" in x) ? KindParametrizedTuple.fromJson(x["parametrized_tuple"]) : _atd_missing_json_field!(typeof(obj.parametrized_tuple))("Root", "parametrized_tuple");
     return obj;
 }
 JSONValue toJson(Root obj) {
@@ -488,8 +488,8 @@ JSONValue toJson(Root obj) {
     res["kinds"] = _atd_write_list(((Kind x) => x.toJson()))(obj.kinds);
     res["assoc1"] = _atd_write_list(((Tuple!(float, int) x) => JSONValue([_atd_write_float(x[0]), _atd_write_int(x[1])])))(obj.assoc1);
     res["assoc2"] = _atd_write_tuple_list_to_object((&_atd_write_int).toDelegate)(obj.assoc2);
-    res["assoc3"] = _atd_write_list(((Tuple!(float, int) x) => JSONValue([_atd_write_float(x[0]), _atd_write_int(x[1])])))(obj.assoc3);
-    res["assoc4"] = _atd_write_tuple_list_to_object((&_atd_write_int).toDelegate)(obj.assoc4);
+    res["assoc3"] = _atd_write_assoc_dict_to_array((&_atd_write_float).toDelegate, (&_atd_write_int).toDelegate)(obj.assoc3);
+    res["assoc4"] = _atd_write_assoc_array_to_object((&_atd_write_int).toDelegate)(obj.assoc4);
     res["nullables"] = _atd_write_list(_atd_write_nullable((&_atd_write_int).toDelegate))(obj.nullables);
     res["options"] = _atd_write_list(_atd_write_option((&_atd_write_int).toDelegate))(obj.options);
     res["untyped_things"] = _atd_write_list((JSONValue x) => x)(obj.untyped_things);
@@ -505,7 +505,7 @@ struct RequireField {
 
 RequireField fromJson(T : RequireField)(JSONValue x) {
     RequireField obj;
-    obj.req = ("req" in x) ? _atd_read_string(x["req"]) : _atd_missing_json_field("RequireField", "req");
+    obj.req = ("req" in x) ? _atd_read_string(x["req"]) : _atd_missing_json_field!(typeof(obj.req))("RequireField", "req");
     return obj;
 }
 JSONValue toJson(RequireField obj) {
@@ -519,8 +519,8 @@ alias Pair = Tuple!(string, int);
 JSONValue toJson(Pair e) {
     return ((Tuple!(string, int) x) => JSONValue([_atd_write_string(x[0]), _atd_write_int(x[1])]))(e);
 }
-JSONValue toJsonString(Pair e) {
-    return ((Tuple!(string, int) x) => JSONValue([_atd_write_string(x[0]), _atd_write_int(x[1])]))(e);
+string toJsonString(Pair e) {
+    return ((Tuple!(string, int) x) => JSONValue([_atd_write_string(x[0]), _atd_write_int(x[1])]))(e).toString;
 }
 Pair fromJson(Pair)(JSONValue e) {
     return (JSONValue x) => tuple(_atd_read_string(x[0]), _atd_read_int(x[1]))(e);
@@ -532,8 +532,8 @@ struct A {}
 JSONValue toJson(A e) {
     return JSONValue("A");
 }
-JSONValue toJsonString(A e) {
-    return JSONValue("A");
+string toJsonString(A e) {
+    return JSONValue("A").toString;
 }
 
 
@@ -542,8 +542,8 @@ struct B { int value; }
 JSONValue toJson(B e) {
     return JSONValue([JSONValue("B"), _atd_write_int(e.value)]);
 }
-JSONValue toJsonString(B e) {
-    return JSONValue([JSONValue("B"), _atd_write_int(e.value)]);
+string toJsonString(B e) {
+    return JSONValue([JSONValue("B"), _atd_write_int(e.value)]).toString;
 }
 
 
@@ -566,8 +566,8 @@ Frozen fromJson(Frozen)(JSONValue x) {
 
 JSONValue toJson(Frozen x) {
     return x.match!(
-    (A v) => v.toJsonString,
-(B v) => v.toJsonString
+    (A v) => v.toJson,
+(B v) => v.toJson
     );
 }
 

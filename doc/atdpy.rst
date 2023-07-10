@@ -284,28 +284,7 @@ expression e.g.
     ~answer <python default="42">: int;
   }
 
-Default values are always honored when reading JSON data from
-Python. However, the implementation of ``dataclass`` via the
-``@dataclass`` decorator prevents the use of mutable values for
-defaults. This causes class constructors to not have default fields
-that are mutable such as ``[]``. For example:
-
-.. code-block:: ocaml
-
-   type bar = {
-     ~items: int list;
-   }
-
-will translate to a class constructor that requires one argument of
-type list. For example, ``Bar([1, 2, 3])`` would be legal but
-``Bar()`` would be illegal. Reading from the JSON object ``{}`` would
-however succeed. Therefore, the following two Python expressions would
-be valid and equivalent:
-
-.. code-block:: python
-
-   Bar([])
-   Bar.from_json_string('{}')
+Default values are always honored when reading JSON data from Python.
 
 
 Field and constructor renaming

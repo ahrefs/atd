@@ -794,8 +794,8 @@ let inst_var_declaration
         match get_python_default unwrapped_e an with
         | None -> ""
         | Some x ->
-            (* This constructs ensures that a fresh default value is
-               evaluated for each class instanciation. It's important for
+            (* This construct ensures that a fresh default value is
+               evaluated for each class instantiation. It's important for
                default lists since Python lists are mutable. *)
             sprintf " = field(default_factory=lambda: %s)" x
   in

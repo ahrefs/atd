@@ -1,3 +1,8 @@
+2.12.1 (2023-07-25)
+-------------------
+
+* atdts: Stop compiler errors on generated typescript (#348)
+
 2.12.0 (2023-05-12)
 -------------------
 
@@ -11,7 +16,7 @@
   from `"None"` which both translate to `None` in Python. (#332)
 * (BREAKING) atdgen: revert default encoding of int64 values as string (#330)
 * atdgen: Support `<json repr="string">` for `int` values (#330)
-* atdpy: Treat default field values as expressions to evaluate each time 
+* atdpy: Treat default field values as expressions to evaluate each time
   they're assigned to a field. This allows the use of mutable defaults such as
   lists (#339)
 

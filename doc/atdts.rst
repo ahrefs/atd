@@ -364,3 +364,8 @@ TypeScript maps if the correct annotations are provided:
 * ``(foo * bar) list <ts repr="map">`` will use a TypeScript
   map of type ``Map<Foo, Bar>`` to represent the association list.
   Using the annotation ``<ts repr="array">`` is equivalent to the default.
+
+Caveats
+=========
+* Generated typescript contains a flag telling the compiler not to run
+  checks on the file.

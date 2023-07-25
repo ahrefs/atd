@@ -192,6 +192,7 @@ let runtime_start atd_filename =
     of type 'Foo'.
 */
 
+// @ts-nocheck
 /* tslint:disable */
 /* eslint-disable */|}
     atd_filename

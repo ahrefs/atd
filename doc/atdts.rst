@@ -368,4 +368,4 @@ TypeScript maps if the correct annotations are provided:
 Caveats
 =========
 * Generated typescript contains a flag telling the compiler not to run
-  checks on the file.
+  checks on the file. `(Read) <https://github.com/ahrefs/atd/issues/347>`_

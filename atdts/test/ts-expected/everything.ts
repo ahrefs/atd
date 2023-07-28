@@ -9,6 +9,7 @@
     of type 'Foo'.
 */
 
+// @ts-nocheck
 /* tslint:disable */
 /* eslint-disable */
 

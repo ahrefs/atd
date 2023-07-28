@@ -1,4 +1,4 @@
-2.12.1 (2023-07-25)
+Unreleased
 -------------------
 
 * atdts: Stop compiler errors on generated typescript (#348)

@@ -3,11 +3,9 @@
 ;
 (rule
   (targets
-    allcaps.d
     everything.d
   )
   (deps
-    ../atd-input/ALLCAPS.atd
     ../atd-input/everything.atd
   )
   (action
@@ -22,7 +20,7 @@
  (deps
   (glob_files *.d))
  (action
-  ; TODO: ensure that compile check is run on unit tests, too
   (progn
-   (run ldc2 %{deps})
+   (run ldc2 %{deps} --of test)
+   (bash ./test)
   )))

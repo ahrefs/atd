@@ -195,7 +195,7 @@ let fixed_size_preamble atd_filename =
   import std.functional;
   import std.json;
   import std.sumtype;
-  import std.typecons : nullable, Nullable, tuple, Tuple;
+  import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
   
 private
 {
@@ -469,7 +469,19 @@ private
   {
     JSONValue res = obj.toJson;
     return res.toString;
-  }|}
+  }
+  
+  TypedefType!T unwrapAlias(T)(T e) @safe
+  {
+    return cast(TypedefType!T) e;
+  }
+
+  T wrapAlias(T)(TypedefType!T e) @safe
+  {
+    return cast(T) e;
+  }
+
+  |}
     atd_filename
     atd_filename
     (Filename.remove_extension atd_filename)
@@ -847,12 +859,12 @@ let alias_wrapper env  name type_expr =
   let dlang_struct_name = struct_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
-    Line (sprintf "alias %s = %s;" dlang_struct_name value_type);
+    Line (sprintf "alias %s = Typedef!(%s, (%s).init, \"%s\");" dlang_struct_name value_type value_type dlang_struct_name); 
     Line (sprintf "JSONValue toJson(%s e) {"  dlang_struct_name);
-    Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
+    Block [Line(sprintf "return %s(e.unwrapAlias);" (json_writer env type_expr))];
     Line("}");
     Line (sprintf "%s fromJson(T : %s)(JSONValue e) {"  dlang_struct_name dlang_struct_name);
-    Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
+    Block [Line(sprintf "return %s(e).wrapAlias!%s;" (json_reader env type_expr) dlang_struct_name)];
     Line("}");
   ]
 

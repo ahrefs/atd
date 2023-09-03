@@ -43,6 +43,7 @@ type root = {
 }
 
 type alias = int list
+type alias2 = int list
 
 type pair = (string * int)
 

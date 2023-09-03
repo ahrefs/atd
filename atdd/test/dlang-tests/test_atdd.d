@@ -168,6 +168,14 @@ void setupTests()
 
         assert (a_obj == a_obj.toJsonString.fromJsonString!RecursiveClass);
     };
+
+    tests["aliases are different"] = {
+        Alias a1 = [32, 43];
+        Alias2 a2 = [32, 43];
+
+        assert(a1.unwrapAlias == a2.unwrapAlias);
+        assert(a1 == a1.unwrapAlias.wrapAlias!Alias);
+    };
 }
 
 void assertThrows(T)(T fn, bool writeMsg = false)

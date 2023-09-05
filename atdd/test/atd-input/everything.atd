@@ -1,3 +1,6 @@
+
+<dlang import="std.stdint : uint32_t">
+
 type kind = [
   | Root (* class name conflict *)
   | Thing of int

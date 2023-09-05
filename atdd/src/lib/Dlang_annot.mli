@@ -28,7 +28,7 @@ val get_dlang_assoc_repr : Atd.Annot.t -> assoc_repr
 
 (** Returns text the user wants to be inserted at the beginning of the
     Dlang file such as imports. *)
-val get_dlang_json_text : Atd.Annot.t -> string list
+val get_dlang_import : Atd.Annot.t -> string list
 
 
 

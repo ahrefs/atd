@@ -183,6 +183,15 @@ private
       };
       return fun;
   }
+
+  auto _atd_read_wrap(Wrapped, Unwrapped)(Wrapped delegate(JSONValue) readElm, Unwrapped delegate(Wrapped) unwrap)
+  {
+    auto fun = (JSONValue e) {
+        auto elm = readElm(e);
+        return unwrap(elm);
+    };
+    return fun;
+  }
   
   // this whole set of function could be remplaced by one templated _atd_write_value function
   // not sure it is what we want though
@@ -275,7 +284,17 @@ private
       };
       return fun;
   }
+
+  auto _atd_write_wrap(Wrapped, Unwrapped)(JSONValue delegate(Wrapped) writeElm, Wrapped delegate(Unwrapped) wrap)
+  {
+    auto fun = (Unwrapped elm) {
+        auto e = wrap(elm);
+        return writeElm(e);
+    };
+    return fun;
+  }
 }
+
   // ############################################################################
   // # Public classes
   // ############################################################################
@@ -303,6 +322,9 @@ private
   }
 
   
+
+
+import std.stdint : uint32_t;
 
 
 struct RecursiveClass {
@@ -531,6 +553,22 @@ JSONValue toJson(RequireField obj) {
 }
 
 
+struct RecordWithWrappedType {
+    int item;
+}
+
+RecordWithWrappedType fromJson(T : RecordWithWrappedType)(JSONValue x) {
+    RecordWithWrappedType obj;
+    obj.item = ("item" in x) ? _atd_read_wrap((&_atd_read_string).toDelegate, (string e) => to!(int)(e))(x["item"]) : _atd_missing_json_field!(typeof(obj.item))("RecordWithWrappedType", "item");
+    return obj;
+}
+JSONValue toJson(RecordWithWrappedType obj) {
+    JSONValue res;
+    res["item"] = _atd_write_wrap((&_atd_write_string).toDelegate, (int e) => to!(string)(e))(obj.item);
+    return res;
+}
+
+
 alias Pair = Typedef!(Tuple!(string, int), (Tuple!(string, int)).init, "Pair");
 JSONValue toJson(Pair e) {
     return ((Tuple!(string, int) x) => JSONValue([_atd_write_string(x[0]), _atd_write_int(x[1])]))(e.unwrapAlias);
@@ -596,6 +634,15 @@ JSONValue toJson(DefaultList obj) {
     JSONValue res;
     res["items"] = _atd_write_list((&_atd_write_int).toDelegate)(obj.items);
     return res;
+}
+
+
+alias Alias3 = Typedef!(uint32_t[], (uint32_t[]).init, "Alias3");
+JSONValue toJson(Alias3 e) {
+    return _atd_write_wrap(_atd_write_list((&_atd_write_int).toDelegate), (uint32_t[] e) => to!(int[])(e))(e.unwrapAlias);
+}
+Alias3 fromJson(T : Alias3)(JSONValue e) {
+    return _atd_read_wrap(_atd_read_list((&_atd_read_int).toDelegate), (int[] e) => to!(uint32_t[])(e))(e).wrapAlias!Alias3;
 }
 
 

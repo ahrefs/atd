@@ -30,6 +30,7 @@ let annot_schema_dlang : Atd.Annot.schema_section =
       Type_expr, "unwrap";
       Type_expr, "wrap";
       Field, "default";
+      Module_head, "import";
     ]
   }
 
@@ -197,7 +198,6 @@ import std.format;
 import std.functional;
 import std.json;
 import std.sumtype;
-import std.stdint;
 import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
   
 private
@@ -1135,5 +1135,8 @@ let run_file src_path =
   in
   let full_module = Atd.Ast.use_only_specific_variants full_module in
   let (atd_head, atd_module) = full_module in
-  let head = Dlang_annot.get_dlang_json_text (snd atd_head) in
+  let head =
+     Dlang_annot.get_dlang_import (snd atd_head) 
+    |> List.map (sprintf "import %s;")
+  in
   to_file ~atd_filename:src_name ~head atd_module dst_path

@@ -34,19 +34,11 @@ let get_dlang_assoc_repr an : assoc_repr =
     an
 
 (* imports etc. *)
-let get_dlang_text an : string list =
+let get_dlang_import an : string list =
   Atd.Annot.get_fields
     ~parse:(fun s -> Some s)
     ~sections:["dlang"]
-    ~field:"text"
-    an
-
-let get_dlang_json_text an : string list =
-  get_dlang_text an
-  @ Atd.Annot.get_fields
-    ~parse:(fun s -> Some s)
-    ~sections:["dlang"]
-    ~field:"json_dlang.text"
+    ~field:"import"
     an
 
 let get_dlang_wrap loc an =

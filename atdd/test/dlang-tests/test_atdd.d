@@ -176,6 +176,11 @@ void setupTests()
         assert(a1.unwrapAlias == a2.unwrapAlias);
         assert(a1 == a1.unwrapAlias.wrapAlias!Alias);
     };
+
+    tests["using wrapped type"] = {
+        auto og = RecordWithWrappedType(42);
+        assert(og.toJsonString.fromJsonString!RecordWithWrappedType == og);
+    };
 }
 
 void assertThrows(T)(T fn, bool writeMsg = false)

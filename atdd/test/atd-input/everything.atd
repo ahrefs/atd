@@ -60,3 +60,7 @@ type recursive_class = {
 type default_list = {
   ~items: int list;
 }
+
+type record_with_wrapped_type = {
+  item: string wrap <dlang t="int" wrap="to!(string)" unwrap="to!(int)">;
+}

@@ -25,7 +25,10 @@ let annot_schema_dlang : Atd.Annot.schema_section =
   {
     section = "dlang";
     fields = [
+      Type_expr, "t";
       Type_expr, "repr";
+      Type_expr, "unwrap";
+      Type_expr, "wrap";
       Field, "default";
     ]
   }
@@ -489,9 +492,6 @@ private
 let not_implemented loc msg =
   A.error_at loc ("not implemented in atdd: " ^ msg)
 
-let todo hint =
-  failwith ("TODO: " ^ hint)
-
 let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
   let rec spaced xs =
     match List.filter (fun x -> not (B.is_empty_node x)) xs with
@@ -570,7 +570,11 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Option (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
   | Nullable (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
   | Shared (loc, e, an) -> not_implemented loc "shared" (* TODO *)
-  | Wrap (loc, e, an) -> todo "wrap"
+  | Wrap (loc, e, an) ->
+      (match Dlang_annot.get_dlang_wrap loc an with
+          None -> assert false (* TODO : dubious*)
+       | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
+      )
   | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -650,7 +654,11 @@ let rec json_writer ?(nested=false) env e =
   | Nullable (loc, e, an) ->
       sprintf "_atd_write_nullable(%s)" (json_writer ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
-  | Wrap (loc, e, an) -> json_writer ~nested:true env e
+  | Wrap (loc, e, an) -> 
+    (match Dlang_annot.get_dlang_wrap loc an with
+    None -> assert false (* TODO : dubious*)
+   | Some { dlang_wrap ; _ } -> dlang_wrap
+    )
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_write_%s%s" 
@@ -729,7 +737,11 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
   | Nullable (loc, e, an) ->
       sprintf "_atd_read_nullable(%s)" (json_reader ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
-  | Wrap (loc, e, an) -> json_reader ~nested:true env e
+  | Wrap (loc, e, an) ->
+    (match Dlang_annot.get_dlang_wrap loc an with
+    None -> assert false (* TODO : dubious*)
+   | Some { dlang_unwrap ; _ } -> dlang_unwrap
+    )
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_read_%s%s"
@@ -1026,7 +1038,7 @@ let sum env  loc name cases =
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
-  let rec unwrap e =
+  let unwrap e =
     match e with
     | Sum (loc, cases, an) ->
         sum env  loc name cases
@@ -1036,9 +1048,9 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     | List _
     | Option _
     | Nullable _
+    | Wrap _
     | Name _ -> alias_wrapper env  name e
     | Shared _ -> not_implemented loc "cyclic references"
-    | Wrap (loc, e, an) -> unwrap e
     | Tvar _ -> not_implemented loc "parametrized type"
   in
   unwrap e

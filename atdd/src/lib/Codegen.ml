@@ -197,6 +197,7 @@ import std.format;
 import std.functional;
 import std.json;
 import std.sumtype;
+import std.stdint;
 import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
   
 private
@@ -364,6 +365,15 @@ private
       };
       return fun;
   }
+
+  auto _atd_read_wrap(Wrapped, Unwrapped)(Wrapped delegate(JSONValue) readElm, Unwrapped delegate(Wrapped) unwrap)
+  {
+    auto fun = (JSONValue e) {
+        auto elm = readElm(e);
+        return unwrap(elm);
+    };
+    return fun;
+  }
   
   // this whole set of function could be remplaced by one templated _atd_write_value function
   // not sure it is what we want though
@@ -456,7 +466,17 @@ private
       };
       return fun;
   }
+
+  auto _atd_write_wrap(Wrapped, Unwrapped)(JSONValue delegate(Wrapped) writeElm, Wrapped delegate(Unwrapped) wrap)
+  {
+    auto fun = (Unwrapped elm) {
+        auto e = wrap(elm);
+        return writeElm(e);
+    };
+    return fun;
+  }
 }
+
   // ############################################################################
   // # Public classes
   // ############################################################################
@@ -657,8 +677,9 @@ let rec json_writer ?(nested=false) env e =
   | Wrap (loc, e, an) -> 
     (match Dlang_annot.get_dlang_wrap loc an with
     None -> assert false (* TODO : dubious*)
-   | Some { dlang_wrap ; _ } -> dlang_wrap
-    )
+   | Some { dlang_wrap_t; dlang_wrap ; _ } ->
+      sprintf "_atd_write_wrap(%s, (%s e) => %s(e))" (json_writer ~nested:true env e) dlang_wrap_t dlang_wrap
+    ) 
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_write_%s%s" 
@@ -740,7 +761,8 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
   | Wrap (loc, e, an) ->
     (match Dlang_annot.get_dlang_wrap loc an with
     None -> assert false (* TODO : dubious*)
-   | Some { dlang_unwrap ; _ } -> dlang_unwrap
+   | Some { dlang_unwrap ; _ } ->
+      sprintf "_atd_read_wrap(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr env e) dlang_unwrap
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with

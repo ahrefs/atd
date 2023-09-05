@@ -44,6 +44,8 @@ type root = {
 
 type alias = int list
 type alias2 = int list
+type alias3 = int list wrap <dlang t="uint32_t[]" wrap="to!(int[])" unwrap="to!(uint32_t[])">
+
 
 type pair = (string * int)
 

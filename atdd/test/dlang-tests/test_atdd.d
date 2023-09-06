@@ -13,7 +13,7 @@ void setupTests()
     tests["simpleRecord"] = {
         auto record = IntFloatParametrizedRecord(32, [5.4, 3.3]);
 
-        auto json = record.toJson();
+        auto json = record.toJson;
         auto recordFromJson = fromJson!IntFloatParametrizedRecord(json);
 
         assert(record == recordFromJson);
@@ -36,7 +36,7 @@ void setupTests()
 
         auto str = "[\"hello\",2]";
         auto p = str.fromJsonString!Pair;
-        assert(str == p.toJsonString);
+        assert(str == p.toJsonString!Pair);
     };
 
     tests["invalidPairWrongType"] = {
@@ -86,8 +86,7 @@ void setupTests()
             JSONValue(123)
         ];
         obj.parametrized_record = IntFloatParametrizedRecord(42, [9.9f, 8.8f]);
-        obj.parametrized_tuple = KindParametrizedTuple(
-            tuple(Kind(WOW()), Kind(WOW()), 100));
+        obj.parametrized_tuple = tuple(Kind(WOW()), Kind(WOW()), 100);
 
         auto jsonStr = obj.toJsonString;
         auto newObj = jsonStr.fromJsonString!Root;

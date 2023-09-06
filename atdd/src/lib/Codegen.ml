@@ -491,7 +491,7 @@ private
   
   string toJsonString(T)(T obj)
   {
-    JSONValue res = obj.toJson;
+    JSONValue res = obj.toJson!T;
     return res.toString;
   }
   
@@ -700,7 +700,9 @@ let rec json_writer ?(nested=false) env e =
        | "bool" | "int" | "float" | "string" -> sprintf "%s_atd_write_%s%s" 
        (if nested then "(&" else "")  name (if nested then ").toDelegate" else "")
        | "abstract" -> "(JSONValue x) => x"
-       | _ -> sprintf "((%s x) => x.toJson())" (dlang_type_name env name))
+       | _ -> let dtype_name = (dlang_type_name env name) in
+              let rawtype_name = (dlang_type_name ~aliasing:None_ env name) in 
+          sprintf "((%s x) => x.toJson!(%s))" rawtype_name dtype_name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -777,7 +779,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
     (match Dlang_annot.get_dlang_wrap loc an with
     None -> assert false (* TODO : dubious*)
    | Some { dlang_unwrap ; _ } ->
-      sprintf "_atd_read_wrap(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr env e) dlang_unwrap
+      sprintf "_atd_read_wrap(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr ~aliasing:None_ env e) dlang_unwrap
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with
@@ -835,7 +837,7 @@ let from_json_class_argument
 let inst_var_declaration
     env trans_meth ((loc, (name, kind, an), e) : simple_field) =
   let var_name = inst_var_name trans_meth name in
-  let type_name = type_name_of_expr env e in
+  let type_name = type_name_of_expr ~aliasing:None_ env e in
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
@@ -883,7 +885,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json =
     [
-      Line (sprintf "JSONValue toJson(%s obj) {" (single_esc dlang_struct_name));
+      Line (sprintf "JSONValue toJson(T : %s)(T obj) {" (single_esc dlang_struct_name));
       Block [
         Line ("JSONValue res;");
         Inline json_object_body;
@@ -908,11 +910,17 @@ let alias_wrapper env  name type_expr =
   let value_type = type_name_of_expr ~aliasing:None_ env type_expr in
   [
     Line (sprintf "alias %s = Typedef!(%s, (%s).init, \"%s\");" dlang_struct_name value_type value_type dlang_struct_name); 
-    Line (sprintf "JSONValue toJson(%s e) {"  dlang_struct_name);
-    Block [Line(sprintf "return %s(e.unwrapAlias);" (json_writer env type_expr))];
+    Line (sprintf "JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name value_type);
+    Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");
-    Line (sprintf "%s fromJson(T : %s)(JSONValue e) {"  dlang_struct_name dlang_struct_name);
-    Block [Line(sprintf "return %s(e).wrapAlias!%s;" (json_reader env type_expr) dlang_struct_name)];
+    Line (sprintf "string toJsonString(T : %s)(%s obj) {"  dlang_struct_name value_type);
+    Block [Line(sprintf "return obj.toJson!(%s).toString;" dlang_struct_name)];
+    Line("}");
+    Line (sprintf "%s fromJson(T : %s)(JSONValue e) {"  value_type dlang_struct_name);
+    Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
+    Line("}");
+    Line (sprintf "%s fromJsonString(T : %s)(string s) {"  value_type dlang_struct_name);
+    Block [Line(sprintf "return parseJSON(s).fromJson!(%s);" dlang_struct_name)];
     Line("}");
   ]
 
@@ -926,7 +934,7 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s {}" (trans env unique_name));
-          Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
+          Line (sprintf "JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
         ]
@@ -936,7 +944,7 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
-          Line (sprintf "JSONValue toJson(%s e) {"  (trans env unique_name));
+          Line (sprintf "JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
@@ -1037,12 +1045,12 @@ let sum_container env  loc name cases =
       ];
     Line "}";
     Line "";
-    Line (sprintf "JSONValue toJson(%s x) {" (dlang_struct_name));
+    Line (sprintf "JSONValue toJson(T : %s)(T x) {" (dlang_struct_name));
     Block [
       Line "return x.match!(";
         Line (
                  List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-                   sprintf "(%s v) => v.toJson" (trans env unique_name)
+                   sprintf "(%s v) => v.toJson!(%s)" (trans env unique_name) (trans env unique_name)
                  ) cases
               |> String.concat ",\n");
         Line ");"

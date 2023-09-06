@@ -21,6 +21,8 @@ type env = {
   translate_inst_variable: unit -> (string -> string);
 }
 
+type aliasing = Keep | None_
+
 let annot_schema_dlang : Atd.Annot.schema_section =
   {
     section = "dlang";
@@ -503,6 +505,14 @@ private
       return cast(T) e;
   }
 
+  template RemoveTypedef(T)
+  {
+      static if (is(T : Typedef!Arg, Arg))
+          alias RemoveTypedef = RemoveTypedef!Arg;
+      else
+          alias RemoveTypedef = T;
+  }
+
   |}
     atd_filename
     atd_filename
@@ -553,7 +563,7 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
 (* Map ATD built-in types to built-in Dlang types *)
-let dlang_type_name env (name : string) =
+let dlang_type_name ?(aliasing=Keep) env (name : string) =
   match name with
   | "unit" -> "void"
   | "bool" -> "bool"
@@ -561,9 +571,14 @@ let dlang_type_name env (name : string) =
   | "float" -> "float"
   | "string" -> "string"
   | "abstract" -> "JSONValue"
-  | user_defined -> struct_name env user_defined
+  | user_defined -> 
+      let typename = (struct_name env user_defined) in
+      match aliasing with
+      | None_ -> sprintf "RemoveTypedef!(%s)" typename
+      (* | Remove_One -> sprintf "TypedefType!(%s)" typename *)
+      | Keep -> typename
 
-let rec type_name_of_expr env (e : type_expr) : string =
+let rec type_name_of_expr ?(aliasing=Keep) env (e : type_expr) : string =
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
@@ -595,7 +610,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
           None -> assert false (* TODO : dubious*)
        | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
       )
-  | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
+  | Name (loc, (loc2, name, []), an) -> dlang_type_name ~aliasing:aliasing env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -890,7 +905,7 @@ let record env loc name (fields : field list) an =
 
 let alias_wrapper env  name type_expr =
   let dlang_struct_name = struct_name env name in
-  let value_type = type_name_of_expr env type_expr in
+  let value_type = type_name_of_expr ~aliasing:None_ env type_expr in
   [
     Line (sprintf "alias %s = Typedef!(%s, (%s).init, \"%s\");" dlang_struct_name value_type value_type dlang_struct_name); 
     Line (sprintf "JSONValue toJson(%s e) {"  dlang_struct_name);

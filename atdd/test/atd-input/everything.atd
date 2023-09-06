@@ -1,5 +1,5 @@
 
-<dlang import="std.stdint : uint32_t">
+<dlang import="std.stdint : uint32_t, uint16_t">
 
 type kind = [
   | Root (* class name conflict *)
@@ -43,11 +43,16 @@ type root = {
   untyped_things: abstract list;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;
-}
+  wrapped: st wrap <dlang t="uint16_t" wrap="to!St" unwrap="to!uint16_t">
+} 
 
+type st = int
 type alias = int list
 type alias2 = int list
-type alias3 = int list wrap <dlang t="uint32_t[]" wrap="to!(int[])" unwrap="to!(uint32_t[])">
+type alias3 = int wrap <dlang t="uint32_t" wrap="to!int" unwrap="to!uint32_t">
+type alias_of_alias = alias3 wrap <dlang t="uint16_t" wrap="to!Alias3" unwrap="to!uint16_t">
+type alias_of_alias_not_Wrapped = alias3
+type alias_of_alias_of_alias = alias_of_alias_not_Wrapped
 
 
 type pair = (string * int)

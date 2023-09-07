@@ -46,7 +46,7 @@ let version_term =
   Arg.value (Arg.flag info)
 
 let doc =
-  "Type-safe JSON serializers for Python"
+  "Type-safe JSON serializers for D"
 
 (*
    The structure of the help page.
@@ -55,15 +55,15 @@ let man = [
   (* 'NAME' and 'SYNOPSIS' sections are inserted here by cmdliner. *)
 
   `S Manpage.s_description;  (* standard 'DESCRIPTION' section *)
-  `P "atdd turns a file containing type definitions into Python classes \
+  `P "atdd turns a file containing type definitions into D classes \
       that read, write, and validate JSON data. The generated code \
-      can be type-checked statically with mypy to ensure user code agrees \
+      can be type-checked statically upon compilation to ensure user code agrees \
       with the ATD interface.";
 
   (* 'ARGUMENTS' and 'OPTIONS' sections are inserted here by cmdliner. *)
 
   `S Manpage.s_examples; (* standard 'EXAMPLES' section *)
-  `P "The following is a sample ATD file. 'sample.atd' becomes 'sample.py' \
+  `P "The following is a sample ATD file. 'sample.atd' becomes 'sample.d' \
       with the command 'atdd sample.atd'.";
   `Pre "\
 (* Sample ATD file sample.atd *)
@@ -72,7 +72,7 @@ type foo = {
   name: string;                 (* required field *)
   ?description: string option;  (* optional field *)
   ~tags: string list;           (* optional with implicit default *)
-  ~price <python default=\"0.99\">: float;  (* explicit default *)
+  ~price <dlang default=\"0.99\">: float;  (* explicit default *)
   items: bar list;
 }
 

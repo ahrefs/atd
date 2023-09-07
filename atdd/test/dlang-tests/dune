@@ -12,7 +12,7 @@
     (run %{bin:atdd} %{deps})))
 
 ;
-; Typecheck and run the tests on the generated Dlang code.
+; Compile and run the tests on the generated Dlang code.
 ;
 (rule
  (alias runtest)

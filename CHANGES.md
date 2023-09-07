@@ -1,3 +1,7 @@
+master
+-------------------
+* atdd: Add `dlang` backend to generate D code from ATD definitions
+
 2.12.0 (2023-05-12)
 -------------------
 

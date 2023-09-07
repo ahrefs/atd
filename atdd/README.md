@@ -40,8 +40,7 @@ ldc2.
 Running the tests is done from the `atdd/` main folder with `make
 test`.
 
-We have two kinds of tests for atdpy:
-* [unit tests](src/test) for testing internal OCaml code
+We have two kinds of tests for atdd:
 * code generation and D tests:
   * they generate D code from ATD files and compare the D output
     against the [expectations](dlang-expected).

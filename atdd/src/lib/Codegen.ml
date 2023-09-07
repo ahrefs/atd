@@ -615,7 +615,7 @@ let rec type_name_of_expr ?(aliasing=Keep) env (e : type_expr) : string =
   | Shared (loc, e, an) -> not_implemented loc "shared" (* TODO *)
   | Wrap (loc, e, an) ->
       (match Dlang_annot.get_dlang_wrap loc an with
-          None -> assert false (* TODO : dubious*)
+       | None -> error_at loc "wrap type declared, but no dlang annotation found"
        | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
       )
   | Name (loc, (loc2, name, []), an) -> dlang_type_name ~aliasing:aliasing env name
@@ -699,7 +699,7 @@ let rec json_writer ?(nested=false) env e =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> 
     (match Dlang_annot.get_dlang_wrap loc an with
-    None -> assert false (* TODO : dubious*)
+   | None -> error_at loc "wrap type declared, but no dlang annotation found"
    | Some { dlang_wrap_t; dlang_wrap ; _ } ->
       sprintf "_atd_write_wrap(%s, (%s e) => %s(e))" (json_writer ~nested:true env e) dlang_wrap_t dlang_wrap
     ) 

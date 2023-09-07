@@ -15,17 +15,11 @@ import std.conv;
 import std.format;
 import std.json;
 import std.sumtype;
+import std.traits : isCallable;
 import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
-  
+
 private
 {
-
-  @trusted auto toDelegate(T)(T fn)
-  {
-    import std.functional;
-    return std.functional.toDelegate(fn);
-  }
-
   class AtdException : Exception
   {
       @safe this(string msg, string file = __FILE__, size_t line = __LINE__)
@@ -33,13 +27,29 @@ private
           super(msg, file, line);
       }
   }
+
+  // workaround to make toDelegate callable from safe
+  @trusted auto toDelegate(F)(auto ref F fp) if (isCallable!F)
+  {
+    import std.functional;
+    return std.functional.toDelegate(fp);
+  }
+
+  template RemoveTypedef(T)
+  {
+      static if (is(T : Typedef!Arg, Arg))
+          alias RemoveTypedef = RemoveTypedef!Arg;
+      else
+          alias RemoveTypedef = T;
+  }
   
   auto _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
       throw new AtdException("missing field %s in JSON object of type %s".format(typeName, jsonFieldName));
+      // hack so that the return type is the same as the field we are instantiating
+      return T.init;
   }
   
-  // TODO check later if template is right way to go
   auto _atd_bad_json(T)(string expectedType, T jsonValue)
   {
       string valueStr = jsonValue.to!string;
@@ -108,9 +118,9 @@ private
           throw _atd_bad_json("string", x);
   }
   
-  auto _atd_read_list(T)(T delegate(JSONValue) readElements)
+  auto _atd_read_list(E)(E delegate(JSONValue) @safe readElements)
   {
-      return (JSONValue jsonVal) {
+      return (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.array)
               throw _atd_bad_json("array", jsonVal);
           auto list = jsonVal.array;
@@ -119,9 +129,9 @@ private
   }
   
   auto _atd_read_object_to_assoc_array(V)(
-      V delegate(JSONValue) readValue)
+      V delegate(JSONValue) @safe readValue)
   {
-      auto fun = (JSONValue jsonVal) {
+      auto fun = (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.object)
               throw _atd_bad_json("object", jsonVal);
           V[string] ret;
@@ -133,10 +143,10 @@ private
   }
   
   auto _atd_read_array_to_assoc_dict(K, V)(
-      K delegate(JSONValue) readKey,
-      V delegate(JSONValue) readValue)
+      K delegate(JSONValue) @safe readKey,
+      V delegate(JSONValue) @safe readValue)
   {
-      auto fun = (JSONValue jsonVal) {
+      auto fun = (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.array)
               throw _atd_bad_json("list", jsonVal);
           V[K] ret;
@@ -152,9 +162,9 @@ private
   }
   
   auto _atd_read_object_to_tuple_list(T)(
-      T delegate(JSONValue) readValue)
+      T delegate(JSONValue) @safe readValue)
   {
-      auto fun = (JSONValue jsonVal) {
+      auto fun = (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.object)
               throw _atd_bad_json("object", jsonVal);
           auto tupList = new Tuple!(string, T)[](jsonVal.object.length);
@@ -166,9 +176,9 @@ private
       return fun;
   }
   
-  auto _atd_read_nullable(T)(T delegate(JSONValue) readElm)
+  auto _atd_read_nullable(T)(T delegate(JSONValue) @safe readElm)
   {
-      auto fun = (JSONValue e) {
+      auto fun = (JSONValue e) @safe {
           if (e.isNull)
               return Nullable!T.init;
           else
@@ -177,9 +187,9 @@ private
       return fun;
   }
   
-  auto _atd_read_option(T)(T delegate(JSONValue) readElm)
+  auto _atd_read_option(T)(T delegate(JSONValue) @safe readElm)
   {
-      auto fun = (JSONValue e) {
+      auto fun = (JSONValue e) @trusted {
           if (e.type == JSONType.string && e.str == "None")
               return Nullable!T.init;
           else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
@@ -190,9 +200,9 @@ private
       return fun;
   }
 
-  auto _atd_read_wrap(Wrapped, Unwrapped)(Wrapped delegate(JSONValue) readElm, Unwrapped delegate(Wrapped) unwrap)
+  auto _atd_read_wrap(Wrapped, Unwrapped)(Wrapped delegate(JSONValue) @safe readElm, Unwrapped delegate(Wrapped) @safe unwrap)
   {
-    auto fun = (JSONValue e) {
+    auto fun = (JSONValue e) @safe {
         auto elm = readElm(e);
         return unwrap(elm);
     };
@@ -227,15 +237,15 @@ private
       return JSONValue(s);
   }
   
-  auto _atd_write_list(T)(JSONValue delegate(T) writeElm )
+  auto _atd_write_list(T)(JSONValue delegate(T) @safe writeElm)
   {
-      return (T[] list) { return JSONValue(array(list.map!writeElm())); };
+      return (T[] list) @safe { return JSONValue(array(list.map!writeElm())); };
   }
   
   auto _atd_write_assoc_array_to_object(T)(
-      JSONValue delegate(T) writeValue )
+      JSONValue delegate(T) @safe writeValue)
   {
-      auto fun = (T[string] assocArr) {
+      auto fun = (T[string] assocArr) @safe {
           JSONValue[string] ret;
           foreach (key, val; assocArr)
               ret[key] = writeValue(val);
@@ -245,10 +255,10 @@ private
   }
   
   auto _atd_write_assoc_dict_to_array(K, V)(
-      JSONValue delegate(K) writeKey ,
-      JSONValue delegate(V) writeValue )
+      JSONValue delegate(K) @safe writeKey,
+      JSONValue delegate(V) @safe writeValue)
   {
-      auto fun = (V[K] assocArr) {
+      auto fun = (V[K] assocArr) @safe {
           JSONValue[] ret;
           foreach (key, val; assocArr)
               ret ~= JSONValue([writeKey(key), writeValue(val)]);
@@ -258,9 +268,9 @@ private
   }
   
   auto _atd_write_tuple_list_to_object(T)(
-      JSONValue delegate(T) writeValue )
+      JSONValue delegate(T) @safe writeValue)
   {
-      auto fun = (Tuple!(string, T)[] tupList) {
+      auto fun = (Tuple!(string, T)[] tupList) @safe {
           JSONValue[string] ret;
           foreach (tup; tupList)
               ret[tup[0]] = writeValue(tup[1]);
@@ -269,9 +279,9 @@ private
       return fun;
   }
   
-  auto _atd_write_nullable(T)(JSONValue delegate(T) writeElm )
+  auto _atd_write_nullable(T)(JSONValue delegate(T) @safe writeElm)
   {
-      auto fun = (Nullable!T elm) {
+      auto fun = (Nullable!T elm) @safe {
           if (elm.isNull)
               return JSONValue(null);
           else
@@ -280,9 +290,9 @@ private
       return fun;
   }
   
-  auto _atd_write_option(T)(JSONValue delegate(T) writeElm )
+  auto _atd_write_option(T)(JSONValue delegate(T) @safe writeElm)
   {
-      auto fun = (Nullable!T elm) {
+      auto fun = (Nullable!T elm) @safe {
           if (elm.isNull)
               return JSONValue("None");
           else
@@ -291,9 +301,9 @@ private
       return fun;
   }
 
-  auto _atd_write_wrap(Wrapped, Unwrapped)(JSONValue delegate(Wrapped) writeElm , Wrapped delegate(Unwrapped) wrap )
+  auto _atd_write_wrap(Wrapped, Unwrapped)(JSONValue delegate(Wrapped) @safe writeElm, Wrapped delegate(Unwrapped) @safe wrap)
   {
-    auto fun = (Unwrapped elm) {
+    auto fun = (Unwrapped elm) @safe {
         auto e = wrap(elm);
         return writeElm(e);
     };
@@ -327,14 +337,6 @@ private
       return cast(T) e;
   }
 
-  template RemoveTypedef(T)
-  {
-      static if (is(T : Typedef!Arg, Arg))
-          alias RemoveTypedef = RemoveTypedef!Arg;
-      else
-          alias RemoveTypedef = T;
-  }
-
   
 
 
@@ -347,14 +349,14 @@ struct RecursiveClass {
     RecursiveClass[] children;
 }
 
- RecursiveClass fromJson(T : RecursiveClass)(JSONValue x) {
+@trusted RecursiveClass fromJson(T : RecursiveClass)(JSONValue x) {
     RecursiveClass obj;
     obj.id = ("id" in x) ? _atd_read_int(x["id"]) : _atd_missing_json_field!(typeof(obj.id))("RecursiveClass", "id");
     obj.flag = ("flag" in x) ? _atd_read_bool(x["flag"]) : _atd_missing_json_field!(typeof(obj.flag))("RecursiveClass", "flag");
     obj.children = ("children" in x) ? _atd_read_list((&fromJson!RecursiveClass).toDelegate)(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
     return obj;
 }
- JSONValue toJson(T : RecursiveClass)(T obj) {
+@trusted JSONValue toJson(T : RecursiveClass)(T obj) {
     JSONValue res;
     res["id"] = _atd_write_int(obj.id);
     res["flag"] = _atd_write_bool(obj.flag);
@@ -364,51 +366,51 @@ struct RecursiveClass {
 
 
 alias St = Typedef!(int, (int).init, "St");
- JSONValue toJson(T : St)(int e) {
+@trusted JSONValue toJson(T : St)(int e) {
     return _atd_write_int(e);
 }
- string toJsonString(T : St)(int obj) {
+@trusted string toJsonString(T : St)(int obj) {
     return obj.toJson!(St).toString;
 }
- int fromJson(T : St)(JSONValue e) {
+@trusted int fromJson(T : St)(JSONValue e) {
     return _atd_read_int(e);
 }
- int fromJsonString(T : St)(string s) {
+@trusted int fromJsonString(T : St)(string s) {
     return parseJSON(s).fromJson!(St);
 }
 
 
 // Original type: kind = [ ... | Root | ... ]
 struct Root_ {}
- JSONValue toJson(T : Root_)(T e) {
+@trusted JSONValue toJson(T : Root_)(T e) {
     return JSONValue("Root");
 }
 
 
 // Original type: kind = [ ... | Thing of ... | ... ]
 struct Thing { int value; }
- JSONValue toJson(T : Thing)(T e) {
+@trusted JSONValue toJson(T : Thing)(T e) {
     return JSONValue([JSONValue("Thing"), _atd_write_int(e.value)]);
 }
 
 
 // Original type: kind = [ ... | WOW | ... ]
 struct WOW {}
- JSONValue toJson(T : WOW)(T e) {
+@trusted JSONValue toJson(T : WOW)(T e) {
     return JSONValue("wow");
 }
 
 
 // Original type: kind = [ ... | Amaze of ... | ... ]
 struct Amaze { string[] value; }
- JSONValue toJson(T : Amaze)(T e) {
+@trusted JSONValue toJson(T : Amaze)(T e) {
     return JSONValue([JSONValue("!!!"), _atd_write_list((&_atd_write_string).toDelegate)(e.value)]);
 }
 
 
 alias Kind = SumType!(Root_, Thing, WOW, Amaze);
 
-Kind fromJson(T : Kind)(JSONValue x) {
+@trusted Kind fromJson(T : Kind)(JSONValue x) {
     if (x.type == JSONType.string) {
         if (x.str == "Root") 
             return Kind(Root_());
@@ -427,7 +429,7 @@ Kind fromJson(T : Kind)(JSONValue x) {
     throw _atd_bad_json("Kind", x);
 }
 
-JSONValue toJson(T : Kind)(T x) {
+@trusted JSONValue toJson(T : Kind)(T x) {
     return x.match!(
     (Root_ v) => v.toJson!(Root_),
 (Thing v) => v.toJson!(Thing),
@@ -438,80 +440,80 @@ JSONValue toJson(T : Kind)(T x) {
 
 
 alias Alias3 = Typedef!(uint32_t, (uint32_t).init, "Alias3");
- JSONValue toJson(T : Alias3)(uint32_t e) {
+@trusted JSONValue toJson(T : Alias3)(uint32_t e) {
     return _atd_write_wrap((&_atd_write_int).toDelegate, (uint32_t e) => to!int(e))(e);
 }
- string toJsonString(T : Alias3)(uint32_t obj) {
+@trusted string toJsonString(T : Alias3)(uint32_t obj) {
     return obj.toJson!(Alias3).toString;
 }
- uint32_t fromJson(T : Alias3)(JSONValue e) {
+@trusted uint32_t fromJson(T : Alias3)(JSONValue e) {
     return _atd_read_wrap((&_atd_read_int).toDelegate, (int e) => to!uint32_t(e))(e);
 }
- uint32_t fromJsonString(T : Alias3)(string s) {
+@trusted uint32_t fromJsonString(T : Alias3)(string s) {
     return parseJSON(s).fromJson!(Alias3);
 }
 
 
 alias AliasOfAliasNotWrapped = Typedef!(RemoveTypedef!(Alias3), (RemoveTypedef!(Alias3)).init, "AliasOfAliasNotWrapped");
- JSONValue toJson(T : AliasOfAliasNotWrapped)(RemoveTypedef!(Alias3) e) {
+@trusted JSONValue toJson(T : AliasOfAliasNotWrapped)(RemoveTypedef!(Alias3) e) {
     return ((RemoveTypedef!(Alias3) x) => x.toJson!(Alias3))(e);
 }
- string toJsonString(T : AliasOfAliasNotWrapped)(RemoveTypedef!(Alias3) obj) {
+@trusted string toJsonString(T : AliasOfAliasNotWrapped)(RemoveTypedef!(Alias3) obj) {
     return obj.toJson!(AliasOfAliasNotWrapped).toString;
 }
- RemoveTypedef!(Alias3) fromJson(T : AliasOfAliasNotWrapped)(JSONValue e) {
+@trusted RemoveTypedef!(Alias3) fromJson(T : AliasOfAliasNotWrapped)(JSONValue e) {
     return fromJson!Alias3(e);
 }
- RemoveTypedef!(Alias3) fromJsonString(T : AliasOfAliasNotWrapped)(string s) {
+@trusted RemoveTypedef!(Alias3) fromJsonString(T : AliasOfAliasNotWrapped)(string s) {
     return parseJSON(s).fromJson!(AliasOfAliasNotWrapped);
 }
 
 
 alias AliasOfAliasOfAlias = Typedef!(RemoveTypedef!(AliasOfAliasNotWrapped), (RemoveTypedef!(AliasOfAliasNotWrapped)).init, "AliasOfAliasOfAlias");
- JSONValue toJson(T : AliasOfAliasOfAlias)(RemoveTypedef!(AliasOfAliasNotWrapped) e) {
+@trusted JSONValue toJson(T : AliasOfAliasOfAlias)(RemoveTypedef!(AliasOfAliasNotWrapped) e) {
     return ((RemoveTypedef!(AliasOfAliasNotWrapped) x) => x.toJson!(AliasOfAliasNotWrapped))(e);
 }
- string toJsonString(T : AliasOfAliasOfAlias)(RemoveTypedef!(AliasOfAliasNotWrapped) obj) {
+@trusted string toJsonString(T : AliasOfAliasOfAlias)(RemoveTypedef!(AliasOfAliasNotWrapped) obj) {
     return obj.toJson!(AliasOfAliasOfAlias).toString;
 }
- RemoveTypedef!(AliasOfAliasNotWrapped) fromJson(T : AliasOfAliasOfAlias)(JSONValue e) {
+@trusted RemoveTypedef!(AliasOfAliasNotWrapped) fromJson(T : AliasOfAliasOfAlias)(JSONValue e) {
     return fromJson!AliasOfAliasNotWrapped(e);
 }
- RemoveTypedef!(AliasOfAliasNotWrapped) fromJsonString(T : AliasOfAliasOfAlias)(string s) {
+@trusted RemoveTypedef!(AliasOfAliasNotWrapped) fromJsonString(T : AliasOfAliasOfAlias)(string s) {
     return parseJSON(s).fromJson!(AliasOfAliasOfAlias);
 }
 
 
 alias Alias = Typedef!(int[], (int[]).init, "Alias");
- JSONValue toJson(T : Alias)(int[] e) {
+@trusted JSONValue toJson(T : Alias)(int[] e) {
     return _atd_write_list((&_atd_write_int).toDelegate)(e);
 }
- string toJsonString(T : Alias)(int[] obj) {
+@trusted string toJsonString(T : Alias)(int[] obj) {
     return obj.toJson!(Alias).toString;
 }
- int[] fromJson(T : Alias)(JSONValue e) {
+@trusted int[] fromJson(T : Alias)(JSONValue e) {
     return _atd_read_list((&_atd_read_int).toDelegate)(e);
 }
- int[] fromJsonString(T : Alias)(string s) {
+@trusted int[] fromJsonString(T : Alias)(string s) {
     return parseJSON(s).fromJson!(Alias);
 }
 
 
 alias KindParametrizedTuple = Typedef!(Tuple!(Kind, Kind, int), (Tuple!(Kind, Kind, int)).init, "KindParametrizedTuple");
- JSONValue toJson(T : KindParametrizedTuple)(Tuple!(Kind, Kind, int) e) {
+@trusted JSONValue toJson(T : KindParametrizedTuple)(Tuple!(Kind, Kind, int) e) {
     return ((Tuple!(Kind, Kind, int) x) => JSONValue([((RemoveTypedef!(Kind) x) => x.toJson!(Kind))(x[0]), ((RemoveTypedef!(Kind) x) => x.toJson!(Kind))(x[1]), _atd_write_int(x[2])]))(e);
 }
- string toJsonString(T : KindParametrizedTuple)(Tuple!(Kind, Kind, int) obj) {
+@trusted string toJsonString(T : KindParametrizedTuple)(Tuple!(Kind, Kind, int) obj) {
     return obj.toJson!(KindParametrizedTuple).toString;
 }
- Tuple!(Kind, Kind, int) fromJson(T : KindParametrizedTuple)(JSONValue e) {
-    return ((JSONValue x) { 
+@trusted Tuple!(Kind, Kind, int) fromJson(T : KindParametrizedTuple)(JSONValue e) {
+    return ((JSONValue x) @trusted { 
     if (x.type != JSONType.array || x.array.length != 3)
       throw _atd_bad_json("Tuple of size 3", x);
     return tuple(fromJson!Kind(x[0]), fromJson!Kind(x[1]), _atd_read_int(x[2]));
   })(e);
 }
- Tuple!(Kind, Kind, int) fromJsonString(T : KindParametrizedTuple)(string s) {
+@trusted Tuple!(Kind, Kind, int) fromJsonString(T : KindParametrizedTuple)(string s) {
     return parseJSON(s).fromJson!(KindParametrizedTuple);
 }
 
@@ -521,13 +523,13 @@ struct IntFloatParametrizedRecord {
     float[] field_b = [];
 }
 
- IntFloatParametrizedRecord fromJson(T : IntFloatParametrizedRecord)(JSONValue x) {
+@trusted IntFloatParametrizedRecord fromJson(T : IntFloatParametrizedRecord)(JSONValue x) {
     IntFloatParametrizedRecord obj;
     obj.field_a = ("field_a" in x) ? _atd_read_int(x["field_a"]) : _atd_missing_json_field!(typeof(obj.field_a))("IntFloatParametrizedRecord", "field_a");
     obj.field_b = ("field_b" in x) ? _atd_read_list((&_atd_read_float).toDelegate)(x["field_b"]) : [];
     return obj;
 }
- JSONValue toJson(T : IntFloatParametrizedRecord)(T obj) {
+@trusted JSONValue toJson(T : IntFloatParametrizedRecord)(T obj) {
     JSONValue res;
     res["field_a"] = _atd_write_int(obj.field_a);
     res["field_b"] = _atd_write_list((&_atd_write_float).toDelegate)(obj.field_b);
@@ -562,7 +564,7 @@ struct Root {
     RemoveTypedef!(AliasOfAliasOfAlias) aaa;
 }
 
- Root fromJson(T : Root)(JSONValue x) {
+@trusted Root fromJson(T : Root)(JSONValue x) {
     Root obj;
     obj.id = ("ID" in x) ? _atd_read_string(x["ID"]) : _atd_missing_json_field!(typeof(obj.id))("Root", "ID");
     obj.await = ("await" in x) ? _atd_read_bool(x["await"]) : _atd_missing_json_field!(typeof(obj.await))("Root", "await");
@@ -575,13 +577,13 @@ struct Root {
     obj.extras = ("extras" in x) ? _atd_read_list((&_atd_read_int).toDelegate)(x["extras"]) : [];
     obj.answer = ("answer" in x) ? _atd_read_int(x["answer"]) : 42;
     obj.aliased = ("aliased" in x) ? fromJson!Alias(x["aliased"]) : _atd_missing_json_field!(typeof(obj.aliased))("Root", "aliased");
-    obj.point = ("point" in x) ? ((JSONValue x) { 
+    obj.point = ("point" in x) ? ((JSONValue x) @trusted { 
     if (x.type != JSONType.array || x.array.length != 2)
       throw _atd_bad_json("Tuple of size 2", x);
     return tuple(_atd_read_float(x[0]), _atd_read_float(x[1]));
   })(x["point"]) : _atd_missing_json_field!(typeof(obj.point))("Root", "point");
     obj.kinds = ("kinds" in x) ? _atd_read_list((&fromJson!Kind).toDelegate)(x["kinds"]) : _atd_missing_json_field!(typeof(obj.kinds))("Root", "kinds");
-    obj.assoc1 = ("assoc1" in x) ? _atd_read_list(((JSONValue x) { 
+    obj.assoc1 = ("assoc1" in x) ? _atd_read_list(((JSONValue x) @trusted { 
     if (x.type != JSONType.array || x.array.length != 2)
       throw _atd_bad_json("Tuple of size 2", x);
     return tuple(_atd_read_float(x[0]), _atd_read_int(x[1]));
@@ -598,7 +600,7 @@ struct Root {
     obj.aaa = ("aaa" in x) ? fromJson!AliasOfAliasOfAlias(x["aaa"]) : _atd_missing_json_field!(typeof(obj.aaa))("Root", "aaa");
     return obj;
 }
- JSONValue toJson(T : Root)(T obj) {
+@trusted JSONValue toJson(T : Root)(T obj) {
     JSONValue res;
     res["ID"] = _atd_write_string(obj.id);
     res["await"] = _atd_write_bool(obj.await);
@@ -633,12 +635,12 @@ struct RequireField {
     string req;
 }
 
- RequireField fromJson(T : RequireField)(JSONValue x) {
+@trusted RequireField fromJson(T : RequireField)(JSONValue x) {
     RequireField obj;
     obj.req = ("req" in x) ? _atd_read_string(x["req"]) : _atd_missing_json_field!(typeof(obj.req))("RequireField", "req");
     return obj;
 }
- JSONValue toJson(T : RequireField)(T obj) {
+@trusted JSONValue toJson(T : RequireField)(T obj) {
     JSONValue res;
     res["req"] = _atd_write_string(obj.req);
     return res;
@@ -649,12 +651,12 @@ struct RecordWithWrappedType {
     int item;
 }
 
- RecordWithWrappedType fromJson(T : RecordWithWrappedType)(JSONValue x) {
+@trusted RecordWithWrappedType fromJson(T : RecordWithWrappedType)(JSONValue x) {
     RecordWithWrappedType obj;
     obj.item = ("item" in x) ? _atd_read_wrap((&_atd_read_string).toDelegate, (string e) => to!(int)(e))(x["item"]) : _atd_missing_json_field!(typeof(obj.item))("RecordWithWrappedType", "item");
     return obj;
 }
- JSONValue toJson(T : RecordWithWrappedType)(T obj) {
+@trusted JSONValue toJson(T : RecordWithWrappedType)(T obj) {
     JSONValue res;
     res["item"] = _atd_write_wrap((&_atd_write_string).toDelegate, (int e) => to!(string)(e))(obj.item);
     return res;
@@ -662,41 +664,41 @@ struct RecordWithWrappedType {
 
 
 alias Pair = Typedef!(Tuple!(string, int), (Tuple!(string, int)).init, "Pair");
- JSONValue toJson(T : Pair)(Tuple!(string, int) e) {
+@trusted JSONValue toJson(T : Pair)(Tuple!(string, int) e) {
     return ((Tuple!(string, int) x) => JSONValue([_atd_write_string(x[0]), _atd_write_int(x[1])]))(e);
 }
- string toJsonString(T : Pair)(Tuple!(string, int) obj) {
+@trusted string toJsonString(T : Pair)(Tuple!(string, int) obj) {
     return obj.toJson!(Pair).toString;
 }
- Tuple!(string, int) fromJson(T : Pair)(JSONValue e) {
-    return ((JSONValue x) { 
+@trusted Tuple!(string, int) fromJson(T : Pair)(JSONValue e) {
+    return ((JSONValue x) @trusted { 
     if (x.type != JSONType.array || x.array.length != 2)
       throw _atd_bad_json("Tuple of size 2", x);
     return tuple(_atd_read_string(x[0]), _atd_read_int(x[1]));
   })(e);
 }
- Tuple!(string, int) fromJsonString(T : Pair)(string s) {
+@trusted Tuple!(string, int) fromJsonString(T : Pair)(string s) {
     return parseJSON(s).fromJson!(Pair);
 }
 
 
 // Original type: frozen = [ ... | A | ... ]
 struct A {}
- JSONValue toJson(T : A)(T e) {
+@trusted JSONValue toJson(T : A)(T e) {
     return JSONValue("A");
 }
 
 
 // Original type: frozen = [ ... | B of ... | ... ]
 struct B { int value; }
- JSONValue toJson(T : B)(T e) {
+@trusted JSONValue toJson(T : B)(T e) {
     return JSONValue([JSONValue("B"), _atd_write_int(e.value)]);
 }
 
 
 alias Frozen = SumType!(A, B);
 
-Frozen fromJson(T : Frozen)(JSONValue x) {
+@trusted Frozen fromJson(T : Frozen)(JSONValue x) {
     if (x.type == JSONType.string) {
         if (x.str == "A") 
             return Frozen(A());
@@ -711,7 +713,7 @@ Frozen fromJson(T : Frozen)(JSONValue x) {
     throw _atd_bad_json("Frozen", x);
 }
 
-JSONValue toJson(T : Frozen)(T x) {
+@trusted JSONValue toJson(T : Frozen)(T x) {
     return x.match!(
     (A v) => v.toJson!(A),
 (B v) => v.toJson!(B)
@@ -723,12 +725,12 @@ struct DefaultList {
     int[] items = [];
 }
 
- DefaultList fromJson(T : DefaultList)(JSONValue x) {
+@trusted DefaultList fromJson(T : DefaultList)(JSONValue x) {
     DefaultList obj;
     obj.items = ("items" in x) ? _atd_read_list((&_atd_read_int).toDelegate)(x["items"]) : [];
     return obj;
 }
- JSONValue toJson(T : DefaultList)(T obj) {
+@trusted JSONValue toJson(T : DefaultList)(T obj) {
     JSONValue res;
     res["items"] = _atd_write_list((&_atd_write_int).toDelegate)(obj.items);
     return res;
@@ -736,30 +738,30 @@ struct DefaultList {
 
 
 alias AliasOfAlias = Typedef!(uint16_t, (uint16_t).init, "AliasOfAlias");
- JSONValue toJson(T : AliasOfAlias)(uint16_t e) {
+@trusted JSONValue toJson(T : AliasOfAlias)(uint16_t e) {
     return _atd_write_wrap(((RemoveTypedef!(Alias3) x) => x.toJson!(Alias3)), (uint16_t e) => to!uint32_t(e))(e);
 }
- string toJsonString(T : AliasOfAlias)(uint16_t obj) {
+@trusted string toJsonString(T : AliasOfAlias)(uint16_t obj) {
     return obj.toJson!(AliasOfAlias).toString;
 }
- uint16_t fromJson(T : AliasOfAlias)(JSONValue e) {
+@trusted uint16_t fromJson(T : AliasOfAlias)(JSONValue e) {
     return _atd_read_wrap((&fromJson!Alias3).toDelegate, (RemoveTypedef!(Alias3) e) => to!uint16_t(e))(e);
 }
- uint16_t fromJsonString(T : AliasOfAlias)(string s) {
+@trusted uint16_t fromJsonString(T : AliasOfAlias)(string s) {
     return parseJSON(s).fromJson!(AliasOfAlias);
 }
 
 
 alias Alias2 = Typedef!(int[], (int[]).init, "Alias2");
- JSONValue toJson(T : Alias2)(int[] e) {
+@trusted JSONValue toJson(T : Alias2)(int[] e) {
     return _atd_write_list((&_atd_write_int).toDelegate)(e);
 }
- string toJsonString(T : Alias2)(int[] obj) {
+@trusted string toJsonString(T : Alias2)(int[] obj) {
     return obj.toJson!(Alias2).toString;
 }
- int[] fromJson(T : Alias2)(JSONValue e) {
+@trusted int[] fromJson(T : Alias2)(JSONValue e) {
     return _atd_read_list((&_atd_read_int).toDelegate)(e);
 }
- int[] fromJsonString(T : Alias2)(string s) {
+@trusted int[] fromJsonString(T : Alias2)(string s) {
     return parseJSON(s).fromJson!(Alias2);
 }

@@ -53,7 +53,7 @@ void setupTests()
         );
     };
 
-    tests["everything"] = {
+    tests["everything"] = () {
         import std.typecons;
         import std.json;
 
@@ -88,10 +88,12 @@ void setupTests()
         obj.parametrized_record = IntFloatParametrizedRecord(42, [9.9f, 8.8f]);
         obj.parametrized_tuple = tuple(Kind(WOW()), Kind(WOW()), 100);
 
-        auto jsonStr = obj.toJsonString;
-        auto newObj = jsonStr.fromJsonString!Root;
+        () @safe {
+            auto jsonStr = obj.toJsonString;
+            auto newObj = jsonStr.fromJsonString!Root;
 
-        assert(obj == newObj);
+            assert(obj == newObj);
+        }();
     };
 
     tests["defaultListWithThings"] = {

@@ -201,8 +201,7 @@ import std.json;
 import std.sumtype;
 import std.traits : isCallable;
 import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
-import std.functional;
-  
+
 private
 {
   class AtdException : Exception
@@ -212,6 +211,21 @@ private
           super(msg, file, line);
       }
   }
+
+  // workaround to make toDelegate callable from safe
+  @trusted auto toDelegate(F)(auto ref F fp) if (isCallable!F)
+  {
+    import std.functional;
+    return std.functional.toDelegate(fp);
+  }
+
+  template RemoveTypedef(T)
+  {
+      static if (is(T : Typedef!Arg, Arg))
+          alias RemoveTypedef = RemoveTypedef!Arg;
+      else
+          alias RemoveTypedef = T;
+  }
   
   auto _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
@@ -220,7 +234,6 @@ private
       return T.init;
   }
   
-  // TODO check later if template is right way to go
   auto _atd_bad_json(T)(string expectedType, T jsonValue)
   {
       string valueStr = jsonValue.to!string;
@@ -289,9 +302,9 @@ private
           throw _atd_bad_json("string", x);
   }
   
-  auto _atd_read_list(F)(F readElements) if (isCallable!(F))
+  auto _atd_read_list(E)(E delegate(JSONValue) @safe readElements)
   {
-      return (JSONValue jsonVal) {
+      return (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.array)
               throw _atd_bad_json("array", jsonVal);
           auto list = jsonVal.array;
@@ -300,9 +313,9 @@ private
   }
   
   auto _atd_read_object_to_assoc_array(V)(
-      V delegate(JSONValue) readValue)
+      V delegate(JSONValue) @safe readValue)
   {
-      auto fun = (JSONValue jsonVal) {
+      auto fun = (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.object)
               throw _atd_bad_json("object", jsonVal);
           V[string] ret;
@@ -314,10 +327,10 @@ private
   }
   
   auto _atd_read_array_to_assoc_dict(K, V)(
-      K delegate(JSONValue) readKey,
-      V delegate(JSONValue) readValue)
+      K delegate(JSONValue) @safe readKey,
+      V delegate(JSONValue) @safe readValue)
   {
-      auto fun = (JSONValue jsonVal) {
+      auto fun = (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.array)
               throw _atd_bad_json("list", jsonVal);
           V[K] ret;
@@ -333,9 +346,9 @@ private
   }
   
   auto _atd_read_object_to_tuple_list(T)(
-      T delegate(JSONValue) readValue)
+      T delegate(JSONValue) @safe readValue)
   {
-      auto fun = (JSONValue jsonVal) {
+      auto fun = (JSONValue jsonVal) @trusted {
           if (jsonVal.type != JSONType.object)
               throw _atd_bad_json("object", jsonVal);
           auto tupList = new Tuple!(string, T)[](jsonVal.object.length);
@@ -347,9 +360,9 @@ private
       return fun;
   }
   
-  auto _atd_read_nullable(T)(T delegate(JSONValue) readElm)
+  auto _atd_read_nullable(T)(T delegate(JSONValue) @safe readElm)
   {
-      auto fun = (JSONValue e) {
+      auto fun = (JSONValue e) @safe {
           if (e.isNull)
               return Nullable!T.init;
           else
@@ -358,9 +371,9 @@ private
       return fun;
   }
   
-  auto _atd_read_option(T)(T delegate(JSONValue) readElm)
+  auto _atd_read_option(T)(T delegate(JSONValue) @safe readElm)
   {
-      auto fun = (JSONValue e) {
+      auto fun = (JSONValue e) @trusted {
           if (e.type == JSONType.string && e.str == "None")
               return Nullable!T.init;
           else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
@@ -371,9 +384,9 @@ private
       return fun;
   }
 
-  auto _atd_read_wrap(Wrapped, Unwrapped)(Wrapped delegate(JSONValue) readElm, Unwrapped delegate(Wrapped) unwrap)
+  auto _atd_read_wrap(Wrapped, Unwrapped)(Wrapped delegate(JSONValue) @safe readElm, Unwrapped delegate(Wrapped) @safe unwrap)
   {
-    auto fun = (JSONValue e) {
+    auto fun = (JSONValue e) @safe {
         auto elm = readElm(e);
         return unwrap(elm);
     };
@@ -408,15 +421,15 @@ private
       return JSONValue(s);
   }
   
-  auto _atd_write_list(T)(JSONValue delegate(T) writeElm)
+  auto _atd_write_list(T)(JSONValue delegate(T) @safe writeElm)
   {
-      return (T[] list) { return JSONValue(array(list.map!writeElm())); };
+      return (T[] list) @safe { return JSONValue(array(list.map!writeElm())); };
   }
   
   auto _atd_write_assoc_array_to_object(T)(
-      JSONValue delegate(T) writeValue)
+      JSONValue delegate(T) @safe writeValue)
   {
-      auto fun = (T[string] assocArr) {
+      auto fun = (T[string] assocArr) @safe {
           JSONValue[string] ret;
           foreach (key, val; assocArr)
               ret[key] = writeValue(val);
@@ -426,10 +439,10 @@ private
   }
   
   auto _atd_write_assoc_dict_to_array(K, V)(
-      JSONValue delegate(K) writeKey,
-      JSONValue delegate(V) writeValue)
+      JSONValue delegate(K) @safe writeKey,
+      JSONValue delegate(V) @safe writeValue)
   {
-      auto fun = (V[K] assocArr) {
+      auto fun = (V[K] assocArr) @safe {
           JSONValue[] ret;
           foreach (key, val; assocArr)
               ret ~= JSONValue([writeKey(key), writeValue(val)]);
@@ -439,9 +452,9 @@ private
   }
   
   auto _atd_write_tuple_list_to_object(T)(
-      JSONValue delegate(T) writeValue)
+      JSONValue delegate(T) @safe writeValue)
   {
-      auto fun = (Tuple!(string, T)[] tupList) {
+      auto fun = (Tuple!(string, T)[] tupList) @safe {
           JSONValue[string] ret;
           foreach (tup; tupList)
               ret[tup[0]] = writeValue(tup[1]);
@@ -450,9 +463,9 @@ private
       return fun;
   }
   
-  auto _atd_write_nullable(T)(JSONValue delegate(T) writeElm)
+  auto _atd_write_nullable(T)(JSONValue delegate(T) @safe writeElm)
   {
-      auto fun = (Nullable!T elm) {
+      auto fun = (Nullable!T elm) @safe {
           if (elm.isNull)
               return JSONValue(null);
           else
@@ -461,9 +474,9 @@ private
       return fun;
   }
   
-  auto _atd_write_option(T)(JSONValue delegate(T) writeElm)
+  auto _atd_write_option(T)(JSONValue delegate(T) @safe writeElm)
   {
-      auto fun = (Nullable!T elm) {
+      auto fun = (Nullable!T elm) @safe {
           if (elm.isNull)
               return JSONValue("None");
           else
@@ -472,9 +485,9 @@ private
       return fun;
   }
 
-  auto _atd_write_wrap(Wrapped, Unwrapped)(JSONValue delegate(Wrapped) writeElm, Wrapped delegate(Unwrapped) wrap)
+  auto _atd_write_wrap(Wrapped, Unwrapped)(JSONValue delegate(Wrapped) @safe writeElm, Wrapped delegate(Unwrapped) @safe wrap)
   {
-    auto fun = (Unwrapped elm) {
+    auto fun = (Unwrapped elm) @safe {
         auto e = wrap(elm);
         return writeElm(e);
     };
@@ -506,14 +519,6 @@ private
   auto wrapAlias(T)(TypedefType!T e) if (is(T : Typedef!Arg, Arg))
   {
       return cast(T) e;
-  }
-
-  template RemoveTypedef(T)
-  {
-      static if (is(T : Typedef!Arg, Arg))
-          alias RemoveTypedef = RemoveTypedef!Arg;
-      else
-          alias RemoveTypedef = T;
   }
 
   |}
@@ -804,7 +809,7 @@ and tuple_reader env cells =
     ) cells
     |> String.concat ", "
   in
-  sprintf "((JSONValue x) { 
+  sprintf "((JSONValue x) @trusted { 
     if (x.type != JSONType.array || x.array.length != %d)
       throw _atd_bad_json(\"Tuple of size %d\", x);
     return tuple(%s);
@@ -876,8 +881,8 @@ let record env loc name (fields : field list) an =
     ) fields in
   let from_json =
     [
-      Line (sprintf "%s fromJson(T : %s)(JSONValue x) {"
-              (single_esc dlang_struct_name) (single_esc dlang_struct_name));
+      Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue x) {"
+            (single_esc dlang_struct_name) (single_esc dlang_struct_name));
       Block [
         Line (sprintf "%s obj;" dlang_struct_name);
         Inline from_json_class_arguments;
@@ -888,7 +893,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json =
     [
-      Line (sprintf "JSONValue toJson(T : %s)(T obj) {" (single_esc dlang_struct_name));
+      Line (sprintf "@trusted JSONValue toJson(T : %s)(T obj) {" (single_esc dlang_struct_name));
       Block [
         Line ("JSONValue res;");
         Inline json_object_body;
@@ -913,16 +918,16 @@ let alias_wrapper env  name type_expr =
   let value_type = type_name_of_expr ~aliasing:None_ env type_expr in
   [
     Line (sprintf "alias %s = Typedef!(%s, (%s).init, \"%s\");" dlang_struct_name value_type value_type dlang_struct_name); 
-    Line (sprintf "JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name value_type);
+    Line (sprintf "@trusted JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name value_type);
     Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");
-    Line (sprintf "string toJsonString(T : %s)(%s obj) {"  dlang_struct_name value_type);
+    Line (sprintf "@trusted string toJsonString(T : %s)(%s obj) {"  dlang_struct_name value_type);
     Block [Line(sprintf "return obj.toJson!(%s).toString;" dlang_struct_name)];
     Line("}");
-    Line (sprintf "%s fromJson(T : %s)(JSONValue e) {"  value_type dlang_struct_name);
+    Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue e) {" value_type dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
     Line("}");
-    Line (sprintf "%s fromJsonString(T : %s)(string s) {"  value_type dlang_struct_name);
+    Line (sprintf "@trusted %s fromJsonString(T : %s)(string s) {"  value_type dlang_struct_name);
     Block [Line(sprintf "return parseJSON(s).fromJson!(%s);" dlang_struct_name)];
     Line("}");
   ]
@@ -937,7 +942,7 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s {}" (trans env unique_name));
-          Line (sprintf "JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
+          Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
           Line("}");
         ]
@@ -947,7 +952,7 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
-          Line (sprintf "JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
+          Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
@@ -1038,8 +1043,8 @@ let sum_container env  loc name cases =
   [
     Line (sprintf "alias %s = SumType!(%s);" dlang_struct_name type_list);
     Line "";
-      Line (sprintf "%s fromJson(T : %s)(JSONValue x) {"
-              (single_esc dlang_struct_name) (single_esc dlang_struct_name));
+      Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue x) {"
+            (single_esc dlang_struct_name) (single_esc dlang_struct_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
@@ -1048,7 +1053,7 @@ let sum_container env  loc name cases =
       ];
     Line "}";
     Line "";
-    Line (sprintf "JSONValue toJson(T : %s)(T x) {" (dlang_struct_name));
+    Line (sprintf "@trusted JSONValue toJson(T : %s)(T x) {" (dlang_struct_name));
     Block [
       Line "return x.match!(";
         Line (

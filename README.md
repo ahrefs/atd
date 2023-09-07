@@ -13,6 +13,7 @@ Target languages currently supported:
 * Python: [atdpy](atdpy)
 * Scala: [atds](atds)
 * TypeScript: [atdts](atdts)
+* DLang: [atdd](atdd)
 
 All can installed with opam e.g.
 ```

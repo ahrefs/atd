@@ -653,12 +653,12 @@ struct RecordWithWrappedType {
 
 @trusted RecordWithWrappedType fromJson(T : RecordWithWrappedType)(JSONValue x) {
     RecordWithWrappedType obj;
-    obj.item = ("item" in x) ? _atd_read_wrap((&_atd_read_string).toDelegate, (string e) => to!(int)(e))(x["item"]) : _atd_missing_json_field!(typeof(obj.item))("RecordWithWrappedType", "item");
+    obj.item = ("item" in x) ? _atd_read_wrap((&_atd_read_string).toDelegate, (string e) => to!int(e))(x["item"]) : _atd_missing_json_field!(typeof(obj.item))("RecordWithWrappedType", "item");
     return obj;
 }
 @trusted JSONValue toJson(T : RecordWithWrappedType)(T obj) {
     JSONValue res;
-    res["item"] = _atd_write_wrap((&_atd_write_string).toDelegate, (int e) => to!(string)(e))(obj.item);
+    res["item"] = _atd_write_wrap((&_atd_write_string).toDelegate, (int e) => to!string(e))(obj.item);
     return res;
 }
 

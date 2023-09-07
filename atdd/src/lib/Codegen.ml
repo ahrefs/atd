@@ -700,8 +700,8 @@ let rec json_writer ?(nested=false) env e =
   | Wrap (loc, e, an) -> 
     (match Dlang_annot.get_dlang_wrap loc an with
    | None -> error_at loc "wrap type declared, but no dlang annotation found"
-   | Some { dlang_wrap_t; dlang_wrap ; _ } ->
-      sprintf "_atd_write_wrap(%s, (%s e) => %s(e))" (json_writer ~nested:true env e) dlang_wrap_t dlang_wrap
+   | Some { dlang_wrap_t; dlang_unwrap ; _ } ->
+      sprintf "_atd_write_wrap(%s, (%s e) => %s(e))" (json_writer ~nested:true env e) dlang_wrap_t dlang_unwrap
     ) 
   | Name (loc, (loc2, name, []), an) ->
       (match name with
@@ -786,8 +786,8 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
   | Wrap (loc, e, an) ->
     (match Dlang_annot.get_dlang_wrap loc an with
     None -> assert false (* TODO : dubious*)
-   | Some { dlang_unwrap ; _ } ->
-      sprintf "_atd_read_wrap(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr ~aliasing:None_ env e) dlang_unwrap
+   | Some { dlang_wrap ; _ } ->
+      sprintf "_atd_read_wrap(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr ~aliasing:None_ env e) dlang_wrap
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with

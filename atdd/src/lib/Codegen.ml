@@ -197,28 +197,31 @@ import std.algorithm : map;
 import std.array : array;
 import std.conv;
 import std.format;
-import std.functional;
 import std.json;
 import std.sumtype;
+import std.traits : isCallable;
 import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
+import std.functional;
   
 private
 {
   class AtdException : Exception
   {
-      this(string msg, string file = __FILE__, size_t line = __LINE__)
+      @safe this(string msg, string file = __FILE__, size_t line = __LINE__)
       {
           super(msg, file, line);
       }
   }
   
-  T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
+  auto _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
       throw new AtdException("missing field %%s in JSON object of type %%s".format(typeName, jsonFieldName));
+      // hack so that the return type is the same as the field we are instantiating
+      return T.init;
   }
   
   // TODO check later if template is right way to go
-  AtdException _atd_bad_json(T)(string expectedType, T jsonValue)
+  auto _atd_bad_json(T)(string expectedType, T jsonValue)
   {
       string valueStr = jsonValue.to!string;
       if (valueStr.length > 200)
@@ -232,7 +235,7 @@ private
       ));
   }
   
-  AtdException _atd_bad_d(T)(string expectedType, T jsonValue)
+  auto _atd_bad_d(T)(string expectedType, T jsonValue)
   {
       string valueStr = jsonValue.to!string;
       if (valueStr.length > 200)
@@ -246,7 +249,7 @@ private
       ));
   }
   
-  typeof(null) _atd_read_unit(JSONValue x)
+  auto _atd_read_unit(JSONValue x)
   {
       if (x.isNull)
           return null;
@@ -254,7 +257,7 @@ private
           throw _atd_bad_json("unit", x);
   }
   
-  bool _atd_read_bool(JSONValue x)
+  auto _atd_read_bool(JSONValue x)
   {
       try
           return x.boolean;
@@ -262,7 +265,7 @@ private
           throw _atd_bad_json("bool", x);
   }
   
-  int _atd_read_int(JSONValue x)
+  auto _atd_read_int(JSONValue x)
   {
       try
           return cast(int) x.integer;
@@ -270,15 +273,15 @@ private
           throw _atd_bad_json("int", x);
   }
   
-  float _atd_read_float(JSONValue x)
+  auto _atd_read_float(JSONValue x)
   {
       try
-          return x.floating;
+          return cast(float) x.floating;
       catch (JSONException e)
           throw _atd_bad_json("float", x);
   }
   
-  string _atd_read_string(JSONValue x)
+  auto _atd_read_string(JSONValue x)
   {
       try
           return x.str;
@@ -286,7 +289,7 @@ private
           throw _atd_bad_json("string", x);
   }
   
-  auto _atd_read_list(T)(T delegate(JSONValue) readElements)
+  auto _atd_read_list(F)(F readElements) if (isCallable!(F))
   {
       return (JSONValue jsonVal) {
           if (jsonVal.type != JSONType.array)
@@ -380,27 +383,27 @@ private
   // this whole set of function could be remplaced by one templated _atd_write_value function
   // not sure it is what we want though
   
-  JSONValue _atd_write_unit(typeof(null) n)
+  auto _atd_write_unit(typeof(null) n)
   {
       return JSONValue(null);
   }
   
-  JSONValue _atd_write_bool(bool b)
+  auto _atd_write_bool(bool b)
   {
       return JSONValue(b);
   }
   
-  JSONValue _atd_write_int(int i)
+  auto _atd_write_int(int i)
   {
       return JSONValue(i);
   }
   
-  JSONValue _atd_write_float(float f)
+  auto _atd_write_float(float f)
   {
       return JSONValue(f);
   }
   
-  JSONValue _atd_write_string(string s)
+  auto _atd_write_string(string s)
   {
       return JSONValue(s);
   }
@@ -483,24 +486,24 @@ private
   // # Public classes
   // ############################################################################
   
-  T fromJsonString(T)(string s)
+  auto fromJsonString(T)(string s)
   {
       JSONValue res = parseJSON(s);
       return res.fromJson!T;
   }
   
-  string toJsonString(T)(T obj)
+  auto toJsonString(T)(T obj)
   {
     JSONValue res = obj.toJson!T;
     return res.toString;
   }
   
-  @safe TypedefType!T unwrapAlias(T)(T e) if (is(T : Typedef!Arg, Arg))
+  auto unwrapAlias(T)(T e) if (is(T : Typedef!Arg, Arg))
   {
       return cast(TypedefType!T) e;
   }
     
-  @safe T wrapAlias(T)(TypedefType!T e) if (is(T : Typedef!Arg, Arg))
+  auto wrapAlias(T)(TypedefType!T e) if (is(T : Typedef!Arg, Arg))
   {
       return cast(T) e;
   }

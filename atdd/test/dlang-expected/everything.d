@@ -43,11 +43,9 @@ private
           alias RemoveTypedef = T;
   }
   
-  auto _atd_missing_json_field(T)(string typeName, string jsonFieldName)
+  @trusted T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
       throw new AtdException("missing field %s in JSON object of type %s".format(typeName, jsonFieldName));
-      // hack so that the return type is the same as the field we are instantiating
-      return T.init;
   }
   
   auto _atd_bad_json(T)(string expectedType, T jsonValue)

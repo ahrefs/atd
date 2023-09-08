@@ -227,11 +227,9 @@ private
           alias RemoveTypedef = T;
   }
   
-  auto _atd_missing_json_field(T)(string typeName, string jsonFieldName)
+  @trusted T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
       throw new AtdException("missing field %%s in JSON object of type %%s".format(typeName, jsonFieldName));
-      // hack so that the return type is the same as the field we are instantiating
-      return T.init;
   }
   
   auto _atd_bad_json(T)(string expectedType, T jsonValue)
@@ -785,7 +783,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) ->
     (match Dlang_annot.get_dlang_wrap loc an with
-    None -> assert false (* TODO : dubious*)
+   | None -> error_at loc "wrap type declared, but no dlang annotation found"
    | Some { dlang_wrap ; _ } ->
       sprintf "_atd_read_wrap(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr ~aliasing:None_ env e) dlang_wrap
     )

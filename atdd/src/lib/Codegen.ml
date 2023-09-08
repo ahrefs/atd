@@ -229,7 +229,7 @@ private
   
   @trusted T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
-      throw new AtdException("missing field %%s in JSON object of type %%s".format(typeName, jsonFieldName));
+      throw new AtdException("missing field %%s in JSON object of type %%s".format(jsonFieldName, typeName));
   }
   
   auto _atd_bad_json(T)(string expectedType, T jsonValue)

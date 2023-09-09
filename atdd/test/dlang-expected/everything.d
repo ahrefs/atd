@@ -15,7 +15,7 @@ import std.conv;
 import std.format;
 import std.json;
 import std.sumtype;
-import std.traits : isCallable;
+import std.traits : isCallable, ReturnType;
 import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
 
 private
@@ -116,224 +116,229 @@ private
           throw _atd_bad_json("string", x);
   }
   
-  auto _atd_read_list(E)(E delegate(JSONValue) @safe readElements)
-  {
-      return (JSONValue jsonVal) @trusted {
-          if (jsonVal.type != JSONType.array)
-              throw _atd_bad_json("array", jsonVal);
-          auto list = jsonVal.array;
-          return array(list.map!readElements());
-      };
-  }
-  
-  auto _atd_read_object_to_assoc_array(V)(
-      V delegate(JSONValue) @safe readValue)
-  {
-      auto fun = (JSONValue jsonVal) @trusted {
-          if (jsonVal.type != JSONType.object)
-              throw _atd_bad_json("object", jsonVal);
-          V[string] ret;
-          foreach (key, val; jsonVal.object)
-              ret[key] = readValue(val);
-          return ret;
-      };
-      return fun;
-  }
-  
-  auto _atd_read_array_to_assoc_dict(K, V)(
-      K delegate(JSONValue) @safe readKey,
-      V delegate(JSONValue) @safe readValue)
-  {
-      auto fun = (JSONValue jsonVal) @trusted {
-          if (jsonVal.type != JSONType.array)
-              throw _atd_bad_json("list", jsonVal);
-          V[K] ret;
-          foreach (jsonInnerVal; jsonVal.array)
-          {
-              if (jsonInnerVal.type != JSONType.array)
-                  throw _atd_bad_json("list", jsonInnerVal);
-              ret[readKey(jsonInnerVal[0])] = readValue(jsonInnerVal[1]);
-          }
-          return ret;
-      };
-      return fun;
-  }
-  
-  auto _atd_read_object_to_tuple_list(T)(
-      T delegate(JSONValue) @safe readValue)
-  {
-      auto fun = (JSONValue jsonVal) @trusted {
-          if (jsonVal.type != JSONType.object)
-              throw _atd_bad_json("object", jsonVal);
-          auto tupList = new Tuple!(string, T)[](jsonVal.object.length);
-          int i = 0;
-          foreach (key, val; jsonVal.object)
-              tupList[i++] = tuple(key, readValue(val));
-          return tupList;
-      };
-      return fun;
-  }
-  
-  auto _atd_read_nullable(T)(T delegate(JSONValue) @safe readElm)
-  {
-      auto fun = (JSONValue e) @safe {
-          if (e.isNull)
-              return Nullable!T.init;
-          else
-              return Nullable!T(readElm(e));
-      };
-      return fun;
-  }
-  
-  auto _atd_read_option(T)(T delegate(JSONValue) @safe readElm)
-  {
-      auto fun = (JSONValue e) @trusted {
-          if (e.type == JSONType.string && e.str == "None")
-              return Nullable!T.init;
-          else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
-              return Nullable!T(readElm(e[1]));
-          else
-              throw _atd_bad_json("option", e);
-      };
-      return fun;
-  }
+  template _atd_read_list(alias readElements)
+    {
+        auto _atd_read_list(JSONValue jsonVal)
+        {
+            if (jsonVal.type != JSONType.array)
+                throw _atd_bad_json("array", jsonVal);
+            auto list = jsonVal.array;
+            return array(list.map!readElements());
+        }
+    }
 
-  auto _atd_read_wrap(Wrapped, Unwrapped)(Wrapped delegate(JSONValue) @safe readElm, Unwrapped delegate(Wrapped) @safe unwrap)
-  {
-    auto fun = (JSONValue e) @safe {
-        auto elm = readElm(e);
-        return unwrap(elm);
-    };
-    return fun;
-  }
-  
-  // this whole set of function could be remplaced by one templated _atd_write_value function
-  // not sure it is what we want though
-  
-  auto _atd_write_unit(typeof(null) n)
-  {
-      return JSONValue(null);
-  }
-  
-  auto _atd_write_bool(bool b)
-  {
-      return JSONValue(b);
-  }
-  
-  auto _atd_write_int(int i)
-  {
-      return JSONValue(i);
-  }
-  
-  auto _atd_write_float(float f)
-  {
-      return JSONValue(f);
-  }
-  
-  auto _atd_write_string(string s)
-  {
-      return JSONValue(s);
-  }
-  
-  auto _atd_write_list(T)(JSONValue delegate(T) @safe writeElm)
-  {
-      return (T[] list) @safe { return JSONValue(array(list.map!writeElm())); };
-  }
-  
-  auto _atd_write_assoc_array_to_object(T)(
-      JSONValue delegate(T) @safe writeValue)
-  {
-      auto fun = (T[string] assocArr) @safe {
-          JSONValue[string] ret;
-          foreach (key, val; assocArr)
-              ret[key] = writeValue(val);
-          return JSONValue(ret);
-      };
-      return fun;
-  }
-  
-  auto _atd_write_assoc_dict_to_array(K, V)(
-      JSONValue delegate(K) @safe writeKey,
-      JSONValue delegate(V) @safe writeValue)
-  {
-      auto fun = (V[K] assocArr) @safe {
-          JSONValue[] ret;
-          foreach (key, val; assocArr)
-              ret ~= JSONValue([writeKey(key), writeValue(val)]);
-          return JSONValue(ret);
-      };
-      return fun;
-  }
-  
-  auto _atd_write_tuple_list_to_object(T)(
-      JSONValue delegate(T) @safe writeValue)
-  {
-      auto fun = (Tuple!(string, T)[] tupList) @safe {
-          JSONValue[string] ret;
-          foreach (tup; tupList)
-              ret[tup[0]] = writeValue(tup[1]);
-          return JSONValue(ret);
-      };
-      return fun;
-  }
-  
-  auto _atd_write_nullable(T)(JSONValue delegate(T) @safe writeElm)
-  {
-      auto fun = (Nullable!T elm) @safe {
-          if (elm.isNull)
-              return JSONValue(null);
-          else
-              return writeElm(elm.get);
-      };
-      return fun;
-  }
-  
-  auto _atd_write_option(T)(JSONValue delegate(T) @safe writeElm)
-  {
-      auto fun = (Nullable!T elm) @safe {
-          if (elm.isNull)
-              return JSONValue("None");
-          else
-              return JSONValue([JSONValue("Some"), writeElm(elm.get)]);
-      };
-      return fun;
-  }
+    template _atd_read_object_to_assoc_array(alias readValue)
+    {
+        auto _atd_read_object_to_assoc_array(JSONValue jsonVal)
+        {
+            alias T = ReturnType!readValue;
 
-  auto _atd_write_wrap(Wrapped, Unwrapped)(JSONValue delegate(Wrapped) @safe writeElm, Wrapped delegate(Unwrapped) @safe wrap)
-  {
-    auto fun = (Unwrapped elm) @safe {
-        auto e = wrap(elm);
-        return writeElm(e);
-    };
-    return fun;
-  }
+            if (jsonVal.type != JSONType.object)
+                throw _atd_bad_json("object", jsonVal);
+            T[string] ret;
+            foreach (key, val; jsonVal.object)
+                ret[key] = readValue(val);
+            return ret;
+        }
+    }
+
+    template _atd_read_array_to_assoc_dict(alias readKey, alias readValue)
+    {
+        auto _atd_read_array_to_assoc_dict(JSONValue jsonVal)
+        {
+            alias K = ReturnType!readKey;
+            alias V = ReturnType!readValue;
+
+            if (jsonVal.type != JSONType.array)
+                throw _atd_bad_json("list", jsonVal);
+            V[K] ret;
+            foreach (jsonInnerVal; jsonVal.array)
+            {
+                if (jsonInnerVal.type != JSONType.array)
+                    throw _atd_bad_json("list", jsonInnerVal);
+                ret[readKey(jsonInnerVal[0])] = readValue(jsonInnerVal[1]);
+            }
+            return ret;
+        }
+    }
+
+    template _atd_read_object_to_tuple_list(alias readValue)
+    {
+        auto _atd_read_object_to_tuple_list(JSONValue jsonVal)
+        {
+            alias T = ReturnType!readValue;
+
+            if (jsonVal.type != JSONType.object)
+                throw _atd_bad_json("object", jsonVal);
+            auto tupList = new Tuple!(string, T)[](jsonVal.object.length);
+            int i = 0;
+            foreach (key, val; jsonVal.object)
+                tupList[i++] = tuple(key, readValue(val));
+            return tupList;
+        }
+    }
+
+    template _atd_read_nullable(alias readElm)
+    {
+        auto _atd_read_nullable(JSONValue e)
+        {
+            alias T = ReturnType!readElm;
+
+            if (e.isNull)
+                return Nullable!T.init;
+            else
+                return Nullable!T(readElm(e));
+        }
+    }
+
+    template _atd_read_option(alias readElm)
+    {
+        auto _atd_read_option(JSONValue e)
+        {
+            alias T = ReturnType!readElm;
+
+            if (e.type == JSONType.string && e.str == "None")
+                return Nullable!T.init;
+            else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
+                return Nullable!T(readElm(e[1]));
+            else
+                throw _atd_bad_json("option", e);
+        }
+    }
+
+    template _atd_read_wrap(alias readElm, alias wrap)
+    {
+        auto _atd_read_wrap(JSONValue e)
+        {
+            return wrap(readElm(e));
+        }
+    }
+
+    // this whole set of function could be remplaced by one templated _atd_write_value function
+    // not sure it is what we want though
+
+    auto _atd_write_unit(typeof(null) n)
+    {
+        return JSONValue(null);
+    }
+
+    auto _atd_write_bool(bool b)
+    {
+        return JSONValue(b);
+    }
+
+    auto _atd_write_int(int i)
+    {
+        return JSONValue(i);
+    }
+
+    auto _atd_write_float(float f)
+    {
+        return JSONValue(f);
+    }
+
+    auto _atd_write_string(string s)
+    {
+        return JSONValue(s);
+    }
+
+    template _atd_write_list(alias writeElm)
+    {
+        auto _atd_write_list(T)(T[] list)
+        {
+            return JSONValue(array(list.map!writeElm()));
+        }
+    }
+
+    template _atd_write_assoc_array_to_object(alias writeValue)
+    {
+        auto _atd_write_assoc_array_to_object(T)(T[string] assocArr)
+        {
+            JSONValue[string] ret;
+            foreach (key, val; assocArr)
+                ret[key] = writeValue(val);
+            return JSONValue(ret);
+        }
+    }
+
+    template _atd_write_assoc_dict_to_array(alias writeKey, alias writeValue)
+    {
+        auto _atd_write_assoc_dict_to_array(K, V)(V[K] assocArr)
+        {
+            JSONValue[] ret;
+            foreach (key, val; assocArr)
+                ret ~= JSONValue([writeKey(key), writeValue(val)]);
+            return JSONValue(ret);
+        }
+    }
+
+    template _atd_write_tuple_list_to_object(alias writeValue)
+    {
+        auto _atd_write_tuple_list_to_object(T)(Tuple!(string, T)[] tupList)
+        {
+            JSONValue[string] ret;
+            foreach (tup; tupList)
+                ret[tup[0]] = writeValue(tup[1]);
+            return JSONValue(ret);
+        }
+    }
+
+    template _atd_write_nullable(alias writeElm)
+    {
+        auto _atd_write_nullable(T)(Nullable!T elm)
+        {
+            if (elm.isNull)
+                return JSONValue(null);
+            else
+                return writeElm(elm.get);
+        }
+    }
+
+    template _atd_write_option(alias writeElm)
+    {
+        auto _atd_write_option(T)(Nullable!T elm)
+        {
+            if (elm.isNull)
+                return JSONValue("None");
+            else
+                return JSONValue([JSONValue("Some"), writeElm(elm.get)]);
+        }
+    }
+
+    template _atd_write_wrap(alias writeElm, alias unwrap)
+    {
+        auto _atd_write_wrap(Wrapped)(Wrapped e)
+        {
+            return writeElm(unwrap(e));
+        }
+    }
 }
 
-  // ############################################################################
-  // # Public classes
-  // ############################################################################
-  
-  auto fromJsonString(T)(string s)
-  {
-      JSONValue res = parseJSON(s);
-      return res.fromJson!T;
-  }
-  
-  auto toJsonString(T)(T obj)
-  {
+// ############################################################################
+// # Public classes
+// ############################################################################
+
+auto fromJsonString(T)(string s)
+{
+    JSONValue res = parseJSON(s);
+    return res.fromJson!T;
+}
+
+auto toJsonString(T)(T obj)
+{
     JSONValue res = obj.toJson!T;
     return res.toString;
-  }
-  
-  auto unwrapAlias(T)(T e) if (is(T : Typedef!Arg, Arg))
-  {
-      return cast(TypedefType!T) e;
-  }
-    
-  auto wrapAlias(T)(TypedefType!T e) if (is(T : Typedef!Arg, Arg))
-  {
-      return cast(T) e;
-  }
+}
+
+auto unwrapAlias(T)(T e) if (is(T : Typedef!Arg, Arg))
+{
+    return cast(TypedefType!T) e;
+}
+
+auto wrapAlias(T)(TypedefType!T e) if (is(T : Typedef!Arg, Arg))
+{
+    return cast(T) e;
+}
 
   
 
@@ -351,14 +356,14 @@ struct RecursiveClass {
     RecursiveClass obj;
     obj.id = ("id" in x) ? _atd_read_int(x["id"]) : _atd_missing_json_field!(typeof(obj.id))("RecursiveClass", "id");
     obj.flag = ("flag" in x) ? _atd_read_bool(x["flag"]) : _atd_missing_json_field!(typeof(obj.flag))("RecursiveClass", "flag");
-    obj.children = ("children" in x) ? _atd_read_list((&fromJson!RecursiveClass).toDelegate)(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
+    obj.children = ("children" in x) ? _atd_read_list!(fromJson!RecursiveClass)(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
     return obj;
 }
 @trusted JSONValue toJson(T : RecursiveClass)(T obj) {
     JSONValue res;
     res["id"] = _atd_write_int(obj.id);
     res["flag"] = _atd_write_bool(obj.flag);
-    res["children"] = _atd_write_list(((RemoveTypedef!(RecursiveClass) x) => x.toJson!(RecursiveClass)))(obj.children);
+    res["children"] = _atd_write_list!(((RemoveTypedef!(RecursiveClass) x) => x.toJson!(RecursiveClass)))(obj.children);
     return res;
 }
 
@@ -402,7 +407,7 @@ struct WOW {}
 // Original type: kind = [ ... | Amaze of ... | ... ]
 struct Amaze { string[] value; }
 @trusted JSONValue toJson(T : Amaze)(T e) {
-    return JSONValue([JSONValue("!!!"), _atd_write_list((&_atd_write_string).toDelegate)(e.value)]);
+    return JSONValue([JSONValue("!!!"), _atd_write_list!(_atd_write_string)(e.value)]);
 }
 
 
@@ -421,7 +426,7 @@ alias Kind = SumType!(Root_, Thing, WOW, Amaze);
         if (cons == "Thing")
             return Kind(Thing(_atd_read_int(x[1])));
         if (cons == "!!!")
-            return Kind(Amaze(_atd_read_list((&_atd_read_string).toDelegate)(x[1])));
+            return Kind(Amaze(_atd_read_list!(_atd_read_string)(x[1])));
         throw _atd_bad_json("Kind", x);
     }
     throw _atd_bad_json("Kind", x);
@@ -439,13 +444,13 @@ alias Kind = SumType!(Root_, Thing, WOW, Amaze);
 
 alias Alias3 = Typedef!(uint32_t, (uint32_t).init, "Alias3");
 @trusted JSONValue toJson(T : Alias3)(uint32_t e) {
-    return _atd_write_wrap((&_atd_write_int).toDelegate, (uint32_t e) => to!int(e))(e);
+    return _atd_write_wrap!(_atd_write_int, (uint32_t e) => to!int(e))(e);
 }
 @trusted string toJsonString(T : Alias3)(uint32_t obj) {
     return obj.toJson!(Alias3).toString;
 }
 @trusted uint32_t fromJson(T : Alias3)(JSONValue e) {
-    return _atd_read_wrap((&_atd_read_int).toDelegate, (int e) => to!uint32_t(e))(e);
+    return _atd_read_wrap!(_atd_read_int, (int e) => to!uint32_t(e))(e);
 }
 @trusted uint32_t fromJsonString(T : Alias3)(string s) {
     return parseJSON(s).fromJson!(Alias3);
@@ -484,13 +489,13 @@ alias AliasOfAliasOfAlias = Typedef!(RemoveTypedef!(AliasOfAliasNotWrapped), (Re
 
 alias Alias = Typedef!(int[], (int[]).init, "Alias");
 @trusted JSONValue toJson(T : Alias)(int[] e) {
-    return _atd_write_list((&_atd_write_int).toDelegate)(e);
+    return _atd_write_list!(_atd_write_int)(e);
 }
 @trusted string toJsonString(T : Alias)(int[] obj) {
     return obj.toJson!(Alias).toString;
 }
 @trusted int[] fromJson(T : Alias)(JSONValue e) {
-    return _atd_read_list((&_atd_read_int).toDelegate)(e);
+    return _atd_read_list!(_atd_read_int)(e);
 }
 @trusted int[] fromJsonString(T : Alias)(string s) {
     return parseJSON(s).fromJson!(Alias);
@@ -524,13 +529,13 @@ struct IntFloatParametrizedRecord {
 @trusted IntFloatParametrizedRecord fromJson(T : IntFloatParametrizedRecord)(JSONValue x) {
     IntFloatParametrizedRecord obj;
     obj.field_a = ("field_a" in x) ? _atd_read_int(x["field_a"]) : _atd_missing_json_field!(typeof(obj.field_a))("IntFloatParametrizedRecord", "field_a");
-    obj.field_b = ("field_b" in x) ? _atd_read_list((&_atd_read_float).toDelegate)(x["field_b"]) : [];
+    obj.field_b = ("field_b" in x) ? _atd_read_list!(_atd_read_float)(x["field_b"]) : [];
     return obj;
 }
 @trusted JSONValue toJson(T : IntFloatParametrizedRecord)(T obj) {
     JSONValue res;
     res["field_a"] = _atd_write_int(obj.field_a);
-    res["field_b"] = _atd_write_list((&_atd_write_float).toDelegate)(obj.field_b);
+    res["field_b"] = _atd_write_list!(_atd_write_float)(obj.field_b);
     return res;
 }
 
@@ -570,9 +575,9 @@ struct Root {
     obj.x___init__ = ("__init__" in x) ? _atd_read_float(x["__init__"]) : _atd_missing_json_field!(typeof(obj.x___init__))("Root", "__init__");
     obj.float_with_auto_default = ("float_with_auto_default" in x) ? _atd_read_float(x["float_with_auto_default"]) : 0.0;
     obj.float_with_default = ("float_with_default" in x) ? _atd_read_float(x["float_with_default"]) : 0.1;
-    obj.items = ("items" in x) ? _atd_read_list(_atd_read_list((&_atd_read_int).toDelegate))(x["items"]) : _atd_missing_json_field!(typeof(obj.items))("Root", "items");
-    obj.maybe = ("maybe" in x) ? _atd_read_option((&_atd_read_int).toDelegate)(x["maybe"]) : typeof(obj.maybe).init;
-    obj.extras = ("extras" in x) ? _atd_read_list((&_atd_read_int).toDelegate)(x["extras"]) : [];
+    obj.items = ("items" in x) ? _atd_read_list!(_atd_read_list!(_atd_read_int))(x["items"]) : _atd_missing_json_field!(typeof(obj.items))("Root", "items");
+    obj.maybe = ("maybe" in x) ? _atd_read_option!(_atd_read_int)(x["maybe"]) : typeof(obj.maybe).init;
+    obj.extras = ("extras" in x) ? _atd_read_list!(_atd_read_int)(x["extras"]) : [];
     obj.answer = ("answer" in x) ? _atd_read_int(x["answer"]) : 42;
     obj.aliased = ("aliased" in x) ? fromJson!Alias(x["aliased"]) : _atd_missing_json_field!(typeof(obj.aliased))("Root", "aliased");
     obj.point = ("point" in x) ? ((JSONValue x) @trusted { 
@@ -580,21 +585,21 @@ struct Root {
       throw _atd_bad_json("Tuple of size 2", x);
     return tuple(_atd_read_float(x[0]), _atd_read_float(x[1]));
   })(x["point"]) : _atd_missing_json_field!(typeof(obj.point))("Root", "point");
-    obj.kinds = ("kinds" in x) ? _atd_read_list((&fromJson!Kind).toDelegate)(x["kinds"]) : _atd_missing_json_field!(typeof(obj.kinds))("Root", "kinds");
-    obj.assoc1 = ("assoc1" in x) ? _atd_read_list(((JSONValue x) @trusted { 
+    obj.kinds = ("kinds" in x) ? _atd_read_list!(fromJson!Kind)(x["kinds"]) : _atd_missing_json_field!(typeof(obj.kinds))("Root", "kinds");
+    obj.assoc1 = ("assoc1" in x) ? _atd_read_list!(((JSONValue x) @trusted { 
     if (x.type != JSONType.array || x.array.length != 2)
       throw _atd_bad_json("Tuple of size 2", x);
     return tuple(_atd_read_float(x[0]), _atd_read_int(x[1]));
   }))(x["assoc1"]) : _atd_missing_json_field!(typeof(obj.assoc1))("Root", "assoc1");
-    obj.assoc2 = ("assoc2" in x) ? _atd_read_object_to_tuple_list((&_atd_read_int).toDelegate)(x["assoc2"]) : _atd_missing_json_field!(typeof(obj.assoc2))("Root", "assoc2");
-    obj.assoc3 = ("assoc3" in x) ? _atd_read_array_to_assoc_dict((&_atd_read_float).toDelegate, (&_atd_read_int).toDelegate)(x["assoc3"]) : _atd_missing_json_field!(typeof(obj.assoc3))("Root", "assoc3");
-    obj.assoc4 = ("assoc4" in x) ? _atd_read_object_to_assoc_array((&_atd_read_int).toDelegate)(x["assoc4"]) : _atd_missing_json_field!(typeof(obj.assoc4))("Root", "assoc4");
-    obj.nullables = ("nullables" in x) ? _atd_read_list(_atd_read_nullable((&_atd_read_int).toDelegate))(x["nullables"]) : _atd_missing_json_field!(typeof(obj.nullables))("Root", "nullables");
-    obj.options = ("options" in x) ? _atd_read_list(_atd_read_option((&_atd_read_int).toDelegate))(x["options"]) : _atd_missing_json_field!(typeof(obj.options))("Root", "options");
-    obj.untyped_things = ("untyped_things" in x) ? _atd_read_list(((JSONValue x) => x))(x["untyped_things"]) : _atd_missing_json_field!(typeof(obj.untyped_things))("Root", "untyped_things");
+    obj.assoc2 = ("assoc2" in x) ? _atd_read_object_to_tuple_list!(_atd_read_int)(x["assoc2"]) : _atd_missing_json_field!(typeof(obj.assoc2))("Root", "assoc2");
+    obj.assoc3 = ("assoc3" in x) ? _atd_read_array_to_assoc_dict!(_atd_read_float, _atd_read_int)(x["assoc3"]) : _atd_missing_json_field!(typeof(obj.assoc3))("Root", "assoc3");
+    obj.assoc4 = ("assoc4" in x) ? _atd_read_object_to_assoc_array!(_atd_read_int)(x["assoc4"]) : _atd_missing_json_field!(typeof(obj.assoc4))("Root", "assoc4");
+    obj.nullables = ("nullables" in x) ? _atd_read_list!(_atd_read_nullable!(_atd_read_int))(x["nullables"]) : _atd_missing_json_field!(typeof(obj.nullables))("Root", "nullables");
+    obj.options = ("options" in x) ? _atd_read_list!(_atd_read_option!(_atd_read_int))(x["options"]) : _atd_missing_json_field!(typeof(obj.options))("Root", "options");
+    obj.untyped_things = ("untyped_things" in x) ? _atd_read_list!(((JSONValue x) => x))(x["untyped_things"]) : _atd_missing_json_field!(typeof(obj.untyped_things))("Root", "untyped_things");
     obj.parametrized_record = ("parametrized_record" in x) ? fromJson!IntFloatParametrizedRecord(x["parametrized_record"]) : _atd_missing_json_field!(typeof(obj.parametrized_record))("Root", "parametrized_record");
     obj.parametrized_tuple = ("parametrized_tuple" in x) ? fromJson!KindParametrizedTuple(x["parametrized_tuple"]) : _atd_missing_json_field!(typeof(obj.parametrized_tuple))("Root", "parametrized_tuple");
-    obj.wrapped = ("wrapped" in x) ? _atd_read_wrap((&fromJson!St).toDelegate, (RemoveTypedef!(St) e) => to!uint16_t(e))(x["wrapped"]) : _atd_missing_json_field!(typeof(obj.wrapped))("Root", "wrapped");
+    obj.wrapped = ("wrapped" in x) ? _atd_read_wrap!(fromJson!St, (RemoveTypedef!(St) e) => to!uint16_t(e))(x["wrapped"]) : _atd_missing_json_field!(typeof(obj.wrapped))("Root", "wrapped");
     obj.aaa = ("aaa" in x) ? fromJson!AliasOfAliasOfAlias(x["aaa"]) : _atd_missing_json_field!(typeof(obj.aaa))("Root", "aaa");
     return obj;
 }
@@ -606,24 +611,24 @@ struct Root {
     res["__init__"] = _atd_write_float(obj.x___init__);
     res["float_with_auto_default"] = _atd_write_float(obj.float_with_auto_default);
     res["float_with_default"] = _atd_write_float(obj.float_with_default);
-    res["items"] = _atd_write_list(_atd_write_list((&_atd_write_int).toDelegate))(obj.items);
+    res["items"] = _atd_write_list!(_atd_write_list!(_atd_write_int))(obj.items);
     if (!obj.maybe.isNull)
-        res["maybe"] = _atd_write_option((&_atd_write_int).toDelegate)(obj.maybe);
-    res["extras"] = _atd_write_list((&_atd_write_int).toDelegate)(obj.extras);
+        res["maybe"] = _atd_write_option!(_atd_write_int)(obj.maybe);
+    res["extras"] = _atd_write_list!(_atd_write_int)(obj.extras);
     res["answer"] = _atd_write_int(obj.answer);
     res["aliased"] = ((RemoveTypedef!(Alias) x) => x.toJson!(Alias))(obj.aliased);
     res["point"] = ((Tuple!(float, float) x) => JSONValue([_atd_write_float(x[0]), _atd_write_float(x[1])]))(obj.point);
-    res["kinds"] = _atd_write_list(((RemoveTypedef!(Kind) x) => x.toJson!(Kind)))(obj.kinds);
-    res["assoc1"] = _atd_write_list(((Tuple!(float, int) x) => JSONValue([_atd_write_float(x[0]), _atd_write_int(x[1])])))(obj.assoc1);
-    res["assoc2"] = _atd_write_tuple_list_to_object((&_atd_write_int).toDelegate)(obj.assoc2);
-    res["assoc3"] = _atd_write_assoc_dict_to_array((&_atd_write_float).toDelegate, (&_atd_write_int).toDelegate)(obj.assoc3);
-    res["assoc4"] = _atd_write_assoc_array_to_object((&_atd_write_int).toDelegate)(obj.assoc4);
-    res["nullables"] = _atd_write_list(_atd_write_nullable((&_atd_write_int).toDelegate))(obj.nullables);
-    res["options"] = _atd_write_list(_atd_write_option((&_atd_write_int).toDelegate))(obj.options);
-    res["untyped_things"] = _atd_write_list((JSONValue x) => x)(obj.untyped_things);
+    res["kinds"] = _atd_write_list!(((RemoveTypedef!(Kind) x) => x.toJson!(Kind)))(obj.kinds);
+    res["assoc1"] = _atd_write_list!(((Tuple!(float, int) x) => JSONValue([_atd_write_float(x[0]), _atd_write_int(x[1])])))(obj.assoc1);
+    res["assoc2"] = _atd_write_tuple_list_to_object!(_atd_write_int)(obj.assoc2);
+    res["assoc3"] = _atd_write_assoc_dict_to_array!(_atd_write_float, _atd_write_int)(obj.assoc3);
+    res["assoc4"] = _atd_write_assoc_array_to_object!(_atd_write_int)(obj.assoc4);
+    res["nullables"] = _atd_write_list!(_atd_write_nullable!(_atd_write_int))(obj.nullables);
+    res["options"] = _atd_write_list!(_atd_write_option!(_atd_write_int))(obj.options);
+    res["untyped_things"] = _atd_write_list!((JSONValue x) => x)(obj.untyped_things);
     res["parametrized_record"] = ((RemoveTypedef!(IntFloatParametrizedRecord) x) => x.toJson!(IntFloatParametrizedRecord))(obj.parametrized_record);
     res["parametrized_tuple"] = ((RemoveTypedef!(KindParametrizedTuple) x) => x.toJson!(KindParametrizedTuple))(obj.parametrized_tuple);
-    res["wrapped"] = _atd_write_wrap(((RemoveTypedef!(St) x) => x.toJson!(St)), (uint16_t e) => to!int(e))(obj.wrapped);
+    res["wrapped"] = _atd_write_wrap!(((RemoveTypedef!(St) x) => x.toJson!(St)), (uint16_t e) => to!int(e))(obj.wrapped);
     res["aaa"] = ((RemoveTypedef!(AliasOfAliasOfAlias) x) => x.toJson!(AliasOfAliasOfAlias))(obj.aaa);
     return res;
 }
@@ -651,12 +656,12 @@ struct RecordWithWrappedType {
 
 @trusted RecordWithWrappedType fromJson(T : RecordWithWrappedType)(JSONValue x) {
     RecordWithWrappedType obj;
-    obj.item = ("item" in x) ? _atd_read_wrap((&_atd_read_string).toDelegate, (string e) => to!int(e))(x["item"]) : _atd_missing_json_field!(typeof(obj.item))("RecordWithWrappedType", "item");
+    obj.item = ("item" in x) ? _atd_read_wrap!(_atd_read_string, (string e) => to!int(e))(x["item"]) : _atd_missing_json_field!(typeof(obj.item))("RecordWithWrappedType", "item");
     return obj;
 }
 @trusted JSONValue toJson(T : RecordWithWrappedType)(T obj) {
     JSONValue res;
-    res["item"] = _atd_write_wrap((&_atd_write_string).toDelegate, (int e) => to!string(e))(obj.item);
+    res["item"] = _atd_write_wrap!(_atd_write_string, (int e) => to!string(e))(obj.item);
     return res;
 }
 
@@ -725,25 +730,25 @@ struct DefaultList {
 
 @trusted DefaultList fromJson(T : DefaultList)(JSONValue x) {
     DefaultList obj;
-    obj.items = ("items" in x) ? _atd_read_list((&_atd_read_int).toDelegate)(x["items"]) : [];
+    obj.items = ("items" in x) ? _atd_read_list!(_atd_read_int)(x["items"]) : [];
     return obj;
 }
 @trusted JSONValue toJson(T : DefaultList)(T obj) {
     JSONValue res;
-    res["items"] = _atd_write_list((&_atd_write_int).toDelegate)(obj.items);
+    res["items"] = _atd_write_list!(_atd_write_int)(obj.items);
     return res;
 }
 
 
 alias AliasOfAlias = Typedef!(uint16_t, (uint16_t).init, "AliasOfAlias");
 @trusted JSONValue toJson(T : AliasOfAlias)(uint16_t e) {
-    return _atd_write_wrap(((RemoveTypedef!(Alias3) x) => x.toJson!(Alias3)), (uint16_t e) => to!uint32_t(e))(e);
+    return _atd_write_wrap!(((RemoveTypedef!(Alias3) x) => x.toJson!(Alias3)), (uint16_t e) => to!uint32_t(e))(e);
 }
 @trusted string toJsonString(T : AliasOfAlias)(uint16_t obj) {
     return obj.toJson!(AliasOfAlias).toString;
 }
 @trusted uint16_t fromJson(T : AliasOfAlias)(JSONValue e) {
-    return _atd_read_wrap((&fromJson!Alias3).toDelegate, (RemoveTypedef!(Alias3) e) => to!uint16_t(e))(e);
+    return _atd_read_wrap!(fromJson!Alias3, (RemoveTypedef!(Alias3) e) => to!uint16_t(e))(e);
 }
 @trusted uint16_t fromJsonString(T : AliasOfAlias)(string s) {
     return parseJSON(s).fromJson!(AliasOfAlias);
@@ -752,13 +757,13 @@ alias AliasOfAlias = Typedef!(uint16_t, (uint16_t).init, "AliasOfAlias");
 
 alias Alias2 = Typedef!(int[], (int[]).init, "Alias2");
 @trusted JSONValue toJson(T : Alias2)(int[] e) {
-    return _atd_write_list((&_atd_write_int).toDelegate)(e);
+    return _atd_write_list!(_atd_write_int)(e);
 }
 @trusted string toJsonString(T : Alias2)(int[] obj) {
     return obj.toJson!(Alias2).toString;
 }
 @trusted int[] fromJson(T : Alias2)(JSONValue e) {
-    return _atd_read_list((&_atd_read_int).toDelegate)(e);
+    return _atd_read_list!(_atd_read_int)(e);
 }
 @trusted int[] fromJsonString(T : Alias2)(string s) {
     return parseJSON(s).fromJson!(Alias2);

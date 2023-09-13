@@ -206,5 +206,5 @@ bucklescript backend")
   (atd (>= 2.11.0))
   (cmdliner (>= 1.1.0))
   re
-  (alcotest :with-test)
+  (ldc2 :with-test)
   (odoc :with-doc)))

@@ -21,6 +21,6 @@
   (glob_files *.d))
  (action
   (progn
-   (bash "source $(curl -fsS https://dlang.org/install.sh | bash -s ldc -a) && ldc2 %{deps} --of test")
+   (bash "ldc2 %{deps} --of test")
    (bash ./test)
   )))

@@ -27,7 +27,7 @@ pip install jsonschema pytest mypy flake8
 
 # To get latest ldc version
 source $(curl https://dlang.org/install.sh | bash -s ldc -a)
-BASH_ENV=~/.bashrc
+echo "source $(~/dlang/install.sh ldc -a)" >> "$BASH_ENV"
 
 ###### Sanity checks ######
 

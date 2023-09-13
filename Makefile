@@ -44,12 +44,13 @@ docker-build:
 # to support all the target languages.
 .PHONY: test
 test:
-	$(MAKE) test-ts
 	$(MAKE) test-ocaml
 	$(MAKE) test-scala
 	$(MAKE) test-java
 	$(MAKE) test-python
 	$(MAKE) test-ts
+	$(MAKE) test-d
+
 
 # Test the OCaml code used by all the backends
 test-common:
@@ -86,6 +87,11 @@ test-python:
 test-ts:
 	$(MAKE) test-common
 	$(MAKE) -C atdts test
+
+.PHONY: test-d
+test-d:
+	$(MAKE) test-common
+	$(MAKE) -C atdd test
 
 ############################################################################
 

@@ -20,7 +20,8 @@ sudo apt-get install -y \
   python3 \
   python3-pip \
   python-is-python3 \
-  scala
+  scala \
+  ldc
 
 # For JSON Schema and atdpy testing
 pip install jsonschema pytest mypy flake8
@@ -56,3 +57,6 @@ node --version
 
 echo 'check npm'
 npm --version
+
+echo 'check ldc2 (dlang)'
+ldc2 --version

@@ -20,11 +20,14 @@ sudo apt-get install -y \
   python3 \
   python3-pip \
   python-is-python3 \
-  scala \
-  ldc
+  scala
 
 # For JSON Schema and atdpy testing
 pip install jsonschema pytest mypy flake8
+
+# To get latest ldc version
+source $(curl https://dlang.org/install.sh | bash -s ldc -a)
+BASH_ENV=~/.bashrc
 
 ###### Sanity checks ######
 

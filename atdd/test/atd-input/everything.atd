@@ -1,0 +1,76 @@
+<dlang import="std.stdint : uint32_t, uint16_t">
+
+type kind = [
+  | Root (* class name conflict *)
+  | Thing of int
+  | WOW <json name="wow">
+  | Amaze <json name="!!!"> of string list
+]
+
+type frozen = [
+  | A
+  | B of int
+]
+
+type ('a, 'b) parametrized_record = {
+  field_a: 'a;
+  ~field_b: 'b list;
+}
+
+type 'a parametrized_tuple = ('a * 'a * int)
+
+type root = {
+  id <json name="ID">: string;
+  await: bool;
+  integer: int;
+  __init__ : float;
+  ~float_with_auto_default: float;
+  ~float_with_default <dlang default="0.1">: float;
+  items: int list list;
+  ?maybe: int option;
+  ~extras: int list;
+  ~answer <dlang default="42">: int;
+  aliased: alias;
+  point: (float * float);
+  kinds: kind list;
+  assoc1: (float * int) list;
+  assoc2: (string * int) list <json repr="object">;
+  assoc3: (float * int) list <dlang repr="dict">;
+  assoc4: (string * int) list <json repr="object"> <dlang repr="dict">;
+  nullables: int nullable list;
+  options: int option list;
+  untyped_things: abstract list;
+  parametrized_record: (int, float) parametrized_record;
+  parametrized_tuple: kind parametrized_tuple;
+  wrapped: st wrap <dlang t="uint16_t" wrap="to!uint16_t" unwrap="to!int">;
+  aaa: alias_of_alias_of_alias;
+} 
+
+type st = int
+type alias = int list
+type alias2 = int list
+type alias3 = int wrap <dlang t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
+type alias_of_alias = alias3 wrap <dlang t="uint16_t" wrap="to!uint16_t" unwrap="to!uint32_t">
+type alias_of_alias_not_Wrapped = alias3
+type alias_of_alias_of_alias = alias_of_alias_not_Wrapped
+
+
+type pair = (string * int)
+
+type require_field = {
+  req: string;
+}
+
+type recursive_class = {
+  id: int;
+  flag: bool;
+  children: recursive_class list;
+}
+
+type default_list = {
+  ~items: int list;
+}
+
+type record_with_wrapped_type = {
+  item: string wrap <dlang t="int" wrap="to!int" unwrap="to!string">;
+}

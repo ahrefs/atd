@@ -42,7 +42,7 @@ type root = {
   untyped_things: abstract list;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;
-  wrapped: st wrap <dlang t="uint16_t" wrap="to!uint16_t" unwrap="to!int">;
+  wrapped: st wrap <dlang t="uint16_t" wrap="((St st) => st._data.to!uint16_t)" unwrap="((uint16_t e) => St(e.to!int))">;
   aaa: alias_of_alias_of_alias;
 } 
 
@@ -53,6 +53,15 @@ type alias3 = int wrap <dlang t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
 type alias_of_alias = alias3 wrap <dlang t="uint16_t" wrap="to!uint16_t" unwrap="to!uint32_t">
 type alias_of_alias_not_Wrapped = alias3
 type alias_of_alias_of_alias = alias_of_alias_not_Wrapped
+
+type password = int wrap <dlang t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
+
+type credential = {
+  name: string;
+  password: password;
+}
+
+type credentials = credential list
 
 
 type pair = (string * int)

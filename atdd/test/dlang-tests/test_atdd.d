@@ -86,7 +86,7 @@ void setupTests()
             JSONValue(123)
         ];
         obj.parametrized_record = IntFloatParametrizedRecord(42, [9.9f, 8.8f]);
-        obj.parametrized_tuple = tuple(Kind(WOW()), Kind(WOW()), 100);
+        obj.parametrized_tuple = KindParametrizedTuple(tuple(Kind(WOW()), Kind(WOW()), 100));
 
         () @safe {
             auto jsonStr = obj.toJsonString;
@@ -170,17 +170,21 @@ void setupTests()
         assert (a_obj == a_obj.toJsonString.fromJsonString!RecursiveClass);
     };
 
-    tests["aliases are different"] = {
-        Alias a1 = [32, 43];
-        Alias2 a2 = [32, 43];
-
-        assert(a1.unwrapAlias == a2.unwrapAlias);
-        assert(a1 == a1.unwrapAlias.wrapAlias!Alias);
-    };
-
     tests["using wrapped type"] = {
         auto og = RecordWithWrappedType(42);
         assert(og.toJsonString.fromJsonString!RecordWithWrappedType == og);
+    };
+
+    tests["should be able to deserialize into type name and used as base type"] = {
+        Credentials credientials;
+
+        auto json = `[{"name": "henry", "password": 123}, {"name":"mark", "password":42}]`;
+
+        credientials = json.fromJsonString!Credentials;
+
+        import std.algorithm;
+
+        auto mapResult = credientials.map!((c) => c);
     };
 }
 

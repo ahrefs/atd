@@ -515,8 +515,7 @@ let use_only_name_variant x =
   Map.full_module mappers x
 
 (*
-   Eliminate the 'wrap' constructs since we don't do anything with them,
-   and produce decent error messages for the unsupported constructs.
+   Eliminate the 'Wrap' constructs.
    The result is guaranteed to not be of the form 'Wrap ...' but it may
    contain 'Wrap' constructs within its type arguments.
 *)

@@ -76,6 +76,7 @@ function test_everything() {
       any_a: 1234,
       any_b: [ [], [[[]]], true, {}, null ]
     },
+    wrapped: ["a", "b"],
   }
   const aStr = JSON.stringify(API.writeRoot(aObj), null, 2)
   save('aStr', aStr)
@@ -204,7 +205,11 @@ ${aStr}`
       {},
       null
     ]
-  }
+  },
+  "wrapped": [
+    "a",
+    "b"
+  ]
 }`
   save('bStr', bStr)
   const bObj = API.readRoot(JSON.parse(aStr))

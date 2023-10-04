@@ -2,7 +2,9 @@ Unreleased
 -------------------
 
 * atdts: Stop compiler errors on generated typescript (#348)
+* atdts: Don't fail on `wrap` constructs (#353)
 * atdd: Add `dlang` backend to generate D code from ATD definitions (#349)
+
 
 2.12.0 (2023-05-12)
 -------------------

@@ -84,25 +84,6 @@ let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
   in
   spaced blocks
 
-(*
-   Eliminate the 'wrap' constructs since we don't do anything with them,
-   and produce decent error messages for the unsupported constructs.
-   The result is guaranteed to not be of the form 'Wrap ...' but it may
-   contain 'Wrap' constructs within its type arguments.
-*)
-let rec shallow_unwrap e =
-  match e with
-  | Wrap (loc, e, an) -> shallow_unwrap e
-  | Shared (loc, e, an) -> not_implemented loc "cyclic references"
-  | Tvar _
-  | Sum _
-  | Record _
-  | Tuple _
-  | List _
-  | Option _
-  | Nullable _
-  | Name _ -> e
-
 let init_env () : env =
   (* The list of "keywords" is extracted from
      https://github.com/microsoft/TypeScript/issues/2536#issuecomment-87194347
@@ -860,7 +841,7 @@ let sum_type env loc name cases =
 let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
-  match shallow_unwrap e with
+  match e with
   | Sum (loc, variants, an) ->
       sum_type env loc name (flatten_variants variants)
   | Record (loc, fields, an) ->
@@ -915,7 +896,7 @@ let write_case env loc orig_name an opt_e =
       ]
 
 let read_root_expr env ~ts_type_name e =
-  match shallow_unwrap e with
+  match e with
   | Sum (loc, variants, an) ->
       let cases = flatten_variants variants in
       let cases0, cases1 =
@@ -1041,7 +1022,7 @@ let read_root_expr env ~ts_type_name e =
   | Tvar _ -> assert false
 
 let write_root_expr env ~ts_type_name e =
-  match shallow_unwrap e with
+  match e with
   | Sum (loc, variants, an) ->
       let cases = flatten_variants variants in
       [
@@ -1199,6 +1180,10 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module = Atd.Ast.use_only_specific_variants full_module in
+  let full_module =
+    full_module
+    |> Atd.Ast.use_only_specific_variants
+    |> Atd.Ast.remove_wrap_constructs
+  in
   let atd_head, atd_module = full_module in
   to_file ~atd_filename:src_name atd_module dst_path

@@ -318,3 +318,10 @@ val use_only_specific_variants : full_module -> full_module
 val use_only_name_variant : full_module -> full_module
   (** Use the generic variant [Name] instead of the dedicated variants
       [Int], [List], etc. *)
+
+val remove_wrap_constructs : full_module -> full_module
+  (** Remove all [Wrap] constructs and their annotations from the
+      tree. This unwrapping returns the original ATD types e.g.
+      an [int wrap <ocaml module="ID">] becomes [int].
+      It can be useful for backends that don't support [Wrap]
+      or for pretty-printing more basic type definitions. *)

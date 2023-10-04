@@ -895,7 +895,8 @@ let alias_wrapper env  name type_expr =
   let dlang_struct_name = struct_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
-    Line (sprintf "struct %s{ %s _data; alias _data this;}" dlang_struct_name value_type); 
+    Line (sprintf "struct %s{ %s _data; alias _data this;" dlang_struct_name value_type); 
+    Line (sprintf "this(%s init) {_data = init;} this(%s init) {_data = init._data;}}" value_type dlang_struct_name);
     Line (sprintf "@trusted JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");

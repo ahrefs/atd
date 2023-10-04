@@ -42,7 +42,7 @@ type root = {
   untyped_things: abstract list;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;
-  wrapped: st wrap <dlang t="uint16_t" wrap="((St st) => st._data.to!uint16_t)" unwrap="((uint16_t e) => St(e.to!int))">;
+  wrapped: st wrap <dlang t="uint16_t" wrap="((St st) => st.to!int.to!uint16_t)" unwrap="((uint16_t e) => St(e.to!int))">;
   aaa: alias_of_alias_of_alias;
 } 
 

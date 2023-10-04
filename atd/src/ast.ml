@@ -513,3 +513,24 @@ let use_only_name_variant x =
   in
   let mappers = { Map.type_expr } in
   Map.full_module mappers x
+
+(*
+   Eliminate the 'Wrap' constructs.
+   The result is guaranteed to not be of the form 'Wrap ...' but it may
+   contain 'Wrap' constructs within its type arguments.
+*)
+let rec shallow_unwrap e =
+  match e with
+  | Wrap (loc, e, an) -> shallow_unwrap e
+  | Shared _
+  | Tvar _
+  | Sum _
+  | Record _
+  | Tuple _
+  | List _
+  | Option _
+  | Nullable _
+  | Name _ -> e
+
+let remove_wrap_constructs m =
+  Map.full_module { type_expr = shallow_unwrap } m

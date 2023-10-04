@@ -1,3 +1,5 @@
+; Various tests. Use 'dune promote' to approve changes in test output.
+
 (rule
  (targets test.out.atd)
  (deps test.atd)
@@ -17,6 +19,17 @@
  (alias runtest)
  (deps test2.out.atd)
  (action (diff test2.expected.atd test2.out.atd)))
+
+; Test -remove-wraps
+(rule
+ (targets test.unwrap.atd)
+ (deps test.atd)
+ (action (run %{bin:atdcat} %{deps} -remove-wraps -o %{targets})))
+
+(rule
+ (alias runtest)
+ (deps test.unwrap.atd)
+ (action (diff test.unwrap.expected.atd test.unwrap.atd)))
 
 ;;;;;;;;;;;;;;;;;;;;;; Test JSON Schema output
 

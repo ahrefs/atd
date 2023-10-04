@@ -72,14 +72,18 @@ let strip all sections x =
 let parse
     ~annot_schema
     ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
-    ~strip_all ~strip_sections files =
+    ~remove_wraps ~strip_all ~strip_sections files =
   let l =
     List.map (
       fun file ->
-        fst (
+        let m, _orig_defs =
           Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
             ~inherit_fields ~inherit_variants file
-        )
+        in
+        if remove_wraps then
+          Atd.Ast.remove_wrap_constructs m
+        else
+          m
     ) files
   in
   let heads, bodies = List.split l in
@@ -116,6 +120,7 @@ let () =
   let xdebug = ref false in
   let inherit_fields = ref false in
   let inherit_variants = ref false in
+  let remove_wraps = ref false in
   let strip_sections = ref [] in
   let strip_all = ref false in
   let out_format = ref Atd in
@@ -190,6 +195,10 @@ let () =
           This is suitable input for \"caml2html -ext html:cat\"
           which converts ATD files into HTML.";
 
+    "-remove-wraps", Arg.Set remove_wraps,
+    "
+          eliminate all 'wrap' constructs and their annotations";
+
     "-strip",
     Arg.String (fun s -> strip_sections := split_on_comma s @ !strip_sections),
     "NAME1[,NAME2,...]
@@ -226,6 +235,7 @@ let () =
         ~xdebug: !xdebug
         ~inherit_fields
         ~inherit_variants
+        ~remove_wraps: !remove_wraps
         ~strip_all: !strip_all
         ~strip_sections: !strip_sections
         !input_files

@@ -48,6 +48,7 @@ type root = {
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: different_kinds_of_things parametrized_tuple;
   anything: anything;
+  wrapped: string wrap list;
 }
 
 type alias = int list
@@ -57,3 +58,5 @@ type pair = (string * int)
 type foo = {
   foo: string;
 }
+
+type special_string = string wrap

@@ -353,7 +353,7 @@ struct RecursiveClass {
 
 
 struct St{ int _data; alias _data this;
-this(int init) {_data = init;} this(St init) {_data = init._data;}}
+@safe this(int init) {_data = init;} @safe this(St init) {_data = init._data;}}
 @trusted JSONValue toJson(T : St)(St e) {
     return _atd_write_int(e);
 }
@@ -422,7 +422,7 @@ alias Kind = SumType!(Root_, Thing, WOW, Amaze);
 
 
 struct Alias3{ uint32_t _data; alias _data this;
-this(uint32_t init) {_data = init;} this(Alias3 init) {_data = init._data;}}
+@safe this(uint32_t init) {_data = init;} @safe this(Alias3 init) {_data = init._data;}}
 @trusted JSONValue toJson(T : Alias3)(Alias3 e) {
     return _atd_write_wrap!(_atd_write_int, (uint32_t e) => to!int(e))(e);
 }
@@ -432,7 +432,7 @@ this(uint32_t init) {_data = init;} this(Alias3 init) {_data = init._data;}}
 
 
 struct AliasOfAliasNotWrapped{ Alias3 _data; alias _data this;
-this(Alias3 init) {_data = init;} this(AliasOfAliasNotWrapped init) {_data = init._data;}}
+@safe this(Alias3 init) {_data = init;} @safe this(AliasOfAliasNotWrapped init) {_data = init._data;}}
 @trusted JSONValue toJson(T : AliasOfAliasNotWrapped)(AliasOfAliasNotWrapped e) {
     return ((Alias3 x) => x.toJson!(Alias3))(e);
 }
@@ -442,7 +442,7 @@ this(Alias3 init) {_data = init;} this(AliasOfAliasNotWrapped init) {_data = ini
 
 
 struct AliasOfAliasOfAlias{ AliasOfAliasNotWrapped _data; alias _data this;
-this(AliasOfAliasNotWrapped init) {_data = init;} this(AliasOfAliasOfAlias init) {_data = init._data;}}
+@safe this(AliasOfAliasNotWrapped init) {_data = init;} @safe this(AliasOfAliasOfAlias init) {_data = init._data;}}
 @trusted JSONValue toJson(T : AliasOfAliasOfAlias)(AliasOfAliasOfAlias e) {
     return ((AliasOfAliasNotWrapped x) => x.toJson!(AliasOfAliasNotWrapped))(e);
 }
@@ -452,7 +452,7 @@ this(AliasOfAliasNotWrapped init) {_data = init;} this(AliasOfAliasOfAlias init)
 
 
 struct Alias{ int[] _data; alias _data this;
-this(int[] init) {_data = init;} this(Alias init) {_data = init._data;}}
+@safe this(int[] init) {_data = init;} @safe this(Alias init) {_data = init._data;}}
 @trusted JSONValue toJson(T : Alias)(Alias e) {
     return _atd_write_list!(_atd_write_int)(e);
 }
@@ -462,7 +462,7 @@ this(int[] init) {_data = init;} this(Alias init) {_data = init._data;}}
 
 
 struct KindParametrizedTuple{ Tuple!(Kind, Kind, int) _data; alias _data this;
-this(Tuple!(Kind, Kind, int) init) {_data = init;} this(KindParametrizedTuple init) {_data = init._data;}}
+@safe this(Tuple!(Kind, Kind, int) init) {_data = init;} @safe this(KindParametrizedTuple init) {_data = init._data;}}
 @trusted JSONValue toJson(T : KindParametrizedTuple)(KindParametrizedTuple e) {
     return ((Tuple!(Kind, Kind, int) x) => JSONValue([((Kind x) => x.toJson!(Kind))(x[0]), ((Kind x) => x.toJson!(Kind))(x[1]), _atd_write_int(x[2])]))(e);
 }
@@ -621,7 +621,7 @@ struct RecordWithWrappedType {
 
 
 struct Password{ uint32_t _data; alias _data this;
-this(uint32_t init) {_data = init;} this(Password init) {_data = init._data;}}
+@safe this(uint32_t init) {_data = init;} @safe this(Password init) {_data = init._data;}}
 @trusted JSONValue toJson(T : Password)(Password e) {
     return _atd_write_wrap!(_atd_write_int, (uint32_t e) => to!int(e))(e);
 }
@@ -631,7 +631,7 @@ this(uint32_t init) {_data = init;} this(Password init) {_data = init._data;}}
 
 
 struct Pair{ Tuple!(string, int) _data; alias _data this;
-this(Tuple!(string, int) init) {_data = init;} this(Pair init) {_data = init._data;}}
+@safe this(Tuple!(string, int) init) {_data = init;} @safe this(Pair init) {_data = init._data;}}
 @trusted JSONValue toJson(T : Pair)(Pair e) {
     return ((Tuple!(string, int) x) => JSONValue([_atd_write_string(x[0]), _atd_write_int(x[1])]))(e);
 }
@@ -719,7 +719,7 @@ struct Credential {
 
 
 struct Credentials{ Credential[] _data; alias _data this;
-this(Credential[] init) {_data = init;} this(Credentials init) {_data = init._data;}}
+@safe this(Credential[] init) {_data = init;} @safe this(Credentials init) {_data = init._data;}}
 @trusted JSONValue toJson(T : Credentials)(Credentials e) {
     return _atd_write_list!(((Credential x) => x.toJson!(Credential)))(e);
 }
@@ -729,7 +729,7 @@ this(Credential[] init) {_data = init;} this(Credentials init) {_data = init._da
 
 
 struct AliasOfAlias{ uint16_t _data; alias _data this;
-this(uint16_t init) {_data = init;} this(AliasOfAlias init) {_data = init._data;}}
+@safe this(uint16_t init) {_data = init;} @safe this(AliasOfAlias init) {_data = init._data;}}
 @trusted JSONValue toJson(T : AliasOfAlias)(AliasOfAlias e) {
     return _atd_write_wrap!(((Alias3 x) => x.toJson!(Alias3)), (uint16_t e) => to!uint32_t(e))(e);
 }
@@ -739,7 +739,7 @@ this(uint16_t init) {_data = init;} this(AliasOfAlias init) {_data = init._data;
 
 
 struct Alias2{ int[] _data; alias _data this;
-this(int[] init) {_data = init;} this(Alias2 init) {_data = init._data;}}
+@safe this(int[] init) {_data = init;} @safe this(Alias2 init) {_data = init._data;}}
 @trusted JSONValue toJson(T : Alias2)(Alias2 e) {
     return _atd_write_list!(_atd_write_int)(e);
 }

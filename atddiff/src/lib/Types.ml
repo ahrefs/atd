@@ -11,7 +11,7 @@ type incompatibility_kind =
   | Deleted_root_type of { def_name: string }
   | Added_root_type of { def_name: string }
 
-type incompatibility = {
+type finding = {
   direction: direction;
   kind: incompatibility_kind;
   location_old: Atd.Ast.loc option;
@@ -19,4 +19,4 @@ type incompatibility = {
   description: string;
 }
 
-type result = incompatibility list
+type result = finding list

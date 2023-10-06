@@ -1,1 +1,16 @@
-not implemented. so sad.
+Possible backward incompatibility:
+File "test_old.atd", line 59, characters 0-33
+The definition for type 'old_name_for_root_type' no longer exists.
+
+Possible backward incompatibility:
+File "test_old.atd", line 62, characters 0-56
+The definition for type 'old_name_for_root_type_with_changes' no longer exists.
+
+Possible forward incompatibility:
+File "test_new.atd", line 62, characters 0-33
+There is a new type named 'new_name_for_root_type'.
+
+Possible forward incompatibility:
+File "test_new.atd", line 65, characters 0-58
+There is a new type named 'new_name_for_root_type_with_changes'.
+

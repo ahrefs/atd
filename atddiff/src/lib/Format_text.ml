@@ -10,7 +10,7 @@ let format_loc_text opt_loc =
   | None -> ""
   | Some loc -> Atd.Ast.string_of_loc loc ^ "\n"
 
-let format_incompatibility_text buf (x : incompatibility) =
+let format_incompatibility_text buf (x : finding) =
   let is_certain =
     match x.kind with
     | Missing_field _ -> true
@@ -28,6 +28,9 @@ let format_incompatibility_text buf (x : incompatibility) =
     | Backward, false -> "Possible backward incompatibility"
     | Both, false -> "Possible forward and backward incompatibility"
   in
+(*
+   TODO: this should populate the 'description' field earlier:
+
   let msg =
     match x.kind, x.direction with
     | Missing_field {def_name; field_name}, Forward ->
@@ -42,6 +45,7 @@ A required field '%s' was removed from the definition of type '%s'.
           field_name def_name
     | _ -> "[TODO]"
   in
+*)
   bprintf buf "\
 %s:
 %s%s%s
@@ -49,9 +53,12 @@ A required field '%s' was removed from the definition of type '%s'.
     dir
     (format_loc_text x.location_old)
     (format_loc_text x.location_new)
-    msg
+    x.description
 
 let to_string res : string =
   let buf = Buffer.create 1000 in
-  List.iter (format_incompatibility_text buf) res;
+  List.iter (fun x ->
+    format_incompatibility_text buf x;
+    Buffer.add_char buf '\n'
+  ) res;
   Buffer.contents buf

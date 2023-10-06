@@ -52,7 +52,7 @@ type forward_incompatible_record_if_implicit_defaults = {
 
 type backward_incompatible_variant = [ A ]
 
-type backward_incompatible_variant = [ A | B ]
+type forward_incompatible_variant = [ A | B ]
 
 (****************************************************************************)
 (* Type definitions with possible breaking changes *)

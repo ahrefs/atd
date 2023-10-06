@@ -1,0 +1,15 @@
+; Various tests exercising the 'atddiff' command line.
+; Use 'dune promote' to approve changes in test output.
+
+; Test text output
+(rule
+ (targets test.txt)
+ (deps test_old.atd test_new.atd)
+ (action (run %{bin:atddiff} %{deps} -o %{targets})))
+(rule
+ (alias runtest)
+ (deps test.txt)
+ (action (diff test.expected.txt test.txt)))
+
+; Test JSON output
+; TODO

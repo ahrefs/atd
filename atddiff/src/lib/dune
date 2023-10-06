@@ -1,0 +1,6 @@
+(library
+ (name atddiff)
+ (libraries
+   atd
+ )
+)

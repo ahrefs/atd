@@ -1,0 +1,64 @@
+(* Main ATD test file for atddiff. Old version.
+
+   backward-compatible = we can read old data with a newer implementation
+   forward-compatible = we can read new data with an older implementation
+   ...-incompatible = we can't ...
+*)
+
+(****************************************************************************)
+(* Type definitions without breaking changes in any direction *)
+(****************************************************************************)
+
+type unchanged_record = {
+  a: int;
+  ?b: int option;
+  ~c: int list;
+  d <old>: int <old2>;
+  renamed_field_type: old_name_for_unchanged_type;
+}
+
+type unchanged_variant = [
+  | A
+  | B of int
+]
+
+type old_name_for_unchanged_type = [ Thing ]
+
+(****************************************************************************)
+(* Type definitions with breaking changes *)
+(****************************************************************************)
+
+type backward_incompatible_record = {
+  ?becomes_required: int option;
+  json_repr_changes: (string * int) list;
+}
+
+type forward_incompatible_record = {
+  removed_field: int;
+  becomes_optional: int;
+  json_repr_changes: (string * int) list;
+}
+
+type backward_incompatible_record_if_implicit_defaults = {
+  ~becomes_required: int;
+}
+
+type forward_incompatible_record_if_implicit_defaults = {
+  becomes_optional: int;
+}
+
+type backward_incompatible_variant = [ A | B ]
+
+type forward_incompatible_variant = [ A ]
+
+(****************************************************************************)
+(* Type definitions with possible breaking changes *)
+(****************************************************************************)
+
+(* Not detected as a rename but as a deleted/created root type name. *)
+type old_name_for_root_type = int
+
+(* Undetected incompatibility. Reported as a deleted/created root type name. *)
+type old_name_for_root_type_with_changes = {
+  x: int;
+}

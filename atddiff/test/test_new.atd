@@ -1,0 +1,67 @@
+(*
+   Main ATD test file for atddiff. Newer version to be compared with
+   the older version.
+
+   backward-compatible = we can read old data with a newer implementation
+   forward-compatible = we can read new data with an older implementation
+   ...-incompatible = we can't ...
+*)
+
+(****************************************************************************)
+(* Type definitions without breaking changes in any direction *)
+(****************************************************************************)
+
+type unchanged_variant = [
+  | A
+  | B of int
+]
+
+(* The order of the type definitions changed on purpose. *)
+type unchanged_record = {
+  a: int;
+  ?b: int option;
+  ~c: int list;
+  d <new>: int <new2 a="b">;
+  renamed_field_type: new_name_for_unchanged_type;
+}
+
+type new_name_for_unchanged_type = [ Thing ]
+
+(****************************************************************************)
+(* Type definitions with breaking changes *)
+(****************************************************************************)
+
+type backward_incompatible_record = {
+  added_field: int;
+  becomes_required: int;
+  json_repr_changes: (string * int) list <json repr="object">;
+}
+
+type forward_incompatible_record = {
+  ?becomes_optional: int option;
+  json_repr_changes: (string * int) list <json repr="object">;
+}
+
+type backward_incompatible_record_if_implicit_defaults = {
+  becomes_required: int;
+}
+
+type forward_incompatible_record_if_implicit_defaults = {
+  ~becomes_optional: int;
+}
+
+type backward_incompatible_variant = [ A ]
+
+type backward_incompatible_variant = [ A | B ]
+
+(****************************************************************************)
+(* Type definitions with possible breaking changes *)
+(****************************************************************************)
+
+(* Not detected as a rename but as a deleted/created type name. *)
+type new_name_for_root_type = int
+
+(* Undetected incompatibility. Reported as a deleted/created root type name. *)
+type new_name_for_root_type_with_changes = {
+  x: float;
+}

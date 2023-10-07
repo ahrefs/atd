@@ -103,6 +103,40 @@ let report_added_root_types defs name_set =
       None
   ) defs
 
+(* Produce a read-only table of type definitions *)
+let make_def_table (defs : A.type_def list) =
+  let tbl = Hashtbl.create 100 in
+  List.iter (fun ((loc, (name, _param, _an), _expr) as def) ->
+    Hashtbl.replace tbl name def
+  ) defs;
+  tbl
+
+let get_def def_tbl name =
+  match Hashtbl.find_opt def_tbl name with
+  | None -> invalid_arg ("get_def: " ^ name)
+  | Some def -> def
+
+(*
+   Assumption: all type names are built-in or monomorphic.
+*)
+let deref def_tbl name =
+  let (_loc, (_name, param, _an), expr) = get_def def_tbl name in
+  match expr ...
+
+let report_structural_mismatches defs1 defs2 shared_root_types =
+  let def_tbl1 = make_def_table defs1 in
+  let def_tbl2 = make_def_table defs2 in
+  let get_expr1 name = get_expr def_tbl1 name in
+  let get_expr2 name = get_expr def_tbl2 name in
+  let rec cmp_expr e1 e2 =
+    
+  in
+  List.fold_left (fun acc root_type_name ->
+    let (_loc, (_name, _param, _an), e1) = get_expr1 root_type_name in
+    let (_loc, (_name, _param, _an), e2) = get_expr2 root_type_name in
+    cmp_expr e1 e2 @ acc
+  ) [] shared_root_types
+
 let finding_group (a : finding) =
   match a.location_old, a.location_new with
   | None, None -> (* should probably not exist *) 1
@@ -136,7 +170,9 @@ let compare_findings (a : finding) (b : finding) =
 
 (*
    Expectations:
-   - the ASTs have been monomorphized
+   - the ASTs have been monomorphized. Any polymorphic type definition
+     was removed. The only remaining parametrized types are the builtins
+     'list', 'option', etc.
    - where a node substitution occurred in the AST, the location was preserved
      so as to point accurately to the source code location.
 *)
@@ -150,9 +186,23 @@ let asts (ast1 : A.full_module) (ast2 : A.full_module) : result =
   let left_only, shared, right_only =
     split_root_types root_types1 root_types2
   in
-  let results =
-    [ report_deleted_root_types defs1 left_only;
-      report_added_root_types defs2 right_only ]
+  let shared, findings =
+    (*
+       We don't handle these because it would be complicated.
+       Exposing unused parametrized types in an ATD interface is
+       a bad practice for a definitive interface. It will become reasonable
+       practice once ATD files can be split into modules.
+       Here, we emit a warning that we're not handling this case.
+    *)
+    report_parametrized_root_types defs1 defs2 (Strings.elements shared)
   in
-  List.flatten results
+  let findings = [
+    report_deleted_root_types defs1 left_only;
+    report_added_root_types defs2 right_only;
+  ] in
+  let findings =
+    report_structural_mismatches defs1 defs2 (Strings.elements shared)
+  in
+  findings
+  |> List.flatten
   |> List.sort compare_findings

@@ -17,7 +17,7 @@ let compare_files
     |> Atd.Util.load_file
       ~expand:true (* removes parametrized types, preserves locations
                       where type name substitution occurs *)
-      ~keep_poly:true (* keeps polymorphic type defs *)
+      ~keep_poly:true (* keep polymorphic type defs for now *)
       ~inherit_fields:true (* simplifies comparison *)
       ~inherit_variants:true (* simplifies comparison *)
     |> fst

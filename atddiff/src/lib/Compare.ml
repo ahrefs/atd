@@ -49,6 +49,31 @@ module A = Atd.Ast
 
 module Strings = Set.Make(String)
 
+let kind_of_expr (e : A.type_expr) =
+  match e with
+  | Name _ -> "unresolved type name"
+  | Sum _ -> "sum type or enum"
+  | Record _ -> "record/object"
+  | Tuple _ -> "tuple"
+  | List _ -> "list/array"
+  | Option _ -> "option"
+  | Nullable _ -> "nullable"
+  | Shared _ -> "shared"
+  | Wrap _ -> "wrap"
+  | Tvar _ -> "type variable"
+
+let a noun =
+  match noun with
+  | "" -> "??"
+  | s ->
+      match s.[0] with
+      | 'a' | 'e' | 'i' | 'o' | 'u' -> "an"
+      | _ -> "a"
+
+let a_kind_of_expr e =
+  let noun = kind_of_expr e in
+  (a noun) ^ " " ^ noun
+
 let get_root_types defs =
   let nonroots =
     List.fold_left (fun nonroots (_loc, (name, _param, _an), expr) ->
@@ -78,7 +103,7 @@ let report_deleted_root_types defs name_set =
     if Strings.mem name name_set then
       Some {
         direction = Backward;
-        kind = Deleted_root_type { def_name = name };
+        kind = Deleted_root_type;
         location_old = Some loc;
         location_new = None;
         description =
@@ -94,7 +119,7 @@ let report_added_root_types defs name_set =
     if Strings.mem name name_set then
       Some {
         direction = Forward;
-        kind = Deleted_root_type { def_name = name };
+        kind = Deleted_root_type;
         location_old = None;
         location_new = Some loc;
         description = sprintf "There is a new type named '%s'." name
@@ -104,38 +129,277 @@ let report_added_root_types defs name_set =
   ) defs
 
 (* Produce a read-only table of type definitions *)
-let make_def_table (defs : A.type_def list) =
+let make_def_table (defs : A.type_def list) : (string, A.type_def) Hashtbl.t =
   let tbl = Hashtbl.create 100 in
   List.iter (fun ((loc, (name, _param, _an), _expr) as def) ->
     Hashtbl.replace tbl name def
   ) defs;
   tbl
 
-let get_def def_tbl name =
+let get_def def_tbl name : A.type_def =
   match Hashtbl.find_opt def_tbl name with
   | None -> invalid_arg ("get_def: " ^ name)
   | Some def -> def
 
 (*
+   Resolve the type expression into one that is not a name, if possible.
+
+   The result may only be a name if the name can't be resolved.
+   It occurs in the following cases:
+   - cyclic type definition
+   - predefined name that doesn't use a dedicated constructor (e.g. 'list'
+     in some cases (?))
+   We could revise this to guarantee that the returned node is never
+   a 'Name' if it helps.
+
    Assumption: all type names are built-in or monomorphic.
 *)
-let deref def_tbl name =
-  let (_loc, (_name, param, _an), expr) = get_def def_tbl name in
-  match expr ...
+let deref_expr def_tbl orig_e =
+  let rec deref_expr e =
+      match (e : A.type_expr) with
+      | Name (_loc, (_loc2, name, _args), _an) ->
+          let (_loc, (_name, param, _an), e) = get_def def_tbl name in
+          check_deref_expr e
+      | Sum _
+      | Record _
+      | Tuple _
+      | List _
+      | Option _
+      | Nullable _
+      | Shared _ as e -> e
+      | Wrap _ -> assert false
+      | Tvar _ -> assert false
+  and check_deref_expr e =
+    if e == orig_e then
+      (* cycle *)
+      e
+    else
+      deref_expr e
+  in
+  deref_expr orig_e
 
 let report_structural_mismatches defs1 defs2 shared_root_types =
   let def_tbl1 = make_def_table defs1 in
   let def_tbl2 = make_def_table defs2 in
-  let get_expr1 name = get_expr def_tbl1 name in
-  let get_expr2 name = get_expr def_tbl2 name in
-  let rec cmp_expr e1 e2 =
-    
+  let get_expr1 e = deref_expr def_tbl1 e in
+  let get_expr2 e = deref_expr def_tbl2 e in
+  let findings : (string * finding) list ref = ref [] in
+  let cmp_expr def_name e1 e2 =
+    let add x =
+      findings := (def_name, x) :: !findings in
+    let rec cmp_expr e1 e2 : unit =
+      match get_expr1 e1, get_expr2 e2 with
+      | Sum (loc1, cases1, _an1), Sum (loc2, cases2, _an2) ->
+          (* TODO: compare JSON annotations an1 and an2 *)
+          cmp_variants loc1 loc2 cases1 cases2
+      | Record (loc1, fields1, an1), Record (loc2, fields2, an2) ->
+          (* TODO: compare JSON annotations an1 and an2 *)
+          cmp_fields loc1 loc2 fields1 fields2
+      | Tuple (loc1, cells1, an1), Tuple (loc2, cells2, an2) ->
+          (* TODO: compare JSON annotations an1 and an2? *)
+          cmp_tuple_cells loc1 loc2 cells1 cells2
+      | List (loc1, e1, an1), List (loc2, e2, an2) ->
+          (* TODO: compare JSON annotations an1 and an2? *)
+          cmp_expr e1 e2
+      | Option (loc1, e1, an1), Option (loc2, e2, an2)
+      | Nullable (loc1, e1, an1), Nullable (loc2, e2, an2)
+      | Shared (loc1, e1, an1), Shared (loc2, e2, an2) ->
+          (* TODO: compare JSON annotations an1 and an2? *)
+          cmp_expr e1 e2
+      | Name (_, (loc1, name1, args1), _an1),
+        Name (_, (loc2, name2, args2), _an2) ->
+          (* TODO: does this happen with 'list', 'option, etc.? *)
+          if name1 <> name2 then
+            add {
+              direction = Both;
+              kind = Incompatible_type;
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "Type names '%s' and '%s' are not the same and may not \
+                         be compatible."
+                  name1 name2;
+            }
+          else
+            ()
+      | Wrap _, _ | _, Wrap _ -> assert false
+      | Tvar _, _ | Tvar _, _ -> assert false
+      | (Sum _
+        | Record _
+        | Tuple _
+        | List _
+        | Option _
+        | Nullable _
+        | Shared _
+        | Name _) as e1, e2 ->
+          add {
+            direction = Both;
+            kind = Incompatible_type;
+            location_old = Some (A.loc_of_type_expr e1);
+            location_new = Some (A.loc_of_type_expr e2);
+            description =
+              sprintf "Incompatible kinds of types: %s is now %s."
+                (kind_of_expr e1) (a_kind_of_expr e2);
+          }
+    and cmp_variants loc1 loc2 cases1 cases2 =
+      let with_names cases =
+        (* TODO: apply annotations *)
+        cases
+        |> List.map (fun (x : A.variant) ->
+          match x with
+          | Variant (loc, (name, an), opt_e) -> name, (loc, (name, an), opt_e)
+          | Inherit _ -> assert false
+        )
+      in
+      let named1 = with_names cases1 in
+      let named2 = with_names cases2 in
+      let names1 = List.map fst named1 |> Strings.of_list in
+      let names2 = List.map fst named2 |> Strings.of_list in
+      let left_only = Strings.diff names1 names2 |> Strings.elements in
+      let shared = Strings.inter names1 names2 |> Strings.elements in
+      let right_only = Strings.diff names2 names1 |> Strings.elements in
+      left_only
+      |> List.iter (fun name ->
+        let loc, (_name, _an), _opt_e = List.assoc name named1 in
+        add {
+          direction = Backward;
+          kind = Missing_variant { variant_name = name };
+          location_old = Some loc;
+          location_new = None;
+          description = sprintf "Case '%s' disappeared." name
+        }
+      );
+      right_only
+      |> List.iter (fun name ->
+        let loc, (_name, _an), _opt_e = List.assoc name named2 in
+        add {
+          direction = Backward;
+          kind = Missing_variant { variant_name = name };
+          location_old = None;
+          location_new = Some loc;
+          description = sprintf "Case '%s' is new." name
+        }
+      );
+      shared
+      |> List.iter (fun name ->
+        let loc1, _, e1 = List.assoc name named1 in
+        let loc2, _, e2 = List.assoc name named2 in
+        match e1, e2 with
+        | None, None -> ()
+        | Some e1, Some e2 ->
+            cmp_expr e1 e2
+        | Some _, None ->
+            add {
+              direction = Both;
+              kind = Missing_variant_argument { variant_name = name };
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "Case '%s' no longer has an argument." name
+            }
+        | None, Some _ ->
+            add {
+              direction = Both;
+              kind = Missing_variant_argument { variant_name = name };
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "Case '%s' used to not have an argument." name
+            }
+      )
+    and cmp_fields loc1 loc2 fields1 fields2 =
+      let with_names fields =
+        (* TODO: apply annotations *)
+        fields
+        |> List.map (fun (field : A.field) ->
+          match field with
+          | `Field ((_, (name, _, _), _) as x) -> name, x
+          | `Inherit _ -> assert false
+        )
+      in
+      let named1 = with_names fields1 in
+      let named2 = with_names fields2 in
+      let names1 = List.map fst named1 |> Strings.of_list in
+      let names2 = List.map fst named2 |> Strings.of_list in
+      let left_only = Strings.diff names1 names2 |> Strings.elements in
+      let shared = Strings.inter names1 names2 |> Strings.elements in
+      let right_only = Strings.diff names2 names1 |> Strings.elements in
+      left_only
+      |> List.iter (fun name ->
+        let loc, (_name, kind, _an), _e = List.assoc name named1 in
+        add {
+          direction = Forward;
+          kind = Missing_field { field_name = name };
+          location_old = Some loc;
+          location_new = None;
+          description = sprintf "Field '%s' disappeared." name
+        }
+      );
+      right_only
+      |> List.iter (fun name ->
+        let loc, (_name, kind, _an), _opt_e = List.assoc name named2 in
+        add {
+          direction = Backward;
+          kind = Missing_field { field_name = name };
+          location_old = None;
+          location_new = Some loc;
+          description = sprintf "Field '%s' is new." name
+        }
+      );
+      shared
+      |> List.iter (fun name ->
+        let loc1, _, e1 = List.assoc name named1 in
+        let loc2, _, e2 = List.assoc name named2 in
+        match e1, e2 with
+        | None, None -> ()
+        | Some e1, Some e2 ->
+            cmp_expr e1 e2
+        | Some _, None ->
+            add {
+              direction = Both;
+              kind = Missing_variant_argument { variant_name = name };
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "Case '%s' no longer has an argument." name
+            }
+        | None, Some _ ->
+            add {
+              direction = Both;
+              kind = Missing_variant_argument { variant_name = name };
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "Case '%s' used to not have an argument." name
+            }
+      )
+
+
+    and cmp_tuple_cells loc1 loc2 cells1 cells2 =
+      let n1 = List.length cells1 in
+      let n2 = List.length cells2 in
+      if n1 <> n2 then
+        add {
+          direction = Both;
+          kind = Incompatible_type;
+          location_old = Some (A.loc_of_type_expr e1);
+          location_new = Some (A.loc_of_type_expr e2);
+          description = sprintf "Incompatible tuple lengths";
+        }
+      else
+        List.iter2 (fun (_loc1, e1, _an1) (_loc2, e2, _an2) ->
+          (* TODO: honor annotations? *)
+          cmp_expr e1 e2
+        ) cells1 cells2
+    in
+    cmp_expr e1 e2
   in
-  List.fold_left (fun acc root_type_name ->
-    let (_loc, (_name, _param, _an), e1) = get_expr1 root_type_name in
-    let (_loc, (_name, _param, _an), e2) = get_expr2 root_type_name in
-    cmp_expr e1 e2 @ acc
-  ) [] shared_root_types
+  List.iter (fun name ->
+    let (loc1, (_name, param, _an), e1) = get_def def_tbl1 name in
+    let (loc2, (_name, param, _an), e2) = get_def def_tbl2 name in
+    cmp_expr name e1 e2
+  ) shared_root_types;
+  !findings
 
 let finding_group (a : finding) =
   match a.location_old, a.location_new with
@@ -156,6 +420,7 @@ let compare_opt_location (a : Atd.Loc.t option) (b : Atd.Loc.t option) =
    2. Exists only in the new file
    3a. Position in the old file
    3b. Position in the new file
+   4. Everything else (expected to not occur)
 *)
 let compare_findings (a : finding) (b : finding) =
   (* sort by left-only, right-only, both *)
@@ -166,7 +431,22 @@ let compare_findings (a : finding) (b : finding) =
     let c = compare_opt_location a.location_old b.location_old in
     if c <> 0 then c
     else
-      compare_opt_location a.location_new b.location_new
+      let c = compare_opt_location a.location_new b.location_new in
+      if c <> 0 then c
+      else Stdlib.compare a b
+
+let group_and_sort_findings xs =
+  let tbl = Hashtbl.create 100 in
+  xs
+  |> List.iter (fun (name, finding) ->
+    match Hashtbl.find_opt tbl finding with
+    | None ->
+        Hashtbl.add tbl finding (ref [name])
+    | Some names ->
+        names := name :: !names
+  );
+  Hashtbl.fold (fun finding names acc -> (finding, !names) :: acc) tbl []
+  |> List.sort (fun (a, _) (b, _) -> compare_findings a b)
 
 (*
    Expectations:
@@ -205,4 +485,4 @@ let asts (ast1 : A.full_module) (ast2 : A.full_module) : result =
   in
   findings
   |> List.flatten
-  |> List.sort compare_findings
+  |> group_and_sort_findings

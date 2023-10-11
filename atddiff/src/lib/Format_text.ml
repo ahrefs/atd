@@ -12,12 +12,15 @@ let format_loc_text opt_loc =
 
 let format_incompatibility_text buf (x : finding) =
   let is_certain =
+    (* TODO: more clearly distinguish Warning from Error? *)
     match x.kind with
     | Missing_field _ -> true
-    | Default_required _ -> false
-    | Incompatible_type _ -> true
-    | Deleted_root_type _ -> false
-    | Added_root_type _ -> false
+    | Missing_variant _ -> true
+    | Missing_variant_argument _ -> true
+    | Default_required -> false
+    | Incompatible_type -> true
+    | Deleted_root_type -> false
+    | Added_root_type -> false
   in
   let dir =
     match x.direction, is_certain with

@@ -3,7 +3,7 @@
 ;
 (rule
   (targets
-    everything.d
+    everything_atd.d
   )
   (deps
     ../atd-input/everything.atd

@@ -7,7 +7,7 @@
 // # Private functions
 // ############################################################################
 
-module everything;
+module everything_atd;
 
 import std.algorithm : map;
 import std.array : array;

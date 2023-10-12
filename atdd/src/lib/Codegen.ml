@@ -510,7 +510,7 @@ auto toJsonString(T)(T obj)
   |}
     atd_filename
     atd_filename
-    (Filename.remove_extension atd_filename)
+    (sprintf "%s_atd" (Filename.remove_extension atd_filename))
 
 
 let not_implemented loc msg =
@@ -1124,7 +1124,7 @@ let run_file src_path =
     (if Filename.check_suffix src_name ".atd" then
        Filename.chop_suffix src_name ".atd"
      else
-       src_name) ^ ".d"
+       src_name) ^ "_atd.d"
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in

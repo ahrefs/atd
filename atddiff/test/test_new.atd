@@ -54,6 +54,14 @@ type backward_incompatible_variant = [ A ]
 
 type forward_incompatible_variant = [ A | B ]
 
+type ('a, 'b) unchanged_type_parameters = { x: ('a * 'b) list }
+
+type ('a, 'b) swapped_type_parameters = { x: ('b * 'a) list }
+
+type 'a type_arity_changed = ('a * 'a) list
+
+type 'a ignored_type_parameters_are_ok = 'a list
+
 (****************************************************************************)
 (* Type definitions with possible breaking changes *)
 (****************************************************************************)

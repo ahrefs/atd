@@ -11,13 +11,13 @@ The following root types are affected:
   backward_incompatible_variant
 
 Possible backward incompatibility:
-File "test_old.atd", line 59, characters 0-33
+File "test_old.atd", line 67, characters 0-33
 The definition for type 'old_name_for_root_type' no longer exists.
 The following root types are affected:
   old_name_for_root_type
 
 Possible backward incompatibility:
-File "test_old.atd", line 62, characters 0-56
+File "test_old.atd", line 70, characters 0-56
 The definition for type 'old_name_for_root_type_with_changes' no longer exists.
 The following root types are affected:
   old_name_for_root_type_with_changes
@@ -35,28 +35,28 @@ The following root types are affected:
   forward_incompatible_variant
 
 Possible forward incompatibility:
-File "test_new.atd", line 62, characters 0-33
+File "test_new.atd", line 70, characters 0-33
 There is a new type named 'new_name_for_root_type'.
 The following root types are affected:
   new_name_for_root_type
 
 Possible forward incompatibility:
-File "test_new.atd", line 65, characters 0-58
+File "test_new.atd", line 73, characters 0-58
 There is a new type named 'new_name_for_root_type_with_changes'.
 The following root types are affected:
   new_name_for_root_type_with_changes
-
-Incompatibility in both directions:
-File "test_old.atd", line 14, characters 5-16
-File "test_new.atd", line 36, characters 19-23
-Incompatible kinds of types: option is now an int.
-The following root types are affected:
-  backward_incompatible_record
 
 Backward incompatibility:
 File "test_old.atd", line 32, characters 2-31
 File "test_new.atd", line 36, characters 2-23
 Formerly optional field 'becomes_required' is now required.
+The following root types are affected:
+  backward_incompatible_record
+
+Incompatibility in both directions:
+File "test_old.atd", line 32, characters 20-31
+File "test_new.atd", line 36, characters 19-23
+Incompatible kinds of types: option is now an int.
 The following root types are affected:
   backward_incompatible_record
 
@@ -69,7 +69,7 @@ The following root types are affected:
 
 Incompatibility in both directions:
 File "test_old.atd", line 38, characters 19-23
-File "test_new.atd", line 22, characters 5-16
+File "test_new.atd", line 41, characters 20-31
 Incompatible kinds of types: int is now an option.
 The following root types are affected:
   forward_incompatible_record
@@ -95,4 +95,18 @@ implementations can read newer data. If this is already the case, use
 'atddiff --json-defaults-old' to disable this warning.
 The following root types are affected:
   forward_incompatible_record_if_implicit_defaults
+
+Incompatibility in both directions:
+File "test_old.atd", line 56, characters 0-61
+File "test_new.atd", line 59, characters 0-61
+Incompatible type variables are being used.
+The following root types are affected:
+  swapped_type_parameters
+
+Incompatibility in both directions:
+File "test_old.atd", line 58, characters 0-49
+File "test_new.atd", line 61, characters 0-43
+Incompatible type variables are being used.
+The following root types are affected:
+  type_arity_changed
 

@@ -47,7 +47,13 @@ open Printf
 open Types
 module A = Atd.Ast
 
+(* Sets of names: type names, variant names, field names.
+   It's used to detect names that are in common between the two ATD files,
+   as well as names that occur only in one of the files. *)
 module Strings = Set.Make(String)
+
+(* This is used for instanciating type variables. *)
+module Env = Map.Make(String)
 
 type options = {
   (* Are fields with defaults always populated in old JSON data? *)
@@ -157,44 +163,112 @@ let get_def def_tbl name : A.type_def =
   | Some def -> def
 
 (*
+   Create an environment that normalizes the names for the type variables:
+     ('k, 'v) t
+   produces the environment:
+     'k -> '0
+     'v -> '1
+
+   This allows the following normalization:
+     type ('k, 'v) t = ('k * 'v foo) list
+   ->
+     type ('0, '1) t = ('0 * '1 foo) list
+*)
+let create_normalized_environment loc type_params =
+  (* type_params is the list of named type parameters for a parametrized
+     type definition:
+       type ('k, 'v) t = ...
+     -> ["k"; "v"]
+  *)
+  let numbered = List.mapi (fun i var -> (string_of_int i, var)) type_params in
+  let new_params = List.map fst numbered in
+  let env =
+    List.fold_left (fun env (new_var, var) ->
+      Env.add var (A.Tvar (loc, new_var)) env
+    ) Env.empty numbered
+  in
+  new_params, env
+
+(*
+   Replace all the type variables occurring in a type expression.
+   Fail in case of an unbound variable.
+*)
+let replace_type_variables env e =
+  let replace_var (e : A.type_expr) =
+    match e with
+    | Tvar (loc, var) ->
+        (match Env.find_opt var env with
+         | None ->
+             A.error_at loc (sprintf "Unbound type parameter '%s" var)
+         | Some e -> e)
+    | e -> e
+  in
+  A.Map.type_expr { type_expr = replace_var } e
+
+let create_env_from_pairs bindings =
+  List.fold_left (fun env (k, v) -> Env.add k v env) Env.empty bindings
+
+(*
+   This normalization allows comparing parametrized type definitions e.g.
+
+     type 'a t = 'a list   vs.  type 'elt t = 'elt list
+
+   becomes
+
+     type '0 t = ' list   vs.  type '0 t = '0 list
+*)
+let normalize_type_params_in_definition (def : A.type_def) : A.type_def =
+  let loc, (name, params, an), e = def in
+  let new_params, env = create_normalized_environment loc params in
+  let new_e = replace_type_variables env e in
+  (loc, (name, new_params, an), new_e)
+
+(*
    Resolve the type expression into one that is not a name, if possible.
 
    The result may only be a name if the name can't be resolved.
    It occurs in the following cases:
    - cyclic type definition
-   - predefined name that doesn't use a dedicated constructor (e.g. 'list'
-     in some cases (?))
+   - predefined types (bool, int, list, ...)
    We could revise this to guarantee that the returned node is never
    a 'Name' if it helps.
-
-   Assumption: all type names are built-in or monomorphic.
 *)
 let deref_expr def_tbl orig_e =
-  let rec deref_expr e =
+  let rec deref_expr env e =
       match (e : A.type_expr) with
-      | Name (_loc, (_loc2, name, _args), _an) ->
+      | Name (_loc, (loc2, name, args), _an) ->
           if is_builtin_name name then
             e
           else
             let (_loc, (_name, param, _an), e) = get_def def_tbl name in
-            check_deref_expr e
+            let e = replace_type_variables env e in
+            let n_param = List.length param in
+            let n_args = List.length args in
+            if n_param <> n_args then
+              A.error_at loc2
+                (sprintf "Type '%s' expects %i arguments but %i were given"
+                   name n_param n_args)
+            else
+              let bindings = List.combine param args in
+              let new_env = create_env_from_pairs bindings in
+              check_deref_expr new_env e
       | Sum _
       | Record _
       | Tuple _
       | List _
       | Option _
       | Nullable _
-      | Shared _ as e -> e
+      | Shared _
+      | Tvar _ as e -> e
       | Wrap _ -> assert false
-      | Tvar _ -> assert false
-  and check_deref_expr e =
-    if e == orig_e then
+  and check_deref_expr env e =
+    if e = orig_e then
       (* cycle *)
       e
     else
-      deref_expr e
+      deref_expr env e
   in
-  deref_expr orig_e
+  deref_expr Env.empty orig_e
 
 let report_structural_mismatches options def_tbl1 def_tbl2 shared_root_types =
   let get_expr1 e = deref_expr def_tbl1 e in
@@ -231,14 +305,25 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_root_types =
               location_old = Some loc1;
               location_new = Some loc2;
               description =
-                sprintf "Type names '%s' and '%s' are not the same and may not \
-                         be compatible."
+                sprintf "Type names '%s' and '%s' are not the same and \
+                         may not be compatible."
                   name1 name2;
             }
           else
             ()
       | Wrap _, _ | _, Wrap _ -> assert false
-      | Tvar _, _ | _, Tvar _ -> assert false
+      | Tvar (loc1, var1), Tvar (loc2, var2) ->
+          (* Type variables were normalized so they can be compared
+             directly. *)
+          if var1 <> var2 then
+            add {
+              direction = Both;
+              kind = Incompatible_type;
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "Incompatible type variables are being used.";
+            }
       | (Sum _
         | Record _
         | Tuple _
@@ -246,7 +331,8 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_root_types =
         | Option _
         | Nullable _
         | Shared _
-        | Name _) as e1, e2 ->
+        | Name _
+        | Tvar _) as e1, e2 ->
           add {
             direction = Both;
             kind = Incompatible_type;
@@ -458,27 +544,6 @@ then there's no problem and you should use
   ) shared_root_types;
   !findings
 
-let report_parametrized_root_types defs1 defs2 shared_type_names =
-  shared_type_names
-  |> List.filter_map (fun name ->
-    let (loc1, (_name, param1, _an), _e1) = get_def defs1 name in
-    let (loc2, (_name, param2, _an), _e2) = get_def defs2 name in
-    if param1 <> [] || param2 <> [] then
-      Some (name, {
-        direction = Both;
-        kind = Parametrized_root_type;
-        location_old = Some loc1;
-        location_new = Some loc2;
-        description = sprintf "\
-Type '%s' is parametrized but is not used in this ATD file.
-It was not analyzed for incompatibilities due to current limitations
-of atddiff."
-            name;
-      })
-    else
-      None
-  )
-
 let finding_group (a : finding) =
   match a.location_old, a.location_new with
   | None, None -> (* should probably not exist *) 1
@@ -519,11 +584,12 @@ let group_and_sort_findings xs =
   |> List.iter (fun (name, finding) ->
     match Hashtbl.find_opt tbl finding with
     | None ->
-        Hashtbl.add tbl finding (ref [name])
+        Hashtbl.add tbl finding (ref (Strings.singleton name))
     | Some names ->
-        names := name :: !names
+        names := Strings.add name !names
   );
-  Hashtbl.fold (fun finding names acc -> (finding, !names) :: acc) tbl []
+  Hashtbl.fold (fun finding names acc ->
+    (finding, Strings.elements !names) :: acc) tbl []
   |> List.sort (fun (a, _) (b, _) -> compare_findings a b)
 
 (*
@@ -537,8 +603,13 @@ let group_and_sort_findings xs =
 let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   let _head1, body1 = ast1 in
   let _head2, body2 = ast2 in
-  let defs1 = body1 |> List.map (function A.Type x -> x) in
-  let defs2 = body2 |> List.map (function A.Type x -> x) in
+  let extract_normalized_defs body =
+    body
+    |> List.map (function A.Type x -> x)
+    |> List.map normalize_type_params_in_definition
+  in
+  let defs1 = extract_normalized_defs body1 in
+  let defs2 = extract_normalized_defs body2 in
   let def_tbl1 = make_def_table defs1 in
   let def_tbl2 = make_def_table defs2 in
   let root_types1 = get_root_types defs1 in
@@ -546,21 +617,9 @@ let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   let left_only, shared, right_only =
     split_root_types root_types1 root_types2
   in
-  let findings =
-    (*
-       We don't handle these because it would be complicated.
-       Exposing unused parametrized types in an ATD interface is
-       a bad practice for a definitive interface. It will become reasonable
-       practice once ATD files can be split into modules.
-       Here, we emit a warning that we're not handling this case.
-    *)
-    report_parametrized_root_types def_tbl1 def_tbl2
-      (Strings.elements shared)
-  in
   let findings = [
     report_deleted_root_types defs1 left_only;
     report_added_root_types defs2 right_only;
-    findings
   ] in
   let findings =
     report_structural_mismatches options def_tbl1 def_tbl2

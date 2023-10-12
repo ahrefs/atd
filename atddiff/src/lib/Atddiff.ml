@@ -17,12 +17,6 @@ let compare_files
   let load_file atd_file =
     atd_file
     |> Atd.Util.load_file
-    (* TODO: This monomorphization doesn't work to report errors because
-       of incorrect locations, presumably due to sharing equivalent
-       types, keeping only one of the original locations. *)
-      ~expand:true (* removes parametrized types, preserves locations
-                      where type name substitution occurs *)
-      ~keep_poly:true (* keep polymorphic type defs for now *)
       ~inherit_fields:true (* simplifies comparison *)
       ~inherit_variants:true (* simplifies comparison *)
     |> fst

@@ -9,6 +9,8 @@ type conf = {
   old_file: string;
   new_file: string;
   out_file: string option;
+  json_defaults_old: bool;
+  json_defaults_new: bool;
   version: bool;
 }
 
@@ -18,7 +20,11 @@ let run conf =
     exit 0
   )
   else
-    let out_data = Atddiff.compare_files conf.old_file conf.new_file in
+    let out_data =
+      Atddiff.compare_files
+        ~json_defaults_old:conf.json_defaults_old
+        ~json_defaults_new:conf.json_defaults_new
+        conf.old_file conf.new_file in
     match conf.out_file with
     | None -> print_string out_data
     | Some out_file ->
@@ -59,6 +65,39 @@ let out_file_term =
             standard output."
   in
   Arg.value (Arg.opt (Arg.some Arg.string) None info)
+
+let json_defaults_term =
+  let info =
+    Arg.info ["json-defaults"]
+      ~doc:"Shorthand for '--json-defaults-old --json-defaults-new'."
+  in
+  Arg.value (Arg.flag info)
+
+let json_defaults_old_term =
+  let info =
+    Arg.info ["json-defaults-old"]
+      ~doc:"Assume that old implementations emitting JSON populate \
+            optional fields with a value when a default exists. This applies \
+            to all the fields marked with a '~'. For example, a field \
+            declared as '~items: item list' defaults to the empty list. \
+            This option makes atddiff assume that '~' fields behave like \
+            required fields in JSON for old implementations. \
+            For example, when using atdgen it is achieved with '-j-defaults'."
+  in
+  Arg.value (Arg.flag info)
+
+let json_defaults_new_term =
+  let info =
+    Arg.info ["json-defaults-new"]
+      ~doc:"Assume that new implementations emitting JSON populate \
+            optional fields with a value when a default exists. This applies \
+            to all the fields marked with a '~'. For example, a field \
+            declared as '~items: item list' defaults to the empty list. \
+            This option makes atddiff assume that '~' fields behave like \
+            required fields in JSON for new implementations. \
+            For example, when using atdgen it is achieved with '-j-defaults'."
+  in
+  Arg.value (Arg.flag info)
 
 let version_term =
   let info =
@@ -108,11 +147,18 @@ let man = [
 ]
 
 let cmdline_term run =
-  let combine old_file new_file out_file version =
+  let combine
+      old_file new_file out_file
+      json_defaults json_defaults_old json_defaults_new
+      version =
+    let json_defaults_old = json_defaults_old || json_defaults in
+    let json_defaults_new = json_defaults_new || json_defaults in
     run {
       old_file;
       new_file;
       out_file;
+      json_defaults_old;
+      json_defaults_new;
       version;
     }
   in
@@ -120,6 +166,9 @@ let cmdline_term run =
         $ old_file_term
         $ new_file_term
         $ out_file_term
+        $ json_defaults_term
+        $ json_defaults_old_term
+        $ json_defaults_new_term
         $ version_term
        )
 

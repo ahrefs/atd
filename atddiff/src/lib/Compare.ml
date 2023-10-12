@@ -49,9 +49,24 @@ module A = Atd.Ast
 
 module Strings = Set.Make(String)
 
+type options = {
+  (* Are fields with defaults always populated in old JSON data? *)
+  json_defaults_old : bool;
+  (* Are fields with defaults always populated in new JSON data? *)
+  json_defaults_new : bool;
+}
+
+let is_builtin_name =
+  let tbl = Atd.Predef.make_table () in
+  fun name -> Hashtbl.mem tbl name
+
 let kind_of_expr (e : A.type_expr) =
   match e with
-  | Name _ -> "unresolved type name"
+  | Name (_, (_, name, _args), _) ->
+      if is_builtin_name name then
+        name
+      else
+        "unresolved type name"
   | Sum _ -> "sum type or enum"
   | Record _ -> "record/object"
   | Tuple _ -> "tuple"
@@ -101,7 +116,7 @@ let split_root_types root_types1 root_types2 =
 let report_deleted_root_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
-      Some {
+      Some (name, {
         direction = Backward;
         kind = Deleted_root_type;
         location_old = Some loc;
@@ -109,7 +124,7 @@ let report_deleted_root_types defs name_set =
         description =
           sprintf "The definition for type '%s' no longer exists."
             name
-      }
+      })
     else
       None
   ) defs
@@ -117,13 +132,13 @@ let report_deleted_root_types defs name_set =
 let report_added_root_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
-      Some {
+      Some (name, {
         direction = Forward;
         kind = Deleted_root_type;
         location_old = None;
         location_new = Some loc;
         description = sprintf "There is a new type named '%s'." name
-      }
+      })
     else
       None
   ) defs
@@ -158,8 +173,11 @@ let deref_expr def_tbl orig_e =
   let rec deref_expr e =
       match (e : A.type_expr) with
       | Name (_loc, (_loc2, name, _args), _an) ->
-          let (_loc, (_name, param, _an), e) = get_def def_tbl name in
-          check_deref_expr e
+          if is_builtin_name name then
+            e
+          else
+            let (_loc, (_name, param, _an), e) = get_def def_tbl name in
+            check_deref_expr e
       | Sum _
       | Record _
       | Tuple _
@@ -178,9 +196,7 @@ let deref_expr def_tbl orig_e =
   in
   deref_expr orig_e
 
-let report_structural_mismatches defs1 defs2 shared_root_types =
-  let def_tbl1 = make_def_table defs1 in
-  let def_tbl2 = make_def_table defs2 in
+let report_structural_mismatches options def_tbl1 def_tbl2 shared_root_types =
   let get_expr1 e = deref_expr def_tbl1 e in
   let get_expr2 e = deref_expr def_tbl2 e in
   let findings : (string * finding) list ref = ref [] in
@@ -208,7 +224,6 @@ let report_structural_mismatches defs1 defs2 shared_root_types =
           cmp_expr e1 e2
       | Name (_, (loc1, name1, args1), _an1),
         Name (_, (loc2, name2, args2), _an2) ->
-          (* TODO: does this happen with 'list', 'option, etc.? *)
           if name1 <> name2 then
             add {
               direction = Both;
@@ -223,7 +238,7 @@ let report_structural_mismatches defs1 defs2 shared_root_types =
           else
             ()
       | Wrap _, _ | _, Wrap _ -> assert false
-      | Tvar _, _ | Tvar _, _ -> assert false
+      | Tvar _, _ | _, Tvar _ -> assert false
       | (Sum _
         | Record _
         | Tuple _
@@ -327,53 +342,95 @@ let report_structural_mismatches defs1 defs2 shared_root_types =
       left_only
       |> List.iter (fun name ->
         let loc, (_name, kind, _an), _e = List.assoc name named1 in
-        add {
-          direction = Forward;
-          kind = Missing_field { field_name = name };
-          location_old = Some loc;
-          location_new = None;
-          description = sprintf "Field '%s' disappeared." name
-        }
+        match kind with
+        | Optional
+        | With_default -> ()
+        | Required ->
+            add {
+              direction = Forward;
+              kind = Missing_field { field_name = name };
+              location_old = Some loc;
+              location_new = None;
+              description = sprintf "Required field '%s' disappeared." name
+            }
       );
       right_only
       |> List.iter (fun name ->
         let loc, (_name, kind, _an), _opt_e = List.assoc name named2 in
-        add {
-          direction = Backward;
-          kind = Missing_field { field_name = name };
-          location_old = None;
-          location_new = Some loc;
-          description = sprintf "Field '%s' is new." name
-        }
+        match kind with
+        | Optional
+        | With_default -> ()
+        | Required ->
+            add {
+              direction = Backward;
+              kind = Missing_field { field_name = name };
+              location_old = None;
+              location_new = Some loc;
+              description = sprintf "Required field '%s' is new." name
+            }
       );
       shared
       |> List.iter (fun name ->
-        let loc1, _, e1 = List.assoc name named1 in
-        let loc2, _, e2 = List.assoc name named2 in
-        match e1, e2 with
-        | None, None -> ()
-        | Some e1, Some e2 ->
-            cmp_expr e1 e2
-        | Some _, None ->
-            add {
-              direction = Both;
-              kind = Missing_variant_argument { variant_name = name };
+        let loc1, (_, kind1, _), e1 = List.assoc name named1 in
+        let loc2, (_, kind2, _), e2 = List.assoc name named2 in
+        (match kind1, kind2 with
+         | (Optional | With_default), (Optional | With_default) -> ()
+         | Required, Required -> ()
+         | Required, With_default
+           when options.json_defaults_new -> ()
+         | Required, With_default ->
+             add {
+              direction = Forward;
+              kind = Default_required { field_name = name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
-                sprintf "Case '%s' no longer has an argument." name
+                sprintf "\
+Formerly required field '%s' is now optional but has a default value.
+You must ensure that new implementations always populate the JSON field
+with a value (using atdgen's option -j-defaults or equivalent) so that older
+implementations can read newer data. If this is already the case, use
+'atddiff --json-defaults-old' to disable this warning."
+                  name
             }
-        | None, Some _ ->
-            add {
-              direction = Both;
-              kind = Missing_variant_argument { variant_name = name };
+         | Required, Optional ->
+             add {
+              direction = Forward;
+              kind = Missing_field { field_name = name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
-                sprintf "Case '%s' used to not have an argument." name
+                sprintf "Formerly required field '%s' is now optional." name
             }
+         | With_default, Required
+           when options.json_defaults_old -> ()
+         | With_default, Required ->
+             add {
+              direction = Backward;
+              kind = Default_required { field_name = name };
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "\
+Newly required field '%s' was optional but had a default value.
+If old implementations in use always populate the JSON field
+with a value (using atdgen's option -j-defaults or equivalent),
+then there's no problem and you should use
+'atddiff --json-defaults-new' to disable this warning."
+                  name
+            }
+         | Optional, Required ->
+             add {
+              direction = Backward;
+              kind = Missing_field { field_name = name };
+              location_old = Some loc1;
+              location_new = Some loc2;
+              description =
+                sprintf "Formerly optional field '%s' is now required." name
+            }
+        );
+        cmp_expr e1 e2
       )
-
 
     and cmp_tuple_cells loc1 loc2 cells1 cells2 =
       let n1 = List.length cells1 in
@@ -400,6 +457,27 @@ let report_structural_mismatches defs1 defs2 shared_root_types =
     cmp_expr name e1 e2
   ) shared_root_types;
   !findings
+
+let report_parametrized_root_types defs1 defs2 shared_type_names =
+  shared_type_names
+  |> List.filter_map (fun name ->
+    let (loc1, (_name, param1, _an), _e1) = get_def defs1 name in
+    let (loc2, (_name, param2, _an), _e2) = get_def defs2 name in
+    if param1 <> [] || param2 <> [] then
+      Some (name, {
+        direction = Both;
+        kind = Parametrized_root_type;
+        location_old = Some loc1;
+        location_new = Some loc2;
+        description = sprintf "\
+Type '%s' is parametrized but is not used in this ATD file.
+It was not analyzed for incompatibilities due to current limitations
+of atddiff."
+            name;
+      })
+    else
+      None
+  )
 
 let finding_group (a : finding) =
   match a.location_old, a.location_new with
@@ -456,17 +534,19 @@ let group_and_sort_findings xs =
    - where a node substitution occurred in the AST, the location was preserved
      so as to point accurately to the source code location.
 *)
-let asts (ast1 : A.full_module) (ast2 : A.full_module) : result =
+let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   let _head1, body1 = ast1 in
   let _head2, body2 = ast2 in
   let defs1 = body1 |> List.map (function A.Type x -> x) in
   let defs2 = body2 |> List.map (function A.Type x -> x) in
+  let def_tbl1 = make_def_table defs1 in
+  let def_tbl2 = make_def_table defs2 in
   let root_types1 = get_root_types defs1 in
   let root_types2 = get_root_types defs2 in
   let left_only, shared, right_only =
     split_root_types root_types1 root_types2
   in
-  let shared, findings =
+  let findings =
     (*
        We don't handle these because it would be complicated.
        Exposing unused parametrized types in an ATD interface is
@@ -474,14 +554,18 @@ let asts (ast1 : A.full_module) (ast2 : A.full_module) : result =
        practice once ATD files can be split into modules.
        Here, we emit a warning that we're not handling this case.
     *)
-    report_parametrized_root_types defs1 defs2 (Strings.elements shared)
+    report_parametrized_root_types def_tbl1 def_tbl2
+      (Strings.elements shared)
   in
   let findings = [
     report_deleted_root_types defs1 left_only;
     report_added_root_types defs2 right_only;
+    findings
   ] in
   let findings =
-    report_structural_mismatches defs1 defs2 (Strings.elements shared)
+    report_structural_mismatches options def_tbl1 def_tbl2
+      (Strings.elements shared)
+    :: findings
   in
   findings
   |> List.flatten

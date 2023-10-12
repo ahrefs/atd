@@ -8,10 +8,11 @@ type incompatibility_kind =
   | Missing_field of { field_name: string }
   | Missing_variant of { variant_name: string }
   | Missing_variant_argument of { variant_name: string }
-  | Default_required
+  | Default_required of { field_name: string }
   | Incompatible_type
   | Deleted_root_type
   | Added_root_type
+  | Parametrized_root_type
 
 (*
    Important things we want to report:

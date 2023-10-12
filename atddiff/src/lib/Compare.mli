@@ -3,4 +3,13 @@
 
    The findings are sorted nicely.
 *)
-val asts : Atd.Ast.full_module -> Atd.Ast.full_module -> Types.result
+
+type options = {
+  (* Are fields with defaults always populated in old JSON data? *)
+  json_defaults_old : bool;
+  (* Are fields with defaults always populated in new JSON data? *)
+  json_defaults_new : bool;
+}
+
+val asts :
+  options -> Atd.Ast.full_module -> Atd.Ast.full_module -> Types.result

@@ -24,4 +24,10 @@ for name in $test_names; do
  (action (diff $name.expected.txt $name.txt)))
 
 EOF
+
+  # Create empty output files if they don't exist already so as to save
+  # some manual labor
+  if ! [[ -e "$name".expected.txt ]]; then
+    touch "$name".expected.txt
+  fi
 done

@@ -4,22 +4,6 @@
    Specifically, we're focused on incompatibilities in JSON data and we
    honor <json ...> annotations that affect the shape of JSON data.
 
-   1. Identify root types.
-
-   A root type is type defined in the ATD file that is not referenced by
-   other type definitions. A root type whose name changes is considered
-   possibly problematic while a non-root type can change its name as long
-   as its uses remain the same or compatible as before.
-
-   Removed and added root type names are reported. Changes in type parameters
-   are not reported and not checked for compatibility at this stage.
-   For example, 'type ('a, 'b) t = ('a * 'b) list' can become
-   'type ('k, 'v) t = ('k * 'v) list' or even
-   'type ('k, 'v) t = ('k * 'v) option' without triggering a warning at this
-   stage.
-
-   2. Compare pairs of root types across the older and the newer AST.
-
    Types are compared structurally i.e. changes in type names don't matter
    as long as they don't affect the JSON representation of data.
    For example, 'int list' and 'nums' are equivalent if 'nums' is defined
@@ -95,36 +79,25 @@ let a_kind_of_expr e =
   let noun = kind_of_expr e in
   (a noun) ^ " " ^ noun
 
-let get_root_types defs =
-  let nonroots =
-    List.fold_left (fun nonroots (_loc, (name, _param, _an), expr) ->
-      let referenced = A.extract_type_names expr in
-      List.fold_right Strings.add referenced nonroots
-    ) Strings.empty defs
-  in
-  (* Exclude built-ins like 'list' without worrying what they are *)
-  defs
-  |> List.filter_map (fun (_loc, (name, _param, _an), expr) ->
-    if Strings.mem name nonroots then None
-    else Some name
-  )
+let get_type_names defs =
+  List.map (fun (_loc, (name, _param, _an), expr) -> name) defs
 
-(* Split root type names into:
+(* Split type names into:
    - left-only
    - intersection
    - right-only
 *)
-let split_root_types root_types1 root_types2 =
-  let a = Strings.of_list root_types1 in
-  let b = Strings.of_list root_types2 in
+let split_types types1 types2 =
+  let a = Strings.of_list types1 in
+  let b = Strings.of_list types2 in
   Strings.diff a b, Strings.inter a b, Strings.diff b a
 
-let report_deleted_root_types defs name_set =
+let report_deleted_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
       Some (name, {
         direction = Backward;
-        kind = Deleted_root_type;
+        kind = Deleted_type;
         location_old = Some loc;
         location_new = None;
         description =
@@ -135,12 +108,12 @@ let report_deleted_root_types defs name_set =
       None
   ) defs
 
-let report_added_root_types defs name_set =
+let report_added_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
       Some (name, {
         direction = Forward;
-        kind = Deleted_root_type;
+        kind = Deleted_type;
         location_old = None;
         location_new = Some loc;
         description = sprintf "There is a new type named '%s'." name
@@ -235,32 +208,32 @@ let normalize_type_params_in_definition (def : A.type_def) : A.type_def =
 *)
 let deref_expr def_tbl orig_e =
   let rec deref_expr env e =
-      match (e : A.type_expr) with
-      | Name (_loc, (loc2, name, args), _an) ->
-          if is_builtin_name name then
-            e
+    match (e : A.type_expr) with
+    | Name (_loc, (loc2, name, args), _an) ->
+        if is_builtin_name name then
+          e
+        else
+          let (_loc, (_name, param, _an), e) = get_def def_tbl name in
+          let e = replace_type_variables env e in
+          let n_param = List.length param in
+          let n_args = List.length args in
+          if n_param <> n_args then
+            A.error_at loc2
+              (sprintf "Type '%s' expects %i arguments but %i were given"
+                 name n_param n_args)
           else
-            let (_loc, (_name, param, _an), e) = get_def def_tbl name in
-            let e = replace_type_variables env e in
-            let n_param = List.length param in
-            let n_args = List.length args in
-            if n_param <> n_args then
-              A.error_at loc2
-                (sprintf "Type '%s' expects %i arguments but %i were given"
-                   name n_param n_args)
-            else
-              let bindings = List.combine param args in
-              let new_env = create_env_from_pairs bindings in
-              check_deref_expr new_env e
-      | Sum _
-      | Record _
-      | Tuple _
-      | List _
-      | Option _
-      | Nullable _
-      | Shared _
-      | Tvar _ as e -> e
-      | Wrap _ -> assert false
+            let bindings = List.combine param args in
+            let new_env = create_env_from_pairs bindings in
+            check_deref_expr new_env e
+    | Sum _
+    | Record _
+    | Tuple _
+    | List _
+    | Option _
+    | Nullable _
+    | Shared _
+    | Tvar _ as e -> e
+    | Wrap _ -> assert false
   and check_deref_expr env e =
     if e = orig_e then
       (* cycle *)
@@ -270,14 +243,33 @@ let deref_expr def_tbl orig_e =
   in
   deref_expr Env.empty orig_e
 
-let report_structural_mismatches options def_tbl1 def_tbl2 shared_root_types =
+let report_structural_mismatches options def_tbl1 def_tbl2 shared_types =
   let get_expr1 e = deref_expr def_tbl1 e in
   let get_expr2 e = deref_expr def_tbl2 e in
   let findings : (string * finding) list ref = ref [] in
+  (*
+     Table of pairs of type expressions that were already compared or whose
+     comparison is in progress. This prevent against infinite expansion
+     of recursive types.
+  *)
+  let visited_tbl = Hashtbl.create 100 in
+  let was_visited def_name e1 e2 =
+    let key = (def_name, e1, e2) in
+    Hashtbl.mem visited_tbl key
+  in
+  let mark_visited def_name e1 e2 =
+    let key = (def_name, e1, e2) in
+    Hashtbl.replace visited_tbl key ()
+  in
   let cmp_expr def_name e1 e2 =
     let add x =
       findings := (def_name, x) :: !findings in
     let rec cmp_expr e1 e2 : unit =
+      if not (was_visited def_name e1 e2) then (
+        mark_visited def_name e1 e2;
+        really_cmp_expr e1 e2
+      )
+    and really_cmp_expr e1 e2 : unit =
       match get_expr1 e1, get_expr2 e2 with
       | Sum (loc1, cases1, _an1), Sum (loc2, cases2, _an2) ->
           (* TODO: compare JSON annotations an1 and an2 *)
@@ -541,7 +533,7 @@ then there's no problem and you should use
     let (loc1, (_name, param, _an), e1) = get_def def_tbl1 name in
     let (loc2, (_name, param, _an), e2) = get_def def_tbl2 name in
     cmp_expr name e1 e2
-  ) shared_root_types;
+  ) shared_types;
   !findings
 
 let finding_group (a : finding) =
@@ -612,14 +604,14 @@ let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   let defs2 = extract_normalized_defs body2 in
   let def_tbl1 = make_def_table defs1 in
   let def_tbl2 = make_def_table defs2 in
-  let root_types1 = get_root_types defs1 in
-  let root_types2 = get_root_types defs2 in
+  let type_names1 = get_type_names defs1 in
+  let type_names2 = get_type_names defs2 in
   let left_only, shared, right_only =
-    split_root_types root_types1 root_types2
+    split_types type_names1 type_names2
   in
   let findings = [
-    report_deleted_root_types defs1 left_only;
-    report_added_root_types defs2 right_only;
+    report_deleted_types defs1 left_only;
+    report_added_types defs2 right_only;
   ] in
   let findings =
     report_structural_mismatches options def_tbl1 def_tbl2

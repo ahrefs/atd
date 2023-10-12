@@ -10,7 +10,7 @@ let format_loc_text opt_loc =
   | None -> ""
   | Some loc -> Atd.Ast.string_of_loc loc ^ "\n"
 
-let format_incompatibility_text buf ((x : finding), affected_root_types) =
+let format_incompatibility_text buf ((x : finding), affected_types) =
   let is_certain =
     (* TODO: more clearly distinguish Warning from Error? *)
     match x.kind with
@@ -19,8 +19,8 @@ let format_incompatibility_text buf ((x : finding), affected_root_types) =
     | Missing_variant_argument _ -> true
     | Default_required _ -> false
     | Incompatible_type -> true
-    | Deleted_root_type -> false
-    | Added_root_type -> false
+    | Deleted_type -> false
+    | Added_type -> false
   in
   let dir =
     match x.direction, is_certain with
@@ -34,13 +34,13 @@ let format_incompatibility_text buf ((x : finding), affected_root_types) =
   bprintf buf "\
 %s:
 %s%s%s
-The following root types are affected:%s
+The following types are affected:%s
 "
     dir
     (format_loc_text x.location_old)
     (format_loc_text x.location_new)
     x.description
-    (affected_root_types
+    (affected_types
      |> List.map (fun name -> "\n  " ^ name)
      |> String.concat "")
 

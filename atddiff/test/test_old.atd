@@ -24,6 +24,13 @@ type unchanged_variant = [
 
 type old_name_for_unchanged_type = [ Thing ]
 
+(* Check that recursive definitions don't cause infinite loops or some
+   other problem. *)
+type unchanged_recursive = [ Cons of (int * unchanged_recursive) | Nil  ]
+
+type unchanged_recursive_a = [ A of unchanged_recursive_b ]
+type unchanged_recursive_b = [ B of unchanged_recursive_a ]
+
 (****************************************************************************)
 (* Type definitions with breaking changes *)
 (****************************************************************************)

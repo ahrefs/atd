@@ -6,8 +6,10 @@ DUNE ?= dune
 
 .PHONY: build
 build:
+	rm -f bin
 	$(DUNE) build
+	ln -s ../_build/install/default/bin .
 
 .PHONY: test
 test:
-	$(DUNE) runtest -f
+	$(MAKE) -C test

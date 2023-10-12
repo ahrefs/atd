@@ -62,6 +62,13 @@ type 'a type_arity_changed = ('a * 'a) list
 
 type 'a ignored_type_parameters_are_ok = 'a list
 
+(* Check that recursive definitions don't cause infinite loops or some
+   other problem. *)
+type unchanged_recursive = [ Cons of (int * unchanged_recursive) | Nil  ]
+
+type unchanged_recursive_a = [ A of unchanged_recursive_b ]
+type unchanged_recursive_b = [ B of unchanged_recursive_a ]
+
 (****************************************************************************)
 (* Type definitions with possible breaking changes *)
 (****************************************************************************)

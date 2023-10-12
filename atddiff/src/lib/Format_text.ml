@@ -21,7 +21,6 @@ let format_incompatibility_text buf ((x : finding), affected_root_types) =
     | Incompatible_type -> true
     | Deleted_root_type -> false
     | Added_root_type -> false
-    | Parametrized_root_type -> false
   in
   let dir =
     match x.direction, is_certain with

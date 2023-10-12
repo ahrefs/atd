@@ -12,7 +12,6 @@ type incompatibility_kind =
   | Incompatible_type
   | Deleted_root_type
   | Added_root_type
-  | Parametrized_root_type
 
 (*
    Important things we want to report:

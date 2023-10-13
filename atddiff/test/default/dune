@@ -140,3 +140,13 @@
  (deps unchanged.txt)
  (action (diff unchanged.expected.txt unchanged.txt)))
 
+(rule
+ (targets unchanged_renamed_nonroot_type.txt)
+ (deps unchanged_renamed_nonroot_type_old.atd unchanged_renamed_nonroot_type_new.atd)
+ (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success)))
+
+(rule
+ (alias runtest)
+ (deps unchanged_renamed_nonroot_type.txt)
+ (action (diff unchanged_renamed_nonroot_type.expected.txt unchanged_renamed_nonroot_type.txt)))
+

@@ -207,12 +207,17 @@ let normalize_type_params_in_definition (def : A.type_def) : A.type_def =
    a 'Name' if it helps.
 *)
 let deref_expr def_tbl orig_e =
+  let visited_names = ref [] in
+  let add_visited_name name =
+    visited_names := name :: !visited_names
+  in
   let rec deref_expr env e =
     match (e : A.type_expr) with
     | Name (_loc, (loc2, name, args), _an) ->
         if is_builtin_name name then
           e
-        else
+        else (
+          add_visited_name name;
           let (_loc, (_name, param, _an), e) = get_def def_tbl name in
           let e = replace_type_variables env e in
           let n_param = List.length param in
@@ -225,6 +230,7 @@ let deref_expr def_tbl orig_e =
             let bindings = List.combine param args in
             let new_env = create_env_from_pairs bindings in
             check_deref_expr new_env e
+        )
     | Sum _
     | Record _
     | Tuple _
@@ -241,7 +247,9 @@ let deref_expr def_tbl orig_e =
     else
       deref_expr env e
   in
-  deref_expr Env.empty orig_e
+  let e = deref_expr Env.empty orig_e in
+  let visited_names = !visited_names in
+  e, visited_names
 
 let unwrap_option (kind : A.field_kind) (e : A.type_expr) : A.type_expr =
   match kind with
@@ -267,9 +275,40 @@ let unwrap_option (kind : A.field_kind) (e : A.type_expr) : A.type_expr =
   | Required
   | With_default -> e
 
-let report_structural_mismatches options def_tbl1 def_tbl2 shared_types =
-  let get_expr1 e = deref_expr def_tbl1 e in
-  let get_expr2 e = deref_expr def_tbl2 e in
+(*
+   Compare the type definitions whose name hasn't changed from the old
+   version to the new one.
+
+   Along the way, we discover that this named type in the old version
+   is supposed to match that named type in the new version. Their name
+   can differ if the type was renamed or if the wrong type was used instead.
+   The pairs of named types that were compared is returned.
+
+   Return value: (findings, compared type names)
+*)
+let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
+  (string * finding) list * (string * string) list =
+  let compared_names = Hashtbl.create 100 in
+  let add_compared_names names1 names2 =
+    (* Add the cartesian product of names1 and names2.
+       names1 is a list of known aliases for a type expression in the
+       old ATD file. names2 is the same for the new ATD file.
+    *)
+    List.iter (fun name1 ->
+      List.iter (fun name2 ->
+        Hashtbl.replace compared_names (name1, name2) ()
+      ) names2
+    ) names1
+  in
+  let get_compared_names () =
+    Hashtbl.fold (fun pair () acc -> pair :: acc) compared_names []
+  in
+  let get_expr e1 e2 =
+    let e1, names1 = deref_expr def_tbl1 e1 in
+    let e2, names2 = deref_expr def_tbl2 e2 in
+    add_compared_names names1 names2;
+    e1, e2
+  in
   let findings : (string * finding) list ref = ref [] in
   (*
      Table of pairs of type expressions that were already compared or whose
@@ -294,7 +333,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types =
         really_cmp_expr e1 e2
       )
     and really_cmp_expr e1 e2 : unit =
-      match get_expr1 e1, get_expr2 e2 with
+      match get_expr e1 e2 with
       | Sum (loc1, cases1, _an1), Sum (loc2, cases2, _an2) ->
           (* TODO: compare JSON annotations an1 and an2 *)
           cmp_variants loc1 loc2 cases1 cases2
@@ -562,7 +601,7 @@ then there's no problem and you should use
     let (loc2, (_name, param, _an), e2) = get_def def_tbl2 name in
     cmp_expr name e1 e2
   ) shared_types;
-  !findings
+  !findings, get_compared_names ()
 
 let finding_group (a : finding) =
   match a.location_old, a.location_new with
@@ -637,14 +676,26 @@ let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   let left_only, shared, right_only =
     split_types type_names1 type_names2
   in
+  (* We return the pairs of type names that were discovered during
+     the comparison, informing us about renamings. *)
+  let findings, compared_name_pairs =
+    report_structural_mismatches options def_tbl1 def_tbl2
+      (Strings.elements shared)
+  in
+  let shared_left_names, shared_right_names =
+    List.split compared_name_pairs
+  in
+  let left_only =
+    Strings.diff left_only (Strings.of_list shared_left_names)
+  in
+  let right_only =
+    Strings.diff right_only (Strings.of_list shared_right_names)
+  in
   let findings = [
     report_deleted_types defs1 left_only;
     report_added_types defs2 right_only;
-  ] in
-  let findings =
-    report_structural_mismatches options def_tbl1 def_tbl2
-      (Strings.elements shared)
-    :: findings
+    findings
+  ]
   in
   findings
   |> List.flatten

@@ -1,0 +1,7 @@
+type root = {
+  field: not_a_root_type_renamed list;
+}
+
+type not_a_root_type_renamed = not_a_root_type2_renamed
+
+type not_a_root_type2_renamed = [ A ]

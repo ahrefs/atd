@@ -152,7 +152,7 @@ let man = [
 
   `S Manpage.s_description;  (* standard 'DESCRIPTION' section *)
   `P "Atddiff compares two versions of the same ATD file and reports \
-      changes that cause some incompatibilities. \
+      changes in JSON data that can cause some incompatibilities. \
       Incompatibilities are of two kinds: forward and backward. \
       Backward compatibility refers to the ability to read older data \
       or data produced by an older implementation using a newer \

@@ -29,7 +29,13 @@ let compare_files
       json_defaults_old;
       json_defaults_new
     } in
-    Compare.asts options ast1 ast2 in
-  match output_format with
-  | Text -> Format_text.to_string res
-  | JSON -> format_json res
+    Compare.asts options ast1 ast2
+  in
+  match res with
+  | [] -> Ok ()
+  | res ->
+      Error (
+        match output_format with
+        | Text -> Format_text.to_string res
+        | JSON -> format_json res
+      )

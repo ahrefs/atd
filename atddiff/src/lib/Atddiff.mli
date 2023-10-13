@@ -16,7 +16,7 @@ val compare_files :
   ?json_defaults_old:bool ->
   ?json_defaults_new:bool ->
   ?output_format:output_format ->
-  string -> string -> string
+  string -> string -> (unit, string) Result.t
 
 (* Version of the atddiff library and executable *)
 val version : string

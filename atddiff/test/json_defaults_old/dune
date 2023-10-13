@@ -3,7 +3,7 @@
 (rule
  (targets backward_incompatible_record_if_implicit_defaults.txt)
  (deps backward_incompatible_record_if_implicit_defaults_old.atd backward_incompatible_record_if_implicit_defaults_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} --json-defaults-old)))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success --json-defaults-old)))
 
 (rule
  (alias runtest)
@@ -13,7 +13,7 @@
 (rule
  (targets forward_incompatible_record_if_implicit_defaults.txt)
  (deps forward_incompatible_record_if_implicit_defaults_old.atd forward_incompatible_record_if_implicit_defaults_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} --json-defaults-old)))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success --json-defaults-old)))
 
 (rule
  (alias runtest)

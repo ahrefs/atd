@@ -52,18 +52,18 @@ folders="
 "
 
 for folder in $folders; do
-  atddiff_options=""
+  atddiff_options="--exit-success"
   case "$folder" in
     default)
       ;;
     json_defaults)
-      atddiff_options="--json-defaults"
+      atddiff_options="--exit-success --json-defaults"
       ;;
     json_defaults_old)
-      atddiff_options="--json-defaults-old"
+      atddiff_options="--exit-success --json-defaults-old"
       ;;
     json_defaults_new)
-      atddiff_options="--json-defaults-new"
+      atddiff_options="--exit-success --json-defaults-new"
       ;;
     *)
       echo "Error: Unknown atddiff command for test folder $folder" >&2

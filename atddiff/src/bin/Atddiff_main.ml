@@ -11,13 +11,29 @@ type conf = {
   out_file: string option;
   json_defaults_old: bool;
   json_defaults_new: bool;
+  exit_success: bool;
   version: bool;
 }
+
+let ok_exit = 0
+let error_exit = 1
+let bug_exit = 2
+let finding_exit = 3
+
+let exit_info = [
+  ok_exit, "atddiff completed successfully and either found nothing to report \
+            or found issues but the --exit-success option was on.";
+  error_exit, "User error: atddiff failed due to invalid command-line \
+               options, missing files etc.";
+  bug_exit, "Internal error: atddiff failed due to a bug (including \
+             uncaught exceptions).";
+  finding_exit, "atddiff successfully found one or more issues to report.";
+] |> List.map (fun (code, doc) -> Cmd.Exit.info ~doc code)
 
 let run conf =
   if conf.version then (
     print_endline Atddiff.version;
-    exit 0
+    exit ok_exit
   )
   else
     let out_data =
@@ -25,13 +41,22 @@ let run conf =
         ~json_defaults_old:conf.json_defaults_old
         ~json_defaults_new:conf.json_defaults_new
         conf.old_file conf.new_file in
-    match conf.out_file with
-    | None -> print_string out_data
-    | Some out_file ->
-       let oc = open_out_bin out_file in
-       Fun.protect
-         ~finally:(fun () -> close_out_noerr oc)
-         (fun () -> output_string oc out_data)
+    let exit_code, data =
+      match out_data with
+      | Ok () ->
+          ok_exit, ""
+      | Error data ->
+          (if conf.exit_success then ok_exit else finding_exit), data
+    in
+    (match conf.out_file with
+     | None -> print_string data
+     | Some out_file ->
+         let oc = open_out_bin out_file in
+         Fun.protect
+           ~finally:(fun () -> close_out_noerr oc)
+           (fun () -> output_string oc data)
+    );
+    exit exit_code
 
 (***************************************************************************)
 (* Command-line processing *)
@@ -39,7 +64,7 @@ let run conf =
 
 let error msg =
   eprintf "Error: %s\n%!" msg;
-  exit 1
+  exit error_exit
 
 let old_file_term =
   let info =
@@ -99,10 +124,20 @@ let json_defaults_new_term =
   in
   Arg.value (Arg.flag info)
 
+let exit_success_term =
+  let info =
+    Arg.info ["exit-success"]
+      ~doc:(sprintf "Exit with success status %i instead of %i if there are \
+                     type incompatibilities to report."
+              ok_exit
+              finding_exit)
+  in
+  Arg.value (Arg.flag info)
+
 let version_term =
   let info =
     Arg.info ["version"]
-      ~doc:"Prints the version of atddiff and exits"
+      ~doc:"Print the version of atddiff and exits."
   in
   Arg.value (Arg.flag info)
 
@@ -150,7 +185,7 @@ let cmdline_term run =
   let combine
       old_file new_file out_file
       json_defaults json_defaults_old json_defaults_new
-      version =
+      exit_success version =
     let json_defaults_old = json_defaults_old || json_defaults in
     let json_defaults_new = json_defaults_new || json_defaults in
     run {
@@ -159,6 +194,7 @@ let cmdline_term run =
       out_file;
       json_defaults_old;
       json_defaults_new;
+      exit_success;
       version;
     }
   in
@@ -169,6 +205,7 @@ let cmdline_term run =
         $ json_defaults_term
         $ json_defaults_old_term
         $ json_defaults_new_term
+        $ exit_success_term
         $ version_term
        )
 
@@ -176,6 +213,7 @@ let parse_command_line_and_run run =
   let info =
     Cmd.info
       ~doc
+      ~exits:exit_info
       ~man
       "atddiff"
   in

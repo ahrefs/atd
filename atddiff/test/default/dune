@@ -3,7 +3,7 @@
 (rule
  (targets backward_incompatible_record_if_implicit_defaults.txt)
  (deps backward_incompatible_record_if_implicit_defaults_old.atd backward_incompatible_record_if_implicit_defaults_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -13,7 +13,7 @@
 (rule
  (targets backward_incompatible_record.txt)
  (deps backward_incompatible_record_old.atd backward_incompatible_record_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -23,7 +23,7 @@
 (rule
  (targets backward_incompatible_variant.txt)
  (deps backward_incompatible_variant_old.atd backward_incompatible_variant_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -33,7 +33,7 @@
 (rule
  (targets forward_incompatible_record_if_implicit_defaults.txt)
  (deps forward_incompatible_record_if_implicit_defaults_old.atd forward_incompatible_record_if_implicit_defaults_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -43,7 +43,7 @@
 (rule
  (targets forward_incompatible_record.txt)
  (deps forward_incompatible_record_old.atd forward_incompatible_record_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -53,7 +53,7 @@
 (rule
  (targets forward_incompatible_variant.txt)
  (deps forward_incompatible_variant_old.atd forward_incompatible_variant_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -63,7 +63,7 @@
 (rule
  (targets ignored_type_parameters_are_ok.txt)
  (deps ignored_type_parameters_are_ok_old.atd ignored_type_parameters_are_ok_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -73,7 +73,7 @@
 (rule
  (targets json_repr_change.txt)
  (deps json_repr_change_old.atd json_repr_change_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -83,7 +83,7 @@
 (rule
  (targets recursive.txt)
  (deps recursive_old.atd recursive_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -93,7 +93,7 @@
 (rule
  (targets recursive_types.txt)
  (deps recursive_types_old.atd recursive_types_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -103,7 +103,7 @@
 (rule
  (targets swapped_type_parameters.txt)
  (deps swapped_type_parameters_old.atd swapped_type_parameters_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -113,7 +113,7 @@
 (rule
  (targets type_arity_change.txt)
  (deps type_arity_change_old.atd type_arity_change_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -123,7 +123,7 @@
 (rule
  (targets type_name_change.txt)
  (deps type_name_change_old.atd type_name_change_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)
@@ -133,7 +133,7 @@
 (rule
  (targets unchanged.txt)
  (deps unchanged_old.atd unchanged_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets})))
+ (action (run %{bin:atddiff} %{deps} -o %{targets} )))
 
 (rule
  (alias runtest)

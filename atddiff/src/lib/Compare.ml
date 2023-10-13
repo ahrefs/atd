@@ -243,6 +243,30 @@ let deref_expr def_tbl orig_e =
   in
   deref_expr Env.empty orig_e
 
+let unwrap_option (kind : A.field_kind) (e : A.type_expr) : A.type_expr =
+  match kind with
+  | Optional ->
+      (match e with
+      | Option (_, e, _)
+      | Name (_, (_, "option", [e]), _) -> e
+      | Sum _
+      | Record _
+      | Tuple _
+      | List _
+      | Nullable _
+      | Shared _
+      | Wrap _
+      | Name _
+      | Tvar _ ->
+          (* It's an error but we let it be.
+             Maybe atdgen supports having a name that's
+             an alias for an option type; we shouldn't support this in
+             new implementations. *)
+          e
+      )
+  | Required
+  | With_default -> e
+
 let report_structural_mismatches options def_tbl1 def_tbl2 shared_types =
   let get_expr1 e = deref_expr def_tbl1 e in
   let get_expr2 e = deref_expr def_tbl2 e in
@@ -451,6 +475,10 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types =
       |> List.iter (fun name ->
         let loc1, (_, kind1, _), e1 = List.assoc name named1 in
         let loc2, (_, kind2, _), e2 = List.assoc name named2 in
+        (* The type of an optional field '?foo: int option' is considered
+           to be 'int' rather than 'int option' *)
+        let e1 = unwrap_option kind1 e1 in
+        let e2 = unwrap_option kind2 e2 in
         (match kind1, kind2 with
          | (Optional | With_default), (Optional | With_default) -> ()
          | Required, Required -> ()

@@ -1,0 +1,12 @@
+Possible backward incompatibility:
+File "unchanged_old.atd", line 18, characters 0-44
+The definition for type 'old_name_for_unchanged_type' no longer exists.
+The following types are affected:
+  old_name_for_unchanged_type
+
+Possible forward incompatibility:
+File "unchanged_new.atd", line 19, characters 0-44
+There is a new type named 'new_name_for_unchanged_type'.
+The following types are affected:
+  new_name_for_unchanged_type
+

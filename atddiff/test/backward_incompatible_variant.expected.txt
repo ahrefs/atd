@@ -1,0 +1,6 @@
+Backward incompatibility:
+File "backward_incompatible_variant_old.atd", line 1, characters 43-44
+Case 'B' disappeared.
+The following types are affected:
+  backward_incompatible_variant
+

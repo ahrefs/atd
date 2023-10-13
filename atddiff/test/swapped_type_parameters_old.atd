@@ -1,0 +1,3 @@
+type ('k, 'v) unchanged_type_parameters = { x: ('k * 'v) list }
+
+type ('k, 'v) swapped_type_parameters = { x: ('k * 'v) list }

@@ -1,0 +1,11 @@
+Possible forward incompatibility:
+File "forward_incompatible_record_if_implicit_defaults_old.atd", line 2, characters 2-23
+File "forward_incompatible_record_if_implicit_defaults_new.atd", line 2, characters 2-24
+Formerly required field 'becomes_optional' is now optional but has a default value.
+You must ensure that new implementations always populate the JSON field
+with a value (using atdgen's option -j-defaults or equivalent) so that older
+implementations can read newer data. If this is already the case, use
+'atddiff --json-defaults-old' to disable this warning.
+The following types are affected:
+  forward_incompatible_record_if_implicit_defaults
+

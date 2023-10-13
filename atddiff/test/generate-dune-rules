@@ -12,6 +12,10 @@ cat > dune <<EOF
 ; For adding tests, read the instructions in the Makefile.
 EOF
 for name in $test_names; do
+  if ! [[ -e "$name"_new.atd ]]; then
+    echo "Missing test file '${name}_new.atd'" >&2
+    exit 1
+  fi
   cat >> dune <<EOF
 (rule
  (targets $name.txt)

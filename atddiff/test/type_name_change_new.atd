@@ -1,0 +1,7 @@
+(* Not detected as a rename but as a deleted/created type name. *)
+type new_name_for_root_type = int
+
+(* Undetected incompatibility. Reported as a deleted/created root type name. *)
+type new_name_for_root_type_with_changes = {
+  x: float;
+}

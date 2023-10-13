@@ -1,0 +1,7 @@
+Incompatibility in both directions:
+File "type_arity_change_old.atd", line 1, characters 0-48
+File "type_arity_change_new.atd", line 1, characters 0-42
+Incompatible type variables are being used.
+The following types are affected:
+  type_arity_change
+

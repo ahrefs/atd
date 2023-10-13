@@ -1,0 +1,18 @@
+(****************************************************************************)
+(* Type definitions without breaking changes in both directions *)
+(****************************************************************************)
+
+type unchanged_record = {
+  a: int;
+  ?b: int option;
+  ~c: int list;
+  d <old>: int <old2>;
+  renamed_field_type: old_name_for_unchanged_type;
+}
+
+type unchanged_variant = [
+  | A
+  | B of int
+]
+
+type old_name_for_unchanged_type = [ Thing ]

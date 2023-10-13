@@ -496,7 +496,7 @@ Formerly required field '%s' is now optional but has a default value.
 You must ensure that new implementations always populate the JSON field
 with a value (using atdgen's option -j-defaults or equivalent) so that older
 implementations can read newer data. If this is already the case, use
-'atddiff --json-defaults-old' to disable this warning."
+'atddiff --json-defaults-new' to disable this warning."
                   name
             }
          | Required, Optional ->
@@ -522,7 +522,7 @@ Newly required field '%s' was optional but had a default value.
 If old implementations in use always populate the JSON field
 with a value (using atdgen's option -j-defaults or equivalent),
 then there's no problem and you should use
-'atddiff --json-defaults-new' to disable this warning."
+'atddiff --json-defaults-old' to disable this warning."
                   name
             }
          | Optional, Required ->

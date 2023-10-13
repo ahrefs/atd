@@ -9,6 +9,7 @@ generate_in_folder() {
   # available variables: $folder, $atddiff_options
 
   echo "Generating 'dune' file in $(pwd)"
+  echo "  atddiff options: $atddiff_options"
 
   shopt -s failglob
   test_names=$(for x in *_old.atd; do echo $(basename "$x" _old.atd); done)
@@ -46,6 +47,8 @@ EOF
 folders="
   default
   json_defaults
+  json_defaults_old
+  json_defaults_new
 "
 
 for folder in $folders; do
@@ -55,6 +58,12 @@ for folder in $folders; do
       ;;
     json_defaults)
       atddiff_options="--json-defaults"
+      ;;
+    json_defaults_old)
+      atddiff_options="--json-defaults-old"
+      ;;
+    json_defaults_new)
+      atddiff_options="--json-defaults-new"
       ;;
     *)
       echo "Error: Unknown atddiff command for test folder $folder" >&2

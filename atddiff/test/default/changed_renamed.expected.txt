@@ -1,0 +1,9 @@
+Incompatibility in both directions:
+File "changed_renamed_old.atd", line 10, characters 22-26
+File "changed_renamed_new.atd", line 10, characters 22-28
+Type names 'int' and 'float' are not the same and may not be compatible.
+The following types are affected:
+  new_name
+  old_name
+  root_type
+

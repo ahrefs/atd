@@ -1,0 +1,10 @@
+(*
+   The root type hasn't changed its name but a field uses
+   a type that was renamed and has an incompatibility.
+*)
+
+type root_type = {
+  field: old_name;
+}
+
+type old_name = [ A of int ]

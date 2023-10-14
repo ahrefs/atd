@@ -31,6 +31,16 @@
  (action (diff backward_incompatible_variant.expected.txt backward_incompatible_variant.txt)))
 
 (rule
+ (targets changed_renamed.txt)
+ (deps changed_renamed_old.atd changed_renamed_new.atd)
+ (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success)))
+
+(rule
+ (alias runtest)
+ (deps changed_renamed.txt)
+ (action (diff changed_renamed.expected.txt changed_renamed.txt)))
+
+(rule
  (targets forward_incompatible_record_if_implicit_defaults.txt)
  (deps forward_incompatible_record_if_implicit_defaults_old.atd forward_incompatible_record_if_implicit_defaults_new.atd)
  (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success)))

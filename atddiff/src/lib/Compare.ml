@@ -95,7 +95,7 @@ let split_types types1 types2 =
 let report_deleted_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
-      Some (name, {
+      Some (([name], []), {
         direction = Backward;
         kind = Deleted_type;
         location_old = Some loc;
@@ -111,7 +111,7 @@ let report_deleted_types defs name_set =
 let report_added_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
-      Some (name, {
+      Some (([], [name]), {
         direction = Forward;
         kind = Deleted_type;
         location_old = None;
@@ -275,6 +275,17 @@ let unwrap_option (kind : A.field_kind) (e : A.type_expr) : A.type_expr =
   | Required
   | With_default -> e
 
+let deduplicate_list (xs : 'a list) : 'a list =
+  let tbl = Hashtbl.create (2 * List.length xs) in
+  List.filter (fun k ->
+    if Hashtbl.mem tbl k then
+      false
+    else (
+      Hashtbl.add tbl k ();
+      true
+    )
+  ) xs
+
 (*
    Compare the type definitions whose name hasn't changed from the old
    version to the new one.
@@ -284,77 +295,79 @@ let unwrap_option (kind : A.field_kind) (e : A.type_expr) : A.type_expr =
    can differ if the type was renamed or if the wrong type was used instead.
    The pairs of named types that were compared is returned.
 
-   Return value: (findings, compared type names)
+   Return value: (findings with affected type names, all visited type names)
 *)
 let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
-  (string * finding) list * (string * string) list =
-  let compared_names = Hashtbl.create 100 in
-  let add_compared_names names1 names2 =
-    (* Add the cartesian product of names1 and names2.
-       names1 is a list of known aliases for a type expression in the
-       old ATD file. names2 is the same for the new ATD file.
-    *)
-    List.iter (fun name1 ->
-      List.iter (fun name2 ->
-        Hashtbl.replace compared_names (name1, name2) ()
-      ) names2
-    ) names1
-  in
-  let get_compared_names () =
-    Hashtbl.fold (fun pair () acc -> pair :: acc) compared_names []
+  ((string list * string list) * finding) list
+  * (string list * string list) =
+  let visited_names1 = ref [] in
+  let visited_names2 = ref [] in
+  let get_visited_names () =
+    deduplicate_list !visited_names1, deduplicate_list !visited_names2
   in
   let get_expr e1 e2 =
     let e1, names1 = deref_expr def_tbl1 e1 in
     let e2, names2 = deref_expr def_tbl2 e2 in
-    add_compared_names names1 names2;
-    e1, e2
+    visited_names1 := names1 @ !visited_names1;
+    visited_names2 := names2 @ !visited_names2;
+    e1, e2, (names1, names2)
   in
-  let findings : (string * finding) list ref = ref [] in
-  (*
-     Table of pairs of type expressions that were already compared or whose
-     comparison is in progress. This prevent against infinite expansion
-     of recursive types.
-  *)
-  let visited_tbl = Hashtbl.create 100 in
-  let was_visited def_name e1 e2 =
-    let key = (def_name, e1, e2) in
-    Hashtbl.mem visited_tbl key
-  in
-  let mark_visited def_name e1 e2 =
-    let key = (def_name, e1, e2) in
-    Hashtbl.replace visited_tbl key ()
+  let findings : ((string list * string list) * finding) list ref = ref [] in
+  let extend_name_stacks (names1, names2) (stack1, stack2) =
+    (names1 @ stack1, names2 @stack2)
   in
   let cmp_expr def_name e1 e2 =
-    let add x =
-      findings := (def_name, x) :: !findings in
-    let rec cmp_expr e1 e2 : unit =
+    (*
+       Table of pairs of type expressions that were already compared or whose
+       comparison is in progress. This prevent against infinite expansion
+       of recursive types.
+    *)
+    let visited_tbl = Hashtbl.create 100 in
+    let was_visited def_name e1 e2 =
+      let key = (def_name, e1, e2) in
+      Hashtbl.mem visited_tbl key
+    in
+    let mark_visited def_name e1 e2 =
+      let key = (def_name, e1, e2) in
+      Hashtbl.replace visited_tbl key ()
+    in
+    let add stacks x =
+      findings := (stacks, x) :: !findings in
+    (*
+       'stacks' is the pair of stacks of type names visited starting from
+       the root definition. They're the type names affected by the finding.
+    *)
+    let rec cmp_expr (stacks : (string list * string list))
+        e1 e2 : unit =
       if not (was_visited def_name e1 e2) then (
         mark_visited def_name e1 e2;
-        really_cmp_expr e1 e2
+        really_cmp_expr stacks e1 e2
       )
-    and really_cmp_expr e1 e2 : unit =
-      match get_expr e1 e2 with
+    and really_cmp_expr stacks e1 e2 : unit =
+      let e1, e2, affected_names = get_expr e1 e2 in
+      let stacks = extend_name_stacks affected_names stacks in
+      match e1, e2 with
       | Sum (loc1, cases1, _an1), Sum (loc2, cases2, _an2) ->
           (* TODO: compare JSON annotations an1 and an2 *)
-          cmp_variants loc1 loc2 cases1 cases2
+          cmp_variants stacks loc1 loc2 cases1 cases2
       | Record (loc1, fields1, an1), Record (loc2, fields2, an2) ->
           (* TODO: compare JSON annotations an1 and an2 *)
-          cmp_fields loc1 loc2 fields1 fields2
+          cmp_fields stacks loc1 loc2 fields1 fields2
       | Tuple (loc1, cells1, an1), Tuple (loc2, cells2, an2) ->
           (* TODO: compare JSON annotations an1 and an2? *)
-          cmp_tuple_cells loc1 loc2 cells1 cells2
+          cmp_tuple_cells stacks loc1 loc2 cells1 cells2
       | List (loc1, e1, an1), List (loc2, e2, an2) ->
           (* TODO: compare JSON annotations an1 and an2? *)
-          cmp_expr e1 e2
+          cmp_expr stacks e1 e2
       | Option (loc1, e1, an1), Option (loc2, e2, an2)
       | Nullable (loc1, e1, an1), Nullable (loc2, e2, an2)
       | Shared (loc1, e1, an1), Shared (loc2, e2, an2) ->
           (* TODO: compare JSON annotations an1 and an2? *)
-          cmp_expr e1 e2
+          cmp_expr stacks e1 e2
       | Name (_, (loc1, name1, args1), _an1),
         Name (_, (loc2, name2, args2), _an2) ->
           if name1 <> name2 then
-            add {
+            add stacks {
               direction = Both;
               kind = Incompatible_type;
               location_old = Some loc1;
@@ -371,7 +384,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
           (* Type variables were normalized so they can be compared
              directly. *)
           if var1 <> var2 then
-            add {
+            add stacks {
               direction = Both;
               kind = Incompatible_type;
               location_old = Some loc1;
@@ -388,7 +401,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Shared _
         | Name _
         | Tvar _) as e1, e2 ->
-          add {
+          add stacks {
             direction = Both;
             kind = Incompatible_type;
             location_old = Some (A.loc_of_type_expr e1);
@@ -397,7 +410,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
               sprintf "Incompatible kinds of types: %s is now %s."
                 (kind_of_expr e1) (a_kind_of_expr e2);
           }
-    and cmp_variants loc1 loc2 cases1 cases2 =
+    and cmp_variants stacks loc1 loc2 cases1 cases2 =
       let with_names cases =
         (* TODO: apply annotations *)
         cases
@@ -417,7 +430,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       left_only
       |> List.iter (fun name ->
         let loc, (_name, _an), _opt_e = List.assoc name named1 in
-        add {
+        add stacks {
           direction = Backward;
           kind = Missing_variant { variant_name = name };
           location_old = Some loc;
@@ -428,7 +441,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       right_only
       |> List.iter (fun name ->
         let loc, (_name, _an), _opt_e = List.assoc name named2 in
-        add {
+        add stacks {
           direction = Backward;
           kind = Missing_variant { variant_name = name };
           location_old = None;
@@ -443,9 +456,9 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         match e1, e2 with
         | None, None -> ()
         | Some e1, Some e2 ->
-            cmp_expr e1 e2
+            cmp_expr stacks e1 e2
         | Some _, None ->
-            add {
+            add stacks {
               direction = Both;
               kind = Missing_variant_argument { variant_name = name };
               location_old = Some loc1;
@@ -454,7 +467,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
                 sprintf "Case '%s' no longer has an argument." name
             }
         | None, Some _ ->
-            add {
+            add stacks {
               direction = Both;
               kind = Missing_variant_argument { variant_name = name };
               location_old = Some loc1;
@@ -463,7 +476,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
                 sprintf "Case '%s' used to not have an argument." name
             }
       )
-    and cmp_fields loc1 loc2 fields1 fields2 =
+    and cmp_fields stacks loc1 loc2 fields1 fields2 =
       let with_names fields =
         (* TODO: apply annotations *)
         fields
@@ -487,7 +500,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Optional
         | With_default -> ()
         | Required ->
-            add {
+            add stacks {
               direction = Forward;
               kind = Missing_field { field_name = name };
               location_old = Some loc;
@@ -502,7 +515,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Optional
         | With_default -> ()
         | Required ->
-            add {
+            add stacks {
               direction = Backward;
               kind = Missing_field { field_name = name };
               location_old = None;
@@ -524,7 +537,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
          | Required, With_default
            when options.json_defaults_new -> ()
          | Required, With_default ->
-             add {
+             add stacks {
               direction = Forward;
               kind = Default_required { field_name = name };
               location_old = Some loc1;
@@ -539,7 +552,7 @@ implementations can read newer data. If this is already the case, use
                   name
             }
          | Required, Optional ->
-             add {
+             add stacks {
               direction = Forward;
               kind = Missing_field { field_name = name };
               location_old = Some loc1;
@@ -550,7 +563,7 @@ implementations can read newer data. If this is already the case, use
          | With_default, Required
            when options.json_defaults_old -> ()
          | With_default, Required ->
-             add {
+             add stacks {
               direction = Backward;
               kind = Default_required { field_name = name };
               location_old = Some loc1;
@@ -565,7 +578,7 @@ then there's no problem and you should use
                   name
             }
          | Optional, Required ->
-             add {
+             add stacks {
               direction = Backward;
               kind = Missing_field { field_name = name };
               location_old = Some loc1;
@@ -574,14 +587,14 @@ then there's no problem and you should use
                 sprintf "Formerly optional field '%s' is now required." name
             }
         );
-        cmp_expr e1 e2
+        cmp_expr stacks e1 e2
       )
 
-    and cmp_tuple_cells loc1 loc2 cells1 cells2 =
+    and cmp_tuple_cells stacks loc1 loc2 cells1 cells2 =
       let n1 = List.length cells1 in
       let n2 = List.length cells2 in
       if n1 <> n2 then
-        add {
+        add stacks {
           direction = Both;
           kind = Incompatible_type;
           location_old = Some (A.loc_of_type_expr e1);
@@ -591,17 +604,22 @@ then there's no problem and you should use
       else
         List.iter2 (fun (_loc1, e1, _an1) (_loc2, e2, _an2) ->
           (* TODO: honor annotations? *)
-          cmp_expr e1 e2
+          cmp_expr stacks e1 e2
         ) cells1 cells2
     in
-    cmp_expr e1 e2
+    let stacks = ([def_name], [def_name]) in
+    cmp_expr stacks e1 e2;
+    get_visited_names ()
   in
-  List.iter (fun name ->
-    let (loc1, (_name, param, _an), e1) = get_def def_tbl1 name in
-    let (loc2, (_name, param, _an), e2) = get_def def_tbl2 name in
-    cmp_expr name e1 e2
-  ) shared_types;
-  !findings, get_compared_names ()
+  let visited_names =
+    List.fold_left (fun (acc1, acc2) name ->
+      let (loc1, (_name, param, _an), e1) = get_def def_tbl1 name in
+      let (loc2, (_name, param, _an), e2) = get_def def_tbl2 name in
+      let visited1, visited2 = cmp_expr name e1 e2 in
+      (visited1 @ acc1, visited2 @ acc2)
+    ) ([], []) shared_types
+  in
+  !findings, visited_names
 
 let finding_group (a : finding) =
   match a.location_old, a.location_new with
@@ -640,15 +658,26 @@ let compare_findings (a : finding) (b : finding) =
 let group_and_sort_findings xs =
   let tbl = Hashtbl.create 100 in
   xs
-  |> List.iter (fun (name, finding) ->
+  |> List.iter (fun ((affected_names1, affected_names2), finding) ->
     match Hashtbl.find_opt tbl finding with
     | None ->
-        Hashtbl.add tbl finding (ref (Strings.singleton name))
-    | Some names ->
-        names := Strings.add name !names
+        Hashtbl.add tbl finding (ref (Strings.of_list affected_names1,
+                                      Strings.of_list affected_names2))
+    | Some r ->
+        let acc1, acc2 = !r in
+        r := (Strings.union (Strings.of_list affected_names1) acc1,
+              Strings.union (Strings.of_list affected_names2) acc2)
   );
-  Hashtbl.fold (fun finding names acc ->
-    (finding, Strings.elements !names) :: acc) tbl []
+  Hashtbl.fold (fun finding r acc ->
+    let affected_names1, affected_names2 = !r in
+    (* For now, we report old and new type names as a single list.
+       We could be more precise about equivalence between old
+       and new names. Would it help the user? *)
+    let all_affected_names = Strings.union affected_names1 affected_names2 in
+    (finding,
+     Strings.elements all_affected_names)
+    :: acc)
+    tbl []
   |> List.sort (fun (a, _) (b, _) -> compare_findings a b)
 
 (*
@@ -678,25 +707,22 @@ let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   in
   (* We return the pairs of type names that were discovered during
      the comparison, informing us about renamings. *)
-  let findings, compared_name_pairs =
+  let findings, (visited_names1, visited_names2) =
     report_structural_mismatches options def_tbl1 def_tbl2
       (Strings.elements shared)
   in
-  let shared_left_names, shared_right_names =
-    List.split compared_name_pairs
-  in
   let left_only =
-    Strings.diff left_only (Strings.of_list shared_left_names)
+    Strings.diff left_only (Strings.of_list visited_names1)
   in
   let right_only =
-    Strings.diff right_only (Strings.of_list shared_right_names)
+    Strings.diff right_only (Strings.of_list visited_names2)
   in
   let findings = [
     report_deleted_types defs1 left_only;
     report_added_types defs2 right_only;
     findings
   ]
+    |> List.flatten
   in
   findings
-  |> List.flatten
   |> group_and_sort_findings

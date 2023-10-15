@@ -1,0 +1,11 @@
+Possible backward incompatibility:
+File "backward_incompatible_record_if_implicit_defaults_old.atd", line 2, characters 2-24
+File "backward_incompatible_record_if_implicit_defaults_new.atd", line 2, characters 2-23
+Newly required field 'becomes_required' was optional but had a default value.
+If old implementations in use always populate the JSON field
+with a value (using atdgen's option -j-defaults or equivalent),
+then there's no problem and you should use
+'atddiff --json-defaults-old' to disable this warning.
+The following types are affected:
+  backward_incompatible_record_if_implicit_defaults
+

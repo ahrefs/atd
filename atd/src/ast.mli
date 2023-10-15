@@ -1,6 +1,6 @@
 (** Abstract syntax tree (AST) representing ATD data *)
 
-type loc = Lexing.position * Lexing.position
+type loc = Loc.t
     (** A location in the source code. *)
 
 exception Atd_error of string

@@ -1,0 +1,4 @@
+type backward_incompatible_record = {
+  added_field: int;
+  becomes_required: int;
+}

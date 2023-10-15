@@ -1,0 +1,3 @@
+type forward_incompatible_record_if_implicit_defaults = {
+  ~becomes_optional: int;
+}

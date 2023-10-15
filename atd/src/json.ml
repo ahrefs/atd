@@ -223,6 +223,25 @@ let get_json_list an =
     ~field:"repr"
     an
 
+(*
+   Return true iff the type expression is of the form:
+
+     '(string * _) list <json repr="object">'
+*)
+let is_json_map (list_expr : Ast.type_expr) =
+  match list_expr with
+  | List (_, e, an) ->
+      (match e, get_json_list an with
+       | Tuple (_,
+                [
+                  (_, Name (_, (_, "string", _), _), _);
+                  _
+                ],
+                _), Object -> true
+       | _ -> false
+      )
+  | _ -> false
+
 let get_json_cons default an =
   Annot.get_field
     ~parse:(fun s -> Some s)

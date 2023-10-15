@@ -66,7 +66,7 @@ let error msg =
   eprintf "Error: %s\n%!" msg;
   exit error_exit
 
-let old_file_term =
+let old_file_term : string Term.t =
   let info =
     Arg.info []
       ~docv:"OLD_ATD_FILE"
@@ -74,7 +74,7 @@ let old_file_term =
   in
   Arg.required (Arg.pos 0 (Arg.some Arg.file) None info)
 
-let new_file_term =
+let new_file_term : string Term.t =
   let info =
     Arg.info []
       ~docv:"NEW_ATD_FILE"
@@ -82,7 +82,7 @@ let new_file_term =
   in
   Arg.required (Arg.pos 1 (Arg.some Arg.file) None info)
 
-let out_file_term =
+let out_file_term : string option Term.t =
   let info =
     Arg.info ["o"; "output-file"]
       ~docv:"OUTPUT_FILE"
@@ -91,14 +91,14 @@ let out_file_term =
   in
   Arg.value (Arg.opt (Arg.some Arg.string) None info)
 
-let json_defaults_term =
+let json_defaults_term : bool Term.t =
   let info =
     Arg.info ["json-defaults"]
       ~doc:"Shorthand for '--json-defaults-old --json-defaults-new'."
   in
   Arg.value (Arg.flag info)
 
-let json_defaults_old_term =
+let json_defaults_old_term : bool Term.t =
   let info =
     Arg.info ["json-defaults-old"]
       ~doc:"Assume that old implementations emitting JSON populate \
@@ -111,7 +111,7 @@ let json_defaults_old_term =
   in
   Arg.value (Arg.flag info)
 
-let json_defaults_new_term =
+let json_defaults_new_term : bool Term.t =
   let info =
     Arg.info ["json-defaults-new"]
       ~doc:"Assume that new implementations emitting JSON populate \
@@ -124,7 +124,7 @@ let json_defaults_new_term =
   in
   Arg.value (Arg.flag info)
 
-let exit_success_term =
+let exit_success_term : bool Term.t =
   let info =
     Arg.info ["exit-success"]
       ~doc:(sprintf "Exit with success status %i instead of %i if there are \
@@ -134,7 +134,7 @@ let exit_success_term =
   in
   Arg.value (Arg.flag info)
 
-let version_term =
+let version_term : bool Term.t =
   let info =
     Arg.info ["version"]
       ~doc:"Print the version of atddiff and exits."

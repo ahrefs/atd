@@ -16,7 +16,7 @@ Target programming languages currently supported:
 * TypeScript: [atdts](atdts)
 
 Export to other interface description languages (IDLs):
-* JSON Schema: [atdcat](atdcat -jsonschema)
+* JSON Schema: [`atdcat -jsonschema`](atdcat)
 
 Tools to work with ATD files:
 * [atdcat](atdcat): check syntax, reformat, expand inherited definitions,

@@ -1,0 +1,4 @@
+type with_field_renames = {
+  a <json name="a!"> : int;
+  b : int;
+}

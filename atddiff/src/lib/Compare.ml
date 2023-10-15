@@ -60,7 +60,9 @@ let kind_of_expr (e : A.type_expr) =
   | Sum _ -> "sum type or enum"
   | Record _ -> "record/object"
   | Tuple _ -> "tuple"
-  | List _ -> "list/array"
+  | List _ as e ->
+      if Atd.Json.is_json_map e then "map"
+      else "list/array"
   | Option _ -> "option"
   | Nullable _ -> "nullable"
   | Shared _ -> "shared"
@@ -348,21 +350,17 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       let stacks = extend_name_stacks affected_names stacks in
       match e1, e2 with
       | Sum (loc1, cases1, _an1), Sum (loc2, cases2, _an2) ->
-          (* TODO: compare JSON annotations an1 and an2 *)
           cmp_variants stacks loc1 loc2 cases1 cases2
       | Record (loc1, fields1, an1), Record (loc2, fields2, an2) ->
-          (* TODO: compare JSON annotations an1 and an2 *)
           cmp_fields stacks loc1 loc2 fields1 fields2
       | Tuple (loc1, cells1, an1), Tuple (loc2, cells2, an2) ->
-          (* TODO: compare JSON annotations an1 and an2? *)
           cmp_tuple_cells stacks loc1 loc2 cells1 cells2
-      | List (loc1, e1, an1), List (loc2, e2, an2) ->
-          (* TODO: compare JSON annotations an1 and an2? *)
-          cmp_expr stacks e1 e2
+      | List (loc1, sub_e1, an1), List (loc2, sub_e2, an2)
+        when Atd.Json.is_json_map e1 = Atd.Json.is_json_map e2 ->
+          cmp_expr stacks sub_e1 sub_e2
       | Option (loc1, e1, an1), Option (loc2, e2, an2)
       | Nullable (loc1, e1, an1), Nullable (loc2, e2, an2)
       | Shared (loc1, e1, an1), Shared (loc2, e2, an2) ->
-          (* TODO: compare JSON annotations an1 and an2? *)
           cmp_expr stacks e1 e2
       | Name (_, (loc1, name1, args1), _an1),
         Name (_, (loc2, name2, args2), _an2) ->
@@ -412,11 +410,12 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
           }
     and cmp_variants stacks loc1 loc2 cases1 cases2 =
       let with_names cases =
-        (* TODO: apply annotations *)
         cases
         |> List.map (fun (x : A.variant) ->
           match x with
-          | Variant (loc, (name, an), opt_e) -> name, (loc, (name, an), opt_e)
+          | Variant (loc, (name, an), opt_e) ->
+              let json_name = Atd.Json.get_json_cons name an in
+              json_name, (loc, (name, an), opt_e)
           | Inherit _ -> assert false
         )
       in
@@ -428,31 +427,31 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       let shared = Strings.inter names1 names2 |> Strings.elements in
       let right_only = Strings.diff names2 names1 |> Strings.elements in
       left_only
-      |> List.iter (fun name ->
-        let loc, (_name, _an), _opt_e = List.assoc name named1 in
+      |> List.iter (fun json_name ->
+        let loc, (_name, _an), _opt_e = List.assoc json_name named1 in
         add stacks {
           direction = Backward;
-          kind = Missing_variant { variant_name = name };
+          kind = Missing_variant { variant_name = json_name };
           location_old = Some loc;
           location_new = None;
-          description = sprintf "Case '%s' disappeared." name
+          description = sprintf "Case '%s' disappeared." json_name
         }
       );
       right_only
-      |> List.iter (fun name ->
-        let loc, (_name, _an), _opt_e = List.assoc name named2 in
+      |> List.iter (fun json_name ->
+        let loc, (_name, _an), _opt_e = List.assoc json_name named2 in
         add stacks {
           direction = Backward;
-          kind = Missing_variant { variant_name = name };
+          kind = Missing_variant { variant_name = json_name };
           location_old = None;
           location_new = Some loc;
-          description = sprintf "Case '%s' is new." name
+          description = sprintf "Case '%s' is new." json_name
         }
       );
       shared
-      |> List.iter (fun name ->
-        let loc1, _, e1 = List.assoc name named1 in
-        let loc2, _, e2 = List.assoc name named2 in
+      |> List.iter (fun json_name ->
+        let loc1, _, e1 = List.assoc json_name named1 in
+        let loc2, _, e2 = List.assoc json_name named2 in
         match e1, e2 with
         | None, None -> ()
         | Some e1, Some e2 ->
@@ -460,29 +459,30 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Some _, None ->
             add stacks {
               direction = Both;
-              kind = Missing_variant_argument { variant_name = name };
+              kind = Missing_variant_argument { variant_name = json_name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
-                sprintf "Case '%s' no longer has an argument." name
+                sprintf "Case '%s' no longer has an argument." json_name
             }
         | None, Some _ ->
             add stacks {
               direction = Both;
-              kind = Missing_variant_argument { variant_name = name };
+              kind = Missing_variant_argument { variant_name = json_name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
-                sprintf "Case '%s' used to not have an argument." name
+                sprintf "Case '%s' used to not have an argument." json_name
             }
       )
     and cmp_fields stacks loc1 loc2 fields1 fields2 =
       let with_names fields =
-        (* TODO: apply annotations *)
         fields
         |> List.map (fun (field : A.field) ->
           match field with
-          | `Field ((_, (name, _, _), _) as x) -> name, x
+          | `Field ((_, (name, _, an), _) as x) ->
+              let json_name = Atd.Json.get_json_fname name an in
+              json_name, x
           | `Inherit _ -> assert false
         )
       in
@@ -494,39 +494,39 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       let shared = Strings.inter names1 names2 |> Strings.elements in
       let right_only = Strings.diff names2 names1 |> Strings.elements in
       left_only
-      |> List.iter (fun name ->
-        let loc, (_name, kind, _an), _e = List.assoc name named1 in
+      |> List.iter (fun json_name ->
+        let loc, (_name, kind, _an), _e = List.assoc json_name named1 in
         match kind with
         | Optional
         | With_default -> ()
         | Required ->
             add stacks {
               direction = Forward;
-              kind = Missing_field { field_name = name };
+              kind = Missing_field { field_name = json_name };
               location_old = Some loc;
               location_new = None;
-              description = sprintf "Required field '%s' disappeared." name
+              description = sprintf "Required field '%s' disappeared." json_name
             }
       );
       right_only
-      |> List.iter (fun name ->
-        let loc, (_name, kind, _an), _opt_e = List.assoc name named2 in
+      |> List.iter (fun json_name ->
+        let loc, (_name, kind, _an), _opt_e = List.assoc json_name named2 in
         match kind with
         | Optional
         | With_default -> ()
         | Required ->
             add stacks {
               direction = Backward;
-              kind = Missing_field { field_name = name };
+              kind = Missing_field { field_name = json_name };
               location_old = None;
               location_new = Some loc;
-              description = sprintf "Required field '%s' is new." name
+              description = sprintf "Required field '%s' is new." json_name
             }
       );
       shared
-      |> List.iter (fun name ->
-        let loc1, (_, kind1, _), e1 = List.assoc name named1 in
-        let loc2, (_, kind2, _), e2 = List.assoc name named2 in
+      |> List.iter (fun json_name ->
+        let loc1, (_, kind1, _), e1 = List.assoc json_name named1 in
+        let loc2, (_, kind2, _), e2 = List.assoc json_name named2 in
         (* The type of an optional field '?foo: int option' is considered
            to be 'int' rather than 'int option' *)
         let e1 = unwrap_option kind1 e1 in
@@ -539,7 +539,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
          | Required, With_default ->
              add stacks {
               direction = Forward;
-              kind = Default_required { field_name = name };
+              kind = Default_required { field_name = json_name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
@@ -549,23 +549,24 @@ You must ensure that new implementations always populate the JSON field
 with a value (using atdgen's option -j-defaults or equivalent) so that older
 implementations can read newer data. If this is already the case, use
 'atddiff --json-defaults-new' to disable this warning."
-                  name
+                  json_name
             }
          | Required, Optional ->
              add stacks {
               direction = Forward;
-              kind = Missing_field { field_name = name };
+              kind = Missing_field { field_name = json_name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
-                sprintf "Formerly required field '%s' is now optional." name
+                sprintf "Formerly required field '%s' is now optional."
+                  json_name
             }
          | With_default, Required
            when options.json_defaults_old -> ()
          | With_default, Required ->
              add stacks {
               direction = Backward;
-              kind = Default_required { field_name = name };
+              kind = Default_required { field_name = json_name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
@@ -575,16 +576,17 @@ If old implementations in use always populate the JSON field
 with a value (using atdgen's option -j-defaults or equivalent),
 then there's no problem and you should use
 'atddiff --json-defaults-old' to disable this warning."
-                  name
+                  json_name
             }
          | Optional, Required ->
              add stacks {
               direction = Backward;
-              kind = Missing_field { field_name = name };
+              kind = Missing_field { field_name = json_name };
               location_old = Some loc1;
               location_new = Some loc2;
               description =
-                sprintf "Formerly optional field '%s' is now required." name
+                sprintf "Formerly optional field '%s' is now required."
+                  json_name
             }
         );
         cmp_expr stacks e1 e2
@@ -603,7 +605,6 @@ then there's no problem and you should use
         }
       else
         List.iter2 (fun (_loc1, e1, _an1) (_loc2, e2, _an2) ->
-          (* TODO: honor annotations? *)
           cmp_expr stacks e1 e2
         ) cells1 cells2
     in

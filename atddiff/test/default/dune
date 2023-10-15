@@ -81,6 +81,16 @@
  (action (diff ignored_type_parameters_are_ok.expected.txt ignored_type_parameters_are_ok.txt)))
 
 (rule
+ (targets json_field_name_change.txt)
+ (deps json_field_name_change_old.atd json_field_name_change_new.atd)
+ (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success)))
+
+(rule
+ (alias runtest)
+ (deps json_field_name_change.txt)
+ (action (diff json_field_name_change.expected.txt json_field_name_change.txt)))
+
+(rule
  (targets json_repr_change.txt)
  (deps json_repr_change_old.atd json_repr_change_new.atd)
  (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success)))
@@ -89,6 +99,16 @@
  (alias runtest)
  (deps json_repr_change.txt)
  (action (diff json_repr_change.expected.txt json_repr_change.txt)))
+
+(rule
+ (targets json_variant_name_change.txt)
+ (deps json_variant_name_change_old.atd json_variant_name_change_new.atd)
+ (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success)))
+
+(rule
+ (alias runtest)
+ (deps json_variant_name_change.txt)
+ (action (diff json_variant_name_change.expected.txt json_variant_name_change.txt)))
 
 (rule
  (targets recursive.txt)

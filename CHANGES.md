@@ -8,7 +8,7 @@ Unreleased
 * atdd: Add `dlang` backend to generate D code from ATD definitions (#349)
 * new tool: atddiff. Compares two versions of an ATD file and reports
   possible incompatibilities in the JSON data. Atddiff ships as part of the 
-  `atd` package together with `atdcat`.
+  `atd` package together with `atdcat` (#358)
 
 2.12.0 (2023-05-12)
 -------------------

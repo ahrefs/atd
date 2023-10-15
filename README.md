@@ -7,13 +7,22 @@ ATD stands for Adaptable Type Definitions. It is a syntax for defining
 cross-language data types. It is used as input to generate efficient
 and type-safe serializers, deserializers and validators.
 
-Target languages currently supported:
+Target programming languages currently supported:
+* DLang: [atdd](atdd)
 * Java: [atdj](atdj)
 * OCaml, Bucklescript: [atdgen](atdgen)
 * Python: [atdpy](atdpy)
 * Scala: [atds](atds)
 * TypeScript: [atdts](atdts)
-* DLang: [atdd](atdd)
+
+Export to other interface description languages (IDLs):
+* JSON Schema: [atdcat](atdcat -jsonschema)
+
+Tools to work with ATD files:
+* [atdcat](atdcat): check syntax, reformat, expand inherited definitions,
+  export to JSON Schema, ...
+* [atddiff](atddiff): compare two revisions of a given ATD interface and
+  report incompatibilities.
 
 All can installed with opam e.g.
 ```
@@ -70,36 +79,53 @@ The ATD project started in 2010. Contributors include:
 
 * Martin Jambon
 * Rudi Grinberg
+* Alexandre Bourquelot
 * Ivan Jager
+* oleksiy
+* Gregoire Lionnet
 * David Sheets
+* Rytis Jonynas
 * Jeff Meister
 * Carmelo Piccione
-* oleksiy
+* Louis
 * Louis Roché
+* Raman Varabets
 * Daniel Weil
 * Egor Chemokhonenko
 * Gabriel Scherer
-* Raman Varabets
+* Louis Roché (Ahrefs)
+* Matthew McQuaid
+* koonwen
 * tzm
 * Mathieu Baudet
 * Oleksiy Golovko
 * Rauan Mayemir
+* Hyeseong Kim
 * John Billings
+* Marek Kubica
+* Zach Yannes
+* Antonin Décimo
 * Brendan Long
 * Caio Wakamatsu
 * Chris Yocum
 * Pierre Boutillier
 * Shon Feder
+* metanivek
+* sebastiantoh
 * Anurag Soni
 * Arjun Ravi Narayan
 * Asya-kawai
 * Christophe Troestler
 * Damien Doligez
 * Daniel M
+* Enrico Tassi
 * François Pottier
 * Javier Chavarri
+* Jonas Bergler
+* Kate
 * Stephane Legrand
 * Vincent Bernardoff
+* Zach
 * haoyang
 * pmundkur
 * ygrek

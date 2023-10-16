@@ -1,0 +1,1 @@
+type 'a ignored_type_parameters_are_ok = 'a list

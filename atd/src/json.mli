@@ -72,6 +72,18 @@ val annot_schema_json : Annot.schema
 
 val get_json_list : Annot.t -> json_list
 
+(*
+   Return true iff the type expression is of the form:
+
+     '(string * _) list <json repr="object">'
+
+   Note that it doesn't perform any dealiasing: 'string' must be literally
+   'string'. Same for 'list'.
+
+   This uses 'get_json_list' to extract the relevant annotation.
+*)
+val is_json_map : Ast.type_expr -> bool
+
 val get_json_float : Annot.t -> json_float
 
 val get_json_int : Annot.t -> json_int

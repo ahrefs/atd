@@ -1,0 +1,1 @@
+type ('a, 'b) type_arity_change = ('a * 'b) list

@@ -1,0 +1,6 @@
+Backward incompatibility:
+File "forward_incompatible_variant_new.atd", line 1, characters 42-43
+Case 'B' is new.
+The following types are affected:
+  forward_incompatible_variant
+

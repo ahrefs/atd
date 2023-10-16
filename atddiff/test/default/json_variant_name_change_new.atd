@@ -1,0 +1,6 @@
+type with_constructor_renames = [
+  | A <json name="a!">
+  | B <json name="b!"> of int
+  | C
+  | D of int
+]

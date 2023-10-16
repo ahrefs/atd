@@ -1,0 +1,4 @@
+type forward_incompatible_record = {
+  removed_field: int;
+  becomes_optional: int;
+}

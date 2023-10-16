@@ -1,8 +1,14 @@
-Unreleased
+2.13.0 (2023-10-15)
 -------------------
 
 * atdts: Stop compiler errors on generated typescript (#348)
+* atdts: Don't fail on `wrap` constructs (#353)
+* atdcat: New option `-remove-wraps` which pretty-prints the type
+  definitions without `wrap` constructs (#353)
 * atdd: Add `dlang` backend to generate D code from ATD definitions (#349)
+* new tool: atddiff. Compares two versions of an ATD file and reports
+  possible incompatibilities in the JSON data. Atddiff ships as part of the 
+  `atd` package together with `atdcat` (#352, #358)
 
 2.12.0 (2023-05-12)
 -------------------

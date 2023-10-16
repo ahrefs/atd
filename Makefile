@@ -56,6 +56,7 @@ test:
 test-common:
 	$(MAKE) -C atd test
 	$(MAKE) -C atdcat test
+	$(MAKE) -C atddiff test
 
 # Test only the OCaml backends
 .PHONY: test-ocaml

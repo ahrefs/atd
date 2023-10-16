@@ -34,9 +34,6 @@ let annot_schema : Atd.Annot.schema =
 let not_implemented loc msg =
   A.error_at loc ("not implemented in atdts: " ^ msg)
 
-let todo hint =
-  failwith ("TODO: " ^ hint)
-
 (* This is used to convince the TypeScript type checker in strict mode
    that a function doesn't lack a return statement (TS2366) *)
 let impossible = "throw new Error('impossible')"
@@ -86,23 +83,6 @@ let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
     | a :: rest -> a :: spacer @ spaced rest
   in
   spaced blocks
-
-(*
-   Eliminate the 'wrap' constructs since we don't do anything with them,
-   and produce decent error messages for the unsupported constructs.
-*)
-let rec unwrap e =
-  match e with
-  | Wrap (loc, e, an) -> unwrap e
-  | Shared (loc, e, an) -> not_implemented loc "cyclic references"
-  | Tvar _
-  | Sum _
-  | Record _
-  | Tuple _
-  | List _
-  | Option _
-  | Nullable _
-  | Name _ -> e
 
 let init_env () : env =
   (* The list of "keywords" is extracted from
@@ -627,7 +607,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Option (loc, e, an) -> sprintf "Option<%s>" (type_name_of_expr env e)
   | Nullable (loc, e, an) -> sprintf "(%s | null)" (type_name_of_expr env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
-  | Wrap (loc, e, an) -> todo "wrap"
+  | Wrap (loc, e, an) -> type_name_of_expr env e
   | Name (loc, (loc2, name, []), an) -> ts_type_name env name
   | Name (loc, _, _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -861,7 +841,7 @@ let sum_type env loc name cases =
 let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
-  match unwrap e with
+  match e with
   | Sum (loc, variants, an) ->
       sum_type env loc name (flatten_variants variants)
   | Record (loc, fields, an) ->
@@ -916,7 +896,7 @@ let write_case env loc orig_name an opt_e =
       ]
 
 let read_root_expr env ~ts_type_name e =
-  match unwrap e with
+  match e with
   | Sum (loc, variants, an) ->
       let cases = flatten_variants variants in
       let cases0, cases1 =
@@ -1042,7 +1022,7 @@ let read_root_expr env ~ts_type_name e =
   | Tvar _ -> assert false
 
 let write_root_expr env ~ts_type_name e =
-  match unwrap e with
+  match e with
   | Sum (loc, variants, an) ->
       let cases = flatten_variants variants in
       [
@@ -1200,6 +1180,10 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module = Atd.Ast.use_only_specific_variants full_module in
+  let full_module =
+    full_module
+    |> Atd.Ast.use_only_specific_variants
+    |> Atd.Ast.remove_wrap_constructs
+  in
   let atd_head, atd_module = full_module in
   to_file ~atd_filename:src_name atd_module dst_path

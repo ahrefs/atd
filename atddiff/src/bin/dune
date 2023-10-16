@@ -1,0 +1,10 @@
+(executable
+ (name Atddiff_main)
+ (public_name atddiff)
+ (package atd)
+ (libraries
+   cmdliner
+   atddiff
+   atd
+ )
+)

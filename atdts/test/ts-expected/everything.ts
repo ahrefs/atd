@@ -50,6 +50,7 @@ export type Root = {
   parametrized_record: IntFloatParametrizedRecord;
   parametrized_tuple: TupleE1a4b40;
   anything: Anything;
+  wrapped: string[];
 }
 
 export type Alias = number /*int*/[]
@@ -59,6 +60,8 @@ export type Pair = [string, number /*int*/]
 export type Foo = {
   foo: string;
 }
+
+export type SpecialString = string
 
 export type IntFloatParametrizedRecord = {
   field_a: number /*int*/;
@@ -157,6 +160,7 @@ export function writeRoot(x: Root, context: any = x): any {
     'parametrized_record': _atd_write_required_field('Root', 'parametrized_record', writeIntFloatParametrizedRecord, x.parametrized_record, x),
     'parametrized_tuple': _atd_write_required_field('Root', 'parametrized_tuple', writeTupleE1a4b40, x.parametrized_tuple, x),
     'anything': _atd_write_required_field('Root', 'anything', writeAnything, x.anything, x),
+    'wrapped': _atd_write_required_field('Root', 'wrapped', _atd_write_array(_atd_write_string), x.wrapped, x),
   };
 }
 
@@ -183,6 +187,7 @@ export function readRoot(x: any, context: any = x): Root {
     parametrized_record: _atd_read_required_field('Root', 'parametrized_record', readIntFloatParametrizedRecord, x['parametrized_record'], x),
     parametrized_tuple: _atd_read_required_field('Root', 'parametrized_tuple', readTupleE1a4b40, x['parametrized_tuple'], x),
     anything: _atd_read_required_field('Root', 'anything', readAnything, x['anything'], x),
+    wrapped: _atd_read_required_field('Root', 'wrapped', _atd_read_array(_atd_read_string), x['wrapped'], x),
   };
 }
 
@@ -212,6 +217,14 @@ export function readFoo(x: any, context: any = x): Foo {
   return {
     foo: _atd_read_required_field('Foo', 'foo', _atd_read_string, x['foo'], x),
   };
+}
+
+export function writeSpecialString(x: SpecialString, context: any = x): any {
+  return _atd_write_string(x, context);
+}
+
+export function readSpecialString(x: any, context: any = x): SpecialString {
+  return _atd_read_string(x, context);
 }
 
 export function writeIntFloatParametrizedRecord(x: IntFloatParametrizedRecord, context: any = x): any {

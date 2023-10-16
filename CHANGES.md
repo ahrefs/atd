@@ -1,3 +1,10 @@
+Unreleased
+-------------------
+
+* atdd: Fix various issues with the interoperability of user defined types,
+  used in or outside of records (#355)
+* atdd: Generated `.d` files now have the suffix `_atd.d` (#355)
+
 2.13.0 (2023-10-15)
 -------------------
 

@@ -83,6 +83,7 @@
   (odoc :with-doc)
   (re (>= 1.9.0))
   (yojson (>= 1.6.0))
+  (cmdliner (>= 1.1.0))
  )
  (synopsis "Parser for the ATD data format description language")
  (description "\

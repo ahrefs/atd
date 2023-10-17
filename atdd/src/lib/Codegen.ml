@@ -21,7 +21,6 @@ type env = {
   translate_inst_variable: unit -> (string -> string);
 }
 
-type aliasing = Keep | None_
 
 let annot_schema_dlang : Atd.Annot.schema_section =
   {
@@ -200,10 +199,11 @@ import std.format;
 import std.json;
 import std.sumtype;
 import std.traits : isCallable, ReturnType;
-import std.typecons : nullable, Nullable, tuple, Tuple, Typedef, TypedefType;
+import std.typecons : nullable, Nullable, tuple, Tuple;
 
 private
 {
+
   class AtdException : Exception
   {
       @safe this(string msg, string file = __FILE__, size_t line = __LINE__)
@@ -219,13 +219,6 @@ private
     return std.functional.toDelegate(fp);
   }
 
-  template RemoveTypedef(T)
-  {
-      static if (is(T : Typedef!Arg, Arg))
-          alias RemoveTypedef = RemoveTypedef!Arg;
-      else
-          alias RemoveTypedef = T;
-  }
   
   @trusted T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
   {
@@ -514,20 +507,10 @@ auto toJsonString(T)(T obj)
     return res.toString;
 }
 
-auto unwrapAlias(T)(T e) if (is(T : Typedef!Arg, Arg))
-{
-    return cast(TypedefType!T) e;
-}
-
-auto wrapAlias(T)(TypedefType!T e) if (is(T : Typedef!Arg, Arg))
-{
-    return cast(T) e;
-}
-
   |}
     atd_filename
     atd_filename
-    (Filename.remove_extension atd_filename)
+    (sprintf "%s_atd" (Filename.remove_extension atd_filename))
 
 
 let not_implemented loc msg =
@@ -574,7 +557,7 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
 (* Map ATD built-in types to built-in Dlang types *)
-let dlang_type_name ?(aliasing=Keep) env (name : string) =
+let dlang_type_name env (name : string) =
   match name with
   | "unit" -> "void"
   | "bool" -> "bool"
@@ -584,12 +567,9 @@ let dlang_type_name ?(aliasing=Keep) env (name : string) =
   | "abstract" -> "JSONValue"
   | user_defined -> 
       let typename = (struct_name env user_defined) in
-      match aliasing with
-      | None_ -> sprintf "RemoveTypedef!(%s)" typename
-      (* | Remove_One -> sprintf "TypedefType!(%s)" typename *)
-      | Keep -> typename
+      typename
 
-let rec type_name_of_expr ?(aliasing=Keep) env (e : type_expr) : string =
+let rec type_name_of_expr env (e : type_expr) : string =
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
@@ -621,7 +601,7 @@ let rec type_name_of_expr ?(aliasing=Keep) env (e : type_expr) : string =
        | None -> error_at loc "wrap type declared, but no dlang annotation found"
        | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
       )
-  | Name (loc, (loc2, name, []), an) -> dlang_type_name ~aliasing:aliasing env name
+  | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -711,8 +691,7 @@ let rec json_writer ?(nested=false) env e =
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
        | "abstract" -> "(JSONValue x) => x"
        | _ -> let dtype_name = (dlang_type_name env name) in
-              let rawtype_name = (dlang_type_name ~aliasing:None_ env name) in 
-          sprintf "((%s x) => x.toJson!(%s))" rawtype_name dtype_name)
+          sprintf "((%s x) => x.toJson!(%s))" dtype_name dtype_name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -789,7 +768,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
     (match Dlang_annot.get_dlang_wrap loc an with
    | None -> error_at loc "wrap type declared, but no dlang annotation found"
    | Some { dlang_wrap ; _ } ->
-      sprintf "_atd_read_wrap!(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr ~aliasing:None_ env e) dlang_wrap
+      sprintf "_atd_read_wrap!(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr env e) dlang_wrap
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with
@@ -844,7 +823,7 @@ let from_json_class_argument
 let inst_var_declaration
     env trans_meth ((loc, (name, kind, an), e) : simple_field) =
   let var_name = inst_var_name trans_meth name in
-  let type_name = type_name_of_expr ~aliasing:None_ env e in
+  let type_name = type_name_of_expr env e in
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
@@ -914,20 +893,15 @@ let record env loc name (fields : field list) an =
 
 let alias_wrapper env  name type_expr =
   let dlang_struct_name = struct_name env name in
-  let value_type = type_name_of_expr ~aliasing:None_ env type_expr in
+  let value_type = type_name_of_expr env type_expr in
   [
-    Line (sprintf "alias %s = Typedef!(%s, (%s).init, \"%s\");" dlang_struct_name value_type value_type dlang_struct_name); 
-    Line (sprintf "@trusted JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name value_type);
+    Line (sprintf "struct %s{ %s _data; alias _data this;" dlang_struct_name value_type); 
+    Line (sprintf "@safe this(%s init) {_data = init;} @safe this(%s init) {_data = init._data;}}" value_type dlang_struct_name);
+    Line (sprintf "@trusted JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");
-    Line (sprintf "@trusted string toJsonString(T : %s)(%s obj) {"  dlang_struct_name value_type);
-    Block [Line(sprintf "return obj.toJson!(%s).toString;" dlang_struct_name)];
-    Line("}");
-    Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue e) {" value_type dlang_struct_name);
-    Block [Line(sprintf "return %s(e);" (json_reader env type_expr))];
-    Line("}");
-    Line (sprintf "@trusted %s fromJsonString(T : %s)(string s) {"  value_type dlang_struct_name);
-    Block [Line(sprintf "return parseJSON(s).fromJson!(%s);" dlang_struct_name)];
+    Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue e) {" dlang_struct_name dlang_struct_name);
+    Block [Line(sprintf "return %s(%s(e));" dlang_struct_name (json_reader env type_expr))];
     Line("}");
   ]
 
@@ -1150,7 +1124,7 @@ let run_file src_path =
     (if Filename.check_suffix src_name ".atd" then
        Filename.chop_suffix src_name ".atd"
      else
-       src_name) ^ ".d"
+       src_name) ^ "_atd.d"
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in

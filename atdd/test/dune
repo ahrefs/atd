@@ -8,8 +8,8 @@
  (alias runtest)
  (package atdd)
  (action
-   (diff dlang-expected/everything.d
-    dlang-tests/everything.d)))
+   (diff dlang-expected/everything_atd.d
+    dlang-tests/everything_atd.d)))
 
 ; 2. Run the generated Dlang code and check that is reads or writes JSON
 ;    data as expected.

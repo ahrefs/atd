@@ -44,7 +44,6 @@ type json_record = {
 type json_sum = {
   json_sum_adapter : json_adapter;
   json_open_enum : bool;
-  json_lowercase_tags : bool;
 }
 
 (** The different kinds of ATD nodes with their json-specific options. *)

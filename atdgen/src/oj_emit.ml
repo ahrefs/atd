@@ -757,7 +757,6 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       let json_options = {
         Json.json_sum_adapter = Json.no_adapter;
         json_open_enum = false;
-        json_lowercase_tags = false;
       } in
       make_reader p
         (Some "_ option")

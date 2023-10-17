@@ -42,7 +42,6 @@ type json_record = {
 type json_sum = {
   json_sum_adapter : json_adapter;
   json_open_enum : bool;
-  json_lowercase_tags : bool;
 }
 
 (*
@@ -206,13 +205,9 @@ let get_json_adapter an =
 let get_json_open_enum an =
   Annot.get_flag ~sections:["json"] ~field:"open_enum" an
 
-let get_json_lowercase_tags an =
-  Annot.get_flag ~sections:["json"] ~field:"lowercase_tags" an
-
 let get_json_sum an = {
   json_sum_adapter = get_json_adapter an;
   json_open_enum = get_json_open_enum an;
-  json_lowercase_tags = get_json_lowercase_tags an;
 }
 
 let get_json_list an =

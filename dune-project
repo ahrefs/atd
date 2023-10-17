@@ -83,6 +83,7 @@
   (odoc :with-doc)
   (re (>= 1.9.0))
   (yojson (>= 1.6.0))
+  (cmdliner (>= 1.1.0))
  )
  (synopsis "Parser for the ATD data format description language")
  (description "\
@@ -97,7 +98,7 @@ utilities."))
  (depends
   (ocaml (>= 4.08))
   (alcotest :with-test)
-  (atd (>= 2.11.0))
+  (atd (>= 2.13.0))
   (atdgen-runtime (>= 2.1.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
@@ -191,7 +192,7 @@ bucklescript backend")
  (description "TypeScript code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.11.0))
+  (atd (>= 2.13.0))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)

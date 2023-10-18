@@ -52,6 +52,7 @@ folders="
   json_defaults
   json_defaults_old
   json_defaults_new
+  json_output
 "
 
 for folder in $folders; do
@@ -76,6 +77,9 @@ for folder in $folders; do
       ;;
     json_defaults_new)
       atddiff_options="--exit-success --json-defaults-new"
+      ;;
+    json_output)
+      atddiff_options="--exit-success --output-format json"
       ;;
     *)
       echo "Error: Unknown atddiff command for test folder $folder" >&2

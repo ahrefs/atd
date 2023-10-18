@@ -43,6 +43,7 @@ let run conf =
         ~filter:conf.filter
         ~json_defaults_old:conf.json_defaults_old
         ~json_defaults_new:conf.json_defaults_new
+        ~output_format:conf.output_format
         conf.old_file conf.new_file in
     let exit_code, data =
       match out_data with
@@ -152,16 +153,18 @@ let json_defaults_new_term : bool Term.t =
   in
   Arg.value (Arg.flag info)
 
-let json_term : bool Term.t =
+let output_format_term : Atddiff.output_format Term.t =
   let info =
-    Arg.info ["json"]
+    Arg.info ["output-format"; "f"]
       ~doc:(
-        "Output JSON instead of text. The format is consistent with \
-         the ATD conventions and matches the type 'result' \
-         of the file 'Types.ml' in the 'atd' source repository at \
-         https://github.com/ahrefs/atd/blob/master/atddiff/src/lib/Types.ml")
+        "Output JSON instead of text. The format is specified by the file \
+         Atddiff_output.atd that's included in the source distribution of \
+         ATD. At the time of writing, its location is \
+         https://github.com/ahrefs/atd/blob/master/atddiff/src/lib/Atddiff_output.atd")
   in
-  Arg.value (Arg.flag info)
+  Arg.value (Arg.opt (Arg.enum ["text", Atddiff.Text;
+                                "json", Atddiff.JSON])
+               Atddiff.Text info)
 
 let exit_success_term : bool Term.t =
   let info =
@@ -225,7 +228,7 @@ let cmdline_term run =
       old_file new_file out_file
       backward forward types
       json_defaults json_defaults_old json_defaults_new
-      json
+      output_format
       exit_success version =
     let filter =
       let module A = Atddiff in
@@ -245,8 +248,6 @@ let cmdline_term run =
     in
     let json_defaults_old = json_defaults_old || json_defaults in
     let json_defaults_new = json_defaults_new || json_defaults in
-    let output_format : Atddiff.output_format =
-      if json then JSON else Text in
     run {
       old_file;
       new_file;
@@ -269,7 +270,7 @@ let cmdline_term run =
         $ json_defaults_term
         $ json_defaults_old_term
         $ json_defaults_new_term
-        $ json_term
+        $ output_format_term
         $ exit_success_term
         $ version_term
        )

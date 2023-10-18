@@ -1,5 +1,5 @@
 Backward incompatibility:
-File "recursive_new.atd", line 9, characters 52-53
+File "recursive_new.atd", line 9, characters 52-53:
 Case 'B' is new.
 The following types are affected:
   changed_recursive

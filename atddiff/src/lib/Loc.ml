@@ -42,8 +42,16 @@ let compare (a : t) (b : t) =
     compare_pos a.end_ b.end_
 
 let to_string ({start; end_} : t) =
-  Printf.sprintf "File %S, line %i, characters %i-%i"
-    start.path
-    start.line
-    start.column
-    end_.column
+  if start.line = end_.line then
+    Printf.sprintf "File %S, line %i, characters %i-%i"
+      start.path
+      start.line
+      start.column
+      end_.column
+  else
+    Printf.sprintf "File %S, line %i, character %i to line %i, character %i"
+      start.path
+      start.line
+      start.column
+      end_.line
+      end_.column

@@ -1,6 +1,6 @@
 Incompatibility in both directions:
 File "filter_old.atd", line 7, characters 16-20
-File "filter_new.atd", line 7, characters 16-23
+File "filter_new.atd", line 7, characters 16-23:
 Type names 'int' and 'string' are not the same and may not be compatible.
 The following types are affected:
   a

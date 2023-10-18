@@ -71,5 +71,5 @@ let compare_files
       Error (
         match output_format with
         | Text -> Format_text.to_string res
-        | JSON -> Format_JSON.to_string res
+        | JSON -> Format_JSON.to_string res ^ "\n"
       )

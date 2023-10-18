@@ -1,0 +1,282 @@
+{
+  "findings": [
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": "Deleted_type",
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 1, "column": 0 },
+          "end": { "path": "all_errors_old.atd", "line": 1, "column": 18 }
+        },
+        "description": "The definition for type 'deleted' no longer exists."
+      },
+      "affected_types": [ "deleted" ]
+    },
+    {
+      "finding": {
+        "direction": "Forward",
+        "kind": [ "Missing_field", { "field_name": "deleted_field" } ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 4, "column": 2 },
+          "end": { "path": "all_errors_old.atd", "line": 4, "column": 20 }
+        },
+        "description": "Required field 'deleted_field' disappeared."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Forward",
+        "kind": [ "Missing_field", { "field_name": "renamed_field" } ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 9, "column": 2 },
+          "end": { "path": "all_errors_old.atd", "line": 9, "column": 20 }
+        },
+        "description": "Required field 'renamed_field' disappeared."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [ "Missing_variant", { "variant_name": "Deleted_case" } ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 13, "column": 4 },
+          "end": { "path": "all_errors_old.atd", "line": 13, "column": 16 }
+        },
+        "description": "Case 'Deleted_case' disappeared."
+      },
+      "affected_types": [ "changed_variant", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [
+          "Missing_variant", { "variant_name": "Deleted_case_with_arg" }
+        ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 14, "column": 4 },
+          "end": { "path": "all_errors_old.atd", "line": 14, "column": 35 }
+        },
+        "description": "Case 'Deleted_case_with_arg' disappeared."
+      },
+      "affected_types": [ "changed_variant", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Forward",
+        "kind": "Deleted_type",
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 1, "column": 0 },
+          "end": { "path": "all_errors_new.atd", "line": 1, "column": 18 }
+        },
+        "description": "There is a new type named 'created'."
+      },
+      "affected_types": [ "created" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [ "Missing_field", { "field_name": "new_field" } ],
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 4, "column": 2 },
+          "end": { "path": "all_errors_new.atd", "line": 4, "column": 16 }
+        },
+        "description": "Required field 'new_field' is new."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [ "Missing_field", { "field_name": "RENAMED_FIELD" } ],
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 9, "column": 2 },
+          "end": { "path": "all_errors_new.atd", "line": 9, "column": 48 }
+        },
+        "description": "Required field 'RENAMED_FIELD' is new."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [ "Missing_variant", { "variant_name": "New_case" } ],
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 13, "column": 4 },
+          "end": { "path": "all_errors_new.atd", "line": 13, "column": 12 }
+        },
+        "description": "Case 'New_case' is new."
+      },
+      "affected_types": [ "changed_variant", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [
+          "Missing_variant", { "variant_name": "New_case_with_arg" }
+        ],
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 14, "column": 4 },
+          "end": { "path": "all_errors_new.atd", "line": 14, "column": 28 }
+        },
+        "description": "Case 'New_case_with_arg' is new."
+      },
+      "affected_types": [ "changed_variant", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Forward",
+        "kind": [ "Missing_field", { "field_name": "becomes_optional" } ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 5, "column": 2 },
+          "end": { "path": "all_errors_old.atd", "line": 5, "column": 23 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 5, "column": 2 },
+          "end": { "path": "all_errors_new.atd", "line": 5, "column": 31 }
+        },
+        "description": "Formerly required field 'becomes_optional' is now optional."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Forward",
+        "kind": [
+          "Default_required",
+          { "field_name": "becomes_optional_with_default" }
+        ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 6, "column": 2 },
+          "end": { "path": "all_errors_old.atd", "line": 6, "column": 36 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 6, "column": 2 },
+          "end": { "path": "all_errors_new.atd", "line": 6, "column": 37 }
+        },
+        "description": "Formerly required field 'becomes_optional_with_default' is now optional but has a default value.\nYou must ensure that new implementations always populate the JSON field\nwith a value (using atdgen's option -j-defaults or equivalent) so that older\nimplementations can read newer data. If this is already the case, use\n'atddiff --json-defaults-new' to disable this warning."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [ "Missing_field", { "field_name": "becomes_required" } ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 7, "column": 2 },
+          "end": { "path": "all_errors_old.atd", "line": 7, "column": 31 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 7, "column": 2 },
+          "end": { "path": "all_errors_new.atd", "line": 7, "column": 23 }
+        },
+        "description": "Formerly optional field 'becomes_required' is now required."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Backward",
+        "kind": [
+          "Default_required",
+          { "field_name": "with_default_becomes_required" }
+        ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 8, "column": 2 },
+          "end": { "path": "all_errors_old.atd", "line": 8, "column": 37 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 8, "column": 2 },
+          "end": { "path": "all_errors_new.atd", "line": 8, "column": 36 }
+        },
+        "description": "Newly required field 'with_default_becomes_required' was optional but had a default value.\nIf old implementations in use always populate the JSON field\nwith a value (using atdgen's option -j-defaults or equivalent),\nthen there's no problem and you should use\n'atddiff --json-defaults-old' to disable this warning."
+      },
+      "affected_types": [ "changed_record", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Both",
+        "kind": [
+          "Missing_variant_argument", { "variant_name": "Added_arg" }
+        ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 15, "column": 4 },
+          "end": { "path": "all_errors_old.atd", "line": 15, "column": 13 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 15, "column": 4 },
+          "end": { "path": "all_errors_new.atd", "line": 15, "column": 22 }
+        },
+        "description": "Case 'Added_arg' used to not have an argument."
+      },
+      "affected_types": [ "changed_variant", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Both",
+        "kind": [
+          "Missing_variant_argument", { "variant_name": "Removed_arg" }
+        ],
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 16, "column": 4 },
+          "end": { "path": "all_errors_old.atd", "line": 16, "column": 22 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 16, "column": 4 },
+          "end": { "path": "all_errors_new.atd", "line": 16, "column": 15 }
+        },
+        "description": "Case 'Removed_arg' no longer has an argument."
+      },
+      "affected_types": [ "changed_variant", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Both",
+        "kind": "Incompatible_type",
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 17, "column": 18 },
+          "end": { "path": "all_errors_old.atd", "line": 17, "column": 22 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 17, "column": 18 },
+          "end": { "path": "all_errors_new.atd", "line": 17, "column": 23 }
+        },
+        "description": "Type names 'int' and 'bool' are not the same and may not be compatible."
+      },
+      "affected_types": [ "changed_variant", "indirect_changes" ]
+    },
+    {
+      "finding": {
+        "direction": "Both",
+        "kind": "Incompatible_type",
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 26, "column": 20 },
+          "end": { "path": "all_errors_old.atd", "line": 26, "column": 60 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 26, "column": 20 },
+          "end": { "path": "all_errors_new.atd", "line": 26, "column": 39 }
+        },
+        "description": "Incompatible kinds of types: map is now a list/array."
+      },
+      "affected_types": [ "changed_map1" ]
+    },
+    {
+      "finding": {
+        "direction": "Both",
+        "kind": "Incompatible_type",
+        "location_old": {
+          "start": { "path": "all_errors_old.atd", "line": 27, "column": 20 },
+          "end": { "path": "all_errors_old.atd", "line": 27, "column": 39 }
+        },
+        "location_new": {
+          "start": { "path": "all_errors_new.atd", "line": 27, "column": 20 },
+          "end": { "path": "all_errors_new.atd", "line": 27, "column": 60 }
+        },
+        "description": "Incompatible kinds of types: list/array is now a map."
+      },
+      "affected_types": [ "changed_map2" ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 Incompatibility in both directions:
 File "json_repr_change_old.atd", line 2, characters 21-40
-File "json_repr_change_new.atd", line 2, characters 21-61
+File "json_repr_change_new.atd", line 2, characters 21-61:
 Incompatible kinds of types: list/array is now a map.
 The following types are affected:
   incompatible_record

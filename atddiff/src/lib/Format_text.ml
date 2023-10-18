@@ -5,10 +5,15 @@
 open Printf
 module T = Atddiff_output_t
 
-let format_loc_text opt_loc =
-  match opt_loc with
-  | None -> ""
-  | Some loc -> Loc.to_string loc ^ "\n"
+let format_loc_text opt_loc1 opt_loc2 =
+  match opt_loc1, opt_loc2 with
+  | None, None -> "<unknown location>"
+  | Some loc, None | None, Some loc ->
+      Loc.to_string loc
+  | Some loc1, Some loc2 ->
+      sprintf "%s\n%s"
+        (Loc.to_string loc1)
+        (Loc.to_string loc2)
 
 let format_incompatibility_text buf (x : T.full_finding) =
   let finding = x.finding in
@@ -34,12 +39,12 @@ let format_incompatibility_text buf (x : T.full_finding) =
   in
   bprintf buf "\
 %s:
-%s%s%s
+%s:
+%s
 The following types are affected:%s
 "
     dir
-    (format_loc_text finding.location_old)
-    (format_loc_text finding.location_new)
+    (format_loc_text finding.location_old finding.location_new)
     finding.description
     (x.affected_types
      |> List.map (fun name -> "\n  " ^ name)

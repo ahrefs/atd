@@ -1,0 +1,27 @@
+type created = int
+
+type changed_record = {
+  new_field: int;
+  ?becomes_optional: int option;
+  ~becomes_optional_with_default: int;
+  becomes_required: int;
+  with_default_becomes_required: int;
+  renamed_field <json name="RENAMED_FIELD">: int;
+}
+
+type changed_variant = [
+  | New_case
+  | New_case_with_arg of int
+  | Added_arg of float
+  | Removed_arg
+  | Changed_arg of bool
+  | Renamed_case <json repr="RENAMED_CASE">
+]
+
+type indirect_changes = {
+  record: changed_record;
+  variant: changed_variant;
+}
+
+type changed_map1 = (string * int) list
+type changed_map2 = (string * int) list <json repr="object">

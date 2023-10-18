@@ -4,6 +4,9 @@ Unreleased
 * atdd: Fix various issues with the interoperability of user defined types,
   used in or outside of records (#355)
 * atdd: Generated `.d` files now have the suffix `_atd.d` (#355)
+* atddiff now supports options for filtering the findings based on the 
+  direction of the incompatibility (`--backward`, `--forward`) or based on the  
+  name of the affected types (`--types`) (#365)
 
 2.13.0 (2023-10-15)
 -------------------

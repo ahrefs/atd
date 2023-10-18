@@ -82,6 +82,13 @@ Various types of changes in definitions will be reported, including when a
 field becomes optional, when an enum case is added, or when certain elements
 get renamed.
 
+If you only need backward compatibility, ``atddiff --backward`` will
+report only findings that break backward compatibility. Likewise,
+``atddiff --forward`` will report only findings that break forward
+compatibility. If your ATD interface is large or messy and you care
+only about problems affecting specific types, the ``--types`` filter
+will show only the findings that affect these types.
+
 In practice, we usually don't have two versions of the same source
 file checked out as separate files but they exist in ``git`` or some
 other tracking system. With git, comparing two versions of the same

@@ -4,7 +4,8 @@
 
 type simple_filter =
   (* A finding reported to affect the given ATD type name.
-     This type name could exist only in the old or in the new ATD file. *)
+     It's possible that this type name exists only in one of the two versions
+     of the ATD file. *)
   | Affected_type_name of string
   (* Select backward incompatibilies *)
   | Backward

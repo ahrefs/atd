@@ -86,8 +86,8 @@ If you only need backward compatibility, ``atddiff --backward`` will
 report only findings that break backward compatibility. Likewise,
 ``atddiff --forward`` will report only findings that break forward
 compatibility. If your ATD interface is large or messy and you care
-only about problems affecting specific types, the ``--types`` filter
-will show only the findings that affect these types.
+only about problems affecting specific types, ``--types foo,bar``
+will show only the issues that affect the types ``foo`` or ``bar``.
 
 In practice, we usually don't have two versions of the same source
 file checked out as separate files but they exist in ``git`` or some

@@ -1,0 +1,17 @@
+(*
+   Test that the command-line filters make the correct selection of findings.
+*)
+
+type a = {
+  added_field: int; (* backward incompatibility *)
+  changing_type: string;
+}
+
+type b = {
+  uses_a: a; (* backward and forward incompatibilities *)
+}
+
+(* Findings affecting only 'c' are ignored. *)
+type c = {
+  added_field_in_ignored_type: int;
+}

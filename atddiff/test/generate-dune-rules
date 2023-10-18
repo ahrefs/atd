@@ -46,6 +46,9 @@ EOF
 
 folders="
   default
+  filter
+  filter_backward
+  filter_forward
   json_defaults
   json_defaults_old
   json_defaults_new
@@ -55,6 +58,15 @@ for folder in $folders; do
   atddiff_options="--exit-success"
   case "$folder" in
     default)
+      ;;
+    filter)
+      atddiff_options="--exit-success --backward --forward --types a,b"
+      ;;
+    filter_backward)
+      atddiff_options="--exit-success --backward"
+      ;;
+    filter_forward)
+      atddiff_options="--exit-success --forward"
       ;;
     json_defaults)
       atddiff_options="--exit-success --json-defaults"

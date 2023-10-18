@@ -9,6 +9,7 @@ type conf = {
   old_file: string;
   new_file: string;
   out_file: string option;
+  filter: Atddiff.filter;
   json_defaults_old: bool;
   json_defaults_new: bool;
   exit_success: bool;
@@ -38,6 +39,7 @@ let run conf =
   else
     let out_data =
       Atddiff.compare_files
+        ~filter:conf.filter
         ~json_defaults_old:conf.json_defaults_old
         ~json_defaults_new:conf.json_defaults_new
         conf.old_file conf.new_file in
@@ -90,6 +92,31 @@ let out_file_term : string option Term.t =
             standard output."
   in
   Arg.value (Arg.opt (Arg.some Arg.string) None info)
+
+let backward_term : bool Term.t =
+  let info =
+    Arg.info ["backward"]
+      ~doc:"Ignore findings other than backward incompatibilies."
+  in
+  Arg.value (Arg.flag info)
+
+let forward_term : bool Term.t =
+  let info =
+    Arg.info ["forward"]
+      ~doc:"Ignore findings other than forward incompatibilies."
+  in
+  Arg.value (Arg.flag info)
+
+let types_term : string list option Term.t =
+  let info =
+    Arg.info ["types"]
+      ~docv:"TYPE_NAME1,TYPE_NAME2,..."
+      ~doc:"Select findings that affect these types. If no '--type' filter is \
+            provided, all types are selected. For example, \
+            '--type foo,bar' selects the findings that affect type 'foo', \
+            type 'bar', or both."
+  in
+  Arg.value (Arg.opt (Arg.some (Arg.list Arg.string)) None info)
 
 let json_defaults_term : bool Term.t =
   let info =
@@ -184,14 +211,32 @@ let man = [
 let cmdline_term run =
   let combine
       old_file new_file out_file
+      backward forward types
       json_defaults json_defaults_old json_defaults_new
       exit_success version =
+    let filter =
+      let module A = Atddiff in
+      let backward = if backward then [A.Filter (A.Backward)] else [] in
+      let forward = if forward then [A.Filter (A.Forward)] else [] in
+      let types =
+        match types with
+        | None -> []
+        | Some types ->
+            [A.Or
+               (List.map (fun name ->
+                  A.Filter (A.Affected_type_name name))
+               types)
+            ]
+      in
+      A.And (List.concat [backward; forward; types])
+    in
     let json_defaults_old = json_defaults_old || json_defaults in
     let json_defaults_new = json_defaults_new || json_defaults in
     run {
       old_file;
       new_file;
       out_file;
+      filter;
       json_defaults_old;
       json_defaults_new;
       exit_success;
@@ -202,6 +247,9 @@ let cmdline_term run =
         $ old_file_term
         $ new_file_term
         $ out_file_term
+        $ backward_term
+        $ forward_term
+        $ types_term
         $ json_defaults_term
         $ json_defaults_old_term
         $ json_defaults_new_term

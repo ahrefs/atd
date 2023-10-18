@@ -1,0 +1,12 @@
+(*
+   Test that the command-line filters make the correct selection of findings.
+*)
+
+type a = {
+  deleted_field: int; (* forward incompatibility *)
+  changing_type: int;
+}
+
+type b = {
+  uses_a: a; (* backward and forward incompatibilities *)
+}

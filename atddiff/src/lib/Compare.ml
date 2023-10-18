@@ -28,7 +28,7 @@
 *)
 
 open Printf
-open Types
+open Atddiff_output_t
 module A = Atd.Ast
 
 (* Sets of names: type names, variant names, field names.
@@ -100,7 +100,7 @@ let report_deleted_types defs name_set =
       Some (([name], []), {
         direction = Backward;
         kind = Deleted_type;
-        location_old = Some loc;
+        location_old = Some (loc |> Loc.of_atd_loc);
         location_new = None;
         description =
           sprintf "The definition for type '%s' no longer exists."
@@ -117,7 +117,7 @@ let report_added_types defs name_set =
         direction = Forward;
         kind = Deleted_type;
         location_old = None;
-        location_new = Some loc;
+        location_new = Some (loc |> Loc.of_atd_loc);
         description = sprintf "There is a new type named '%s'." name
       })
     else
@@ -368,8 +368,8 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
             add stacks {
               direction = Both;
               kind = Incompatible_type;
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "Type names '%s' and '%s' are not the same and \
                          may not be compatible."
@@ -385,8 +385,8 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
             add stacks {
               direction = Both;
               kind = Incompatible_type;
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "Incompatible type variables are being used.";
             }
@@ -402,8 +402,8 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
           add stacks {
             direction = Both;
             kind = Incompatible_type;
-            location_old = Some (A.loc_of_type_expr e1);
-            location_new = Some (A.loc_of_type_expr e2);
+            location_old = Some (A.loc_of_type_expr e1 |> Loc.of_atd_loc);
+            location_new = Some (A.loc_of_type_expr e2 |> Loc.of_atd_loc);
             description =
               sprintf "Incompatible kinds of types: %s is now %s."
                 (kind_of_expr e1) (a_kind_of_expr e2);
@@ -432,7 +432,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         add stacks {
           direction = Backward;
           kind = Missing_variant { variant_name = json_name };
-          location_old = Some loc;
+          location_old = Some (loc |> Loc.of_atd_loc);
           location_new = None;
           description = sprintf "Case '%s' disappeared." json_name
         }
@@ -444,7 +444,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
           direction = Backward;
           kind = Missing_variant { variant_name = json_name };
           location_old = None;
-          location_new = Some loc;
+          location_new = Some (loc |> Loc.of_atd_loc);
           description = sprintf "Case '%s' is new." json_name
         }
       );
@@ -460,8 +460,8 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
             add stacks {
               direction = Both;
               kind = Missing_variant_argument { variant_name = json_name };
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "Case '%s' no longer has an argument." json_name
             }
@@ -469,8 +469,8 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
             add stacks {
               direction = Both;
               kind = Missing_variant_argument { variant_name = json_name };
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "Case '%s' used to not have an argument." json_name
             }
@@ -503,7 +503,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
             add stacks {
               direction = Forward;
               kind = Missing_field { field_name = json_name };
-              location_old = Some loc;
+              location_old = Some (loc |> Loc.of_atd_loc);
               location_new = None;
               description = sprintf "Required field '%s' disappeared." json_name
             }
@@ -519,7 +519,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
               direction = Backward;
               kind = Missing_field { field_name = json_name };
               location_old = None;
-              location_new = Some loc;
+              location_new = Some (loc |> Loc.of_atd_loc);
               description = sprintf "Required field '%s' is new." json_name
             }
       );
@@ -540,8 +540,8 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
              add stacks {
               direction = Forward;
               kind = Default_required { field_name = json_name };
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "\
 Formerly required field '%s' is now optional but has a default value.
@@ -555,8 +555,8 @@ implementations can read newer data. If this is already the case, use
              add stacks {
               direction = Forward;
               kind = Missing_field { field_name = json_name };
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "Formerly required field '%s' is now optional."
                   json_name
@@ -567,8 +567,8 @@ implementations can read newer data. If this is already the case, use
              add stacks {
               direction = Backward;
               kind = Default_required { field_name = json_name };
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "\
 Newly required field '%s' was optional but had a default value.
@@ -582,8 +582,8 @@ then there's no problem and you should use
              add stacks {
               direction = Backward;
               kind = Missing_field { field_name = json_name };
-              location_old = Some loc1;
-              location_new = Some loc2;
+              location_old = Some (loc1 |> Loc.of_atd_loc);
+              location_new = Some (loc2 |> Loc.of_atd_loc);
               description =
                 sprintf "Formerly optional field '%s' is now required."
                   json_name
@@ -599,8 +599,8 @@ then there's no problem and you should use
         add stacks {
           direction = Both;
           kind = Incompatible_type;
-          location_old = Some (A.loc_of_type_expr e1);
-          location_new = Some (A.loc_of_type_expr e2);
+          location_old = Some (A.loc_of_type_expr e1 |> Loc.of_atd_loc);
+          location_new = Some (A.loc_of_type_expr e2 |> Loc.of_atd_loc);
           description = sprintf "Incompatible tuple lengths";
         }
       else
@@ -629,12 +629,12 @@ let finding_group (a : finding) =
   | None, Some _ -> 3
   | Some _, Some _ -> 4
 
-let compare_opt_location (a : Atd.Loc.t option) (b : Atd.Loc.t option) =
+let compare_opt_location (a : Loc.t option) (b : Loc.t option) =
     match a, b with
   | Some _, None -> -1
   | None, Some _ -> 1
   | None, None -> 0
-  | Some a, Some b -> Atd.Loc.compare a b
+  | Some a, Some b -> Loc.compare a b
 
 (* Compare results so as to sort them in the following order:
    1. Exists only in the old file

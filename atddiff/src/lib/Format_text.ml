@@ -3,12 +3,12 @@
 *)
 
 open Printf
-open Types
+open Atddiff_output_t
 
 let format_loc_text opt_loc =
   match opt_loc with
   | None -> ""
-  | Some loc -> Atd.Ast.string_of_loc loc ^ "\n"
+  | Some loc -> Loc.to_string loc ^ "\n"
 
 let format_incompatibility_text buf ((x : finding), affected_types) =
   let is_certain =

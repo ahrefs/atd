@@ -1,17 +1,46 @@
 (*
    Type definitions used to build comparison results
+
+   We don't derive OCaml serializers from this file with atdgen due to
+   circular dependencies but we derive the OCaml types by calling atdgen
+   and keeping the result under source control:
+
+     atdgen -t Atddiff_output.atd
+
+   This provides an ATD specification to users who consume the JSON
+   output of the atddiff.
 *)
 
-type direction = Backward | Forward | Both
+type position = {
+  path: string;
+  line: int;
+  column: int;
+}
 
-type incompatibility_kind =
-  | Missing_field of { field_name: string }
-  | Missing_variant of { variant_name: string }
-  | Missing_variant_argument of { variant_name: string }
-  | Default_required of { field_name: string }
+type location = {
+  start: position;
+  end <ocaml name="end_">: position;
+}
+
+type direction = [ Backward | Forward | Both ] <ocaml repr="classic">
+
+type field_info = {
+  field_name: string
+}
+
+type variant_info = {
+  variant_name: string
+}
+
+type incompatibility_kind = [
+  | Missing_field of field_info
+  | Missing_variant of variant_info
+  | Missing_variant_argument of variant_info
+  | Default_required of field_info
   | Incompatible_type
   | Deleted_type
   | Added_type
+] <ocaml repr="classic">
 
 (*
    Important things we want to report:
@@ -49,8 +78,8 @@ type incompatibility_kind =
 type finding = {
   direction: direction;
   kind: incompatibility_kind;
-  location_old: Atd.Ast.loc option;
-  location_new: Atd.Ast.loc option;
+  location_old: location option;
+  location_new: location option;
 
   (* The description should not mention the affected root type definition
      so as to allow the deduplication of findings. *)

@@ -13,3 +13,9 @@ build:
 .PHONY: test
 test:
 	$(MAKE) -C test
+
+# Update the output format of atddiff by running 'make types'.
+# This requires an external installation of the atdgen command.
+.PHONY: types
+types:
+	$(MAKE) -C src/lib types

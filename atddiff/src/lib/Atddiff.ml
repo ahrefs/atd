@@ -17,10 +17,7 @@ type output_format = Text | JSON
 
 let version = Version.version
 
-let format_json res : string =
-  failwith "JSON output: not implemented"
-
-let rec select_finding filter (x : Types.finding * string list) =
+let rec select_finding filter (x : Atddiff_output_t.finding * string list) =
   match filter with
   | Or filters ->
       List.exists (fun filter -> select_finding filter x) filters
@@ -74,5 +71,5 @@ let compare_files
       Error (
         match output_format with
         | Text -> Format_text.to_string res
-        | JSON -> format_json res
+        | JSON -> Format_JSON.to_string res
       )

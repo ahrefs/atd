@@ -7,6 +7,8 @@ Unreleased
 * atddiff now supports options for filtering the findings based on the 
   direction of the incompatibility (`--backward`, `--forward`) or based on the  
   name of the affected types (`--types`) (#365)
+* atddiff: new option `--output-format json` for exporting the results to
+  JSON (#360)
 
 2.13.0 (2023-10-15)
 -------------------

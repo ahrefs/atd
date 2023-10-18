@@ -2,7 +2,7 @@
    Type definitions used to build comparison results
 *)
 
-type direction = Forward | Backward | Both
+type direction = Backward | Forward | Both
 
 type incompatibility_kind =
   | Missing_field of { field_name: string }

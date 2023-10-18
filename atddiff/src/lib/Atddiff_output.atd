@@ -86,12 +86,14 @@ type finding = {
   description: string;
 }
 
-(*
-   A result is a list of unique findings and the list of root types
-   affected by the finding.
+type full_finding = {
+  finding: finding;
+  affected_types: string list;
+}
 
-   For now, we don't try to identify root type renames so each finding is
-   associated to just one root type name which exists in one or both versions
-   of the file.
+(*
+   A result is a list of unique findings.
 *)
-type result = (finding * string list) list
+type result = {
+  findings: full_finding list;
+}

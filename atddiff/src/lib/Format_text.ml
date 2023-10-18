@@ -3,17 +3,18 @@
 *)
 
 open Printf
-open Atddiff_output_t
+module T = Atddiff_output_t
 
 let format_loc_text opt_loc =
   match opt_loc with
   | None -> ""
   | Some loc -> Loc.to_string loc ^ "\n"
 
-let format_incompatibility_text buf ((x : finding), affected_types) =
+let format_incompatibility_text buf (x : T.full_finding) =
+  let finding = x.finding in
   let is_certain =
     (* TODO: more clearly distinguish Warning from Error? *)
-    match x.kind with
+    match finding.kind with
     | Missing_field _ -> true
     | Missing_variant _ -> true
     | Missing_variant_argument _ -> true
@@ -23,7 +24,7 @@ let format_incompatibility_text buf ((x : finding), affected_types) =
     | Added_type -> false
   in
   let dir =
-    match x.direction, is_certain with
+    match finding.direction, is_certain with
     | Forward, true -> "Forward incompatibility"
     | Backward, true -> "Backward incompatibility"
     | Both, true -> "Incompatibility in both directions"
@@ -37,17 +38,17 @@ let format_incompatibility_text buf ((x : finding), affected_types) =
 The following types are affected:%s
 "
     dir
-    (format_loc_text x.location_old)
-    (format_loc_text x.location_new)
-    x.description
-    (affected_types
+    (format_loc_text finding.location_old)
+    (format_loc_text finding.location_new)
+    finding.description
+    (x.affected_types
      |> List.map (fun name -> "\n  " ^ name)
      |> String.concat "")
 
-let to_string (res : result) : string =
+let to_string (res : T.result) : string =
   let buf = Buffer.create 1000 in
   List.iter (fun x ->
     format_incompatibility_text buf x;
     Buffer.add_char buf '\n'
-  ) res;
+  ) res.findings;
   Buffer.contents buf

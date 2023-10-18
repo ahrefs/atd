@@ -29,4 +29,6 @@ type finding = {
   description: string
 }
 
-type result = (finding * string list) list
+type full_finding = { finding: finding; affected_types: string list }
+
+type result = { findings: full_finding list }

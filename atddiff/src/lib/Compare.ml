@@ -28,8 +28,8 @@
 *)
 
 open Printf
-open Atddiff_output_t
 module A = Atd.Ast
+open Atddiff_output_t
 
 (* Sets of names: type names, variant names, field names.
    It's used to detect names that are in common between the two ATD files,
@@ -656,7 +656,7 @@ let compare_findings (a : finding) (b : finding) =
       if c <> 0 then c
       else Stdlib.compare a b
 
-let group_and_sort_findings xs =
+let group_and_sort_findings xs : full_finding list =
   let tbl = Hashtbl.create 100 in
   xs
   |> List.iter (fun ((affected_names1, affected_names2), finding) ->
@@ -675,11 +675,11 @@ let group_and_sort_findings xs =
        We could be more precise about equivalence between old
        and new names. Would it help the user? *)
     let all_affected_names = Strings.union affected_names1 affected_names2 in
-    (finding,
-     Strings.elements all_affected_names)
+    { finding;
+      affected_types = Strings.elements all_affected_names }
     :: acc)
     tbl []
-  |> List.sort (fun (a, _) (b, _) -> compare_findings a b)
+  |> List.sort (fun a b -> compare_findings a.finding b.finding)
 
 (*
    Expectations:
@@ -725,5 +725,8 @@ let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   ]
     |> List.flatten
   in
-  findings
-  |> group_and_sort_findings
+  let findings =
+    findings
+    |> group_and_sort_findings
+  in
+  { findings }

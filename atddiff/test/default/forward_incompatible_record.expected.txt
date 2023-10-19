@@ -1,12 +1,12 @@
 Forward incompatibility:
-File "forward_incompatible_record_old.atd", line 2, characters 2-20
+File "forward_incompatible_record_old.atd", line 2, characters 2-20:
 Required field 'removed_field' disappeared.
 The following types are affected:
   forward_incompatible_record
 
 Forward incompatibility:
 File "forward_incompatible_record_old.atd", line 3, characters 2-23
-File "forward_incompatible_record_new.atd", line 2, characters 2-31
+File "forward_incompatible_record_new.atd", line 2, characters 2-31:
 Formerly required field 'becomes_optional' is now optional.
 The following types are affected:
   forward_incompatible_record

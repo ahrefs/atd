@@ -1,23 +1,23 @@
 Forward incompatibility:
-File "json_field_name_change_old.atd", line 2, characters 2-26
+File "json_field_name_change_old.atd", line 2, characters 2-26:
 Required field 'a!' disappeared.
 The following types are affected:
   with_field_renames
 
 Forward incompatibility:
-File "json_field_name_change_old.atd", line 3, characters 2-9
+File "json_field_name_change_old.atd", line 3, characters 2-9:
 Required field 'b' disappeared.
 The following types are affected:
   with_field_renames
 
 Backward incompatibility:
-File "json_field_name_change_new.atd", line 2, characters 2-9
+File "json_field_name_change_new.atd", line 2, characters 2-9:
 Required field 'a' is new.
 The following types are affected:
   with_field_renames
 
 Backward incompatibility:
-File "json_field_name_change_new.atd", line 3, characters 2-27
+File "json_field_name_change_new.atd", line 3, characters 2-27:
 Required field 'bee' is new.
 The following types are affected:
   with_field_renames

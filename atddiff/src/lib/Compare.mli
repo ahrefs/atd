@@ -12,4 +12,5 @@ type options = {
 }
 
 val asts :
-  options -> Atd.Ast.full_module -> Atd.Ast.full_module -> Types.result
+  options -> Atd.Ast.full_module -> Atd.Ast.full_module ->
+  Atddiff_output_t.result

@@ -2,6 +2,8 @@
     Internal Atddiff library used by the 'atddiff' command.
 *)
 
+module T = Atddiff_output_t
+
 type simple_filter =
   | Affected_type_name of string
   | Backward
@@ -17,10 +19,7 @@ type output_format = Text | JSON
 
 let version = Version.version
 
-let format_json res : string =
-  failwith "JSON output: not implemented"
-
-let rec select_finding filter (x : Types.finding * string list) =
+let rec select_finding filter (x : T.full_finding) =
   match filter with
   | Or filters ->
       List.exists (fun filter -> select_finding filter x) filters
@@ -29,17 +28,14 @@ let rec select_finding filter (x : Types.finding * string list) =
   | Not filter ->
       not (select_finding filter x)
   | Filter (Affected_type_name name) ->
-      let _, names = x in
-      List.mem name names
+      List.mem name x.affected_types
   | Filter Backward ->
-      let finding, _ = x in
-      (match finding.direction with
+      (match x.finding.direction with
        | Backward | Both -> true
        | Forward -> false
       )
   | Filter Forward ->
-      let finding, _ = x in
-      (match finding.direction with
+      (match x.finding.direction with
        | Forward | Both -> true
        | Backward -> false
       )
@@ -67,12 +63,13 @@ let compare_files
     } in
     Compare.asts options ast1 ast2
   in
-  match res with
+  match res.findings with
   | [] -> Ok ()
-  | res ->
-      let res = List.filter (select_finding filter) res in
+  | findings ->
+      let res : T.result =
+        { findings = List.filter (select_finding filter) findings } in
       Error (
         match output_format with
         | Text -> Format_text.to_string res
-        | JSON -> format_json res
+        | JSON -> Format_JSON.to_string res ^ "\n"
       )

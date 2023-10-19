@@ -1,0 +1,27 @@
+type deleted = int
+
+type changed_record = {
+  deleted_field: int;
+  becomes_optional: int;
+  becomes_optional_with_default: int;
+  ?becomes_required: int option;
+  ~with_default_becomes_required: int;
+  renamed_field: int;
+}
+
+type changed_variant = [
+  | Deleted_case
+  | Deleted_case_with_arg of string
+  | Added_arg
+  | Removed_arg of int
+  | Changed_arg of int
+  | Renamed_case
+]
+
+type indirect_changes = {
+  record: changed_record;
+  variant: changed_variant;
+}
+
+type changed_map1 = (string * int) list <json repr="object">
+type changed_map2 = (string * int) list

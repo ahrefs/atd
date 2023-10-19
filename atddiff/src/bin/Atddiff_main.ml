@@ -12,6 +12,7 @@ type conf = {
   filter: Atddiff.filter;
   json_defaults_old: bool;
   json_defaults_new: bool;
+  output_format: Atddiff.output_format;
   exit_success: bool;
   version: bool;
 }
@@ -42,6 +43,7 @@ let run conf =
         ~filter:conf.filter
         ~json_defaults_old:conf.json_defaults_old
         ~json_defaults_new:conf.json_defaults_new
+        ~output_format:conf.output_format
         conf.old_file conf.new_file in
     let exit_code, data =
       match out_data with
@@ -151,6 +153,19 @@ let json_defaults_new_term : bool Term.t =
   in
   Arg.value (Arg.flag info)
 
+let output_format_term : Atddiff.output_format Term.t =
+  let info =
+    Arg.info ["output-format"; "f"]
+      ~doc:(
+        "Output JSON instead of text. The format is specified by the file \
+         Atddiff_output.atd that's included in the source distribution of \
+         ATD. At the time of writing, its location is \
+         https://github.com/ahrefs/atd/blob/master/atddiff/src/lib/Atddiff_output.atd")
+  in
+  Arg.value (Arg.opt (Arg.enum ["text", Atddiff.Text;
+                                "json", Atddiff.JSON])
+               Atddiff.Text info)
+
 let exit_success_term : bool Term.t =
   let info =
     Arg.info ["exit-success"]
@@ -213,6 +228,7 @@ let cmdline_term run =
       old_file new_file out_file
       backward forward types
       json_defaults json_defaults_old json_defaults_new
+      output_format
       exit_success version =
     let filter =
       let module A = Atddiff in
@@ -239,6 +255,7 @@ let cmdline_term run =
       filter;
       json_defaults_old;
       json_defaults_new;
+      output_format;
       exit_success;
       version;
     }
@@ -253,6 +270,7 @@ let cmdline_term run =
         $ json_defaults_term
         $ json_defaults_old_term
         $ json_defaults_new_term
+        $ output_format_term
         $ exit_success_term
         $ version_term
        )

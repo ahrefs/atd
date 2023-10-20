@@ -441,7 +441,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       |> List.iter (fun json_name ->
         let loc, (_name, _an), _opt_e = List.assoc json_name named2 in
         add stacks {
-          direction = Backward;
+          direction = Forward;
           kind = Missing_variant { variant_name = json_name };
           location_old = None;
           location_new = Some (loc |> Loc.of_atd_loc);

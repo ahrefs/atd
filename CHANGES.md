@@ -1,3 +1,9 @@
+Unreleased
+-------------------
+
+* atddiff: Fixed reports for new variant cases. They are now correctly 
+  reported as forward incompatibilities (#373)
+
 2.14.0 (2023-10-19)
 -------------------
 

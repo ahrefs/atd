@@ -100,7 +100,7 @@
     },
     {
       "finding": {
-        "direction": "Backward",
+        "direction": "Forward",
         "kind": [ "Missing_variant", { "variant_name": "New_case" } ],
         "location_new": {
           "start": { "path": "all_errors_new.atd", "line": 13, "column": 4 },
@@ -112,7 +112,7 @@
     },
     {
       "finding": {
-        "direction": "Backward",
+        "direction": "Forward",
         "kind": [
           "Missing_variant", { "variant_name": "New_case_with_arg" }
         ],

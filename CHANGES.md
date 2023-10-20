@@ -1,4 +1,4 @@
-Unreleased
+2.14.1 (2023-10-20)
 -------------------
 
 * atddiff: Fixed reports for new variant cases. They are now correctly 

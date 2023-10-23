@@ -134,7 +134,12 @@ let path_of_target (target : target) =
     | Default -> [ "ocaml" ]
     | Biniou -> [ "ocaml_biniou"; "ocaml" ]
     | Json -> [ "ocaml_json"; "ocaml" ]
-    | Melange -> ["ocaml_mel"; "ocaml"]
+    | Melange -> [
+      (* kept for backwards compatibility with BuckleScript *)
+      "ocaml_bs";
+      "ocaml_mel";
+      "ocaml"
+    ]
     | Validate -> [ "ocaml_validate"; "ocaml" ]
 
 (*

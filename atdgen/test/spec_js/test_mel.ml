@@ -1,7 +1,7 @@
 let make = Atdgen_codec_runtime.Encode.encode
 
 module M = Spec_js.Make(struct
-    open Spec_js.Bs
+    open Spec_js.Mel
 
     let r1     = make write_r1
     let r2     = make write_r2

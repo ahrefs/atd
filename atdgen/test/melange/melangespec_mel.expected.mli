@@ -1,64 +1,64 @@
-(* Auto-generated from "bucklespec.atd" *)
+(* Auto-generated from "melangespec.atd" *)
 [@@@ocaml.warning "-27-32-33-35-39"]
 
-type recurse = Bucklespec_t.recurse = { recurse_items: recurse list }
+type recurse = Melangespec_t.recurse = { recurse_items: recurse list }
 
-type mutual_recurse1 = Bucklespec_t.mutual_recurse1 = {
+type mutual_recurse1 = Melangespec_t.mutual_recurse1 = {
   mutual_recurse2: mutual_recurse2
 }
 
-and mutual_recurse2 = Bucklespec_t.mutual_recurse2 = {
+and mutual_recurse2 = Melangespec_t.mutual_recurse2 = {
   mutual_recurse1: mutual_recurse1
 }
 
-type variant2 = Bucklespec_t.variant2 =  A | C 
+type variant2 = Melangespec_t.variant2 =  A | C 
 
-type variant1 = Bucklespec_t.variant1 =  A of string | B 
+type variant1 = Melangespec_t.variant1 =  A of string | B 
 
-type valid = Bucklespec_t.valid
+type valid = Melangespec_t.valid
 
-type v2 = Bucklespec_t.v2 =  V1_foo of int | V2_bar of bool 
+type v2 = Melangespec_t.v2 =  V1_foo of int | V2_bar of bool 
 
-type v1 = Bucklespec_t.v1 =  V1_foo of bool | V2_bar of int 
+type v1 = Melangespec_t.v1 =  V1_foo of bool | V2_bar of int 
 
-type using_object = Bucklespec_t.using_object = { f: (string * int) list }
+type using_object = Melangespec_t.using_object = { f: (string * int) list }
 
-type single_tuple = Bucklespec_t.single_tuple
+type single_tuple = Melangespec_t.single_tuple
 
-type id = Bucklespec_t.id
+type id = Melangespec_t.id
 
-type 'a simple_var = 'a Bucklespec_t.simple_var
+type 'a simple_var = 'a Melangespec_t.simple_var
 
-type simple_vars = Bucklespec_t.simple_vars
+type simple_vars = Melangespec_t.simple_vars
 
-type 'a same_pair = 'a Bucklespec_t.same_pair
+type 'a same_pair = 'a Melangespec_t.same_pair
 
-type record_json_name = Bucklespec_t.record_json_name = { foo: int }
+type record_json_name = Melangespec_t.record_json_name = { foo: int }
 
-type point = Bucklespec_t.point
+type point = Melangespec_t.point
 
-type 'a param_similar = 'a Bucklespec_t.param_similar = {
+type 'a param_similar = 'a Melangespec_t.param_similar = {
   data: 'a;
   something: int
 }
 
-type 'a param = 'a Bucklespec_t.param = { data: 'a; nothing: unit }
+type 'a param = 'a Melangespec_t.param = { data: 'a; nothing: unit }
 
-type ('a, 'b) pair = ('a, 'b) Bucklespec_t.pair = { left: 'a; right: 'b }
+type ('a, 'b) pair = ('a, 'b) Melangespec_t.pair = { left: 'a; right: 'b }
 
-type 'a pairs = 'a Bucklespec_t.pairs
+type 'a pairs = 'a Melangespec_t.pairs
 
-type label = Bucklespec_t.label
+type label = Melangespec_t.label
 
-type labeled = Bucklespec_t.labeled = { flag: valid; lb: label; count: int }
+type labeled = Melangespec_t.labeled = { flag: valid; lb: label; count: int }
 
 type from_module_a = A_t.from_module_a
 
-type b = Bucklespec_t.b = { thing: int }
+type b = Melangespec_t.b = { thing: int }
 
-type a = Bucklespec_t.a = { thing: string; other_thing: bool }
+type a = Melangespec_t.a = { thing: string; other_thing: bool }
 
-type adapted = Bucklespec_t.adapted
+type adapted = Melangespec_t.adapted
 
 val read_recurse :  recurse Atdgen_codec_runtime.Decode.t
 

@@ -21,14 +21,14 @@
 /atd/ @mjambon
 /atdcat/ @mjambon
 
-# OCaml and Bucklescript support
+# OCaml and Melange support
 /atdgen-runtime/ @rgrinberg @mjambon
 /atdgen/ @rgrinberg @mjambon
 
-# Bucklescript-specific files
-obuckle_* @rgrinberg
-bucklescript/ @rgrinberg
-*_bs* @rgrinberg
+# Melange-specific files
+omelange_* @rgrinberg @jchavarri
+melange/ @rgrinberg @jchavarri
+*_mel* @rgrinberg @jchavarri
 
 # Java support
 # /atdj/ YOUR_NAME_HERE

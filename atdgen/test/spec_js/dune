@@ -1,6 +1,6 @@
 (library
  (name spec_js)
- (modules spec_t spec_j spec_js spec_bs)
+ (modules spec_t spec_j spec_js spec_mel)
  (libraries atdgen-runtime atdgen-codec-runtime biniou yojson))
 
 (rule
@@ -14,9 +14,9 @@
  (action (run atdgen %{deps} -j -j-std)))
 
 (rule
- (targets spec_bs.ml spec_bs.mli)
+ (targets spec_mel.ml spec_mel.mli)
  (deps spec.atd)
- (action (run atdgen %{deps} -bs)))
+ (action (run atdgen %{deps} -mel)))
 
 (executable
  (name test_j)
@@ -24,8 +24,8 @@
  (libraries spec_js atdgen-runtime yojson))
 
 (executable
- (name test_bs)
- (modules test_bs)
+ (name test_mel)
+ (modules test_mel)
  (libraries spec_js atdgen-codec-runtime yojson))
 
 (rule
@@ -38,10 +38,10 @@
  (action (diff spec_j.expected.json spec_j.json)))
 
 (rule
- (targets spec_bs.json)
- (action (with-stdout-to %{targets} (run ./test_bs.exe))))
+ (targets spec_mel.json)
+ (action (with-stdout-to %{targets} (run ./test_mel.exe))))
 
 (rule
  (alias runtest)
  (package atdgen)
- (action (diff spec_bs.expected.json spec_bs.json)))
+ (action (diff spec_mel.expected.json spec_mel.json)))

@@ -163,8 +163,8 @@ and mapping_of_field ocaml_field_prefix = function
 let defs_of_atd_modules l ~(target : Ocaml.target)=
   (match target with
    | Json
-   | Bucklescript -> ()
-   | t -> invalid_arg "target must be json or bucklescript");
+   | Melange -> ()
+   | t -> invalid_arg "target must be json or melange");
   List.map (fun (is_rec, l) ->
     ( is_rec
     , List.map (function Atd.Ast.Type atd ->

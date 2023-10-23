@@ -178,10 +178,10 @@ automatically handled")
 
 (package
  (name atdgen-codec-runtime)
- (synopsis "Runtime for atdgen generated bucklescript converters")
+ (synopsis "Runtime for atdgen generated Melange converters")
  (description "\
 This library contains the types that are used by atdgen's
-bucklescript backend")
+Melange backend")
  (depends
   (ocaml (>= 4.08))
   (odoc :with-doc)))

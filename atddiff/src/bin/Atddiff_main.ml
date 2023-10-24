@@ -32,11 +32,13 @@ let exit_info = [
   finding_exit, "atddiff successfully found one or more issues to report.";
 ] |> List.map (fun (code, doc) -> Cmd.Exit.info ~doc code)
 
+let print_version_and_exit () =
+  print_endline Atddiff.version;
+  exit ok_exit
+
 let run conf =
-  if conf.version then (
-    print_endline Atddiff.version;
-    exit ok_exit
-  )
+  if conf.version then
+    print_version_and_exit ()
   else
     let out_data =
       Atddiff.compare_files
@@ -276,14 +278,19 @@ let cmdline_term run =
        )
 
 let parse_command_line_and_run run =
-  let info =
-    Cmd.info
-      ~doc
-      ~exits:exit_info
-      ~man
-      "atddiff"
-  in
-  Cmd.v info (cmdline_term run) |> Cmd.eval |> exit
+  match Sys.argv with
+  (* gross, but avoids complaints about missing input files *)
+  | [| _; "--version" |] ->
+      print_version_and_exit ()
+  | _ ->
+      let info =
+        Cmd.info
+          ~doc
+          ~exits:exit_info
+          ~man
+          "atddiff"
+      in
+      Cmd.v info (cmdline_term run) |> Cmd.eval |> exit
 
 let safe_run conf =
   try run conf

@@ -1,3 +1,8 @@
+Unreleased
+-------------------
+
+* atddiff: Fix `atddiff --version` output (#379)
+
 2.14.1 (2023-10-20)
 -------------------
 

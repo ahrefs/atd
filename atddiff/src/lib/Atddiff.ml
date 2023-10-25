@@ -45,6 +45,7 @@ let compare_files
   ?(json_defaults_old = false)
   ?(json_defaults_new = false)
   ?(output_format = Text)
+  ?(with_locations = true)
     old_file new_file =
   let load_file atd_file =
     atd_file
@@ -70,6 +71,6 @@ let compare_files
         { findings = List.filter (select_finding filter) findings } in
       Error (
         match output_format with
-        | Text -> Format_text.to_string res
-        | JSON -> Format_JSON.to_string res ^ "\n"
+        | Text -> Format_text.to_string ~with_locations res
+        | JSON -> Format_JSON.to_string ~with_locations res ^ "\n"
       )

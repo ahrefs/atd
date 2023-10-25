@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {
+      "finding": {
+        "direction": "Both",
+        "kind": "Incompatible_type",
+        "description": "Type names 'int' and 'string' are not the same and may not be compatible."
+      },
+      "affected_types": [ "t" ]
+    }
+  ]
+}

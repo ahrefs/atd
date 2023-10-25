@@ -40,6 +40,7 @@ val compare_files :
   ?json_defaults_old:bool ->
   ?json_defaults_new:bool ->
   ?output_format:output_format ->
+  ?with_locations:bool ->
   string -> string -> (unit, string) Result.t
 
 (* Version of the atddiff library and executable *)

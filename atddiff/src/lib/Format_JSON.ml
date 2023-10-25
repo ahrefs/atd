@@ -51,7 +51,12 @@ let fmt_location (x : location) : json =
     "end", fmt_position x.end_;
   ]
 
-let fmt_finding (x : finding) : json =
+let fmt_finding ~with_locations (x : finding) : json =
+  let x =
+    if with_locations then x
+    else
+      { x with location_old = None; location_new = None }
+  in
   `Assoc (remove_null_fields [
     "direction", fmt_direction x.direction;
     "kind", fmt_kind x.kind;
@@ -60,19 +65,19 @@ let fmt_finding (x : finding) : json =
     "description", `String x.description;
   ])
 
-let fmt_full_finding (x : full_finding) : json =
+let fmt_full_finding ~with_locations (x : full_finding) : json =
   `Assoc [
-    "finding", fmt_finding x.finding;
+    "finding", fmt_finding ~with_locations x.finding;
     "affected_types", `List (List.map string x.affected_types);
   ]
 
-let to_yojson (x : result) : json =
+let to_yojson ~with_locations (x : result) : json =
   `Assoc [
-    "findings", `List (List.map fmt_full_finding x.findings)
+    "findings", `List (List.map (fmt_full_finding ~with_locations) x.findings)
   ]
 
-let to_string x =
+let to_string ~with_locations x =
   x
-  |> to_yojson
+  |> to_yojson ~with_locations
   |> Yojson.Safe.to_string
   |> Yojson.Safe.prettify

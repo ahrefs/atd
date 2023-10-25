@@ -1,0 +1,14 @@
+(rule
+ (targets version.txt)
+ (deps )
+ (action
+   (with-stdout-to version.txt
+     (run %{bin:atddiff} --version)
+   )
+ )
+)
+
+(rule
+ (alias runtest)
+ (deps version.txt)
+ (action (diff version.expected.txt version.txt)))

@@ -1,0 +1,5 @@
+(*
+  This test produces two findings with the same hash ID
+*)
+
+type t = (int * int)

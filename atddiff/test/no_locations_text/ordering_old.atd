@@ -1,0 +1,6 @@
+type a = int
+type b = int list
+type c = (b * b)
+type d = (a * b)
+type e = c list
+type f = d list

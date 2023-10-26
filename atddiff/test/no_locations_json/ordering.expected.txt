@@ -1,0 +1,46 @@
+{
+  "findings": [
+    {
+      "hash": "0ba447bf",
+      "direction": "Both",
+      "kind": "Incompatible_type",
+      "description": "Incompatible kinds of types: list/array is now a string.",
+      "affected_types": [ "e" ]
+    },
+    {
+      "hash": "1c2c4aae",
+      "direction": "Both",
+      "kind": "Incompatible_type",
+      "description": "Incompatible kinds of types: tuple is now a string.",
+      "affected_types": [ "c" ]
+    },
+    {
+      "hash": "2182fd1f",
+      "direction": "Both",
+      "kind": "Incompatible_type",
+      "description": "Incompatible kinds of types: list/array is now a string.",
+      "affected_types": [ "b" ]
+    },
+    {
+      "hash": "2e525f5c",
+      "direction": "Both",
+      "kind": "Incompatible_type",
+      "description": "Incompatible kinds of types: list/array is now a string.",
+      "affected_types": [ "f" ]
+    },
+    {
+      "hash": "3b527108",
+      "direction": "Both",
+      "kind": "Incompatible_type",
+      "description": "Incompatible kinds of types: tuple is now a string.",
+      "affected_types": [ "d" ]
+    },
+    {
+      "hash": "3f176ef7",
+      "direction": "Both",
+      "kind": "Incompatible_type",
+      "description": "Type names 'int' and 'string' are not the same and may not be compatible.",
+      "affected_types": [ "a" ]
+    }
+  ]
+}

@@ -1,46 +1,46 @@
-Backward incompatibility:
+[142bf58a] Backward incompatibility:
 File "json_variant_name_change_old.atd", line 2, characters 4-5:
 Case 'A' disappeared.
 The following types are affected:
   with_constructor_renames
 
-Backward incompatibility:
+[148d17a6] Backward incompatibility:
 File "json_variant_name_change_old.atd", line 3, characters 4-12:
 Case 'B' disappeared.
 The following types are affected:
   with_constructor_renames
 
-Backward incompatibility:
+[3451ab10] Backward incompatibility:
 File "json_variant_name_change_old.atd", line 4, characters 4-23:
 Case 'cee' disappeared.
 The following types are affected:
   with_constructor_renames
 
-Backward incompatibility:
+[2ee9a5f5] Backward incompatibility:
 File "json_variant_name_change_old.atd", line 5, characters 4-30:
 Case 'dee' disappeared.
 The following types are affected:
   with_constructor_renames
 
-Forward incompatibility:
+[02dc524b] Forward incompatibility:
 File "json_variant_name_change_new.atd", line 2, characters 4-22:
 Case 'a!' is new.
 The following types are affected:
   with_constructor_renames
 
-Forward incompatibility:
+[3f5c23f4] Forward incompatibility:
 File "json_variant_name_change_new.atd", line 3, characters 4-29:
 Case 'b!' is new.
 The following types are affected:
   with_constructor_renames
 
-Forward incompatibility:
+[189456fd] Forward incompatibility:
 File "json_variant_name_change_new.atd", line 4, characters 4-5:
 Case 'C' is new.
 The following types are affected:
   with_constructor_renames
 
-Forward incompatibility:
+[1da9d4ce] Forward incompatibility:
 File "json_variant_name_change_new.atd", line 5, characters 4-12:
 Case 'D' is new.
 The following types are affected:

@@ -1,22 +1,22 @@
-Possible backward incompatibility:
+[20f6af79] Possible backward incompatibility:
 File "type_name_change_old.atd", line 2, characters 0-33:
 The definition for type 'old_name_for_root_type' no longer exists.
 The following types are affected:
   old_name_for_root_type
 
-Possible backward incompatibility:
+[23b8d853] Possible backward incompatibility:
 File "type_name_change_old.atd", line 5, character 0 to line 7, character 1:
 The definition for type 'old_name_for_root_type_with_changes' no longer exists.
 The following types are affected:
   old_name_for_root_type_with_changes
 
-Possible forward incompatibility:
+[3ad32ed9] Possible forward incompatibility:
 File "type_name_change_new.atd", line 2, characters 0-33:
 There is a new type named 'new_name_for_root_type'.
 The following types are affected:
   new_name_for_root_type
 
-Possible forward incompatibility:
+[1b1d2804] Possible forward incompatibility:
 File "type_name_change_new.atd", line 5, character 0 to line 7, character 1:
 There is a new type named 'new_name_for_root_type_with_changes'.
 The following types are affected:

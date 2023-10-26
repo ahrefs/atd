@@ -1,4 +1,4 @@
-Possible backward incompatibility:
+[1963da34] Possible backward incompatibility:
 File "backward_incompatible_record_if_implicit_defaults_old.atd", line 2, characters 2-24
 File "backward_incompatible_record_if_implicit_defaults_new.atd", line 2, characters 2-23:
 Newly required field 'becomes_required' was optional but had a default value.

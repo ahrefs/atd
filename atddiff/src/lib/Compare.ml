@@ -112,7 +112,10 @@ let create_finding
 let complete_finding (x : finding) ~affected_types =
   let x = { x with affected_types } in
   let hash =
-    Hashtbl.hash (x.direction, x.kind, x.description, x.affected_types)
+    (* Make the hash function use all the data by using very large
+       parameters *)
+    Hashtbl.hash_param 1_000_000 1_000_000
+      (x.direction, x.kind, x.description, x.affected_types)
     |> Printf.sprintf "%08x"
   in
   { x with hash }

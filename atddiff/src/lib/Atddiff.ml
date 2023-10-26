@@ -19,7 +19,7 @@ type output_format = Text | JSON
 
 let version = Version.version
 
-let rec select_finding filter (x : T.full_finding) =
+let rec select_finding filter (x : T.finding) =
   match filter with
   | Or filters ->
       List.exists (fun filter -> select_finding filter x) filters
@@ -30,12 +30,12 @@ let rec select_finding filter (x : T.full_finding) =
   | Filter (Affected_type_name name) ->
       List.mem name x.affected_types
   | Filter Backward ->
-      (match x.finding.direction with
+      (match x.direction with
        | Backward | Both -> true
        | Forward -> false
       )
   | Filter Forward ->
-      (match x.finding.direction with
+      (match x.direction with
        | Forward | Both -> true
        | Backward -> false
       )
@@ -60,7 +60,8 @@ let compare_files
   let res =
     let options : Compare.options = {
       json_defaults_old;
-      json_defaults_new
+      json_defaults_new;
+      sort_by = (if with_locations then Location else Hash);
     } in
     Compare.asts options ast1 ast2
   in

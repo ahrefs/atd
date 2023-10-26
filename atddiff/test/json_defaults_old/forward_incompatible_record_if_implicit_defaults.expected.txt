@@ -1,4 +1,4 @@
-Possible forward incompatibility:
+[2e39bd55] Possible forward incompatibility:
 File "forward_incompatible_record_if_implicit_defaults_old.atd", line 2, characters 2-23
 File "forward_incompatible_record_if_implicit_defaults_new.atd", line 2, characters 2-24:
 Formerly required field 'becomes_optional' is now optional but has a default value.

@@ -1,4 +1,4 @@
-Incompatibility in both directions:
+[214e5646] Incompatibility in both directions:
 File "changed_renamed_old.atd", line 10, characters 22-26
 File "changed_renamed_new.atd", line 10, characters 22-28:
 Type names 'int' and 'float' are not the same and may not be compatible.

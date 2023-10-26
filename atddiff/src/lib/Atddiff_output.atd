@@ -76,6 +76,11 @@ type incompatibility_kind = [
      different findings at the same location(s).
 *)
 type finding = {
+  (* A hexadecimal hash of all the other fields excluding location fields.
+     It is not necessarily unique but should be unique in most cases.
+     It's used for sorting, tracking, and referring to findings. *)
+  hash: string;
+
   direction: direction;
   kind: incompatibility_kind;
   location_old: location option;
@@ -84,10 +89,7 @@ type finding = {
   (* The description should not mention the affected root type definition
      so as to allow the deduplication of findings. *)
   description: string;
-}
 
-type full_finding = {
-  finding: finding;
   affected_types: string list;
 }
 
@@ -95,5 +97,5 @@ type full_finding = {
    A result is a list of unique findings.
 *)
 type result = {
-  findings: full_finding list;
+  findings: finding list;
 }

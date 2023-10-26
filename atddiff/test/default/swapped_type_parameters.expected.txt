@@ -1,4 +1,4 @@
-Incompatibility in both directions:
+[29041e94] Incompatibility in both directions:
 File "swapped_type_parameters_old.atd", line 3, characters 0-61
 File "swapped_type_parameters_new.atd", line 3, characters 0-61:
 Incompatible type variables are being used.

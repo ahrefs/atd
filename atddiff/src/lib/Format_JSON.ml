@@ -58,22 +58,18 @@ let fmt_finding ~with_locations (x : finding) : json =
       { x with location_old = None; location_new = None }
   in
   `Assoc (remove_null_fields [
+    "hash", `String x.hash;
     "direction", fmt_direction x.direction;
     "kind", fmt_kind x.kind;
     "location_old", option fmt_location x.location_old;
     "location_new", option fmt_location x.location_new;
     "description", `String x.description;
-  ])
-
-let fmt_full_finding ~with_locations (x : full_finding) : json =
-  `Assoc [
-    "finding", fmt_finding ~with_locations x.finding;
     "affected_types", `List (List.map string x.affected_types);
-  ]
+  ])
 
 let to_yojson ~with_locations (x : result) : json =
   `Assoc [
-    "findings", `List (List.map (fmt_full_finding ~with_locations) x.findings)
+    "findings", `List (List.map (fmt_finding ~with_locations) x.findings)
   ]
 
 let to_string ~with_locations x =

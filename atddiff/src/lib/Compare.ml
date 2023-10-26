@@ -39,11 +39,14 @@ module Strings = Set.Make(String)
 (* This is used for instanciating type variables. *)
 module Env = Map.Make(String)
 
+type sort_by = Location | Hash
+
 type options = {
   (* Are fields with defaults always populated in old JSON data? *)
   json_defaults_old : bool;
   (* Are fields with defaults always populated in new JSON data? *)
   json_defaults_new : bool;
+  sort_by: sort_by;
 }
 
 let is_builtin_name =
@@ -94,18 +97,40 @@ let split_types types1 types2 =
   let b = Strings.of_list types2 in
   Strings.diff a b, Strings.inter a b, Strings.diff b a
 
+let create_finding
+    ~direction ~kind ?location_old ?location_new ~description () =
+  {
+    hash = ""; (* computed later *)
+    direction;
+    kind;
+    location_old;
+    location_new;
+    description;
+    affected_types = []; (* computed later *)
+  }
+
+let complete_finding (x : finding) ~affected_types =
+  let x = { x with affected_types } in
+  let hash =
+    Hashtbl.hash (x.direction, x.kind, x.description, x.affected_types)
+    |> Printf.sprintf "%08x"
+  in
+  { x with hash }
+
 let report_deleted_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
-      Some (([name], []), {
-        direction = Backward;
-        kind = Deleted_type;
-        location_old = Some (loc |> Loc.of_atd_loc);
-        location_new = None;
-        description =
-          sprintf "The definition for type '%s' no longer exists."
-            name
-      })
+      Some (([name], []),
+            create_finding
+              ~direction:Backward
+              ~kind:Deleted_type
+              ~location_old: (loc |> Loc.of_atd_loc)
+              ~description:(
+                sprintf "The definition for type '%s' no longer exists."
+                   name
+              )
+              ()
+           )
     else
       None
   ) defs
@@ -113,13 +138,14 @@ let report_deleted_types defs name_set =
 let report_added_types defs name_set =
   List.filter_map (fun (loc, (name, _param, _an), _expr) ->
     if Strings.mem name name_set then
-      Some (([], [name]), {
-        direction = Forward;
-        kind = Deleted_type;
-        location_old = None;
-        location_new = Some (loc |> Loc.of_atd_loc);
-        description = sprintf "There is a new type named '%s'." name
-      })
+      Some (([], [name]),
+            create_finding
+              ~direction:Forward
+              ~kind:Deleted_type
+              ~location_new:(loc |> Loc.of_atd_loc)
+              ~description:(sprintf "There is a new type named '%s'." name)
+              ()
+           )
     else
       None
   ) defs
@@ -333,8 +359,18 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       let key = (def_name, e1, e2) in
       Hashtbl.replace visited_tbl key ()
     in
-    let add stacks x =
-      findings := (stacks, x) :: !findings in
+    let add
+        ~direction ~kind ?location_old ?location_new ~description stacks =
+      let finding =
+        create_finding
+          ~direction
+          ~kind
+          ?location_old
+          ?location_new
+          ~description
+          ()
+      in
+      findings := (stacks, finding) :: !findings in
     (*
        'stacks' is the pair of stacks of type names visited starting from
        the root definition. They're the type names affected by the finding.
@@ -365,16 +401,16 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       | Name (_, (loc1, name1, args1), _an1),
         Name (_, (loc2, name2, args2), _an2) ->
           if name1 <> name2 then
-            add stacks {
-              direction = Both;
-              kind = Incompatible_type;
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
+            add stacks
+              ~direction:Both
+              ~kind:Incompatible_type
+              ~location_old:(loc1 |> Loc.of_atd_loc)
+              ~location_new:(loc2 |> Loc.of_atd_loc)
+              ~description:(
                 sprintf "Type names '%s' and '%s' are not the same and \
                          may not be compatible."
-                  name1 name2;
-            }
+                  name1 name2
+              )
           else
             ()
       | Wrap _, _ | _, Wrap _ -> assert false
@@ -382,14 +418,14 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
           (* Type variables were normalized so they can be compared
              directly. *)
           if var1 <> var2 then
-            add stacks {
-              direction = Both;
-              kind = Incompatible_type;
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
+            add stacks
+              ~direction:Both
+              ~kind:Incompatible_type
+              ~location_old:(loc1 |> Loc.of_atd_loc)
+              ~location_new:(loc2 |> Loc.of_atd_loc)
+              ~description:(
                 sprintf "Incompatible type variables are being used.";
-            }
+              )
       | (Sum _
         | Record _
         | Tuple _
@@ -399,15 +435,15 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Shared _
         | Name _
         | Tvar _) as e1, e2 ->
-          add stacks {
-            direction = Both;
-            kind = Incompatible_type;
-            location_old = Some (A.loc_of_type_expr e1 |> Loc.of_atd_loc);
-            location_new = Some (A.loc_of_type_expr e2 |> Loc.of_atd_loc);
-            description =
+          add stacks
+            ~direction:Both
+            ~kind:Incompatible_type
+            ~location_old:(A.loc_of_type_expr e1 |> Loc.of_atd_loc)
+            ~location_new:(A.loc_of_type_expr e2 |> Loc.of_atd_loc)
+            ~description:(
               sprintf "Incompatible kinds of types: %s is now %s."
-                (kind_of_expr e1) (a_kind_of_expr e2);
-          }
+                (kind_of_expr e1) (a_kind_of_expr e2)
+            )
     and cmp_variants stacks loc1 loc2 cases1 cases2 =
       let with_names cases =
         cases
@@ -429,24 +465,20 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       left_only
       |> List.iter (fun json_name ->
         let loc, (_name, _an), _opt_e = List.assoc json_name named1 in
-        add stacks {
-          direction = Backward;
-          kind = Missing_variant { variant_name = json_name };
-          location_old = Some (loc |> Loc.of_atd_loc);
-          location_new = None;
-          description = sprintf "Case '%s' disappeared." json_name
-        }
+        add stacks
+          ~direction:Backward
+          ~kind:(Missing_variant { variant_name = json_name })
+          ~location_old:(loc |> Loc.of_atd_loc)
+          ~description:(sprintf "Case '%s' disappeared." json_name)
       );
       right_only
       |> List.iter (fun json_name ->
         let loc, (_name, _an), _opt_e = List.assoc json_name named2 in
-        add stacks {
-          direction = Forward;
-          kind = Missing_variant { variant_name = json_name };
-          location_old = None;
-          location_new = Some (loc |> Loc.of_atd_loc);
-          description = sprintf "Case '%s' is new." json_name
-        }
+        add stacks
+          ~direction:Forward
+          ~kind:(Missing_variant { variant_name = json_name })
+          ~location_new:(loc |> Loc.of_atd_loc)
+          ~description:(sprintf "Case '%s' is new." json_name)
       );
       shared
       |> List.iter (fun json_name ->
@@ -457,23 +489,23 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Some e1, Some e2 ->
             cmp_expr stacks e1 e2
         | Some _, None ->
-            add stacks {
-              direction = Both;
-              kind = Missing_variant_argument { variant_name = json_name };
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
+            add stacks
+              ~direction:Both
+              ~kind:(Missing_variant_argument { variant_name = json_name })
+              ~location_old:(loc1 |> Loc.of_atd_loc)
+              ~location_new:(loc2 |> Loc.of_atd_loc)
+              ~description:(
                 sprintf "Case '%s' no longer has an argument." json_name
-            }
+              )
         | None, Some _ ->
-            add stacks {
-              direction = Both;
-              kind = Missing_variant_argument { variant_name = json_name };
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
+            add stacks
+              ~direction:Both
+              ~kind:(Missing_variant_argument { variant_name = json_name })
+              ~location_old:(loc1 |> Loc.of_atd_loc)
+              ~location_new:(loc2 |> Loc.of_atd_loc)
+              ~description:(
                 sprintf "Case '%s' used to not have an argument." json_name
-            }
+              )
       )
     and cmp_fields stacks loc1 loc2 fields1 fields2 =
       let with_names fields =
@@ -500,13 +532,13 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Optional
         | With_default -> ()
         | Required ->
-            add stacks {
-              direction = Forward;
-              kind = Missing_field { field_name = json_name };
-              location_old = Some (loc |> Loc.of_atd_loc);
-              location_new = None;
-              description = sprintf "Required field '%s' disappeared." json_name
-            }
+            add stacks
+              ~direction:Forward
+              ~kind:(Missing_field { field_name = json_name })
+              ~location_old:(loc |> Loc.of_atd_loc)
+              ~description:(
+                sprintf "Required field '%s' disappeared." json_name
+              )
       );
       right_only
       |> List.iter (fun json_name ->
@@ -515,13 +547,13 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
         | Optional
         | With_default -> ()
         | Required ->
-            add stacks {
-              direction = Backward;
-              kind = Missing_field { field_name = json_name };
-              location_old = None;
-              location_new = Some (loc |> Loc.of_atd_loc);
-              description = sprintf "Required field '%s' is new." json_name
-            }
+            add stacks
+              ~direction:Backward
+              ~kind:(Missing_field { field_name = json_name })
+              ~location_new:(loc |> Loc.of_atd_loc)
+              ~description:(
+                sprintf "Required field '%s' is new." json_name
+              )
       );
       shared
       |> List.iter (fun json_name ->
@@ -537,57 +569,57 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
          | Required, With_default
            when options.json_defaults_new -> ()
          | Required, With_default ->
-             add stacks {
-              direction = Forward;
-              kind = Default_required { field_name = json_name };
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
-                sprintf "\
+             add stacks
+               ~direction:Forward
+               ~kind:(Default_required { field_name = json_name })
+               ~location_old:(loc1 |> Loc.of_atd_loc)
+               ~location_new:(loc2 |> Loc.of_atd_loc)
+               ~description:(
+                 sprintf "\
 Formerly required field '%s' is now optional but has a default value.
 You must ensure that new implementations always populate the JSON field
 with a value (using atdgen's option -j-defaults or equivalent) so that older
 implementations can read newer data. If this is already the case, use
 'atddiff --json-defaults-new' to disable this warning."
-                  json_name
-            }
+                   json_name
+               )
          | Required, Optional ->
-             add stacks {
-              direction = Forward;
-              kind = Missing_field { field_name = json_name };
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
-                sprintf "Formerly required field '%s' is now optional."
-                  json_name
-            }
+             add stacks
+               ~direction:Forward
+               ~kind:(Missing_field { field_name = json_name })
+               ~location_old:(loc1 |> Loc.of_atd_loc)
+               ~location_new:(loc2 |> Loc.of_atd_loc)
+               ~description:(
+                 sprintf "Formerly required field '%s' is now optional."
+                   json_name
+               )
          | With_default, Required
            when options.json_defaults_old -> ()
          | With_default, Required ->
-             add stacks {
-              direction = Backward;
-              kind = Default_required { field_name = json_name };
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
-                sprintf "\
+             add stacks
+               ~direction:Backward
+               ~kind:(Default_required { field_name = json_name })
+               ~location_old:(loc1 |> Loc.of_atd_loc)
+               ~location_new:(loc2 |> Loc.of_atd_loc)
+               ~description:(
+                 sprintf "\
 Newly required field '%s' was optional but had a default value.
 If old implementations in use always populate the JSON field
 with a value (using atdgen's option -j-defaults or equivalent),
 then there's no problem and you should use
 'atddiff --json-defaults-old' to disable this warning."
-                  json_name
-            }
+                   json_name
+               )
          | Optional, Required ->
-             add stacks {
-              direction = Backward;
-              kind = Missing_field { field_name = json_name };
-              location_old = Some (loc1 |> Loc.of_atd_loc);
-              location_new = Some (loc2 |> Loc.of_atd_loc);
-              description =
-                sprintf "Formerly optional field '%s' is now required."
-                  json_name
-            }
+             add stacks
+               ~direction:Backward
+               ~kind:(Missing_field { field_name = json_name })
+               ~location_old:(loc1 |> Loc.of_atd_loc)
+               ~location_new:(loc2 |> Loc.of_atd_loc)
+               ~description:(
+                 sprintf "Formerly optional field '%s' is now required."
+                   json_name
+               )
         );
         cmp_expr stacks e1 e2
       )
@@ -596,13 +628,12 @@ then there's no problem and you should use
       let n1 = List.length cells1 in
       let n2 = List.length cells2 in
       if n1 <> n2 then
-        add stacks {
-          direction = Both;
-          kind = Incompatible_type;
-          location_old = Some (A.loc_of_type_expr e1 |> Loc.of_atd_loc);
-          location_new = Some (A.loc_of_type_expr e2 |> Loc.of_atd_loc);
-          description = sprintf "Incompatible tuple lengths";
-        }
+        add stacks
+          ~direction:Both
+          ~kind:Incompatible_type
+          ~location_old:(A.loc_of_type_expr e1 |> Loc.of_atd_loc)
+          ~location_new:(A.loc_of_type_expr e2 |> Loc.of_atd_loc)
+          ~description:"Incompatible tuple lengths"
       else
         List.iter2 (fun (_loc1, e1, _an1) (_loc2, e2, _an2) ->
           cmp_expr stacks e1 e2
@@ -643,7 +674,7 @@ let compare_opt_location (a : Loc.t option) (b : Loc.t option) =
    3b. Position in the new file
    4. Everything else (expected to not occur)
 *)
-let compare_findings (a : finding) (b : finding) =
+let compare_findings_by_location (a : finding) (b : finding) =
   (* sort by left-only, right-only, both *)
   let c = Int.compare (finding_group a) (finding_group b) in
   if c <> 0 then c
@@ -656,7 +687,13 @@ let compare_findings (a : finding) (b : finding) =
       if c <> 0 then c
       else Stdlib.compare a b
 
-let group_and_sort_findings xs : full_finding list =
+let compare_findings_by_hash (a : finding) (b : finding) =
+  let c = String.compare a.hash b.hash in
+  if c <> 0 then c
+  else
+    compare_findings_by_location a b
+
+let group_and_sort_findings ~sort_by xs : finding list =
   let tbl = Hashtbl.create 100 in
   xs
   |> List.iter (fun ((affected_names1, affected_names2), finding) ->
@@ -669,17 +706,25 @@ let group_and_sort_findings xs : full_finding list =
         r := (Strings.union (Strings.of_list affected_names1) acc1,
               Strings.union (Strings.of_list affected_names2) acc2)
   );
-  Hashtbl.fold (fun finding r acc ->
-    let affected_names1, affected_names2 = !r in
-    (* For now, we report old and new type names as a single list.
-       We could be more precise about equivalence between old
-       and new names. Would it help the user? *)
-    let all_affected_names = Strings.union affected_names1 affected_names2 in
-    { finding;
-      affected_types = Strings.elements all_affected_names }
-    :: acc)
-    tbl []
-  |> List.sort (fun a b -> compare_findings a.finding b.finding)
+  let findings =
+    Hashtbl.fold (fun finding r acc ->
+      let affected_names1, affected_names2 = !r in
+      (* For now, we report old and new type names as a single list.
+         We could be more precise about equivalence between old
+         and new names. Would it help the user? *)
+      let all_affected_names = Strings.union affected_names1 affected_names2 in
+      assert (finding.affected_types = []);
+      complete_finding finding
+        ~affected_types:(Strings.elements all_affected_names)
+      :: acc)
+      tbl []
+  in
+  let compare_findings =
+    match sort_by with
+    | Location -> compare_findings_by_location
+    | Hash -> compare_findings_by_hash
+  in
+  List.sort compare_findings findings
 
 (*
    Expectations:
@@ -727,6 +772,6 @@ let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
   in
   let findings =
     findings
-    |> group_and_sort_findings
+    |> group_and_sort_findings ~sort_by:options.sort_by
   in
   { findings }

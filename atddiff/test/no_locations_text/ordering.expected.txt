@@ -1,0 +1,30 @@
+[0ba447bf] Incompatibility in both directions:
+Incompatible kinds of types: list/array is now a string.
+The following types are affected:
+  e
+
+[1c2c4aae] Incompatibility in both directions:
+Incompatible kinds of types: tuple is now a string.
+The following types are affected:
+  c
+
+[2182fd1f] Incompatibility in both directions:
+Incompatible kinds of types: list/array is now a string.
+The following types are affected:
+  b
+
+[2e525f5c] Incompatibility in both directions:
+Incompatible kinds of types: list/array is now a string.
+The following types are affected:
+  f
+
+[3b527108] Incompatibility in both directions:
+Incompatible kinds of types: tuple is now a string.
+The following types are affected:
+  d
+
+[3f176ef7] Incompatibility in both directions:
+Type names 'int' and 'string' are not the same and may not be compatible.
+The following types are affected:
+  a
+

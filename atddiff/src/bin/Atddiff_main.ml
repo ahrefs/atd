@@ -176,7 +176,8 @@ let no_locations_term : bool Term.t =
       ~doc:"Omit file/line/column information when printing findings. \
             This is intended for maximizing the stability of the atddiff \
             reports so that diffing successive reports gives meaningful \
-            results."
+            results. This causes the results to be sorted by hash rather \
+            than by location."
   in
   Arg.value (Arg.flag info)
 

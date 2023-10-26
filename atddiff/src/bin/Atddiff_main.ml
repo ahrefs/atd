@@ -177,7 +177,13 @@ let no_locations_term : bool Term.t =
             This is intended for maximizing the stability of the atddiff \
             reports so that diffing successive reports gives meaningful \
             results. This causes the results to be sorted by hash rather \
-            than by location."
+            than by location. The hex hash of each result is shown in both \
+            text and JSON output. It is guaranteed to be the same for \
+            a given version of atddiff compiled with a given version of \
+            OCaml. In practice, it is not expected to change \
+            often and can be used to track findings over time. Distinct \
+            findings will have the same hash if they have \
+            the same error message up to location."
   in
   Arg.value (Arg.flag info)
 

@@ -173,7 +173,8 @@ let output_format_term : Atddiff.output_format Term.t =
 let no_locations_term : bool Term.t =
   let info =
     Arg.info ["no-locations"]
-      ~doc:"Omit file/line/column information when printing findings. \
+      ~doc:"[EXPERIMENTAL] \
+            Omit file/line/column information when printing findings. \
             This is intended for maximizing the stability of the atddiff \
             reports so that diffing successive reports gives meaningful \
             results. This causes the results to be sorted by hash rather \

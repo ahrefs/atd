@@ -2,6 +2,9 @@ Unreleased
 -------------------
 
 * atddiff: Fix `atddiff --version` output (#379)
+* atddiff: Add option `--no-locations` aimed at producing more stable results
+           that allow diffing successive atddiff reports to spot new
+           findings and ignore old ones.
 
 2.14.1 (2023-10-20)
 -------------------

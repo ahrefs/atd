@@ -1,7 +1,7 @@
-Unreleased
+2.15.0 (2023-10-26)
 -------------------
 
-* atddiff: Incompatible changes in the JSON output format (#382)
+* atddiff: Breaking changes in the JSON output format of atddiff (#382)
 * atddiff: Fix `atddiff --version` output (#379)
 * atddiff: New experimental option `--no-locations` aimed at
            producing more stable results that allow diffing successive

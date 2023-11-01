@@ -1,3 +1,4 @@
 # We use cloud_sptheme because it allows advanced tables
 sphinx
+sphinx_rtd_theme
 cloud_sptheme

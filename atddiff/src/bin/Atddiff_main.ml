@@ -12,6 +12,7 @@ type conf = {
   filter: Atddiff.filter;
   json_defaults_old: bool;
   json_defaults_new: bool;
+  with_locations: bool;
   output_format: Atddiff.output_format;
   exit_success: bool;
   version: bool;
@@ -32,11 +33,13 @@ let exit_info = [
   finding_exit, "atddiff successfully found one or more issues to report.";
 ] |> List.map (fun (code, doc) -> Cmd.Exit.info ~doc code)
 
+let print_version_and_exit () =
+  print_endline Atddiff.version;
+  exit ok_exit
+
 let run conf =
-  if conf.version then (
-    print_endline Atddiff.version;
-    exit ok_exit
-  )
+  if conf.version then
+    print_version_and_exit ()
   else
     let out_data =
       Atddiff.compare_files
@@ -44,6 +47,7 @@ let run conf =
         ~json_defaults_old:conf.json_defaults_old
         ~json_defaults_new:conf.json_defaults_new
         ~output_format:conf.output_format
+        ~with_locations:conf.with_locations
         conf.old_file conf.new_file in
     let exit_code, data =
       match out_data with
@@ -166,6 +170,24 @@ let output_format_term : Atddiff.output_format Term.t =
                                 "json", Atddiff.JSON])
                Atddiff.Text info)
 
+let no_locations_term : bool Term.t =
+  let info =
+    Arg.info ["no-locations"]
+      ~doc:"[EXPERIMENTAL] \
+            Omit file/line/column information when printing findings. \
+            This is intended for maximizing the stability of the atddiff \
+            reports so that diffing successive reports gives meaningful \
+            results. This causes the results to be sorted by hash rather \
+            than by location. The hex hash of each result is shown in both \
+            text and JSON output. It is guaranteed to be the same for \
+            a given version of atddiff compiled with a given version of \
+            OCaml. In practice, it is not expected to change \
+            often and can be used to track findings over time. Distinct \
+            findings will have the same hash if they have \
+            the same error message up to location."
+  in
+  Arg.value (Arg.flag info)
+
 let exit_success_term : bool Term.t =
   let info =
     Arg.info ["exit-success"]
@@ -228,7 +250,7 @@ let cmdline_term run =
       old_file new_file out_file
       backward forward types
       json_defaults json_defaults_old json_defaults_new
-      output_format
+      output_format no_locations
       exit_success version =
     let filter =
       let module A = Atddiff in
@@ -256,6 +278,7 @@ let cmdline_term run =
       json_defaults_old;
       json_defaults_new;
       output_format;
+      with_locations = not no_locations;
       exit_success;
       version;
     }
@@ -271,19 +294,25 @@ let cmdline_term run =
         $ json_defaults_old_term
         $ json_defaults_new_term
         $ output_format_term
+        $ no_locations_term
         $ exit_success_term
         $ version_term
        )
 
 let parse_command_line_and_run run =
-  let info =
-    Cmd.info
-      ~doc
-      ~exits:exit_info
-      ~man
-      "atddiff"
-  in
-  Cmd.v info (cmdline_term run) |> Cmd.eval |> exit
+  match Sys.argv with
+  (* gross, but avoids complaints about missing input files *)
+  | [| _; "--version" |] ->
+      print_version_and_exit ()
+  | _ ->
+      let info =
+        Cmd.info
+          ~doc
+          ~exits:exit_info
+          ~man
+          "atddiff"
+      in
+      Cmd.v info (cmdline_term run) |> Cmd.eval |> exit
 
 let safe_run conf =
   try run conf

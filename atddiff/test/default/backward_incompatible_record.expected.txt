@@ -1,10 +1,10 @@
-Backward incompatibility:
+[2283db51] Backward incompatibility:
 File "backward_incompatible_record_new.atd", line 2, characters 2-18:
 Required field 'added_field' is new.
 The following types are affected:
   backward_incompatible_record
 
-Backward incompatibility:
+[3c1ae3e6] Backward incompatibility:
 File "backward_incompatible_record_old.atd", line 2, characters 2-31
 File "backward_incompatible_record_new.atd", line 3, characters 2-23:
 Formerly optional field 'becomes_required' is now required.

@@ -1,0 +1,10 @@
+[177fee07] Incompatibility in both directions:
+Type names 'int' and 'string' are not the same and may not be compatible.
+The following types are affected:
+  t
+
+[177fee07] Incompatibility in both directions:
+Type names 'int' and 'string' are not the same and may not be compatible.
+The following types are affected:
+  t
+

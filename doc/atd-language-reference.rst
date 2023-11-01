@@ -327,8 +327,6 @@ An ATD lexer splits its input into a stream of tokens,
 discarding whitespace and comments.
 
 .. table::
-   :column-alignment: right left left
-   :column-dividers: none none single none
 
    ============= ======================================== ====================
        token ::= keyword
@@ -429,8 +427,6 @@ Grammar
 ^^^^^^^
 
 .. table::
-   :column-alignment: right left left
-   :column-dividers: none none single none
 
    =============== ======================================== =================
         module ::= annot* typedef*                          entry point

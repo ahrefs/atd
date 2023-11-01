@@ -1,7 +1,16 @@
 Unreleased
 -------------------
 
-* atdgen: Migrate from Bucklescript to Melange (#375)
+* atdgen: Breaking change, migrate from Bucklescript to Melange (#375)
+
+2.15.0 (2023-10-26)
+-------------------
+
+* atddiff: Breaking changes in the JSON output format of atddiff (#382)
+* atddiff: Fix `atddiff --version` output (#379)
+* atddiff: New experimental option `--no-locations` aimed at
+           producing more stable results that allow diffing successive
+           atddiff reports to spot new findings and ignore old ones (#377)
 
 2.14.1 (2023-10-20)
 -------------------

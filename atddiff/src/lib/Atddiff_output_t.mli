@@ -22,13 +22,13 @@ type incompatibility_kind =
 type direction =  Backward | Forward | Both 
 
 type finding = {
+  hash: string;
   direction: direction;
   kind: incompatibility_kind;
   location_old: location option;
   location_new: location option;
-  description: string
+  description: string;
+  affected_types: string list
 }
 
-type full_finding = { finding: finding; affected_types: string list }
-
-type result = { findings: full_finding list }
+type result = { findings: finding list }

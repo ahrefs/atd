@@ -53,33 +53,41 @@ folders="
   json_defaults_old
   json_defaults_new
   json_output
+  no_locations_text
+  no_locations_json
 "
 
 for folder in $folders; do
-  atddiff_options="--exit-success"
+  atddiff_options="--exit-success "
   case "$folder" in
     default)
       ;;
     filter)
-      atddiff_options="--exit-success --backward --forward --types a,b"
+      atddiff_options+="--backward --forward --types a,b"
       ;;
     filter_backward)
-      atddiff_options="--exit-success --backward"
+      atddiff_options+="--backward"
       ;;
     filter_forward)
-      atddiff_options="--exit-success --forward"
+      atddiff_options+="--forward"
       ;;
     json_defaults)
-      atddiff_options="--exit-success --json-defaults"
+      atddiff_options+="--json-defaults"
       ;;
     json_defaults_old)
-      atddiff_options="--exit-success --json-defaults-old"
+      atddiff_options+="--json-defaults-old"
       ;;
     json_defaults_new)
-      atddiff_options="--exit-success --json-defaults-new"
+      atddiff_options+="--json-defaults-new"
       ;;
     json_output)
-      atddiff_options="--exit-success --output-format json"
+      atddiff_options+="--output-format json"
+      ;;
+    no_locations_text)
+      atddiff_options+="--no-locations -f text"
+      ;;
+    no_locations_json)
+      atddiff_options+="--no-locations -f json"
       ;;
     *)
       echo "Error: Unknown atddiff command for test folder $folder" >&2

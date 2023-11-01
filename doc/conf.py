@@ -29,9 +29,7 @@
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 #
-# Table styling allowing right-centered columns.
-# See https://cloud-sptheme.readthedocs.io/en/latest/lib/cloud_sptheme.ext.table_styling.html
-extensions = ['cloud_sptheme.ext.table_styling']
+extensions = []
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -74,18 +72,14 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'sphinx_rtd_theme'
-#
-# This cloud_sptheme (why drop the _sptheme, idk)
-html_theme = 'cloud'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 # Setting used with sphinx_rtd_theme:
-#html_theme_options = {'navigation_depth': 6}
-html_theme_options = {}
+html_theme_options = {'navigation_depth': 6}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

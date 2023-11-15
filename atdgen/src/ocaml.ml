@@ -85,9 +85,9 @@ module Repr = struct
     | Def of atd_ocaml_def
 end
 
-type target = Default | Biniou | Json | Validate | Bucklescript
+type target = Default | Biniou | Json | Validate | Melange
 
-let all_targets = [ Default; Biniou; Json; Validate; Bucklescript ]
+let all_targets = [ Default; Biniou; Json; Validate; Melange ]
 
 let ocaml_int_of_string s : atd_ocaml_int option =
   match s with
@@ -134,7 +134,12 @@ let path_of_target (target : target) =
     | Default -> [ "ocaml" ]
     | Biniou -> [ "ocaml_biniou"; "ocaml" ]
     | Json -> [ "ocaml_json"; "ocaml" ]
-    | Bucklescript -> ["ocaml_bs"; "ocaml"]
+    | Melange -> [
+      (* kept for backwards compatibility with BuckleScript *)
+      "ocaml_bs";
+      "ocaml_mel";
+      "ocaml"
+    ]
     | Validate -> [ "ocaml_validate"; "ocaml" ]
 
 (*
@@ -178,7 +183,7 @@ let annot_schema_of_target (target : target) : Atd.Annot.schema =
     | Default -> []
     | Biniou -> Biniou.annot_schema_biniou
     | Json -> Json.annot_schema_json
-    | Bucklescript -> Json.annot_schema_json
+    | Melange -> Json.annot_schema_json
     | Validate -> []
   in
   ocaml_sections @ other_section
@@ -364,7 +369,7 @@ let get_ocaml_module target an =
           | Default -> type_module
           | Biniou -> s ^ "_b"
           | Json -> s ^ "_j"
-          | Bucklescript -> s ^ "_bs"
+          | Melange -> s ^ "_mel"
           | Validate -> s ^ "_v"
         in
         (type_module, main_module))

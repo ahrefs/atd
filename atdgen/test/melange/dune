@@ -1,0 +1,51 @@
+(rule
+ (targets melangespec_mel.ml melangespec_mel.mli)
+ (deps melangespec.atd)
+ (action (run atdgen %{deps} -mel)))
+
+(rule
+ (targets melangespec_t.ml melangespec_t.mli)
+ (deps melangespec.atd)
+ (action (run atdgen %{deps} -t)))
+
+(rule
+ (targets melangespec_j.ml melangespec_j.mli)
+ (deps melangespec.atd)
+ (action (run atdgen %{deps} -j -j-std)))
+
+(library
+ (name melangespec_types)
+ (wrapped false)
+ (libraries atdgen-codec-runtime)
+ (modules melangespec_t a_t a_mel))
+
+(library
+ (name melangespec_mel)
+ (wrapped false)
+ (libraries atdgen-codec-runtime melangespec_types)
+ (modules melangespec_mel))
+
+(executable
+ (name melangespec_roundtrip)
+ (modules melangespec_roundtrip melangespec_j a_j)
+ (libraries melangespec_types melangespec_mel atdgen-runtime atdgen-codec-runtime biniou yojson))
+
+(rule
+ (alias runtest)
+ (package atdgen)
+ (action (diff melangespec_mel.expected.ml melangespec_mel.ml)))
+
+(rule
+ (alias runtest)
+ (package atdgen)
+ (action (diff melangespec_mel.expected.mli melangespec_mel.mli)))
+
+(rule
+ (alias runtest)
+ (package atdgen)
+ (action (diff melangespec_j.expected.ml melangespec_j.ml)))
+
+(rule
+ (alias runtest)
+ (package atdgen)
+ (action (run ./melangespec_roundtrip.exe)))

@@ -59,7 +59,7 @@ Contributing to a specific subproject
 
 Each subproject has its own README:
 
-* [atdgen](atdgen): targets OCaml, Bucklescript
+* [atdgen](atdgen): targets OCaml, Melange
 * [atdj](atdj): targets Java
 * [atdpy](atdpy): targets Python
 * [atds](atds): targets Scala

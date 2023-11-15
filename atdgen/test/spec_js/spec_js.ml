@@ -1,4 +1,4 @@
-module Bs = Spec_bs
+module Mel = Spec_mel
 module J = Spec_j
 
 open Spec_t

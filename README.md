@@ -10,7 +10,7 @@ and type-safe serializers, deserializers and validators.
 Target programming languages currently supported:
 * DLang: [atdd](atdd)
 * Java: [atdj](atdj)
-* OCaml, Bucklescript: [atdgen](atdgen)
+* OCaml, Melange: [atdgen](atdgen)
 * Python: [atdpy](atdpy)
 * Scala: [atds](atds)
 * TypeScript: [atdts](atdts)

@@ -69,6 +69,7 @@ void setupTests()
         obj.assoc2 = [tuple("d", 3), tuple("e", 7)]; // Must be ordered by key because we lose ordering when writing
         obj.assoc3 = [4.4f: 4, 5.5f: 5];
         obj.assoc4 = ["g": 7, "h": 8];
+        obj.kind = Root_().to!Kind;
         obj.kinds = [
             WOW().to!Kind, Thing(99).to!Kind, Amaze(["a", "b"]).to!Kind, Root_().to!Kind
         ];
@@ -86,7 +87,7 @@ void setupTests()
             JSONValue(123)
         ];
         obj.parametrized_record = IntFloatParametrizedRecord(42, [9.9f, 8.8f]);
-        obj.parametrized_tuple = KindParametrizedTuple(tuple(Kind(WOW()), Kind(WOW()), 100));
+        obj.parametrized_tuple = KindParametrizedTuple(WOW(), WOW(), 100);
 
         () @safe {
             auto jsonStr = obj.toJsonString;

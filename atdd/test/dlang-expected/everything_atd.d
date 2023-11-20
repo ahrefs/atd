@@ -352,8 +352,11 @@ struct RecursiveClass {
 }
 
 
-struct St{ int _data; alias _data this;
-@safe this(int init) {_data = init;} @safe this(St init) {_data = init._data;}}
+struct St{int _data; alias _data this;
+this(int init) @safe {_data = init;}
+this(St init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : St)(St e) {
     return _atd_write_int(e);
 }
@@ -390,7 +393,8 @@ struct Amaze { string[] value; }
 }
 
 
-alias Kind = SumType!(Root_, Thing, WOW, Amaze);
+struct Kind{ SumType!(Root_, Thing, WOW, Amaze) _data; alias _data this;
+@safe this(T)(T init) {_data = init;} @safe this(Kind init) {_data = init._data;}}
 
 @trusted Kind fromJson(T : Kind)(JSONValue x) {
     if (x.type == JSONType.string) {
@@ -421,8 +425,11 @@ alias Kind = SumType!(Root_, Thing, WOW, Amaze);
 }
 
 
-struct Alias3{ uint32_t _data; alias _data this;
-@safe this(uint32_t init) {_data = init;} @safe this(Alias3 init) {_data = init._data;}}
+struct Alias3{uint32_t _data; alias _data this;
+this(uint32_t init) @safe {_data = init;}
+this(Alias3 init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : Alias3)(Alias3 e) {
     return _atd_write_wrap!(_atd_write_int, (uint32_t e) => to!int(e))(e);
 }
@@ -431,8 +438,11 @@ struct Alias3{ uint32_t _data; alias _data this;
 }
 
 
-struct AliasOfAliasNotWrapped{ Alias3 _data; alias _data this;
-@safe this(Alias3 init) {_data = init;} @safe this(AliasOfAliasNotWrapped init) {_data = init._data;}}
+struct AliasOfAliasNotWrapped{Alias3 _data; alias _data this;
+this(Alias3 init) @safe {_data = init;}
+this(AliasOfAliasNotWrapped init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : AliasOfAliasNotWrapped)(AliasOfAliasNotWrapped e) {
     return ((Alias3 x) => x.toJson!(Alias3))(e);
 }
@@ -441,8 +451,11 @@ struct AliasOfAliasNotWrapped{ Alias3 _data; alias _data this;
 }
 
 
-struct AliasOfAliasOfAlias{ AliasOfAliasNotWrapped _data; alias _data this;
-@safe this(AliasOfAliasNotWrapped init) {_data = init;} @safe this(AliasOfAliasOfAlias init) {_data = init._data;}}
+struct AliasOfAliasOfAlias{AliasOfAliasNotWrapped _data; alias _data this;
+this(AliasOfAliasNotWrapped init) @safe {_data = init;}
+this(AliasOfAliasOfAlias init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : AliasOfAliasOfAlias)(AliasOfAliasOfAlias e) {
     return ((AliasOfAliasNotWrapped x) => x.toJson!(AliasOfAliasNotWrapped))(e);
 }
@@ -451,8 +464,11 @@ struct AliasOfAliasOfAlias{ AliasOfAliasNotWrapped _data; alias _data this;
 }
 
 
-struct Alias{ int[] _data; alias _data this;
-@safe this(int[] init) {_data = init;} @safe this(Alias init) {_data = init._data;}}
+struct Alias{int[] _data; alias _data this;
+this(int[] init) @safe {_data = init;}
+this(Alias init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : Alias)(Alias e) {
     return _atd_write_list!(_atd_write_int)(e);
 }
@@ -461,8 +477,11 @@ struct Alias{ int[] _data; alias _data this;
 }
 
 
-struct KindParametrizedTuple{ Tuple!(Kind, Kind, int) _data; alias _data this;
-@safe this(Tuple!(Kind, Kind, int) init) {_data = init;} @safe this(KindParametrizedTuple init) {_data = init._data;}}
+struct KindParametrizedTuple{Tuple!(Kind, Kind, int) _data; alias _data this;
+this(Tuple!(Kind, Kind, int) init) @safe {_data = init;}
+this(KindParametrizedTuple init) @safe {_data = init._data;}
+this(T...)(T args) @safe {_data = tuple(args);}
+}
 @trusted JSONValue toJson(T : KindParametrizedTuple)(KindParametrizedTuple e) {
     return ((Tuple!(Kind, Kind, int) x) => JSONValue([((Kind x) => x.toJson!(Kind))(x[0]), ((Kind x) => x.toJson!(Kind))(x[1]), _atd_write_int(x[2])]))(e);
 }
@@ -507,6 +526,7 @@ struct Root {
     int answer = 42;
     Alias aliased;
     Tuple!(float, float) point;
+    Kind kind;
     Kind[] kinds;
     Tuple!(float, int)[] assoc1;
     Tuple!(string, int)[] assoc2;
@@ -539,6 +559,7 @@ struct Root {
       throw _atd_bad_json("Tuple of size 2", x);
     return tuple(_atd_read_float(x[0]), _atd_read_float(x[1]));
   })(x["point"]) : _atd_missing_json_field!(typeof(obj.point))("Root", "point");
+    obj.kind = ("kind" in x) ? fromJson!Kind(x["kind"]) : _atd_missing_json_field!(typeof(obj.kind))("Root", "kind");
     obj.kinds = ("kinds" in x) ? _atd_read_list!(fromJson!Kind)(x["kinds"]) : _atd_missing_json_field!(typeof(obj.kinds))("Root", "kinds");
     obj.assoc1 = ("assoc1" in x) ? _atd_read_list!(((JSONValue x) @trusted { 
     if (x.type != JSONType.array || x.array.length != 2)
@@ -572,6 +593,7 @@ struct Root {
     res["answer"] = _atd_write_int(obj.answer);
     res["aliased"] = ((Alias x) => x.toJson!(Alias))(obj.aliased);
     res["point"] = ((Tuple!(float, float) x) => JSONValue([_atd_write_float(x[0]), _atd_write_float(x[1])]))(obj.point);
+    res["kind"] = ((Kind x) => x.toJson!(Kind))(obj.kind);
     res["kinds"] = _atd_write_list!(((Kind x) => x.toJson!(Kind)))(obj.kinds);
     res["assoc1"] = _atd_write_list!(((Tuple!(float, int) x) => JSONValue([_atd_write_float(x[0]), _atd_write_int(x[1])])))(obj.assoc1);
     res["assoc2"] = _atd_write_tuple_list_to_object!(_atd_write_int)(obj.assoc2);
@@ -620,8 +642,11 @@ struct RecordWithWrappedType {
 }
 
 
-struct Password{ uint32_t _data; alias _data this;
-@safe this(uint32_t init) {_data = init;} @safe this(Password init) {_data = init._data;}}
+struct Password{uint32_t _data; alias _data this;
+this(uint32_t init) @safe {_data = init;}
+this(Password init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : Password)(Password e) {
     return _atd_write_wrap!(_atd_write_int, (uint32_t e) => to!int(e))(e);
 }
@@ -630,8 +655,11 @@ struct Password{ uint32_t _data; alias _data this;
 }
 
 
-struct Pair{ Tuple!(string, int) _data; alias _data this;
-@safe this(Tuple!(string, int) init) {_data = init;} @safe this(Pair init) {_data = init._data;}}
+struct Pair{Tuple!(string, int) _data; alias _data this;
+this(Tuple!(string, int) init) @safe {_data = init;}
+this(Pair init) @safe {_data = init._data;}
+this(T...)(T args) @safe {_data = tuple(args);}
+}
 @trusted JSONValue toJson(T : Pair)(Pair e) {
     return ((Tuple!(string, int) x) => JSONValue([_atd_write_string(x[0]), _atd_write_int(x[1])]))(e);
 }
@@ -658,7 +686,8 @@ struct B { int value; }
 }
 
 
-alias Frozen = SumType!(A, B);
+struct Frozen{ SumType!(A, B) _data; alias _data this;
+@safe this(T)(T init) {_data = init;} @safe this(Frozen init) {_data = init._data;}}
 
 @trusted Frozen fromJson(T : Frozen)(JSONValue x) {
     if (x.type == JSONType.string) {
@@ -718,8 +747,11 @@ struct Credential {
 }
 
 
-struct Credentials{ Credential[] _data; alias _data this;
-@safe this(Credential[] init) {_data = init;} @safe this(Credentials init) {_data = init._data;}}
+struct Credentials{Credential[] _data; alias _data this;
+this(Credential[] init) @safe {_data = init;}
+this(Credentials init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : Credentials)(Credentials e) {
     return _atd_write_list!(((Credential x) => x.toJson!(Credential)))(e);
 }
@@ -728,8 +760,11 @@ struct Credentials{ Credential[] _data; alias _data this;
 }
 
 
-struct AliasOfAlias{ uint16_t _data; alias _data this;
-@safe this(uint16_t init) {_data = init;} @safe this(AliasOfAlias init) {_data = init._data;}}
+struct AliasOfAlias{uint16_t _data; alias _data this;
+this(uint16_t init) @safe {_data = init;}
+this(AliasOfAlias init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : AliasOfAlias)(AliasOfAlias e) {
     return _atd_write_wrap!(((Alias3 x) => x.toJson!(Alias3)), (uint16_t e) => to!uint32_t(e))(e);
 }
@@ -738,8 +773,11 @@ struct AliasOfAlias{ uint16_t _data; alias _data this;
 }
 
 
-struct Alias2{ int[] _data; alias _data this;
-@safe this(int[] init) {_data = init;} @safe this(Alias2 init) {_data = init._data;}}
+struct Alias2{int[] _data; alias _data this;
+this(int[] init) @safe {_data = init;}
+this(Alias2 init) @safe {_data = init._data;}
+
+}
 @trusted JSONValue toJson(T : Alias2)(Alias2 e) {
     return _atd_write_list!(_atd_write_int)(e);
 }

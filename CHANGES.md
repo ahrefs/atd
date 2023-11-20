@@ -2,6 +2,8 @@ Unreleased
 -------------------
 
 * atdgen: Breaking change, migrate from Bucklescript to Melange (#375)
+* atdd: Workaround d compiler bug regarding declaration order when using aliases (#393)
+        Algebraic data types (SumType) now uses `alias this` syntax.
 
 2.15.0 (2023-10-26)
 -------------------

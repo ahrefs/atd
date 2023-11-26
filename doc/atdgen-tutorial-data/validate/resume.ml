@@ -1,7 +1,7 @@
 let check_experience x =
   let is_valid = match Resume_v.validate_work_experience [] x with
-    | None -> false
-    | _ -> true
+    | None -> true
+    | _ -> false
   in
   Printf.printf "%s:\n%s\n"
     (if is_valid then "VALID" else "INVALID")
@@ -11,7 +11,7 @@ let () =
   (* one valid date *)
   let valid = { Resume_t.year = 2000; month = 2; day = 29 } in
   (* one invalid date *)
-  let invalid = { Resume_t.year = 2010; month = 0; day = 0 } in
+  let invalid = { Resume_t.year = 1900; month = 0; day = 0 } in
   (* two more valid dates, created with Resume_v.create_date *)
   let date1 = { Resume_t.year = 2005; month = 8; day = 1 } in
   let date2 = { Resume_t.year = 2006; month = 3; day = 22 } in

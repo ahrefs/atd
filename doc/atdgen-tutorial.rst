@@ -708,8 +708,8 @@ generated ``Resume_j`` in the following program written in ``resume.ml``:
 
   let check_experience x =
     let is_valid = match Resume_v.validate_work_experience [] x with
-      | None -> false
-      | _ -> true
+      | None -> true
+      | _ -> false
     in
     Printf.printf "%s:\n%s\n"
       (if is_valid then "VALID" else "INVALID")

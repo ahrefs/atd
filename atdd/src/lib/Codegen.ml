@@ -894,9 +894,16 @@ let record env loc name (fields : field list) an =
 let alias_wrapper env  name type_expr =
   let dlang_struct_name = struct_name env name in
   let value_type = type_name_of_expr env type_expr in
+  let optional_constructor = match type_expr with
+    | Tuple (_, _, _) -> 
+      Line(sprintf "this(T...)(T args) @safe {_data = tuple(args);}");
+    | _ -> Line(""); in
   [
-    Line (sprintf "struct %s{ %s _data; alias _data this;" dlang_struct_name value_type); 
-    Line (sprintf "@safe this(%s init) {_data = init;} @safe this(%s init) {_data = init._data;}}" value_type dlang_struct_name);
+    Line (sprintf "struct %s{%s _data; alias _data this;" dlang_struct_name value_type); 
+    Line (sprintf "this(%s init) @safe {_data = init;}" value_type );
+    Line (sprintf "this(%s init) @safe {_data = init._data;}" dlang_struct_name);
+    Inline [optional_constructor];
+    Line ("}");
     Line (sprintf "@trusted JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
     Line("}");
@@ -1014,7 +1021,8 @@ let sum_container env  loc name cases =
       []
   in
   [
-    Line (sprintf "alias %s = SumType!(%s);" dlang_struct_name type_list);
+    Line (sprintf "struct %s{ %s _data; alias _data this;" dlang_struct_name (sprintf "SumType!(%s)" type_list) ); 
+    Line (sprintf "@safe this(T)(T init) {_data = init;} @safe this(%s init) {_data = init._data;}}" dlang_struct_name);
     Line "";
       Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue x) {"
             (single_esc dlang_struct_name) (single_esc dlang_struct_name));

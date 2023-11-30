@@ -32,6 +32,7 @@ type root = {
   ~answer <dlang default="42">: int;
   aliased: alias;
   point: (float * float);
+  kind: kind;
   kinds: kind list;
   assoc1: (float * int) list;
   assoc2: (string * int) list <json repr="object">;

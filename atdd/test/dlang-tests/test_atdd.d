@@ -71,7 +71,7 @@ void setupTests()
         obj.assoc4 = ["g": 7, "h": 8];
         obj.kind = Root_().to!Kind;
         obj.kinds = [
-            WOW().to!Kind, Thing(99).to!Kind, Amaze(["a", "b"]).to!Kind, Root_().to!Kind
+            WOW().to!Kind, 99.to!Thing.to!Kind, ["a", "b"].to!Amaze.to!Kind, Root_().to!Kind
         ];
         obj.nullables = [
             12.Nullable!int, Nullable!int.init, Nullable!int.init,

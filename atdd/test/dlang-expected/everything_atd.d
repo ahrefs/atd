@@ -373,7 +373,9 @@ struct Root_ {}
 
 
 // Original type: kind = [ ... | Thing of ... | ... ]
-struct Thing { int value; }
+struct Thing {
+int value; alias value this;
+@safe this(T)(T init) {value = init;} @safe this(Thing init) {value = init.value;}}
 @trusted JSONValue toJson(T : Thing)(T e) {
     return JSONValue([JSONValue("Thing"), _atd_write_int(e.value)]);
 }
@@ -387,7 +389,9 @@ struct WOW {}
 
 
 // Original type: kind = [ ... | Amaze of ... | ... ]
-struct Amaze { string[] value; }
+struct Amaze {
+string[] value; alias value this;
+@safe this(T)(T init) {value = init;} @safe this(Amaze init) {value = init.value;}}
 @trusted JSONValue toJson(T : Amaze)(T e) {
     return JSONValue([JSONValue("!!!"), _atd_write_list!(_atd_write_string)(e.value)]);
 }
@@ -680,7 +684,9 @@ struct A {}
 
 
 // Original type: frozen = [ ... | B of ... | ... ]
-struct B { int value; }
+struct B {
+int value; alias value this;
+@safe this(T)(T init) {value = init;} @safe this(B init) {value = init.value;}}
 @trusted JSONValue toJson(T : B)(T e) {
     return JSONValue([JSONValue("B"), _atd_write_int(e.value)]);
 }

@@ -931,7 +931,8 @@ let case_class env  type_name
           Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
+          Line (sprintf "struct %s {\n%s value; alias value this;" (trans env unique_name) (type_name_of_expr env e) ); 
+          Line (sprintf "@safe this(T)(T init) {value = init;} @safe this(%s init) {value = init.value;}}" (trans env unique_name));
           Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
           Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
           Line("}");

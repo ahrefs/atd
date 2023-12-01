@@ -26,6 +26,7 @@ let annot_schema_dlang : Atd.Annot.schema_section =
   {
     section = "dlang";
     fields = [
+      Type_def, "shape";
       Type_expr, "t";
       Type_expr, "repr";
       Type_expr, "unwrap";

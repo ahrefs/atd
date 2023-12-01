@@ -8,6 +8,11 @@ type assoc_repr =
   | List
   | Dict
 
+type shape =
+  | Enum
+  | Default
+  | Recursive
+
 type atd_dlang_wrap = {
   dlang_wrap_t : string;
   dlang_wrap : string;
@@ -20,6 +25,19 @@ let get_dlang_default an : string option =
       ~sections:["dlang"]
       ~field:"default"
       an
+
+let get_dlang_type_shape an : shape =
+  Atd.Annot.get_field
+    ~parse:(function
+      | "enum" -> Some Enum
+      | "default" -> Some Default
+      | "rec" | "recursive" -> Some Recursive
+      | _ -> None
+    )
+    ~default:Default
+    ~sections:["dlang"]
+    ~field:"shape"
+    an
 
 let get_dlang_assoc_repr an : assoc_repr =
   Atd.Annot.get_field

@@ -1,0 +1,24 @@
+(executable
+ (name resume)
+ (libraries atdgen-runtime yojson))
+
+(rule
+ (targets resume_t.ml resume_t.mli)
+ (deps resume.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -t)))
+
+(rule
+ (targets resume_j.ml resume_j.mli)
+ (deps resume.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -j)))
+
+(rule
+ (targets resume_v.ml resume_v.mli)
+ (deps resume.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -v)))
+
+(cram
+ (deps resume.exe))

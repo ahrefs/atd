@@ -940,8 +940,7 @@ let inst_var_declaration
     Line (sprintf "%s %s%s;" type_name var_name default)
   ]
 
-let record env loc name (fields : field list) an =
-  let is_rec = true in
+let record env loc name (fields : field list) an is_rec =
   let dlang_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
@@ -1177,19 +1176,31 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
   let unwrap e =
-    match e with
-    | Sum (loc, cases, an) ->
-        sum env  loc name cases
-    | Record (loc, fields, an) ->
-        record env loc name fields an
-    | Tuple _
-    | List _
-    | Option _
-    | Nullable _
-    | Wrap _
-    | Name _ -> alias_wrapper env  name e
-    | Shared _ -> not_implemented loc "cyclic references"
-    | Tvar _ -> not_implemented loc "parametrized type"
+    match Dlang_annot.get_dlang_type_shape an with
+    | Enum -> 
+      (match e with
+      | Sum (loc, cases, an) ->
+          sum env  loc name cases
+      | _ -> not_implemented loc "shape enum but not sumtype")
+    | Recursive -> 
+      (match e with
+      | Record (loc, fields, an) ->
+          record env loc name fields an true
+      | _ -> not_implemented loc "shape recursive but not record")
+    | Default -> 
+      (match e with
+      | Sum (loc, cases, an) ->
+          sum env  loc name cases
+      | Record (loc, fields, an) ->
+          record env loc name fields an false
+      | Tuple _
+      | List _
+      | Option _
+      | Nullable _
+      | Wrap _
+      | Name _ -> alias_wrapper env  name e
+      | Shared _ -> not_implemented loc "cyclic references"
+      | Tvar _ -> not_implemented loc "parametrized type")
   in
   unwrap e
 

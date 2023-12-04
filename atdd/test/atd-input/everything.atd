@@ -12,6 +12,17 @@ type frozen = [
   | B of int
 ]
 
+type planet <dlang shape="enum"> = [
+  | Mercury
+  | Venus
+  | Earth
+  | Mars
+  | Saturn
+  | Jupiter
+  | Neptune
+  | Uranus
+]
+
 type ('a, 'b) parametrized_record = {
   field_a: 'a;
   ~field_b: 'b list;
@@ -71,10 +82,10 @@ type require_field = {
   req: string;
 }
 
-type recursive_class = {
+type recursive_class <dlang shape="recursive"> = {
   id: int;
   flag: bool;
-  children: recursive_class list;
+  children: recursive_class;
 }
 
 type default_list = {

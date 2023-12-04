@@ -10,6 +10,13 @@ bool testFailed = false;
 
 void setupTests()
 {
+    tests["basicTypes"] = {
+        auto floatList = [0.1, 0.5, -0.8];
+        auto jsonStr = floatList.toJsonString;
+
+        assert(floatList.toJsonString == jsonStr.fromJsonString!(float[]).toJsonString);
+    };
+
     tests["simpleRecord"] = {
         auto record = IntFloatParametrizedRecord(32, [5.4, 3.3]);
 
@@ -62,14 +69,14 @@ void setupTests()
         obj.x___init__ = 0.32f;
         obj.items = [[], [1, 2]];
         obj.extras = [17, 53];
-        obj.aliased = [1, 6, 8];
-        obj.maybe = 43;
-        obj.point = tuple(4.3, 1.2);
+        obj.aliased = new Alias([1, 6, 8]);
+        obj.maybe = new Nullable!int(43);
+        obj.point = new Tuple!(float, float)(tuple(4.3, 1.2));
         obj.assoc1 = [tuple(3.4f, 2), tuple(1.1f, 2)]; // Can be not ordered by key
         obj.assoc2 = [tuple("d", 3), tuple("e", 7)]; // Must be ordered by key because we lose ordering when writing
         obj.assoc3 = [4.4f: 4, 5.5f: 5];
         obj.assoc4 = ["g": 7, "h": 8];
-        obj.kind = Root_().to!Kind;
+        obj.kind = new Kind(Root_().to!Kind);
         obj.kinds = [
             WOW().to!Kind, 99.to!Thing.to!Kind, ["a", "b"].to!Amaze.to!Kind, Root_().to!Kind
         ];
@@ -86,14 +93,14 @@ void setupTests()
             JSONValue(new int[string]),
             JSONValue(123)
         ];
-        obj.parametrized_record = IntFloatParametrizedRecord(42, [9.9f, 8.8f]);
-        obj.parametrized_tuple = KindParametrizedTuple(WOW(), WOW(), 100);
+        obj.parametrized_record = new IntFloatParametrizedRecord(42, [9.9f, 8.8f]);
+        obj.parametrized_tuple = new KindParametrizedTuple(WOW(), WOW(), 100);
 
         () @safe {
             auto jsonStr = obj.toJsonString;
             auto newObj = jsonStr.fromJsonString!Root;
 
-            assert(obj == newObj);
+            assert(obj.toJsonString == newObj.toJsonString);
         }();
     };
 

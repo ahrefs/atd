@@ -261,7 +261,7 @@ private
       else
           throw _atd_bad_json("unit", x);
   }
-  
+
   auto _atd_read_bool(JSONValue x)
   {
       try
@@ -293,7 +293,7 @@ private
       catch (JSONException e)
           throw _atd_bad_json("string", x);
   }
-  
+
   template _atd_read_list(alias readElements)
     {
         auto _atd_read_list(JSONValue jsonVal)
@@ -508,6 +508,94 @@ auto toJsonString(T)(T obj)
     return res.toString;
 }
 
+template _atd_write_ptr(alias writeElm)
+{
+  JSONValue _atd_write_ptr(P : T*, T)(P ptr)
+  {
+    if (ptr is null)
+      return JSONValue(null);
+    else
+      return writeElm(*ptr);
+  }
+}
+
+template _atd_read_ptr(alias readElm)
+{
+  alias T = ReturnType!readElm;
+  alias P = T*;
+
+  P _atd_read_ptr(JSONValue x)
+  {
+    if (x == JSONValue(null))
+      return null;
+
+    T* heapVal = new T;
+    *heapVal = readElm(x);
+
+    return heapVal;
+  }
+}
+
+// handling deserialisation into and from pointers
+@trusted T* fromJson(P : T*, T)(JSONValue x)
+{
+    return _atd_read_ptr!(j => j.fromJson!T)(x);
+}
+
+@trusted JSONValue toJson(P : T*, T)(P x)
+{
+  return _atd_write_ptr!(e => e.toJson!T)(x);
+}
+
+bool fromJson(T : bool)(JSONValue x)
+{
+  return _atd_read_bool(x);
+}
+
+int fromJson(T : int)(JSONValue x)
+{
+  return _atd_read_int(x);
+}
+
+float fromJson(T : float)(JSONValue x)
+{
+  return _atd_read_float(x);
+}
+
+string fromJson(T : string)(JSONValue x)
+{
+  return _atd_read_string(x);
+}
+
+E[] fromJson(T : E[], E)(JSONValue x)
+{
+  return _atd_read_list!(j => j.fromJson!E)(x);
+}
+
+JSONValue toJson(T : bool)(T x)
+{
+  return _atd_write_bool(x);
+}
+
+JSONValue toJson(T : int)(T x)
+{
+  return _atd_write_int(x);
+}
+
+JSONValue toJson(T : float)(T x)
+{
+  return _atd_write_float(x);
+}
+
+JSONValue toJson(T : string)(T x)
+{
+  return _atd_write_string(x);
+}
+
+JSONValue toJson(T : E[], E)(T x)
+{
+  return _atd_write_list!(e => e.toJson!E)(x);
+}
   |}
     atd_filename
     atd_filename
@@ -558,7 +646,11 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
 (* Map ATD built-in types to built-in Dlang types *)
-let dlang_type_name env (name : string) =
+let dlang_type_name ?(is_ptr=false) env (name : string) =
+  let ptr_symbol = match is_ptr with
+    | true -> "*"
+    | false -> ""
+  in
   match name with
   | "unit" -> "void"
   | "bool" -> "bool"
@@ -568,9 +660,12 @@ let dlang_type_name env (name : string) =
   | "abstract" -> "JSONValue"
   | user_defined -> 
       let typename = (struct_name env user_defined) in
-      typename
+      sprintf "%s%s" typename ptr_symbol
 
-let rec type_name_of_expr env (e : type_expr) : string =
+let rec type_name_of_expr ?(is_ptr=false) env (e : type_expr) : string =
+  let ptr_symbol = match is_ptr with
+    | true -> "*"
+    | false -> "" in
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
@@ -579,7 +674,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
         xs
         |> List.map (fun (loc, x, an) -> type_name_of_expr env x)
       in
-      sprintf "Tuple!(%s)" (String.concat ", " type_names)
+      sprintf "Tuple!(%s)%s" (String.concat ", " type_names) ptr_symbol
   | List (loc, e, an) ->
      (match assoc_kind loc e an with
        | Array_list
@@ -594,17 +689,23 @@ let rec type_name_of_expr env (e : type_expr) : string =
            sprintf "%s[string]"
              (type_name_of_expr env value)
       )
-  | Option (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
-  | Nullable (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
+  | Option (loc, e, an) -> sprintf "Nullable!(%s)%s" (type_name_of_expr env e) ptr_symbol
+  | Nullable (loc, e, an) -> sprintf "Nullable!(%s)%s" (type_name_of_expr env e) ptr_symbol
   | Shared (loc, e, an) -> not_implemented loc "shared" (* TODO *)
   | Wrap (loc, e, an) ->
       (match Dlang_annot.get_dlang_wrap loc an with
        | None -> error_at loc "wrap type declared, but no dlang annotation found"
        | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
       )
-  | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
+  | Name (loc, (loc2, name, []), an) -> dlang_type_name ~is_ptr env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
+
+let should_wrap_ptr is_rec env (e : type_expr) : bool =
+   let name = type_name_of_expr ~is_ptr:is_rec env e in
+   let len = String.length name in
+   if len > 0 then name.[len - 1] = '*'
+   else false
 
 let rec get_default_default (e : type_expr) : string option =
   match e with
@@ -707,31 +808,27 @@ and tuple_writer env (loc, cells, an) =
     (type_name_of_expr env (Tuple (loc, cells, an)))
     tuple_body
 
-let construct_json_field env trans_meth
+let construct_json_field ?(is_rec=false) env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
   let unwrapped_type = unwrap_field_type loc name kind e in
-  let writer_function = json_writer env unwrapped_type in
-  let assignment =
+  let writer_fn n = json_writer ~nested:n env unwrapped_type in
+  let wrap_in_optional writer = sprintf "_atd_write_option!(%s)" writer in
+  let wrap_in_ptr writer = match should_wrap_ptr is_rec env e with
+  | true -> sprintf "_atd_write_ptr!(%s)" writer
+  | false -> writer
+  in
+  let assignment writer =
     [
       Line (sprintf "res[\"%s\"] = %s(obj.%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
-              writer_function
+              writer
               (inst_var_name trans_meth name))
     ]
   in
   match kind with
   | Required
-  | With_default -> assignment
-  | Optional ->
-      [
-        Line (sprintf "if (!obj.%s.isNull)"
-                (inst_var_name trans_meth name));
-     Block [ Line(sprintf "res[\"%s\"] = %s(%s)(obj.%s);"
-              (Atd.Json.get_json_fname name an |> single_esc)
-              "_atd_write_option!"
-              (json_writer ~nested:true env unwrapped_type)
-              (inst_var_name trans_meth name))];
-      ]
+  | With_default -> assignment (wrap_in_ptr (writer_fn false))
+  | Optional -> assignment (wrap_in_ptr (wrap_in_optional (writer_fn true)))
 
 (*
    Function value that can be applied to a JSON node, converting it
@@ -795,7 +892,7 @@ and tuple_reader env cells =
   })" (List.length cells) (List.length cells) tuple_body
 
 let from_json_class_argument
-    env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
+    ?(is_rec=false) env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
   let dlang_name = inst_var_name trans_meth name in
   let json_name = Atd.Json.get_json_fname name an in
   let else_body =
@@ -814,17 +911,21 @@ let from_json_class_argument
               (sprintf "missing default Dlang value for field '%s'"
                  name)
   in
+  let reader = match should_wrap_ptr is_rec env e with 
+  | true -> sprintf "_atd_read_ptr!(%s)" (json_reader env e)
+  | false -> (json_reader env e)
+  in
   sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
     dlang_name
     (single_esc json_name)
-    (json_reader env e)
+    reader
     (single_esc json_name)
     else_body
 
 let inst_var_declaration
-    env trans_meth ((loc, (name, kind, an), e) : simple_field) =
+    ?(is_rec=false) env trans_meth ((loc, (name, kind, an), e) : simple_field) =
   let var_name = inst_var_name trans_meth name in
-  let type_name = type_name_of_expr env e in
+  let type_name = type_name_of_expr ~is_ptr:is_rec env e in
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
@@ -834,12 +935,13 @@ let inst_var_declaration
         match get_dlang_default unwrapped_e an with
         | None -> ""
         | Some x -> sprintf " = %s" x
-  in
+    in
   [
     Line (sprintf "%s %s%s;" type_name var_name default)
   ]
 
 let record env loc name (fields : field list) an =
+  let is_rec = true in
   let dlang_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
@@ -849,14 +951,14 @@ let record env loc name (fields : field list) an =
       fields
   in
   let inst_var_declarations =
-    List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields
+    List.map (fun x -> Inline (inst_var_declaration ~is_rec:is_rec env trans_meth x)) fields
   in
   let json_object_body =
     List.map (fun x ->
-      Inline (construct_json_field env trans_meth x)) fields in
+      Inline (construct_json_field ~is_rec:is_rec env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
-      Line (from_json_class_argument env trans_meth dlang_struct_name x)
+      Line (from_json_class_argument ~is_rec:is_rec env trans_meth dlang_struct_name x)
     ) fields in
   let from_json =
     [

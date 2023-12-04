@@ -733,99 +733,68 @@ struct RecordWithWrappedType {
 }
 
 
-// Original type: planet = [ ... | Mercury | ... ]
-struct Mercury {}
-@trusted JSONValue toJson(T : Mercury)(T e) {
-    return JSONValue("Mercury");
+enum Planet{
+Mercury,
+Venus,
+Earth,
+Mars,
+Saturn,
+Jupiter,
+Neptune,
+Uranus,
+Pluto
 }
 
-
-// Original type: planet = [ ... | Venus | ... ]
-struct Venus {}
-@trusted JSONValue toJson(T : Venus)(T e) {
-    return JSONValue("Venus");
-}
-
-
-// Original type: planet = [ ... | Earth | ... ]
-struct Earth {}
-@trusted JSONValue toJson(T : Earth)(T e) {
-    return JSONValue("Earth");
-}
-
-
-// Original type: planet = [ ... | Mars | ... ]
-struct Mars {}
-@trusted JSONValue toJson(T : Mars)(T e) {
-    return JSONValue("Mars");
-}
-
-
-// Original type: planet = [ ... | Saturn | ... ]
-struct Saturn {}
-@trusted JSONValue toJson(T : Saturn)(T e) {
-    return JSONValue("Saturn");
-}
-
-
-// Original type: planet = [ ... | Jupiter | ... ]
-struct Jupiter {}
-@trusted JSONValue toJson(T : Jupiter)(T e) {
-    return JSONValue("Jupiter");
-}
-
-
-// Original type: planet = [ ... | Neptune | ... ]
-struct Neptune {}
-@trusted JSONValue toJson(T : Neptune)(T e) {
-    return JSONValue("Neptune");
-}
-
-
-// Original type: planet = [ ... | Uranus | ... ]
-struct Uranus {}
-@trusted JSONValue toJson(T : Uranus)(T e) {
-    return JSONValue("Uranus");
-}
-
-
-struct Planet{ SumType!(Mercury, Venus, Earth, Mars, Saturn, Jupiter, Neptune, Uranus) _data; alias _data this;
-@safe this(T)(T init) {_data = init;} @safe this(Planet init) {_data = init._data;}}
-
-@trusted Planet fromJson(T : Planet)(JSONValue x) {
-    if (x.type == JSONType.string) {
-        if (x.str == "Mercury") 
-            return Planet(Mercury());
-        if (x.str == "Venus") 
-            return Planet(Venus());
-        if (x.str == "Earth") 
-            return Planet(Earth());
-        if (x.str == "Mars") 
-            return Planet(Mars());
-        if (x.str == "Saturn") 
-            return Planet(Saturn());
-        if (x.str == "Jupiter") 
-            return Planet(Jupiter());
-        if (x.str == "Neptune") 
-            return Planet(Neptune());
-        if (x.str == "Uranus") 
-            return Planet(Uranus());
-        throw _atd_bad_json("Planet", x);
+Planet fromJson(T : Planet)(JSONValue x) @trusted {
+if (x.type == JSONType.string) {
+    switch (x.str)
+    {
+    case "Mercury":
+ return Planet.Mercury;
+case "Venus":
+ return Planet.Venus;
+case "Earth":
+ return Planet.Earth;
+case "Mars":
+ return Planet.Mars;
+case "Saturn":
+ return Planet.Saturn;
+case "Jupiter":
+ return Planet.Jupiter;
+case "Neptune":
+ return Planet.Neptune;
+case "Uranus":
+ return Planet.Uranus;
+case "not a planet":
+ return Planet.Pluto;
+    default: throw _atd_bad_json("Planet", x);
     }
-    throw _atd_bad_json("Planet", x);
+}
+throw _atd_bad_json("Planet", x);
 }
 
-@trusted JSONValue toJson(T : Planet)(T x) {
-    return x.match!(
-    (Mercury v) => v.toJson!(Mercury),
-(Venus v) => v.toJson!(Venus),
-(Earth v) => v.toJson!(Earth),
-(Mars v) => v.toJson!(Mars),
-(Saturn v) => v.toJson!(Saturn),
-(Jupiter v) => v.toJson!(Jupiter),
-(Neptune v) => v.toJson!(Neptune),
-(Uranus v) => v.toJson!(Uranus)
-    );
+JSONValue toJson(T : Planet)(T x) @trusted {
+    final switch (x) with (x)
+    {
+    case Mercury:
+ return JSONValue("Mercury");
+case Venus:
+ return JSONValue("Venus");
+case Earth:
+ return JSONValue("Earth");
+case Mars:
+ return JSONValue("Mars");
+case Saturn:
+ return JSONValue("Saturn");
+case Jupiter:
+ return JSONValue("Jupiter");
+case Neptune:
+ return JSONValue("Neptune");
+case Uranus:
+ return JSONValue("Uranus");
+case Pluto:
+ return JSONValue("not a planet");
+    }
 }
 
 

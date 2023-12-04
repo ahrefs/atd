@@ -193,6 +193,14 @@ void setupTests()
 
         auto mapResult = credientials.map!((c) => c);
     };
+
+    tests["variant enum"] = {
+        Planet p = Planet.Earth;
+
+        auto res = p.toJsonString.fromJsonString!Planet;
+
+        assert(res.toJsonString == p.toJsonString);
+    };
 }
 
 void assertThrows(T)(T fn, bool writeMsg = false)

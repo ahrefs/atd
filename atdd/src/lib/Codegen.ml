@@ -1087,7 +1087,69 @@ let read_cases1 env loc name cases1 =
             (struct_name env name |> single_esc))
   ]
 
-let sum_container env  loc name cases =
+
+let enum_container env loc name cases = 
+  let cases =
+    List.map (fun (x : variant) ->
+      match x with
+      | Variant (loc, (orig_name, an), opt_e) ->
+          let unique_name = create_struct_name env orig_name in
+          (loc, orig_name, unique_name, an, opt_e)
+      | Inherit _ -> assert false
+    ) cases
+  in
+  let cases0, cases1 =
+    List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
+      opt_e = None
+    ) cases
+  in
+  let fields_block = 
+    List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+      to_camel_case (trans env unique_name)
+    ) cases
+    |> String.concat ",\n"
+  in
+  let dlang_struct_name = struct_name env name in
+  if cases1 <> [] then
+    error_at loc "cannot use enum shape for variant with type"
+  else
+  [
+    Line (sprintf "enum %s{" dlang_struct_name);
+    Line fields_block;
+    Line "}";
+    Line "";
+    Line (sprintf "%s fromJson(T : %s)(JSONValue x) @trusted {"
+          (single_esc dlang_struct_name) (single_esc dlang_struct_name));
+    Line "if (x.type == JSONType.string) {";
+    Block [
+      Line "switch (x.str)";
+      Line "{";
+      (Line (List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+        let json_name = Atd.Json.get_json_cons orig_name an in
+          (sprintf "case \"%s\":\n return Planet.%s;" (single_esc json_name) (trans env unique_name) )
+        ) cases |> String.concat "\n"););
+      Line (sprintf "default: throw _atd_bad_json(\"%s\", x);" (single_esc (struct_name env name)));
+      Line "}";
+    ];
+    Line "}";
+    Line (sprintf "throw _atd_bad_json(\"%s\", x);"
+    (single_esc (struct_name env name)));
+    Line "}";
+    Line "";
+    Line (sprintf "JSONValue toJson(T : %s)(T x) @trusted {" (dlang_struct_name));
+    Block [
+      Line "final switch (x) with (x)";
+      Line "{";
+      (Line (List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+        let json_name = Atd.Json.get_json_cons orig_name an in
+         (sprintf "case %s:\n return JSONValue(\"%s\");" (trans env unique_name) (single_esc json_name))
+        ) cases |> String.concat "\n"););
+        Line "}";
+    ];
+    Line "}";
+  ]
+
+let sum_container env loc name cases =
   let dlang_struct_name = struct_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1180,7 +1242,7 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     | Enum -> 
       (match e with
       | Sum (loc, cases, an) ->
-          sum env  loc name cases
+          enum_container env loc name cases
       | _ -> not_implemented loc "shape enum but not sumtype")
     | Recursive -> 
       (match e with

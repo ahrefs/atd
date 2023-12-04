@@ -21,6 +21,7 @@ type planet <dlang shape="enum"> = [
   | Jupiter
   | Neptune
   | Uranus
+  | Pluto <json name="not a planet">
 ]
 
 type ('a, 'b) parametrized_record = {

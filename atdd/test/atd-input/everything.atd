@@ -89,6 +89,17 @@ type recursive_class <dlang shape="recursive"> = {
   children: recursive_class;
 }
 
+type record_that_uses_recursive_variant = 
+{
+  v: recursive_variant;
+  i: int;
+}
+
+type recursive_variant <dlang shape="recursive"> = [
+  | Int of int
+  | Record of record_that_uses_recursive_variant
+]
+
 type default_list = {
   ~items: int list;
 }

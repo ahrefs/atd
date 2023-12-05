@@ -201,6 +201,17 @@ void setupTests()
 
         assert(res.toJsonString == p.toJsonString);
     };
+
+    tests["recursive variant"] = {
+        import std.sumtype;
+        import std.conv;
+
+        auto v = RecursiveVariant(Int(43));
+        auto r = RecordThatUsesRecursiveVariant(v, 42);
+        auto vv = RecursiveVariant(Record(r));
+
+        assert(vv.toJsonString == vv.toJsonString.fromJsonString!RecursiveVariant.toJsonString);
+    };
 }
 
 void assertThrows(T)(T fn, bool writeMsg = false)

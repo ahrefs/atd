@@ -1015,7 +1015,7 @@ let alias_wrapper env  name type_expr =
   ]
 
 let case_class env  type_name
-    (loc, orig_name, unique_name, an, opt_e) =
+    (loc, orig_name, unique_name, an, opt_e) is_rec =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
@@ -1033,10 +1033,22 @@ let case_class env  type_name
           Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s {\n%s value; alias value this;" (trans env unique_name) (type_name_of_expr env e) ); 
-          Line (sprintf "@safe this(T)(T init) {value = init;} @safe this(%s init) {value = init.value;}}" (trans env unique_name));
+          (* Line (sprintf "struct %s {\n%s value; alias value this;" (trans env unique_name) (type_name_of_expr env e) );  *)
+          Inline (match is_rec with 
+            | true -> ([
+                Line (sprintf "struct %s {\n%s* value; alias getValue this;" (trans env unique_name) (type_name_of_expr env e)); 
+                Line (sprintf "this(T)(T init) @safe  {value = new %s(init);} %s getValue() @safe {return value is null ? (%s).init : *value;}" 
+                  (type_name_of_expr env e) (type_name_of_expr env e) (type_name_of_expr env e));
+                Line (sprintf "this(%s init) @trusted {value = new %s; *value = init;}}" 
+                  (type_name_of_expr env e) (type_name_of_expr env e));
+                ])
+            | false -> ([
+                Line (sprintf "struct %s {\n%s value; alias value this;" (trans env unique_name) (type_name_of_expr env e));
+                Line (sprintf "this(T)(T init) @safe {value = init;} this(%s init) @safe{value = init.value;}}" (trans env unique_name));
+            ])
+            );
           Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
       
@@ -1213,7 +1225,7 @@ let sum_container env loc name cases =
   ]
 
 
-let sum env  loc name cases =
+let sum env  loc name cases is_recursive =
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1224,7 +1236,7 @@ let sum env  loc name cases =
     ) cases
   in
   let case_classes =
-    List.map (fun x -> Inline (case_class env name x)) cases
+    List.map (fun x -> Inline (case_class env name x is_recursive)) cases
     |> double_spaced
   in
   let container_class = sum_container env loc name cases in
@@ -1248,11 +1260,13 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
       (match e with
       | Record (loc, fields, an) ->
           record env loc name fields an true
+      | Sum (loc, cases, an) ->
+          sum env  loc name cases true
       | _ -> not_implemented loc "shape recursive but not record")
     | Default -> 
       (match e with
       | Sum (loc, cases, an) ->
-          sum env  loc name cases
+          sum env  loc name cases false
       | Record (loc, fields, an) ->
           record env loc name fields an false
       | Tuple _

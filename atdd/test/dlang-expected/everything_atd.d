@@ -440,6 +440,67 @@ struct RecursiveClass {
 }
 
 
+struct RecordThatUsesRecursiveVariant {
+    RecursiveVariant v;
+    int i;
+}
+
+@trusted RecordThatUsesRecursiveVariant fromJson(T : RecordThatUsesRecursiveVariant)(JSONValue x) {
+    RecordThatUsesRecursiveVariant obj;
+    obj.v = ("v" in x) ? fromJson!RecursiveVariant(x["v"]) : _atd_missing_json_field!(typeof(obj.v))("RecordThatUsesRecursiveVariant", "v");
+    obj.i = ("i" in x) ? _atd_read_int(x["i"]) : _atd_missing_json_field!(typeof(obj.i))("RecordThatUsesRecursiveVariant", "i");
+    return obj;
+}
+@trusted JSONValue toJson(T : RecordThatUsesRecursiveVariant)(T obj) {
+    JSONValue res;
+    res["v"] = ((RecursiveVariant x) => x.toJson!(RecursiveVariant))(obj.v);
+    res["i"] = _atd_write_int(obj.i);
+    return res;
+}
+
+// Original type: recursive_variant = [ ... | Int of ... | ... ]
+struct Int {
+int* value; alias getValue this;
+this(T)(T init) @safe  {value = new int(init);} int getValue() @safe {return value is null ? (int).init : *value;}
+this(int init) @trusted {value = new int; *value = init;}}
+@trusted JSONValue toJson(T : Int)(T e) {
+    return JSONValue([JSONValue("Int"), _atd_write_int(e)]);
+}
+
+
+// Original type: recursive_variant = [ ... | Record of ... | ... ]
+struct Record {
+RecordThatUsesRecursiveVariant* value; alias getValue this;
+this(T)(T init) @safe  {value = new RecordThatUsesRecursiveVariant(init);} RecordThatUsesRecursiveVariant getValue() @safe {return value is null ? (RecordThatUsesRecursiveVariant).init : *value;}
+this(RecordThatUsesRecursiveVariant init) @trusted {value = new RecordThatUsesRecursiveVariant; *value = init;}}
+@trusted JSONValue toJson(T : Record)(T e) {
+    return JSONValue([JSONValue("Record"), ((RecordThatUsesRecursiveVariant x) => x.toJson!(RecordThatUsesRecursiveVariant))(e)]);
+}
+
+
+struct RecursiveVariant{ SumType!(Int, Record) _data; alias _data this;
+@safe this(T)(T init) {_data = init;} @safe this(RecursiveVariant init) {_data = init._data;}}
+
+@trusted RecursiveVariant fromJson(T : RecursiveVariant)(JSONValue x) {
+    if (x.type == JSONType.array && x.array.length == 2 && x[0].type == JSONType.string) {
+        string cons = x[0].str;
+        if (cons == "Int")
+            return RecursiveVariant(Int(_atd_read_int(x[1])));
+        if (cons == "Record")
+            return RecursiveVariant(Record(fromJson!RecordThatUsesRecursiveVariant(x[1])));
+        throw _atd_bad_json("RecursiveVariant", x);
+    }
+    throw _atd_bad_json("RecursiveVariant", x);
+}
+
+@trusted JSONValue toJson(T : RecursiveVariant)(T x) {
+    return x.match!(
+    (Int v) => v.toJson!(Int),
+(Record v) => v.toJson!(Record)
+    );
+}
+
+
 struct St{int _data; alias _data this;
 this(int init) @safe {_data = init;}
 this(St init) @safe {_data = init._data;}
@@ -463,9 +524,9 @@ struct Root_ {}
 // Original type: kind = [ ... | Thing of ... | ... ]
 struct Thing {
 int value; alias value this;
-@safe this(T)(T init) {value = init;} @safe this(Thing init) {value = init.value;}}
+this(T)(T init) @safe {value = init;} this(Thing init) @safe{value = init.value;}}
 @trusted JSONValue toJson(T : Thing)(T e) {
-    return JSONValue([JSONValue("Thing"), _atd_write_int(e.value)]);
+    return JSONValue([JSONValue("Thing"), _atd_write_int(e)]);
 }
 
 
@@ -479,9 +540,9 @@ struct WOW {}
 // Original type: kind = [ ... | Amaze of ... | ... ]
 struct Amaze {
 string[] value; alias value this;
-@safe this(T)(T init) {value = init;} @safe this(Amaze init) {value = init.value;}}
+this(T)(T init) @safe {value = init;} this(Amaze init) @safe{value = init.value;}}
 @trusted JSONValue toJson(T : Amaze)(T e) {
-    return JSONValue([JSONValue("!!!"), _atd_write_list!(_atd_write_string)(e.value)]);
+    return JSONValue([JSONValue("!!!"), _atd_write_list!(_atd_write_string)(e)]);
 }
 
 
@@ -838,9 +899,9 @@ struct A {}
 // Original type: frozen = [ ... | B of ... | ... ]
 struct B {
 int value; alias value this;
-@safe this(T)(T init) {value = init;} @safe this(B init) {value = init.value;}}
+this(T)(T init) @safe {value = init;} this(B init) @safe{value = init.value;}}
 @trusted JSONValue toJson(T : B)(T e) {
-    return JSONValue([JSONValue("B"), _atd_write_int(e.value)]);
+    return JSONValue([JSONValue("B"), _atd_write_int(e)]);
 }
 
 

@@ -925,7 +925,17 @@ let from_json_class_argument
 let inst_var_declaration
     ?(is_rec=false) env trans_meth ((loc, (name, kind, an), e) : simple_field) =
   let var_name = inst_var_name trans_meth name in
-  let type_name = type_name_of_expr ~is_ptr:is_rec env e in
+  let is_nullable_ptr = match is_rec with 
+  | false -> false
+  | true -> (match e with 
+    | Option (_,_,_) | Nullable (_,_,_) -> true (* Workaround because d compiler cannot handle Nullable!T* :( *)
+    | _ -> false)
+  in
+  let alias_typename = sprintf "__%s_type__" var_name in
+  let type_name = match is_nullable_ptr with 
+    | false -> type_name_of_expr ~is_ptr:is_rec env e
+    | true -> alias_typename (* Workaround because d compiler cannot handle Nullable!T* :( *)
+  in
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
@@ -936,8 +946,12 @@ let inst_var_declaration
         | None -> ""
         | Some x -> sprintf " = %s" x
     in
-  [
-    Line (sprintf "%s %s%s;" type_name var_name default)
+  let type_line = Line (sprintf "%s %s%s;" type_name var_name default); in
+  match is_nullable_ptr with 
+  | false -> [type_line]
+  | true -> [
+    Line (sprintf "alias %s = %s;" alias_typename (type_name_of_expr ~is_ptr:is_rec env e));
+    type_line
   ]
 
 let record env loc name (fields : field list) an is_rec =

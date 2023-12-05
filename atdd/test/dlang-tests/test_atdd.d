@@ -171,8 +171,9 @@ void setupTests()
     };
 
     tests["recursiveClass"] = {
-        auto child1 = new RecursiveClass(1, true, null);
-        auto a_obj = RecursiveClass(0, false, child1);
+        import std.typecons;
+        auto child = new Nullable!RecursiveClass(RecursiveClass(1, true, null));
+        auto a_obj = RecursiveClass(0, false, child);
 
         assert (a_obj.toJsonString == a_obj.toJsonString.fromJsonString!RecursiveClass.toJsonString);
     };

@@ -421,21 +421,22 @@ import std.stdint : uint32_t, uint16_t;
 struct RecursiveClass {
     int id;
     bool flag;
-    RecursiveClass* children;
+    alias __children_type__ = Nullable!(RecursiveClass)*;
+    __children_type__ children;
 }
 
 @trusted RecursiveClass fromJson(T : RecursiveClass)(JSONValue x) {
     RecursiveClass obj;
     obj.id = ("id" in x) ? _atd_read_int(x["id"]) : _atd_missing_json_field!(typeof(obj.id))("RecursiveClass", "id");
     obj.flag = ("flag" in x) ? _atd_read_bool(x["flag"]) : _atd_missing_json_field!(typeof(obj.flag))("RecursiveClass", "flag");
-    obj.children = ("children" in x) ? _atd_read_ptr!(fromJson!RecursiveClass)(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
+    obj.children = ("children" in x) ? _atd_read_ptr!(_atd_read_nullable!(fromJson!RecursiveClass))(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
     return obj;
 }
 @trusted JSONValue toJson(T : RecursiveClass)(T obj) {
     JSONValue res;
     res["id"] = _atd_write_int(obj.id);
     res["flag"] = _atd_write_bool(obj.flag);
-    res["children"] = _atd_write_ptr!(((RecursiveClass x) => x.toJson!(RecursiveClass)))(obj.children);
+    res["children"] = _atd_write_ptr!(_atd_write_nullable!(((RecursiveClass x) => x.toJson!(RecursiveClass))))(obj.children);
     return res;
 }
 

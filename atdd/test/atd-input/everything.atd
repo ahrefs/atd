@@ -86,7 +86,7 @@ type require_field = {
 type recursive_class <dlang shape="recursive"> = {
   id: int;
   flag: bool;
-  children: recursive_class;
+  children: recursive_class nullable;
 }
 
 type record_that_uses_recursive_variant = 

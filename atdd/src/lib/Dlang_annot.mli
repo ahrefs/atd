@@ -19,6 +19,18 @@ type assoc_repr =
   | List
   | Dict
 
+
+(** How to represent a variant or record.
+    [Recursive] Use this option when the type has recursive references, leading to members defined as pointers.
+    [Enum] If a variant doesn't contain fields, this option will allow to represent it as an enum instead of a sum type.
+*)
+type shape =
+  | Enum
+  | Default
+  | Recursive
+
+val get_dlang_type_shape : Atd.Annot.t -> shape
+
 (** Inspect annotations placed on lists of pairs such as
     [(string * foo) list <dlang repr="dict">].
     Permissible values for the [repr] field are ["dict"] and ["list"].

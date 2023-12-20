@@ -12,6 +12,18 @@ type frozen = [
   | B of int
 ]
 
+type planet <dlang shape="enum"> = [
+  | Mercury
+  | Venus
+  | Earth
+  | Mars
+  | Saturn
+  | Jupiter
+  | Neptune
+  | Uranus
+  | Pluto <json name="not a planet">
+]
+
 type ('a, 'b) parametrized_record = {
   field_a: 'a;
   ~field_b: 'b list;
@@ -71,11 +83,22 @@ type require_field = {
   req: string;
 }
 
-type recursive_class = {
+type recursive_class <dlang shape="recursive"> = {
   id: int;
   flag: bool;
-  children: recursive_class list;
+  children: recursive_class nullable;
 }
+
+type record_that_uses_recursive_variant = 
+{
+  v: recursive_variant;
+  i: int;
+}
+
+type recursive_variant <dlang shape="recursive"> = [
+  | Int of int
+  | Record of record_that_uses_recursive_variant
+]
 
 type default_list = {
   ~items: int list;
@@ -83,4 +106,13 @@ type default_list = {
 
 type record_with_wrapped_type = {
   item: string wrap <dlang t="int" wrap="to!int" unwrap="to!string">;
+}
+
+type null_opt = {
+  a : int;
+  b : int option;
+  c : int nullable;
+  ?f : int option;
+  ~h <dlang default="3"> :int option;
+  ~i <dlang default="3"> : int nullable;
 }

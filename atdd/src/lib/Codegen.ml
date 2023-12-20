@@ -26,6 +26,7 @@ let annot_schema_dlang : Atd.Annot.schema_section =
   {
     section = "dlang";
     fields = [
+      Type_def, "shape";
       Type_expr, "t";
       Type_expr, "repr";
       Type_expr, "unwrap";
@@ -260,7 +261,7 @@ private
       else
           throw _atd_bad_json("unit", x);
   }
-  
+
   auto _atd_read_bool(JSONValue x)
   {
       try
@@ -292,7 +293,7 @@ private
       catch (JSONException e)
           throw _atd_bad_json("string", x);
   }
-  
+
   template _atd_read_list(alias readElements)
     {
         auto _atd_read_list(JSONValue jsonVal)
@@ -507,6 +508,94 @@ auto toJsonString(T)(T obj)
     return res.toString;
 }
 
+template _atd_write_ptr(alias writeElm)
+{
+  JSONValue _atd_write_ptr(P : T*, T)(P ptr)
+  {
+    if (ptr is null)
+      return JSONValue(null);
+    else
+      return writeElm(*ptr);
+  }
+}
+
+template _atd_read_ptr(alias readElm)
+{
+  alias T = ReturnType!readElm;
+  alias P = T*;
+
+  P _atd_read_ptr(JSONValue x)
+  {
+    if (x == JSONValue(null))
+      return null;
+
+    T* heapVal = new T;
+    *heapVal = readElm(x);
+
+    return heapVal;
+  }
+}
+
+// handling deserialisation into and from pointers
+@trusted T* fromJson(P : T*, T)(JSONValue x)
+{
+    return _atd_read_ptr!(j => j.fromJson!T)(x);
+}
+
+@trusted JSONValue toJson(P : T*, T)(P x)
+{
+  return _atd_write_ptr!(e => e.toJson!T)(x);
+}
+
+bool fromJson(T : bool)(JSONValue x)
+{
+  return _atd_read_bool(x);
+}
+
+int fromJson(T : int)(JSONValue x)
+{
+  return _atd_read_int(x);
+}
+
+float fromJson(T : float)(JSONValue x)
+{
+  return _atd_read_float(x);
+}
+
+string fromJson(T : string)(JSONValue x)
+{
+  return _atd_read_string(x);
+}
+
+E[] fromJson(T : E[], E)(JSONValue x)
+{
+  return _atd_read_list!(j => j.fromJson!E)(x);
+}
+
+JSONValue toJson(T : bool)(T x)
+{
+  return _atd_write_bool(x);
+}
+
+JSONValue toJson(T : int)(T x)
+{
+  return _atd_write_int(x);
+}
+
+JSONValue toJson(T : float)(T x)
+{
+  return _atd_write_float(x);
+}
+
+JSONValue toJson(T : string)(T x)
+{
+  return _atd_write_string(x);
+}
+
+JSONValue toJson(T : E[], E)(T x)
+{
+  return _atd_write_list!(e => e.toJson!E)(x);
+}
   |}
     atd_filename
     atd_filename
@@ -557,7 +646,11 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
 (* Map ATD built-in types to built-in Dlang types *)
-let dlang_type_name env (name : string) =
+let dlang_type_name ?(is_ptr=false) env (name : string) =
+  let ptr_symbol = match is_ptr with
+    | true -> "*"
+    | false -> ""
+  in
   match name with
   | "unit" -> "void"
   | "bool" -> "bool"
@@ -567,9 +660,12 @@ let dlang_type_name env (name : string) =
   | "abstract" -> "JSONValue"
   | user_defined -> 
       let typename = (struct_name env user_defined) in
-      typename
+      sprintf "%s%s" typename ptr_symbol
 
-let rec type_name_of_expr env (e : type_expr) : string =
+let rec type_name_of_expr ?(is_ptr=false) env (e : type_expr) : string =
+  let ptr_symbol = match is_ptr with
+    | true -> "*"
+    | false -> "" in
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
@@ -578,7 +674,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
         xs
         |> List.map (fun (loc, x, an) -> type_name_of_expr env x)
       in
-      sprintf "Tuple!(%s)" (String.concat ", " type_names)
+      sprintf "Tuple!(%s)%s" (String.concat ", " type_names) ptr_symbol
   | List (loc, e, an) ->
      (match assoc_kind loc e an with
        | Array_list
@@ -593,17 +689,23 @@ let rec type_name_of_expr env (e : type_expr) : string =
            sprintf "%s[string]"
              (type_name_of_expr env value)
       )
-  | Option (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
-  | Nullable (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
+  | Option (loc, e, an) -> sprintf "Nullable!(%s)%s" (type_name_of_expr env e) ptr_symbol
+  | Nullable (loc, e, an) -> sprintf "Nullable!(%s)%s" (type_name_of_expr env e) ptr_symbol
   | Shared (loc, e, an) -> not_implemented loc "shared" (* TODO *)
   | Wrap (loc, e, an) ->
       (match Dlang_annot.get_dlang_wrap loc an with
        | None -> error_at loc "wrap type declared, but no dlang annotation found"
        | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
       )
-  | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
+  | Name (loc, (loc2, name, []), an) -> dlang_type_name ~is_ptr env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
+
+let should_wrap_ptr is_rec env (e : type_expr) : bool =
+   let name = type_name_of_expr ~is_ptr:is_rec env e in
+   let len = String.length name in
+   if len > 0 then name.[len - 1] = '*'
+   else false
 
 let rec get_default_default (e : type_expr) : string option =
   match e with
@@ -706,32 +808,38 @@ and tuple_writer env (loc, cells, an) =
     (type_name_of_expr env (Tuple (loc, cells, an)))
     tuple_body
 
-let construct_json_field env trans_meth
+let construct_json_field ?(is_rec=false) env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
   let unwrapped_type = unwrap_field_type loc name kind e in
-  let writer_function = json_writer env unwrapped_type in
-  let assignment =
-    [
-      Line (sprintf "res[\"%s\"] = %s(obj.%s);"
-              (Atd.Json.get_json_fname name an |> single_esc)
-              writer_function
-              (inst_var_name trans_meth name))
-    ]
+  let var_name = (inst_var_name trans_meth name) in
+  let writer_fn n = json_writer ~nested:n env unwrapped_type in
+  (* let wrap_in_optional writer = sprintf "_atd_write_opti`on!(%s)" writer in *)
+  let wrap_in_ptr writer = match should_wrap_ptr is_rec env e with
+  | true -> sprintf "_atd_write_ptr!(%s)" writer
+  | false -> writer
   in
-  match kind with
-  | Required
-  | With_default -> assignment
-  | Optional ->
-      [
-        Line (sprintf "if (!obj.%s.isNull)"
-                (inst_var_name trans_meth name));
-     Block [ Line(sprintf "res[\"%s\"] = %s(%s)(obj.%s);"
+  let conditional condition =
+    Line (sprintf "if (%s)" condition)
+  in
+  let assignment ?(get_nullable=false) writer =
+      Line (sprintf "res[\"%s\"] = %s(obj.%s%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
-              "_atd_write_option!"
-              (json_writer ~nested:true env unwrapped_type)
-              (inst_var_name trans_meth name))];
-      ]
-
+              writer
+              (inst_var_name trans_meth name)
+              (match get_nullable with | true -> ".get" | false -> ""))
+  in
+  let ca c a =
+    [c; Block [a]]
+  in
+  let dlang_default = match (get_dlang_default e an) with | Some x -> x | None -> "" in
+  match kind with
+  | Required -> [assignment (wrap_in_ptr (writer_fn false))]
+  | With_default -> 
+    let c = conditional (sprintf "obj.%s != %s" var_name dlang_default) in
+    ca c (assignment (wrap_in_ptr (writer_fn false)))
+  | Optional -> 
+    let c = conditional (sprintf "!obj.%s.isNull" var_name) in
+    ca c (assignment ~get_nullable:true (wrap_in_ptr ((writer_fn true))))
 (*
    Function value that can be applied to a JSON node, converting it
    to the desired value.
@@ -793,8 +901,13 @@ and tuple_reader env cells =
     return tuple(%s);
   })" (List.length cells) (List.length cells) tuple_body
 
+let needs_nullable (e : type_expr) = 
+  match e with 
+  | Nullable _ | Option _ -> true
+  | _ -> false
+
 let from_json_class_argument
-    env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
+    ?(is_rec=false) env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
   let dlang_name = inst_var_name trans_meth name in
   let json_name = Atd.Json.get_json_fname name an in
   let else_body =
@@ -807,23 +920,46 @@ let from_json_class_argument
     | Optional -> (sprintf "typeof(obj.%s).init" dlang_name)
     | With_default ->
         match get_dlang_default e an with
-        | Some x -> x
+        | Some x -> (match (needs_nullable e) with | true -> (sprintf "%s.nullable" x) | false -> x)
         | None ->
             A.error_at loc
               (sprintf "missing default Dlang value for field '%s'"
                  name)
   in
-  sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
+  let reader = 
+    (match kind with 
+    | Optional -> 
+      (match e with 
+      | Option(_, e, _) -> (json_reader env e) 
+      | _ -> A.error_at loc (sprintf "optional but not option")) 
+    | _ -> (json_reader env e)) 
+  in
+  let wrapped_reader = match should_wrap_ptr is_rec env e with 
+  | true -> sprintf "_atd_read_ptr!(%s)" reader
+  | false -> reader
+  in
+  sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"])%s : %s;"
     dlang_name
     (single_esc json_name)
-    (json_reader env e)
+    wrapped_reader
     (single_esc json_name)
+    (match kind with | Optional -> ".nullable" | _ -> "") (* Needs to convert to nullable for optional *)
     else_body
 
 let inst_var_declaration
-    env trans_meth ((loc, (name, kind, an), e) : simple_field) =
+    ?(is_rec=false) env trans_meth ((loc, (name, kind, an), e) : simple_field) =
   let var_name = inst_var_name trans_meth name in
-  let type_name = type_name_of_expr env e in
+  let is_nullable_ptr = match is_rec with 
+  | false -> false
+  | true -> (match e with 
+    | Option (_,_,_) | Nullable (_,_,_) -> true (* Workaround because d compiler cannot handle Nullable!T* :( *)
+    | _ -> false)
+  in
+  let alias_typename = sprintf "__%s_type__" var_name in
+  let type_name = match is_nullable_ptr with 
+    | false -> type_name_of_expr ~is_ptr:is_rec env e
+    | true -> alias_typename (* Workaround because d compiler cannot handle Nullable!T* :( *)
+  in
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
@@ -833,12 +969,16 @@ let inst_var_declaration
         match get_dlang_default unwrapped_e an with
         | None -> ""
         | Some x -> sprintf " = %s" x
-  in
-  [
-    Line (sprintf "%s %s%s;" type_name var_name default)
+    in
+  let type_line = Line (sprintf "%s %s%s;" type_name var_name default); in
+  match is_nullable_ptr with 
+  | false -> [type_line]
+  | true -> [
+    Line (sprintf "alias %s = %s;" alias_typename (type_name_of_expr ~is_ptr:is_rec env e));
+    type_line
   ]
 
-let record env loc name (fields : field list) an =
+let record env loc name (fields : field list) an is_rec =
   let dlang_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
@@ -848,14 +988,14 @@ let record env loc name (fields : field list) an =
       fields
   in
   let inst_var_declarations =
-    List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields
+    List.map (fun x -> Inline (inst_var_declaration ~is_rec:is_rec env trans_meth x)) fields
   in
   let json_object_body =
     List.map (fun x ->
-      Inline (construct_json_field env trans_meth x)) fields in
+      Inline (construct_json_field ~is_rec:is_rec env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
-      Line (from_json_class_argument env trans_meth dlang_struct_name x)
+      Line (from_json_class_argument ~is_rec:is_rec env trans_meth dlang_struct_name x)
     ) fields in
   let from_json =
     [
@@ -874,6 +1014,7 @@ let record env loc name (fields : field list) an =
       Line (sprintf "@trusted JSONValue toJson(T : %s)(T obj) {" (single_esc dlang_struct_name));
       Block [
         Line ("JSONValue res;");
+        Line ("res.object = new JSONValue[string];");
         Inline json_object_body;
         Line "return res;"
       ];
@@ -913,7 +1054,7 @@ let alias_wrapper env  name type_expr =
   ]
 
 let case_class env  type_name
-    (loc, orig_name, unique_name, an, opt_e) =
+    (loc, orig_name, unique_name, an, opt_e) is_rec =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
@@ -931,9 +1072,22 @@ let case_class env  type_name
           Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
+          (* Line (sprintf "struct %s {\n%s value; alias value this;" (trans env unique_name) (type_name_of_expr env e) );  *)
+          Inline (match is_rec with 
+            | true -> ([
+                Line (sprintf "struct %s {\n%s* value; alias getValue this;" (trans env unique_name) (type_name_of_expr env e)); 
+                Line (sprintf "this(T)(T init) @safe  {value = new %s(init);} %s getValue() @safe {return value is null ? (%s).init : *value;}" 
+                  (type_name_of_expr env e) (type_name_of_expr env e) (type_name_of_expr env e));
+                Line (sprintf "this(%s init) @trusted {value = new %s; *value = init;}}" 
+                  (type_name_of_expr env e) (type_name_of_expr env e));
+                ])
+            | false -> ([
+                Line (sprintf "struct %s {\n%s value; alias value this;" (trans env unique_name) (type_name_of_expr env e));
+                Line (sprintf "this(T)(T init) @safe {value = init;} this(%s init) @safe{value = init.value;}}" (trans env unique_name));
+            ])
+            );
           Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e)]);" (single_esc json_name) (json_writer env e))];
           Line("}");
         ]
       
@@ -984,7 +1138,69 @@ let read_cases1 env loc name cases1 =
             (struct_name env name |> single_esc))
   ]
 
-let sum_container env  loc name cases =
+
+let enum_container env loc name cases = 
+  let cases =
+    List.map (fun (x : variant) ->
+      match x with
+      | Variant (loc, (orig_name, an), opt_e) ->
+          let unique_name = create_struct_name env orig_name in
+          (loc, orig_name, unique_name, an, opt_e)
+      | Inherit _ -> assert false
+    ) cases
+  in
+  let cases0, cases1 =
+    List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
+      opt_e = None
+    ) cases
+  in
+  let fields_block = 
+    List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+      to_camel_case (trans env unique_name)
+    ) cases
+    |> String.concat ",\n"
+  in
+  let dlang_struct_name = struct_name env name in
+  if cases1 <> [] then
+    error_at loc "cannot use enum shape for variant with type"
+  else
+  [
+    Line (sprintf "enum %s{" dlang_struct_name);
+    Line fields_block;
+    Line "}";
+    Line "";
+    Line (sprintf "%s fromJson(T : %s)(JSONValue x) @trusted {"
+          (single_esc dlang_struct_name) (single_esc dlang_struct_name));
+    Line "if (x.type == JSONType.string) {";
+    Block [
+      Line "switch (x.str)";
+      Line "{";
+      (Line (List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+        let json_name = Atd.Json.get_json_cons orig_name an in
+          (sprintf "case \"%s\":\n return Planet.%s;" (single_esc json_name) (trans env unique_name) )
+        ) cases |> String.concat "\n"););
+      Line (sprintf "default: throw _atd_bad_json(\"%s\", x);" (single_esc (struct_name env name)));
+      Line "}";
+    ];
+    Line "}";
+    Line (sprintf "throw _atd_bad_json(\"%s\", x);"
+    (single_esc (struct_name env name)));
+    Line "}";
+    Line "";
+    Line (sprintf "JSONValue toJson(T : %s)(T x) @trusted {" (dlang_struct_name));
+    Block [
+      Line "final switch (x) with (x)";
+      Line "{";
+      (Line (List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+        let json_name = Atd.Json.get_json_cons orig_name an in
+         (sprintf "case %s:\n return JSONValue(\"%s\");" (trans env unique_name) (single_esc json_name))
+        ) cases |> String.concat "\n"););
+        Line "}";
+    ];
+    Line "}";
+  ]
+
+let sum_container env loc name cases =
   let dlang_struct_name = struct_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1048,7 +1264,7 @@ let sum_container env  loc name cases =
   ]
 
 
-let sum env  loc name cases =
+let sum env  loc name cases is_recursive =
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1059,7 +1275,7 @@ let sum env  loc name cases =
     ) cases
   in
   let case_classes =
-    List.map (fun x -> Inline (case_class env name x)) cases
+    List.map (fun x -> Inline (case_class env name x is_recursive)) cases
     |> double_spaced
   in
   let container_class = sum_container env loc name cases in
@@ -1073,19 +1289,33 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
   let unwrap e =
-    match e with
-    | Sum (loc, cases, an) ->
-        sum env  loc name cases
-    | Record (loc, fields, an) ->
-        record env loc name fields an
-    | Tuple _
-    | List _
-    | Option _
-    | Nullable _
-    | Wrap _
-    | Name _ -> alias_wrapper env  name e
-    | Shared _ -> not_implemented loc "cyclic references"
-    | Tvar _ -> not_implemented loc "parametrized type"
+    match Dlang_annot.get_dlang_type_shape an with
+    | Enum -> 
+      (match e with
+      | Sum (loc, cases, an) ->
+          enum_container env loc name cases
+      | _ -> not_implemented loc "shape enum but not sumtype")
+    | Recursive -> 
+      (match e with
+      | Record (loc, fields, an) ->
+          record env loc name fields an true
+      | Sum (loc, cases, an) ->
+          sum env  loc name cases true
+      | _ -> not_implemented loc "shape recursive but not record")
+    | Default -> 
+      (match e with
+      | Sum (loc, cases, an) ->
+          sum env  loc name cases false
+      | Record (loc, fields, an) ->
+          record env loc name fields an false
+      | Tuple _
+      | List _
+      | Option _
+      | Nullable _
+      | Wrap _
+      | Name _ -> alias_wrapper env  name e
+      | Shared _ -> not_implemented loc "cyclic references"
+      | Tvar _ -> not_implemented loc "parametrized type")
   in
   unwrap e
 

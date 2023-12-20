@@ -811,25 +811,35 @@ and tuple_writer env (loc, cells, an) =
 let construct_json_field ?(is_rec=false) env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
   let unwrapped_type = unwrap_field_type loc name kind e in
+  let var_name = (inst_var_name trans_meth name) in
   let writer_fn n = json_writer ~nested:n env unwrapped_type in
-  let wrap_in_optional writer = sprintf "_atd_write_option!(%s)" writer in
+  (* let wrap_in_optional writer = sprintf "_atd_write_opti`on!(%s)" writer in *)
   let wrap_in_ptr writer = match should_wrap_ptr is_rec env e with
   | true -> sprintf "_atd_write_ptr!(%s)" writer
   | false -> writer
   in
-  let assignment writer =
-    [
-      Line (sprintf "res[\"%s\"] = %s(obj.%s);"
+  let conditional condition =
+    Line (sprintf "if (%s)" condition)
+  in
+  let assignment ?(get_nullable=false) writer =
+      Line (sprintf "res[\"%s\"] = %s(obj.%s%s);"
               (Atd.Json.get_json_fname name an |> single_esc)
               writer
-              (inst_var_name trans_meth name))
-    ]
+              (inst_var_name trans_meth name)
+              (match get_nullable with | true -> ".get" | false -> ""))
   in
+  let ca c a =
+    [c; Block [a]]
+  in
+  let dlang_default = match (get_dlang_default e an) with | Some x -> x | None -> "" in
   match kind with
-  | Required
-  | With_default -> assignment (wrap_in_ptr (writer_fn false))
-  | Optional -> assignment (wrap_in_ptr (wrap_in_optional (writer_fn true)))
-
+  | Required -> [assignment (wrap_in_ptr (writer_fn false))]
+  | With_default -> 
+    let c = conditional (sprintf "obj.%s != %s" var_name dlang_default) in
+    ca c (assignment (wrap_in_ptr (writer_fn false)))
+  | Optional -> 
+    let c = conditional (sprintf "!obj.%s.isNull" var_name) in
+    ca c (assignment ~get_nullable:true (wrap_in_ptr ((writer_fn true))))
 (*
    Function value that can be applied to a JSON node, converting it
    to the desired value.
@@ -891,6 +901,11 @@ and tuple_reader env cells =
     return tuple(%s);
   })" (List.length cells) (List.length cells) tuple_body
 
+let needs_nullable (e : type_expr) = 
+  match e with 
+  | Nullable _ | Option _ -> true
+  | _ -> false
+
 let from_json_class_argument
     ?(is_rec=false) env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
   let dlang_name = inst_var_name trans_meth name in
@@ -905,21 +920,30 @@ let from_json_class_argument
     | Optional -> (sprintf "typeof(obj.%s).init" dlang_name)
     | With_default ->
         match get_dlang_default e an with
-        | Some x -> x
+        | Some x -> (match (needs_nullable e) with | true -> (sprintf "%s.nullable" x) | false -> x)
         | None ->
             A.error_at loc
               (sprintf "missing default Dlang value for field '%s'"
                  name)
   in
-  let reader = match should_wrap_ptr is_rec env e with 
-  | true -> sprintf "_atd_read_ptr!(%s)" (json_reader env e)
-  | false -> (json_reader env e)
+  let reader = 
+    (match kind with 
+    | Optional -> 
+      (match e with 
+      | Option(_, e, _) -> (json_reader env e) 
+      | _ -> A.error_at loc (sprintf "optional but not option")) 
+    | _ -> (json_reader env e)) 
   in
-  sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
+  let wrapped_reader = match should_wrap_ptr is_rec env e with 
+  | true -> sprintf "_atd_read_ptr!(%s)" reader
+  | false -> reader
+  in
+  sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"])%s : %s;"
     dlang_name
     (single_esc json_name)
-    reader
+    wrapped_reader
     (single_esc json_name)
+    (match kind with | Optional -> ".nullable" | _ -> "") (* Needs to convert to nullable for optional *)
     else_body
 
 let inst_var_declaration
@@ -990,6 +1014,7 @@ let record env loc name (fields : field list) an is_rec =
       Line (sprintf "@trusted JSONValue toJson(T : %s)(T obj) {" (single_esc dlang_struct_name));
       Block [
         Line ("JSONValue res;");
+        Line ("res.object = new JSONValue[string];");
         Inline json_object_body;
         Line "return res;"
       ];

@@ -107,3 +107,12 @@ type default_list = {
 type record_with_wrapped_type = {
   item: string wrap <dlang t="int" wrap="to!int" unwrap="to!string">;
 }
+
+type null_opt = {
+  a : int;
+  b : int option;
+  c : int nullable;
+  ?f : int option;
+  ~h <dlang default="3"> :int option;
+  ~i <dlang default="3"> : int nullable;
+}

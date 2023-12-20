@@ -213,6 +213,20 @@ void setupTests()
 
         assert(vv.toJsonString == vv.toJsonString.fromJsonString!RecursiveVariant.toJsonString);
     };
+
+    tests["optional nullable"] = {
+        import std.typecons : nullable, Nullable;
+        auto x = 3.nullable;
+        auto xx = Nullable!int.init;
+        auto somes = NullOpt(3, x, x, x, x, x);
+        auto nones = NullOpt(0, xx, xx, xx, xx, xx);
+
+        auto somesJ = `{"a":3,"b":["Some",3],"c":3,"f":3}`;
+        assert(somesJ.fromJsonString!NullOpt.toJsonString == somes.toJsonString);
+
+        auto nonesJ = `{"a":0,"b":"None","c":null,"h":"None","i":null}`;  
+        assert(nonesJ.fromJsonString!NullOpt.toJsonString == nones.toJsonString);
+    };
 }
 
 void assertThrows(T)(T fn, bool writeMsg = false)

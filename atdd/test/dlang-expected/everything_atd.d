@@ -434,6 +434,7 @@ struct RecursiveClass {
 }
 @trusted JSONValue toJson(T : RecursiveClass)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["id"] = _atd_write_int(obj.id);
     res["flag"] = _atd_write_bool(obj.flag);
     res["children"] = _atd_write_ptr!(_atd_write_nullable!(((RecursiveClass x) => x.toJson!(RecursiveClass))))(obj.children);
@@ -454,6 +455,7 @@ struct RecordThatUsesRecursiveVariant {
 }
 @trusted JSONValue toJson(T : RecordThatUsesRecursiveVariant)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["v"] = ((RecursiveVariant x) => x.toJson!(RecursiveVariant))(obj.v);
     res["i"] = _atd_write_int(obj.i);
     return res;
@@ -661,8 +663,10 @@ struct IntFloatParametrizedRecord {
 }
 @trusted JSONValue toJson(T : IntFloatParametrizedRecord)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["field_a"] = _atd_write_int(obj.field_a);
-    res["field_b"] = _atd_write_list!(_atd_write_float)(obj.field_b);
+    if (obj.field_b != [])
+        res["field_b"] = _atd_write_list!(_atd_write_float)(obj.field_b);
     return res;
 }
 
@@ -704,7 +708,7 @@ struct Root {
     obj.float_with_auto_default = ("float_with_auto_default" in x) ? _atd_read_float(x["float_with_auto_default"]) : 0.0;
     obj.float_with_default = ("float_with_default" in x) ? _atd_read_float(x["float_with_default"]) : 0.1;
     obj.items = ("items" in x) ? _atd_read_list!(_atd_read_list!(_atd_read_int))(x["items"]) : _atd_missing_json_field!(typeof(obj.items))("Root", "items");
-    obj.maybe = ("maybe" in x) ? _atd_read_option!(_atd_read_int)(x["maybe"]) : typeof(obj.maybe).init;
+    obj.maybe = ("maybe" in x) ? _atd_read_int(x["maybe"]).nullable : typeof(obj.maybe).init;
     obj.extras = ("extras" in x) ? _atd_read_list!(_atd_read_int)(x["extras"]) : [];
     obj.answer = ("answer" in x) ? _atd_read_int(x["answer"]) : 42;
     obj.aliased = ("aliased" in x) ? fromJson!Alias(x["aliased"]) : _atd_missing_json_field!(typeof(obj.aliased))("Root", "aliased");
@@ -734,16 +738,22 @@ struct Root {
 }
 @trusted JSONValue toJson(T : Root)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["ID"] = _atd_write_string(obj.id);
     res["await"] = _atd_write_bool(obj.await);
     res["integer"] = _atd_write_int(obj.integer);
     res["__init__"] = _atd_write_float(obj.x___init__);
-    res["float_with_auto_default"] = _atd_write_float(obj.float_with_auto_default);
-    res["float_with_default"] = _atd_write_float(obj.float_with_default);
+    if (obj.float_with_auto_default != 0.0)
+        res["float_with_auto_default"] = _atd_write_float(obj.float_with_auto_default);
+    if (obj.float_with_default != 0.1)
+        res["float_with_default"] = _atd_write_float(obj.float_with_default);
     res["items"] = _atd_write_list!(_atd_write_list!(_atd_write_int))(obj.items);
-    res["maybe"] = _atd_write_option!(_atd_write_int)(obj.maybe);
-    res["extras"] = _atd_write_list!(_atd_write_int)(obj.extras);
-    res["answer"] = _atd_write_int(obj.answer);
+    if (!obj.maybe.isNull)
+        res["maybe"] = _atd_write_int(obj.maybe.get);
+    if (obj.extras != [])
+        res["extras"] = _atd_write_list!(_atd_write_int)(obj.extras);
+    if (obj.answer != 42)
+        res["answer"] = _atd_write_int(obj.answer);
     res["aliased"] = ((Alias x) => x.toJson!(Alias))(obj.aliased);
     res["point"] = ((Tuple!(float, float) x) => JSONValue([_atd_write_float(x[0]), _atd_write_float(x[1])]))(obj.point);
     res["kind"] = ((Kind x) => x.toJson!(Kind))(obj.kind);
@@ -774,6 +784,7 @@ struct RequireField {
 }
 @trusted JSONValue toJson(T : RequireField)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["req"] = _atd_write_string(obj.req);
     return res;
 }
@@ -790,6 +801,7 @@ struct RecordWithWrappedType {
 }
 @trusted JSONValue toJson(T : RecordWithWrappedType)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["item"] = _atd_write_wrap!(_atd_write_string, (int e) => to!string(e))(obj.item);
     return res;
 }
@@ -890,6 +902,41 @@ this(T...)(T args) @safe {_data = tuple(args);}
 }
 
 
+struct NullOpt {
+    int a;
+    Nullable!(int) b;
+    Nullable!(int) c;
+    Nullable!(int) f;
+    Nullable!(int) h = 3;
+    Nullable!(int) i = 3;
+}
+
+@trusted NullOpt fromJson(T : NullOpt)(JSONValue x) {
+    NullOpt obj;
+    obj.a = ("a" in x) ? _atd_read_int(x["a"]) : _atd_missing_json_field!(typeof(obj.a))("NullOpt", "a");
+    obj.b = ("b" in x) ? _atd_read_option!(_atd_read_int)(x["b"]) : _atd_missing_json_field!(typeof(obj.b))("NullOpt", "b");
+    obj.c = ("c" in x) ? _atd_read_nullable!(_atd_read_int)(x["c"]) : _atd_missing_json_field!(typeof(obj.c))("NullOpt", "c");
+    obj.f = ("f" in x) ? _atd_read_int(x["f"]).nullable : typeof(obj.f).init;
+    obj.h = ("h" in x) ? _atd_read_option!(_atd_read_int)(x["h"]) : 3.nullable;
+    obj.i = ("i" in x) ? _atd_read_nullable!(_atd_read_int)(x["i"]) : 3.nullable;
+    return obj;
+}
+@trusted JSONValue toJson(T : NullOpt)(T obj) {
+    JSONValue res;
+    res.object = new JSONValue[string];
+    res["a"] = _atd_write_int(obj.a);
+    res["b"] = _atd_write_option!(_atd_write_int)(obj.b);
+    res["c"] = _atd_write_nullable!(_atd_write_int)(obj.c);
+    if (!obj.f.isNull)
+        res["f"] = _atd_write_int(obj.f.get);
+    if (obj.h != 3)
+        res["h"] = _atd_write_option!(_atd_write_int)(obj.h);
+    if (obj.i != 3)
+        res["i"] = _atd_write_nullable!(_atd_write_int)(obj.i);
+    return res;
+}
+
+
 // Original type: frozen = [ ... | A | ... ]
 struct A {}
 @trusted JSONValue toJson(T : A)(T e) {
@@ -943,7 +990,9 @@ struct DefaultList {
 }
 @trusted JSONValue toJson(T : DefaultList)(T obj) {
     JSONValue res;
-    res["items"] = _atd_write_list!(_atd_write_int)(obj.items);
+    res.object = new JSONValue[string];
+    if (obj.items != [])
+        res["items"] = _atd_write_list!(_atd_write_int)(obj.items);
     return res;
 }
 
@@ -961,6 +1010,7 @@ struct Credential {
 }
 @trusted JSONValue toJson(T : Credential)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["name"] = _atd_write_string(obj.name);
     res["password"] = ((Password x) => x.toJson!(Password))(obj.password);
     return res;

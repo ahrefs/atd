@@ -12,3 +12,4 @@
 (rule (copy atd.opam.template atds.opam.template))
 (rule (copy atd.opam.template atdts.opam.template))
 (rule (copy atd.opam.template atdd.opam.template))
+(rule (copy atd.opam.template atdcpp.opam.template))

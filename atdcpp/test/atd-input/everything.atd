@@ -1,0 +1,86 @@
+<cpp import="std.stdint : uint32_t, uint16_t">
+
+type kind = [
+  | Root (* class name conflict *)
+  | Thing of int
+  | WOW <json name="wow">
+  | Amaze <json name="!!!"> of string list
+]
+
+type frozen = [
+  | A
+  | B of int
+]
+
+type ('a, 'b) parametrized_record = {
+  field_a: 'a;
+  ~field_b: 'b list;
+}
+
+type 'a parametrized_tuple = ('a * 'a * int)
+
+type root = {
+  id <json name="ID">: string;
+  await: bool;
+  integer: int;
+  __init__ : float;
+  ~float_with_auto_default: float;
+  ~float_with_default <cpp default="0.1">: float;
+  items: int list list;
+  ?maybe: int option;
+  ~extras: int list;
+  ~answer <cpp default="42">: int;
+  aliased: alias;
+  point: (float * float);
+  kind: kind;
+  kinds: kind list;
+  assoc1: (float * int) list;
+  assoc2: (string * int) list <json repr="object">;
+  assoc3: (float * int) list <cpp repr="dict">;
+  assoc4: (string * int) list <json repr="object"> <cpp repr="dict">;
+  nullables: int nullable list;
+  options: int option list;
+  untyped_things: abstract list;
+  parametrized_record: (int, float) parametrized_record;
+  parametrized_tuple: kind parametrized_tuple;
+  wrapped: st wrap <cpp t="uint16_t" wrap="((St st) => st.to!int.to!uint16_t)" unwrap="((uint16_t e) => St(e.to!int))">;
+  aaa: alias_of_alias_of_alias;
+} 
+
+type st = int
+type alias = int list
+type alias2 = int list
+type alias3 = int wrap <cpp t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
+type alias_of_alias = alias3 wrap <cpp t="uint16_t" wrap="to!uint16_t" unwrap="to!uint32_t">
+type alias_of_alias_not_Wrapped = alias3
+type alias_of_alias_of_alias = alias_of_alias_not_Wrapped
+
+type password = int wrap <cpp t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
+
+type credential = {
+  name: string;
+  password: password;
+}
+
+type credentials = credential list
+
+
+type pair = (string * int)
+
+type require_field = {
+  req: string;
+}
+
+type recursive_class = {
+  id: int;
+  flag: bool;
+  children: recursive_class list;
+}
+
+type default_list = {
+  ~items: int list;
+}
+
+type record_with_wrapped_type = {
+  item: string wrap <cpp t="int" wrap="to!int" unwrap="to!string">;
+}

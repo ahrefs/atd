@@ -1,0 +1,26 @@
+;
+; Convert ATD -> Dlang
+;
+(rule
+  (targets
+    everything_atd.d
+  )
+  (deps
+    ../atd-input/everything.atd
+  )
+  (action
+    (run %{bin:atdcpp} %{deps})))
+
+;
+; Compile and run the tests on the generated Dlang code.
+;
+(rule
+ (alias runtest)
+ (package atdcpp)
+ (deps
+  (glob_files *.d))
+ (action
+  (progn
+   (bash "ldc2 %{deps} --of test")
+   (bash ./test)
+  )))

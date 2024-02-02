@@ -11,6 +11,7 @@ DUNE ?= dune
 all:
 	$(MAKE) -C atdpy clean-for-dune
 	$(MAKE) -C atdd clean-for-dune
+	$(MAKE) -C atdcpp clean-for-dune
 	$(MAKE) -C atdts clean-for-dune
 	$(DUNE) build
 
@@ -93,6 +94,11 @@ test-ts:
 test-d:
 	$(MAKE) test-common
 	$(MAKE) -C atdd test
+
+.PHONY: test-cpp
+test-cpp:
+	$(MAKE) test-common
+	$(MAKE) -C atdcpp test
 
 ############################################################################
 

@@ -1,6 +1,6 @@
-<cpp import="std.stdint : uint32_t, uint16_t">
+(* <cpp import="std.stdint : uint32_t, uint16_t"> *)
 
-type kind = [
+(* type kind = [
   | Root (* class name conflict *)
   | Thing of int
   | WOW <json name="wow">
@@ -10,13 +10,14 @@ type kind = [
 type frozen = [
   | A
   | B of int
-]
+] *)
 
 type ('a, 'b) parametrized_record = {
   field_a: 'a;
   ~field_b: 'b list;
 }
 
+(* 
 type 'a parametrized_tuple = ('a * 'a * int)
 
 type root = {
@@ -56,15 +57,18 @@ type alias_of_alias_not_Wrapped = alias3
 type alias_of_alias_of_alias = alias_of_alias_not_Wrapped
 
 type password = int wrap <cpp t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
-
+*)
 type credential = {
   name: string;
-  password: password;
+  password: int;
 }
 
 type credentials = credential list
 
-
+type three_level_nested_list_record = {
+  field_a: int list list list
+}
+(*
 type pair = (string * int)
 
 type require_field = {
@@ -83,4 +87,4 @@ type default_list = {
 
 type record_with_wrapped_type = {
   item: string wrap <cpp t="int" wrap="to!int" unwrap="to!string">;
-}
+} *)

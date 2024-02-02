@@ -3,7 +3,7 @@
 ;
 (rule
   (targets
-    everything_atd.d
+    everything_atd.hpp
   )
   (deps
     ../atd-input/everything.atd
@@ -18,7 +18,7 @@
  (alias runtest)
  (package atdcpp)
  (deps
-  (glob_files *.d))
+  (glob_files *.cpp))
  (action
   (progn
    (bash "ldc2 %{deps} --of test")

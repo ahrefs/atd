@@ -461,7 +461,7 @@ let rec json_writer ?(nested=false) env e =
   | List (loc, e, an) ->
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_write_list<%s>" (json_writer ~nested:true env e)
+           sprintf "_atd_write_array<%s>" (json_writer ~nested:true env e)
        | Array_dict (key, value) ->
            sprintf "_atd_write_assoc_dict_to_array<%s, %s>"
              (json_writer ~nested:true env key) (json_writer ~nested:true env value)
@@ -543,7 +543,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
          The default is to use JSON arrays and Python lists. *)
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_read_list<%s>"
+           sprintf "_atd_read_array<%s>"
              (json_reader ~nested:true env e)
        | Array_dict (key, value) ->
            sprintf "_atd_read_array_to_assoc_dict<%s, %s>"
@@ -642,6 +642,7 @@ let inst_var_declaration
   [
     Line (sprintf "%s %s%s;" type_name var_name default)
   ]
+  
 
 let record env loc name (fields : field list) an =
   let dlang_struct_name = struct_name env name in
@@ -706,7 +707,7 @@ let record env loc name (fields : field list) an =
 let alias_wrapper env  name type_expr =
   let dlang_struct_name = struct_name env name in
   let value_type = type_name_of_expr env type_expr in
-  let optional_constructor = match type_expr with
+  (* let optional_constructor = match type_expr with
     | Tuple (_, _, _) -> 
       Line(sprintf "this(T...)(T args) @safe {_data = tuple(args);}");
     | _ -> Line(""); in
@@ -722,7 +723,8 @@ let alias_wrapper env  name type_expr =
     Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue e) {" dlang_struct_name dlang_struct_name);
     Block [Line(sprintf "return %s(%s(e));" dlang_struct_name (json_reader env type_expr))];
     Line("}");
-  ]
+  ] *)
+  [Line (sprintf "typedef %s %s;" value_type dlang_struct_name)]
 
 let case_class env  type_name
     (loc, orig_name, unique_name, an, opt_e) =

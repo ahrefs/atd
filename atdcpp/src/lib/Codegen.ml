@@ -1132,7 +1132,7 @@ let run_file src_path =
     (if Filename.check_suffix src_name ".atd" then
        Filename.chop_suffix src_name ".atd"
      else
-       src_name) ^ "_atd.d"
+       src_name) ^ "_atd.hpp"
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in

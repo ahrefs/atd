@@ -1,4 +1,4 @@
-#include "everything_atd.hpp"
+#include "everything_atd_goal.hpp"
 
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
@@ -100,6 +100,15 @@ namespace __NNNIntListRecord
             return _atd_read_array<std::vector<int>, read_0>(val);
         }
     }
+}
+
+typedef NNNIntListRecord TT;
+
+TT TT::from_json(const rapidjson::Document &doc)
+{
+    TT record;
+
+    return record;
 }
 
 std::string NNNIntListRecord::to_json_string() const

@@ -24,13 +24,6 @@ private:
     std::string msg_;
 };
 
-// Forward declaration for utility functions using snake case
-template <typename T>
-T read_from_json(const rapidjson::Value &val);
-
-template <typename T>
-rapidjson::Value write_to_json(const T &value, rapidjson::Document::AllocatorType &allocator);
-
 // Reading an integer from JSON
 int _atd_read_int(const rapidjson::Value &val)
 {

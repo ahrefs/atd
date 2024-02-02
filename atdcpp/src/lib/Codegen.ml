@@ -1,5 +1,5 @@
 (*
-   Dlang code generation for JSON support (no biniou support)
+   cpp code generation for JSON support (no biniou support)
 
    Takes the contents of a .atd file and translates it to a .d file.
    Look into the tests to see what generated code looks like.
@@ -38,7 +38,7 @@ let annot_schema_dlang : Atd.Annot.schema_section =
 let annot_schema : Atd.Annot.schema =
   annot_schema_dlang :: Atd.Json.annot_schema_json
 
-(* Translate a preferred variable name into an available Dlang identifier. *)
+(* Translate a preferred variable name into an available cpp identifier. *)
 let trans env id =
   env.translate_variable id
 
@@ -190,327 +190,124 @@ let fixed_size_preamble atd_filename =
 // # Private functions
 // ############################################################################
 
-module %s;
+// filename %s
+#pragma once
 
-import std.algorithm : map;
-import std.array : array;
-import std.conv;
-import std.format;
-import std.json;
-import std.sumtype;
-import std.traits : isCallable, ReturnType;
-import std.typecons : nullable, Nullable, tuple, Tuple;
+#include <stdexcept>
+#include <string>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
+#include <string>
 
-private
+class AtdException : public std::exception
 {
+public:
+    AtdException(const std::string &message) : msg_(message) {}
 
-  class AtdException : Exception
-  {
-      @safe this(string msg, string file = __FILE__, size_t line = __LINE__)
-      {
-          super(msg, file, line);
-      }
-  }
-
-  // workaround to make toDelegate callable from safe
-  @trusted auto toDelegate(F)(auto ref F fp) if (isCallable!F)
-  {
-    import std.functional;
-    return std.functional.toDelegate(fp);
-  }
-
-  
-  @trusted T _atd_missing_json_field(T)(string typeName, string jsonFieldName)
-  {
-      throw new AtdException("missing field %%s in JSON object of type %%s".format(jsonFieldName, typeName));
-  }
-  
-  auto _atd_bad_json(T)(string expectedType, T jsonValue)
-  {
-      string valueStr = jsonValue.to!string;
-      if (valueStr.length > 200)
-      {
-          valueStr = valueStr[0 .. 200];
-      }
-  
-      return new AtdException(
-          "incompatible JSON value where type '%%s' was expected: %%s".format(
-              expectedType, valueStr
-      ));
-  }
-  
-  auto _atd_bad_d(T)(string expectedType, T jsonValue)
-  {
-      string valueStr = jsonValue.to!string;
-      if (valueStr.length > 200)
-      {
-          valueStr = valueStr[0 .. 200];
-      }
-  
-      return new AtdException(
-          "incompatible D value where type '%%s' was expected: %%s".format(
-              expectedType, valueStr
-      ));
-  }
-  
-  auto _atd_read_unit(JSONValue x)
-  {
-      if (x.isNull)
-          return null;
-      else
-          throw _atd_bad_json("unit", x);
-  }
-  
-  auto _atd_read_bool(JSONValue x)
-  {
-      try
-          return x.boolean;
-      catch (JSONException e)
-          throw _atd_bad_json("bool", x);
-  }
-  
-  auto _atd_read_int(JSONValue x)
-  {
-      try
-          return cast(int) x.integer;
-      catch (JSONException e)
-          throw _atd_bad_json("int", x);
-  }
-  
-  auto _atd_read_float(JSONValue x)
-  {
-      try
-          return cast(float) x.floating;
-      catch (JSONException e)
-          throw _atd_bad_json("float", x);
-  }
-  
-  auto _atd_read_string(JSONValue x)
-  {
-      try
-          return x.str;
-      catch (JSONException e)
-          throw _atd_bad_json("string", x);
-  }
-  
-  template _atd_read_list(alias readElements)
+    const char *what() const throw() override
     {
-        auto _atd_read_list(JSONValue jsonVal)
-        {
-            if (jsonVal.type != JSONType.array)
-                throw _atd_bad_json("array", jsonVal);
-            auto list = jsonVal.array;
-            return array(list.map!readElements());
-        }
+        return msg_.c_str();
     }
 
-    template _atd_read_object_to_assoc_array(alias readValue)
-    {
-        auto _atd_read_object_to_assoc_array(JSONValue jsonVal)
-        {
-            alias T = ReturnType!readValue;
+private:
+    std::string msg_;
+};
 
-            if (jsonVal.type != JSONType.object)
-                throw _atd_bad_json("object", jsonVal);
-            T[string] ret;
-            foreach (key, val; jsonVal.object)
-                ret[key] = readValue(val);
-            return ret;
-        }
-    }
-
-    template _atd_read_array_to_assoc_dict(alias readKey, alias readValue)
-    {
-        auto _atd_read_array_to_assoc_dict(JSONValue jsonVal)
-        {
-            alias K = ReturnType!readKey;
-            alias V = ReturnType!readValue;
-
-            if (jsonVal.type != JSONType.array)
-                throw _atd_bad_json("list", jsonVal);
-            V[K] ret;
-            foreach (jsonInnerVal; jsonVal.array)
-            {
-                if (jsonInnerVal.type != JSONType.array)
-                    throw _atd_bad_json("list", jsonInnerVal);
-                ret[readKey(jsonInnerVal[0])] = readValue(jsonInnerVal[1]);
-            }
-            return ret;
-        }
-    }
-
-    template _atd_read_object_to_tuple_list(alias readValue)
-    {
-        auto _atd_read_object_to_tuple_list(JSONValue jsonVal)
-        {
-            alias T = ReturnType!readValue;
-
-            if (jsonVal.type != JSONType.object)
-                throw _atd_bad_json("object", jsonVal);
-            auto tupList = new Tuple!(string, T)[](jsonVal.object.length);
-            int i = 0;
-            foreach (key, val; jsonVal.object)
-                tupList[i++] = tuple(key, readValue(val));
-            return tupList;
-        }
-    }
-
-    template _atd_read_nullable(alias readElm)
-    {
-        auto _atd_read_nullable(JSONValue e)
-        {
-            alias T = ReturnType!readElm;
-
-            if (e.isNull)
-                return Nullable!T.init;
-            else
-                return Nullable!T(readElm(e));
-        }
-    }
-
-    template _atd_read_option(alias readElm)
-    {
-        auto _atd_read_option(JSONValue e)
-        {
-            alias T = ReturnType!readElm;
-
-            if (e.type == JSONType.string && e.str == "None")
-                return Nullable!T.init;
-            else if (e.type == JSONType.array && e.array.length == 2 && e[0].type == JSONType.string && e[0].str == "Some")
-                return Nullable!T(readElm(e[1]));
-            else
-                throw _atd_bad_json("option", e);
-        }
-    }
-
-    template _atd_read_wrap(alias readElm, alias wrap)
-    {
-        auto _atd_read_wrap(JSONValue e)
-        {
-            return wrap(readElm(e));
-        }
-    }
-
-    // this whole set of function could be remplaced by one templated _atd_write_value function
-    // not sure it is what we want though
-
-    auto _atd_write_unit(typeof(null) n)
-    {
-        return JSONValue(null);
-    }
-
-    auto _atd_write_bool(bool b)
-    {
-        return JSONValue(b);
-    }
-
-    auto _atd_write_int(int i)
-    {
-        return JSONValue(i);
-    }
-
-    auto _atd_write_float(float f)
-    {
-        return JSONValue(f);
-    }
-
-    auto _atd_write_string(string s)
-    {
-        return JSONValue(s);
-    }
-
-    template _atd_write_list(alias writeElm)
-    {
-        auto _atd_write_list(T)(T[] list)
-        {
-            return JSONValue(array(list.map!writeElm()));
-        }
-    }
-
-    template _atd_write_assoc_array_to_object(alias writeValue)
-    {
-        auto _atd_write_assoc_array_to_object(T)(T[string] assocArr)
-        {
-            JSONValue[string] ret;
-            foreach (key, val; assocArr)
-                ret[key] = writeValue(val);
-            return JSONValue(ret);
-        }
-    }
-
-    template _atd_write_assoc_dict_to_array(alias writeKey, alias writeValue)
-    {
-        auto _atd_write_assoc_dict_to_array(K, V)(V[K] assocArr)
-        {
-            JSONValue[] ret;
-            foreach (key, val; assocArr)
-                ret ~= JSONValue([writeKey(key), writeValue(val)]);
-            return JSONValue(ret);
-        }
-    }
-
-    template _atd_write_tuple_list_to_object(alias writeValue)
-    {
-        auto _atd_write_tuple_list_to_object(T)(Tuple!(string, T)[] tupList)
-        {
-            JSONValue[string] ret;
-            foreach (tup; tupList)
-                ret[tup[0]] = writeValue(tup[1]);
-            return JSONValue(ret);
-        }
-    }
-
-    template _atd_write_nullable(alias writeElm)
-    {
-        auto _atd_write_nullable(T)(Nullable!T elm)
-        {
-            if (elm.isNull)
-                return JSONValue(null);
-            else
-                return writeElm(elm.get);
-        }
-    }
-
-    template _atd_write_option(alias writeElm)
-    {
-        auto _atd_write_option(T)(Nullable!T elm)
-        {
-            if (elm.isNull)
-                return JSONValue("None");
-            else
-                return JSONValue([JSONValue("Some"), writeElm(elm.get)]);
-        }
-    }
-
-    template _atd_write_wrap(alias writeElm, alias unwrap)
-    {
-        auto _atd_write_wrap(Wrapped)(Wrapped e)
-        {
-            return writeElm(unwrap(e));
-        }
-    }
+template <typename T>
+T _atd_missing_json_field(const std::string &type, const std::string &field)
+{
+    throw AtdException("Missing JSON field '" + field + "' in " + type);
 }
 
-// ############################################################################
-// # Public classes
-// ############################################################################
-
-auto fromJsonString(T)(string s)
+// Reading an integer from JSON
+int _atd_read_int(const rapidjson::Value &val)
 {
-    JSONValue res = parseJSON(s);
-    return res.fromJson!T;
+    if (!val.IsInt())
+    {
+        throw AtdException("Expected an integer");
+    }
+    return val.GetInt();
 }
 
-auto toJsonString(T)(T obj)
+// Reading a float from JSON
+float _atd_read_float(const rapidjson::Value &val)
 {
-    JSONValue res = obj.toJson!T;
-    return res.toString;
+    if (val.IsInt())
+    {
+        return static_cast<float>(val.GetInt());
+    }
+    else if (val.IsUint())
+    {
+        return static_cast<float>(val.GetUint());
+    }
+    if (!val.IsFloat())
+    {
+        throw AtdException("Expected a float");
+    }
+
+    return val.GetFloat();
+}
+
+std::string _atd_read_string(const rapidjson::Value &val)
+{
+    if (!val.IsString())
+    {
+        throw AtdException("Expected a string");
+    }
+    return val.GetString();
+}
+
+template <typename T, T (*read_func)(const rapidjson::Value &)>
+std::vector<T> _atd_read_array(const rapidjson::Value &val)
+{
+    if (!val.IsArray())
+    {
+        throw std::runtime_error("Expected an array"); // Or your specific exception type
+    }
+
+    std::vector<T> result;
+    for (rapidjson::SizeType i = 0; i < val.Size(); i++)
+    {
+        result.push_back(read_func(val[i]));
+    }
+
+    return result;
+}
+
+void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.Int(value);
+}
+
+void _atd_write_float(float value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.Double(value);
+}
+
+void _atd_write_string(const std::string &value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.String(value.c_str());
+}
+
+template <typename T, void (*write_func)(T, rapidjson::Writer<rapidjson::StringBuffer>&)>
+void _atd_write_array(const std::vector<T>& values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.StartArray();
+    for (const auto& value : values)
+    {
+        write_func(value, writer);
+    }
+    writer.EndArray();
 }
 
   |}
     atd_filename
     atd_filename
-    (sprintf "%s_atd" (Filename.remove_extension atd_filename))
+    atd_filename
 
 
 let not_implemented loc msg =
@@ -529,7 +326,7 @@ let double_spaced blocks =
   spaced ~spacer:[Line ""; Line ""] blocks
 
 (*
-   Representations of ATD type '(string * value) list' in JSON and Dlang.
+   Representations of ATD type '(string * value) list' in JSON and cpp.
    Key type or value type are provided when it's useful.
 *)
 type assoc_kind =
@@ -556,15 +353,15 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | _, Object, _ -> error_at loc "not a (string * _) list"
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
-(* Map ATD built-in types to built-in Dlang types *)
+(* Map ATD built-in types to built-in cpp types *)
 let dlang_type_name env (name : string) =
   match name with
   | "unit" -> "void"
   | "bool" -> "bool"
   | "int" -> "int"
   | "float" -> "float"
-  | "string" -> "string"
-  | "abstract" -> "JSONValue"
+  | "string" -> "std::string"
+  | "abstract" -> "rapidjson::Value"
   | user_defined -> 
       let typename = (struct_name env user_defined) in
       typename
@@ -583,18 +380,18 @@ let rec type_name_of_expr env (e : type_expr) : string =
      (match assoc_kind loc e an with
        | Array_list
        | Object_list _ ->
-           sprintf "%s[]"
+           sprintf "std::vector<%s>"
              (type_name_of_expr env e)
        | Array_dict (key, value) ->
-           sprintf "%s[%s]"
+           sprintf "std::map<%s, %s>"
              (type_name_of_expr env value)
              (type_name_of_expr env key)
        | Object_dict value ->
-           sprintf "%s[string]"
+           sprintf "std::map<string, %s>"
              (type_name_of_expr env value)
       )
-  | Option (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
-  | Nullable (loc, e, an) -> sprintf "Nullable!%s" (type_name_of_expr env e)
+  | Option (loc, e, an) -> sprintf "std::optional<%s>" (type_name_of_expr env e)
+  | Nullable (loc, e, an) -> sprintf "std::optional<%s>" (type_name_of_expr env e)
   | Shared (loc, e, an) -> not_implemented loc "shared" (* TODO *)
   | Wrap (loc, e, an) ->
       (match Dlang_annot.get_dlang_wrap loc an with
@@ -610,7 +407,7 @@ let rec get_default_default (e : type_expr) : string option =
   | Sum _
   | Record _
   | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
-  | List _ -> Some "[]"
+  | List _ -> Some "{}"
   | Option _
   | Nullable _ -> None
   | Shared (loc, e, an) -> get_default_default e
@@ -664,21 +461,21 @@ let rec json_writer ?(nested=false) env e =
   | List (loc, e, an) ->
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_write_list!(%s)" (json_writer ~nested:true env e)
+           sprintf "_atd_write_list<%s>" (json_writer ~nested:true env e)
        | Array_dict (key, value) ->
-           sprintf "_atd_write_assoc_dict_to_array!(%s, %s)"
+           sprintf "_atd_write_assoc_dict_to_array<%s, %s>"
              (json_writer ~nested:true env key) (json_writer ~nested:true env value)
        | Object_dict value ->
-           sprintf "_atd_write_assoc_array_to_object!(%s)"
+           sprintf "_atd_write_assoc_array_to_object<%s>"
              (json_writer ~nested:true env value)
        | Object_list value ->
-           sprintf "_atd_write_tuple_list_to_object!(%s)"
+           sprintf "_atd_write_tuple_list_to_object<%s>"
              (json_writer ~nested:true env value)
       )
   | Option (loc, e, an) ->
-      sprintf "_atd_write_option!(%s)"(json_writer ~nested:true env e)
+      sprintf "_atd_write_option<%s>"(json_writer ~nested:true env e)
   | Nullable (loc, e, an) ->
-      sprintf "_atd_write_nullable!(%s)" (json_writer ~nested:true env e)
+      sprintf "_atd_write_nullable<%s>" (json_writer ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> 
     (match Dlang_annot.get_dlang_wrap loc an with
@@ -712,10 +509,9 @@ let construct_json_field env trans_meth
   let writer_function = json_writer env unwrapped_type in
   let assignment =
     [
-      Line (sprintf "res[\"%s\"] = %s(obj.%s);"
-              (Atd.Json.get_json_fname name an |> single_esc)
-              writer_function
-              (inst_var_name trans_meth name))
+      Line (sprintf "writer.Key(\"%s\");"
+              (Atd.Json.get_json_fname name an |> single_esc));
+      Line (sprintf "%s(%s, writer);" writer_function (inst_var_name trans_meth name));
     ]
   in
   match kind with
@@ -747,16 +543,16 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
          The default is to use JSON arrays and Python lists. *)
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_read_list!(%s)"
+           sprintf "_atd_read_list<%s>"
              (json_reader ~nested:true env e)
        | Array_dict (key, value) ->
-           sprintf "_atd_read_array_to_assoc_dict!(%s, %s)"
+           sprintf "_atd_read_array_to_assoc_dict<%s, %s>"
              (json_reader ~nested:true env key) (json_reader ~nested:true env value)
        | Object_dict value ->
-           sprintf "_atd_read_object_to_assoc_array!(%s)"
+           sprintf "_atd_read_object_to_assoc_array<%s>"
              (json_reader ~nested:true env value)
        | Object_list value ->
-           sprintf "_atd_read_object_to_tuple_list!(%s)"
+           sprintf "_atd_read_object_to_tuple_list<%s>"
              (json_reader ~nested:true env value)
       )
   | Option (loc, e, an) ->
@@ -800,25 +596,34 @@ let from_json_class_argument
   let else_body =
     match kind with
     | Required ->
-        sprintf "_atd_missing_json_field!(typeof(obj.%s))(\"%s\", \"%s\")"
+        sprintf "_atd_missing_json_field<decltype(record.%s)>(\"%s\", \"%s\")"
           dlang_name
           (single_esc dlang_struct_name)
           (single_esc json_name)
-    | Optional -> (sprintf "typeof(obj.%s).init" dlang_name)
+    | Optional -> (sprintf "decltype(record.%s).init" dlang_name)
     | With_default ->
         match get_dlang_default e an with
         | Some x -> x
         | None ->
             A.error_at loc
-              (sprintf "missing default Dlang value for field '%s'"
+              (sprintf "missing default cpp value for field '%s'"
                  name)
   in
-  sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
+  Inline [
+    Line (sprintf "if (doc.HasMember(\"%s\"))" (single_esc json_name));
+    Block [
+      Line (sprintf "record.%s = %s(doc[\"%s\"]);"
+              dlang_name
+              (json_reader env e)
+              (single_esc json_name));
+    ];
+    Line (sprintf "else record.%s = %s;" dlang_name else_body);]
+  (* sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
     dlang_name
     (single_esc json_name)
     (json_reader env e)
     (single_esc json_name)
-    else_body
+    else_body *)
 
 let inst_var_declaration
     env trans_meth ((loc, (name, kind, an), e) : simple_field) =
@@ -855,27 +660,33 @@ let record env loc name (fields : field list) an =
       Inline (construct_json_field env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
-      Line (from_json_class_argument env trans_meth dlang_struct_name x)
+      (from_json_class_argument env trans_meth dlang_struct_name x)
     ) fields in
   let from_json =
     [
-      Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue x) {"
-            (single_esc dlang_struct_name) (single_esc dlang_struct_name));
+      Line (sprintf "static %s from_json(const rapidjson::Document & doc) {"
+           (single_esc dlang_struct_name));
       Block [
-        Line (sprintf "%s obj;" dlang_struct_name);
+        Line (sprintf "%s record;" dlang_struct_name);
+        Line "if (!doc.IsObject()) {";
+        Block [Line "throw AtdException(\"Expected an object\");"];
+        Line "}";
         Inline from_json_class_arguments;
-        Line "return obj;";
+        Line "return record;";
       ];
       Line "}";
     ]
   in
   let to_json =
     [
-      Line (sprintf "@trusted JSONValue toJson(T : %s)(T obj) {" (single_esc dlang_struct_name));
+      Line (sprintf "std::string to_json_string() {");
       Block [
-        Line ("JSONValue res;");
+        Line ("rapidjson::StringBuffer buffer;");
+        Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
+        Line ("writer.StartObject();");
         Inline json_object_body;
-        Line "return res;"
+        Line ("writer.EndObject();");
+        Line "return buffer.GetString();"
       ];
       Line "}";
     ]
@@ -884,11 +695,12 @@ let record env loc name (fields : field list) an =
     Line (sprintf "struct %s {" dlang_struct_name);
     Block (spaced [
       Inline inst_var_declarations;
+      Inline from_json;
+      Inline to_json;
     ]);
-    Line ("}");
+    Line ("};");
     Line "";
-    Inline from_json;
-    Inline to_json;
+    
   ]
 
 let alias_wrapper env  name type_expr =

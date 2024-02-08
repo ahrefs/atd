@@ -150,4 +150,12 @@ let () =
           `B ({
             thing = 1;
           }))
+    ; test_decode ~name:"decode variant3"
+        ~yojson:Melangespec_j.string_of_variant3
+        ~melange:Melangespec_mel.read_variant3
+        ~data: Melangespec_t.(A "hello")
+    ; test_encode ~name:"encode variant3"
+        ~yojson:Melangespec_j.variant3_of_string
+        ~melange:Melangespec_mel.write_variant3
+        ~data: Melangespec_t.(A "hello")
     ]

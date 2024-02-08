@@ -108,3 +108,15 @@ type variant2 = [
   | A
   | C
 ] <ocaml repr="classic">
+
+type with_open_enum = [
+  | Alpha
+  | Beta
+  | Other of string
+] <json open_enum>
+
+type variant3 = [
+  | C
+  | B
+  | A of string
+] <ocaml repr="classic"> <json open_enum>

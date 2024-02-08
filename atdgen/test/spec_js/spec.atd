@@ -42,3 +42,9 @@ type age = int wrap
     unwrap="fun (`Age i) -> max 1 (min i 100)">
 
 type ages = age list
+
+type open_enum = [
+  | Alpha
+  | Beta
+  | Other of string
+] <json open_enum>

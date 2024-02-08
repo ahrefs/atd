@@ -6,26 +6,27 @@ open Spec_t
 type 'a j = 'a -> Yojson.Safe.t
 
 module type Json = sig
-  val r1     : r1 j
-  val r2     : r2 j
-  val r3     : r3 j
-  val r4     : r4 j
-  val r5     : r5 j
-  val r6     : r6 j
-  val r7     : r7 j
-  val r8     : r8 j
-  val j1     : j1 j
-  val j2     : j2 j
-  val j3     : j3 j
-  val j4     : j4 j
-  val o1     : o1 j
-  val o2     : o2 j
-  val t1     : t1 j
-  val t2     : t2 j
-  val v1list : v1list j
-  val v2     : v2 j
-  val v3list : v3list j
-  val ages   : ages j
+  val r1        : r1 j
+  val r2        : r2 j
+  val r3        : r3 j
+  val r4        : r4 j
+  val r5        : r5 j
+  val r6        : r6 j
+  val r7        : r7 j
+  val r8        : r8 j
+  val j1        : j1 j
+  val j2        : j2 j
+  val j3        : j3 j
+  val j4        : j4 j
+  val o1        : o1 j
+  val o2        : o2 j
+  val t1        : t1 j
+  val t2        : t2 j
+  val v1list    : v1list j
+  val v2        : v2 j
+  val v3list    : v3list j
+  val ages      : ages j
+  val open_enum : open_enum j
 end
 
 module Make (J : Json) = struct
@@ -60,6 +61,7 @@ module Make (J : Json) = struct
       ; v2 { v2 = `B 100 }
       ; v3list [C1 ; C2 true; C2 false]
       ; ages [ `Age 50; `Age 30; `Age (-1); `Age 400]
+      ; open_enum (`Other  "hello")
       ]
 
   let pp_json fmt json =

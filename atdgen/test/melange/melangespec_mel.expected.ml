@@ -13,6 +13,8 @@ and mutual_recurse2 = Melangespec_t.mutual_recurse2 = {
 
 type with_open_enum = Melangespec_t.with_open_enum
 
+type with_open_enum_list = Melangespec_t.with_open_enum_list
+
 type variant3 = Melangespec_t.variant3 =  C | B | A of string 
 
 type variant2 = Melangespec_t.variant2 =  A | C 
@@ -179,6 +181,22 @@ let read_with_open_enum = (
     | "Beta" -> `Beta
     | x -> `Other x
   )
+)
+let write__with_open_enum_list = (
+  Atdgen_codec_runtime.Encode.list (
+    write_with_open_enum
+  )
+)
+let read__with_open_enum_list = (
+  Atdgen_codec_runtime.Decode.list (
+    read_with_open_enum
+  )
+)
+let write_with_open_enum_list = (
+  write__with_open_enum_list
+)
+let read_with_open_enum_list = (
+  read__with_open_enum_list
 )
 let write_variant3 = (
   Atdgen_codec_runtime.Encode.make (fun (x : variant3) -> match x with

@@ -13,6 +13,8 @@ and mutual_recurse2 = Melangespec_t.mutual_recurse2 = {
 
 type with_open_enum = Melangespec_t.with_open_enum
 
+type with_open_enum_list = Melangespec_t.with_open_enum_list
+
 type variant3 = Melangespec_t.variant3 =  C | B | A of string 
 
 type variant2 = Melangespec_t.variant2 =  A | C 
@@ -79,6 +81,10 @@ val write_mutual_recurse2 :  mutual_recurse2 Atdgen_codec_runtime.Encode.t
 val read_with_open_enum :  with_open_enum Atdgen_codec_runtime.Decode.t
 
 val write_with_open_enum :  with_open_enum Atdgen_codec_runtime.Encode.t
+
+val read_with_open_enum_list :  with_open_enum_list Atdgen_codec_runtime.Decode.t
+
+val write_with_open_enum_list :  with_open_enum_list Atdgen_codec_runtime.Encode.t
 
 val read_variant3 :  variant3 Atdgen_codec_runtime.Decode.t
 

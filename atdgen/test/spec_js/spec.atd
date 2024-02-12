@@ -48,3 +48,5 @@ type open_enum = [
   | Beta
   | Other of string
 ] <json open_enum>
+
+type open_enum_list = open_enum list

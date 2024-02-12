@@ -13,6 +13,8 @@ and mutual_recurse2 = Melangespec_t.mutual_recurse2 = {
 
 type with_open_enum = Melangespec_t.with_open_enum
 
+type with_open_enum_list = Melangespec_t.with_open_enum_list
+
 type variant3 = Melangespec_t.variant3 =  C | B | A of string 
 
 type variant2 = Melangespec_t.variant2 =  A | C 
@@ -421,6 +423,34 @@ let read_with_open_enum = (
 )
 let with_open_enum_of_string s =
   read_with_open_enum (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__with_open_enum_list = (
+  Atdgen_runtime.Oj_run.write_list (
+    write_with_open_enum
+  )
+)
+let string_of__with_open_enum_list ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write__with_open_enum_list ob x;
+  Buffer.contents ob
+let read__with_open_enum_list = (
+  Atdgen_runtime.Oj_run.read_list (
+    read_with_open_enum
+  )
+)
+let _with_open_enum_list_of_string s =
+  read__with_open_enum_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_with_open_enum_list = (
+  write__with_open_enum_list
+)
+let string_of_with_open_enum_list ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_with_open_enum_list ob x;
+  Buffer.contents ob
+let read_with_open_enum_list = (
+  read__with_open_enum_list
+)
+let with_open_enum_list_of_string s =
+  read_with_open_enum_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_variant3 : _ -> variant3 -> _ = (
   fun ob (x : variant3) ->
     match x with

@@ -115,6 +115,8 @@ type with_open_enum = [
   | Other of string
 ] <json open_enum>
 
+type with_open_enum_list = with_open_enum list
+
 type variant3 = [
   | C
   | B

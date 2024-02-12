@@ -150,4 +150,20 @@ let () =
           `B ({
             thing = 1;
           }))
+    ; test_decode ~name:"decode variant3"
+        ~yojson:Melangespec_j.string_of_variant3
+        ~melange:Melangespec_mel.read_variant3
+        ~data: Melangespec_t.(A "hello")
+    ; test_encode ~name:"encode variant3"
+        ~yojson:Melangespec_j.variant3_of_string
+        ~melange:Melangespec_mel.write_variant3
+        ~data: Melangespec_t.(A "hello")
+    ; test_decode ~name:"decode list open enum"
+        ~yojson:Melangespec_j.string_of_with_open_enum_list
+        ~melange:Melangespec_mel.read_with_open_enum_list
+        ~data: Melangespec_t.([`Alpha; `Other "other"])
+    ; test_encode ~name:"encode list open enum"
+        ~yojson:Melangespec_j.with_open_enum_list_of_string
+        ~melange:Melangespec_mel.write_with_open_enum_list
+        ~data: Melangespec_t.([`Alpha; `Other "other"])
     ]

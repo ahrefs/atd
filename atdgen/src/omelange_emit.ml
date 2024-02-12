@@ -11,9 +11,6 @@ type param =
 let target : Ocaml.target = Melange
 let annot_schema = Ocaml.annot_schema_of_target target
 
-let open_enum_not_supported () =
-  failwith "open_enum is not supported in melange mode"
-
 let runtime_module = "Atdgen_codec_runtime"
 
 let decoder_ident = sprintf "%s.Decode.%s" runtime_module
@@ -37,7 +34,6 @@ let destruct_sum (x : Oj_mapping.t) =
   match x with
   | Sum (_, a, Sum x, Sum j) ->
       let tick = Ocaml.tick x in
-      if j.json_open_enum then open_enum_not_supported ();
       tick, a
   | Unit _ -> Error.error (loc_of_mapping x) "Cannot destruct unit"
   | Bool _ -> Error.error (loc_of_mapping x) "Cannot destruct bool"
@@ -182,7 +178,7 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
            ]
       )
   | Sum (_, a, Sum osum, Sum j) ->
-      if j.json_open_enum then open_enum_not_supported ();
+      let open_enum = j.Json.json_open_enum in
       let cases =
         Array.to_list a
         |> List.map
@@ -196,43 +192,61 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
              , o.ocaml_cons
              )
           ) in
-      let cases =
-        let tick = Ocaml.tick osum in
-        cases
-        |> List.concat_map (fun (arg, j, o) ->
-          let codec_cons =
-            match arg with
-            | None ->
-                let single_payload = match type_annot with
-                | None -> sprintf "%s%s" tick o
-                | Some type_annot -> sprintf "%s%s: %s" tick o type_annot in
-                [Line (sprintf "`Single (%s)" single_payload)]
-            | Some v ->
-                [ Line "`Decode ("
-                ; Inline (make_reader p v)
-                ; Line (
-                    sprintf "|> %s (fun x -> ((%s%s x) : %s))"
-                      (decoder_ident "map")
-                      tick o (type_annot_str type_annot))
-                ; Line ")"
-                ]
-          in
-          [Block
-             [ Line "("
-             ; Line (sprintf "%S" j)
-             ; Line ","
-             ; Block codec_cons
-             ; Line ")"
-             ]
-          ])
-        |> Indent.concat (Line ";")
-      in
       let standard_reader =
-        [ Line (decoder_ident "enum")
-        ; Line "["
-        ; Block cases
-        ; Line "]"
-        ]
+        let tick = Ocaml.tick osum in
+        if open_enum then
+          let cases = 
+            cases
+            |> List.map (fun (arg, j, o) -> 
+              match arg with 
+              | Some v -> 
+                  Line (sprintf "| x -> %s" 
+                    (Ox_emit.opt_annot type_annot (sprintf "%s%s %s" tick o "x")))
+              | None -> 
+                Line (sprintf "| \"%s\" -> %s" j 
+                  (Ox_emit.opt_annot type_annot (sprintf "%s%s" tick o))))
+          in
+          [ Line (sprintf "%s (fun json ->" decoder_make)
+          ; Line (sprintf "match %s json with" (decoder_ident "string"))
+          ; Block cases
+          ; Line ")"
+          ]
+        else
+          let cases =
+            cases
+            |> List.concat_map (fun (arg, j, o) ->
+              let codec_cons =
+                match arg with
+                | None ->
+                    let single_payload = match type_annot with
+                    | None -> sprintf "%s%s" tick o
+                    | Some type_annot -> sprintf "%s%s: %s" tick o type_annot in
+                    [Line (sprintf "`Single (%s)" single_payload)]
+                | Some v ->
+                    [ Line "`Decode ("
+                    ; Inline (make_reader p v)
+                    ; Line (
+                        sprintf "|> %s (fun x -> ((%s%s x) : %s))"
+                          (decoder_ident "map")
+                          tick o (type_annot_str type_annot))
+                    ; Line ")"
+                    ]
+              in
+              [Block
+                  [ Line "("
+                  ; Line (sprintf "%S" j)
+                  ; Line ","
+                  ; Block codec_cons
+                  ; Line ")"
+                  ]
+              ])
+            |> Indent.concat (Line ";")
+          in
+          [ Line (decoder_ident "enum")
+          ; Line "["
+          ; Block cases
+          ; Line "]"
+          ]
       in
       let adapter = j.json_sum_adapter in
       read_with_adapter adapter standard_reader
@@ -485,8 +499,8 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
       in
       write_with_adapter j.json_record_adapter writer
   | Sum (_, _a, Sum _osum, Sum j) ->
-      if j.json_open_enum then open_enum_not_supported ();
-      let standard_writer = make_sum_writer ?type_annot p x in
+      let open_enum = j.json_open_enum in
+      let standard_writer = make_sum_writer ?type_annot ~open_enum p x in
       let adapter = j.json_sum_adapter in
       write_with_adapter adapter standard_writer
 
@@ -557,7 +571,7 @@ and make_record_writer p a _record_kind =
   ; Line ")"
   ]
 
-and make_sum_writer ?type_annot (p : param)
+and make_sum_writer ?type_annot ~open_enum (p : param)
     (sum : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping) =
   let tick, a = destruct_sum (p.deref sum) in
   let cases =
@@ -576,6 +590,12 @@ and make_sum_writer ?type_annot (p : param)
                 [ Line (sprintf "| %s%s ->" tick ocaml_cons)
                 ; Line (sprintf "%s %s" (encoder_ident "constr0")
                           (make_json_string json_cons))
+                ]
+            | Some v when open_enum ->
+                (* v should resolve to type string. *)
+                [ Line (sprintf "| %s%s x ->" tick ocaml_cons)
+                ; Inline (make_writer p v)
+                ; Line "x"
                 ]
             | Some v ->
                 [ Line (sprintf "| %s%s x ->" tick ocaml_cons)

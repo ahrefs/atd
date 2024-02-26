@@ -63,11 +63,17 @@ type credential = {
   password: int;
 }
 
-type credentials = credential list
-
-type three_level_nested_list_record = {
-  field_a: int list list list
+type credentials = {
+  credentials: credential list;
 }
+
+
+
+(* type credentials = credential list *)
+
+(* type three_level_nested_list_record = {
+  field_a: int list list list
+} *)
 (*
 type pair = (string * int)
 

@@ -3,7 +3,6 @@
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 
-
 const rapidjson::Document doc_from_json(const std::string &json)
 {
     rapidjson::Document doc;
@@ -22,6 +21,15 @@ int main()
     Credential credential = Credential::from_json(doc_from_json(R"({"name":"user","password":1234})"));
     std::cout << "Credential: " << credential.to_json_string() << std::endl;
 
+    Credentials credentials = Credentials::from_json(doc_from_json(R"({"credentials":
+        [{"name":"user1","password":1234},{"name":"user2","password":5678}]})"));
+
+    for (auto &credential : credentials.credentials)
+    {
+        std::cout << "Credential: " << credential.to_json_string() << std::endl;
+    }
+
+    std::cout << "Credentials: " << credentials.to_json_string() << std::endl;
 
     // std::string NNNIntListRecord_json = R"({"field_a":[[[1,2,3],[4,4,6]],[[7,8,9],[10,11,12]]]})";
 

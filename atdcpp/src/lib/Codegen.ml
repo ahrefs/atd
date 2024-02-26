@@ -261,15 +261,17 @@ std::string _atd_read_string(const rapidjson::Value &val)
     return val.GetString();
 }
 
-template <typename T, T (*read_func)(const rapidjson::Value &)>
-std::vector<T> _atd_read_array(const rapidjson::Value &val)
+template <typename F>
+auto _atd_read_array(F read_func, const rapidjson::Value &val)
 {
+    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
+
     if (!val.IsArray())
     {
         throw std::runtime_error("Expected an array"); // Or your specific exception type
     }
 
-    std::vector<T> result;
+    std::vector<ResultType> result;
     for (rapidjson::SizeType i = 0; i < val.Size(); i++)
     {
         result.push_back(read_func(val[i]));
@@ -293,8 +295,8 @@ void _atd_write_string(const std::string &value, rapidjson::Writer<rapidjson::St
     writer.String(value.c_str());
 }
 
-template <typename T, void (*write_func)(T, rapidjson::Writer<rapidjson::StringBuffer>&)>
-void _atd_write_array(const std::vector<T>& values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+template <typename F, typename V>
+void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.StartArray();
     for (const auto& value : values)
@@ -461,7 +463,7 @@ let rec json_writer ?(nested=false) env e =
   | List (loc, e, an) ->
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_write_array<%s>" (json_writer ~nested:true env e)
+           sprintf "_atd_write_array([](auto v, auto &w){%s(v, w);}, " (json_writer ~nested:true env e)
        | Array_dict (key, value) ->
            sprintf "_atd_write_assoc_dict_to_array<%s, %s>"
              (json_writer ~nested:true env key) (json_writer ~nested:true env value)
@@ -485,10 +487,10 @@ let rec json_writer ?(nested=false) env e =
     ) 
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
+       | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s(" name
        | "abstract" -> "(JSONValue x) => x"
        | _ -> let dtype_name = (dlang_type_name env name) in
-          sprintf "((%s x) => x.toJson!(%s))" dtype_name dtype_name)
+          sprintf "%s::to_json" dtype_name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -511,7 +513,7 @@ let construct_json_field env trans_meth
     [
       Line (sprintf "writer.Key(\"%s\");"
               (Atd.Json.get_json_fname name an |> single_esc));
-      Line (sprintf "%s(%s, writer);" writer_function (inst_var_name trans_meth name));
+      Line (sprintf "%st.%s, writer);" writer_function (inst_var_name trans_meth name));
     ]
   in
   match kind with
@@ -543,7 +545,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
          The default is to use JSON arrays and Python lists. *)
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_read_array<%s>"
+           sprintf "_atd_read_array([](const rapidjson::Value &val){return %s(val);}, " 
              (json_reader ~nested:true env e)
        | Array_dict (key, value) ->
            sprintf "_atd_read_array_to_assoc_dict<%s, %s>"
@@ -568,9 +570,9 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
+       | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s(" name
        | "abstract" -> "((JSONValue x) => x)"
-       | _ -> sprintf "fromJson!%s" 
+       | _ -> sprintf "%s::from_json" 
        (struct_name env name)
        )
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
@@ -612,7 +614,7 @@ let from_json_class_argument
   Inline [
     Line (sprintf "if (doc.HasMember(\"%s\"))" (single_esc json_name));
     Block [
-      Line (sprintf "record.%s = %s(doc[\"%s\"]);"
+      Line (sprintf "record.%s = %sdoc[\"%s\"]);"
               dlang_name
               (json_reader env e)
               (single_esc json_name));
@@ -665,7 +667,7 @@ let record env loc name (fields : field list) an =
     ) fields in
   let from_json =
     [
-      Line (sprintf "static %s from_json(const rapidjson::Document & doc) {"
+      Line (sprintf "static %s from_json(const rapidjson::Value & doc) {"
            (single_esc dlang_struct_name));
       Block [
         Line (sprintf "%s record;" dlang_struct_name);
@@ -680,14 +682,32 @@ let record env loc name (fields : field list) an =
   in
   let to_json =
     [
-      Line (sprintf "std::string to_json_string() {");
+      Line (sprintf "static void to_json(%s t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (single_esc dlang_struct_name));
       Block [
-        Line ("rapidjson::StringBuffer buffer;");
-        Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
         Line ("writer.StartObject();");
         Inline json_object_body;
         Line ("writer.EndObject();");
+      ];
+      Line "}";
+    ]
+  in
+  let to_json_string_static = 
+    [
+      Line (sprintf "static std::string to_json_string(%s t) {" (single_esc dlang_struct_name));
+      Block [
+        Line ("rapidjson::StringBuffer buffer;");
+        Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
+        Line ("to_json(t, writer);");
         Line "return buffer.GetString();"
+      ];
+      Line "}";
+    ]
+  in
+  let to_json_string = 
+    [
+      Line (sprintf "std::string to_json_string() {" );
+      Block [
+        Line ("return to_json_string(*this);");
       ];
       Line "}";
     ]
@@ -698,6 +718,8 @@ let record env loc name (fields : field list) an =
       Inline inst_var_declarations;
       Inline from_json;
       Inline to_json;
+      Inline to_json_string_static;
+      Inline to_json_string;
     ]);
     Line ("};");
     Line "";

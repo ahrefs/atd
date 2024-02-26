@@ -71,9 +71,10 @@ type credentials = {
 
 (* type credentials = credential list *)
 
-(* type three_level_nested_list_record = {
+type three_level_nested_list_record = {
   field_a: int list list list
-} *)
+}
+
 (*
 type pair = (string * int)
 

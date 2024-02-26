@@ -69,24 +69,26 @@ type credentials = {
 
 
 
-(* type credentials = credential list *)
+type credentials2 = credential list
 
 type three_level_nested_list_record = {
   field_a: int list list list
 }
 
-(*
-type pair = (string * int)
+
+(* type pair = (string * int)
 
 type require_field = {
   req: string;
-}
+} *)
 
 type recursive_class = {
   id: int;
   flag: bool;
   children: recursive_class list;
 }
+
+(*
 
 type default_list = {
   ~items: int list;

@@ -233,6 +233,15 @@ int _atd_read_int(const rapidjson::Value &val)
     return val.GetInt();
 }
 
+bool _atd_read_bool(const rapidjson::Value &val)
+{
+    if (!val.IsBool())
+    {
+        throw AtdException("Expected a boolean");
+    }
+    return val.GetBool();
+}
+
 // Reading a float from JSON
 float _atd_read_float(const rapidjson::Value &val)
 {
@@ -283,6 +292,11 @@ auto _atd_read_array(F read_func, const rapidjson::Value &val)
 void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Int(value);
+}
+
+void _atd_write_bool(bool value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.Bool(value);
 }
 
 void _atd_write_float(float value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
@@ -682,7 +696,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json =
     [
-      Line (sprintf "static void to_json(%s t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (single_esc dlang_struct_name));
+      Line (sprintf "static void to_json(const %s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (single_esc dlang_struct_name));
       Block [
         Line ("writer.StartObject();");
         Inline json_object_body;
@@ -693,7 +707,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json_string_static = 
     [
-      Line (sprintf "static std::string to_json_string(%s t) {" (single_esc dlang_struct_name));
+      Line (sprintf "static std::string to_json_string(const %s &t) {" (single_esc dlang_struct_name));
       Block [
         Line ("rapidjson::StringBuffer buffer;");
         Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
@@ -746,7 +760,35 @@ let alias_wrapper env  name type_expr =
     Block [Line(sprintf "return %s(%s(e));" dlang_struct_name (json_reader env type_expr))];
     Line("}");
   ] *)
-  [Line (sprintf "typedef %s %s;" value_type dlang_struct_name)]
+  [
+    Line (sprintf "namespace typedefs {");
+    Block [
+        Line (sprintf "typedef %s %s;" value_type dlang_struct_name)
+        ];
+      Line "}";
+    Line (sprintf "namespace %s {" dlang_struct_name);
+    Block [
+      Line (sprintf "auto from_json(const rapidjson::Value &doc) {");
+      Block [
+        Line (sprintf "return %sdoc);" (json_reader env type_expr));
+      ];
+      Line "}";
+      Line (sprintf "auto to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" dlang_struct_name);
+      Block [
+        Line (sprintf "%st, writer);" (json_writer env type_expr));
+      ];
+      Line "}";
+      Line (sprintf "std::string to_json_string(const typedefs::%s &t) {" dlang_struct_name);
+      Block [
+        Line ("rapidjson::StringBuffer buffer;");
+        Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
+        Line (sprintf "to_json(t, writer);");
+        Line "return buffer.GetString();"
+      ];
+      Line "}";
+    ];
+    Line "}";
+    ]
 
 let case_class env  type_name
     (loc, orig_name, unique_name, an, opt_e) =

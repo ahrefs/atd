@@ -463,7 +463,7 @@ let rec json_writer ?(nested=false) env e =
   | List (loc, e, an) ->
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_write_array([](auto v, auto &w){%s(v, w);}, " (json_writer ~nested:true env e)
+           sprintf "_atd_write_array([](auto v, auto &w){%sv, w);}, " (json_writer ~nested:true env e)
        | Array_dict (key, value) ->
            sprintf "_atd_write_assoc_dict_to_array<%s, %s>"
              (json_writer ~nested:true env key) (json_writer ~nested:true env value)
@@ -490,7 +490,7 @@ let rec json_writer ?(nested=false) env e =
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s(" name
        | "abstract" -> "(JSONValue x) => x"
        | _ -> let dtype_name = (dlang_type_name env name) in
-          sprintf "%s::to_json" dtype_name)
+          sprintf "%s::to_json(" dtype_name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -545,7 +545,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
          The default is to use JSON arrays and Python lists. *)
       (match assoc_kind loc e an with
        | Array_list ->
-           sprintf "_atd_read_array([](const rapidjson::Value &val){return %s(val);}, " 
+           sprintf "_atd_read_array([](const auto &v){return %sv);}, " 
              (json_reader ~nested:true env e)
        | Array_dict (key, value) ->
            sprintf "_atd_read_array_to_assoc_dict<%s, %s>"
@@ -572,7 +572,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s(" name
        | "abstract" -> "((JSONValue x) => x)"
-       | _ -> sprintf "%s::from_json" 
+       | _ -> sprintf "%s::from_json(" 
        (struct_name env name)
        )
   | Name (loc, _, _) -> not_implemented loc "parametrized types"

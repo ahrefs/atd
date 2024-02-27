@@ -8,20 +8,20 @@ type assoc_repr =
   | List
   | Dict
 
-type atd_dlang_wrap = {
-  dlang_wrap_t : string;
-  dlang_wrap : string;
-  dlang_unwrap : string;
+type atd_cpp_wrap = {
+  cpp_wrap_t : string;
+  cpp_wrap : string;
+  cpp_unwrap : string;
 }
 
-let get_dlang_default an : string option =
+let get_cpp_default an : string option =
     Atd.Annot.get_opt_field
       ~parse:(fun s -> Some s)
       ~sections:["cpp"]
       ~field:"default"
       an
 
-let get_dlang_assoc_repr an : assoc_repr =
+let get_cpp_assoc_repr an : assoc_repr =
   Atd.Annot.get_field
     ~parse:(function
       | "list" -> Some List
@@ -33,15 +33,15 @@ let get_dlang_assoc_repr an : assoc_repr =
     ~field:"repr"
     an
 
-(* imports etc. *)
-let get_dlang_import an : string list =
+(* includes etc. *)
+let get_cpp_include an : string list =
   Atd.Annot.get_fields
     ~parse:(fun s -> Some s)
     ~sections:["cpp"]
-    ~field:"import"
+    ~field:"include"
     an
 
-let get_dlang_wrap loc an =
+let get_cpp_wrap loc an =
   let path = ["cpp"] in
   let module_ =
     Atd.Annot.get_opt_field
@@ -86,6 +86,6 @@ let get_dlang_wrap loc an =
   match t, wrap, unwrap with
       None, None, None -> None
     | Some t, Some wrap, Some unwrap ->
-        Some { dlang_wrap_t = t; dlang_wrap = wrap; dlang_unwrap = unwrap }
+        Some { cpp_wrap_t = t; cpp_wrap = wrap; cpp_unwrap = unwrap }
     | _ ->
         Atd.Ast.error_at loc "Incomplete annotation. Missing t, wrap or unwrap"

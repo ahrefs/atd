@@ -22,7 +22,7 @@ type env = {
 }
 
 
-let annot_schema_dlang : Atd.Annot.schema_section =
+let annot_schema_cpp : Atd.Annot.schema_section =
   {
     section = "cpp";
     fields = [
@@ -31,12 +31,12 @@ let annot_schema_dlang : Atd.Annot.schema_section =
       Type_expr, "unwrap";
       Type_expr, "wrap";
       Field, "default";
-      Module_head, "import";
+      Module_head, "include";
     ]
   }
 
 let annot_schema : Atd.Annot.schema =
-  annot_schema_dlang :: Atd.Json.annot_schema_json
+  annot_schema_cpp :: Atd.Json.annot_schema_json
 
 (* Translate a preferred variable name into an available cpp identifier. *)
 let trans env id =
@@ -531,8 +531,8 @@ type assoc_kind =
 
 let assoc_kind loc (e : type_expr) an : assoc_kind =
   let json_repr = Atd.Json.get_json_list an in
-  let dlang_repr = Dlang_annot.get_dlang_assoc_repr an in
-  match e, json_repr, dlang_repr with
+  let cpp_repr = Cpp_annot.get_cpp_assoc_repr an in
+  match e, json_repr, cpp_repr with
   | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Dict ->
       Array_dict (key, value)
   | Tuple (loc,
@@ -547,7 +547,7 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
 (* Map ATD built-in types to built-in cpp types *)
-let dlang_type_name env (name : string) =
+let cpp_type_name env (name : string) =
   match name with
   | "unit" -> "void"
   | "bool" -> "bool"
@@ -559,7 +559,7 @@ let dlang_type_name env (name : string) =
       let typename = (struct_name env user_defined) in
       typename
 
-let dlang_type_name_namespaced env (name : string) = 
+let cpp_type_name_namespaced env (name : string) = 
   match name with
   | "unit" -> "void"
   | "bool" -> "bool"
@@ -600,11 +600,11 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Nullable (loc, e, an) -> sprintf "std::optional<%s>" (type_name_of_expr env e)
   | Shared (loc, e, an) -> not_implemented loc "shared" (* TODO *)
   | Wrap (loc, e, an) ->
-      (match Dlang_annot.get_dlang_wrap loc an with
+      (match Cpp_annot.get_cpp_wrap loc an with
        | None -> error_at loc "wrap type declared, but no cpp annotation found"
-       | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
+       | Some { cpp_wrap_t ; _ } -> cpp_wrap_t
       )
-  | Name (loc, (loc2, name, []), an) -> dlang_type_name_namespaced env name
+  | Name (loc, (loc2, name, []), an) -> cpp_type_name_namespaced env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -631,8 +631,8 @@ let rec get_default_default (e : type_expr) : string option =
   | Name _ -> None
   | Tvar _ -> None
 
-let get_dlang_default (e : type_expr) (an : annot) : string option =
-  let user_default = Dlang_annot.get_dlang_default an in
+let get_cpp_default (e : type_expr) (an : annot) : string option =
+  let user_default = Cpp_annot.get_cpp_default an in
   match user_default with
   | Some s -> Some s
   | None -> get_default_default e
@@ -684,16 +684,16 @@ let rec json_writer ?(nested=false) env e =
       sprintf "_atd_write_nullable([](auto v, auto &w){%sv, w);}, " (json_writer ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> 
-    (match Dlang_annot.get_dlang_wrap loc an with
+    (match Cpp_annot.get_cpp_wrap loc an with
    | None -> error_at loc "wrap type declared, but no cpp annotation found"
-   | Some { dlang_wrap_t; dlang_unwrap ; _ } ->
-      sprintf "_atd_write_wrap([](const auto &v, auto &w){%sv, w);}, [](const auto &e){return %s(e);}, " (json_writer ~nested:true env e) dlang_unwrap
+   | Some { cpp_wrap_t; cpp_unwrap ; _ } ->
+      sprintf "_atd_write_wrap([](const auto &v, auto &w){%sv, w);}, [](const auto &e){return %s(e);}, " (json_writer ~nested:true env e) cpp_unwrap
     ) 
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s(" name
        | "abstract" -> not_implemented loc "abstract"
-       | _ -> let dtype_name = (dlang_type_name env name) in
+       | _ -> let dtype_name = (cpp_type_name env name) in
           sprintf "%s::to_json(" dtype_name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -773,10 +773,10 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
       sprintf "_atd_read_nullable([](const auto &v){return %sv);}, " (json_reader ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) ->
-    (match Dlang_annot.get_dlang_wrap loc an with
+    (match Cpp_annot.get_cpp_wrap loc an with
    | None -> error_at loc "wrap type declared, but no cpp annotation found"
-   | Some { dlang_wrap ; _ } ->
-      sprintf "_atd_read_wrap([](const auto& v){return %sv);}, [](const auto &e){return %s(e);}," (json_reader ~nested:true env e) dlang_wrap
+   | Some { cpp_wrap ; _ } ->
+      sprintf "_atd_read_wrap([](const auto& v){return %sv);}, [](const auto &e){return %s(e);}," (json_reader ~nested:true env e) cpp_wrap
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with
@@ -803,19 +803,19 @@ and tuple_reader env cells =
     (List.length cells) (List.length cells) tuple_body
 
 let from_json_class_argument
-    env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
-  let dlang_name = inst_var_name trans_meth name in
+    env trans_meth cpp_struct_name ((loc, (name, kind, an), e) : simple_field) =
+  let cpp_name = inst_var_name trans_meth name in
   let json_name = Atd.Json.get_json_fname name an in
   let else_body =
     match kind with
     | Required ->
         sprintf "_atd_missing_json_field<decltype(record.%s)>(\"%s\", \"%s\")"
-          dlang_name
-          (single_esc dlang_struct_name)
+          cpp_name
+          (single_esc cpp_struct_name)
           (single_esc json_name)
     | Optional -> (sprintf "std::nullopt")
     | With_default ->
-        match get_dlang_default e an with
+        match get_cpp_default e an with
         | Some x -> x
         | None ->
             A.error_at loc
@@ -826,11 +826,11 @@ let from_json_class_argument
     Line (sprintf "if (doc.HasMember(\"%s\"))" (single_esc json_name));
     Block [
       Line (sprintf "record.%s = %sdoc[\"%s\"]);"
-              dlang_name
+              cpp_name
               (json_reader env e)
               (single_esc json_name));
     ];
-    Line (sprintf "else record.%s = %s;" dlang_name else_body);]
+    Line (sprintf "else record.%s = %s;" cpp_name else_body);]
 
 let inst_var_declaration
     env trans_meth ((loc, (name, kind, an), e) : simple_field) =
@@ -842,17 +842,30 @@ let inst_var_declaration
     | Required
     | Optional -> ""
     | With_default ->
-        match get_dlang_default unwrapped_e an with
+        match get_cpp_default unwrapped_e an with
         | None -> ""
         | Some x -> sprintf " = %s" x
   in
   [
     Line (sprintf "%s %s%s;" type_name var_name default)
   ]
-  
+
+let from_json_string_block = 
+  [
+    Line "static auto from_json_string(const std::string &s) {";
+    Block [
+      Line "rapidjson::Document doc;";
+      Line "doc.Parse(s.c_str());";
+      Line "if (doc.HasParseError()) {";
+      Block [Line "throw AtdException(\"Failed to parse JSON\");"];
+      Line "}";
+      Line "return from_json(doc);";
+    ];
+    Line "}";
+  ]
 
 let record env loc name (fields : field list) an =
-  let dlang_struct_name = struct_name env name in
+  let cpp_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
     List.map (function
@@ -868,14 +881,14 @@ let record env loc name (fields : field list) an =
       Inline (construct_json_field env trans_meth x)) fields in
   let from_json_class_arguments =
     List.map (fun x ->
-      (from_json_class_argument env trans_meth dlang_struct_name x)
+      (from_json_class_argument env trans_meth cpp_struct_name x)
     ) fields in
   let from_json =
     [
       Line (sprintf "static %s from_json(const rapidjson::Value & doc) {"
-           (single_esc dlang_struct_name));
+           (single_esc cpp_struct_name));
       Block [
-        Line (sprintf "%s record;" dlang_struct_name);
+        Line (sprintf "%s record;" cpp_struct_name);
         Line "if (!doc.IsObject()) {";
         Block [Line "throw AtdException(\"Expected an object\");"];
         Line "}";
@@ -887,7 +900,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json =
     [
-      Line (sprintf "static void to_json(const %s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (single_esc dlang_struct_name));
+      Line (sprintf "static void to_json(const %s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (single_esc cpp_struct_name));
       Block [
         Line ("writer.StartObject();");
         Inline json_object_body;
@@ -898,7 +911,7 @@ let record env loc name (fields : field list) an =
   in
   let to_json_string_static = 
     [
-      Line (sprintf "static std::string to_json_string(const %s &t) {" (single_esc dlang_struct_name));
+      Line (sprintf "static std::string to_json_string(const %s &t) {" (single_esc cpp_struct_name));
       Block [
         Line ("rapidjson::StringBuffer buffer;");
         Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
@@ -918,16 +931,17 @@ let record env loc name (fields : field list) an =
     ]
   in
   [
-    Line (sprintf "struct %s;" dlang_struct_name);
+    Line (sprintf "struct %s;" cpp_struct_name);
     Line (sprintf "namespace typedefs {");
     Block [
-      Line (sprintf "typedef %s %s;" dlang_struct_name dlang_struct_name)
+      Line (sprintf "typedef %s %s;" cpp_struct_name cpp_struct_name)
     ];
     Line "}";
-    Line (sprintf "struct %s {" dlang_struct_name);
+    Line (sprintf "struct %s {" cpp_struct_name);
     Block (spaced [
       Inline inst_var_declarations;
       Inline from_json;
+      Inline from_json_string_block;
       Inline to_json;
       Inline to_json_string_static;
       Inline to_json_string;
@@ -936,27 +950,28 @@ let record env loc name (fields : field list) an =
   ]
 
 let alias_wrapper env  name type_expr =
-  let dlang_struct_name = struct_name env name in
+  let cpp_struct_name = struct_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
     Line (sprintf "namespace typedefs {");
     Block [
-        Line (sprintf "typedef %s %s;" value_type dlang_struct_name)
+        Line (sprintf "typedef %s %s;" value_type cpp_struct_name)
         ];
       Line "}";
-    Line (sprintf "namespace %s {" dlang_struct_name);
+    Line (sprintf "namespace %s {" cpp_struct_name);
     Block [
       Line (sprintf "auto from_json(const rapidjson::Value &doc) {");
       Block [
         Line (sprintf "return %sdoc);" (json_reader env type_expr));
       ];
       Line "}";
-      Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" dlang_struct_name);
+      Inline from_json_string_block;
+      Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" cpp_struct_name);
       Block [
         Line (sprintf "%st, writer);" (json_writer env type_expr));
       ];
       Line "}";
-      Line (sprintf "std::string to_json_string(const typedefs::%s &t) {" dlang_struct_name);
+      Line (sprintf "std::string to_json_string(const typedefs::%s &t) {" cpp_struct_name);
       Block [
         Line ("rapidjson::StringBuffer buffer;");
         Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
@@ -1053,17 +1068,17 @@ let read_cases1 env loc name cases1 =
   ]
 
 let sum_container env  loc name cases =
-  let dlang_struct_name = struct_name env name in
-  let type_list =
-    List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-      (sprintf "::%s::Types::%s" (dlang_struct_name) (trans env orig_name))
-    ) cases
-    |> String.concat ", "
-  in
+  let cpp_struct_name = struct_name env name in
   let cases0, cases1 =
     List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
       opt_e = None
     ) cases
+  in
+  let type_list =
+    List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+      (sprintf "::%s::Types::%s" (cpp_struct_name) (trans env orig_name))
+    ) cases
+    |> String.concat ", "
   in
   let cases0_block =
     if cases0 <> [] then
@@ -1090,12 +1105,11 @@ let sum_container env  loc name cases =
   in
   [
     Line (sprintf "namespace typedefs {");
-    Block [ Line(sprintf "typedef %s %s;" (sprintf "std::variant<%s>" type_list) (dlang_struct_name))];
+    Block [ Line(sprintf "typedef %s %s;" (sprintf "std::variant<%s>" type_list) (cpp_struct_name))];
     Line "}";
-
-    Line (sprintf "namespace %s {" (dlang_struct_name));
+    Line (sprintf "namespace %s {" (cpp_struct_name));
     Block [
-      Line (sprintf "static ::typedefs::%s from_json(const rapidjson::Value &x) {" (dlang_struct_name));
+      Line (sprintf "static ::typedefs::%s from_json(const rapidjson::Value &x) {" (cpp_struct_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
@@ -1104,9 +1118,9 @@ let sum_container env  loc name cases =
       ];
       Line "}";
     ];
-
+    Block [Inline from_json_string_block;];
     Block [
-      Line (sprintf "static void to_json(const ::typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (dlang_struct_name));
+      Line (sprintf "static void to_json(const ::typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (cpp_struct_name));
       Block [
         Line "std::visit([&writer](auto &&arg) {";
         Block [
@@ -1122,7 +1136,7 @@ let sum_container env  loc name cases =
       Line ("}");
     ];
 
-    Line (sprintf "std::string to_json_string(const ::typedefs::%s &x) {" (dlang_struct_name));
+    Line (sprintf "std::string to_json_string(const ::typedefs::%s &x) {" (cpp_struct_name));
     Block [
       Line ("rapidjson::StringBuffer buffer;");
       Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
@@ -1206,11 +1220,11 @@ let to_file ~atd_filename ~head (items : A.module_body) dst_path =
   let env = init_env () in
   reserve_good_struct_names env items;
   let head = List.map (fun s -> Line s) head in
-  let dlang_defs =
+  let cpp_defs =
     Atd.Util.tsort items
     |> List.map (fun x -> Inline (definition_group ~atd_filename env x))
   in
-  Line (fixed_size_preamble atd_filename) :: Inline head :: dlang_defs
+  Line (fixed_size_preamble atd_filename) :: Inline head :: cpp_defs
   |> double_spaced
   |> Indent.to_file ~indent:4 dst_path
 
@@ -1236,7 +1250,7 @@ let run_file src_path =
   let full_module = Atd.Ast.use_only_specific_variants full_module in
   let (atd_head, atd_module) = full_module in
   let head =
-     Dlang_annot.get_dlang_import (snd atd_head) 
-    |> List.map (sprintf "import %s;")
+     Cpp_annot.get_cpp_include (snd atd_head) 
+    |> List.map (sprintf "#include %s")
   in
   to_file ~atd_filename:src_name ~head atd_module dst_path

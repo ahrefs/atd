@@ -202,6 +202,7 @@ let fixed_size_preamble atd_filename =
 #include <stdexcept>
 #include <vector>
 #include <string>
+#include <map>
 
 class AtdException : public std::exception
 {
@@ -282,7 +283,7 @@ auto _atd_read_array(F read_func, const rapidjson::Value &val)
 
     if (!val.IsArray())
     {
-        throw std::runtime_error("Expected an array"); // Or your specific exception type
+        throw AtdException("Expected an array"); // Or your specific exception type
     }
 
     std::vector<ResultType> result;
@@ -292,6 +293,89 @@ auto _atd_read_array(F read_func, const rapidjson::Value &val)
     }
 
     return result;
+}
+
+template<typename F>
+auto _atd_read_object_to_tuple_list(F read_func, const rapidjson::Value &val)
+{
+    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
+
+    if (!val.IsObject())
+    {
+        throw AtdException("Expected an object"); // Or your specific exception type
+    }
+
+    std::vector<std::pair<std::string, ResultType>> result;
+    for (auto &m : val.GetObject())
+    {
+        result.push_back(std::make_pair(m.name.GetString(), read_func(m.value)));
+    }
+
+    return result;
+}
+
+template<typename RK, typename RV>
+auto _atd_read_array_to_assoc_dict(RK read_key_func, RV read_value_func, const rapidjson::Value &val)
+{
+    using KeyType = typename std::invoke_result<decltype(read_key_func), const rapidjson::Value &>::type;
+    using ValueType = typename std::invoke_result<decltype(read_value_func), const rapidjson::Value &>::type;
+
+    if (!val.IsArray())
+    {
+        throw AtdException("Expected an array"); // Or your specific exception type
+    }
+
+    std::map<KeyType, ValueType> result;
+    for (rapidjson::SizeType i = 0; i < val.Size(); i++)
+    {
+        auto &pair = val[i];
+        if (!pair.IsArray() || pair.Size() != 2)
+        {
+            throw AtdException("Expected an array of pairs");
+        }
+        result[read_key_func(pair[0])] = read_value_func(pair[1]);
+    }
+
+    return result;
+}
+
+template<typename F>
+auto _atd_read_object_to_assoc_array(F read_func, const rapidjson::Value &val)
+{
+    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
+
+    if (!val.IsObject())
+    {
+        throw AtdException("Expected an object"); // Or your specific exception type
+    }
+
+    std::map<std::string, ResultType> result;
+    for (auto &m : val.GetObject())
+    {
+        result[m.name.GetString()] = read_func(m.value);
+    }
+
+    return result;
+}
+
+template<typename F>
+auto _atd_read_nullable(F read_func, const rapidjson::Value &val)
+{
+    if (val.IsNull())
+    {
+        return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>();
+    }
+    return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>(read_func(val));
+}
+
+template<typename F>
+auto _atd_read_option(F read_func, const rapidjson::Value &val)
+{
+    if (val.IsNull())
+    {
+        return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>();
+    }
+    return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>(read_func(val));
 }
 
 template <typename F, typename W>
@@ -399,6 +483,19 @@ let dlang_type_name env (name : string) =
       let typename = (struct_name env user_defined) in
       typename
 
+let dlang_type_name_namespaced env (name : string) = 
+  match name with
+  | "unit" -> "void"
+  | "bool" -> "bool"
+  | "int" -> "int"
+  | "float" -> "float"
+  | "string" -> "std::string"
+  | "abstract" -> "rapidjson::Value"
+  | user_defined -> 
+      let typename = (struct_name env user_defined) in
+      sprintf "%s::%s" "typedefs" typename      
+
+
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
@@ -420,7 +517,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
              (type_name_of_expr env value)
              (type_name_of_expr env key)
        | Object_dict value ->
-           sprintf "std::map<string, %s>"
+           sprintf "std::map<std::string, %s>"
              (type_name_of_expr env value)
       )
   | Option (loc, e, an) -> sprintf "std::optional<%s>" (type_name_of_expr env e)
@@ -431,7 +528,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
        | None -> error_at loc "wrap type declared, but no cpp annotation found"
        | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
       )
-  | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
+  | Name (loc, (loc2, name, []), an) -> dlang_type_name_namespaced env name
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -582,19 +679,19 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
            sprintf "_atd_read_array([](const auto &v){return %sv);}, " 
              (json_reader ~nested:true env e)
        | Array_dict (key, value) ->
-           sprintf "_atd_read_array_to_assoc_dict<%s, %s>"
+           sprintf "_atd_read_array_to_assoc_dict([](const auto &k){return %sk);}, [](const auto &v){return %sv);}, "
              (json_reader ~nested:true env key) (json_reader ~nested:true env value)
        | Object_dict value ->
-           sprintf "_atd_read_object_to_assoc_array<%s>"
+           sprintf "_atd_read_object_to_assoc_array([](const auto &v){return %sv);},"
              (json_reader ~nested:true env value)
        | Object_list value ->
-           sprintf "_atd_read_object_to_tuple_list<%s>"
+           sprintf "_atd_read_object_to_tuple_list([](const auto &v){return %sv);},"
              (json_reader ~nested:true env value)
       )
   | Option (loc, e, an) ->
-      sprintf "_atd_read_option!(%s)" (json_reader ~nested:true env e)
+      sprintf "_atd_read_option([](const auto &v){return %sv);}, " (json_reader ~nested:true env e)
   | Nullable (loc, e, an) ->
-      sprintf "_atd_read_nullable!(%s)" (json_reader ~nested:true env e)
+      sprintf "_atd_read_nullable([](const auto &v){return %sv);}, " (json_reader ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) ->
     (match Dlang_annot.get_dlang_wrap loc an with
@@ -637,7 +734,7 @@ let from_json_class_argument
           dlang_name
           (single_esc dlang_struct_name)
           (single_esc json_name)
-    | Optional -> (sprintf "decltype(record.%s).init" dlang_name)
+    | Optional -> (sprintf "std::nullopt")
     | With_default ->
         match get_dlang_default e an with
         | Some x -> x
@@ -655,12 +752,6 @@ let from_json_class_argument
               (single_esc json_name));
     ];
     Line (sprintf "else record.%s = %s;" dlang_name else_body);]
-  (* sprintf "obj.%s = (\"%s\" in x) ? %s(x[\"%s\"]) : %s;"
-    dlang_name
-    (single_esc json_name)
-    (json_reader env e)
-    (single_esc json_name)
-    else_body *)
 
 let inst_var_declaration
     env trans_meth ((loc, (name, kind, an), e) : simple_field) =
@@ -757,8 +848,11 @@ let record env loc name (fields : field list) an =
       Inline to_json_string;
     ]);
     Line ("};");
-    Line "";
-    
+    Line (sprintf "namespace typedefs {");
+    Block [
+      Line (sprintf "typedef %s %s;" dlang_struct_name dlang_struct_name)
+    ];
+    Line "}";
   ]
 
 let alias_wrapper env  name type_expr =

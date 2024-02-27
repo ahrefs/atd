@@ -7,17 +7,10 @@ type kind = [
   | Amaze <json name="!!!"> of string list
 ]
 
-type root = {
-
-}
-
-
 type frozen = [
   | A
   | B of int
 ]
-
-(*
 
 type ('a, 'b) parametrized_record = {
   field_a: 'a;
@@ -50,10 +43,10 @@ type root = {
   untyped_things: abstract list;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;
-  wrapped: st wrap <cpp t="uint16_t" wrap="((St st) => st.to!int.to!uint16_t)" unwrap="((uint16_t e) => St(e.to!int))">;
+  wrapped: st wrap <cpp t="uint16_t" wrap="[](St st){return st - 1;}" unwrap="[](uint16_t e){return e + 1;}">;
   aaa: alias_of_alias_of_alias;
 } 
-*)
+
 
 type st = int
 type alias = int list

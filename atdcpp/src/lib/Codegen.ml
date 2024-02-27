@@ -305,10 +305,10 @@ auto _atd_read_object_to_tuple_list(F read_func, const rapidjson::Value &val)
         throw AtdException("Expected an object"); // Or your specific exception type
     }
 
-    std::vector<std::pair<std::string, ResultType>> result;
+    std::vector<std::tuple<std::string, ResultType>> result;
     for (auto &m : val.GetObject())
     {
-        result.push_back(std::make_pair(m.name.GetString(), read_func(m.value)));
+        result.push_back(std::make_tuple(m.name.GetString(), read_func(m.value)));
     }
 
     return result;
@@ -415,6 +415,71 @@ void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson
     writer.EndArray();
 }
 
+template <typename F, typename V>
+void _atd_write_tuple_list_to_object(F write_func, const V &values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.StartObject();
+    for (const auto& value : values)
+    {
+        writer.Key(std::get<0>(value).c_str());
+        write_func(std::get<1>(value), writer);
+    }
+    writer.EndObject();
+}
+
+template <typename Wk, typename Wv, typename Map>
+void _atd_write_assoc_dict_to_array(const Wk write_key_func, const Wv write_value_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.StartArray();
+    for (const auto& pair : value_map)
+    {
+        writer.StartArray();
+        write_key_func(pair.first, writer);
+        write_value_func(pair.second, writer);
+        writer.EndArray();
+    }
+    writer.EndArray();
+}
+
+template <typename F, typename Map>
+void _atd_write_assoc_array_to_object(F write_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    writer.StartObject();
+    for (const auto& pair : value_map)
+    {
+        writer.Key(pair.first.c_str());
+        write_func(pair.second, writer);
+    }
+    writer.EndObject();
+}
+
+
+template <typename F, typename O>
+void _atd_write_option(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    if (val)
+    {
+        write_func(*val, writer);
+    }
+    else
+    {
+        writer.Null();
+    }
+}
+
+template <typename F, typename O>
+void _atd_write_nullable(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    if (val)
+    {
+        write_func(*val, writer);
+    }
+    else
+    {
+        writer.Null();
+    }
+}
+
 template <typename F, typename W, typename T>
 void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
@@ -514,8 +579,8 @@ let rec type_name_of_expr env (e : type_expr) : string =
              (type_name_of_expr env e)
        | Array_dict (key, value) ->
            sprintf "std::map<%s, %s>"
-             (type_name_of_expr env value)
              (type_name_of_expr env key)
+             (type_name_of_expr env value)
        | Object_dict value ->
            sprintf "std::map<std::string, %s>"
              (type_name_of_expr env value)
@@ -593,19 +658,19 @@ let rec json_writer ?(nested=false) env e =
        | Array_list ->
            sprintf "_atd_write_array([](auto v, auto &w){%sv, w);}, " (json_writer ~nested:true env e)
        | Array_dict (key, value) ->
-           sprintf "_atd_write_assoc_dict_to_array<%s, %s>"
+           sprintf "_atd_write_assoc_dict_to_array([](auto v, auto &w){%sv, w);}, [](auto v, auto &w){%sv, w);}, "
              (json_writer ~nested:true env key) (json_writer ~nested:true env value)
        | Object_dict value ->
-           sprintf "_atd_write_assoc_array_to_object<%s>"
+           sprintf "_atd_write_assoc_array_to_object([](auto v, auto &w){%sv, w);}, "
              (json_writer ~nested:true env value)
        | Object_list value ->
-           sprintf "_atd_write_tuple_list_to_object<%s>"
+           sprintf "_atd_write_tuple_list_to_object([](auto v, auto &w){%sv, w);}, "
              (json_writer ~nested:true env value)
       )
   | Option (loc, e, an) ->
-      sprintf "_atd_write_option<%s>"(json_writer ~nested:true env e)
+      sprintf "_atd_write_option([](auto v, auto &w){%sv, w);}, "(json_writer ~nested:true env e)
   | Nullable (loc, e, an) ->
-      sprintf "_atd_write_nullable<%s>" (json_writer ~nested:true env e)
+      sprintf "_atd_write_nullable([](auto v, auto &w){%sv, w);}, " (json_writer ~nested:true env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> 
     (match Dlang_annot.get_dlang_wrap loc an with
@@ -616,7 +681,7 @@ let rec json_writer ?(nested=false) env e =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s(" name
-       | "abstract" -> "(JSONValue x) => x"
+       | "abstract" -> not_implemented loc "abstract"
        | _ -> let dtype_name = (dlang_type_name env name) in
           sprintf "%s::to_json(" dtype_name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
@@ -652,13 +717,16 @@ let construct_json_field env trans_meth
   | With_default -> assignment
   | Optional ->
       [
-        Line (sprintf "if (!obj.%s.isNull)"
+        Line (sprintf "if (t.%s != std::nullopt) {"
                 (inst_var_name trans_meth name));
-     Block [ Line(sprintf "res[\"%s\"] = %s(%s)(obj.%s);"
-              (Atd.Json.get_json_fname name an |> single_esc)
-              "_atd_write_option!"
+     Block [ 
+     Line (sprintf "writer.Key(\"%s\");"
+              (Atd.Json.get_json_fname name an |> single_esc)); 
+     Line(sprintf "%s([](const auto &v, auto &w){%sv, w);}, t.%s, writer);"
+              "_atd_write_option"
               (json_writer ~nested:true env unwrapped_type)
               (inst_var_name trans_meth name))];
+      Line "}";
       ]
 
 (*
@@ -702,7 +770,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
   | Name (loc, (loc2, name, []), an) ->
       (match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s(" name
-       | "abstract" -> "((JSONValue x) => x)"
+       | "abstract" -> not_implemented loc "abstract"
        | _ -> sprintf "%s::from_json(" 
        (struct_name env name)
        )
@@ -839,6 +907,12 @@ let record env loc name (fields : field list) an =
     ]
   in
   [
+    Line (sprintf "struct %s;" dlang_struct_name);
+    Line (sprintf "namespace typedefs {");
+    Block [
+      Line (sprintf "typedef %s %s;" dlang_struct_name dlang_struct_name)
+    ];
+    Line "}";
     Line (sprintf "struct %s {" dlang_struct_name);
     Block (spaced [
       Inline inst_var_declarations;
@@ -848,11 +922,6 @@ let record env loc name (fields : field list) an =
       Inline to_json_string;
     ]);
     Line ("};");
-    Line (sprintf "namespace typedefs {");
-    Block [
-      Line (sprintf "typedef %s %s;" dlang_struct_name dlang_struct_name)
-    ];
-    Line "}";
   ]
 
 let alias_wrapper env  name type_expr =

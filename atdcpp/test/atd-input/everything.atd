@@ -45,6 +45,7 @@ type root = {
   parametrized_tuple: kind parametrized_tuple;
   wrapped: st wrap <cpp t="uint16_t" wrap="[](typedefs::St st){return st - 1;}" unwrap="[](uint16_t e){return e + 1;}">;
   aaa: alias_of_alias_of_alias;
+  item: string wrap <cpp t="int" wrap="std::stoi" unwrap="std::to_string">;
 } 
 
 

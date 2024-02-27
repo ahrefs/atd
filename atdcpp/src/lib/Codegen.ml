@@ -391,7 +391,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
         xs
         |> List.map (fun (loc, x, an) -> type_name_of_expr env x)
       in
-      sprintf "Tuple!(%s)" (String.concat ", " type_names)
+      sprintf "std::tuple<%s>" (String.concat ", " type_names)
   | List (loc, e, an) ->
      (match assoc_kind loc e an with
        | Array_list
@@ -511,12 +511,15 @@ let rec json_writer ?(nested=false) env e =
 and tuple_writer env (loc, cells, an) =
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
-      sprintf "%s(x[%i])" (json_writer env e) i
+      sprintf "%sstd::get<%i>(t), writer)" (json_writer env e) i
     ) cells
-    |> String.concat ", "
+    |> String.concat "; "
   in
-  sprintf "((%s x) => JSONValue([%s]))"
-    (type_name_of_expr env (Tuple (loc, cells, an)))
+  sprintf "[](const auto &t, auto &writer){
+    writer.StartArray();
+      %s;
+      writer.EndArray();
+      }("
     tuple_body
 
 let construct_json_field env trans_meth
@@ -595,15 +598,16 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
 and tuple_reader env cells =
   let tuple_body =
     List.mapi (fun i (loc, e, an) ->
-      sprintf "%s(x[%i])" (json_reader env e) i
+      sprintf "%sv[%i])" (json_reader env e) i
     ) cells
     |> String.concat ", "
   in
-  sprintf "((JSONValue x) @trusted { 
-    if (x.type != JSONType.array || x.array.length != %d)
-      throw _atd_bad_json(\"Tuple of size %d\", x);
-    return tuple(%s);
-  })" (List.length cells) (List.length cells) tuple_body
+  sprintf "[](auto &v){
+      if (!v.IsArray() || v.Size() != %d)
+        throw AtdException(\"Tuple of size %d\");
+      return std::make_tuple(%s);
+      }("
+    (List.length cells) (List.length cells) tuple_body
 
 let from_json_class_argument
     env trans_meth dlang_struct_name ((loc, (name, kind, an), e) : simple_field) =
@@ -743,23 +747,6 @@ let record env loc name (fields : field list) an =
 let alias_wrapper env  name type_expr =
   let dlang_struct_name = struct_name env name in
   let value_type = type_name_of_expr env type_expr in
-  (* let optional_constructor = match type_expr with
-    | Tuple (_, _, _) -> 
-      Line(sprintf "this(T...)(T args) @safe {_data = tuple(args);}");
-    | _ -> Line(""); in
-  [
-    Line (sprintf "struct %s{%s _data; alias _data this;" dlang_struct_name value_type); 
-    Line (sprintf "this(%s init) @safe {_data = init;}" value_type );
-    Line (sprintf "this(%s init) @safe {_data = init._data;}" dlang_struct_name);
-    Inline [optional_constructor];
-    Line ("}");
-    Line (sprintf "@trusted JSONValue toJson(T : %s)(%s e) {"  dlang_struct_name dlang_struct_name);
-    Block [Line(sprintf "return %s(e);" (json_writer env type_expr))];
-    Line("}");
-    Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue e) {" dlang_struct_name dlang_struct_name);
-    Block [Line(sprintf "return %s(%s(e));" dlang_struct_name (json_reader env type_expr))];
-    Line("}");
-  ] *)
   [
     Line (sprintf "namespace typedefs {");
     Block [
@@ -773,7 +760,7 @@ let alias_wrapper env  name type_expr =
         Line (sprintf "return %sdoc);" (json_reader env type_expr));
       ];
       Line "}";
-      Line (sprintf "auto to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" dlang_struct_name);
+      Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" dlang_struct_name);
       Block [
         Line (sprintf "%st, writer);" (json_writer env type_expr));
       ];

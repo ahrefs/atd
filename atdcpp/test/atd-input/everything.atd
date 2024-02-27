@@ -10,7 +10,7 @@
 type frozen = [
   | A
   | B of int
-] *)
+]
 
 type ('a, 'b) parametrized_record = {
   field_a: 'a;
@@ -58,6 +58,7 @@ type alias_of_alias_of_alias = alias_of_alias_not_Wrapped
 
 type password = int wrap <cpp t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
 *)
+*)
 type credential = {
   name: string;
   password: int;
@@ -67,8 +68,6 @@ type credentials = {
   credentials: credential list;
 }
 
-
-
 type credentials2 = credential list
 
 type three_level_nested_list_record = {
@@ -76,11 +75,11 @@ type three_level_nested_list_record = {
 }
 
 
-(* type pair = (string * int)
+type pair = (string * int)
 
 type require_field = {
   req: string;
-} *)
+}
 
 type recursive_class = {
   id: int;

@@ -70,6 +70,14 @@ int main()
 
     std::cout << "Credentials: " << Credentials2::to_json_string(credentials2) << std::endl;
 
+
+    std::string pair_json = R"(["stringb", 1234])";
+    typedefs::Pair pair = Pair::from_json(doc_from_json(pair_json));
+
+    std::cout << "pair first: " << std::get<std::string>(pair) << std::endl;
+    std::cout << "pair second: " << std::get<int>(pair) << std::endl;
+
+    std::cout << "Pair: " << Pair::to_json_string(pair) << std::endl;
     // NNNIntListRecord recordFromJson = NNNIntListRecord::from_json(doc_from_json(NNNIntListRecord_json));
     // /// iterate through all vectors to print all values (3 level of nesting)
     // for (auto &vec1 : recordFromJson.field_a)

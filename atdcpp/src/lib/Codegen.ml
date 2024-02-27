@@ -294,6 +294,12 @@ auto _atd_read_array(F read_func, const rapidjson::Value &val)
     return result;
 }
 
+template <typename F, typename W>
+auto _atd_read_wrap(F read_func, W unwrap_func, const rapidjson::Value &val)
+{
+    return unwrap_func(read_func(val));
+}
+
 void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Int(value);
@@ -323,6 +329,12 @@ void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson
         write_func(value, writer);
     }
     writer.EndArray();
+}
+
+template <typename F, typename W, typename T>
+void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    write_func(wrap_func(val), writer);
 }
 
   |}
@@ -502,7 +514,7 @@ let rec json_writer ?(nested=false) env e =
     (match Dlang_annot.get_dlang_wrap loc an with
    | None -> error_at loc "wrap type declared, but no cpp annotation found"
    | Some { dlang_wrap_t; dlang_unwrap ; _ } ->
-      sprintf "_atd_write_wrap!(%s, (%s e) => %s(e))" (json_writer ~nested:true env e) dlang_wrap_t dlang_unwrap
+      sprintf "_atd_write_wrap([](const auto &v, auto &w){%sv, w);}, [](const auto &e){return %s(e);}, " (json_writer ~nested:true env e) dlang_unwrap
     ) 
   | Name (loc, (loc2, name, []), an) ->
       (match name with
@@ -588,7 +600,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
     (match Dlang_annot.get_dlang_wrap loc an with
    | None -> error_at loc "wrap type declared, but no cpp annotation found"
    | Some { dlang_wrap ; _ } ->
-      sprintf "_atd_read_wrap!(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr env e) dlang_wrap
+      sprintf "_atd_read_wrap([](const auto& v){return %sv);}, [](const auto &e){return %s(e);}," (json_reader ~nested:true env e) dlang_wrap
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with

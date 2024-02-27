@@ -8,7 +8,7 @@ type kind = [
 ]
 
 type root = {
-  
+
 }
 
 
@@ -24,7 +24,6 @@ type ('a, 'b) parametrized_record = {
   ~field_b: 'b list;
 }
 
-(* 
 type 'a parametrized_tuple = ('a * 'a * int)
 
 type root = {
@@ -54,18 +53,19 @@ type root = {
   wrapped: st wrap <cpp t="uint16_t" wrap="((St st) => st.to!int.to!uint16_t)" unwrap="((uint16_t e) => St(e.to!int))">;
   aaa: alias_of_alias_of_alias;
 } 
+*)
 
 type st = int
 type alias = int list
 type alias2 = int list
-type alias3 = int wrap <cpp t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
-type alias_of_alias = alias3 wrap <cpp t="uint16_t" wrap="to!uint16_t" unwrap="to!uint32_t">
+type alias3 = int wrap <cpp t="uint32_t" wrap="static_cast<uint32_t>" unwrap="static_cast<int>">
+type alias_of_alias = alias3 wrap <cpp t="uint16_t" wrap="static_cast<uint16_t>" unwrap="static_cast<uint32_t>">
 type alias_of_alias_not_Wrapped = alias3
 type alias_of_alias_of_alias = alias_of_alias_not_Wrapped
 
-type password = int wrap <cpp t="uint32_t" wrap="to!uint32_t" unwrap="to!int">
-*)
-*)
+type password = int wrap <cpp t="uint32_t" wrap="static_cast<uint32_t>" unwrap="static_cast<int>">
+
+
 type credential = {
   name: string;
   password: int;

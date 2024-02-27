@@ -60,25 +60,33 @@ int main()
     // std::cout << "RecursiveClass: " << recordFromJson2.to_json_string() << std::endl;
 
 
-    typedefs::Credentials2 credentials2 = Credentials2::from_json(doc_from_json(R"(
-        [{"name":"user1","password":1234},{"name":"user2","password":5678}])"));
+    // typedefs::Credentials2 credentials2 = Credentials2::from_json(doc_from_json(R"(
+    //     [{"name":"user1","password":1234},{"name":"user2","password":5678}])"));
 
-    for (auto &credential : credentials2)
-    {
-        std::cout << "Credential: " << credential.to_json_string() << std::endl;
-    }
+    // for (auto &credential : credentials2)
+    // {
+    //     std::cout << "Credential: " << credential.to_json_string() << std::endl;
+    // }
 
-    std::cout << "Credentials: " << Credentials2::to_json_string(credentials2) << std::endl;
+    // std::cout << "Credentials: " << Credentials2::to_json_string(credentials2) << std::endl;
 
 
-    std::string pair_json = R"(["stringb", 1234])";
-    typedefs::Pair pair = Pair::from_json(doc_from_json(pair_json));
+    // std::string pair_json = R"(["stringb", 1234])";
+    // typedefs::Pair pair = Pair::from_json(doc_from_json(pair_json));
 
-    std::cout << "pair first: " << std::get<std::string>(pair) << std::endl;
-    std::cout << "pair second: " << std::get<int>(pair) << std::endl;
+    // std::cout << "pair first: " << std::get<std::string>(pair) << std::endl;
+    // std::cout << "pair second: " << std::get<int>(pair) << std::endl;
 
-    std::cout << "Pair: " << Pair::to_json_string(pair) << std::endl;
-    // NNNIntListRecord recordFromJson = NNNIntListRecord::from_json(doc_from_json(NNNIntListRecord_json));
+    // std::cout << "Pair: " << Pair::to_json_string(pair) << std::endl;
+   
+    // typedefs::Frozen frozen = Frozen::Types::A();
+    // std::cout << "Frozen: " << Frozen::to_json_string(frozen) << std::endl;
+
+    // std::string frozen_json = R"(["B", 1234])";
+    // frozen = Frozen::from_json(doc_from_json(frozen_json));
+    // std::cout << "Frozen: " << Frozen::to_json_string(frozen) << std::endl;
+
+   // NNNIntListRecord recordFromJson = NNNIntListRecord::from_json(doc_from_json(NNNIntListRecord_json));
     // /// iterate through all vectors to print all values (3 level of nesting)
     // for (auto &vec1 : recordFromJson.field_a)
     // {

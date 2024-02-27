@@ -1,13 +1,16 @@
 (* <cpp import="std.stdint : uint32_t, uint16_t"> *)
 
-(* type kind = [
+type kind = [
   | Root (* class name conflict *)
   | Thing of int
   | WOW <json name="wow">
   | Amaze <json name="!!!"> of string list
 ]
 
-*)
+type root = {
+  
+}
+
 
 type frozen = [
   | A

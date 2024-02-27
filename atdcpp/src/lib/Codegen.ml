@@ -371,17 +371,25 @@ auto _atd_read_nullable(F read_func, const rapidjson::Value &val)
 template<typename F>
 auto _atd_read_option(F read_func, const rapidjson::Value &val)
 {
-    if (val.IsNull())
+    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
+    if (val.IsString() && std::string_view(val.GetString()) == "None")
     {
-        return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>();
+        return std::optional<ResultType>();
     }
-    return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>(read_func(val));
+    else if (val.IsArray() && val.Size() == 2 && val[0].IsString() && std::string_view(val[0].GetString()) == "Some")
+    {
+        return std::make_optional(read_func(val[1]));
+    }
+    else
+    {
+        throw AtdException("Expected an option");
+    }
 }
 
 template <typename F, typename W>
-auto _atd_read_wrap(F read_func, W unwrap_func, const rapidjson::Value &val)
+auto _atd_read_wrap(F read_func, W wrap_func, const rapidjson::Value &val)
 {
-    return unwrap_func(read_func(val));
+    return wrap_func(read_func(val));
 }
 
 void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
@@ -459,11 +467,14 @@ void _atd_write_option(F write_func, const O &val, rapidjson::Writer<rapidjson::
 {
     if (val)
     {
+        writer.StartArray();
+        writer.String("Some");
         write_func(*val, writer);
+        writer.EndArray();
     }
     else
     {
-        writer.Null();
+        writer.String("None");
     }
 }
 

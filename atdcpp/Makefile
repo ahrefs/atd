@@ -18,13 +18,13 @@ build:
 test:
 	$(MAKE) clean-for-dune
 	$(DUNE) runtest -f; status=$$?; \
-	  ln -s ../../../_build/default/atdcpp/test/cpp-tests/everything.d \
-	    test/cpp-tests/everything.d && \
+	  ln -s ../../../_build/default/atdcpp/test/cpp-tests/everything_atd.hpp \
+	    test/cpp-tests/everything_atd.hpp && \
 	  exit "$$status"
 
 .PHONY: clean-for-dune
 clean-for-dune:
-	rm -f test/cpp-tests/everything.d
+	rm -f test/cpp-tests/everything_atd.hpp
 
 .PHONY: clean
 clean:

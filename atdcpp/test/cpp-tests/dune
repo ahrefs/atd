@@ -21,6 +21,6 @@
   (glob_files *.cpp))
  (action
   (progn
-   (bash "ldc2 %{deps} --of test")
+   (bash "clang++ -I../../lib/rapidjson/include -std=c++20 %{deps} -o test")
    (bash ./test)
   )))

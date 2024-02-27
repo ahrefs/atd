@@ -317,6 +317,9 @@ void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<
   
 
 
+#include <stdint.h>
+
+
 struct RecursiveClass;
 namespace typedefs {
     typedef RecursiveClass RecursiveClass;
@@ -341,6 +344,15 @@ struct RecursiveClass {
             record.children = _atd_read_array([](const auto &v){return RecursiveClass::from_json(v);}, doc["children"]);
         else record.children = _atd_missing_json_field<decltype(record.children)>("RecursiveClass", "children");
         return record;
+    }
+
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
 
     static void to_json(const RecursiveClass &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
@@ -385,6 +397,15 @@ struct ThreeLevelNestedListRecord {
         return record;
     }
 
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+
     static void to_json(const ThreeLevelNestedListRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         writer.StartObject();
         writer.Key("field_a");
@@ -411,6 +432,14 @@ namespace typedefs {
 namespace St {
     auto from_json(const rapidjson::Value &doc) {
         return _atd_read_int(doc);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
     void to_json(const typedefs::St &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         _atd_write_int(t, writer);
@@ -494,6 +523,14 @@ namespace Kind {
         }
         throw _atd_bad_json("Kind", x);
     }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
     static void to_json(const ::typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         std::visit([&writer](auto &&arg) {
             using T = std::decay_t<decltype(arg)>;
@@ -519,6 +556,14 @@ namespace Alias3 {
     auto from_json(const rapidjson::Value &doc) {
         return _atd_read_wrap([](const auto& v){return _atd_read_int(v);}, [](const auto &e){return static_cast<uint32_t>(e);},doc);
     }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
     void to_json(const typedefs::Alias3 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         _atd_write_wrap([](const auto &v, auto &w){_atd_write_int(v, w);}, [](const auto &e){return static_cast<int>(e);}, t, writer);
     }
@@ -537,6 +582,14 @@ namespace typedefs {
 namespace AliasOfAliasNotWrapped {
     auto from_json(const rapidjson::Value &doc) {
         return Alias3::from_json(doc);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
     void to_json(const typedefs::AliasOfAliasNotWrapped &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         Alias3::to_json(t, writer);
@@ -557,6 +610,14 @@ namespace AliasOfAliasOfAlias {
     auto from_json(const rapidjson::Value &doc) {
         return AliasOfAliasNotWrapped::from_json(doc);
     }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
     void to_json(const typedefs::AliasOfAliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         AliasOfAliasNotWrapped::to_json(t, writer);
     }
@@ -575,6 +636,14 @@ namespace typedefs {
 namespace Alias {
     auto from_json(const rapidjson::Value &doc) {
         return _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
     void to_json(const typedefs::Alias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t, writer);
@@ -598,6 +667,14 @@ namespace KindParametrizedTuple {
         throw AtdException("Tuple of size 3");
       return std::make_tuple(Kind::from_json(v[0]), Kind::from_json(v[1]), _atd_read_int(v[2]));
       }(doc);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
     void to_json(const typedefs::KindParametrizedTuple &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         [](const auto &t, auto &writer){
@@ -635,6 +712,15 @@ struct IntFloatParametrizedRecord {
             record.field_b = _atd_read_array([](const auto &v){return _atd_read_float(v);}, doc["field_b"]);
         else record.field_b = {};
         return record;
+    }
+
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
 
     static void to_json(const IntFloatParametrizedRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
@@ -781,6 +867,15 @@ struct Root {
         return record;
     }
 
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+
     static void to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         writer.StartObject();
         writer.Key("ID");
@@ -877,6 +972,15 @@ struct RequireField {
         return record;
     }
 
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+
     static void to_json(const RequireField &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         writer.StartObject();
         writer.Key("req");
@@ -915,6 +1019,15 @@ struct RecordWithWrappedType {
         return record;
     }
 
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+
     static void to_json(const RecordWithWrappedType &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         writer.StartObject();
         writer.Key("item");
@@ -942,6 +1055,14 @@ namespace Password {
     auto from_json(const rapidjson::Value &doc) {
         return _atd_read_wrap([](const auto& v){return _atd_read_int(v);}, [](const auto &e){return static_cast<uint32_t>(e);},doc);
     }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
     void to_json(const typedefs::Password &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         _atd_write_wrap([](const auto &v, auto &w){_atd_write_int(v, w);}, [](const auto &e){return static_cast<int>(e);}, t, writer);
     }
@@ -964,6 +1085,14 @@ namespace Pair {
         throw AtdException("Tuple of size 2");
       return std::make_tuple(_atd_read_string(v[0]), _atd_read_int(v[1]));
       }(doc);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
     void to_json(const typedefs::Pair &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         [](const auto &t, auto &writer){
@@ -1026,6 +1155,14 @@ namespace Frozen {
         }
         throw _atd_bad_json("Frozen", x);
     }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
     static void to_json(const ::typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         std::visit([&writer](auto &&arg) {
             using T = std::decay_t<decltype(arg)>;
@@ -1058,6 +1195,15 @@ struct DefaultList {
             record.items = _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc["items"]);
         else record.items = {};
         return record;
+    }
+
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
 
     static void to_json(const DefaultList &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
@@ -1102,6 +1248,15 @@ struct Credential {
         return record;
     }
 
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+
     static void to_json(const Credential &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         writer.StartObject();
         writer.Key("name");
@@ -1130,6 +1285,14 @@ namespace typedefs {
 namespace Credentials2 {
     auto from_json(const rapidjson::Value &doc) {
         return _atd_read_array([](const auto &v){return Credential::from_json(v);}, doc);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
     void to_json(const typedefs::Credentials2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         _atd_write_array([](auto v, auto &w){Credential::to_json(v, w);}, t, writer);
@@ -1161,6 +1324,15 @@ struct Credentials {
         return record;
     }
 
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+
     static void to_json(const Credentials &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         writer.StartObject();
         writer.Key("credentials");
@@ -1188,6 +1360,14 @@ namespace AliasOfAlias {
     auto from_json(const rapidjson::Value &doc) {
         return _atd_read_wrap([](const auto& v){return Alias3::from_json(v);}, [](const auto &e){return static_cast<uint16_t>(e);},doc);
     }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
     void to_json(const typedefs::AliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         _atd_write_wrap([](const auto &v, auto &w){Alias3::to_json(v, w);}, [](const auto &e){return static_cast<uint32_t>(e);}, t, writer);
     }
@@ -1206,6 +1386,14 @@ namespace typedefs {
 namespace Alias2 {
     auto from_json(const rapidjson::Value &doc) {
         return _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
     }
     void to_json(const typedefs::Alias2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t, writer);

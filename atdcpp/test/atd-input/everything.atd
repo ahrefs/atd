@@ -1,4 +1,4 @@
-(* <cpp import="std.stdint : uint32_t, uint16_t"> *)
+<cpp include="<stdint.h>">
 
 type kind = [
   | Root (* class name conflict *)
@@ -88,12 +88,21 @@ type recursive_class = {
   children: recursive_class list;
 }
 
-
 type default_list = {
   ~items: int list;
 }
 
-
 type record_with_wrapped_type = {
   item: string wrap <cpp t="int" wrap="std::stoi" unwrap="std::to_string">;
 }
+
+(* type recursive_record2 = {
+  id: int;
+  flag: bool;
+  children: recursive_record2;
+}
+
+type recursive_variant = [
+  | A
+  | B of recursive_variant
+] *)

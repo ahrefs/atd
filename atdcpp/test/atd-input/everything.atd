@@ -7,10 +7,14 @@
   | Amaze <json name="!!!"> of string list
 ]
 
+*)
+
 type frozen = [
   | A
   | B of int
 ]
+
+(*
 
 type ('a, 'b) parametrized_record = {
   field_a: 'a;
@@ -87,11 +91,12 @@ type recursive_class = {
   children: recursive_class list;
 }
 
-(*
 
 type default_list = {
   ~items: int list;
 }
+
+(*
 
 type record_with_wrapped_type = {
   item: string wrap <cpp t="int" wrap="to!int" unwrap="to!string">;

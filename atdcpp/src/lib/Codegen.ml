@@ -223,6 +223,11 @@ T _atd_missing_json_field(const std::string &type, const std::string &field)
     throw AtdException("Missing JSON field '" + field + "' in " + type);
 }
 
+auto _atd_bad_json(const std::string &type, const rapidjson::Value &x)
+{
+    return AtdException("Bad JSON for " + type);
+}
+
 // Reading an integer from JSON
 int _atd_read_int(const rapidjson::Value &val)
 {
@@ -786,20 +791,33 @@ let case_class env  type_name
           Line (sprintf {|// Original type: %s = [ ... | %s | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s {}" (trans env unique_name));
-          Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue(\"%s\");" (single_esc json_name))];
-          Line("}");
+          Line (sprintf "struct %s {" (trans env orig_name));
+          Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env unique_name));
+            Block [
+              Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
+            ];
+            Line("}");
+          Line (sprintf "};");
         ]
   | Some e ->
       [
           Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
-          Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
-          Line("}");
+          Line (sprintf "struct %s" (trans env orig_name));
+          Line(sprintf "{");
+          Block [
+            Line (sprintf "%s value;" (type_name_of_expr env e));
+            Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env unique_name));
+            Block [
+              Line (sprintf "writer.StartArray();");
+              Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
+              Line (sprintf "%se.value, writer);" (json_writer env e));
+              Line (sprintf "writer.EndArray();");
+            ];
+            Line("}");
+          ];
+          Line(sprintf "};");
         ]
       
 
@@ -809,9 +827,9 @@ let read_cases0 env loc name cases0 =
     |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
       let json_name = Atd.Json.get_json_cons orig_name an in
       Inline [
-        Line (sprintf "if (x.str == \"%s\") " (single_esc json_name));
+        Line (sprintf "if (std::string_view(x.GetString()) == \"%s\") " (single_esc json_name));
         Block [
-          Line (sprintf "return %s(%s());" (struct_name env name) (trans env unique_name))
+          Line (sprintf "return Types::%s();" (trans env unique_name))
         ];
       ]
     )
@@ -835,8 +853,7 @@ let read_cases1 env loc name cases1 =
       Inline [
         Line (sprintf "if (cons == \"%s\")" (single_esc json_name));
         Block [
-          Line (sprintf "return %s(%s(%s(x[1])));"
-                  (struct_name env name)
+          Line (sprintf "return Types::%s({%sx[1])});"
                   (trans env unique_name)
                   (json_reader env e))
         ]
@@ -853,7 +870,7 @@ let sum_container env  loc name cases =
   let dlang_struct_name = struct_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-      trans env unique_name
+      (sprintf "::%s::Types::%s" (dlang_struct_name) (trans env unique_name))
     ) cases
     |> String.concat ", "
   in
@@ -865,7 +882,7 @@ let sum_container env  loc name cases =
   let cases0_block =
     if cases0 <> [] then
       [
-        Line "if (x.type == JSONType.string) {";
+        Line "if (x.IsString()) {";
         Block (read_cases0 env loc name cases0);
         Line "}";
       ]
@@ -875,9 +892,9 @@ let sum_container env  loc name cases =
   let cases1_block =
     if cases1 <> [] then
       [
-        Line "if (x.type == JSONType.array && x.array.length == 2 && x[0].type == JSONType.string) {";
+        Line "if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {";
         Block [
-          Line "string cons = x[0].str;";
+          Line "std::string cons = x[0].GetString();";
           Inline (read_cases1 env loc name cases1)
         ];
           Line "}";
@@ -886,30 +903,48 @@ let sum_container env  loc name cases =
       []
   in
   [
-    Line (sprintf "struct %s{ %s _data; alias _data this;" dlang_struct_name (sprintf "SumType!(%s)" type_list) ); 
-    Line (sprintf "@safe this(T)(T init) {_data = init;} @safe this(%s init) {_data = init._data;}}" dlang_struct_name);
-    Line "";
-      Line (sprintf "@trusted %s fromJson(T : %s)(JSONValue x) {"
-            (single_esc dlang_struct_name) (single_esc dlang_struct_name));
+    Line (sprintf "namespace typedefs {");
+    Block [ Line(sprintf "typedef %s %s;" (sprintf "std::variant<%s>" type_list) (dlang_struct_name))];
+    Line "}";
+
+    Line (sprintf "namespace %s {" (dlang_struct_name));
+    Block [
+      Line (sprintf "static ::typedefs::%s from_json(const rapidjson::Value &x) {" (dlang_struct_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
         Line (sprintf "throw _atd_bad_json(\"%s\", x);"
                 (single_esc (struct_name env name)))
       ];
-    Line "}";
-    Line "";
-    Line (sprintf "@trusted JSONValue toJson(T : %s)(T x) {" (dlang_struct_name));
-    Block [
-      Line "return x.match!(";
-        Line (
-                 List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-                   sprintf "(%s v) => v.toJson!(%s)" (trans env unique_name) (trans env unique_name)
-                 ) cases
-              |> String.concat ",\n");
-        Line ");"
-    ];
       Line "}";
+    ];
+
+    Block [
+      Line (sprintf "static void to_json(const ::typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (dlang_struct_name));
+      Block [
+        Line "std::visit([&writer](auto &&arg) {";
+        Block [
+          Line "using T = std::decay_t<decltype(arg)>;";
+          Line (
+            List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+              sprintf "if constexpr (std::is_same_v<T, Types::%s>) Types::%s::to_json(arg, writer);" (trans env unique_name) (trans env unique_name)
+            ) cases
+         |> String.concat "\n");
+        ];
+        Line ("}, x);");
+      ];
+      Line ("}");
+    ];
+
+    Line (sprintf "std::string to_json_string(const ::typedefs::%s &x) {" (dlang_struct_name));
+    Block [
+      Line ("rapidjson::StringBuffer buffer;");
+      Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
+      Line ("to_json(x, writer);");
+      Line "return buffer.GetString();"
+    ];
+    Line "}";
+    Line ("}");
   ]
 
 
@@ -929,7 +964,9 @@ let sum env  loc name cases =
   in
   let container_class = sum_container env loc name cases in
   [
-    Inline case_classes;
+    Line (sprintf "namespace %s::Types {" (struct_name env name));
+    Block case_classes;
+    Line (sprintf "}");
     Inline container_class;
   ]
   |> double_spaced

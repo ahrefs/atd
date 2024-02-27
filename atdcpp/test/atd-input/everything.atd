@@ -40,10 +40,10 @@ type root = {
   assoc4: (string * int) list <json repr="object"> <cpp repr="dict">;
   nullables: int nullable list;
   options: int option list;
-  untyped_things: abstract list;
+  (* untyped_things: abstract list; *)
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;
-  wrapped: st wrap <cpp t="uint16_t" wrap="[](St st){return st - 1;}" unwrap="[](uint16_t e){return e + 1;}">;
+  wrapped: st wrap <cpp t="uint16_t" wrap="[](typedefs::St st){return st - 1;}" unwrap="[](uint16_t e){return e + 1;}">;
   aaa: alias_of_alias_of_alias;
 } 
 
@@ -92,8 +92,7 @@ type default_list = {
   ~items: int list;
 }
 
-(*
 
 type record_with_wrapped_type = {
-  item: string wrap <cpp t="int" wrap="to!int" unwrap="to!string">;
-} *)
+  item: string wrap <cpp t="int" wrap="std::stoi" unwrap="std::to_string">;
+}

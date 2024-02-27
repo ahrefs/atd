@@ -792,7 +792,7 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s {" (trans env orig_name));
-          Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env unique_name));
+          Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name));
             Block [
               Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
             ];
@@ -808,7 +808,7 @@ let case_class env  type_name
           Line(sprintf "{");
           Block [
             Line (sprintf "%s value;" (type_name_of_expr env e));
-            Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env unique_name));
+            Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name));
             Block [
               Line (sprintf "writer.StartArray();");
               Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
@@ -829,7 +829,7 @@ let read_cases0 env loc name cases0 =
       Inline [
         Line (sprintf "if (std::string_view(x.GetString()) == \"%s\") " (single_esc json_name));
         Block [
-          Line (sprintf "return Types::%s();" (trans env unique_name))
+          Line (sprintf "return Types::%s();" (trans env orig_name))
         ];
       ]
     )
@@ -854,7 +854,7 @@ let read_cases1 env loc name cases1 =
         Line (sprintf "if (cons == \"%s\")" (single_esc json_name));
         Block [
           Line (sprintf "return Types::%s({%sx[1])});"
-                  (trans env unique_name)
+                  (trans env orig_name)
                   (json_reader env e))
         ]
       ]
@@ -870,7 +870,7 @@ let sum_container env  loc name cases =
   let dlang_struct_name = struct_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-      (sprintf "::%s::Types::%s" (dlang_struct_name) (trans env unique_name))
+      (sprintf "::%s::Types::%s" (dlang_struct_name) (trans env orig_name))
     ) cases
     |> String.concat ", "
   in
@@ -927,7 +927,7 @@ let sum_container env  loc name cases =
           Line "using T = std::decay_t<decltype(arg)>;";
           Line (
             List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-              sprintf "if constexpr (std::is_same_v<T, Types::%s>) Types::%s::to_json(arg, writer);" (trans env unique_name) (trans env unique_name)
+              sprintf "if constexpr (std::is_same_v<T, Types::%s>) Types::%s::to_json(arg, writer);" (trans env orig_name) (trans env orig_name)
             ) cases
          |> String.concat "\n");
         ];

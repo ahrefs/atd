@@ -4,10 +4,7 @@
 // methods and functions to convert data from/to JSON.
 
 // ############################################################################
-// # Private functions
-// ############################################################################
 
-// filename everything.atd
 #pragma once
 
 #include <stdexcept>
@@ -21,377 +18,39 @@
 #include <string>
 #include <map>
 
-class AtdException : public std::exception
-{
-public:
-    AtdException(const std::string &message) : msg_(message) {}
 
-    const char *what() const throw() override
-    {
-        return msg_.c_str();
-    }
-
-private:
-    std::string msg_;
-};
-
-template <typename T>
-T _atd_missing_json_field(const std::string &type, const std::string &field)
-{
-    throw AtdException("Missing JSON field '" + field + "' in " + type);
-}
-
-auto _atd_bad_json(const std::string &type, const rapidjson::Value &x)
-{
-    return AtdException("Bad JSON for " + type);
-}
-
-// Reading an integer from JSON
-int _atd_read_int(const rapidjson::Value &val)
-{
-    if (!val.IsInt())
-    {
-        throw AtdException("Expected an integer");
-    }
-    return val.GetInt();
-}
-
-bool _atd_read_bool(const rapidjson::Value &val)
-{
-    if (!val.IsBool())
-    {
-        throw AtdException("Expected a boolean");
-    }
-    return val.GetBool();
-}
-
-// Reading a float from JSON
-float _atd_read_float(const rapidjson::Value &val)
-{
-    if (val.IsInt())
-    {
-        return static_cast<float>(val.GetInt());
-    }
-    else if (val.IsUint())
-    {
-        return static_cast<float>(val.GetUint());
-    }
-    if (!val.IsFloat())
-    {
-        throw AtdException("Expected a float");
-    }
-
-    return val.GetFloat();
-}
-
-std::string _atd_read_string(const rapidjson::Value &val)
-{
-    if (!val.IsString())
-    {
-        throw AtdException("Expected a string");
-    }
-    return val.GetString();
-}
-
-template <typename F>
-auto _atd_read_array(F read_func, const rapidjson::Value &val)
-{
-    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
-
-    if (!val.IsArray())
-    {
-        throw AtdException("Expected an array"); // Or your specific exception type
-    }
-
-    std::vector<ResultType> result;
-    for (rapidjson::SizeType i = 0; i < val.Size(); i++)
-    {
-        result.push_back(read_func(val[i]));
-    }
-
-    return result;
-}
-
-template<typename F>
-auto _atd_read_object_to_tuple_list(F read_func, const rapidjson::Value &val)
-{
-    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
-
-    if (!val.IsObject())
-    {
-        throw AtdException("Expected an object"); // Or your specific exception type
-    }
-
-    std::vector<std::tuple<std::string, ResultType>> result;
-    for (auto &m : val.GetObject())
-    {
-        result.push_back(std::make_tuple(m.name.GetString(), read_func(m.value)));
-    }
-
-    return result;
-}
-
-template<typename RK, typename RV>
-auto _atd_read_array_to_assoc_dict(RK read_key_func, RV read_value_func, const rapidjson::Value &val)
-{
-    using KeyType = typename std::invoke_result<decltype(read_key_func), const rapidjson::Value &>::type;
-    using ValueType = typename std::invoke_result<decltype(read_value_func), const rapidjson::Value &>::type;
-
-    if (!val.IsArray())
-    {
-        throw AtdException("Expected an array"); // Or your specific exception type
-    }
-
-    std::map<KeyType, ValueType> result;
-    for (rapidjson::SizeType i = 0; i < val.Size(); i++)
-    {
-        auto &pair = val[i];
-        if (!pair.IsArray() || pair.Size() != 2)
-        {
-            throw AtdException("Expected an array of pairs");
-        }
-        result[read_key_func(pair[0])] = read_value_func(pair[1]);
-    }
-
-    return result;
-}
-
-template<typename F>
-auto _atd_read_object_to_assoc_array(F read_func, const rapidjson::Value &val)
-{
-    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
-
-    if (!val.IsObject())
-    {
-        throw AtdException("Expected an object"); // Or your specific exception type
-    }
-
-    std::map<std::string, ResultType> result;
-    for (auto &m : val.GetObject())
-    {
-        result[m.name.GetString()] = read_func(m.value);
-    }
-
-    return result;
-}
-
-template<typename F>
-auto _atd_read_nullable(F read_func, const rapidjson::Value &val)
-{
-    if (val.IsNull())
-    {
-        return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>();
-    }
-    return std::optional<typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type>(read_func(val));
-}
-
-template<typename F>
-auto _atd_read_option(F read_func, const rapidjson::Value &val)
-{
-    using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
-    if (val.IsString() && std::string_view(val.GetString()) == "None")
-    {
-        return std::optional<ResultType>();
-    }
-    else if (val.IsArray() && val.Size() == 2 && val[0].IsString() && std::string_view(val[0].GetString()) == "Some")
-    {
-        return std::make_optional(read_func(val[1]));
-    }
-    else
-    {
-        throw AtdException("Expected an option");
-    }
-}
-
-template <typename F, typename W>
-auto _atd_read_wrap(F read_func, W wrap_func, const rapidjson::Value &val)
-{
-    return wrap_func(read_func(val));
-}
-
-void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.Int(value);
-}
-
-void _atd_write_bool(bool value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.Bool(value);
-}
-
-void _atd_write_float(float value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.Double(value);
-}
-
-void _atd_write_string(const std::string &value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.String(value.c_str());
-}
-
-template <typename F, typename V>
-void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.StartArray();
-    for (const auto& value : values)
-    {
-        write_func(value, writer);
-    }
-    writer.EndArray();
-}
-
-template <typename F, typename V>
-void _atd_write_tuple_list_to_object(F write_func, const V &values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.StartObject();
-    for (const auto& value : values)
-    {
-        writer.Key(std::get<0>(value).c_str());
-        write_func(std::get<1>(value), writer);
-    }
-    writer.EndObject();
-}
-
-template <typename Wk, typename Wv, typename Map>
-void _atd_write_assoc_dict_to_array(const Wk write_key_func, const Wv write_value_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.StartArray();
-    for (const auto& pair : value_map)
-    {
-        writer.StartArray();
-        write_key_func(pair.first, writer);
-        write_value_func(pair.second, writer);
-        writer.EndArray();
-    }
-    writer.EndArray();
-}
-
-template <typename F, typename Map>
-void _atd_write_assoc_array_to_object(F write_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    writer.StartObject();
-    for (const auto& pair : value_map)
-    {
-        writer.Key(pair.first.c_str());
-        write_func(pair.second, writer);
-    }
-    writer.EndObject();
-}
-
-
-template <typename F, typename O>
-void _atd_write_option(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    if (val)
-    {
-        writer.StartArray();
-        writer.String("Some");
-        write_func(*val, writer);
-        writer.EndArray();
-    }
-    else
-    {
-        writer.String("None");
-    }
-}
-
-template <typename F, typename O>
-void _atd_write_nullable(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    if (val)
-    {
-        write_func(*val, writer);
-    }
-    else
-    {
-        writer.Null();
-    }
-}
-
-template <typename F, typename W, typename T>
-void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
-{
-    write_func(wrap_func(val), writer);
-}
-
-  
 
 
 #include <stdint.h>
+
+
+namespace atd {
 
 
 namespace RecursiveVariant::Types {
     struct A;
     struct B;
 }
-
-
+namespace typedefs {
+    typedef std::variant<atd::RecursiveVariant::Types::A, atd::RecursiveVariant::Types::B> RecursiveVariant;
+}
 namespace RecursiveVariant::Types {
-
-
     // Original type: recursive_variant = [ ... | A | ... ]
     struct A {
-    static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-        writer.String("A");
-    }
+        static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
     // Original type: recursive_variant = [ ... | B of ... | ... ]
     struct B
     {
         std::vector<typedefs::RecursiveVariant> value;
-        static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-            writer.StartArray();
-            writer.String("B");
-            _atd_write_array([](auto v, auto &w){RecursiveVariant::to_json(v, w);}, e.value, writer);
-            writer.EndArray();
-        }
+        static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
-}
-
-
-namespace typedefs {
-    typedef std::variant<::RecursiveVariant::Types::A, ::RecursiveVariant::Types::B> RecursiveVariant;
 }
 namespace RecursiveVariant {
-    static ::typedefs::RecursiveVariant from_json(const rapidjson::Value &x) {
-        if (x.IsString()) {
-            if (std::string_view(x.GetString()) == "A") 
-                return Types::A();
-            throw _atd_bad_json("RecursiveVariant", x);
-        }
-        if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {
-            std::string cons = x[0].GetString();
-            if (cons == "B")
-                return Types::B({_atd_read_array([](const auto &v){return RecursiveVariant::from_json(v);}, x[1])});
-            throw _atd_bad_json("RecursiveVariant", x);
-        }
-        throw _atd_bad_json("RecursiveVariant", x);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    static void to_json(const ::typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        std::visit([&writer](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, Types::A>) Types::A::to_json(arg, writer);
-if constexpr (std::is_same_v<T, Types::B>) Types::B::to_json(arg, writer);
-        }, x);
-    }
-std::string to_json_string(const ::typedefs::RecursiveVariant &x) {
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    to_json(x, writer);
-    return buffer.GetString();
-}
+    static atd::typedefs::RecursiveVariant from_json(const rapidjson::Value &x);
+    static atd::typedefs::RecursiveVariant from_json_string(const std::string &s);
+    static void to_json(const atd::typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const atd::typedefs::RecursiveVariant &x);
 }
 
 
@@ -404,53 +63,11 @@ struct RecursiveClass {
     bool flag;
     std::vector<typedefs::RecursiveClass> children;
 
-    static RecursiveClass from_json(const rapidjson::Value & doc) {
-        RecursiveClass record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("id"))
-            record.id = _atd_read_int(doc["id"]);
-        else record.id = _atd_missing_json_field<decltype(record.id)>("RecursiveClass", "id");
-        if (doc.HasMember("flag"))
-            record.flag = _atd_read_bool(doc["flag"]);
-        else record.flag = _atd_missing_json_field<decltype(record.flag)>("RecursiveClass", "flag");
-        if (doc.HasMember("children"))
-            record.children = _atd_read_array([](const auto &v){return RecursiveClass::from_json(v);}, doc["children"]);
-        else record.children = _atd_missing_json_field<decltype(record.children)>("RecursiveClass", "children");
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const RecursiveClass &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("id");
-        _atd_write_int(t.id, writer);
-        writer.Key("flag");
-        _atd_write_bool(t.flag, writer);
-        writer.Key("children");
-        _atd_write_array([](auto v, auto &w){RecursiveClass::to_json(v, w);}, t.children, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const RecursiveClass &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static RecursiveClass from_json(const rapidjson::Value & doc);
+    static RecursiveClass from_json_string(const std::string &s);
+    static void to_json(const RecursiveClass &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const RecursiveClass &t);
+    std::string to_json_string();
 };
 
 
@@ -461,43 +78,11 @@ namespace typedefs {
 struct ThreeLevelNestedListRecord {
     std::vector<std::vector<std::vector<int>>> field_a;
 
-    static ThreeLevelNestedListRecord from_json(const rapidjson::Value & doc) {
-        ThreeLevelNestedListRecord record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("field_a"))
-            record.field_a = _atd_read_array([](const auto &v){return _atd_read_array([](const auto &v){return _atd_read_array([](const auto &v){return _atd_read_int(v);}, v);}, v);}, doc["field_a"]);
-        else record.field_a = _atd_missing_json_field<decltype(record.field_a)>("ThreeLevelNestedListRecord", "field_a");
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const ThreeLevelNestedListRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("field_a");
-        _atd_write_array([](auto v, auto &w){_atd_write_array([](auto v, auto &w){_atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, v, w);}, v, w);}, t.field_a, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const ThreeLevelNestedListRecord &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static ThreeLevelNestedListRecord from_json(const rapidjson::Value & doc);
+    static ThreeLevelNestedListRecord from_json_string(const std::string &s);
+    static void to_json(const ThreeLevelNestedListRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const ThreeLevelNestedListRecord &t);
+    std::string to_json_string();
 };
 
 
@@ -505,26 +90,10 @@ namespace typedefs {
     typedef int St;
 }
 namespace St {
-    auto from_json(const rapidjson::Value &doc) {
-        return _atd_read_int(doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::St &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        _atd_write_int(t, writer);
-    }
-    std::string to_json_string(const typedefs::St &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::St from_json(const rapidjson::Value &doc);
+    static typedefs::St from_json_string(const std::string &s);
+    void to_json(const typedefs::St &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::St &t);
 }
 
 
@@ -534,101 +103,36 @@ namespace Kind::Types {
     struct WOW;
     struct Amaze;
 }
-
-
+namespace typedefs {
+    typedef std::variant<atd::Kind::Types::Root, atd::Kind::Types::Thing, atd::Kind::Types::WOW, atd::Kind::Types::Amaze> Kind;
+}
 namespace Kind::Types {
-
-
     // Original type: kind = [ ... | Root | ... ]
     struct Root {
-    static void to_json(const Root &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-        writer.String("Root");
-    }
+        static void to_json(const Root &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
     // Original type: kind = [ ... | Thing of ... | ... ]
     struct Thing
     {
         int value;
-        static void to_json(const Thing &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-            writer.StartArray();
-            writer.String("Thing");
-            _atd_write_int(e.value, writer);
-            writer.EndArray();
-        }
+        static void to_json(const Thing &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
     // Original type: kind = [ ... | WOW | ... ]
     struct WOW {
-    static void to_json(const WOW &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-        writer.String("wow");
-    }
+        static void to_json(const WOW &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
     // Original type: kind = [ ... | Amaze of ... | ... ]
     struct Amaze
     {
         std::vector<std::string> value;
-        static void to_json(const Amaze &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-            writer.StartArray();
-            writer.String("!!!");
-            _atd_write_array([](auto v, auto &w){_atd_write_string(v, w);}, e.value, writer);
-            writer.EndArray();
-        }
+        static void to_json(const Amaze &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
-}
-
-
-namespace typedefs {
-    typedef std::variant<::Kind::Types::Root, ::Kind::Types::Thing, ::Kind::Types::WOW, ::Kind::Types::Amaze> Kind;
 }
 namespace Kind {
-    static ::typedefs::Kind from_json(const rapidjson::Value &x) {
-        if (x.IsString()) {
-            if (std::string_view(x.GetString()) == "Root") 
-                return Types::Root();
-            if (std::string_view(x.GetString()) == "wow") 
-                return Types::WOW();
-            throw _atd_bad_json("Kind", x);
-        }
-        if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {
-            std::string cons = x[0].GetString();
-            if (cons == "Thing")
-                return Types::Thing({_atd_read_int(x[1])});
-            if (cons == "!!!")
-                return Types::Amaze({_atd_read_array([](const auto &v){return _atd_read_string(v);}, x[1])});
-            throw _atd_bad_json("Kind", x);
-        }
-        throw _atd_bad_json("Kind", x);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    static void to_json(const ::typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        std::visit([&writer](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, Types::Root>) Types::Root::to_json(arg, writer);
-if constexpr (std::is_same_v<T, Types::Thing>) Types::Thing::to_json(arg, writer);
-if constexpr (std::is_same_v<T, Types::WOW>) Types::WOW::to_json(arg, writer);
-if constexpr (std::is_same_v<T, Types::Amaze>) Types::Amaze::to_json(arg, writer);
-        }, x);
-    }
-std::string to_json_string(const ::typedefs::Kind &x) {
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    to_json(x, writer);
-    return buffer.GetString();
-}
+    static atd::typedefs::Kind from_json(const rapidjson::Value &x);
+    static atd::typedefs::Kind from_json_string(const std::string &s);
+    static void to_json(const atd::typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const atd::typedefs::Kind &x);
 }
 
 
@@ -636,26 +140,10 @@ namespace typedefs {
     typedef uint32_t Alias3;
 }
 namespace Alias3 {
-    auto from_json(const rapidjson::Value &doc) {
-        return _atd_read_wrap([](const auto& v){return _atd_read_int(v);}, [](const auto &e){return static_cast<uint32_t>(e);},doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::Alias3 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        _atd_write_wrap([](const auto &v, auto &w){_atd_write_int(v, w);}, [](const auto &e){return static_cast<int>(e);}, t, writer);
-    }
-    std::string to_json_string(const typedefs::Alias3 &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::Alias3 from_json(const rapidjson::Value &doc);
+    static typedefs::Alias3 from_json_string(const std::string &s);
+    void to_json(const typedefs::Alias3 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Alias3 &t);
 }
 
 
@@ -663,26 +151,10 @@ namespace typedefs {
     typedef typedefs::Alias3 AliasOfAliasNotWrapped;
 }
 namespace AliasOfAliasNotWrapped {
-    auto from_json(const rapidjson::Value &doc) {
-        return Alias3::from_json(doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::AliasOfAliasNotWrapped &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        Alias3::to_json(t, writer);
-    }
-    std::string to_json_string(const typedefs::AliasOfAliasNotWrapped &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::AliasOfAliasNotWrapped from_json(const rapidjson::Value &doc);
+    static typedefs::AliasOfAliasNotWrapped from_json_string(const std::string &s);
+    void to_json(const typedefs::AliasOfAliasNotWrapped &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::AliasOfAliasNotWrapped &t);
 }
 
 
@@ -690,26 +162,10 @@ namespace typedefs {
     typedef typedefs::AliasOfAliasNotWrapped AliasOfAliasOfAlias;
 }
 namespace AliasOfAliasOfAlias {
-    auto from_json(const rapidjson::Value &doc) {
-        return AliasOfAliasNotWrapped::from_json(doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::AliasOfAliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        AliasOfAliasNotWrapped::to_json(t, writer);
-    }
-    std::string to_json_string(const typedefs::AliasOfAliasOfAlias &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::AliasOfAliasOfAlias from_json(const rapidjson::Value &doc);
+    static typedefs::AliasOfAliasOfAlias from_json_string(const std::string &s);
+    void to_json(const typedefs::AliasOfAliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::AliasOfAliasOfAlias &t);
 }
 
 
@@ -717,26 +173,10 @@ namespace typedefs {
     typedef std::vector<int> Alias;
 }
 namespace Alias {
-    auto from_json(const rapidjson::Value &doc) {
-        return _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::Alias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t, writer);
-    }
-    std::string to_json_string(const typedefs::Alias &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::Alias from_json(const rapidjson::Value &doc);
+    static typedefs::Alias from_json_string(const std::string &s);
+    void to_json(const typedefs::Alias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Alias &t);
 }
 
 
@@ -744,34 +184,10 @@ namespace typedefs {
     typedef std::tuple<typedefs::Kind, typedefs::Kind, int> KindParametrizedTuple;
 }
 namespace KindParametrizedTuple {
-    auto from_json(const rapidjson::Value &doc) {
-        return [](auto &v){
-      if (!v.IsArray() || v.Size() != 3)
-        throw AtdException("Tuple of size 3");
-      return std::make_tuple(Kind::from_json(v[0]), Kind::from_json(v[1]), _atd_read_int(v[2]));
-      }(doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::KindParametrizedTuple &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        [](const auto &t, auto &writer){
-    writer.StartArray();
-      Kind::to_json(std::get<0>(t), writer); Kind::to_json(std::get<1>(t), writer); _atd_write_int(std::get<2>(t), writer);
-      writer.EndArray();
-      }(t, writer);
-    }
-    std::string to_json_string(const typedefs::KindParametrizedTuple &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::KindParametrizedTuple from_json(const rapidjson::Value &doc);
+    static typedefs::KindParametrizedTuple from_json_string(const std::string &s);
+    void to_json(const typedefs::KindParametrizedTuple &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::KindParametrizedTuple &t);
 }
 
 
@@ -783,48 +199,11 @@ struct IntFloatParametrizedRecord {
     int field_a;
     std::vector<float> field_b = {};
 
-    static IntFloatParametrizedRecord from_json(const rapidjson::Value & doc) {
-        IntFloatParametrizedRecord record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("field_a"))
-            record.field_a = _atd_read_int(doc["field_a"]);
-        else record.field_a = _atd_missing_json_field<decltype(record.field_a)>("IntFloatParametrizedRecord", "field_a");
-        if (doc.HasMember("field_b"))
-            record.field_b = _atd_read_array([](const auto &v){return _atd_read_float(v);}, doc["field_b"]);
-        else record.field_b = {};
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const IntFloatParametrizedRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("field_a");
-        _atd_write_int(t.field_a, writer);
-        writer.Key("field_b");
-        _atd_write_array([](auto v, auto &w){_atd_write_float(v, w);}, t.field_b, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const IntFloatParametrizedRecord &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static IntFloatParametrizedRecord from_json(const rapidjson::Value & doc);
+    static IntFloatParametrizedRecord from_json_string(const std::string &s);
+    static void to_json(const IntFloatParametrizedRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const IntFloatParametrizedRecord &t);
+    std::string to_json_string();
 };
 
 
@@ -859,181 +238,11 @@ struct Root {
     typedefs::AliasOfAliasOfAlias aaa;
     int item;
 
-    static Root from_json(const rapidjson::Value & doc) {
-        Root record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("ID"))
-            record.id = _atd_read_string(doc["ID"]);
-        else record.id = _atd_missing_json_field<decltype(record.id)>("Root", "ID");
-        if (doc.HasMember("await"))
-            record.await = _atd_read_bool(doc["await"]);
-        else record.await = _atd_missing_json_field<decltype(record.await)>("Root", "await");
-        if (doc.HasMember("integer"))
-            record.integer = _atd_read_int(doc["integer"]);
-        else record.integer = _atd_missing_json_field<decltype(record.integer)>("Root", "integer");
-        if (doc.HasMember("__init__"))
-            record.x___init__ = _atd_read_float(doc["__init__"]);
-        else record.x___init__ = _atd_missing_json_field<decltype(record.x___init__)>("Root", "__init__");
-        if (doc.HasMember("float_with_auto_default"))
-            record.float_with_auto_default = _atd_read_float(doc["float_with_auto_default"]);
-        else record.float_with_auto_default = 0.0;
-        if (doc.HasMember("float_with_default"))
-            record.float_with_default = _atd_read_float(doc["float_with_default"]);
-        else record.float_with_default = 0.1;
-        if (doc.HasMember("items"))
-            record.items = _atd_read_array([](const auto &v){return _atd_read_array([](const auto &v){return _atd_read_int(v);}, v);}, doc["items"]);
-        else record.items = _atd_missing_json_field<decltype(record.items)>("Root", "items");
-        if (doc.HasMember("maybe"))
-            record.maybe = _atd_read_option([](const auto &v){return _atd_read_int(v);}, doc["maybe"]);
-        else record.maybe = std::nullopt;
-        if (doc.HasMember("extras"))
-            record.extras = _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc["extras"]);
-        else record.extras = {};
-        if (doc.HasMember("answer"))
-            record.answer = _atd_read_int(doc["answer"]);
-        else record.answer = 42;
-        if (doc.HasMember("aliased"))
-            record.aliased = Alias::from_json(doc["aliased"]);
-        else record.aliased = _atd_missing_json_field<decltype(record.aliased)>("Root", "aliased");
-        if (doc.HasMember("point"))
-            record.point = [](auto &v){
-      if (!v.IsArray() || v.Size() != 2)
-        throw AtdException("Tuple of size 2");
-      return std::make_tuple(_atd_read_float(v[0]), _atd_read_float(v[1]));
-      }(doc["point"]);
-        else record.point = _atd_missing_json_field<decltype(record.point)>("Root", "point");
-        if (doc.HasMember("kind"))
-            record.kind = Kind::from_json(doc["kind"]);
-        else record.kind = _atd_missing_json_field<decltype(record.kind)>("Root", "kind");
-        if (doc.HasMember("kinds"))
-            record.kinds = _atd_read_array([](const auto &v){return Kind::from_json(v);}, doc["kinds"]);
-        else record.kinds = _atd_missing_json_field<decltype(record.kinds)>("Root", "kinds");
-        if (doc.HasMember("assoc1"))
-            record.assoc1 = _atd_read_array([](const auto &v){return [](auto &v){
-      if (!v.IsArray() || v.Size() != 2)
-        throw AtdException("Tuple of size 2");
-      return std::make_tuple(_atd_read_float(v[0]), _atd_read_int(v[1]));
-      }(v);}, doc["assoc1"]);
-        else record.assoc1 = _atd_missing_json_field<decltype(record.assoc1)>("Root", "assoc1");
-        if (doc.HasMember("assoc2"))
-            record.assoc2 = _atd_read_object_to_tuple_list([](const auto &v){return _atd_read_int(v);},doc["assoc2"]);
-        else record.assoc2 = _atd_missing_json_field<decltype(record.assoc2)>("Root", "assoc2");
-        if (doc.HasMember("assoc3"))
-            record.assoc3 = _atd_read_array_to_assoc_dict([](const auto &k){return _atd_read_float(k);}, [](const auto &v){return _atd_read_int(v);}, doc["assoc3"]);
-        else record.assoc3 = _atd_missing_json_field<decltype(record.assoc3)>("Root", "assoc3");
-        if (doc.HasMember("assoc4"))
-            record.assoc4 = _atd_read_object_to_assoc_array([](const auto &v){return _atd_read_int(v);},doc["assoc4"]);
-        else record.assoc4 = _atd_missing_json_field<decltype(record.assoc4)>("Root", "assoc4");
-        if (doc.HasMember("nullables"))
-            record.nullables = _atd_read_array([](const auto &v){return _atd_read_nullable([](const auto &v){return _atd_read_int(v);}, v);}, doc["nullables"]);
-        else record.nullables = _atd_missing_json_field<decltype(record.nullables)>("Root", "nullables");
-        if (doc.HasMember("options"))
-            record.options = _atd_read_array([](const auto &v){return _atd_read_option([](const auto &v){return _atd_read_int(v);}, v);}, doc["options"]);
-        else record.options = _atd_missing_json_field<decltype(record.options)>("Root", "options");
-        if (doc.HasMember("parametrized_record"))
-            record.parametrized_record = IntFloatParametrizedRecord::from_json(doc["parametrized_record"]);
-        else record.parametrized_record = _atd_missing_json_field<decltype(record.parametrized_record)>("Root", "parametrized_record");
-        if (doc.HasMember("parametrized_tuple"))
-            record.parametrized_tuple = KindParametrizedTuple::from_json(doc["parametrized_tuple"]);
-        else record.parametrized_tuple = _atd_missing_json_field<decltype(record.parametrized_tuple)>("Root", "parametrized_tuple");
-        if (doc.HasMember("wrapped"))
-            record.wrapped = _atd_read_wrap([](const auto& v){return St::from_json(v);}, [](const auto &e){return [](typedefs::St st){return st - 1;}(e);},doc["wrapped"]);
-        else record.wrapped = _atd_missing_json_field<decltype(record.wrapped)>("Root", "wrapped");
-        if (doc.HasMember("aaa"))
-            record.aaa = AliasOfAliasOfAlias::from_json(doc["aaa"]);
-        else record.aaa = _atd_missing_json_field<decltype(record.aaa)>("Root", "aaa");
-        if (doc.HasMember("item"))
-            record.item = _atd_read_wrap([](const auto& v){return _atd_read_string(v);}, [](const auto &e){return std::stoi(e);},doc["item"]);
-        else record.item = _atd_missing_json_field<decltype(record.item)>("Root", "item");
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("ID");
-        _atd_write_string(t.id, writer);
-        writer.Key("await");
-        _atd_write_bool(t.await, writer);
-        writer.Key("integer");
-        _atd_write_int(t.integer, writer);
-        writer.Key("__init__");
-        _atd_write_float(t.x___init__, writer);
-        writer.Key("float_with_auto_default");
-        _atd_write_float(t.float_with_auto_default, writer);
-        writer.Key("float_with_default");
-        _atd_write_float(t.float_with_default, writer);
-        writer.Key("items");
-        _atd_write_array([](auto v, auto &w){_atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, v, w);}, t.items, writer);
-        if (t.maybe != std::nullopt) {
-            writer.Key("maybe");
-            _atd_write_option([](const auto &v, auto &w){_atd_write_int(v, w);}, t.maybe, writer);
-        }
-        writer.Key("extras");
-        _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.extras, writer);
-        writer.Key("answer");
-        _atd_write_int(t.answer, writer);
-        writer.Key("aliased");
-        Alias::to_json(t.aliased, writer);
-        writer.Key("point");
-        [](const auto &t, auto &writer){
-    writer.StartArray();
-      _atd_write_float(std::get<0>(t), writer); _atd_write_float(std::get<1>(t), writer);
-      writer.EndArray();
-      }(t.point, writer);
-        writer.Key("kind");
-        Kind::to_json(t.kind, writer);
-        writer.Key("kinds");
-        _atd_write_array([](auto v, auto &w){Kind::to_json(v, w);}, t.kinds, writer);
-        writer.Key("assoc1");
-        _atd_write_array([](auto v, auto &w){[](const auto &t, auto &writer){
-    writer.StartArray();
-      _atd_write_float(std::get<0>(t), writer); _atd_write_int(std::get<1>(t), writer);
-      writer.EndArray();
-      }(v, w);}, t.assoc1, writer);
-        writer.Key("assoc2");
-        _atd_write_tuple_list_to_object([](auto v, auto &w){_atd_write_int(v, w);}, t.assoc2, writer);
-        writer.Key("assoc3");
-        _atd_write_assoc_dict_to_array([](auto v, auto &w){_atd_write_float(v, w);}, [](auto v, auto &w){_atd_write_int(v, w);}, t.assoc3, writer);
-        writer.Key("assoc4");
-        _atd_write_assoc_array_to_object([](auto v, auto &w){_atd_write_int(v, w);}, t.assoc4, writer);
-        writer.Key("nullables");
-        _atd_write_array([](auto v, auto &w){_atd_write_nullable([](auto v, auto &w){_atd_write_int(v, w);}, v, w);}, t.nullables, writer);
-        writer.Key("options");
-        _atd_write_array([](auto v, auto &w){_atd_write_option([](auto v, auto &w){_atd_write_int(v, w);}, v, w);}, t.options, writer);
-        writer.Key("parametrized_record");
-        IntFloatParametrizedRecord::to_json(t.parametrized_record, writer);
-        writer.Key("parametrized_tuple");
-        KindParametrizedTuple::to_json(t.parametrized_tuple, writer);
-        writer.Key("wrapped");
-        _atd_write_wrap([](const auto &v, auto &w){St::to_json(v, w);}, [](const auto &e){return [](uint16_t e){return e + 1;}(e);}, t.wrapped, writer);
-        writer.Key("aaa");
-        AliasOfAliasOfAlias::to_json(t.aaa, writer);
-        writer.Key("item");
-        _atd_write_wrap([](const auto &v, auto &w){_atd_write_string(v, w);}, [](const auto &e){return std::to_string(e);}, t.item, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const Root &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static Root from_json(const rapidjson::Value & doc);
+    static Root from_json_string(const std::string &s);
+    static void to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const Root &t);
+    std::string to_json_string();
 };
 
 
@@ -1044,43 +253,11 @@ namespace typedefs {
 struct RequireField {
     std::string req;
 
-    static RequireField from_json(const rapidjson::Value & doc) {
-        RequireField record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("req"))
-            record.req = _atd_read_string(doc["req"]);
-        else record.req = _atd_missing_json_field<decltype(record.req)>("RequireField", "req");
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const RequireField &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("req");
-        _atd_write_string(t.req, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const RequireField &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static RequireField from_json(const rapidjson::Value & doc);
+    static RequireField from_json_string(const std::string &s);
+    static void to_json(const RequireField &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const RequireField &t);
+    std::string to_json_string();
 };
 
 
@@ -1091,43 +268,11 @@ namespace typedefs {
 struct RecordWithWrappedType {
     int item;
 
-    static RecordWithWrappedType from_json(const rapidjson::Value & doc) {
-        RecordWithWrappedType record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("item"))
-            record.item = _atd_read_wrap([](const auto& v){return _atd_read_string(v);}, [](const auto &e){return std::stoi(e);},doc["item"]);
-        else record.item = _atd_missing_json_field<decltype(record.item)>("RecordWithWrappedType", "item");
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const RecordWithWrappedType &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("item");
-        _atd_write_wrap([](const auto &v, auto &w){_atd_write_string(v, w);}, [](const auto &e){return std::to_string(e);}, t.item, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const RecordWithWrappedType &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static RecordWithWrappedType from_json(const rapidjson::Value & doc);
+    static RecordWithWrappedType from_json_string(const std::string &s);
+    static void to_json(const RecordWithWrappedType &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const RecordWithWrappedType &t);
+    std::string to_json_string();
 };
 
 
@@ -1135,26 +280,10 @@ namespace typedefs {
     typedef uint32_t Password;
 }
 namespace Password {
-    auto from_json(const rapidjson::Value &doc) {
-        return _atd_read_wrap([](const auto& v){return _atd_read_int(v);}, [](const auto &e){return static_cast<uint32_t>(e);},doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::Password &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        _atd_write_wrap([](const auto &v, auto &w){_atd_write_int(v, w);}, [](const auto &e){return static_cast<int>(e);}, t, writer);
-    }
-    std::string to_json_string(const typedefs::Password &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::Password from_json(const rapidjson::Value &doc);
+    static typedefs::Password from_json_string(const std::string &s);
+    void to_json(const typedefs::Password &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Password &t);
 }
 
 
@@ -1162,34 +291,10 @@ namespace typedefs {
     typedef std::tuple<std::string, int> Pair;
 }
 namespace Pair {
-    auto from_json(const rapidjson::Value &doc) {
-        return [](auto &v){
-      if (!v.IsArray() || v.Size() != 2)
-        throw AtdException("Tuple of size 2");
-      return std::make_tuple(_atd_read_string(v[0]), _atd_read_int(v[1]));
-      }(doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::Pair &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        [](const auto &t, auto &writer){
-    writer.StartArray();
-      _atd_write_string(std::get<0>(t), writer); _atd_write_int(std::get<1>(t), writer);
-      writer.EndArray();
-      }(t, writer);
-    }
-    std::string to_json_string(const typedefs::Pair &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::Pair from_json(const rapidjson::Value &doc);
+    static typedefs::Pair from_json_string(const std::string &s);
+    void to_json(const typedefs::Pair &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Pair &t);
 }
 
 
@@ -1197,74 +302,26 @@ namespace Frozen::Types {
     struct A;
     struct B;
 }
-
-
+namespace typedefs {
+    typedef std::variant<atd::Frozen::Types::A, atd::Frozen::Types::B> Frozen;
+}
 namespace Frozen::Types {
-
-
     // Original type: frozen = [ ... | A | ... ]
     struct A {
-    static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-        writer.String("A");
-    }
+        static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
     // Original type: frozen = [ ... | B of ... | ... ]
     struct B
     {
         int value;
-        static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-            writer.StartArray();
-            writer.String("B");
-            _atd_write_int(e.value, writer);
-            writer.EndArray();
-        }
+        static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
-
-
-}
-
-
-namespace typedefs {
-    typedef std::variant<::Frozen::Types::A, ::Frozen::Types::B> Frozen;
 }
 namespace Frozen {
-    static ::typedefs::Frozen from_json(const rapidjson::Value &x) {
-        if (x.IsString()) {
-            if (std::string_view(x.GetString()) == "A") 
-                return Types::A();
-            throw _atd_bad_json("Frozen", x);
-        }
-        if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {
-            std::string cons = x[0].GetString();
-            if (cons == "B")
-                return Types::B({_atd_read_int(x[1])});
-            throw _atd_bad_json("Frozen", x);
-        }
-        throw _atd_bad_json("Frozen", x);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    static void to_json(const ::typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        std::visit([&writer](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, Types::A>) Types::A::to_json(arg, writer);
-if constexpr (std::is_same_v<T, Types::B>) Types::B::to_json(arg, writer);
-        }, x);
-    }
-std::string to_json_string(const ::typedefs::Frozen &x) {
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    to_json(x, writer);
-    return buffer.GetString();
-}
+    static atd::typedefs::Frozen from_json(const rapidjson::Value &x);
+    static atd::typedefs::Frozen from_json_string(const std::string &s);
+    static void to_json(const atd::typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const atd::typedefs::Frozen &x);
 }
 
 
@@ -1275,43 +332,11 @@ namespace typedefs {
 struct DefaultList {
     std::vector<int> items = {};
 
-    static DefaultList from_json(const rapidjson::Value & doc) {
-        DefaultList record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("items"))
-            record.items = _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc["items"]);
-        else record.items = {};
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const DefaultList &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("items");
-        _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.items, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const DefaultList &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static DefaultList from_json(const rapidjson::Value & doc);
+    static DefaultList from_json_string(const std::string &s);
+    static void to_json(const DefaultList &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const DefaultList &t);
+    std::string to_json_string();
 };
 
 
@@ -1323,48 +348,11 @@ struct Credential {
     std::string name;
     int password;
 
-    static Credential from_json(const rapidjson::Value & doc) {
-        Credential record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("name"))
-            record.name = _atd_read_string(doc["name"]);
-        else record.name = _atd_missing_json_field<decltype(record.name)>("Credential", "name");
-        if (doc.HasMember("password"))
-            record.password = _atd_read_int(doc["password"]);
-        else record.password = _atd_missing_json_field<decltype(record.password)>("Credential", "password");
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const Credential &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("name");
-        _atd_write_string(t.name, writer);
-        writer.Key("password");
-        _atd_write_int(t.password, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const Credential &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static Credential from_json(const rapidjson::Value & doc);
+    static Credential from_json_string(const std::string &s);
+    static void to_json(const Credential &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const Credential &t);
+    std::string to_json_string();
 };
 
 
@@ -1372,26 +360,10 @@ namespace typedefs {
     typedef std::vector<typedefs::Credential> Credentials2;
 }
 namespace Credentials2 {
-    auto from_json(const rapidjson::Value &doc) {
-        return _atd_read_array([](const auto &v){return Credential::from_json(v);}, doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::Credentials2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        _atd_write_array([](auto v, auto &w){Credential::to_json(v, w);}, t, writer);
-    }
-    std::string to_json_string(const typedefs::Credentials2 &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::Credentials2 from_json(const rapidjson::Value &doc);
+    static typedefs::Credentials2 from_json_string(const std::string &s);
+    void to_json(const typedefs::Credentials2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Credentials2 &t);
 }
 
 
@@ -1402,43 +374,11 @@ namespace typedefs {
 struct Credentials {
     std::vector<typedefs::Credential> credentials;
 
-    static Credentials from_json(const rapidjson::Value & doc) {
-        Credentials record;
-        if (!doc.IsObject()) {
-            throw AtdException("Expected an object");
-        }
-        if (doc.HasMember("credentials"))
-            record.credentials = _atd_read_array([](const auto &v){return Credential::from_json(v);}, doc["credentials"]);
-        else record.credentials = _atd_missing_json_field<decltype(record.credentials)>("Credentials", "credentials");
-        return record;
-    }
-
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-
-    static void to_json(const Credentials &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        writer.StartObject();
-        writer.Key("credentials");
-        _atd_write_array([](auto v, auto &w){Credential::to_json(v, w);}, t.credentials, writer);
-        writer.EndObject();
-    }
-
-    static std::string to_json_string(const Credentials &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
-
-    std::string to_json_string() {
-        return to_json_string(*this);
-    }
+    static Credentials from_json(const rapidjson::Value & doc);
+    static Credentials from_json_string(const std::string &s);
+    static void to_json(const Credentials &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const Credentials &t);
+    std::string to_json_string();
 };
 
 
@@ -1446,26 +386,10 @@ namespace typedefs {
     typedef uint16_t AliasOfAlias;
 }
 namespace AliasOfAlias {
-    auto from_json(const rapidjson::Value &doc) {
-        return _atd_read_wrap([](const auto& v){return Alias3::from_json(v);}, [](const auto &e){return static_cast<uint16_t>(e);},doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::AliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        _atd_write_wrap([](const auto &v, auto &w){Alias3::to_json(v, w);}, [](const auto &e){return static_cast<uint32_t>(e);}, t, writer);
-    }
-    std::string to_json_string(const typedefs::AliasOfAlias &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::AliasOfAlias from_json(const rapidjson::Value &doc);
+    static typedefs::AliasOfAlias from_json_string(const std::string &s);
+    void to_json(const typedefs::AliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::AliasOfAlias &t);
 }
 
 
@@ -1473,24 +397,11 @@ namespace typedefs {
     typedef std::vector<int> Alias2;
 }
 namespace Alias2 {
-    auto from_json(const rapidjson::Value &doc) {
-        return _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc);
-    }
-    static auto from_json_string(const std::string &s) {
-        rapidjson::Document doc;
-        doc.Parse(s.c_str());
-        if (doc.HasParseError()) {
-            throw AtdException("Failed to parse JSON");
-        }
-        return from_json(doc);
-    }
-    void to_json(const typedefs::Alias2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
-        _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t, writer);
-    }
-    std::string to_json_string(const typedefs::Alias2 &t) {
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        to_json(t, writer);
-        return buffer.GetString();
-    }
+    typedefs::Alias2 from_json(const rapidjson::Value &doc);
+    static typedefs::Alias2 from_json_string(const std::string &s);
+    void to_json(const typedefs::Alias2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Alias2 &t);
 }
+
+
+} // namespace atd

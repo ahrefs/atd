@@ -7,6 +7,8 @@
 #include "everything_atd.hpp"
 
 int main() {
+    using namespace atd;
+    
     std::map<std::string, std::function<void()>> tests;
 
     tests["simpleRecord"] = []() {

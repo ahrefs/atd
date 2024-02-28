@@ -22,6 +22,7 @@ const rapidjson::Document doc_from_json(const std::string &json)
 
 int main()
 {
+    using namespace atd;
     Root root;
 
     root.id = "id long";

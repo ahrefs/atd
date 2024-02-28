@@ -867,14 +867,14 @@ let inst_var_declaration
     Line (sprintf "%s %s%s;" type_name var_name default)
   ]
 
-let from_json_string_declaration = 
+let from_json_string_declaration cpp_name = 
   [
-    Line "static auto from_json_string(const std::string &s);";
+    Line (sprintf "static %s from_json_string(const std::string &s);" cpp_name);
   ]
 
-let from_json_string_definition cpp_name = 
+let from_json_string_definition cpp_name p = 
   [
-    Line (sprintf "auto %sfrom_json_string(const std::string &s) {" (match cpp_name with | Some x -> sprintf "%s::" x | None -> ""));
+    Line (sprintf "%s %sfrom_json_string(const std::string &s) {" cpp_name (match p with | Some x -> sprintf "%s::" x | None -> ""));
     Block [
       Line "rapidjson::Document doc;";
       Line "doc.Parse(s.c_str());";
@@ -952,7 +952,7 @@ let record_definition env loc name (fields : field list) an =
   in
   [
     Inline from_json;
-    Inline (from_json_string_definition (Some cpp_struct_name));
+    Inline (from_json_string_definition cpp_struct_name (Some cpp_struct_name));
     Inline to_json;
     Inline to_json_string_static;
     Inline to_json_string;
@@ -1000,10 +1000,11 @@ let record env loc name (fields : field list) an =
     ];
     Line "}";
     Line (sprintf "struct %s {" cpp_struct_name);
-    Block (spaced [
+    Block ([
       Inline inst_var_declarations;
+      Line ("");
       Inline from_json;
-      Inline from_json_string_declaration;
+      Inline (from_json_string_declaration cpp_struct_name);
       Inline to_json;
       Inline to_json_string_static;
       Inline to_json_string;
@@ -1022,8 +1023,8 @@ let alias_wrapper env  name type_expr =
     Line "}";
     Line (sprintf "namespace %s {" cpp_struct_name);
     Block [
-      Line (sprintf "auto from_json(const rapidjson::Value &doc);");
-      Inline from_json_string_declaration;
+      Line (sprintf "typedefs::%s from_json(const rapidjson::Value &doc);" cpp_struct_name);
+      Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name));
       Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);" cpp_struct_name);
       Line (sprintf "std::string to_json_string(const typedefs::%s &t);" cpp_struct_name);
     ];
@@ -1035,12 +1036,12 @@ let alias_wrapper_definition env name type_expr =
   [
       Line (sprintf "namespace %s {" cpp_struct_name);
       Block [
-      Line (sprintf "auto from_json(const rapidjson::Value &doc) {");
+      Line (sprintf "typedefs::%s from_json(const rapidjson::Value &doc) {" cpp_struct_name);
       Block [
         Line (sprintf "return %sdoc);" (json_reader env type_expr));
       ];
       Line "}";
-      Inline (from_json_string_definition None);
+      Inline (from_json_string_definition (sprintf "typedefs::%s" cpp_struct_name) None);
       Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" cpp_struct_name);
       Block [
         Line (sprintf "%st, writer);" (json_writer env type_expr));
@@ -1057,9 +1058,31 @@ let alias_wrapper_definition env name type_expr =
       Line "}";
     ]
 
+let case_class_definition env type_name (loc, orig_name, unique_name, an, opt_e) =
+  let json_name = Atd.Json.get_json_cons orig_name an in
+  match opt_e with
+  | None ->
+      [
+          Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
+          Block [
+            Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
+          ];
+          Line (sprintf "};");
+        ]
+  | Some e ->
+      [
+          Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
+          Block [
+            Line (sprintf "writer.StartArray();");
+            Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
+            Line (sprintf "%se.value, writer);" (json_writer env e));
+            Line (sprintf "writer.EndArray();");
+          ];
+          Line("}");
+      ]
+
 let case_class env  type_name
     (loc, orig_name, unique_name, an, opt_e) =
-  let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
       [
@@ -1067,11 +1090,7 @@ let case_class env  type_name
                   type_name
                   orig_name);
           Line (sprintf "struct %s {" (trans env orig_name));
-          Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name));
-            Block [
-              Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
-            ];
-            Line("}");
+          Block [Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (trans env orig_name));];
           Line (sprintf "};");
         ]
   | Some e ->
@@ -1083,14 +1102,7 @@ let case_class env  type_name
           Line(sprintf "{");
           Block [
             Line (sprintf "%s value;" (type_name_of_expr env e));
-            Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name));
-            Block [
-              Line (sprintf "writer.StartArray();");
-              Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
-              Line (sprintf "%se.value, writer);" (json_writer env e));
-              Line (sprintf "writer.EndArray();");
-            ];
-            Line("}");
+            Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (trans env orig_name));
           ];
           Line(sprintf "};");
         ]
@@ -1141,7 +1153,7 @@ let read_cases1 env loc name cases1 =
             (struct_name env name |> single_esc))
   ]
 
-let sum_container env  loc name cases =
+let sum_container_definition env  loc name cases =
   let cpp_struct_name = struct_name env name in
   let cases0, cases1 =
     List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1174,7 +1186,7 @@ let sum_container env  loc name cases =
   [
     Line (sprintf "namespace %s {" (cpp_struct_name));
     Block [
-      Line (sprintf "static atd::typedefs::%s from_json(const rapidjson::Value &x) {" (cpp_struct_name));
+      Line (sprintf "typedefs::%s from_json(const rapidjson::Value &x) {" (cpp_struct_name));
       Block [
         Inline cases0_block;
         Inline cases1_block;
@@ -1183,35 +1195,71 @@ let sum_container env  loc name cases =
       ];
       Line "}";
     ];
-    Block [Inline (from_json_string_definition (Some cpp_struct_name))];
+    Block [Inline (from_json_string_definition (sprintf "typedefs::%s" cpp_struct_name) (None))];
     Block [
-      Line (sprintf "static void to_json(const atd::typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (cpp_struct_name));
+      Line (sprintf "void to_json(const atd::typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (cpp_struct_name));
       Block [
         Line "std::visit([&writer](auto &&arg) {";
         Block [
           Line "using T = std::decay_t<decltype(arg)>;";
-          Line (
+          Block (
             List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-              sprintf "if constexpr (std::is_same_v<T, Types::%s>) Types::%s::to_json(arg, writer);" (trans env orig_name) (trans env orig_name)
+              Line (sprintf "if constexpr (std::is_same_v<T, Types::%s>) Types::%s::to_json(arg, writer);" (trans env orig_name) (trans env orig_name))
             ) cases
-         |> String.concat "\n");
+         );
         ];
         Line ("}, x);");
       ];
       Line ("}");
     ];
 
-    Line (sprintf "std::string to_json_string(const atd::typedefs::%s &x) {" (cpp_struct_name));
+    Block [Line (sprintf "std::string to_json_string(const atd::typedefs::%s &x) {" (cpp_struct_name));
     Block [
       Line ("rapidjson::StringBuffer buffer;");
       Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
       Line ("to_json(x, writer);");
       Line "return buffer.GetString();"
     ];
-    Line "}";
+    Line "}";];
     Line ("}");
   ]
 
+
+let sum_container env  loc name cases =
+  let cpp_struct_name = struct_name env name in
+  [
+    Line (sprintf "namespace %s {" (cpp_struct_name));
+    Block [
+      Line (sprintf "static atd::typedefs::%s from_json(const rapidjson::Value &x);" (cpp_struct_name));
+      Inline (from_json_string_declaration (sprintf "atd::typedefs::%s" cpp_struct_name));
+      Line (sprintf "static void to_json(const atd::typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (cpp_struct_name));
+      Line (sprintf "std::string to_json_string(const atd::typedefs::%s &x);" (cpp_struct_name));
+    ];
+    Line ("}");
+  ]
+
+let sum_definition env loc name cases = 
+  let cases =
+    List.map (fun (x : variant) ->
+      match x with
+      | Variant (loc, (orig_name, an), opt_e) ->
+          let unique_name = create_struct_name env orig_name in
+          (loc, orig_name, unique_name, an, opt_e)
+      | Inherit _ -> assert false
+    ) cases
+  in
+  let case_classes = 
+    List.map (fun x -> Inline (case_class_definition env name x)) cases
+    |> double_spaced
+  in
+  let container_class = sum_container_definition env loc name cases in
+  [
+    Line (sprintf "namespace %s::Types {" (struct_name env name));
+    Block case_classes;
+    Line (sprintf "}");
+    Inline container_class;
+  ]
+  |> double_spaced
 
 let sum env  loc name cases =
   let cases =
@@ -1242,7 +1290,6 @@ let sum env  loc name cases =
   in
   let case_classes = 
     List.map (fun x -> Inline (case_class env name x)) cases
-    |> double_spaced
   in
   let typedef_declaration = 
     [
@@ -1260,7 +1307,6 @@ let sum env  loc name cases =
     Line (sprintf "}");
     Inline container_class;
   ]
-  |> double_spaced
 
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
@@ -1268,7 +1314,7 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   let unwrap e =
     match e with
     | Sum (loc, cases, an) ->
-        sum env loc name cases
+        sum_definition env loc name cases
     | Record (loc, fields, an) ->
         record_definition env loc name fields an
     | Tuple _
@@ -1276,7 +1322,7 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     | Option _
     | Nullable _
     | Wrap _
-    | Name _ -> alias_wrapper_definition env  name e
+    | Name _ -> alias_wrapper_definition env name e
     | Shared _ -> not_implemented loc "cyclic references"
     | Tvar _ -> not_implemented loc "parametrized type"
   in
@@ -1296,7 +1342,7 @@ let type_decl env ((loc, (name, param, an), e) : A.type_def) : B.t =
     | Option _
     | Nullable _
     | Wrap _
-    | Name _ -> alias_wrapper env  name e
+    | Name _ -> alias_wrapper env name e
     | Shared _ -> not_implemented loc "cyclic references"
     | Tvar _ -> not_implemented loc "parametrized type"
   in

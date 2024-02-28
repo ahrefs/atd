@@ -20,11 +20,14 @@ test:
 	$(DUNE) runtest -f; status=$$?; \
 	  ln -s ../../../_build/default/atdcpp/test/cpp-tests/everything_atd.hpp \
 	    test/cpp-tests/everything_atd.hpp && \
+	  ln -s ../../../_build/default/atdcpp/test/cpp-tests/everything_atd.cpp \
+	    test/cpp-tests/everything_atd.cpp && \
 	  exit "$$status"
 
 .PHONY: clean-for-dune
 clean-for-dune:
 	rm -f test/cpp-tests/everything_atd.hpp
+	rm -f test/cpp-tests/everything_atd.cpp
 
 .PHONY: clean
 clean:

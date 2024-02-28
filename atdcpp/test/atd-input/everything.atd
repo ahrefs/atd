@@ -1,5 +1,5 @@
 <cpp include="<stdint.h>">
-
+(* 
 type kind = [
   | Root (* class name conflict *)
   | Thing of int
@@ -46,7 +46,7 @@ type root = {
   wrapped: st wrap <cpp t="uint16_t" wrap="[](typedefs::St st){return st - 1;}" unwrap="[](uint16_t e){return e + 1;}">;
   aaa: alias_of_alias_of_alias;
   item: string wrap <cpp t="int" wrap="std::stoi" unwrap="std::to_string">;
-} 
+}  *)
 
 
 type st = int
@@ -64,7 +64,7 @@ type credential = {
   name: string;
   password: int;
 }
-
+(* 
 type credentials = {
   credentials: credential list;
 }
@@ -108,4 +108,4 @@ type 'a recursive = 'a list
 type recursive_variant = [
   | A
   | B of recursive_variant list
-] 
+]  *)

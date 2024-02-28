@@ -96,13 +96,16 @@ type record_with_wrapped_type = {
   item: string wrap <cpp t="int" wrap="std::stoi" unwrap="std::to_string">;
 }
 
+type 'a recursive = 'a list
+
 (* type recursive_record2 = {
   id: int;
   flag: bool;
   children: recursive_record2;
-}
+} *)
+
 
 type recursive_variant = [
   | A
-  | B of recursive_variant
-] *)
+  | B of recursive_variant list
+] 

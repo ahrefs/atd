@@ -1158,12 +1158,23 @@ let sum env  loc name cases =
       | Inherit _ -> assert false
     ) cases
   in
-  let case_classes =
+  let cases_forward_declarations =
+    List.map (fun (loc, orig_name, unique_name, an, opt_e) -> Line (sprintf "struct %s;" orig_name)) cases 
+  in
+  let cases_forward_declarations_in_namespace = 
+    [
+      Line (sprintf "namespace %s::Types {" (struct_name env name));
+      Block cases_forward_declarations;
+      Line (sprintf "}");
+    ]
+  in
+  let case_classes = 
     List.map (fun x -> Inline (case_class env name x)) cases
     |> double_spaced
   in
   let container_class = sum_container env loc name cases in
   [
+    Inline cases_forward_declarations_in_namespace;
     Line (sprintf "namespace %s::Types {" (struct_name env name));
     Block case_classes;
     Line (sprintf "}");

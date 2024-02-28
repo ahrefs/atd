@@ -320,6 +320,81 @@ void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<
 #include <stdint.h>
 
 
+namespace RecursiveVariant::Types {
+    struct A;
+    struct B;
+}
+
+
+namespace RecursiveVariant::Types {
+
+
+    // Original type: recursive_variant = [ ... | A | ... ]
+    struct A {
+    static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
+        writer.String("A");
+    }
+    };
+
+
+    // Original type: recursive_variant = [ ... | B of ... | ... ]
+    struct B
+    {
+        std::vector<typedefs::RecursiveVariant> value;
+        static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
+            writer.StartArray();
+            writer.String("B");
+            _atd_write_array([](auto v, auto &w){RecursiveVariant::to_json(v, w);}, e.value, writer);
+            writer.EndArray();
+        }
+    };
+
+
+}
+
+
+namespace typedefs {
+    typedef std::variant<::RecursiveVariant::Types::A, ::RecursiveVariant::Types::B> RecursiveVariant;
+}
+namespace RecursiveVariant {
+    static ::typedefs::RecursiveVariant from_json(const rapidjson::Value &x) {
+        if (x.IsString()) {
+            if (std::string_view(x.GetString()) == "A") 
+                return Types::A();
+            throw _atd_bad_json("RecursiveVariant", x);
+        }
+        if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {
+            std::string cons = x[0].GetString();
+            if (cons == "B")
+                return Types::B({_atd_read_array([](const auto &v){return RecursiveVariant::from_json(v);}, x[1])});
+            throw _atd_bad_json("RecursiveVariant", x);
+        }
+        throw _atd_bad_json("RecursiveVariant", x);
+    }
+    static auto from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+    static void to_json(const ::typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+        std::visit([&writer](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, Types::A>) Types::A::to_json(arg, writer);
+if constexpr (std::is_same_v<T, Types::B>) Types::B::to_json(arg, writer);
+        }, x);
+    }
+std::string to_json_string(const ::typedefs::RecursiveVariant &x) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    to_json(x, writer);
+    return buffer.GetString();
+}
+}
+
+
 struct RecursiveClass;
 namespace typedefs {
     typedef RecursiveClass RecursiveClass;
@@ -450,6 +525,14 @@ namespace St {
         to_json(t, writer);
         return buffer.GetString();
     }
+}
+
+
+namespace Kind::Types {
+    struct Root;
+    struct Thing;
+    struct WOW;
+    struct Amaze;
 }
 
 
@@ -1107,6 +1190,12 @@ namespace Pair {
         to_json(t, writer);
         return buffer.GetString();
     }
+}
+
+
+namespace Frozen::Types {
+    struct A;
+    struct B;
 }
 
 

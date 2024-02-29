@@ -17,55 +17,62 @@ let array f xs = `List (Array.to_list (Array.map f xs))
 let int32 s = `String (Int32.to_string s)
 let int64 s = `String (Int64.to_string s)
 
-type ('a, 'b) spec =
-  { name: string
+type ('k, 'a, 'b) spec =
+  { name: 'k
   ; data: 'a
+  ; encode_name: 'k t
   ; encode: 'b t
   }
 
-type 'a field_spec =
-  | Optional of ('a option, 'a) spec * 'a option
-  | Required of ('a, 'a) spec * 'a option
+type ('k, 'a) field_spec =
+  | Optional of ('k, 'a option, 'a) spec * 'a option
+  | Required of ('k, 'a, 'a) spec * 'a option
 
-type field = F : 'a field_spec -> field
+type field = F : ('k, 'a) field_spec -> field
 
-let field ?default encode ~name data =
+let field ?default ~encode_name encode ~name data =
   F (Required (
     { name
     ; data
+    ; encode_name
     ; encode
     }, default
   ))
 
-let field_o ?default encode ~name data =
+let field_o ?default ~encode_name encode ~name data =
   F (Optional (
     { name
     ; data
+    ; encode_name
     ; encode
     }, default
   ))
+
+let as_string json =
+  match json with
+  | `String s -> s | _ -> (* rejected at atd parsing *) assert false
 
 let obj fields =
   `Assoc (
     List.fold_left (fun acc (F f) ->
       match f with
-      | Required ({ name; data; encode}, None) ->
-          (name, encode data)::acc
-      | Required ({ name; data; encode}, Some default) ->
+      | Required ({ name; data; encode_name; encode }, None) ->
+          (encode_name name |> as_string, encode data)::acc
+      | Required ({ name; data; encode_name; encode }, Some default) ->
           if default = data then
             acc
           else
-            (name, encode data)::acc
-      | Optional ({ name; data; encode}, default) ->
+            (encode_name name |> as_string, encode data)::acc
+      | Optional ({ name; data; encode_name; encode }, default) ->
           match data, default with
           | None, _ -> acc
           | Some s, Some default ->
               if s = default then
                 acc
               else
-                (name, encode s)::acc
+                (encode_name name |> as_string, encode s)::acc
           | Some s, None ->
-              (name, encode s)::acc
+              (encode_name name |> as_string, encode s)::acc
     ) [] fields
   )
 

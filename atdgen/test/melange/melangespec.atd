@@ -108,3 +108,7 @@ type variant2 = [
   | A
   | C
 ] <ocaml repr="classic">
+
+type int_object =
+   ( string wrap <ocaml t="int" wrap="int_of_string" unwrap="string_of_int">
+   * int) list <json repr="object">

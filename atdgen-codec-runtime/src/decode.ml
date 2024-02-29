@@ -38,12 +38,12 @@ let array f = function
   | `List l -> Array.map f (Array.of_list l)
   | _ -> raise DecoderError
 
-let obj_list f = function
-  | `Assoc l -> List.map (fun (k, v) -> k, f v) l
+let obj_list ~decode_name f = function
+  | `Assoc l -> List.map (fun (k, v) -> decode_name (`String k), f v) l
   | _ -> raise DecoderError
 
-let obj_array f = function
-  | `Assoc l -> Array.map (fun (k, v) -> k, f v) (Array.of_list l)
+let obj_array ~decode_name f = function
+  | `Assoc l -> Array.map (fun (k, v) -> decode_name (`String k), f v) (Array.of_list l)
   | _ -> raise DecoderError
 
 let optional f j =

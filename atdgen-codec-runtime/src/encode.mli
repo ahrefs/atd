@@ -19,8 +19,8 @@ val int64 : int64 t
 
 type field
 
-val field : ?default:'a -> 'a t -> name:string -> 'a -> field
-val field_o : ?default:'a -> 'a t -> name:string -> 'a option -> field
+val field : ?default:'a -> encode_name:'k t -> 'a t -> name:'k -> 'a -> field
+val field_o : ?default:'a -> encode_name:'k t -> 'a t -> name:'k -> 'a option -> field
 
 val obj : field list -> Json.t
 

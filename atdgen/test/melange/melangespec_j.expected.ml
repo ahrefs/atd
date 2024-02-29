@@ -52,6 +52,8 @@ type label = Melangespec_t.label
 
 type labeled = Melangespec_t.labeled = { flag: valid; lb: label; count: int }
 
+type int_object = Melangespec_t.int_object
+
 type from_module_a = A_t.from_module_a
 
 type b = Melangespec_t.b = { thing: int }
@@ -2332,6 +2334,57 @@ let read_labeled = (
 )
 let labeled_of_string s =
   read_labeled (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__x_2a90d8e = (
+  fun ob x -> (
+    let x = ( string_of_int ) x in (
+      Yojson.Safe.write_string
+    ) ob x)
+)
+let string_of__x_2a90d8e ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write__x_2a90d8e ob x;
+  Buffer.contents ob
+let read__x_2a90d8e = (
+  fun p lb ->
+    let x = (
+      Atdgen_runtime.Oj_run.read_string
+    ) p lb in
+    ( int_of_string ) x
+)
+let _x_2a90d8e_of_string s =
+  read__x_2a90d8e (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__x_946c399 = (
+  Atdgen_runtime.Oj_run.write_assoc_list (
+    write__x_2a90d8e
+  ) (
+    Yojson.Safe.write_int
+  )
+)
+let string_of__x_946c399 ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write__x_946c399 ob x;
+  Buffer.contents ob
+let read__x_946c399 = (
+  Atdgen_runtime.Oj_run.read_assoc_list (
+    read__x_2a90d8e
+  ) (
+    Atdgen_runtime.Oj_run.read_int
+  )
+)
+let _x_946c399_of_string s =
+  read__x_946c399 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_int_object = (
+  write__x_946c399
+)
+let string_of_int_object ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_int_object ob x;
+  Buffer.contents ob
+let read_int_object = (
+  read__x_946c399
+)
+let int_object_of_string s =
+  read_int_object (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_from_module_a = (
   A_j.write_from_module_a
 )

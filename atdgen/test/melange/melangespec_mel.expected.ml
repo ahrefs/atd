@@ -52,6 +52,8 @@ type label = Melangespec_t.label
 
 type labeled = Melangespec_t.labeled = { flag: valid; lb: label; count: int }
 
+type int_object = Melangespec_t.int_object
+
 type from_module_a = A_t.from_module_a
 
 type b = Melangespec_t.b = { thing: int }
@@ -66,6 +68,7 @@ let rec write_mutual_recurse1 js = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write_mutual_recurse2
             )
@@ -81,6 +84,7 @@ and write_mutual_recurse2 js = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write_mutual_recurse1
             )
@@ -129,6 +133,7 @@ and write_recurse js = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write__recurse_list
             )
@@ -290,6 +295,10 @@ let write__x_547263f = (
     List.map (
       fun (key, value) ->
         Atdgen_codec_runtime.Encode.field
+          ~encode_name:
+          (
+            Atdgen_codec_runtime.Encode.string
+          )
           (
             Atdgen_codec_runtime.Encode.int
           )
@@ -300,7 +309,10 @@ let write__x_547263f = (
   )
 )
 let read__x_547263f = (
-  Atdgen_codec_runtime.Decode.obj_list (
+  Atdgen_codec_runtime.Decode.obj_list ~decode_name:(
+    Atdgen_codec_runtime.Decode.string
+  )
+  (
     Atdgen_codec_runtime.Decode.int
   )
 )
@@ -310,6 +322,7 @@ let write_using_object = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write__x_547263f
             )
@@ -549,6 +562,7 @@ let write_record_json_name = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             Atdgen_codec_runtime.Encode.int
             )
@@ -608,6 +622,7 @@ let write_param_similar write__a = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write__a
             )
@@ -615,6 +630,7 @@ let write_param_similar write__a = (
           t.data
         ;
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             Atdgen_codec_runtime.Encode.int
             )
@@ -650,6 +666,7 @@ let write_param write__a = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write__a
             )
@@ -657,6 +674,7 @@ let write_param write__a = (
           t.data
         ;
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             Atdgen_codec_runtime.Encode.unit
             )
@@ -692,6 +710,7 @@ let write_pair write__a write__b = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write__a
             )
@@ -699,6 +718,7 @@ let write_pair write__a write__b = (
           t.left
         ;
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write__b
             )
@@ -756,6 +776,7 @@ let write_labeled = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write_valid
             )
@@ -763,6 +784,7 @@ let write_labeled = (
           t.flag
         ;
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             write_label
             )
@@ -770,6 +792,7 @@ let write_labeled = (
           t.lb
         ;
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             Atdgen_codec_runtime.Encode.int
             )
@@ -805,6 +828,48 @@ let read_labeled = (
     )
   )
 )
+let write__x_2a90d8e = (
+    Atdgen_codec_runtime.Encode.string
+  |> Atdgen_codec_runtime.Encode.contramap (string_of_int)
+)
+let read__x_2a90d8e = (
+  (
+    Atdgen_codec_runtime.Decode.string
+  ) |> (Atdgen_codec_runtime.Decode.map (int_of_string))
+)
+let write__x_946c399 = (
+  Atdgen_codec_runtime.Encode.make (fun (t : _) ->
+    t |>
+    List.map (
+      fun (key, value) ->
+        Atdgen_codec_runtime.Encode.field
+          ~encode_name:
+          (
+            write__x_2a90d8e
+          )
+          (
+            Atdgen_codec_runtime.Encode.int
+          )
+          ~name:key
+          value
+    ) |>
+    Atdgen_codec_runtime.Encode.obj
+  )
+)
+let read__x_946c399 = (
+  Atdgen_codec_runtime.Decode.obj_list ~decode_name:(
+    read__x_2a90d8e
+  )
+  (
+    Atdgen_codec_runtime.Decode.int
+  )
+)
+let write_int_object = (
+  write__x_946c399
+)
+let read_int_object = (
+  read__x_946c399
+)
 let write_from_module_a = (
   A_mel.write_from_module_a
 )
@@ -817,6 +882,7 @@ let write_b = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             Atdgen_codec_runtime.Encode.int
             )
@@ -846,6 +912,7 @@ let write_a = (
     Atdgen_codec_runtime.Encode.obj
       [
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             Atdgen_codec_runtime.Encode.string
             )
@@ -853,6 +920,7 @@ let write_a = (
           t.thing
         ;
           Atdgen_codec_runtime.Encode.field
+            ~encode_name:Atdgen_codec_runtime.Encode.string
             (
             Atdgen_codec_runtime.Encode.bool
             )

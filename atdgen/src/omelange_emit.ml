@@ -172,11 +172,14 @@ let rec make_reader ?type_annot p (x : Oj_mapping.t) : Indent.t list =
            ; Line ")"
            ]
        | Object ->
-           let _k, v = Ox_emit.get_assoc_type p.deref loc x in (* TODO key wrap *)
-           [ Line (sprintf "%s ("
+           let k, v = Ox_emit.get_assoc_type p.deref loc x in
+           [ Line (sprintf "%s ~decode_name:("
                      (match o with
                       | List -> decoder_ident "obj_list"
                       | Array -> decoder_ident "obj_array"))
+           ; Block (make_reader p k)
+           ; Line ")"
+           ; Line "("
            ; Block (make_reader p v)
            ; Line ")"
            ]
@@ -445,7 +448,7 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
            ; Line ")"
            ]
        | Object ->
-           let _k, v = Ox_emit.get_assoc_type p.deref loc x in
+           let k, v = Ox_emit.get_assoc_type p.deref loc x in
            [ Line (sprintf "%s (fun (t : %s) ->"
                encoder_make (type_annot_str type_annot))
            ; Block
@@ -459,12 +462,16 @@ let rec make_writer ?type_annot p (x : Oj_mapping.t) : Indent.t list =
                    ; Block
                        [ Line (encoder_ident "field")
                        ; Block
-                           [ Line "("
+                           [ Line (sprintf "~encode_name:")
+                           ; Line "("
+                           ; Block (make_writer p k)
+                           ; Line ")"
+                           ; Line "("
                            ; Block (make_writer p v)
                            ; Line ")"
                            ]
                        ; Block
-                           [ Line "~name:key" (* TODO unwrap keys? *)
+                           [ Line "~name:key"
                            ; Line "value";
                            ]
                        ]
@@ -533,7 +540,8 @@ and make_record_writer p a _record_kind =
                   assert false
             )
           ; Block
-              [ Line "("
+              [ Line (sprintf "~encode_name:%s" (encoder_ident "string"))
+              ; Line "("
               ; Inline (make_writer p (
                   if unwrapped then
                     f_value

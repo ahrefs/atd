@@ -52,6 +52,8 @@ type label = Melangespec_t.label
 
 type labeled = Melangespec_t.labeled = { flag: valid; lb: label; count: int }
 
+type int_object = Melangespec_t.int_object
+
 type from_module_a = A_t.from_module_a
 
 type b = Melangespec_t.b = { thing: int }
@@ -147,6 +149,10 @@ val write_label :  label Atdgen_codec_runtime.Encode.t
 val read_labeled :  labeled Atdgen_codec_runtime.Decode.t
 
 val write_labeled :  labeled Atdgen_codec_runtime.Encode.t
+
+val read_int_object :  int_object Atdgen_codec_runtime.Decode.t
+
+val write_int_object :  int_object Atdgen_codec_runtime.Encode.t
 
 val read_from_module_a :  from_module_a Atdgen_codec_runtime.Decode.t
 

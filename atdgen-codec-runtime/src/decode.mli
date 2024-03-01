@@ -14,8 +14,8 @@ val string : string t
 val optional : 'a t -> 'a option t
 val list : 'a t -> 'a list t
 val array : 'a t -> 'a array t
-val obj_list : 'a t -> (string * 'a) list t
-val obj_array : 'a t -> (string * 'a) array t
+val obj_list : decode_name:'k t -> 'a t -> ('k * 'a) list t
+val obj_array : decode_name:'k t -> 'a t -> ('k * 'a) array t
 
 (* a field that should be present *)
 val field : string -> 'a t -> 'a t

@@ -12,6 +12,8 @@ See the sample input type definitions
 [everything.atd](test/atd-input/everything.atd) and
 the C++ output [everything.hpp](test/cpp-expected/everything.hpp).
 
+This implementation makes use of the RapidJson C++ library.
+
 Requirements
 --
 
@@ -19,12 +21,14 @@ Requirements for building and testing `atdcpp`:
 * Opam and dependencies installed from the [`atd` project root](..)
   with `make setup`.
 * gcc / clang
+* librapidjson
 
 Requirements for generating C++ code:
 * the `atdcpp` executable
 
 Requirements for compiling the generated C++ code:
 * A working C++ compiler (gcc / clang)
+* The rapidjson library
 
 Documentation
 --
@@ -34,8 +38,7 @@ Documentation
 Development notes
 --
 
-Build or rebuild with `make`. Test with `make test`. This requires
-gtest.
+Build or rebuild with `make`. Test with `make test`.
 
 Running the tests is done from the `atdcpp/` main folder with `make
 test`.

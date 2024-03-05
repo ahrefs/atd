@@ -202,6 +202,22 @@ auto _atd_read_wrap(F read_func, W wrap_func, const rapidjson::Value &val)
     return wrap_func(read_func(val));
 }
 
+template <typename T>
+std::shared_ptr<T> _atd_wrap_shared_ptr(T val)
+{
+    return std::make_shared<T>(val);
+}
+
+template <typename T>
+T _atd_unwrap_shared_ptr(const std::shared_ptr<T> val)
+{
+    if (!val)
+    {
+        throw AtdException("Expected a shared_ptr but got nullptr");
+    }
+    return *val;
+}
+
 void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Int(value);
@@ -316,15 +332,18 @@ void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<
 namespace RecursiveVariant::Types {
 
 
-    void A::to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
-        writer.String("A");
-    };
-
-
-    void B::to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
+    void Integer::to_json(const Integer &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
         writer.StartArray();
-        writer.String("B");
-        _atd_write_array([](auto v, auto &w){RecursiveVariant::to_json(v, w);}, e.value, writer);
+        writer.String("Integer");
+        _atd_write_int(e.value, writer);
+        writer.EndArray();
+    }
+
+
+    void Rec::to_json(const Rec &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
+        writer.StartArray();
+        writer.String("Rec");
+        _atd_write_wrap([](const auto &v, auto &w){RecursiveVariant::to_json(v, w);}, [](const auto &e){return _atd_unwrap_shared_ptr(e);}, e.value, writer);
         writer.EndArray();
     }
 
@@ -334,15 +353,12 @@ namespace RecursiveVariant::Types {
 
 namespace RecursiveVariant {
     typedefs::RecursiveVariant from_json(const rapidjson::Value &x) {
-        if (x.IsString()) {
-            if (std::string_view(x.GetString()) == "A") 
-                return Types::A();
-            throw _atd_bad_json("RecursiveVariant", x);
-        }
         if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {
             std::string cons = x[0].GetString();
-            if (cons == "B")
-                return Types::B({_atd_read_array([](const auto &v){return RecursiveVariant::from_json(v);}, x[1])});
+            if (cons == "Integer")
+                return Types::Integer({_atd_read_int(x[1])});
+            if (cons == "Rec")
+                return Types::Rec({_atd_read_wrap([](const auto& v){return RecursiveVariant::from_json(v);}, [](const auto &e){return _atd_wrap_shared_ptr(e);},x[1])});
             throw _atd_bad_json("RecursiveVariant", x);
         }
         throw _atd_bad_json("RecursiveVariant", x);
@@ -358,8 +374,8 @@ namespace RecursiveVariant {
     void to_json(const atd::typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         std::visit([&writer](auto &&arg) {
             using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, Types::A>) Types::A::to_json(arg, writer);
-                if constexpr (std::is_same_v<T, Types::B>) Types::B::to_json(arg, writer);
+                if constexpr (std::is_same_v<T, Types::Integer>) Types::Integer::to_json(arg, writer);
+                if constexpr (std::is_same_v<T, Types::Rec>) Types::Rec::to_json(arg, writer);
         }, x);
     }
     std::string to_json_string(const atd::typedefs::RecursiveVariant &x) {
@@ -368,6 +384,51 @@ namespace RecursiveVariant {
         to_json(x, writer);
         return buffer.GetString();
     }
+}
+
+
+RecursiveRecord2 RecursiveRecord2::from_json(const rapidjson::Value & doc) {
+    RecursiveRecord2 record;
+    if (!doc.IsObject()) {
+        throw AtdException("Expected an object");
+    }
+    if (doc.HasMember("id"))
+        record.id = _atd_read_int(doc["id"]);
+    else record.id = _atd_missing_json_field<decltype(record.id)>("RecursiveRecord2", "id");
+    if (doc.HasMember("flag"))
+        record.flag = _atd_read_bool(doc["flag"]);
+    else record.flag = _atd_missing_json_field<decltype(record.flag)>("RecursiveRecord2", "flag");
+    if (doc.HasMember("children"))
+        record.children = _atd_read_wrap([](const auto& v){return _atd_read_nullable([](const auto &v){return RecursiveRecord2::from_json(v);}, v);}, [](const auto &e){return _atd_wrap_shared_ptr(e);},doc["children"]);
+    else record.children = _atd_missing_json_field<decltype(record.children)>("RecursiveRecord2", "children");
+    return record;
+}
+RecursiveRecord2 RecursiveRecord2::from_json_string(const std::string &s) {
+    rapidjson::Document doc;
+    doc.Parse(s.c_str());
+    if (doc.HasParseError()) {
+        throw AtdException("Failed to parse JSON");
+    }
+    return from_json(doc);
+}
+void RecursiveRecord2::to_json(const RecursiveRecord2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+    writer.StartObject();
+    writer.Key("id");
+    _atd_write_int(t.id, writer);
+    writer.Key("flag");
+    _atd_write_bool(t.flag, writer);
+    writer.Key("children");
+    _atd_write_wrap([](const auto &v, auto &w){_atd_write_nullable([](auto v, auto &w){RecursiveRecord2::to_json(v, w);}, v, w);}, [](const auto &e){return _atd_unwrap_shared_ptr(e);}, t.children, writer);
+    writer.EndObject();
+}
+std::string RecursiveRecord2::to_json_string(const RecursiveRecord2 &t) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    to_json(t, writer);
+    return buffer.GetString();
+}
+std::string RecursiveRecord2::to_json_string() {
+    return to_json_string(*this);
 }
 
 
@@ -447,6 +508,41 @@ std::string ThreeLevelNestedListRecord::to_json_string(const ThreeLevelNestedLis
     return buffer.GetString();
 }
 std::string ThreeLevelNestedListRecord::to_json_string() {
+    return to_json_string(*this);
+}
+
+
+StructWithRecursiveVariant StructWithRecursiveVariant::from_json(const rapidjson::Value & doc) {
+    StructWithRecursiveVariant record;
+    if (!doc.IsObject()) {
+        throw AtdException("Expected an object");
+    }
+    if (doc.HasMember("variant"))
+        record.variant = RecursiveVariant::from_json(doc["variant"]);
+    else record.variant = _atd_missing_json_field<decltype(record.variant)>("StructWithRecursiveVariant", "variant");
+    return record;
+}
+StructWithRecursiveVariant StructWithRecursiveVariant::from_json_string(const std::string &s) {
+    rapidjson::Document doc;
+    doc.Parse(s.c_str());
+    if (doc.HasParseError()) {
+        throw AtdException("Failed to parse JSON");
+    }
+    return from_json(doc);
+}
+void StructWithRecursiveVariant::to_json(const StructWithRecursiveVariant &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+    writer.StartObject();
+    writer.Key("variant");
+    RecursiveVariant::to_json(t.variant, writer);
+    writer.EndObject();
+}
+std::string StructWithRecursiveVariant::to_json_string(const StructWithRecursiveVariant &t) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    to_json(t, writer);
+    return buffer.GetString();
+}
+std::string StructWithRecursiveVariant::to_json_string() {
     return to_json_string(*this);
 }
 

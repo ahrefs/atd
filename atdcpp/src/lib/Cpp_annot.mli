@@ -36,6 +36,7 @@ type atd_cpp_wrap = {
   cpp_wrap_t : string;
   cpp_wrap : string;
   cpp_unwrap : string;
+  cpp_templatize : bool;
 }
 
 val get_cpp_wrap : Atd.Ast.loc ->

@@ -30,6 +30,7 @@ let annot_schema_cpp : Atd.Annot.schema_section =
       Type_expr, "repr";
       Type_expr, "unwrap";
       Type_expr, "wrap";
+      Type_expr, "templatize";
       Field, "default";
       Module_head, "include";
     ]
@@ -408,6 +409,22 @@ auto _atd_read_wrap(F read_func, W wrap_func, const rapidjson::Value &val)
     return wrap_func(read_func(val));
 }
 
+template <typename T>
+std::shared_ptr<T> _atd_wrap_shared_ptr(T val)
+{
+    return std::make_shared<T>(val);
+}
+
+template <typename T>
+T _atd_unwrap_shared_ptr(const std::shared_ptr<T> val)
+{
+    if (!val)
+    {
+        throw AtdException("Expected a shared_ptr but got nullptr");
+    }
+    return *val;
+}
+
 void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Int(value);
@@ -586,8 +603,7 @@ let cpp_type_name_namespaced env (name : string) =
   | "abstract" -> "rapidjson::Value"
   | user_defined -> 
       let typename = (struct_name env user_defined) in
-      sprintf "%s::%s" "typedefs" typename      
-
+      sprintf "%s::%s" "typedefs" typename            
 
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
@@ -619,7 +635,8 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Wrap (loc, e, an) ->
       (match Cpp_annot.get_cpp_wrap loc an with
        | None -> error_at loc "wrap type declared, but no cpp annotation found"
-       | Some { cpp_wrap_t ; _ } -> cpp_wrap_t
+       | Some { cpp_wrap_t ; cpp_templatize=false; _ } -> cpp_wrap_t
+       | Some { cpp_wrap_t ; cpp_templatize=true; _ } -> sprintf "%s<%s>" cpp_wrap_t (type_name_of_expr env e)        
       )
   | Name (loc, (loc2, name, []), an) -> cpp_type_name_namespaced env name
   | Name (loc, (_, name, _::_), _) -> assert false

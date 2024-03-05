@@ -28,22 +28,24 @@ namespace atd {
 
 
 namespace RecursiveVariant::Types {
-    struct A;
-    struct B;
+    struct Integer;
+    struct Rec;
 }
 namespace typedefs {
-    typedef std::variant<atd::RecursiveVariant::Types::A, atd::RecursiveVariant::Types::B> RecursiveVariant;
+    typedef std::variant<atd::RecursiveVariant::Types::Integer, atd::RecursiveVariant::Types::Rec> RecursiveVariant;
 }
 namespace RecursiveVariant::Types {
-    // Original type: recursive_variant = [ ... | A | ... ]
-    struct A {
-        static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-    // Original type: recursive_variant = [ ... | B of ... | ... ]
-    struct B
+    // Original type: recursive_variant = [ ... | Integer of ... | ... ]
+    struct Integer
     {
-        std::vector<typedefs::RecursiveVariant> value;
-        static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        int value;
+        static void to_json(const Integer &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    };
+    // Original type: recursive_variant = [ ... | Rec of ... | ... ]
+    struct Rec
+    {
+        std::shared_ptr<typedefs::RecursiveVariant> value;
+        static void to_json(const Rec &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     };
 }
 namespace RecursiveVariant {
@@ -52,6 +54,23 @@ namespace RecursiveVariant {
     static void to_json(const atd::typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const atd::typedefs::RecursiveVariant &x);
 }
+
+
+struct RecursiveRecord2;
+namespace typedefs {
+    typedef RecursiveRecord2 RecursiveRecord2;
+}
+struct RecursiveRecord2 {
+    int id;
+    bool flag;
+    std::shared_ptr<std::optional<typedefs::RecursiveRecord2>> children;
+
+    static RecursiveRecord2 from_json(const rapidjson::Value & doc);
+    static RecursiveRecord2 from_json_string(const std::string &s);
+    static void to_json(const RecursiveRecord2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const RecursiveRecord2 &t);
+    std::string to_json_string();
+};
 
 
 struct RecursiveClass;
@@ -82,6 +101,21 @@ struct ThreeLevelNestedListRecord {
     static ThreeLevelNestedListRecord from_json_string(const std::string &s);
     static void to_json(const ThreeLevelNestedListRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     static std::string to_json_string(const ThreeLevelNestedListRecord &t);
+    std::string to_json_string();
+};
+
+
+struct StructWithRecursiveVariant;
+namespace typedefs {
+    typedef StructWithRecursiveVariant StructWithRecursiveVariant;
+}
+struct StructWithRecursiveVariant {
+    typedefs::RecursiveVariant variant;
+
+    static StructWithRecursiveVariant from_json(const rapidjson::Value & doc);
+    static StructWithRecursiveVariant from_json_string(const std::string &s);
+    static void to_json(const StructWithRecursiveVariant &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const StructWithRecursiveVariant &t);
     std::string to_json_string();
 };
 

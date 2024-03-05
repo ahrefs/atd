@@ -9,7 +9,8 @@
  (package atdcpp)
  (action
    (diff cpp-expected/everything_atd.hpp
-    cpp-tests/everything_atd.hpp)))
+    cpp-tests/everything_atd.hpp)
+  ))
 
 ; 2. Run the generated Dlang code and check that is reads or writes JSON
 ;    data as expected.

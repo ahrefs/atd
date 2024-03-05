@@ -12,6 +12,7 @@ type atd_cpp_wrap = {
   cpp_wrap_t : string;
   cpp_wrap : string;
   cpp_unwrap : string;
+  cpp_templatize : bool;
 }
 
 let get_cpp_default an : string option =
@@ -83,9 +84,15 @@ let get_cpp_wrap loc an =
       ~field:"unwrap"
       an
   in
+  let templatize =
+    Atd.Annot.get_flag
+      ~sections:path
+      ~field:"templatize"
+      an
+  in
   match t, wrap, unwrap with
       None, None, None -> None
     | Some t, Some wrap, Some unwrap ->
-        Some { cpp_wrap_t = t; cpp_wrap = wrap; cpp_unwrap = unwrap }
+        Some { cpp_wrap_t = t; cpp_wrap = wrap; cpp_unwrap = unwrap; cpp_templatize = templatize}
     | _ ->
         Atd.Ast.error_at loc "Incomplete annotation. Missing t, wrap or unwrap"

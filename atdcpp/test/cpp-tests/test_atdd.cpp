@@ -60,7 +60,49 @@ int main() {
         if (json == rootFromJson.to_json_string()) {
             std::cout << "Test passed: rootObjectSerialization" << std::endl;
         } else {
-            std::cout << "Test failed: rootObjectSerialization" << std::endl;
+            throw std::runtime_error("check is failed");
+        }
+    };
+
+    tests["recursiveVariant"] = []() {
+        typedefs::RecursiveVariant recursiveVariant = RecursiveVariant::Types::Integer{42};
+
+        typedefs::RecursiveVariant recursiveVariant2 = RecursiveVariant::Types::Rec{std::make_shared<typedefs::RecursiveVariant>(recursiveVariant)};
+        typedefs::StructWithRecursiveVariant structWithRecursiveVariant = {recursiveVariant2};
+
+        std::string json = structWithRecursiveVariant.to_json_string();
+        typedefs::StructWithRecursiveVariant structWithRecursiveVariantFromJson = StructWithRecursiveVariant::from_json_string(json);
+
+        if (json == R"({"variant":["Rec",["Integer",42]]})" && json == structWithRecursiveVariantFromJson.to_json_string()) {
+            std::cout << "Test passed: recursiveVariant" << std::endl;
+        } else {
+            throw std::runtime_error("check is failed");
+        }
+    };
+
+    tests["recursive record"] = []() {
+        using T = std::optional<typedefs::RecursiveRecord2>;
+
+        auto optional = std::make_optional<typedefs::RecursiveRecord2>(
+            {2, 
+            false, 
+            std::make_shared<T>(std::nullopt)}
+        );
+
+        typedefs::RecursiveRecord2 record{};
+        record.id = 1;
+        record.flag = true;
+        record.children = std::make_shared<T>(optional);
+
+        std::string json = record.to_json_string();
+
+        auto target_json = R"({"id":1,"flag":true,"children":{"id":2,"flag":false,"children":null}})";
+        RecursiveRecord2 recordFromJson = RecursiveRecord2::from_json_string(target_json);
+
+        if (json == target_json && json == recordFromJson.to_json_string()) {
+            std::cout << "Test passed: recursive record" << std::endl;
+        } else {
+            throw std::runtime_error("check is failed");
         }
     };
 

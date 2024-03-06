@@ -884,9 +884,10 @@ let inst_var_declaration
     Line (sprintf "%s %s%s;" type_name var_name default)
   ]
 
-let from_json_string_declaration cpp_name = 
+let from_json_string_declaration cpp_name static = 
+  let static_val = match static with | true -> "static " | false -> "" in
   [
-    Line (sprintf "static %s from_json_string(const std::string &s);" cpp_name);
+    Line (sprintf "%s%s from_json_string(const std::string &s);" static_val cpp_name);
   ]
 
 let from_json_string_definition cpp_name p = 
@@ -1024,7 +1025,7 @@ let record env loc name (fields : field list) an codegen_type =
       Inline inst_var_declarations;
       Line ("");
       Inline from_json;
-      Inline (from_json_string_declaration cpp_struct_name);
+      Inline (from_json_string_declaration cpp_struct_name true);
       Inline to_json;
       Inline to_json_string_static;
       Inline to_json_string;
@@ -1044,7 +1045,7 @@ let alias_wrapper env  name type_expr codegen_type =
       Line (sprintf "namespace %s {" cpp_struct_name);
       Block [
         Line (sprintf "typedefs::%s from_json(const rapidjson::Value &doc);" cpp_struct_name);
-        Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name));
+        Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name) false);
         Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);" cpp_struct_name);
         Line (sprintf "std::string to_json_string(const typedefs::%s &t);" cpp_struct_name);
       ];
@@ -1207,9 +1208,9 @@ let sum_container env  loc name cases codegen_type =
   match codegen_type with
   | Declaration -> 
   [
-    Line (sprintf "static typedefs::%s from_json(const rapidjson::Value &x);" (cpp_struct_name));
-    Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name));
-    Line (sprintf "static void to_json(const typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (cpp_struct_name));
+    Line (sprintf "typedefs::%s from_json(const rapidjson::Value &x);" (cpp_struct_name));
+    Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name) false);
+    Line (sprintf "void to_json(const typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (cpp_struct_name));
     Line (sprintf "std::string to_json_string(const typedefs::%s &x);" (cpp_struct_name));
   ]
   | Definition ->

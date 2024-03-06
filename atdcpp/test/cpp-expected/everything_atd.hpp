@@ -95,9 +95,9 @@ namespace RecursiveVariant {
         };
     }
 
-    static typedefs::RecursiveVariant from_json(const rapidjson::Value &x);
-    static typedefs::RecursiveVariant from_json_string(const std::string &s);
-    static void to_json(const typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    typedefs::RecursiveVariant from_json(const rapidjson::Value &x);
+    typedefs::RecursiveVariant from_json_string(const std::string &s);
+    void to_json(const typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::RecursiveVariant &x);
 }
 
@@ -152,7 +152,7 @@ struct StructWithRecursiveVariant {
 
 namespace St {
     typedefs::St from_json(const rapidjson::Value &doc);
-    static typedefs::St from_json_string(const std::string &s);
+    typedefs::St from_json_string(const std::string &s);
     void to_json(const typedefs::St &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::St &t);
 }
@@ -182,16 +182,16 @@ namespace Kind {
         };
     }
 
-    static typedefs::Kind from_json(const rapidjson::Value &x);
-    static typedefs::Kind from_json_string(const std::string &s);
-    static void to_json(const typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    typedefs::Kind from_json(const rapidjson::Value &x);
+    typedefs::Kind from_json_string(const std::string &s);
+    void to_json(const typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Kind &x);
 }
 
 
 namespace Alias3 {
     typedefs::Alias3 from_json(const rapidjson::Value &doc);
-    static typedefs::Alias3 from_json_string(const std::string &s);
+    typedefs::Alias3 from_json_string(const std::string &s);
     void to_json(const typedefs::Alias3 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Alias3 &t);
 }
@@ -199,7 +199,7 @@ namespace Alias3 {
 
 namespace AliasOfAliasNotWrapped {
     typedefs::AliasOfAliasNotWrapped from_json(const rapidjson::Value &doc);
-    static typedefs::AliasOfAliasNotWrapped from_json_string(const std::string &s);
+    typedefs::AliasOfAliasNotWrapped from_json_string(const std::string &s);
     void to_json(const typedefs::AliasOfAliasNotWrapped &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::AliasOfAliasNotWrapped &t);
 }
@@ -207,7 +207,7 @@ namespace AliasOfAliasNotWrapped {
 
 namespace AliasOfAliasOfAlias {
     typedefs::AliasOfAliasOfAlias from_json(const rapidjson::Value &doc);
-    static typedefs::AliasOfAliasOfAlias from_json_string(const std::string &s);
+    typedefs::AliasOfAliasOfAlias from_json_string(const std::string &s);
     void to_json(const typedefs::AliasOfAliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::AliasOfAliasOfAlias &t);
 }
@@ -215,7 +215,7 @@ namespace AliasOfAliasOfAlias {
 
 namespace Alias {
     typedefs::Alias from_json(const rapidjson::Value &doc);
-    static typedefs::Alias from_json_string(const std::string &s);
+    typedefs::Alias from_json_string(const std::string &s);
     void to_json(const typedefs::Alias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Alias &t);
 }
@@ -223,7 +223,7 @@ namespace Alias {
 
 namespace KindParametrizedTuple {
     typedefs::KindParametrizedTuple from_json(const rapidjson::Value &doc);
-    static typedefs::KindParametrizedTuple from_json_string(const std::string &s);
+    typedefs::KindParametrizedTuple from_json_string(const std::string &s);
     void to_json(const typedefs::KindParametrizedTuple &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::KindParametrizedTuple &t);
 }
@@ -300,7 +300,7 @@ struct RecordWithWrappedType {
 
 namespace Password {
     typedefs::Password from_json(const rapidjson::Value &doc);
-    static typedefs::Password from_json_string(const std::string &s);
+    typedefs::Password from_json_string(const std::string &s);
     void to_json(const typedefs::Password &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Password &t);
 }
@@ -308,7 +308,7 @@ namespace Password {
 
 namespace Pair {
     typedefs::Pair from_json(const rapidjson::Value &doc);
-    static typedefs::Pair from_json_string(const std::string &s);
+    typedefs::Pair from_json_string(const std::string &s);
     void to_json(const typedefs::Pair &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Pair &t);
 }
@@ -328,9 +328,9 @@ namespace Frozen {
         };
     }
 
-    static typedefs::Frozen from_json(const rapidjson::Value &x);
-    static typedefs::Frozen from_json_string(const std::string &s);
-    static void to_json(const typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    typedefs::Frozen from_json(const rapidjson::Value &x);
+    typedefs::Frozen from_json_string(const std::string &s);
+    void to_json(const typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Frozen &x);
 }
 
@@ -360,7 +360,7 @@ struct Credential {
 
 namespace Credentials2 {
     typedefs::Credentials2 from_json(const rapidjson::Value &doc);
-    static typedefs::Credentials2 from_json_string(const std::string &s);
+    typedefs::Credentials2 from_json_string(const std::string &s);
     void to_json(const typedefs::Credentials2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Credentials2 &t);
 }
@@ -379,7 +379,7 @@ struct Credentials {
 
 namespace AliasOfAlias {
     typedefs::AliasOfAlias from_json(const rapidjson::Value &doc);
-    static typedefs::AliasOfAlias from_json_string(const std::string &s);
+    typedefs::AliasOfAlias from_json_string(const std::string &s);
     void to_json(const typedefs::AliasOfAlias &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::AliasOfAlias &t);
 }
@@ -387,7 +387,7 @@ namespace AliasOfAlias {
 
 namespace Alias2 {
     typedefs::Alias2 from_json(const rapidjson::Value &doc);
-    static typedefs::Alias2 from_json_string(const std::string &s);
+    typedefs::Alias2 from_json_string(const std::string &s);
     void to_json(const typedefs::Alias2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Alias2 &t);
 }

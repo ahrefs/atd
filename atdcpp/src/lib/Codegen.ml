@@ -903,6 +903,13 @@ let from_json_string_definition cpp_name p =
     Line "}";
   ]
 
+type codegen_type = 
+  | Declaration 
+  | Definition 
+  | Forward_decl 
+  | Struct_typedef
+  | Alias_typedef
+  | Variant_typedef
 
 let record_definition env loc name (fields : field list) an =
   let cpp_struct_name = struct_name env name in
@@ -976,17 +983,17 @@ let record_definition env loc name (fields : field list) an =
   ]
 
 
-let record env loc name (fields : field list) an =
+let record env loc name (fields : field list) an codegen_type =
   let cpp_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
-  let fields =
+  let fields_l =
     List.map (function
       | `Field x -> x
       | `Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   let inst_var_declarations =
-    List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields
+    List.map (fun x -> Inline (inst_var_declaration env trans_meth x)) fields_l
   in
   let from_json =
     [
@@ -1009,6 +1016,8 @@ let record env loc name (fields : field list) an =
       Line (sprintf "std::string to_json_string();" );
     ]
   in
+  match codegen_type with
+  | Declaration ->
   [
     Line (sprintf "struct %s {" cpp_struct_name);
     Block ([
@@ -1022,23 +1031,27 @@ let record env loc name (fields : field list) an =
     ]);
     Line ("};");
   ]
+  | Definition -> record_definition env loc name fields an
+  | Forward_decl -> [Line (sprintf "struct %s;" cpp_struct_name)]
+  | Struct_typedef -> [Line (sprintf "typedef %s %s;" cpp_struct_name cpp_struct_name)]
+  | _ -> []
 
-let alias_wrapper env  name type_expr =
+let alias_wrapper env  name type_expr codegen_type =
   let cpp_struct_name = struct_name env name in
-  [
-    Line (sprintf "namespace %s {" cpp_struct_name);
-    Block [
-      Line (sprintf "typedefs::%s from_json(const rapidjson::Value &doc);" cpp_struct_name);
-      Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name));
-      Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);" cpp_struct_name);
-      Line (sprintf "std::string to_json_string(const typedefs::%s &t);" cpp_struct_name);
-    ];
-    Line "}";
-  ]
-
-let alias_wrapper_definition env name type_expr = 
-  let cpp_struct_name = struct_name env name in
-  [
+  match codegen_type with
+  | Declaration ->
+    [
+      Line (sprintf "namespace %s {" cpp_struct_name);
+      Block [
+        Line (sprintf "typedefs::%s from_json(const rapidjson::Value &doc);" cpp_struct_name);
+        Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name));
+        Line (sprintf "void to_json(const typedefs::%s &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);" cpp_struct_name);
+        Line (sprintf "std::string to_json_string(const typedefs::%s &t);" cpp_struct_name);
+      ];
+      Line "}";
+    ]
+  | Definition -> 
+    [
       Line (sprintf "namespace %s {" cpp_struct_name);
       Block [
       Line (sprintf "typedefs::%s from_json(const rapidjson::Value &doc) {" cpp_struct_name);
@@ -1062,55 +1075,58 @@ let alias_wrapper_definition env name type_expr =
       Line "}"; ];
       Line "}";
     ]
+  | Alias_typedef -> [Line (sprintf "typedef %s %s;" (type_name_of_expr env type_expr) cpp_struct_name)]
+  | _ -> []
 
-let case_class_definition env type_name (loc, orig_name, unique_name, an, opt_e) =
+
+let case_class env  type_name (loc, orig_name, unique_name, an, opt_e) case_classes =
   let json_name = Atd.Json.get_json_cons orig_name an in
-  match opt_e with
-  | None ->
-      [
-          Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
-          Block [
-            Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
-          ];
-          Line (sprintf "};");
+  match case_classes with
+  | Declaration -> (match opt_e with
+    | None ->
+        [
+            Line (sprintf {|// Original type: %s = [ ... | %s | ... ]|}
+                    type_name
+                    orig_name);
+            Line (sprintf "struct %s {" (trans env orig_name));
+            Block [Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (trans env orig_name));];
+            Line (sprintf "};");
         ]
-  | Some e ->
-      [
-          Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
-          Block [
-            Line (sprintf "writer.StartArray();");
-            Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
-            Line (sprintf "%se.value, writer);" (json_writer env e));
-            Line (sprintf "writer.EndArray();");
-          ];
-          Line("}");
-      ]
-
-let case_class env  type_name
-    (loc, orig_name, unique_name, an, opt_e) =
-  match opt_e with
-  | None ->
-      [
-          Line (sprintf {|// Original type: %s = [ ... | %s | ... ]|}
-                  type_name
-                  orig_name);
-          Line (sprintf "struct %s {" (trans env orig_name));
-          Block [Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (trans env orig_name));];
-          Line (sprintf "};");
+    | Some e ->
+        [
+            Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
+                    type_name
+                    orig_name);
+            Line (sprintf "struct %s" (trans env orig_name));
+            Line(sprintf "{");
+            Block [
+              Line (sprintf "%s value;" (type_name_of_expr env e));
+              Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (trans env orig_name));
+            ];
+            Line(sprintf "};");
+        ])
+  | Definition -> (match opt_e with
+    | None ->
+        [
+            Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
+            Block [
+              Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
+            ];
+            Line (sprintf "};");
         ]
-  | Some e ->
-      [
-          Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
-                  type_name
-                  orig_name);
-          Line (sprintf "struct %s" (trans env orig_name));
-          Line(sprintf "{");
-          Block [
-            Line (sprintf "%s value;" (type_name_of_expr env e));
-            Line (sprintf "static void to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (trans env orig_name));
-          ];
-          Line(sprintf "};");
-        ]
+    | Some e ->
+        [
+            Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
+            Block [
+              Line (sprintf "writer.StartArray();");
+              Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
+              Line (sprintf "%se.value, writer);" (json_writer env e));
+              Line (sprintf "writer.EndArray();");
+            ];
+            Line("}");
+        ])
+  | _ -> []
+  
       
 
 let read_cases0 env loc name cases0 =
@@ -1158,7 +1174,7 @@ let read_cases1 env loc name cases1 =
             (struct_name env name |> single_esc))
   ]
 
-let sum_container_definition env  loc name cases =
+let sum_container env  loc name cases codegen_type =
   let cpp_struct_name = struct_name env name in
   let cases0, cases1 =
     List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1188,6 +1204,15 @@ let sum_container_definition env  loc name cases =
     else
       []
   in
+  match codegen_type with
+  | Declaration -> 
+  [
+    Line (sprintf "static typedefs::%s from_json(const rapidjson::Value &x);" (cpp_struct_name));
+    Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name));
+    Line (sprintf "static void to_json(const typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (cpp_struct_name));
+    Line (sprintf "std::string to_json_string(const typedefs::%s &x);" (cpp_struct_name));
+  ]
+  | Definition ->
   [
     Line (sprintf "namespace %s {" (cpp_struct_name));
     Block [
@@ -1217,7 +1242,6 @@ let sum_container_definition env  loc name cases =
       ];
       Line ("}");
     ];
-
     Block [Line (sprintf "std::string to_json_string(const typedefs::%s &x) {" (cpp_struct_name));
     Block [
       Line ("rapidjson::StringBuffer buffer;");
@@ -1228,19 +1252,9 @@ let sum_container_definition env  loc name cases =
     Line "}";];
     Line ("}");
   ]
-
-
-let sum_container env  loc name cases =
-  let cpp_struct_name = struct_name env name in
-  [
-    Line (sprintf "static typedefs::%s from_json(const rapidjson::Value &x);" (cpp_struct_name));
-    Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name));
-    Line (sprintf "static void to_json(const typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (cpp_struct_name));
-    Line (sprintf "std::string to_json_string(const typedefs::%s &x);" (cpp_struct_name));
-  ]
+  | _ -> []
   
-
-let sum_definition env loc name cases = 
+let sum env loc name cases codegen_type =
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1251,230 +1265,75 @@ let sum_definition env loc name cases =
     ) cases
   in
   let case_classes = 
-    List.map (fun x -> Inline (case_class_definition env name x)) cases
-    |> double_spaced
+    List.map (fun x -> Inline (case_class env name x codegen_type)) cases
   in
-  let container_class = sum_container_definition env loc name cases in
-  [
-    Line (sprintf "namespace %s::Types {" (struct_name env name));
-    Block case_classes;
-    Line (sprintf "}");
-    Inline container_class;
-  ]
-  |> double_spaced
-
-let sum env  loc name cases =
-  let cases =
-    List.map (fun (x : variant) ->
-      match x with
-      | Variant (loc, (orig_name, an), opt_e) ->
-          let unique_name = create_struct_name env orig_name in
-          (loc, orig_name, unique_name, an, opt_e)
-      | Inherit _ -> assert false
-    ) cases
-  in
-  let case_classes = 
-    List.map (fun x -> Inline (case_class env name x)) cases
-  in
-  let container_class = sum_container env loc name cases in
-  [
-    Line (sprintf "namespace %s {" (struct_name env name));
-    Block [
-      Line (sprintf "namespace Types {");
-      Block case_classes;
+  let container_class = sum_container env loc name cases codegen_type in
+  match codegen_type with
+  | Declaration -> 
+    [
+      Line (sprintf "namespace %s {" (struct_name env name));
+      Block [
+        Line (sprintf "namespace Types {");
+        Block case_classes;
+        Line (sprintf "}");
+        Line ("");
+        Inline container_class;
+      ];
       Line (sprintf "}");
-      Line ("");
+    ]
+  | Definition ->
+    [
+      Line (sprintf "namespace %s::Types {" (struct_name env name));
+      Block (case_classes |> double_spaced);
+      Line (sprintf "}");
       Inline container_class;
-    ];
-    Line (sprintf "}");
-  ]
-
-type codegen_type = 
-  | Type_decl | Type_def 
-  | Forward_decl |  Struct_typedef | Alias_typedef | Variant_typedef
-
-
-let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
-    not_implemented loc "parametrized type";
-  let unwrap e =
-    match e with
-    | Sum (loc, cases, an) ->
-        sum_definition env loc name cases
-    | Record (loc, fields, an) ->
-        record_definition env loc name fields an
-    | Tuple _
-    | List _
-    | Option _
-    | Nullable _
-    | Wrap _
-    | Name _ -> alias_wrapper_definition env name e
-    | Shared _ -> not_implemented loc "cyclic references"
-    | Tvar _ -> not_implemented loc "parametrized type"
-  in
-  unwrap e
-
-let type_decl env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
-    not_implemented loc "parametrized type";
-  let unwrap e =
-    match e with
-    | Sum (loc, cases, an) ->
-        sum env loc name cases
-    | Record (loc, fields, an) ->
-        record env loc name fields an
-    | Tuple _
-    | List _
-    | Option _
-    | Nullable _
-    | Wrap _
-    | Name _ -> alias_wrapper env name e
-    | Shared _ -> not_implemented loc "cyclic references"
-    | Tvar _ -> not_implemented loc "parametrized type"
-  in
-  unwrap e
-
-
-let sum_forward_decl env loc name cases =
-  let cases =
-    List.map (fun (x : variant) ->
-      match x with
-      | Variant (loc, (orig_name, an), opt_e) ->
-          let unique_name = create_struct_name env orig_name in
-          (loc, orig_name, unique_name, an, opt_e)
-      | Inherit _ -> assert false
-    ) cases
-  in
-  let cases_forward_declarations =
-    List.map (fun (loc, orig_name, unique_name, an, opt_e) -> Line (sprintf "struct %s;" orig_name)) cases 
-  in
-  let cases_forward_declarations_in_namespace = 
+    ] |> double_spaced
+  | Forward_decl ->
+    let cases_forward_declarations =
+      List.map (fun (loc, orig_name, unique_name, an, opt_e) -> Line (sprintf "struct %s;" orig_name)) cases 
+    in
     [
       Line (sprintf "namespace %s::Types {" (struct_name env name));
       Block cases_forward_declarations;
       Line (sprintf "}");
     ]
-  in
-  cases_forward_declarations_in_namespace
+  | Variant_typedef -> 
+    let type_list =
+      List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+        (sprintf "atd::%s::Types::%s" (struct_name env name) (trans env orig_name))
+      ) cases
+      |> String.concat ", "
+    in
+    [Line(sprintf "typedef %s %s;" (sprintf "std::variant<%s>" type_list) (struct_name env name))]
+  | _ -> []
 
-let record_forward_decl env loc name (fields : field list) an =
-  let cpp_struct_name = struct_name env name in
-  Line (sprintf "struct %s;" cpp_struct_name)
-
-
-let record_typedef env loc name (fields : field list) an =
-  let cpp_struct_name = struct_name env name in
-  Line (sprintf "typedef %s %s;" cpp_struct_name cpp_struct_name)
-
-let forward_decl env ((loc, (name, param, an), e) : A.type_def) : B.t =
+let type_def env ((loc, (name, param, an), e) : A.type_def) codegen_type : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
   let unwrap e =
     match e with
     | Sum (loc, cases, an) ->
-        sum_forward_decl env loc name cases
+        sum env loc name cases codegen_type
     | Record (loc, fields, an) ->
-        [record_forward_decl env loc name fields an]
-    | Tuple _ | List _ | Option _ | Nullable _ | Wrap _ | Name _ -> []
-    | Shared _ -> not_implemented loc "cyclic references"
-    | Tvar _ -> not_implemented loc "parametrized type"
-  in
-  unwrap e
-
-let sum_typedef env loc name cases =
-  let cases =
-    List.map (fun (x : variant) ->
-      match x with
-      | Variant (loc, (orig_name, an), opt_e) ->
-          let unique_name = create_struct_name env orig_name in
-          (loc, orig_name, unique_name, an, opt_e)
-      | Inherit _ -> assert false
-    ) cases
-  in
-  let cpp_struct_name = struct_name env name in
-  let type_list =
-    List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
-      (sprintf "atd::%s::Types::%s" (cpp_struct_name) (trans env orig_name))
-    ) cases
-    |> String.concat ", "
-  in
-  let typedef_declaration =  
-      Line(sprintf "typedef %s %s;" (sprintf "std::variant<%s>" type_list) (cpp_struct_name));
-  in
-  typedef_declaration
-
-let alias_typedef env  name type_expr =
-  let cpp_struct_name = struct_name env name in
-  let value_type = type_name_of_expr env type_expr in
-  Line (sprintf "typedef %s %s;" value_type cpp_struct_name)
-   
-
-let typedefs env ((loc, (name, param, an), e) : A.type_def) : B.t =
-  if param <> [] then
-    not_implemented loc "parametrized type";
-  let unwrap e =
-    match e with
-    | Sum (loc, cases, an) ->
-        []
-    | Record (loc, fields, an) ->
-        [record_typedef env loc name fields an]
+        record env loc name fields an codegen_type
     | Tuple _
     | List _
     | Option _
     | Nullable _
     | Wrap _
-    | Name _ -> []
+    | Name _ -> alias_wrapper env name e codegen_type
     | Shared _ -> not_implemented loc "cyclic references"
     | Tvar _ -> not_implemented loc "parametrized type"
   in
   unwrap e
 
-let typedefs2 env ((loc, (name, param, an), e) : A.type_def) : B.t =
-    if param <> [] then
-      not_implemented loc "parametrized type";
-    let unwrap e =
-      match e with
-      | Sum (loc, cases, an) ->
-          []
-      | Record (loc, fields, an) ->
-          []
-      | Tuple _
-      | List _
-      | Option _
-      | Nullable _
-      | Wrap _
-      | Name _ -> [alias_typedef env name e]
-      | Shared _ -> not_implemented loc "cyclic references"
-      | Tvar _ -> not_implemented loc "parametrized type"
-    in
-    unwrap e
-
-  let typedefs3 env ((loc, (name, param, an), e) : A.type_def) : B.t =
-    if param <> [] then
-      not_implemented loc "parametrized type";
-    let unwrap e =
-      match e with
-      | Sum (loc, cases, an) ->
-          [sum_typedef env loc name cases]
-      | _ -> []
-    in
-    unwrap e
-
 let module_body env x codegen_type =
-  let fn = match codegen_type with
-    | Type_decl -> type_decl
-    | Type_def -> type_def
-    | Forward_decl -> forward_decl
-    | Struct_typedef -> typedefs
-    | Variant_typedef -> typedefs3
-    | Alias_typedef -> typedefs2
-  in
   let gen = 
-  List.fold_left (fun acc (Type x) -> Inline (fn env x) :: acc) [] x
+  List.fold_left (fun acc (Type x) -> Inline (type_def env x codegen_type) :: acc) [] x
   |> List.rev
   in
   match codegen_type with
-  | Type_decl | Type_def -> gen |> spaced
+  | Declaration | Definition -> gen |> spaced
   | _ -> gen
 
 let definition_group ~atd_filename env codegen_type
@@ -1501,37 +1360,25 @@ let to_header_file ~atd_filename ~head (items : A.module_body) dst_path =
   let env = init_env () in
   reserve_good_struct_names env items;
   let head = List.map (fun s -> Line s) head in
-  let cpp_forward_declarations =
+  let get_lines_for codegen_type =
     Atd.Util.tsort items
-    |> List.map (fun x -> Inline (definition_group ~atd_filename env Forward_decl x))
+    |> List.map (fun x -> Inline (definition_group ~atd_filename env codegen_type x))
   in
+  let cpp_forward_declarations = get_lines_for Forward_decl in
   let cpp_forward_declarations = [Line "// forward declarations"] @ cpp_forward_declarations @ [Line ""; Line ""] in
-  let cpp_typedefs = 
-    Atd.Util.tsort items
-    |> List.map (fun x -> Inline (definition_group ~atd_filename env Struct_typedef x))
-  in
-  let cpp_v_typedefs = 
-    Atd.Util.tsort items
-    |> List.map (fun x -> Inline (definition_group ~atd_filename env Variant_typedef x))
-  in
-  let cpp_true_typedefs = 
-    Atd.Util.tsort items
-    |> List.map (fun x -> Inline (definition_group ~atd_filename env Alias_typedef x))
-  in
+  let cpp_structs_typedefs = get_lines_for Struct_typedef in
+  let cpp_variant_typedefs = get_lines_for Variant_typedef in
+  let cpp_alias_typedefs = get_lines_for Alias_typedef in
   let cpp_typedefs = 
     [Line "namespace typedefs {"] 
     @ 
-    [Block 
-      [Inline cpp_typedefs;
-      Line "";
-      Inline cpp_v_typedefs;
-      Line "";
-      Inline cpp_true_typedefs;]
+    [(Block ([
+      Inline cpp_structs_typedefs;
+      Inline cpp_variant_typedefs;
+      Inline cpp_alias_typedefs;
+      ] |> spaced))
     ] @ [Line "} // namespace typedefs"; Line ""] in
-  let cpp_declarations =
-    Atd.Util.tsort items
-    |> List.map (fun x -> Inline (definition_group ~atd_filename env Type_decl x))
-  in
+  let cpp_declarations = get_lines_for Declaration in
   let namespace_start = [Line (sprintf "namespace atd {")] in
   let namespace_end = [Line "} // namespace atd"] in
     Line (fixed_size_preamble_header atd_filename) 
@@ -1548,7 +1395,7 @@ let to_cpp_file ~atd_filename (items : A.module_body) dst_path =
   reserve_good_struct_names env items;
   let cpp_defs =
     Atd.Util.tsort items
-    |> List.map (fun x -> Inline (definition_group ~atd_filename env Type_def x))
+    |> List.map (fun x -> Inline (definition_group ~atd_filename env Definition x))
   in
   let head = [Line (sprintf "#include \"%s_atd.hpp\"" (Filename.chop_extension atd_filename))] in
   let namespace_end = [Line "} // namespace atd"] in

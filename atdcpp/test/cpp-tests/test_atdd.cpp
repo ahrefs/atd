@@ -68,12 +68,13 @@ int main() {
         typedefs::RecursiveVariant recursiveVariant = RecursiveVariant::Types::Integer{42};
 
         typedefs::RecursiveVariant recursiveVariant2 = RecursiveVariant::Types::Rec{std::make_shared<typedefs::RecursiveVariant>(recursiveVariant)};
-        typedefs::StructWithRecursiveVariant structWithRecursiveVariant = {recursiveVariant2};
+        typedefs::RecursiveVariant recursiveVariant3 = RecursiveVariant::Types::Rec{std::make_shared<typedefs::RecursiveVariant>(recursiveVariant2)};
+        typedefs::StructWithRecursiveVariant structWithRecursiveVariant = {recursiveVariant3};
 
         std::string json = structWithRecursiveVariant.to_json_string();
         typedefs::StructWithRecursiveVariant structWithRecursiveVariantFromJson = StructWithRecursiveVariant::from_json_string(json);
 
-        if (json == R"({"variant":["Rec",["Integer",42]]})" && json == structWithRecursiveVariantFromJson.to_json_string()) {
+        if (json == R"({"variant":["Rec",["Rec",["Integer",42]]]})" && json == structWithRecursiveVariantFromJson.to_json_string()) {
             std::cout << "Test passed: recursiveVariant" << std::endl;
         } else {
             throw std::runtime_error("check is failed");

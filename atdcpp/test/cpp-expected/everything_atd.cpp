@@ -371,14 +371,14 @@ namespace RecursiveVariant {
         }
         return from_json(doc);
     }
-    void to_json(const atd::typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+    void to_json(const typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         std::visit([&writer](auto &&arg) {
             using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, Types::Integer>) Types::Integer::to_json(arg, writer);
                 if constexpr (std::is_same_v<T, Types::Rec>) Types::Rec::to_json(arg, writer);
         }, x);
     }
-    std::string to_json_string(const atd::typedefs::RecursiveVariant &x) {
+    std::string to_json_string(const typedefs::RecursiveVariant &x) {
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
         to_json(x, writer);
@@ -630,7 +630,7 @@ namespace Kind {
         }
         return from_json(doc);
     }
-    void to_json(const atd::typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+    void to_json(const typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         std::visit([&writer](auto &&arg) {
             using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, Types::Root>) Types::Root::to_json(arg, writer);
@@ -639,7 +639,7 @@ namespace Kind {
                 if constexpr (std::is_same_v<T, Types::Amaze>) Types::Amaze::to_json(arg, writer);
         }, x);
     }
-    std::string to_json_string(const atd::typedefs::Kind &x) {
+    std::string to_json_string(const typedefs::Kind &x) {
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
         to_json(x, writer);
@@ -1157,14 +1157,14 @@ namespace Frozen {
         }
         return from_json(doc);
     }
-    void to_json(const atd::typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+    void to_json(const typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
         std::visit([&writer](auto &&arg) {
             using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, Types::A>) Types::A::to_json(arg, writer);
                 if constexpr (std::is_same_v<T, Types::B>) Types::B::to_json(arg, writer);
         }, x);
     }
-    std::string to_json_string(const atd::typedefs::Frozen &x) {
+    std::string to_json_string(const typedefs::Frozen &x) {
         rapidjson::StringBuffer buffer;
         rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
         to_json(x, writer);

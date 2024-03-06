@@ -19,47 +19,89 @@
 #include <map>
 
 
-
-
 #include <stdint.h>
-
-
 namespace atd {
-
-
+// forward declarations
 namespace RecursiveVariant::Types {
     struct Integer;
     struct Rec;
 }
-namespace typedefs {
-    typedef std::variant<atd::RecursiveVariant::Types::Integer, atd::RecursiveVariant::Types::Rec> RecursiveVariant;
-}
-namespace RecursiveVariant::Types {
-    // Original type: recursive_variant = [ ... | Integer of ... | ... ]
-    struct Integer
-    {
-        int value;
-        static void to_json(const Integer &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-    // Original type: recursive_variant = [ ... | Rec of ... | ... ]
-    struct Rec
-    {
-        std::shared_ptr<typedefs::RecursiveVariant> value;
-        static void to_json(const Rec &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-}
-namespace RecursiveVariant {
-    static atd::typedefs::RecursiveVariant from_json(const rapidjson::Value &x);
-    static atd::typedefs::RecursiveVariant from_json_string(const std::string &s);
-    static void to_json(const atd::typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    std::string to_json_string(const atd::typedefs::RecursiveVariant &x);
-}
-
-
 struct RecursiveRecord2;
+struct RecursiveClass;
+struct ThreeLevelNestedListRecord;
+struct StructWithRecursiveVariant;
+namespace Kind::Types {
+    struct Root;
+    struct Thing;
+    struct WOW;
+    struct Amaze;
+}
+struct IntFloatParametrizedRecord;
+struct Root;
+struct RequireField;
+struct RecordWithWrappedType;
+namespace Frozen::Types {
+    struct A;
+    struct B;
+}
+struct DefaultList;
+struct Credential;
+struct Credentials;
+
+
 namespace typedefs {
     typedef RecursiveRecord2 RecursiveRecord2;
+    typedef RecursiveClass RecursiveClass;
+    typedef ThreeLevelNestedListRecord ThreeLevelNestedListRecord;
+    typedef StructWithRecursiveVariant StructWithRecursiveVariant;
+    typedef IntFloatParametrizedRecord IntFloatParametrizedRecord;
+    typedef Root Root;
+    typedef RequireField RequireField;
+    typedef RecordWithWrappedType RecordWithWrappedType;
+    typedef DefaultList DefaultList;
+    typedef Credential Credential;
+    typedef Credentials Credentials;
+
+    typedef std::variant<atd::RecursiveVariant::Types::Integer, atd::RecursiveVariant::Types::Rec> RecursiveVariant;
+    typedef std::variant<atd::Kind::Types::Root, atd::Kind::Types::Thing, atd::Kind::Types::WOW, atd::Kind::Types::Amaze> Kind;
+    typedef std::variant<atd::Frozen::Types::A, atd::Frozen::Types::B> Frozen;
+
+    typedef int St;
+    typedef uint32_t Alias3;
+    typedef typedefs::Alias3 AliasOfAliasNotWrapped;
+    typedef typedefs::AliasOfAliasNotWrapped AliasOfAliasOfAlias;
+    typedef std::vector<int> Alias;
+    typedef std::tuple<typedefs::Kind, typedefs::Kind, int> KindParametrizedTuple;
+    typedef uint32_t Password;
+    typedef std::tuple<std::string, int> Pair;
+    typedef std::vector<typedefs::Credential> Credentials2;
+    typedef uint16_t AliasOfAlias;
+    typedef std::vector<int> Alias2;
+} // namespace typedefs
+
+namespace RecursiveVariant {
+    namespace Types {
+        // Original type: recursive_variant = [ ... | Integer of ... | ... ]
+        struct Integer
+        {
+            int value;
+            static void to_json(const Integer &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+        // Original type: recursive_variant = [ ... | Rec of ... | ... ]
+        struct Rec
+        {
+            std::shared_ptr<typedefs::RecursiveVariant> value;
+            static void to_json(const Rec &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+    }
+
+    static typedefs::RecursiveVariant from_json(const rapidjson::Value &x);
+    static typedefs::RecursiveVariant from_json_string(const std::string &s);
+    static void to_json(const typedefs::RecursiveVariant &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::RecursiveVariant &x);
 }
+
+
 struct RecursiveRecord2 {
     int id;
     bool flag;
@@ -73,10 +115,6 @@ struct RecursiveRecord2 {
 };
 
 
-struct RecursiveClass;
-namespace typedefs {
-    typedef RecursiveClass RecursiveClass;
-}
 struct RecursiveClass {
     int id;
     bool flag;
@@ -90,10 +128,6 @@ struct RecursiveClass {
 };
 
 
-struct ThreeLevelNestedListRecord;
-namespace typedefs {
-    typedef ThreeLevelNestedListRecord ThreeLevelNestedListRecord;
-}
 struct ThreeLevelNestedListRecord {
     std::vector<std::vector<std::vector<int>>> field_a;
 
@@ -105,10 +139,6 @@ struct ThreeLevelNestedListRecord {
 };
 
 
-struct StructWithRecursiveVariant;
-namespace typedefs {
-    typedef StructWithRecursiveVariant StructWithRecursiveVariant;
-}
 struct StructWithRecursiveVariant {
     typedefs::RecursiveVariant variant;
 
@@ -120,9 +150,6 @@ struct StructWithRecursiveVariant {
 };
 
 
-namespace typedefs {
-    typedef int St;
-}
 namespace St {
     typedefs::St from_json(const rapidjson::Value &doc);
     static typedefs::St from_json_string(const std::string &s);
@@ -131,48 +158,37 @@ namespace St {
 }
 
 
-namespace Kind::Types {
-    struct Root;
-    struct Thing;
-    struct WOW;
-    struct Amaze;
-}
-namespace typedefs {
-    typedef std::variant<atd::Kind::Types::Root, atd::Kind::Types::Thing, atd::Kind::Types::WOW, atd::Kind::Types::Amaze> Kind;
-}
-namespace Kind::Types {
-    // Original type: kind = [ ... | Root | ... ]
-    struct Root {
-        static void to_json(const Root &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-    // Original type: kind = [ ... | Thing of ... | ... ]
-    struct Thing
-    {
-        int value;
-        static void to_json(const Thing &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-    // Original type: kind = [ ... | WOW | ... ]
-    struct WOW {
-        static void to_json(const WOW &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-    // Original type: kind = [ ... | Amaze of ... | ... ]
-    struct Amaze
-    {
-        std::vector<std::string> value;
-        static void to_json(const Amaze &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-}
 namespace Kind {
-    static atd::typedefs::Kind from_json(const rapidjson::Value &x);
-    static atd::typedefs::Kind from_json_string(const std::string &s);
-    static void to_json(const atd::typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    std::string to_json_string(const atd::typedefs::Kind &x);
+    namespace Types {
+        // Original type: kind = [ ... | Root | ... ]
+        struct Root {
+            static void to_json(const Root &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+        // Original type: kind = [ ... | Thing of ... | ... ]
+        struct Thing
+        {
+            int value;
+            static void to_json(const Thing &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+        // Original type: kind = [ ... | WOW | ... ]
+        struct WOW {
+            static void to_json(const WOW &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+        // Original type: kind = [ ... | Amaze of ... | ... ]
+        struct Amaze
+        {
+            std::vector<std::string> value;
+            static void to_json(const Amaze &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+    }
+
+    static typedefs::Kind from_json(const rapidjson::Value &x);
+    static typedefs::Kind from_json_string(const std::string &s);
+    static void to_json(const typedefs::Kind &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Kind &x);
 }
 
 
-namespace typedefs {
-    typedef uint32_t Alias3;
-}
 namespace Alias3 {
     typedefs::Alias3 from_json(const rapidjson::Value &doc);
     static typedefs::Alias3 from_json_string(const std::string &s);
@@ -181,9 +197,6 @@ namespace Alias3 {
 }
 
 
-namespace typedefs {
-    typedef typedefs::Alias3 AliasOfAliasNotWrapped;
-}
 namespace AliasOfAliasNotWrapped {
     typedefs::AliasOfAliasNotWrapped from_json(const rapidjson::Value &doc);
     static typedefs::AliasOfAliasNotWrapped from_json_string(const std::string &s);
@@ -192,9 +205,6 @@ namespace AliasOfAliasNotWrapped {
 }
 
 
-namespace typedefs {
-    typedef typedefs::AliasOfAliasNotWrapped AliasOfAliasOfAlias;
-}
 namespace AliasOfAliasOfAlias {
     typedefs::AliasOfAliasOfAlias from_json(const rapidjson::Value &doc);
     static typedefs::AliasOfAliasOfAlias from_json_string(const std::string &s);
@@ -203,9 +213,6 @@ namespace AliasOfAliasOfAlias {
 }
 
 
-namespace typedefs {
-    typedef std::vector<int> Alias;
-}
 namespace Alias {
     typedefs::Alias from_json(const rapidjson::Value &doc);
     static typedefs::Alias from_json_string(const std::string &s);
@@ -214,9 +221,6 @@ namespace Alias {
 }
 
 
-namespace typedefs {
-    typedef std::tuple<typedefs::Kind, typedefs::Kind, int> KindParametrizedTuple;
-}
 namespace KindParametrizedTuple {
     typedefs::KindParametrizedTuple from_json(const rapidjson::Value &doc);
     static typedefs::KindParametrizedTuple from_json_string(const std::string &s);
@@ -225,10 +229,6 @@ namespace KindParametrizedTuple {
 }
 
 
-struct IntFloatParametrizedRecord;
-namespace typedefs {
-    typedef IntFloatParametrizedRecord IntFloatParametrizedRecord;
-}
 struct IntFloatParametrizedRecord {
     int field_a;
     std::vector<float> field_b = {};
@@ -241,10 +241,6 @@ struct IntFloatParametrizedRecord {
 };
 
 
-struct Root;
-namespace typedefs {
-    typedef Root Root;
-}
 struct Root {
     std::string id;
     bool await;
@@ -280,10 +276,6 @@ struct Root {
 };
 
 
-struct RequireField;
-namespace typedefs {
-    typedef RequireField RequireField;
-}
 struct RequireField {
     std::string req;
 
@@ -295,10 +287,6 @@ struct RequireField {
 };
 
 
-struct RecordWithWrappedType;
-namespace typedefs {
-    typedef RecordWithWrappedType RecordWithWrappedType;
-}
 struct RecordWithWrappedType {
     int item;
 
@@ -310,9 +298,6 @@ struct RecordWithWrappedType {
 };
 
 
-namespace typedefs {
-    typedef uint32_t Password;
-}
 namespace Password {
     typedefs::Password from_json(const rapidjson::Value &doc);
     static typedefs::Password from_json_string(const std::string &s);
@@ -321,9 +306,6 @@ namespace Password {
 }
 
 
-namespace typedefs {
-    typedef std::tuple<std::string, int> Pair;
-}
 namespace Pair {
     typedefs::Pair from_json(const rapidjson::Value &doc);
     static typedefs::Pair from_json_string(const std::string &s);
@@ -332,37 +314,27 @@ namespace Pair {
 }
 
 
-namespace Frozen::Types {
-    struct A;
-    struct B;
-}
-namespace typedefs {
-    typedef std::variant<atd::Frozen::Types::A, atd::Frozen::Types::B> Frozen;
-}
-namespace Frozen::Types {
-    // Original type: frozen = [ ... | A | ... ]
-    struct A {
-        static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-    // Original type: frozen = [ ... | B of ... | ... ]
-    struct B
-    {
-        int value;
-        static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    };
-}
 namespace Frozen {
-    static atd::typedefs::Frozen from_json(const rapidjson::Value &x);
-    static atd::typedefs::Frozen from_json_string(const std::string &s);
-    static void to_json(const atd::typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
-    std::string to_json_string(const atd::typedefs::Frozen &x);
+    namespace Types {
+        // Original type: frozen = [ ... | A | ... ]
+        struct A {
+            static void to_json(const A &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+        // Original type: frozen = [ ... | B of ... | ... ]
+        struct B
+        {
+            int value;
+            static void to_json(const B &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+    }
+
+    static typedefs::Frozen from_json(const rapidjson::Value &x);
+    static typedefs::Frozen from_json_string(const std::string &s);
+    static void to_json(const typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Frozen &x);
 }
 
 
-struct DefaultList;
-namespace typedefs {
-    typedef DefaultList DefaultList;
-}
 struct DefaultList {
     std::vector<int> items = {};
 
@@ -374,10 +346,6 @@ struct DefaultList {
 };
 
 
-struct Credential;
-namespace typedefs {
-    typedef Credential Credential;
-}
 struct Credential {
     std::string name;
     int password;
@@ -390,9 +358,6 @@ struct Credential {
 };
 
 
-namespace typedefs {
-    typedef std::vector<typedefs::Credential> Credentials2;
-}
 namespace Credentials2 {
     typedefs::Credentials2 from_json(const rapidjson::Value &doc);
     static typedefs::Credentials2 from_json_string(const std::string &s);
@@ -401,10 +366,6 @@ namespace Credentials2 {
 }
 
 
-struct Credentials;
-namespace typedefs {
-    typedef Credentials Credentials;
-}
 struct Credentials {
     std::vector<typedefs::Credential> credentials;
 
@@ -416,9 +377,6 @@ struct Credentials {
 };
 
 
-namespace typedefs {
-    typedef uint16_t AliasOfAlias;
-}
 namespace AliasOfAlias {
     typedefs::AliasOfAlias from_json(const rapidjson::Value &doc);
     static typedefs::AliasOfAlias from_json_string(const std::string &s);
@@ -427,15 +385,10 @@ namespace AliasOfAlias {
 }
 
 
-namespace typedefs {
-    typedef std::vector<int> Alias2;
-}
 namespace Alias2 {
     typedefs::Alias2 from_json(const rapidjson::Value &doc);
     static typedefs::Alias2 from_json_string(const std::string &s);
     void to_json(const typedefs::Alias2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Alias2 &t);
 }
-
-
 } // namespace atd

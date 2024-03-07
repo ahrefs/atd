@@ -201,6 +201,7 @@ let fixed_size_preamble_header atd_filename =
 #include <vector>
 #include <string>
 #include <map>
+#include <variant>
 
 |} atd_filename atd_filename
 
@@ -243,6 +244,7 @@ T _atd_missing_json_field(const std::string &type, const std::string &field)
 
 auto _atd_bad_json(const std::string &type, const rapidjson::Value &x)
 {
+    (void) x;
     return AtdException("Bad JSON for " + type);
 }
 
@@ -649,7 +651,7 @@ let rec get_default_default (e : type_expr) : string option =
   | Tuple _ (* a default tuple could be possible but we're lazy *) -> None
   | List _ -> Some "{}"
   | Option _
-  | Nullable _ -> None
+  | Nullable _ -> Some "std::nullopt"
   | Shared (loc, e, an) -> get_default_default e
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
@@ -657,7 +659,7 @@ let rec get_default_default (e : type_expr) : string option =
        | "unit" -> None
        | "bool" -> Some "false"
        | "int" -> Some "0"
-       | "float" -> Some "0.0"
+       | "float" -> Some "0.0f"
        | "string" -> Some {|""|}
        | "abstract" -> None
        | _ -> None
@@ -749,29 +751,34 @@ and tuple_writer env (loc, cells, an) =
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
   let unwrapped_type = unwrap_field_type loc name kind e in
-  let writer_function = json_writer env unwrapped_type in
-  let assignment =
+  let writer_function n = json_writer ~nested:n env unwrapped_type in
+  let cpp_var_name = inst_var_name trans_meth name in
+  let cpp_type_name = type_name_of_expr env unwrapped_type in
+  let cpp_default = match (get_cpp_default e an) with | Some x -> x | None -> "" in
+  let assignement =
     [
       Line (sprintf "writer.Key(\"%s\");"
               (Atd.Json.get_json_fname name an |> single_esc));
-      Line (sprintf "%st.%s, writer);" writer_function (inst_var_name trans_meth name));
+      Line (sprintf "%st.%s, writer);" (writer_function false) (inst_var_name trans_meth name));
     ]
   in
   match kind with
-  | Required
-  | With_default -> assignment
+  | Required -> assignement
+  | With_default -> 
+      [
+        Line (sprintf "if (t.%s != %s(%s)) {" cpp_var_name cpp_type_name cpp_default);
+        Block assignement; 
+        Line "}"
+      ]
   | Optional ->
       [
-        Line (sprintf "if (t.%s != std::nullopt) {"
-                (inst_var_name trans_meth name));
-     Block [ 
-     Line (sprintf "writer.Key(\"%s\");"
-              (Atd.Json.get_json_fname name an |> single_esc)); 
-     Line(sprintf "%s([](const auto &v, auto &w){%sv, w);}, t.%s, writer);"
-              "_atd_write_option"
-              (json_writer ~nested:true env unwrapped_type)
-              (inst_var_name trans_meth name))];
-      Line "}";
+        Line (sprintf "if (t.%s != std::nullopt) {" cpp_var_name);
+        Block [ 
+          Line (sprintf "writer.Key(\"%s\");"
+                    (Atd.Json.get_json_fname name an |> single_esc)); 
+          Line (sprintf "%st.%s.value(), writer);" (writer_function true) cpp_var_name)
+        ];
+        Line "}";
       ]
 
 (*
@@ -856,12 +863,19 @@ let from_json_class_argument
               (sprintf "missing default cpp value for field '%s'"
                  name)
   in
+  let reader = 
+    match kind with 
+    | Optional -> (match e with 
+      | Option(_, e, _) -> (json_reader env e) 
+      | _ -> A.error_at loc "optional field must be of type 'xxx option'") 
+    | _ -> (json_reader env e)
+  in
   Inline [
     Line (sprintf "if (doc.HasMember(\"%s\"))" (single_esc json_name));
     Block [
       Line (sprintf "record.%s = %sdoc[\"%s\"]);"
               cpp_name
-              (json_reader env e)
+              reader
               (single_esc json_name));
     ];
     Line (sprintf "else record.%s = %s;" cpp_name else_body);]
@@ -912,14 +926,8 @@ type codegen_type =
   | Alias_typedef
   | Variant_typedef
 
-let record_definition env loc name (fields : field list) an =
+let record_definition env loc name fields an =
   let cpp_struct_name = struct_name env name in
-  let fields =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
-      fields
-  in
   let trans_meth = env.translate_inst_variable () in
   let from_json_class_arguments =
     List.map (fun x ->
@@ -1032,7 +1040,7 @@ let record env loc name (fields : field list) an codegen_type =
     ]);
     Line ("};");
   ]
-  | Definition -> record_definition env loc name fields an
+  | Definition -> record_definition env loc name fields_l an
   | Forward_decl -> [Line (sprintf "struct %s;" cpp_struct_name)]
   | Struct_typedef -> [Line (sprintf "typedef %s %s;" cpp_struct_name cpp_struct_name)]
   | _ -> []

@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <variant>
 
 
 #include <stdint.h>
@@ -40,10 +41,12 @@ struct IntFloatParametrizedRecord;
 struct Root;
 struct RequireField;
 struct RecordWithWrappedType;
+struct NullOpt;
 namespace Frozen::Types {
     struct A;
     struct B;
 }
+struct EmptyRecord;
 struct DefaultList;
 struct Credential;
 struct Credentials;
@@ -58,6 +61,8 @@ namespace typedefs {
     typedef Root Root;
     typedef RequireField RequireField;
     typedef RecordWithWrappedType RecordWithWrappedType;
+    typedef NullOpt NullOpt;
+    typedef EmptyRecord EmptyRecord;
     typedef DefaultList DefaultList;
     typedef Credential Credential;
     typedef Credentials Credentials;
@@ -246,8 +251,8 @@ struct Root {
     bool await;
     int integer;
     float x___init__;
-    float float_with_auto_default = 0.0;
-    float float_with_default = 0.1;
+    float float_with_auto_default = 0.0f;
+    float float_with_default = 0.1f;
     std::vector<std::vector<int>> items;
     std::optional<int> maybe;
     std::vector<int> extras = {};
@@ -314,6 +319,22 @@ namespace Pair {
 }
 
 
+struct NullOpt {
+    int a;
+    std::optional<int> b;
+    std::optional<int> c;
+    std::optional<int> f;
+    std::optional<int> h = 3;
+    std::optional<int> i = 3;
+
+    static NullOpt from_json(const rapidjson::Value & doc);
+    static NullOpt from_json_string(const std::string &s);
+    static void to_json(const NullOpt &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const NullOpt &t);
+    std::string to_json_string();
+};
+
+
 namespace Frozen {
     namespace Types {
         // Original type: frozen = [ ... | A | ... ]
@@ -333,6 +354,16 @@ namespace Frozen {
     void to_json(const typedefs::Frozen &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Frozen &x);
 }
+
+
+struct EmptyRecord {
+
+    static EmptyRecord from_json(const rapidjson::Value & doc);
+    static EmptyRecord from_json_string(const std::string &s);
+    static void to_json(const EmptyRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    static std::string to_json_string(const EmptyRecord &t);
+    std::string to_json_string();
+};
 
 
 struct DefaultList {

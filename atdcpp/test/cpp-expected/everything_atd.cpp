@@ -36,6 +36,7 @@ T _atd_missing_json_field(const std::string &type, const std::string &field)
 
 auto _atd_bad_json(const std::string &type, const rapidjson::Value &x)
 {
+    (void) x;
     return AtdException("Bad JSON for " + type);
 }
 
@@ -801,8 +802,10 @@ void IntFloatParametrizedRecord::to_json(const IntFloatParametrizedRecord &t, ra
     writer.StartObject();
     writer.Key("field_a");
     _atd_write_int(t.field_a, writer);
-    writer.Key("field_b");
-    _atd_write_array([](auto v, auto &w){_atd_write_float(v, w);}, t.field_b, writer);
+    if (t.field_b != std::vector<float>({})) {
+        writer.Key("field_b");
+        _atd_write_array([](auto v, auto &w){_atd_write_float(v, w);}, t.field_b, writer);
+    }
     writer.EndObject();
 }
 std::string IntFloatParametrizedRecord::to_json_string(const IntFloatParametrizedRecord &t) {
@@ -835,15 +838,15 @@ Root Root::from_json(const rapidjson::Value & doc) {
     else record.x___init__ = _atd_missing_json_field<decltype(record.x___init__)>("Root", "__init__");
     if (doc.HasMember("float_with_auto_default"))
         record.float_with_auto_default = _atd_read_float(doc["float_with_auto_default"]);
-    else record.float_with_auto_default = 0.0;
+    else record.float_with_auto_default = 0.0f;
     if (doc.HasMember("float_with_default"))
         record.float_with_default = _atd_read_float(doc["float_with_default"]);
-    else record.float_with_default = 0.1;
+    else record.float_with_default = 0.1f;
     if (doc.HasMember("items"))
         record.items = _atd_read_array([](const auto &v){return _atd_read_array([](const auto &v){return _atd_read_int(v);}, v);}, doc["items"]);
     else record.items = _atd_missing_json_field<decltype(record.items)>("Root", "items");
     if (doc.HasMember("maybe"))
-        record.maybe = _atd_read_option([](const auto &v){return _atd_read_int(v);}, doc["maybe"]);
+        record.maybe = _atd_read_int(doc["maybe"]);
     else record.maybe = std::nullopt;
     if (doc.HasMember("extras"))
         record.extras = _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc["extras"]);
@@ -924,20 +927,28 @@ void Root::to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &wr
     _atd_write_int(t.integer, writer);
     writer.Key("__init__");
     _atd_write_float(t.x___init__, writer);
-    writer.Key("float_with_auto_default");
-    _atd_write_float(t.float_with_auto_default, writer);
-    writer.Key("float_with_default");
-    _atd_write_float(t.float_with_default, writer);
+    if (t.float_with_auto_default != float(0.0f)) {
+        writer.Key("float_with_auto_default");
+        _atd_write_float(t.float_with_auto_default, writer);
+    }
+    if (t.float_with_default != float(0.1f)) {
+        writer.Key("float_with_default");
+        _atd_write_float(t.float_with_default, writer);
+    }
     writer.Key("items");
     _atd_write_array([](auto v, auto &w){_atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, v, w);}, t.items, writer);
     if (t.maybe != std::nullopt) {
         writer.Key("maybe");
-        _atd_write_option([](const auto &v, auto &w){_atd_write_int(v, w);}, t.maybe, writer);
+        _atd_write_int(t.maybe.value(), writer);
     }
-    writer.Key("extras");
-    _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.extras, writer);
-    writer.Key("answer");
-    _atd_write_int(t.answer, writer);
+    if (t.extras != std::vector<int>({})) {
+        writer.Key("extras");
+        _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.extras, writer);
+    }
+    if (t.answer != int(42)) {
+        writer.Key("answer");
+        _atd_write_int(t.answer, writer);
+    }
     writer.Key("aliased");
     Alias::to_json(t.aliased, writer);
     writer.Key("point");
@@ -1115,6 +1126,72 @@ namespace Pair {
 }
 
 
+NullOpt NullOpt::from_json(const rapidjson::Value & doc) {
+    NullOpt record;
+    if (!doc.IsObject()) {
+        throw AtdException("Expected an object");
+    }
+    if (doc.HasMember("a"))
+        record.a = _atd_read_int(doc["a"]);
+    else record.a = _atd_missing_json_field<decltype(record.a)>("NullOpt", "a");
+    if (doc.HasMember("b"))
+        record.b = _atd_read_option([](const auto &v){return _atd_read_int(v);}, doc["b"]);
+    else record.b = _atd_missing_json_field<decltype(record.b)>("NullOpt", "b");
+    if (doc.HasMember("c"))
+        record.c = _atd_read_nullable([](const auto &v){return _atd_read_int(v);}, doc["c"]);
+    else record.c = _atd_missing_json_field<decltype(record.c)>("NullOpt", "c");
+    if (doc.HasMember("f"))
+        record.f = _atd_read_int(doc["f"]);
+    else record.f = std::nullopt;
+    if (doc.HasMember("h"))
+        record.h = _atd_read_option([](const auto &v){return _atd_read_int(v);}, doc["h"]);
+    else record.h = 3;
+    if (doc.HasMember("i"))
+        record.i = _atd_read_nullable([](const auto &v){return _atd_read_int(v);}, doc["i"]);
+    else record.i = 3;
+    return record;
+}
+NullOpt NullOpt::from_json_string(const std::string &s) {
+    rapidjson::Document doc;
+    doc.Parse(s.c_str());
+    if (doc.HasParseError()) {
+        throw AtdException("Failed to parse JSON");
+    }
+    return from_json(doc);
+}
+void NullOpt::to_json(const NullOpt &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+    writer.StartObject();
+    writer.Key("a");
+    _atd_write_int(t.a, writer);
+    writer.Key("b");
+    _atd_write_option([](auto v, auto &w){_atd_write_int(v, w);}, t.b, writer);
+    writer.Key("c");
+    _atd_write_nullable([](auto v, auto &w){_atd_write_int(v, w);}, t.c, writer);
+    if (t.f != std::nullopt) {
+        writer.Key("f");
+        _atd_write_int(t.f.value(), writer);
+    }
+    if (t.h != std::optional<int>(3)) {
+        writer.Key("h");
+        _atd_write_option([](auto v, auto &w){_atd_write_int(v, w);}, t.h, writer);
+    }
+    if (t.i != std::optional<int>(3)) {
+        writer.Key("i");
+        _atd_write_nullable([](auto v, auto &w){_atd_write_int(v, w);}, t.i, writer);
+    }
+    writer.EndObject();
+}
+std::string NullOpt::to_json_string(const NullOpt &t) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    to_json(t, writer);
+    return buffer.GetString();
+}
+std::string NullOpt::to_json_string() {
+    return to_json_string(*this);
+}
+
+
 namespace Frozen::Types {
 
 
@@ -1173,6 +1250,36 @@ namespace Frozen {
 }
 
 
+EmptyRecord EmptyRecord::from_json(const rapidjson::Value & doc) {
+    EmptyRecord record;
+    if (!doc.IsObject()) {
+        throw AtdException("Expected an object");
+    }
+    return record;
+}
+EmptyRecord EmptyRecord::from_json_string(const std::string &s) {
+    rapidjson::Document doc;
+    doc.Parse(s.c_str());
+    if (doc.HasParseError()) {
+        throw AtdException("Failed to parse JSON");
+    }
+    return from_json(doc);
+}
+void EmptyRecord::to_json(const EmptyRecord &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+    writer.StartObject();
+    writer.EndObject();
+}
+std::string EmptyRecord::to_json_string(const EmptyRecord &t) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    to_json(t, writer);
+    return buffer.GetString();
+}
+std::string EmptyRecord::to_json_string() {
+    return to_json_string(*this);
+}
+
+
 DefaultList DefaultList::from_json(const rapidjson::Value & doc) {
     DefaultList record;
     if (!doc.IsObject()) {
@@ -1193,8 +1300,10 @@ DefaultList DefaultList::from_json_string(const std::string &s) {
 }
 void DefaultList::to_json(const DefaultList &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
     writer.StartObject();
-    writer.Key("items");
-    _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.items, writer);
+    if (t.items != std::vector<int>({})) {
+        writer.Key("items");
+        _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.items, writer);
+    }
     writer.EndObject();
 }
 std::string DefaultList::to_json_string(const DefaultList &t) {

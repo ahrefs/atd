@@ -107,6 +107,42 @@ int main() {
         }
     };
 
+    tests["optional nullable"] = []() {
+        std::optional<int> x{3};
+        std::optional<int> xx{std::nullopt};
+
+        auto somes = typedefs::NullOpt{.a = 3, .b = x, .c = x, .f = x, .h = x, .i = x};
+        auto nones = typedefs::NullOpt{.a = 0, .b = xx, .c = xx, .f = xx, .h = xx, .i = xx};
+
+        auto some_j = R"({"a":3,"b":["Some",3],"c":3,"f":3})";
+        auto nones_j = R"({"a":0,"b":"None","c":null,"h":"None","i":null})";
+
+        if (NullOpt::from_json_string(some_j).to_json_string() == somes.to_json_string() && some_j == somes.to_json_string()) {
+            std::cout << "Test passed: optional nullable some" << std::endl;
+        } else {
+            throw std::runtime_error("check 1 is failed");
+        }
+
+
+        if (NullOpt::from_json_string(nones_j).to_json_string() == nones.to_json_string() && nones_j == nones.to_json_string()) {
+            std::cout << "Test passed: optional nullable none" << std::endl;
+        } else {
+            throw std::runtime_error("check 2 is failed");
+        }
+    };
+
+    tests["empty record"] = []() {
+        typedefs::EmptyRecord emptyRecord;
+        std::string json = "{}";
+        typedefs::EmptyRecord emptyRecordFromJson = EmptyRecord::from_json_string(json);
+
+        if (emptyRecord.to_json_string() == emptyRecordFromJson.to_json_string()) {
+            std::cout << "Test passed: empty record" << std::endl;
+        } else {
+            throw std::runtime_error("check is failed");
+        }
+    };
+
     std::cout << "Running tests..." << std::endl;
 
     int passed = 0;

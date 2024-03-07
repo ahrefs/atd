@@ -25,7 +25,7 @@ type root = {
   integer: int;
   __init__ : float;
   ~float_with_auto_default: float;
-  ~float_with_default <cpp default="0.1">: float;
+  ~float_with_default <cpp default="0.1f">: float;
   items: int list list;
   ?maybe: int option;
   ~extras: int list;
@@ -112,4 +112,16 @@ type recursive_record2 = {
   id: int;
   flag: bool;
   children: recursive_record2 nullable wrap <cpp templatize t="std::shared_ptr" wrap="_atd_wrap_shared_ptr" unwrap="_atd_unwrap_shared_ptr">;
+}
+
+type null_opt = {
+  a : int;
+  b : int option;
+  c : int nullable;
+  ?f : int option;
+  ~h <cpp default="3"> :int option;
+  ~i <cpp default="3"> : int nullable;
+}
+
+type empty_record = {
 }

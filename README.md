@@ -8,6 +8,7 @@ cross-language data types. It is used as input to generate efficient
 and type-safe serializers, deserializers and validators.
 
 Target programming languages currently supported:
+* C++: [atdcpp](atdcpp)
 * DLang: [atdd](atdd)
 * Java: [atdj](atdj)
 * OCaml, Melange: [atdgen](atdgen)

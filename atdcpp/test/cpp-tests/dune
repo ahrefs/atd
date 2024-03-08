@@ -1,0 +1,27 @@
+;
+; Convert ATD -> Dlang
+;
+(rule
+  (targets
+    everything_atd.hpp
+    everything_atd.cpp
+  )
+  (deps
+    ../atd-input/everything.atd
+  )
+  (action
+    (run %{bin:atdcpp} %{deps})))
+
+;
+; Compile and run the tests on the generated Dlang code.
+;
+(rule
+ (alias runtest)
+ (package atdcpp)
+ (deps
+  (glob_files *.cpp))
+ (action
+  (progn
+   (bash "g++ -I../../lib/rapidjson/include -std=c++20 %{deps} -o test")
+   (bash ./test)
+  )))

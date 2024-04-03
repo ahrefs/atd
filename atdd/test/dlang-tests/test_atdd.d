@@ -10,6 +10,13 @@ bool testFailed = false;
 
 void setupTests()
 {
+    tests["basicTypes"] = {
+        auto floatList = [0.1, 0.5, -0.8];
+        auto jsonStr = floatList.toJsonString;
+
+        assert(floatList.toJsonString == jsonStr.fromJsonString!(float[]).toJsonString);
+    };
+
     tests["simpleRecord"] = {
         auto record = IntFloatParametrizedRecord(32, [5.4, 3.3]);
 
@@ -71,7 +78,7 @@ void setupTests()
         obj.assoc4 = ["g": 7, "h": 8];
         obj.kind = Root_().to!Kind;
         obj.kinds = [
-            WOW().to!Kind, Thing(99).to!Kind, Amaze(["a", "b"]).to!Kind, Root_().to!Kind
+            WOW().to!Kind, 99.to!Thing.to!Kind, ["a", "b"].to!Amaze.to!Kind, Root_().to!Kind
         ];
         obj.nullables = [
             12.Nullable!int, Nullable!int.init, Nullable!int.init,
@@ -93,7 +100,7 @@ void setupTests()
             auto jsonStr = obj.toJsonString;
             auto newObj = jsonStr.fromJsonString!Root;
 
-            assert(obj == newObj);
+            assert(obj.toJsonString == newObj.toJsonString);
         }();
     };
 
@@ -164,11 +171,11 @@ void setupTests()
     };
 
     tests["recursiveClass"] = {
-        auto child1 = RecursiveClass(1, true, []);
-        auto child2 = RecursiveClass(2, true, []);
-        auto a_obj = RecursiveClass(0, false, [child1, child2]);
+        import std.typecons;
+        auto child = new Nullable!RecursiveClass(RecursiveClass(1, true, null));
+        auto a_obj = RecursiveClass(0, false, child);
 
-        assert (a_obj == a_obj.toJsonString.fromJsonString!RecursiveClass);
+        assert (a_obj.toJsonString == a_obj.toJsonString.fromJsonString!RecursiveClass.toJsonString);
     };
 
     tests["using wrapped type"] = {
@@ -186,6 +193,39 @@ void setupTests()
         import std.algorithm;
 
         auto mapResult = credientials.map!((c) => c);
+    };
+
+    tests["variant enum"] = {
+        Planet p = Planet.Earth;
+
+        auto res = p.toJsonString.fromJsonString!Planet;
+
+        assert(res.toJsonString == p.toJsonString);
+    };
+
+    tests["recursive variant"] = {
+        import std.sumtype;
+        import std.conv;
+
+        auto v = RecursiveVariant(Int(43));
+        auto r = RecordThatUsesRecursiveVariant(v, 42);
+        auto vv = RecursiveVariant(Record(r));
+
+        assert(vv.toJsonString == vv.toJsonString.fromJsonString!RecursiveVariant.toJsonString);
+    };
+
+    tests["optional nullable"] = {
+        import std.typecons : nullable, Nullable;
+        auto x = 3.nullable;
+        auto xx = Nullable!int.init;
+        auto somes = NullOpt(3, x, x, x, x, x);
+        auto nones = NullOpt(0, xx, xx, xx, xx, xx);
+
+        auto somesJ = `{"a":3,"b":["Some",3],"c":3,"f":3}`;
+        assert(somesJ.fromJsonString!NullOpt.toJsonString == somes.toJsonString);
+
+        auto nonesJ = `{"a":0,"b":"None","c":null,"h":"None","i":null}`;  
+        assert(nonesJ.fromJsonString!NullOpt.toJsonString == nones.toJsonString);
     };
 }
 

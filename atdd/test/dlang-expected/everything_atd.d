@@ -77,7 +77,7 @@ private
       else
           throw _atd_bad_json("unit", x);
   }
-  
+
   auto _atd_read_bool(JSONValue x)
   {
       try
@@ -109,7 +109,7 @@ private
       catch (JSONException e)
           throw _atd_bad_json("string", x);
   }
-  
+
   template _atd_read_list(alias readElements)
     {
         auto _atd_read_list(JSONValue jsonVal)
@@ -324,6 +324,94 @@ auto toJsonString(T)(T obj)
     return res.toString;
 }
 
+template _atd_write_ptr(alias writeElm)
+{
+  JSONValue _atd_write_ptr(P : T*, T)(P ptr)
+  {
+    if (ptr is null)
+      return JSONValue(null);
+    else
+      return writeElm(*ptr);
+  }
+}
+
+template _atd_read_ptr(alias readElm)
+{
+  alias T = ReturnType!readElm;
+  alias P = T*;
+
+  P _atd_read_ptr(JSONValue x)
+  {
+    if (x == JSONValue(null))
+      return null;
+
+    T* heapVal = new T;
+    *heapVal = readElm(x);
+
+    return heapVal;
+  }
+}
+
+// handling deserialisation into and from pointers
+@trusted T* fromJson(P : T*, T)(JSONValue x)
+{
+    return _atd_read_ptr!(j => j.fromJson!T)(x);
+}
+
+@trusted JSONValue toJson(P : T*, T)(P x)
+{
+  return _atd_write_ptr!(e => e.toJson!T)(x);
+}
+
+bool fromJson(T : bool)(JSONValue x)
+{
+  return _atd_read_bool(x);
+}
+
+int fromJson(T : int)(JSONValue x)
+{
+  return _atd_read_int(x);
+}
+
+float fromJson(T : float)(JSONValue x)
+{
+  return _atd_read_float(x);
+}
+
+string fromJson(T : string)(JSONValue x)
+{
+  return _atd_read_string(x);
+}
+
+E[] fromJson(T : E[], E)(JSONValue x)
+{
+  return _atd_read_list!(j => j.fromJson!E)(x);
+}
+
+JSONValue toJson(T : bool)(T x)
+{
+  return _atd_write_bool(x);
+}
+
+JSONValue toJson(T : int)(T x)
+{
+  return _atd_write_int(x);
+}
+
+JSONValue toJson(T : float)(T x)
+{
+  return _atd_write_float(x);
+}
+
+JSONValue toJson(T : string)(T x)
+{
+  return _atd_write_string(x);
+}
+
+JSONValue toJson(T : E[], E)(T x)
+{
+  return _atd_write_list!(e => e.toJson!E)(x);
+}
   
 
 
@@ -333,22 +421,86 @@ import std.stdint : uint32_t, uint16_t;
 struct RecursiveClass {
     int id;
     bool flag;
-    RecursiveClass[] children;
+    alias __children_type__ = Nullable!(RecursiveClass)*;
+    __children_type__ children;
 }
 
 @trusted RecursiveClass fromJson(T : RecursiveClass)(JSONValue x) {
     RecursiveClass obj;
     obj.id = ("id" in x) ? _atd_read_int(x["id"]) : _atd_missing_json_field!(typeof(obj.id))("RecursiveClass", "id");
     obj.flag = ("flag" in x) ? _atd_read_bool(x["flag"]) : _atd_missing_json_field!(typeof(obj.flag))("RecursiveClass", "flag");
-    obj.children = ("children" in x) ? _atd_read_list!(fromJson!RecursiveClass)(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
+    obj.children = ("children" in x) ? _atd_read_ptr!(_atd_read_nullable!(fromJson!RecursiveClass))(x["children"]) : _atd_missing_json_field!(typeof(obj.children))("RecursiveClass", "children");
     return obj;
 }
 @trusted JSONValue toJson(T : RecursiveClass)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["id"] = _atd_write_int(obj.id);
     res["flag"] = _atd_write_bool(obj.flag);
-    res["children"] = _atd_write_list!(((RecursiveClass x) => x.toJson!(RecursiveClass)))(obj.children);
+    res["children"] = _atd_write_ptr!(_atd_write_nullable!(((RecursiveClass x) => x.toJson!(RecursiveClass))))(obj.children);
     return res;
+}
+
+
+struct RecordThatUsesRecursiveVariant {
+    RecursiveVariant v;
+    int i;
+}
+
+@trusted RecordThatUsesRecursiveVariant fromJson(T : RecordThatUsesRecursiveVariant)(JSONValue x) {
+    RecordThatUsesRecursiveVariant obj;
+    obj.v = ("v" in x) ? fromJson!RecursiveVariant(x["v"]) : _atd_missing_json_field!(typeof(obj.v))("RecordThatUsesRecursiveVariant", "v");
+    obj.i = ("i" in x) ? _atd_read_int(x["i"]) : _atd_missing_json_field!(typeof(obj.i))("RecordThatUsesRecursiveVariant", "i");
+    return obj;
+}
+@trusted JSONValue toJson(T : RecordThatUsesRecursiveVariant)(T obj) {
+    JSONValue res;
+    res.object = new JSONValue[string];
+    res["v"] = ((RecursiveVariant x) => x.toJson!(RecursiveVariant))(obj.v);
+    res["i"] = _atd_write_int(obj.i);
+    return res;
+}
+
+// Original type: recursive_variant = [ ... | Int of ... | ... ]
+struct Int {
+int* value; alias getValue this;
+this(T)(T init) @safe  {value = new int(init);} int getValue() @safe {return value is null ? (int).init : *value;}
+this(int init) @trusted {value = new int; *value = init;}}
+@trusted JSONValue toJson(T : Int)(T e) {
+    return JSONValue([JSONValue("Int"), _atd_write_int(e)]);
+}
+
+
+// Original type: recursive_variant = [ ... | Record of ... | ... ]
+struct Record {
+RecordThatUsesRecursiveVariant* value; alias getValue this;
+this(T)(T init) @safe  {value = new RecordThatUsesRecursiveVariant(init);} RecordThatUsesRecursiveVariant getValue() @safe {return value is null ? (RecordThatUsesRecursiveVariant).init : *value;}
+this(RecordThatUsesRecursiveVariant init) @trusted {value = new RecordThatUsesRecursiveVariant; *value = init;}}
+@trusted JSONValue toJson(T : Record)(T e) {
+    return JSONValue([JSONValue("Record"), ((RecordThatUsesRecursiveVariant x) => x.toJson!(RecordThatUsesRecursiveVariant))(e)]);
+}
+
+
+struct RecursiveVariant{ SumType!(Int, Record) _data; alias _data this;
+@safe this(T)(T init) {_data = init;} @safe this(RecursiveVariant init) {_data = init._data;}}
+
+@trusted RecursiveVariant fromJson(T : RecursiveVariant)(JSONValue x) {
+    if (x.type == JSONType.array && x.array.length == 2 && x[0].type == JSONType.string) {
+        string cons = x[0].str;
+        if (cons == "Int")
+            return RecursiveVariant(Int(_atd_read_int(x[1])));
+        if (cons == "Record")
+            return RecursiveVariant(Record(fromJson!RecordThatUsesRecursiveVariant(x[1])));
+        throw _atd_bad_json("RecursiveVariant", x);
+    }
+    throw _atd_bad_json("RecursiveVariant", x);
+}
+
+@trusted JSONValue toJson(T : RecursiveVariant)(T x) {
+    return x.match!(
+    (Int v) => v.toJson!(Int),
+(Record v) => v.toJson!(Record)
+    );
 }
 
 
@@ -373,9 +525,11 @@ struct Root_ {}
 
 
 // Original type: kind = [ ... | Thing of ... | ... ]
-struct Thing { int value; }
+struct Thing {
+int value; alias value this;
+this(T)(T init) @safe {value = init;} this(Thing init) @safe{value = init.value;}}
 @trusted JSONValue toJson(T : Thing)(T e) {
-    return JSONValue([JSONValue("Thing"), _atd_write_int(e.value)]);
+    return JSONValue([JSONValue("Thing"), _atd_write_int(e)]);
 }
 
 
@@ -387,9 +541,11 @@ struct WOW {}
 
 
 // Original type: kind = [ ... | Amaze of ... | ... ]
-struct Amaze { string[] value; }
+struct Amaze {
+string[] value; alias value this;
+this(T)(T init) @safe {value = init;} this(Amaze init) @safe{value = init.value;}}
 @trusted JSONValue toJson(T : Amaze)(T e) {
-    return JSONValue([JSONValue("!!!"), _atd_write_list!(_atd_write_string)(e.value)]);
+    return JSONValue([JSONValue("!!!"), _atd_write_list!(_atd_write_string)(e)]);
 }
 
 
@@ -507,8 +663,10 @@ struct IntFloatParametrizedRecord {
 }
 @trusted JSONValue toJson(T : IntFloatParametrizedRecord)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["field_a"] = _atd_write_int(obj.field_a);
-    res["field_b"] = _atd_write_list!(_atd_write_float)(obj.field_b);
+    if (obj.field_b != [])
+        res["field_b"] = _atd_write_list!(_atd_write_float)(obj.field_b);
     return res;
 }
 
@@ -521,7 +679,7 @@ struct Root {
     float float_with_auto_default = 0.0;
     float float_with_default = 0.1;
     int[][] items;
-    Nullable!int maybe;
+    Nullable!(int) maybe;
     int[] extras = [];
     int answer = 42;
     Alias aliased;
@@ -532,8 +690,8 @@ struct Root {
     Tuple!(string, int)[] assoc2;
     int[float] assoc3;
     int[string] assoc4;
-    Nullable!int[] nullables;
-    Nullable!int[] options;
+    Nullable!(int)[] nullables;
+    Nullable!(int)[] options;
     JSONValue[] untyped_things;
     IntFloatParametrizedRecord parametrized_record;
     KindParametrizedTuple parametrized_tuple;
@@ -550,7 +708,7 @@ struct Root {
     obj.float_with_auto_default = ("float_with_auto_default" in x) ? _atd_read_float(x["float_with_auto_default"]) : 0.0;
     obj.float_with_default = ("float_with_default" in x) ? _atd_read_float(x["float_with_default"]) : 0.1;
     obj.items = ("items" in x) ? _atd_read_list!(_atd_read_list!(_atd_read_int))(x["items"]) : _atd_missing_json_field!(typeof(obj.items))("Root", "items");
-    obj.maybe = ("maybe" in x) ? _atd_read_option!(_atd_read_int)(x["maybe"]) : typeof(obj.maybe).init;
+    obj.maybe = ("maybe" in x) ? _atd_read_int(x["maybe"]).nullable : typeof(obj.maybe).init;
     obj.extras = ("extras" in x) ? _atd_read_list!(_atd_read_int)(x["extras"]) : [];
     obj.answer = ("answer" in x) ? _atd_read_int(x["answer"]) : 42;
     obj.aliased = ("aliased" in x) ? fromJson!Alias(x["aliased"]) : _atd_missing_json_field!(typeof(obj.aliased))("Root", "aliased");
@@ -580,17 +738,22 @@ struct Root {
 }
 @trusted JSONValue toJson(T : Root)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["ID"] = _atd_write_string(obj.id);
     res["await"] = _atd_write_bool(obj.await);
     res["integer"] = _atd_write_int(obj.integer);
     res["__init__"] = _atd_write_float(obj.x___init__);
-    res["float_with_auto_default"] = _atd_write_float(obj.float_with_auto_default);
-    res["float_with_default"] = _atd_write_float(obj.float_with_default);
+    if (obj.float_with_auto_default != 0.0)
+        res["float_with_auto_default"] = _atd_write_float(obj.float_with_auto_default);
+    if (obj.float_with_default != 0.1)
+        res["float_with_default"] = _atd_write_float(obj.float_with_default);
     res["items"] = _atd_write_list!(_atd_write_list!(_atd_write_int))(obj.items);
     if (!obj.maybe.isNull)
-        res["maybe"] = _atd_write_option!(_atd_write_int)(obj.maybe);
-    res["extras"] = _atd_write_list!(_atd_write_int)(obj.extras);
-    res["answer"] = _atd_write_int(obj.answer);
+        res["maybe"] = _atd_write_int(obj.maybe.get);
+    if (obj.extras != [])
+        res["extras"] = _atd_write_list!(_atd_write_int)(obj.extras);
+    if (obj.answer != 42)
+        res["answer"] = _atd_write_int(obj.answer);
     res["aliased"] = ((Alias x) => x.toJson!(Alias))(obj.aliased);
     res["point"] = ((Tuple!(float, float) x) => JSONValue([_atd_write_float(x[0]), _atd_write_float(x[1])]))(obj.point);
     res["kind"] = ((Kind x) => x.toJson!(Kind))(obj.kind);
@@ -621,6 +784,7 @@ struct RequireField {
 }
 @trusted JSONValue toJson(T : RequireField)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["req"] = _atd_write_string(obj.req);
     return res;
 }
@@ -637,8 +801,74 @@ struct RecordWithWrappedType {
 }
 @trusted JSONValue toJson(T : RecordWithWrappedType)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["item"] = _atd_write_wrap!(_atd_write_string, (int e) => to!string(e))(obj.item);
     return res;
+}
+
+
+enum Planet{
+Mercury,
+Venus,
+Earth,
+Mars,
+Saturn,
+Jupiter,
+Neptune,
+Uranus,
+Pluto
+}
+
+Planet fromJson(T : Planet)(JSONValue x) @trusted {
+if (x.type == JSONType.string) {
+    switch (x.str)
+    {
+    case "Mercury":
+ return Planet.Mercury;
+case "Venus":
+ return Planet.Venus;
+case "Earth":
+ return Planet.Earth;
+case "Mars":
+ return Planet.Mars;
+case "Saturn":
+ return Planet.Saturn;
+case "Jupiter":
+ return Planet.Jupiter;
+case "Neptune":
+ return Planet.Neptune;
+case "Uranus":
+ return Planet.Uranus;
+case "not a planet":
+ return Planet.Pluto;
+    default: throw _atd_bad_json("Planet", x);
+    }
+}
+throw _atd_bad_json("Planet", x);
+}
+
+JSONValue toJson(T : Planet)(T x) @trusted {
+    final switch (x) with (x)
+    {
+    case Mercury:
+ return JSONValue("Mercury");
+case Venus:
+ return JSONValue("Venus");
+case Earth:
+ return JSONValue("Earth");
+case Mars:
+ return JSONValue("Mars");
+case Saturn:
+ return JSONValue("Saturn");
+case Jupiter:
+ return JSONValue("Jupiter");
+case Neptune:
+ return JSONValue("Neptune");
+case Uranus:
+ return JSONValue("Uranus");
+case Pluto:
+ return JSONValue("not a planet");
+    }
 }
 
 
@@ -672,6 +902,41 @@ this(T...)(T args) @safe {_data = tuple(args);}
 }
 
 
+struct NullOpt {
+    int a;
+    Nullable!(int) b;
+    Nullable!(int) c;
+    Nullable!(int) f;
+    Nullable!(int) h = 3;
+    Nullable!(int) i = 3;
+}
+
+@trusted NullOpt fromJson(T : NullOpt)(JSONValue x) {
+    NullOpt obj;
+    obj.a = ("a" in x) ? _atd_read_int(x["a"]) : _atd_missing_json_field!(typeof(obj.a))("NullOpt", "a");
+    obj.b = ("b" in x) ? _atd_read_option!(_atd_read_int)(x["b"]) : _atd_missing_json_field!(typeof(obj.b))("NullOpt", "b");
+    obj.c = ("c" in x) ? _atd_read_nullable!(_atd_read_int)(x["c"]) : _atd_missing_json_field!(typeof(obj.c))("NullOpt", "c");
+    obj.f = ("f" in x) ? _atd_read_int(x["f"]).nullable : typeof(obj.f).init;
+    obj.h = ("h" in x) ? _atd_read_option!(_atd_read_int)(x["h"]) : 3.nullable;
+    obj.i = ("i" in x) ? _atd_read_nullable!(_atd_read_int)(x["i"]) : 3.nullable;
+    return obj;
+}
+@trusted JSONValue toJson(T : NullOpt)(T obj) {
+    JSONValue res;
+    res.object = new JSONValue[string];
+    res["a"] = _atd_write_int(obj.a);
+    res["b"] = _atd_write_option!(_atd_write_int)(obj.b);
+    res["c"] = _atd_write_nullable!(_atd_write_int)(obj.c);
+    if (!obj.f.isNull)
+        res["f"] = _atd_write_int(obj.f.get);
+    if (obj.h != 3)
+        res["h"] = _atd_write_option!(_atd_write_int)(obj.h);
+    if (obj.i != 3)
+        res["i"] = _atd_write_nullable!(_atd_write_int)(obj.i);
+    return res;
+}
+
+
 // Original type: frozen = [ ... | A | ... ]
 struct A {}
 @trusted JSONValue toJson(T : A)(T e) {
@@ -680,9 +945,11 @@ struct A {}
 
 
 // Original type: frozen = [ ... | B of ... | ... ]
-struct B { int value; }
+struct B {
+int value; alias value this;
+this(T)(T init) @safe {value = init;} this(B init) @safe{value = init.value;}}
 @trusted JSONValue toJson(T : B)(T e) {
-    return JSONValue([JSONValue("B"), _atd_write_int(e.value)]);
+    return JSONValue([JSONValue("B"), _atd_write_int(e)]);
 }
 
 
@@ -723,7 +990,9 @@ struct DefaultList {
 }
 @trusted JSONValue toJson(T : DefaultList)(T obj) {
     JSONValue res;
-    res["items"] = _atd_write_list!(_atd_write_int)(obj.items);
+    res.object = new JSONValue[string];
+    if (obj.items != [])
+        res["items"] = _atd_write_list!(_atd_write_int)(obj.items);
     return res;
 }
 
@@ -741,6 +1010,7 @@ struct Credential {
 }
 @trusted JSONValue toJson(T : Credential)(T obj) {
     JSONValue res;
+    res.object = new JSONValue[string];
     res["name"] = _atd_write_string(obj.name);
     res["password"] = ((Password x) => x.toJson!(Password))(obj.password);
     return res;

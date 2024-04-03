@@ -11,6 +11,12 @@ and mutual_recurse2 = Melangespec_t.mutual_recurse2 = {
   mutual_recurse1: mutual_recurse1
 }
 
+type with_open_enum = Melangespec_t.with_open_enum
+
+type with_open_enum_list = Melangespec_t.with_open_enum_list
+
+type variant3 = Melangespec_t.variant3 =  C | B | A of string 
+
 type variant2 = Melangespec_t.variant2 =  A | C 
 
 type variant1 = Melangespec_t.variant1 =  A of string | B 
@@ -370,6 +376,128 @@ and read_recurse = (
 )
 and recurse_of_string s =
   read_recurse (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_with_open_enum = (
+  fun ob x ->
+    match x with
+      | `Alpha -> Buffer.add_string ob "\"Alpha\""
+      | `Beta -> Buffer.add_string ob "\"Beta\""
+      | `Other x -> (
+          Yojson.Safe.write_string
+        ) ob x;
+)
+let string_of_with_open_enum ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_with_open_enum ob x;
+  Buffer.contents ob
+let read_with_open_enum = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    match Yojson.Safe.start_any_variant p lb with
+      | `Edgy_bracket -> (
+          match Yojson.Safe.read_ident p lb with
+            | "Alpha" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Alpha
+            | "Beta" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              `Beta
+            | x ->
+              `Other x
+        )
+      | `Double_quote -> (
+          match Yojson.Safe.finish_string p lb with
+            | "Alpha" ->
+              `Alpha
+            | "Beta" ->
+              `Beta
+            | x ->
+              `Other x
+        )
+      | `Square_bracket -> (
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+)
+let with_open_enum_of_string s =
+  read_with_open_enum (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write__with_open_enum_list = (
+  Atdgen_runtime.Oj_run.write_list (
+    write_with_open_enum
+  )
+)
+let string_of__with_open_enum_list ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write__with_open_enum_list ob x;
+  Buffer.contents ob
+let read__with_open_enum_list = (
+  Atdgen_runtime.Oj_run.read_list (
+    read_with_open_enum
+  )
+)
+let _with_open_enum_list_of_string s =
+  read__with_open_enum_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_with_open_enum_list = (
+  write__with_open_enum_list
+)
+let string_of_with_open_enum_list ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_with_open_enum_list ob x;
+  Buffer.contents ob
+let read_with_open_enum_list = (
+  read__with_open_enum_list
+)
+let with_open_enum_list_of_string s =
+  read_with_open_enum_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+let write_variant3 : _ -> variant3 -> _ = (
+  fun ob (x : variant3) ->
+    match x with
+      | C -> Buffer.add_string ob "\"C\""
+      | B -> Buffer.add_string ob "\"B\""
+      | A x -> (
+          Yojson.Safe.write_string
+        ) ob x;
+)
+let string_of_variant3 ?(len = 1024) x =
+  let ob = Buffer.create len in
+  write_variant3 ob x;
+  Buffer.contents ob
+let read_variant3 = (
+  fun p lb ->
+    Yojson.Safe.read_space p lb;
+    match Yojson.Safe.start_any_variant p lb with
+      | `Edgy_bracket -> (
+          match Yojson.Safe.read_ident p lb with
+            | "C" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              (C : variant3)
+            | "B" ->
+              Yojson.Safe.read_space p lb;
+              Yojson.Safe.read_gt p lb;
+              (B : variant3)
+            | x ->
+              (A x : variant3)
+        )
+      | `Double_quote -> (
+          match Yojson.Safe.finish_string p lb with
+            | "C" ->
+              (C : variant3)
+            | "B" ->
+              (B : variant3)
+            | x ->
+              (A x : variant3)
+        )
+      | `Square_bracket -> (
+          match Atdgen_runtime.Oj_run.read_string p lb with
+            | x ->
+              Atdgen_runtime.Oj_run.invalid_variant_tag p x
+        )
+)
+let variant3_of_string s =
+  read_variant3 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_variant2 : _ -> variant2 -> _ = (
   fun ob (x : variant2) ->
     match x with

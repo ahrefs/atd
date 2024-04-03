@@ -1,6 +1,7 @@
 (lang dune 2.8)
 (using menhir 2.0)
 (implicit_transitive_deps false)
+(cram enable)
 
 (name atd)
 (license MIT)

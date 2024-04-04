@@ -1,0 +1,8 @@
+(executable
+ (name prettify)
+ (libraries atdgen-runtime yojson))
+
+(cram
+ (deps
+  prettify.exe
+  (glob_files *.json)))

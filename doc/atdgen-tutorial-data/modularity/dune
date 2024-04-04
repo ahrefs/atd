@@ -1,0 +1,42 @@
+(executable
+ (name main)
+ (libraries atdgen-runtime yojson))
+
+(rule
+ (targets part1_t.ml part1_t.mli)
+ (deps part1.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -t)))
+
+(rule
+ (targets part1_j.ml part1_j.mli)
+ (deps part1.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -j)))
+
+(rule
+ (targets part2_t.ml part2_t.mli)
+ (deps part2.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -t)))
+
+(rule
+ (targets part2_j.ml part2_j.mli)
+ (deps part2.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -j)))
+
+(rule
+ (targets part3_t.ml part3_t.mli)
+ (deps part3.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -t)))
+
+(rule
+ (targets part3_j.ml part3_j.mli)
+ (deps part3.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -j)))
+
+(cram
+ (deps main.exe))

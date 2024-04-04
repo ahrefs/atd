@@ -36,10 +36,9 @@ let validate fname =
       (* Read config data structure from JSON file *)
       let x = Atdgen_runtime.Util.Json.from_file Config_j.read_config fname in
       (* Call the validators specified by <ocaml valid=...> *)
-      if not (Config_v.validate_config x) then
-        failwith "Some fields are invalid"
-      else
-        x
+      match Config_v.validate_config [] x with
+      | Some _ -> failwith "Some fields are invalid"
+      | None -> x
     with e ->
       (* Print decent error message and exit *)
       let msg =

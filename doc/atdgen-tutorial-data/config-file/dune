@@ -1,0 +1,37 @@
+(executable
+ (name config)
+ (libraries atdgen-runtime yojson))
+
+(rule
+ (targets config_t.ml config_t.mli)
+ (deps config.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -t)))
+
+(rule
+ (targets config_j.ml config_j.mli)
+ (deps config.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -j -j-defaults -j-strict-fields)))
+
+(rule
+ (targets config_v.ml config_v.mli)
+ (deps config.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -v)))
+
+(rule
+ (targets config_atd.ml)
+ (deps config.atd)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (run echo "let contents = \"\\")
+    (run sed -e "s/\\(\\\\\\|\\\"\\)/\\\\\\1/g" %{deps})
+    (run echo "\"")))))
+
+(cram
+ (deps
+  config.exe
+  (glob_files *.json)))

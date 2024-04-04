@@ -1,0 +1,18 @@
+(executable
+ (name hello)
+ (libraries atdgen-runtime yojson))
+
+(rule
+ (targets hello_t.ml hello_t.mli)
+ (deps hello.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -t)))
+
+(rule
+ (targets hello_j.ml hello_j.mli)
+ (deps hello.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -j)))
+
+(cram
+ (deps hello.exe))

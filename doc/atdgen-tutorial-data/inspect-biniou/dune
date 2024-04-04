@@ -1,0 +1,18 @@
+(executable
+ (name tree)
+ (libraries atdgen-runtime biniou yojson))
+
+(rule
+ (targets tree_t.ml tree_t.mli)
+ (deps tree.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -t)))
+
+(rule
+ (targets tree_b.ml tree_b.mli)
+ (deps tree.atd)
+ (action
+  (run %{bin:atdgen} %{deps} -b)))
+
+(cram
+ (deps tree.exe))

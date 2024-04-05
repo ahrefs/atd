@@ -225,6 +225,29 @@ namespace atd
 namespace // anonymous
 {
 
+std::string _rapid_json_type_to_string(rapidjson::Type type)
+{
+    switch (type)
+    {
+    case rapidjson::kNullType:
+        return "null";
+    case rapidjson::kFalseType:
+        return "false";
+    case rapidjson::kTrueType:
+        return "true";
+    case rapidjson::kObjectType:
+        return "object";
+    case rapidjson::kArrayType:
+        return "array";
+    case rapidjson::kStringType:
+        return "string";
+    case rapidjson::kNumberType:
+        return "number";
+    default:
+        return "unknown";
+    }
+}
+
 class AtdException : public std::exception
 {
 public:
@@ -247,8 +270,8 @@ template <typename T>
 
 [[maybe_unused]] auto _atd_bad_json(const std::string &type, const rapidjson::Value &x)
 {
-    (void) x;
-    return AtdException("Bad JSON for " + type);
+    auto x_type = x.GetType();
+    return AtdException("Bad JSON for " + type + " got type " + _rapid_json_type_to_string(x_type));
 }
 
 // Reading an integer from JSON

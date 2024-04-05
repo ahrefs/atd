@@ -202,6 +202,7 @@ let fixed_size_preamble_header atd_filename =
 #include <string>
 #include <map>
 #include <variant>
+#include <optional>
 
 |} atd_filename atd_filename
 

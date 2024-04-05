@@ -42,6 +42,13 @@ let get_cpp_include an : string list =
     ~field:"include"
     an
 
+let get_cpp_namespace an : string option =
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["cpp"]
+    ~field:"namespace"
+    an
+
 let get_cpp_wrap loc an =
   let path = ["cpp"] in
   let module_ =

@@ -30,6 +30,9 @@ val get_cpp_assoc_repr : Atd.Annot.t -> assoc_repr
     cpp file such as include. *)
 val get_cpp_include : Atd.Annot.t -> string list
 
+(** Return the namespace that needs to be used for the types defined in the
+    ATD file. *)
+val get_cpp_namespace : Atd.Annot.t -> string option
 
 
 type atd_cpp_wrap = {

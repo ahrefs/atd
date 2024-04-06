@@ -18,6 +18,7 @@
 #include <string>
 #include <map>
 #include <variant>
+#include <optional>
 
 
 #include <stdint.h>
@@ -67,9 +68,9 @@ namespace typedefs {
     typedef Credential Credential;
     typedef Credentials Credentials;
 
-    typedef std::variant<atd::RecursiveVariant::Types::Integer, atd::RecursiveVariant::Types::Rec> RecursiveVariant;
-    typedef std::variant<atd::Kind::Types::Root, atd::Kind::Types::Thing, atd::Kind::Types::WOW, atd::Kind::Types::Amaze> Kind;
-    typedef std::variant<atd::Frozen::Types::A, atd::Frozen::Types::B> Frozen;
+    typedef std::variant<RecursiveVariant::Types::Integer, RecursiveVariant::Types::Rec> RecursiveVariant;
+    typedef std::variant<Kind::Types::Root, Kind::Types::Thing, Kind::Types::WOW, Kind::Types::Amaze> Kind;
+    typedef std::variant<Frozen::Types::A, Frozen::Types::B> Frozen;
 
     typedef int St;
     typedef uint32_t Alias3;

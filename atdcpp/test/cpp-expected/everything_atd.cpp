@@ -14,6 +14,32 @@
 namespace atd
 {
 
+namespace // anonymous
+{
+
+std::string _rapid_json_type_to_string(rapidjson::Type type)
+{
+    switch (type)
+    {
+    case rapidjson::kNullType:
+        return "null";
+    case rapidjson::kFalseType:
+        return "false";
+    case rapidjson::kTrueType:
+        return "true";
+    case rapidjson::kObjectType:
+        return "object";
+    case rapidjson::kArrayType:
+        return "array";
+    case rapidjson::kStringType:
+        return "string";
+    case rapidjson::kNumberType:
+        return "number";
+    default:
+        return "unknown";
+    }
+}
+
 class AtdException : public std::exception
 {
 public:
@@ -29,19 +55,19 @@ private:
 };
 
 template <typename T>
-T _atd_missing_json_field(const std::string &type, const std::string &field)
+[[maybe_unused]] T _atd_missing_json_field(const std::string &type, const std::string &field)
 {
     throw AtdException("Missing JSON field '" + field + "' in " + type);
 }
 
-auto _atd_bad_json(const std::string &type, const rapidjson::Value &x)
+[[maybe_unused]] auto _atd_bad_json(const std::string &type, const rapidjson::Value &x)
 {
-    (void) x;
-    return AtdException("Bad JSON for " + type);
+    auto x_type = x.GetType();
+    return AtdException("Bad JSON for " + type + " got type " + _rapid_json_type_to_string(x_type));
 }
 
 // Reading an integer from JSON
-int _atd_read_int(const rapidjson::Value &val)
+[[maybe_unused]] int _atd_read_int(const rapidjson::Value &val)
 {
     if (!val.IsInt())
     {
@@ -50,7 +76,7 @@ int _atd_read_int(const rapidjson::Value &val)
     return val.GetInt();
 }
 
-bool _atd_read_bool(const rapidjson::Value &val)
+[[maybe_unused]] bool _atd_read_bool(const rapidjson::Value &val)
 {
     if (!val.IsBool())
     {
@@ -60,7 +86,7 @@ bool _atd_read_bool(const rapidjson::Value &val)
 }
 
 // Reading a float from JSON
-float _atd_read_float(const rapidjson::Value &val)
+[[maybe_unused]] float _atd_read_float(const rapidjson::Value &val)
 {
     if (val.IsInt())
     {
@@ -78,7 +104,7 @@ float _atd_read_float(const rapidjson::Value &val)
     return val.GetFloat();
 }
 
-std::string _atd_read_string(const rapidjson::Value &val)
+[[maybe_unused]] std::string _atd_read_string(const rapidjson::Value &val)
 {
     if (!val.IsString())
     {
@@ -88,7 +114,7 @@ std::string _atd_read_string(const rapidjson::Value &val)
 }
 
 template <typename F>
-auto _atd_read_array(F read_func, const rapidjson::Value &val)
+[[maybe_unused]] auto _atd_read_array(F read_func, const rapidjson::Value &val)
 {
     using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
 
@@ -107,7 +133,7 @@ auto _atd_read_array(F read_func, const rapidjson::Value &val)
 }
 
 template<typename F>
-auto _atd_read_object_to_tuple_list(F read_func, const rapidjson::Value &val)
+[[maybe_unused]] auto _atd_read_object_to_tuple_list(F read_func, const rapidjson::Value &val)
 {
     using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
 
@@ -126,7 +152,7 @@ auto _atd_read_object_to_tuple_list(F read_func, const rapidjson::Value &val)
 }
 
 template<typename RK, typename RV>
-auto _atd_read_array_to_assoc_dict(RK read_key_func, RV read_value_func, const rapidjson::Value &val)
+[[maybe_unused]] auto _atd_read_array_to_assoc_dict(RK read_key_func, RV read_value_func, const rapidjson::Value &val)
 {
     using KeyType = typename std::invoke_result<decltype(read_key_func), const rapidjson::Value &>::type;
     using ValueType = typename std::invoke_result<decltype(read_value_func), const rapidjson::Value &>::type;
@@ -151,7 +177,7 @@ auto _atd_read_array_to_assoc_dict(RK read_key_func, RV read_value_func, const r
 }
 
 template<typename F>
-auto _atd_read_object_to_assoc_array(F read_func, const rapidjson::Value &val)
+[[maybe_unused]] auto _atd_read_object_to_assoc_array(F read_func, const rapidjson::Value &val)
 {
     using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
 
@@ -170,7 +196,7 @@ auto _atd_read_object_to_assoc_array(F read_func, const rapidjson::Value &val)
 }
 
 template<typename F>
-auto _atd_read_nullable(F read_func, const rapidjson::Value &val)
+[[maybe_unused]] auto _atd_read_nullable(F read_func, const rapidjson::Value &val)
 {
     if (val.IsNull())
     {
@@ -180,7 +206,7 @@ auto _atd_read_nullable(F read_func, const rapidjson::Value &val)
 }
 
 template<typename F>
-auto _atd_read_option(F read_func, const rapidjson::Value &val)
+[[maybe_unused]] auto _atd_read_option(F read_func, const rapidjson::Value &val)
 {
     using ResultType = typename std::invoke_result<decltype(read_func), const rapidjson::Value &>::type;
     if (val.IsString() && std::string_view(val.GetString()) == "None")
@@ -198,19 +224,19 @@ auto _atd_read_option(F read_func, const rapidjson::Value &val)
 }
 
 template <typename F, typename W>
-auto _atd_read_wrap(F read_func, W wrap_func, const rapidjson::Value &val)
+[[maybe_unused]] auto _atd_read_wrap(F read_func, W wrap_func, const rapidjson::Value &val)
 {
     return wrap_func(read_func(val));
 }
 
 template <typename T>
-std::shared_ptr<T> _atd_wrap_shared_ptr(T val)
+[[maybe_unused]] std::shared_ptr<T> _atd_wrap_shared_ptr(T val)
 {
     return std::make_shared<T>(val);
 }
 
 template <typename T>
-T _atd_unwrap_shared_ptr(const std::shared_ptr<T> val)
+[[maybe_unused]] T _atd_unwrap_shared_ptr(const std::shared_ptr<T> val)
 {
     if (!val)
     {
@@ -219,28 +245,28 @@ T _atd_unwrap_shared_ptr(const std::shared_ptr<T> val)
     return *val;
 }
 
-void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_int(int value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Int(value);
 }
 
-void _atd_write_bool(bool value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_bool(bool value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Bool(value);
 }
 
-void _atd_write_float(float value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_float(float value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Double(value);
 }
 
-void _atd_write_string(const std::string &value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_string(const std::string &value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.String(value.c_str());
 }
 
 template <typename F, typename V>
-void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.StartArray();
     for (const auto& value : values)
@@ -251,7 +277,7 @@ void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson
 }
 
 template <typename F, typename V>
-void _atd_write_tuple_list_to_object(F write_func, const V &values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_tuple_list_to_object(F write_func, const V &values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.StartObject();
     for (const auto& value : values)
@@ -263,7 +289,7 @@ void _atd_write_tuple_list_to_object(F write_func, const V &values, rapidjson::W
 }
 
 template <typename Wk, typename Wv, typename Map>
-void _atd_write_assoc_dict_to_array(const Wk write_key_func, const Wv write_value_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_assoc_dict_to_array(const Wk write_key_func, const Wv write_value_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.StartArray();
     for (const auto& pair : value_map)
@@ -277,7 +303,7 @@ void _atd_write_assoc_dict_to_array(const Wk write_key_func, const Wv write_valu
 }
 
 template <typename F, typename Map>
-void _atd_write_assoc_array_to_object(F write_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_assoc_array_to_object(F write_func, const Map &value_map, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.StartObject();
     for (const auto& pair : value_map)
@@ -290,7 +316,7 @@ void _atd_write_assoc_array_to_object(F write_func, const Map &value_map, rapidj
 
 
 template <typename F, typename O>
-void _atd_write_option(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_option(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     if (val)
     {
@@ -306,7 +332,7 @@ void _atd_write_option(F write_func, const O &val, rapidjson::Writer<rapidjson::
 }
 
 template <typename F, typename O>
-void _atd_write_nullable(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_nullable(F write_func, const O &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     if (val)
     {
@@ -319,15 +345,12 @@ void _atd_write_nullable(F write_func, const O &val, rapidjson::Writer<rapidjson
 }
 
 template <typename F, typename W, typename T>
-void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_wrap(F write_func, W wrap_func, const T &val, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     write_func(wrap_func(val), writer);
 }
-
+} // anonymous namespace
   
-
-
-#include "everything_atd.hpp"
 
 
 namespace RecursiveVariant::Types {

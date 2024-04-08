@@ -22,7 +22,7 @@
 
 
 #include <stdint.h>
-namespace atd {
+namespace atd::my::custom::ns {
 // forward declarations
 namespace RecursiveVariant::Types {
     struct Integer;
@@ -58,6 +58,11 @@ namespace typedefs {
     typedef RecursiveClass RecursiveClass;
     typedef ThreeLevelNestedListRecord ThreeLevelNestedListRecord;
     typedef StructWithRecursiveVariant StructWithRecursiveVariant;
+    enum class EnumSumtype {
+        A,
+        B,
+        C,
+    };
     typedef IntFloatParametrizedRecord IntFloatParametrizedRecord;
     typedef Root Root;
     typedef RequireField RequireField;
@@ -195,6 +200,16 @@ namespace Kind {
 }
 
 
+namespace EnumSumtype {
+    typedef typedefs::EnumSumtype Types;
+
+    typedefs::EnumSumtype from_json(const rapidjson::Value &x);
+    typedefs::EnumSumtype from_json_string(const std::string &s);
+    void to_json(const typedefs::EnumSumtype &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::EnumSumtype &x);
+}
+
+
 namespace Alias3 {
     typedefs::Alias3 from_json(const rapidjson::Value &doc);
     typedefs::Alias3 from_json_string(const std::string &s);
@@ -273,6 +288,7 @@ struct Root {
     uint16_t wrapped;
     typedefs::AliasOfAliasOfAlias aaa;
     int item;
+    typedefs::EnumSumtype ee;
 
     static Root from_json(const rapidjson::Value & doc);
     static Root from_json_string(const std::string &s);
@@ -423,4 +439,4 @@ namespace Alias2 {
     void to_json(const typedefs::Alias2 &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::Alias2 &t);
 }
-} // namespace atd
+} // namespace atd::my::custom::ns

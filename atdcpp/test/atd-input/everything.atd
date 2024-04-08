@@ -1,4 +1,5 @@
 <cpp include="<stdint.h>">
+<cpp namespace="my::custom::ns">
 
 type kind = [
   | Root (* class name conflict *)
@@ -11,6 +12,12 @@ type frozen = [
   | A
   | B of int
 ]
+
+type enum_sumtype = [
+  | A
+  | B
+  | C
+] <cpp repr="enum">
 
 type ('a, 'b) parametrized_record = {
   field_a: 'a;
@@ -46,6 +53,7 @@ type root = {
   wrapped: st wrap <cpp t="uint16_t" wrap="[](typedefs::St st){return st - 1;}" unwrap="[](uint16_t e){return e + 1;}">;
   aaa: alias_of_alias_of_alias;
   item: string wrap <cpp t="int" wrap="std::stoi" unwrap="std::to_string">;
+  ee : enum_sumtype;
 }  
 
 

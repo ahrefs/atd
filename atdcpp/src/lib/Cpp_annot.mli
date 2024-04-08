@@ -19,6 +19,21 @@ type assoc_repr =
   | List
   | Dict
 
+(** Whether a sum type must be represented in cpp as a variant or as an enum.
+    This is independent of the JSON representation.
+*)
+type sumtype_repr =
+  | Variant
+  | Enum
+
+(** Inspection of annotations placed on sum types such as
+    [type foo = A | B | C <cpp repr="enum">].
+    Permissible values for the [repr] field are ["enum"] and ["variant"].
+    The default is ["variant"].
+*)
+val get_cpp_sumtype_repr : Atd.Annot.t -> sumtype_repr
+
+
 (** Inspect annotations placed on lists of pairs such as
     [(string * foo) list <cpp repr="dict">].
     Permissible values for the [repr] field are ["dict"] and ["list"].

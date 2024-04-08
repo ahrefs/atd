@@ -7,7 +7,7 @@
 #include "everything_atd.hpp"
 
 int main() {
-    using namespace atd;
+    using namespace atd::my::custom::ns;
     
     std::map<std::string, std::function<void()>> tests;
 
@@ -53,6 +53,7 @@ int main() {
         root.wrapped = 1;
         root.aaa = -90;
         root.item = 45;
+        root.ee = EnumSumtype::Types::B;
 
         std::string json = root.to_json_string();
         Root rootFromJson = Root::from_json_string(json);

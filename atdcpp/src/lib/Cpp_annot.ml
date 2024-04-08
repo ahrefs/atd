@@ -8,6 +8,10 @@ type assoc_repr =
   | List
   | Dict
 
+type sumtype_repr =
+  | Variant
+  | Enum
+
 type atd_cpp_wrap = {
   cpp_wrap_t : string;
   cpp_wrap : string;
@@ -21,6 +25,18 @@ let get_cpp_default an : string option =
       ~sections:["cpp"]
       ~field:"default"
       an
+
+let get_cpp_sumtype_repr an : sumtype_repr =
+  Atd.Annot.get_field
+    ~parse:(function
+      | "variant" -> Some Variant
+      | "enum" -> Some Enum
+      | _ -> None
+    )
+    ~default:Variant
+    ~sections:["cpp"]
+    ~field:"repr"
+    an
 
 let get_cpp_assoc_repr an : assoc_repr =
   Atd.Annot.get_field

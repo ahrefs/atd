@@ -1167,7 +1167,7 @@ let case_class env  type_name (loc, orig_name, unique_name, an, opt_e) case_clas
   
       
 
-let read_cases0 env loc name cases0 =
+let read_cases0 env loc name cases0 sum_repr =
   let ifs =
     cases0
     |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1175,7 +1175,7 @@ let read_cases0 env loc name cases0 =
       Inline [
         Line (sprintf "if (std::string_view(x.GetString()) == \"%s\") " (single_esc json_name));
         Block [
-          Line (sprintf "return Types::%s();" (trans env orig_name))
+          Line (sprintf "return Types::%s%s;" (trans env orig_name) (match sum_repr with | Cpp_annot.Variant -> "()" | Cpp_annot.Enum -> ""))
         ];
       ]
     )
@@ -1223,7 +1223,7 @@ let sum_container env  loc name cases codegen_type =
     if cases0 <> [] then
       [
         Line "if (x.IsString()) {";
-        Block (read_cases0 env loc name cases0);
+        Block (read_cases0 env loc name cases0 Cpp_annot.Variant);
         Line "}";
       ]
     else
@@ -1345,13 +1345,127 @@ let sum env loc name cases codegen_type =
     [Line(sprintf "typedef %s %s;" (sprintf "std::variant<%s>" type_list) (struct_name env name))]
   | _ -> []
 
+
+let enum_container env  loc name cases codegen_type =
+  let cpp_struct_name = struct_name env name in
+  let cases0, cases1 =
+    List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
+      opt_e = None
+    ) cases
+  in
+  let cases0_block =
+    if cases0 <> [] then
+      [
+        Line "if (x.IsString()) {";
+        Block (read_cases0 env loc name cases0 Cpp_annot.Enum);
+        Line "}";
+      ]
+    else
+      []
+  in
+  let cases1_block =
+    if cases1 <> [] then
+      error_at loc "enums with parameters are not supported"
+    else
+      []
+  in
+  match codegen_type with
+  | Declaration -> 
+  [
+    Line (sprintf "typedefs::%s from_json(const rapidjson::Value &x);" (cpp_struct_name));
+    Inline (from_json_string_declaration (sprintf "typedefs::%s" cpp_struct_name) false);
+    Line (sprintf "void to_json(const typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);" (cpp_struct_name));
+    Line (sprintf "std::string to_json_string(const typedefs::%s &x);" (cpp_struct_name));
+  ]
+  | Definition ->
+  [
+    Line (sprintf "namespace %s {" (cpp_struct_name));
+    Block [
+      Line (sprintf "typedefs::%s from_json(const rapidjson::Value &x) {" (cpp_struct_name));
+      Block [
+        Inline cases0_block;
+        Inline cases1_block;
+        Line (sprintf "throw _atd_bad_json(\"%s\", x);"
+                (single_esc (struct_name env name)))
+      ];
+      Line "}";
+    ];
+    Block [Inline (from_json_string_definition (sprintf "typedefs::%s" cpp_struct_name) (None))];
+    Block [
+      Line (sprintf "void to_json(const typedefs::%s &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {" (cpp_struct_name));
+      Block [
+        Line "switch (x) {";
+          Block (
+            List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+              Line (sprintf "case Types::%s: _atd_write_string(\"%s\", writer); break;" (trans env orig_name) (trans env orig_name))
+            ) cases
+         );
+        Line ("}");
+      ];
+      Line ("}");
+    ];
+    Block [Line (sprintf "std::string to_json_string(const typedefs::%s &x) {" (cpp_struct_name));
+    Block [
+      Line ("rapidjson::StringBuffer buffer;");
+      Line ("rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);");
+      Line ("to_json(x, writer);");
+      Line "return buffer.GetString();"
+    ];
+    Line "}";];
+    Line ("}");
+  ]
+  | _ -> []
+
+let enum env loc name cases codegen_type =
+    let cases =
+      List.map (fun (x : variant) ->
+        match x with
+        | Variant (loc, (orig_name, an), opt_e) ->
+            let unique_name = create_struct_name env orig_name in
+            (loc, orig_name, unique_name, an, opt_e)
+        | Inherit _ -> assert false
+      ) cases
+    in
+    (* let case_classes = 
+      List.map (fun x -> Inline (case_class env name x codegen_type)) cases
+    in *)
+    let container_class = enum_container env loc name cases codegen_type in
+    match codegen_type with
+    | Declaration -> 
+      [
+        Line (sprintf "namespace %s {" (struct_name env name));
+        Block [
+          Line (sprintf "typedef typedefs::%s Types;" (struct_name env name));
+          Line ("");
+          Inline container_class;
+        ];
+        Line (sprintf "}");
+      ]
+    | Definition ->
+      [
+        Inline container_class;
+      ] |> double_spaced
+    | Struct_typedef ->
+      let type_list =
+        List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
+          Line (sprintf "%s," (trans env orig_name))) cases in 
+          [
+            Line (sprintf "enum class %s {" (struct_name env name));
+            Block type_list;
+            Line (sprintf "};");
+          ]
+    | _ -> []
+
+
 let type_def env ((loc, (name, param, an), e) : A.type_def) codegen_type : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
   let unwrap e =
     match e with
     | Sum (loc, cases, an) ->
-        sum env loc name cases codegen_type
+      (match (Cpp_annot.get_cpp_sumtype_repr an) with
+      | Variant -> sum env loc name cases codegen_type
+      | Enum -> enum env loc name cases codegen_type)
     | Record (loc, fields, an) ->
         record env loc name fields an codegen_type
     | Tuple _

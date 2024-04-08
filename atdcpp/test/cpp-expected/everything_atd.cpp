@@ -11,7 +11,7 @@
 
 #include "everything_atd.hpp"
 
-namespace atd
+namespace atd::my::custom::ns
 {
 
 namespace // anonymous
@@ -672,6 +672,43 @@ namespace Kind {
 }
 
 
+namespace EnumSumtype {
+    typedefs::EnumSumtype from_json(const rapidjson::Value &x) {
+        if (x.IsString()) {
+            if (std::string_view(x.GetString()) == "A") 
+                return Types::A;
+            if (std::string_view(x.GetString()) == "B") 
+                return Types::B;
+            if (std::string_view(x.GetString()) == "C") 
+                return Types::C;
+            throw _atd_bad_json("EnumSumtype", x);
+        }
+        throw _atd_bad_json("EnumSumtype", x);
+    }
+    typedefs::EnumSumtype from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+    void to_json(const typedefs::EnumSumtype &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+        switch (x) {
+            case Types::A: _atd_write_string("A", writer); break;
+            case Types::B: _atd_write_string("B", writer); break;
+            case Types::C: _atd_write_string("C", writer); break;
+        }
+    }
+    std::string to_json_string(const typedefs::EnumSumtype &x) {
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        to_json(x, writer);
+        return buffer.GetString();
+    }
+}
+
+
 namespace Alias3 {
     typedefs::Alias3 from_json(const rapidjson::Value &doc) {
         return _atd_read_wrap([](const auto& v){return _atd_read_int(v);}, [](const auto &e){return static_cast<uint32_t>(e);},doc);
@@ -930,6 +967,9 @@ Root Root::from_json(const rapidjson::Value & doc) {
     if (doc.HasMember("item"))
         record.item = _atd_read_wrap([](const auto& v){return _atd_read_string(v);}, [](const auto &e){return std::stoi(e);},doc["item"]);
     else record.item = _atd_missing_json_field<decltype(record.item)>("Root", "item");
+    if (doc.HasMember("ee"))
+        record.ee = EnumSumtype::from_json(doc["ee"]);
+    else record.ee = _atd_missing_json_field<decltype(record.ee)>("Root", "ee");
     return record;
 }
 Root Root::from_json_string(const std::string &s) {
@@ -1010,6 +1050,8 @@ void Root::to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &wr
     AliasOfAliasOfAlias::to_json(t.aaa, writer);
     writer.Key("item");
     _atd_write_wrap([](const auto &v, auto &w){_atd_write_string(v, w);}, [](const auto &e){return std::to_string(e);}, t.item, writer);
+    writer.Key("ee");
+    EnumSumtype::to_json(t.ee, writer);
     writer.EndObject();
 }
 std::string Root::to_json_string(const Root &t) {
@@ -1487,4 +1529,4 @@ namespace Alias2 {
 }
 
 
-} // namespace atd
+} // namespace atd::my::custom::ns

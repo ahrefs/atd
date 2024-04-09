@@ -1,5 +1,5 @@
 ;
-; Convert ATD -> Dlang
+; Convert ATD -> C++
 ;
 (rule
   (targets
@@ -13,7 +13,8 @@
     (run %{bin:atdcpp} %{deps})))
 
 ;
-; Compile and run the tests on the generated Dlang code.
+; Compile and run the tests on the generated C++ code.
+; Linking with rapidjson library
 ;
 (rule
  (alias runtest)

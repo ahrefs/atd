@@ -862,7 +862,7 @@ void IntFloatParametrizedRecord::to_json(const IntFloatParametrizedRecord &t, ra
     writer.StartObject();
     writer.Key("field_a");
     _atd_write_int(t.field_a, writer);
-    if (t.field_b != std::vector<float>({})) {
+    if (!t.field_b.empty()) {
         writer.Key("field_b");
         _atd_write_array([](auto v, auto &w){_atd_write_float(v, w);}, t.field_b, writer);
     }
@@ -1004,7 +1004,7 @@ void Root::to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &wr
         writer.Key("maybe");
         _atd_write_int(t.maybe.value(), writer);
     }
-    if (t.extras != std::vector<int>({})) {
+    if (!t.extras.empty()) {
         writer.Key("extras");
         _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.extras, writer);
     }
@@ -1365,7 +1365,7 @@ DefaultList DefaultList::from_json_string(const std::string &s) {
 }
 void DefaultList::to_json(const DefaultList &t, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
     writer.StartObject();
-    if (t.items != std::vector<int>({})) {
+    if (!t.items.empty()) {
         writer.Key("items");
         _atd_write_array([](auto v, auto &w){_atd_write_int(v, w);}, t.items, writer);
     }

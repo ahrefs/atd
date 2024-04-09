@@ -696,11 +696,16 @@ let rec get_default_default (e : type_expr) : string option =
   | Name _ -> None
   | Tvar _ -> None
 
-let get_cpp_default (e : type_expr) (an : annot) : string option =
+
+type cpp_default = | User_default of string | Default_default of string | No_default 
+
+let get_cpp_default (e : type_expr) (an : annot) : cpp_default =
   let user_default = Cpp_annot.get_cpp_default an in
   match user_default with
-  | Some s -> Some s
-  | None -> get_default_default e
+  | Some s -> User_default s
+  | None -> (match get_default_default e with 
+    | Some s -> Default_default s 
+    | None -> No_default)
 
 (* If the field is '?foo: bar option', its cpp or json value has type
    'bar' rather than 'bar option'. *)
@@ -777,13 +782,22 @@ and tuple_writer env (loc, cells, an) =
       }("
     tuple_body
 
+let get_is_set_to_default env an e field =
+  let cpp_default = get_cpp_default e an in
+  let cpp_default_str = match cpp_default with | User_default x | Default_default x -> x | No_default -> "" in
+  let default_format = sprintf "%s != %s(%s)" field (type_name_of_expr env e) cpp_default_str in
+  match e with
+  | List _ -> (match cpp_default with
+    | User_default _ -> default_format
+    | Default_default _ | No_default ->  sprintf "!%s.empty()" field
+    )
+  | _ -> default_format
+
 let construct_json_field env trans_meth
     ((loc, (name, kind, an), e) : simple_field) =
   let unwrapped_type = unwrap_field_type loc name kind e in
   let writer_function n = json_writer ~nested:n env unwrapped_type in
   let cpp_var_name = inst_var_name trans_meth name in
-  let cpp_type_name = type_name_of_expr env unwrapped_type in
-  let cpp_default = match (get_cpp_default e an) with | Some x -> x | None -> "" in
   let assignement =
     [
       Line (sprintf "writer.Key(\"%s\");"
@@ -795,7 +809,7 @@ let construct_json_field env trans_meth
   | Required -> assignement
   | With_default -> 
       [
-        Line (sprintf "if (t.%s != %s(%s)) {" cpp_var_name cpp_type_name cpp_default);
+        Line (sprintf "if (%s) {" (get_is_set_to_default env an e (sprintf "t.%s" cpp_var_name)));
         Block assignement; 
         Line "}"
       ]
@@ -886,8 +900,8 @@ let from_json_class_argument
     | Optional -> (sprintf "std::nullopt")
     | With_default ->
         match get_cpp_default e an with
-        | Some x -> x
-        | None ->
+        | User_default x | Default_default x -> x
+        | No_default ->
             A.error_at loc
               (sprintf "missing default cpp value for field '%s'"
                  name)
@@ -920,8 +934,8 @@ let inst_var_declaration
     | Optional -> ""
     | With_default ->
         match get_cpp_default unwrapped_e an with
-        | None -> ""
-        | Some x -> sprintf " = %s" x
+        | No_default -> ""
+        | User_default x | Default_default x -> sprintf " = %s" x
   in
   [
     Line (sprintf "%s %s%s;" type_name var_name default)

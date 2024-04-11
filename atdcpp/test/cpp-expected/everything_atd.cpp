@@ -71,7 +71,7 @@ template <typename T>
 {
     if (!val.IsInt())
     {
-        throw AtdException("Expected an integer");
+        throw AtdException("Expected an integer but got" + _rapid_json_type_to_string(val.GetType()));
     }
     return val.GetInt();
 }
@@ -80,7 +80,7 @@ template <typename T>
 {
     if (!val.IsBool())
     {
-        throw AtdException("Expected a boolean");
+        throw AtdException("Expected a boolean but got" + _rapid_json_type_to_string(val.GetType()));
     }
     return val.GetBool();
 }
@@ -98,7 +98,7 @@ template <typename T>
     }
     if (!val.IsFloat())
     {
-        throw AtdException("Expected a float");
+        throw AtdException("Expected a float but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     return val.GetFloat();
@@ -108,7 +108,7 @@ template <typename T>
 {
     if (!val.IsString())
     {
-        throw AtdException("Expected a string");
+        throw AtdException("Expected a string but got" + _rapid_json_type_to_string(val.GetType()));
     }
     return val.GetString();
 }
@@ -120,7 +120,7 @@ template <typename F>
 
     if (!val.IsArray())
     {
-        throw AtdException("Expected an array"); // Or your specific exception type
+        throw AtdException("Expected an array but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::vector<ResultType> result;
@@ -139,7 +139,7 @@ template<typename F>
 
     if (!val.IsObject())
     {
-        throw AtdException("Expected an object"); // Or your specific exception type
+        throw AtdException("Expected an object but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::vector<std::tuple<std::string, ResultType>> result;
@@ -159,7 +159,7 @@ template<typename RK, typename RV>
 
     if (!val.IsArray())
     {
-        throw AtdException("Expected an array"); // Or your specific exception type
+        throw AtdException("Expected an array but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::map<KeyType, ValueType> result;
@@ -183,7 +183,7 @@ template<typename F>
 
     if (!val.IsObject())
     {
-        throw AtdException("Expected an object"); // Or your specific exception type
+        throw AtdException("Expected an object but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::map<std::string, ResultType> result;
@@ -414,7 +414,7 @@ namespace RecursiveVariant {
 RecursiveRecord2 RecursiveRecord2::from_json(const rapidjson::Value & doc) {
     RecursiveRecord2 record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: recursive_record2, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("id"))
         record.id = _atd_read_int(doc["id"]);
@@ -459,7 +459,7 @@ std::string RecursiveRecord2::to_json_string() {
 RecursiveClass RecursiveClass::from_json(const rapidjson::Value & doc) {
     RecursiveClass record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: recursive_class, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("id"))
         record.id = _atd_read_int(doc["id"]);
@@ -504,7 +504,7 @@ std::string RecursiveClass::to_json_string() {
 ThreeLevelNestedListRecord ThreeLevelNestedListRecord::from_json(const rapidjson::Value & doc) {
     ThreeLevelNestedListRecord record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: three_level_nested_list_record, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("field_a"))
         record.field_a = _atd_read_array([](const auto &v){return _atd_read_array([](const auto &v){return _atd_read_array([](const auto &v){return _atd_read_int(v);}, v);}, v);}, doc["field_a"]);
@@ -539,7 +539,7 @@ std::string ThreeLevelNestedListRecord::to_json_string() {
 StructWithRecursiveVariant StructWithRecursiveVariant::from_json(const rapidjson::Value & doc) {
     StructWithRecursiveVariant record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: struct_with_recursive_variant, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("variant"))
         record.variant = RecursiveVariant::from_json(doc["variant"]);
@@ -840,7 +840,7 @@ namespace KindParametrizedTuple {
 IntFloatParametrizedRecord IntFloatParametrizedRecord::from_json(const rapidjson::Value & doc) {
     IntFloatParametrizedRecord record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: _int_float_parametrized_record, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("field_a"))
         record.field_a = _atd_read_int(doc["field_a"]);
@@ -882,7 +882,7 @@ std::string IntFloatParametrizedRecord::to_json_string() {
 Root Root::from_json(const rapidjson::Value & doc) {
     Root record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: root, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("ID"))
         record.id = _atd_read_string(doc["ID"]);
@@ -1068,7 +1068,7 @@ std::string Root::to_json_string() {
 RequireField RequireField::from_json(const rapidjson::Value & doc) {
     RequireField record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: require_field, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("req"))
         record.req = _atd_read_string(doc["req"]);
@@ -1103,7 +1103,7 @@ std::string RequireField::to_json_string() {
 RecordWithWrappedType RecordWithWrappedType::from_json(const rapidjson::Value & doc) {
     RecordWithWrappedType record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: record_with_wrapped_type, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("item"))
         record.item = _atd_read_wrap([](const auto& v){return _atd_read_string(v);}, [](const auto &e){return std::stoi(e);},doc["item"]);
@@ -1194,7 +1194,7 @@ namespace Pair {
 NullOpt NullOpt::from_json(const rapidjson::Value & doc) {
     NullOpt record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: null_opt, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("a"))
         record.a = _atd_read_int(doc["a"]);
@@ -1318,7 +1318,7 @@ namespace Frozen {
 EmptyRecord EmptyRecord::from_json(const rapidjson::Value & doc) {
     EmptyRecord record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: empty_record, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     return record;
 }
@@ -1348,7 +1348,7 @@ std::string EmptyRecord::to_json_string() {
 DefaultList DefaultList::from_json(const rapidjson::Value & doc) {
     DefaultList record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: default_list, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("items"))
         record.items = _atd_read_array([](const auto &v){return _atd_read_int(v);}, doc["items"]);
@@ -1385,7 +1385,7 @@ std::string DefaultList::to_json_string() {
 Credential Credential::from_json(const rapidjson::Value & doc) {
     Credential record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: credential, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("name"))
         record.name = _atd_read_string(doc["name"]);
@@ -1449,7 +1449,7 @@ namespace Credentials2 {
 Credentials Credentials::from_json(const rapidjson::Value & doc) {
     Credentials record;
     if (!doc.IsObject()) {
-        throw AtdException("Expected an object");
+        throw AtdException("atdtype: credentials, expected an object but got" + _rapid_json_type_to_string(doc.GetType()));
     }
     if (doc.HasMember("credentials"))
         record.credentials = _atd_read_array([](const auto &v){return Credential::from_json(v);}, doc["credentials"]);

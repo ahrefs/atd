@@ -281,7 +281,7 @@ template <typename T>
 {
     if (!val.IsInt())
     {
-        throw AtdException("Expected an integer");
+        throw AtdException("Expected an integer but got" + _rapid_json_type_to_string(val.GetType()));
     }
     return val.GetInt();
 }
@@ -290,7 +290,7 @@ template <typename T>
 {
     if (!val.IsBool())
     {
-        throw AtdException("Expected a boolean");
+        throw AtdException("Expected a boolean but got" + _rapid_json_type_to_string(val.GetType()));
     }
     return val.GetBool();
 }
@@ -308,7 +308,7 @@ template <typename T>
     }
     if (!val.IsFloat())
     {
-        throw AtdException("Expected a float");
+        throw AtdException("Expected a float but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     return val.GetFloat();
@@ -318,7 +318,7 @@ template <typename T>
 {
     if (!val.IsString())
     {
-        throw AtdException("Expected a string");
+        throw AtdException("Expected a string but got" + _rapid_json_type_to_string(val.GetType()));
     }
     return val.GetString();
 }
@@ -330,7 +330,7 @@ template <typename F>
 
     if (!val.IsArray())
     {
-        throw AtdException("Expected an array"); // Or your specific exception type
+        throw AtdException("Expected an array but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::vector<ResultType> result;
@@ -349,7 +349,7 @@ template<typename F>
 
     if (!val.IsObject())
     {
-        throw AtdException("Expected an object"); // Or your specific exception type
+        throw AtdException("Expected an object but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::vector<std::tuple<std::string, ResultType>> result;
@@ -369,7 +369,7 @@ template<typename RK, typename RV>
 
     if (!val.IsArray())
     {
-        throw AtdException("Expected an array"); // Or your specific exception type
+        throw AtdException("Expected an array but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::map<KeyType, ValueType> result;
@@ -393,7 +393,7 @@ template<typename F>
 
     if (!val.IsObject())
     {
-        throw AtdException("Expected an object"); // Or your specific exception type
+        throw AtdException("Expected an object but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
     std::map<std::string, ResultType> result;
@@ -986,7 +986,9 @@ let record_definition env loc name fields an =
       Block [
         Line (sprintf "%s record;" cpp_struct_name);
         Line "if (!doc.IsObject()) {";
-        Block [Line "throw AtdException(\"Expected an object\");"];
+        Block [
+          Line (sprintf "throw AtdException(\"atdtype: %s, expected an object but got\" + _rapid_json_type_to_string(doc.GetType()));" name);
+          ];
         Line "}";
         Inline from_json_class_arguments;
         Line "return record;";

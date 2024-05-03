@@ -51,6 +51,7 @@ test:
 	$(MAKE) test-python
 	$(MAKE) test-ts
 	$(MAKE) test-d
+	$(MAKE) test-cpp
 
 
 # Test the OCaml code used by all the backends

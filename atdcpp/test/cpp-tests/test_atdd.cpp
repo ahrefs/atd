@@ -59,6 +59,7 @@ int main() {
         root.aaa = -90;
         root.item = 45;
         root.ee = EnumSumtype::Types::B;
+        root.untyped_things = {R"({"objec1t":"value"})", R"({"object":[1,2,3]})"};
 
         std::string json = root.to_json_string();
         Root rootFromJson = Root::from_json_string(json);

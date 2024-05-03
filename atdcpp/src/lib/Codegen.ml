@@ -324,6 +324,15 @@ template <typename T>
     return val.GetString();
 }
 
+[[maybe_unused]] std::string _atd_read_abstract(const rapidjson::Value &val)
+{
+  // will convert val to string
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  val.Accept(writer);
+  return buffer.GetString();
+}
+
 template <typename F>
 [[maybe_unused]] auto _atd_read_array(F read_func, const rapidjson::Value &val)
 {
@@ -476,6 +485,12 @@ template <typename T>
     writer.String(value.c_str());
 }
 
+[[maybe_unused]] void _atd_write_abstract(const std::string &value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    // writes string value as raw json
+    writer.RawValue(value.c_str(), value.size(), rapidjson::kStringType);
+}
+
 template <typename F, typename V>
 [[maybe_unused]] void _atd_write_array(F write_func, const V& values, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
@@ -620,7 +635,7 @@ let cpp_type_name env (name : string) =
   | "int" -> "int"
   | "float" -> "float"
   | "string" -> "std::string"
-  | "abstract" -> "rapidjson::Value"
+  | "abstract" -> "std::string"
   | user_defined -> 
       let typename = (struct_name env user_defined) in
       typename
@@ -632,7 +647,7 @@ let cpp_type_name_namespaced env (name : string) =
   | "int" -> "int"
   | "float" -> "float"
   | "string" -> "std::string"
-  | "abstract" -> "rapidjson::Value"
+  | "abstract" -> "std::string"
   | user_defined -> 
       let typename = (struct_name env user_defined) in
       sprintf "%s::%s" "typedefs" typename            
@@ -762,8 +777,7 @@ let rec json_writer ?(nested=false) env e =
     ) 
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s(" name
-       | "abstract" -> not_implemented loc "abstract"
+       | "bool" | "int" | "float" | "string" | "abstract" -> sprintf "_atd_write_%s(" name
        | _ -> let dtype_name = (cpp_type_name env name) in
           sprintf "%s::to_json(" dtype_name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
@@ -865,8 +879,7 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
     )
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s(" name
-       | "abstract" -> not_implemented loc "abstract"
+       | "bool" | "int" | "float" | "string" | "abstract" -> sprintf "_atd_read_%s(" name
        | _ -> sprintf "%s::from_json(" 
        (struct_name env name)
        )

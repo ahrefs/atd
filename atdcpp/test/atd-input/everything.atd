@@ -47,7 +47,7 @@ type root = {
   assoc4: (string * int) list <json repr="object"> <cpp repr="dict">;
   nullables: int nullable list;
   options: int option list;
-  (* untyped_things: abstract list; *)
+  untyped_things: abstract list;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;
   wrapped: st wrap <cpp t="uint16_t" wrap="[](typedefs::St st){return st - 1;}" unwrap="[](uint16_t e){return e + 1;}">;

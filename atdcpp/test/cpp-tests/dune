@@ -23,6 +23,6 @@
   (glob_files *.cpp))
  (action
   (progn
-   (bash "g++ -I../../lib/rapidjson/include -I/usr/include/rapidjson -std=c++17 %{deps} -o test")
+   (bash "g++ -I../../lib/rapidjson/include -std=c++17 %{deps} -o test")
    (bash ./test)
   )))

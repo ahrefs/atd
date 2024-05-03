@@ -18,6 +18,7 @@
 #include <string>
 #include <map>
 #include <variant>
+#include <memory>
 #include <optional>
 
 

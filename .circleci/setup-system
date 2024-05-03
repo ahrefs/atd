@@ -25,6 +25,10 @@ sudo apt-get install -y \
 # For JSON Schema and atdpy testing
 pip install jsonschema pytest mypy flake8
 
+# For atdcpp testing
+sudo apt install -y \
+  rapidjson-dev
+
 # To get latest ldc version
 source $(curl https://dlang.org/install.sh | bash -s ldc -a)
 echo "source $(~/dlang/install.sh ldc -a)" >> "$BASH_ENV"

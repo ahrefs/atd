@@ -4,6 +4,11 @@
 #include <tuple>
 #include <vector>
 #include <stdexcept>
+#include <functional>
+#include <optional>
+#include <variant>
+#include <memory>
+
 #include "everything_atd.hpp"
 
 int main() {

@@ -284,6 +284,7 @@ struct Root {
     std::map<std::string, int> assoc4;
     std::vector<std::optional<int>> nullables;
     std::vector<std::optional<int>> options;
+    std::vector<std::string> untyped_things;
     typedefs::IntFloatParametrizedRecord parametrized_record;
     typedefs::KindParametrizedTuple parametrized_tuple;
     uint16_t wrapped;

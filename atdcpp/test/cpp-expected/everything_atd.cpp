@@ -113,6 +113,15 @@ template <typename T>
     return val.GetString();
 }
 
+[[maybe_unused]] std::string _atd_read_abstract(const rapidjson::Value &val)
+{
+  // will convert val to string
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  val.Accept(writer);
+  return buffer.GetString();
+}
+
 template <typename F>
 [[maybe_unused]] auto _atd_read_array(F read_func, const rapidjson::Value &val)
 {
@@ -263,6 +272,12 @@ template <typename T>
 [[maybe_unused]] void _atd_write_string(const std::string &value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.String(value.c_str());
+}
+
+[[maybe_unused]] void _atd_write_abstract(const std::string &value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+{
+    // writes string value as raw json
+    writer.RawValue(value.c_str(), value.size(), rapidjson::kStringType);
 }
 
 template <typename F, typename V>
@@ -952,6 +967,9 @@ Root Root::from_json(const rapidjson::Value & doc) {
     if (doc.HasMember("options"))
         record.options = _atd_read_array([](const auto &v){return _atd_read_option([](const auto &v){return _atd_read_int(v);}, v);}, doc["options"]);
     else record.options = _atd_missing_json_field<decltype(record.options)>("Root", "options");
+    if (doc.HasMember("untyped_things"))
+        record.untyped_things = _atd_read_array([](const auto &v){return _atd_read_abstract(v);}, doc["untyped_things"]);
+    else record.untyped_things = _atd_missing_json_field<decltype(record.untyped_things)>("Root", "untyped_things");
     if (doc.HasMember("parametrized_record"))
         record.parametrized_record = IntFloatParametrizedRecord::from_json(doc["parametrized_record"]);
     else record.parametrized_record = _atd_missing_json_field<decltype(record.parametrized_record)>("Root", "parametrized_record");
@@ -1040,6 +1058,8 @@ void Root::to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &wr
     _atd_write_array([](auto v, auto &w){_atd_write_nullable([](auto v, auto &w){_atd_write_int(v, w);}, v, w);}, t.nullables, writer);
     writer.Key("options");
     _atd_write_array([](auto v, auto &w){_atd_write_option([](auto v, auto &w){_atd_write_int(v, w);}, v, w);}, t.options, writer);
+    writer.Key("untyped_things");
+    _atd_write_array([](auto v, auto &w){_atd_write_abstract(v, w);}, t.untyped_things, writer);
     writer.Key("parametrized_record");
     IntFloatParametrizedRecord::to_json(t.parametrized_record, writer);
     writer.Key("parametrized_tuple");

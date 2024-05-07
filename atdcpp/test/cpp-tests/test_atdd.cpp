@@ -37,7 +37,7 @@ int main() {
         root.await = false;
         root.integer = 43;
         root.x___init__ = 3.14;
-        root.float_with_auto_default = 90.03;
+        root.float_with_auto_default = 90.036990;
         root.float_with_default = 32.1;
         root.items = {{1, 2}, {-1, -2}};
         root.maybe = 422;

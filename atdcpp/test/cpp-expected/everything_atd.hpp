@@ -253,7 +253,7 @@ namespace KindParametrizedTuple {
 
 struct IntFloatParametrizedRecord {
     int field_a;
-    std::vector<float> field_b = {};
+    std::vector<double> field_b = {};
 
     static IntFloatParametrizedRecord from_json(const rapidjson::Value & doc);
     static IntFloatParametrizedRecord from_json_string(const std::string &s);
@@ -267,20 +267,20 @@ struct Root {
     std::string id;
     bool await;
     int integer;
-    float x___init__;
-    float float_with_auto_default = 0.0f;
-    float float_with_default = 0.1f;
+    double x___init__;
+    double float_with_auto_default = 0.0f;
+    double float_with_default = 0.1f;
     std::vector<std::vector<int>> items;
     std::optional<int> maybe;
     std::vector<int> extras = {};
     int answer = 42;
     typedefs::Alias aliased;
-    std::tuple<float, float> point;
+    std::tuple<double, double> point;
     typedefs::Kind kind;
     std::vector<typedefs::Kind> kinds;
-    std::vector<std::tuple<float, int>> assoc1;
+    std::vector<std::tuple<double, int>> assoc1;
     std::vector<std::tuple<std::string, int>> assoc2;
-    std::map<float, int> assoc3;
+    std::map<double, int> assoc3;
     std::map<std::string, int> assoc4;
     std::vector<std::optional<int>> nullables;
     std::vector<std::optional<int>> options;

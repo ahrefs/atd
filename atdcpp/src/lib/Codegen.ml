@@ -297,22 +297,14 @@ template <typename T>
 }
 
 // Reading a float from JSON
-[[maybe_unused]] float _atd_read_float(const rapidjson::Value &val)
+[[maybe_unused]] double _atd_read_float(const rapidjson::Value &val)
 {
-    if (val.IsInt())
+    if (!val.IsNumber())
     {
-        return static_cast<float>(val.GetInt());
-    }
-    else if (val.IsUint())
-    {
-        return static_cast<float>(val.GetUint());
-    }
-    if (!val.IsFloat())
-    {
-        throw AtdException("Expected a float but got" + _rapid_json_type_to_string(val.GetType()));
+        throw AtdException("Expected a number but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
-    return val.GetFloat();
+    return val.GetDouble();
 }
 
 [[maybe_unused]] std::string _atd_read_string(const rapidjson::Value &val)
@@ -475,7 +467,7 @@ template <typename T>
     writer.Bool(value);
 }
 
-[[maybe_unused]] void _atd_write_float(float value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_float(double value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Double(value);
 }
@@ -633,7 +625,7 @@ let cpp_type_name env (name : string) =
   | "unit" -> "void"
   | "bool" -> "bool"
   | "int" -> "int"
-  | "float" -> "float"
+  | "float" -> "double"
   | "string" -> "std::string"
   | "abstract" -> "std::string"
   | user_defined -> 
@@ -645,7 +637,7 @@ let cpp_type_name_namespaced env (name : string) =
   | "unit" -> "void"
   | "bool" -> "bool"
   | "int" -> "int"
-  | "float" -> "float"
+  | "float" -> "double"
   | "string" -> "std::string"
   | "abstract" -> "std::string"
   | user_defined -> 

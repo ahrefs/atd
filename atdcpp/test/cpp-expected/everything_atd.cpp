@@ -86,22 +86,14 @@ template <typename T>
 }
 
 // Reading a float from JSON
-[[maybe_unused]] float _atd_read_float(const rapidjson::Value &val)
+[[maybe_unused]] double _atd_read_float(const rapidjson::Value &val)
 {
-    if (val.IsInt())
+    if (!val.IsNumber())
     {
-        return static_cast<float>(val.GetInt());
-    }
-    else if (val.IsUint())
-    {
-        return static_cast<float>(val.GetUint());
-    }
-    if (!val.IsFloat())
-    {
-        throw AtdException("Expected a float but got" + _rapid_json_type_to_string(val.GetType()));
+        throw AtdException("Expected a number but got" + _rapid_json_type_to_string(val.GetType()));
     }
 
-    return val.GetFloat();
+    return val.GetDouble();
 }
 
 [[maybe_unused]] std::string _atd_read_string(const rapidjson::Value &val)
@@ -264,7 +256,7 @@ template <typename T>
     writer.Bool(value);
 }
 
-[[maybe_unused]] void _atd_write_float(float value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
+[[maybe_unused]] void _atd_write_float(double value, rapidjson::Writer<rapidjson::StringBuffer>& writer)
 {
     writer.Double(value);
 }
@@ -1008,11 +1000,11 @@ void Root::to_json(const Root &t, rapidjson::Writer<rapidjson::StringBuffer> &wr
     _atd_write_int(t.integer, writer);
     writer.Key("__init__");
     _atd_write_float(t.x___init__, writer);
-    if (t.float_with_auto_default != float(0.0f)) {
+    if (t.float_with_auto_default != double(0.0f)) {
         writer.Key("float_with_auto_default");
         _atd_write_float(t.float_with_auto_default, writer);
     }
-    if (t.float_with_default != float(0.1f)) {
+    if (t.float_with_default != double(0.1f)) {
         writer.Key("float_with_default");
         _atd_write_float(t.float_with_default, writer);
     }

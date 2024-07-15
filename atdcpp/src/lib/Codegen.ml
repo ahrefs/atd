@@ -1170,6 +1170,7 @@ let case_class env  type_name (loc, orig_name, unique_name, an, opt_e) case_clas
         [
             Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
             Block [
+              Line (sprintf "(void)e;");
               Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
             ];
             Line (sprintf "};");

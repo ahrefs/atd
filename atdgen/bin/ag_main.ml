@@ -71,6 +71,10 @@ let main () =
     let l = Re.Str.split (Re.Str.regexp " *, *\\| +") s in
     opens := List.rev_append l !opens
   in
+  let tags = ref [] in
+  let add_tags t =
+    tags := List.rev_append t !tags
+  in
   let pp_convs : Ocaml.pp_convs ref = ref (Ocaml.Ppx_deriving []) in
   let set_pp_convs arg =
     match !pp_convs with
@@ -103,6 +107,14 @@ let main () =
     ATTR
          Insert '[@@ATTR]' after OCaml type definitions.
          Option can be used multiple times to specify several attributes
+    ";
+    "-tag", Arg.String (fun s -> add_tags [ s ]),
+    "
+    TAG
+         Only evaluate annotations which have either 
+          - the provided TAG as a field value <... tag=TAG>,
+          - or have no tags specified.
+         Option can be used multiple times to specify several tags
     ";
     "-t", Arg.Unit (fun () ->
                       set_once "output type" mode T;
@@ -422,6 +434,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd" Sys.argv.(0) in
           ~type_aliases
           ~force_defaults
           ~ocaml_version
+          ~tags:!tags
           atd_file ocaml_prefix
 
 let () =

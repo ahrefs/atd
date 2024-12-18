@@ -6,7 +6,14 @@ open Atdj_env
 let args_spec env = Arg.align
     [ "-package",
       Arg.String (fun x -> env := { !env with package = x }),
-      " Package name of generated files"
+      " Package name of generated files";
+
+      "-tag",
+      Arg.String (fun x -> env := { !env with tags = (x :: !env.tags) }),
+      " Only evaluate annotations which have either \n
+          - the provided TAG as a field value <... tag=TAG>, \n
+          - or have no tags specified. \n
+        Option can be used multiple times to specify several tags"
     ]
 
 let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"
@@ -64,7 +71,7 @@ let main () =
   (* Parse ATD file *)
   let (atd_head, atd_module), _original_types =
     Atd.Util.load_file
-      ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
+      ~expand:false ~inherit_fields:true ~inherit_variants:true ~tags:env.tags input_file
   in
   let env = {
     env with

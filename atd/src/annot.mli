@@ -203,3 +203,10 @@ type schema = schema_section list
 (** Check that annotations of interest are not misplaced.
     Raises an exception with an error message when the check fails. *)
 val validate : schema -> Ast.any -> unit
+
+(**
+   Remove annotations which do not have at least one of the provided [tags] found in their tag field.
+*)
+val filter_by_tags :
+  tags : string list ->
+  Ast.full_module -> Ast.full_module

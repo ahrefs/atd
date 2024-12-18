@@ -90,6 +90,12 @@ let annot_schema_json : Annot.schema = [
       Variant, "name";
       Field, "name";
       Field, "tag_field";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   };
   {

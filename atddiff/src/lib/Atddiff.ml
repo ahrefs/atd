@@ -52,6 +52,7 @@ let compare_files
     |> Atd.Util.load_file
       ~inherit_fields:true (* simplifies comparison *)
       ~inherit_variants:true (* simplifies comparison *)
+      ~tags:[]
     |> fst
     |> Atd.Ast.remove_wrap_constructs
   in

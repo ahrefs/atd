@@ -1357,6 +1357,7 @@ let make_ocaml_files
     ~force_defaults:_
     ~ocaml_version
     ~pp_convs
+    ~tags
     atd_file out =
   let ((head, m0), _) =
     match atd_file with
@@ -1364,13 +1365,13 @@ let make_ocaml_files
         Atd.Util.load_file
           ~annot_schema
           ~expand:false ~inherit_fields:true ~inherit_variants:true
-          ?pos_fname ?pos_lnum
+          ?pos_fname ?pos_lnum ~tags
           file
     | None ->
         Atd.Util.read_channel
           ~annot_schema
           ~expand:false ~inherit_fields:true ~inherit_variants:true
-          ?pos_fname ?pos_lnum
+          ?pos_fname ?pos_lnum ~tags
           stdin
   in
   let tsort =

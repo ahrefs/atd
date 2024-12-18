@@ -8,6 +8,7 @@ let read_lexbuf
     ?(inherit_variants = false)
     ?(pos_fname = "")
     ?(pos_lnum = 1)
+    ~tags
     lexbuf =
 
   Lexer.init_fname lexbuf pos_fname pos_lnum;
@@ -30,12 +31,16 @@ let read_lexbuf
    | Some schema ->
        Annot.validate schema (Ast.Full_module full_module)
   );
+  let full_module = match tags with 
+    | [] -> full_module 
+    | tags -> Annot.filter_by_tags ~tags full_module
+  in
   (full_module, original_types)
 
 let read_channel
     ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants
-    ?pos_fname ?pos_lnum
+    ?pos_fname ?pos_lnum ~tags
     ic =
   let lexbuf = Lexing.from_channel ic in
   let pos_fname =
@@ -45,12 +50,12 @@ let read_channel
       pos_fname
   in
   read_lexbuf ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
-    ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
+    ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum ~tags lexbuf
 
 let load_file
     ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants
-    ?pos_fname ?pos_lnum
+    ?pos_fname ?pos_lnum ~tags
     file =
   let ic = open_in file in
   let finally () = close_in_noerr ic in
@@ -63,7 +68,7 @@ let load_file
     let ast =
       read_channel
         ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
-        ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum ic
+        ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum ~tags ic
     in
     finally ();
     ast
@@ -74,11 +79,11 @@ let load_file
 let load_string
     ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
     ?inherit_fields ?inherit_variants
-    ?pos_fname ?pos_lnum
+    ?pos_fname ?pos_lnum ~tags
     s =
   let lexbuf = Lexing.from_string s in
   read_lexbuf ?annot_schema ?expand ?keep_builtins ?keep_poly ?xdebug
-    ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum lexbuf
+    ?inherit_fields ?inherit_variants ?pos_fname ?pos_lnum ~tags lexbuf
 
 module Tsort = Sort.Make (
   struct

@@ -25,6 +25,12 @@ let annot_schema_ts : Atd.Annot.schema_section =
     fields = [
       Type_expr, "repr";
       Field, "default";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   }
 
@@ -1161,7 +1167,7 @@ let to_file ~atd_filename (items : A.module_body) dst_path =
   |> spaced
   |> Indent.to_file ~indent:2 dst_path
 
-let run_file src_path =
+let run_file ~tags src_path =
   let src_name = Filename.basename src_path in
   let dst_name =
     (if Filename.check_suffix src_name ".atd" then
@@ -1178,6 +1184,7 @@ let run_file src_path =
       ~keep_builtins:true
       ~inherit_fields:true
       ~inherit_variants:true
+      ~tags
       src_path
   in
   let full_module =

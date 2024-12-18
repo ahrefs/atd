@@ -258,6 +258,21 @@
  (package atdgen)
  (action (diff test_annot_error.expected.stdout test_annot_error.stdout)))
  
+(rule
+ (targets test_annot_tags_j.ml test_annot_tags_j.mli)
+ (deps    test_annot_tags.atd)
+ (action  (run %{bin:atdgen} -tag=melange -j -j-std %{deps})))
+
+(rule
+ (alias runtest)
+ (package atdgen)
+ (action (diff test_annot_tags_j.expected.ml test_annot_tags_j.ml)))
+
+(rule
+ (alias runtest)
+ (package atdgen)
+ (action (diff test_annot_tags_j.expected.mli test_annot_tags_j.mli)))
+ 
  ;; inline records are not allowed within poly variant, but allowed in classic
 
 (rule

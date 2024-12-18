@@ -214,3 +214,16 @@ let validate schema root =
   List.iter (fun sec ->
     validate_section sec root
   ) schema
+
+let filter_by_tags ~tags full_module =
+  let aux (annot : t) =
+    annot |> List.filter (fun (section, _) -> (
+      match tags, fields annot ~section ~field:"tag" with
+      | _, [] -> true
+      | tags, fields ->
+          fields
+          |> List.filter_map snd 
+          |> List.exists (fun value -> List.mem value tags)
+    ))
+  in
+  Ast.map_all_annot aux full_module

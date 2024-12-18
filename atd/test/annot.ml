@@ -31,11 +31,11 @@ let schema : Atd.Annot.schema = [
 ]
 
 let test_valid_input atd_input =
-  let root, _orig_types = Atd.Util.load_string atd_input in
+  let root, _orig_types = Atd.Util.load_string ~tags:[] atd_input in
   Atd.Annot.validate schema (Atd.Ast.Full_module root)
 
 let test_invalid_input atd_input =
-  let root, _orig_types = Atd.Util.load_string atd_input in
+  let root, _orig_types = Atd.Util.load_string ~tags:[] atd_input in
   try
     Atd.Annot.validate schema (Atd.Ast.Full_module root);
     assert false

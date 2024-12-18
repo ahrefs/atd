@@ -90,7 +90,7 @@ let compare_files
   let load_file atd_file =
     let ast_with_inherits =
        atd_file
-       |> Atd.Util.load_file
+       |> Atd.Util.load_file ~tags:[]
        |> fst
        |> Atd.Ast.remove_wrap_constructs
     in

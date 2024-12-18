@@ -16,6 +16,7 @@ val make_ocaml_files
   -> ocaml_version:(int * int) option
   -> pp_convs:Ocaml.pp_convs
   -> add_generic_modules: bool
+  -> tags:string list
   -> string option
   -> Ox_emit.target
   -> unit

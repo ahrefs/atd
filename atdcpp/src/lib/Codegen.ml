@@ -34,6 +34,12 @@ let annot_schema_cpp : Atd.Annot.schema_section =
       Field, "default";
       Module_head, "include";
       Module_head, "namespace";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   }
 

@@ -41,6 +41,12 @@ let annot_schema_biniou : Atd.Annot.schema = [
     section = "biniou";
     fields = [
       Type_expr, "repr";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   };
   {
@@ -50,6 +56,12 @@ let annot_schema_biniou : Atd.Annot.schema = [
       Type_def, "module";
       Type_def, "predef";
       Type_def, "t";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   };
 ]

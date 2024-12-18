@@ -32,6 +32,12 @@ let annot_schema_dlang : Atd.Annot.schema_section =
       Type_expr, "wrap";
       Field, "default";
       Module_head, "import";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   }
 

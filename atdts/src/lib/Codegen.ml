@@ -27,6 +27,12 @@ let annot_schema_ts : Atd.Annot.schema_section =
       Field, "default";
       Type_def, "from";
       Type_def, "t";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   }
 

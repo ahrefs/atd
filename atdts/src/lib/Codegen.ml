@@ -811,7 +811,7 @@ let alias_type env name an type_expr =
       ]
   | Some (from,t) ->
       [
-        Line (sprintf "export {type %s as %s} from \"./%s.ts\"" (type_name env t) ts_type_name (String.lowercase_ascii from))
+        Line (sprintf "import { type %s as %s } from \"./%s\"" (type_name env t) ts_type_name (String.lowercase_ascii from))
       ]
 
 let string_of_case_name name =
@@ -1117,7 +1117,7 @@ let make_reader env loc name an e =
   match get_export_from an e with
   | Some (from,t) ->
       [
-        Line (sprintf "export {%s as %s} from \"./%s.ts\"" (reader_name env t) ts_name (String.lowercase_ascii from));
+        Line (sprintf "import { %s as %s } from \"./%s\"" (reader_name env t) ts_name (String.lowercase_ascii from));
       ]
   | None ->
       let read = read_root_expr env ~ts_type_name e in
@@ -1134,7 +1134,7 @@ let make_writer env loc name an e =
   match get_export_from an e with
   | Some (from,t) ->
       [
-        Line (sprintf "export {%s as %s} from \"./%s.ts\"" (writer_name env t) ts_name (String.lowercase_ascii from));
+        Line (sprintf "import { %s as %s } from \"./%s\"" (writer_name env t) ts_name (String.lowercase_ascii from));
       ]
   | None ->
       let write = write_root_expr env ~ts_type_name e in

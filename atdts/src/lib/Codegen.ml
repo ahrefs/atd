@@ -578,7 +578,7 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
 (* Map ATD built-in types to built-in TypeScript types *)
 let ts_type_name env (name : string) =
   match name with
-  | "unit" -> "Null"
+  | "unit" -> "null"
   | "bool" -> "boolean"
   | "int" -> "number /*int*/"
   | "float" -> "number"

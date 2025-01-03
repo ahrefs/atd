@@ -1,1 +1,1 @@
-type foo = [ Foo of {x: int} ]<ocaml repr="classic">
+type foo = [ Foo of {x: int; y: float} ]<ocaml repr="classic">

@@ -8,30 +8,31 @@ let write_foo : _ -> foo -> _ = (
     match x with
       | Foo x ->
         Buffer.add_string ob "<\"Foo\":";
-        (
-          fun ob x ->
-            Buffer.add_char ob '{';
-            let is_first = ref true in
-            if !is_first then
-              is_first := false
-            else
-              Buffer.add_char ob ',';
-              Buffer.add_string ob "\"x\":";
-            (
-              Yojson.Safe.write_int
-            )
-              ob x.x;
-            if !is_first then
-              is_first := false
-            else
-              Buffer.add_char ob ',';
-              Buffer.add_string ob "\"y\":";
-            (
-              Yojson.Safe.write_float
-            )
-              ob x.y;
-            Buffer.add_char ob '}';
-        ) ob x;
+        Buffer.add_string ob "{";
+        begin
+          Buffer.add_char ob '{';
+          let is_first = ref true in
+          if !is_first then
+            is_first := false
+          else
+            Buffer.add_char ob ',';
+            Buffer.add_string ob "\"x\":";
+          (
+            Yojson.Safe.write_int
+          )
+            ob x.x;
+          if !is_first then
+            is_first := false
+          else
+            Buffer.add_char ob ',';
+            Buffer.add_string ob "\"y\":";
+          (
+            Yojson.Safe.write_float
+          )
+            ob x.y;
+          Buffer.add_char ob '}';
+        end (* ob x *);
+        Buffer.add_string ob "}";
         Buffer.add_char ob '>'
 )
 let string_of_foo ?(len = 1024) x =
@@ -47,122 +48,120 @@ let read_foo = (
             | "Foo" ->
               Atdgen_runtime.Oj_run.read_until_field_value p lb;
               let x = (
-                  fun p lb ->
-                    Yojson.Safe.read_space p lb;
-                    Yojson.Safe.read_lcurl p lb;
-                    let field_x = ref (None) in
-                    let field_y = ref (None) in
-                    try
-                      Yojson.Safe.read_space p lb;
-                      Yojson.Safe.read_object_end lb;
-                      Yojson.Safe.read_space p lb;
-                      let f =
-                        fun s pos len ->
-                          if pos < 0 || len < 0 || pos + len > String.length s then
-                            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
-                          if len = 1 then (
-                            match String.unsafe_get s pos with
-                              | 'x' -> (
-                                  0
-                                )
-                              | 'y' -> (
-                                  1
-                                )
-                              | _ -> (
-                                  -1
-                                )
-                          )
-                          else (
-                            -1
-                          )
-                      in
-                      let i = Yojson.Safe.map_ident p f lb in
-                      Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                      (
-                        match i with
-                          | 0 ->
-                            field_x := (
-                              Some (
-                                (
-                                  Atdgen_runtime.Oj_run.read_int
-                                ) p lb
-                              )
-                            );
-                          | 1 ->
-                            field_y := (
-                              Some (
-                                (
-                                  Atdgen_runtime.Oj_run.read_number
-                                ) p lb
-                              )
-                            );
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_lcurl p lb;
+                let field_x = ref (None) in
+                let field_y = ref (None) in
+                try
+                  Yojson.Safe.read_space p lb;
+                  Yojson.Safe.read_object_end lb;
+                  Yojson.Safe.read_space p lb;
+                  let f =
+                    fun s pos len ->
+                      if pos < 0 || len < 0 || pos + len > String.length s then
+                        invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+                      if len = 1 then (
+                        match String.unsafe_get s pos with
+                          | 'x' -> (
+                              0
+                            )
+                          | 'y' -> (
+                              1
+                            )
                           | _ -> (
-                              Yojson.Safe.skip_json p lb
-                            )
-                      );
-                      while true do
-                        Yojson.Safe.read_space p lb;
-                        Yojson.Safe.read_object_sep p lb;
-                        Yojson.Safe.read_space p lb;
-                        let f =
-                          fun s pos len ->
-                            if pos < 0 || len < 0 || pos + len > String.length s then
-                              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
-                            if len = 1 then (
-                              match String.unsafe_get s pos with
-                                | 'x' -> (
-                                    0
-                                  )
-                                | 'y' -> (
-                                    1
-                                  )
-                                | _ -> (
-                                    -1
-                                  )
-                            )
-                            else (
                               -1
                             )
-                        in
-                        let i = Yojson.Safe.map_ident p f lb in
-                        Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                        (
-                          match i with
-                            | 0 ->
-                              field_x := (
-                                Some (
-                                  (
-                                    Atdgen_runtime.Oj_run.read_int
-                                  ) p lb
-                                )
-                              );
-                            | 1 ->
-                              field_y := (
-                                Some (
-                                  (
-                                    Atdgen_runtime.Oj_run.read_number
-                                  ) p lb
-                                )
-                              );
-                            | _ -> (
-                                Yojson.Safe.skip_json p lb
-                              )
-                        );
-                      done;
-                      assert false;
-                    with Yojson.End_of_object -> (
-                        (
-                          {
-                            x = (match !field_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x");
-                            y = (match !field_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "y");
-                          }
-                        )
                       )
-                ) p lb
-              in
+                      else (
+                        -1
+                      )
+                  in
+                  let i = Yojson.Safe.map_ident p f lb in
+                  Atdgen_runtime.Oj_run.read_until_field_value p lb;
+                  (
+                    match i with
+                      | 0 ->
+                        field_x := (
+                          Some (
+                            (
+                              Atdgen_runtime.Oj_run.read_int
+                            ) p lb
+                          )
+                        );
+                      | 1 ->
+                        field_y := (
+                          Some (
+                            (
+                              Atdgen_runtime.Oj_run.read_number
+                            ) p lb
+                          )
+                        );
+                      | _ -> (
+                          Yojson.Safe.skip_json p lb
+                        )
+                  );
+                  while true do
+                    Yojson.Safe.read_space p lb;
+                    Yojson.Safe.read_object_sep p lb;
+                    Yojson.Safe.read_space p lb;
+                    let f =
+                      fun s pos len ->
+                        if pos < 0 || len < 0 || pos + len > String.length s then
+                          invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+                        if len = 1 then (
+                          match String.unsafe_get s pos with
+                            | 'x' -> (
+                                0
+                              )
+                            | 'y' -> (
+                                1
+                              )
+                            | _ -> (
+                                -1
+                              )
+                        )
+                        else (
+                          -1
+                        )
+                    in
+                    let i = Yojson.Safe.map_ident p f lb in
+                    Atdgen_runtime.Oj_run.read_until_field_value p lb;
+                    (
+                      match i with
+                        | 0 ->
+                          field_x := (
+                            Some (
+                              (
+                                Atdgen_runtime.Oj_run.read_int
+                              ) p lb
+                            )
+                          );
+                        | 1 ->
+                          field_y := (
+                            Some (
+                              (
+                                Atdgen_runtime.Oj_run.read_number
+                              ) p lb
+                            )
+                          );
+                        | _ -> (
+                            Yojson.Safe.skip_json p lb
+                          )
+                    );
+                  done;
+                  assert false;
+                with Yojson.End_of_object -> (
+                    (Foo
+                      {
+                        x = (match !field_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x");
+                        y = (match !field_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "y");
+                      }
+                     : foo)
+                  )
+              ) in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_gt p lb;
-              (Foo x : foo)
+              x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -178,122 +177,120 @@ let read_foo = (
               Yojson.Safe.read_comma p lb;
               Yojson.Safe.read_space p lb;
               let x = (
-                  fun p lb ->
-                    Yojson.Safe.read_space p lb;
-                    Yojson.Safe.read_lcurl p lb;
-                    let field_x = ref (None) in
-                    let field_y = ref (None) in
-                    try
-                      Yojson.Safe.read_space p lb;
-                      Yojson.Safe.read_object_end lb;
-                      Yojson.Safe.read_space p lb;
-                      let f =
-                        fun s pos len ->
-                          if pos < 0 || len < 0 || pos + len > String.length s then
-                            invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
-                          if len = 1 then (
-                            match String.unsafe_get s pos with
-                              | 'x' -> (
-                                  0
-                                )
-                              | 'y' -> (
-                                  1
-                                )
-                              | _ -> (
-                                  -1
-                                )
-                          )
-                          else (
-                            -1
-                          )
-                      in
-                      let i = Yojson.Safe.map_ident p f lb in
-                      Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                      (
-                        match i with
-                          | 0 ->
-                            field_x := (
-                              Some (
-                                (
-                                  Atdgen_runtime.Oj_run.read_int
-                                ) p lb
-                              )
-                            );
-                          | 1 ->
-                            field_y := (
-                              Some (
-                                (
-                                  Atdgen_runtime.Oj_run.read_number
-                                ) p lb
-                              )
-                            );
+                Yojson.Safe.read_space p lb;
+                Yojson.Safe.read_lcurl p lb;
+                let field_x = ref (None) in
+                let field_y = ref (None) in
+                try
+                  Yojson.Safe.read_space p lb;
+                  Yojson.Safe.read_object_end lb;
+                  Yojson.Safe.read_space p lb;
+                  let f =
+                    fun s pos len ->
+                      if pos < 0 || len < 0 || pos + len > String.length s then
+                        invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+                      if len = 1 then (
+                        match String.unsafe_get s pos with
+                          | 'x' -> (
+                              0
+                            )
+                          | 'y' -> (
+                              1
+                            )
                           | _ -> (
-                              Yojson.Safe.skip_json p lb
-                            )
-                      );
-                      while true do
-                        Yojson.Safe.read_space p lb;
-                        Yojson.Safe.read_object_sep p lb;
-                        Yojson.Safe.read_space p lb;
-                        let f =
-                          fun s pos len ->
-                            if pos < 0 || len < 0 || pos + len > String.length s then
-                              invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
-                            if len = 1 then (
-                              match String.unsafe_get s pos with
-                                | 'x' -> (
-                                    0
-                                  )
-                                | 'y' -> (
-                                    1
-                                  )
-                                | _ -> (
-                                    -1
-                                  )
-                            )
-                            else (
                               -1
                             )
-                        in
-                        let i = Yojson.Safe.map_ident p f lb in
-                        Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                        (
-                          match i with
-                            | 0 ->
-                              field_x := (
-                                Some (
-                                  (
-                                    Atdgen_runtime.Oj_run.read_int
-                                  ) p lb
-                                )
-                              );
-                            | 1 ->
-                              field_y := (
-                                Some (
-                                  (
-                                    Atdgen_runtime.Oj_run.read_number
-                                  ) p lb
-                                )
-                              );
-                            | _ -> (
-                                Yojson.Safe.skip_json p lb
-                              )
-                        );
-                      done;
-                      assert false;
-                    with Yojson.End_of_object -> (
-                        (
-                          {
-                            x = (match !field_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x");
-                            y = (match !field_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "y");
-                          }
-                        )
                       )
-                ) p lb
-              in
+                      else (
+                        -1
+                      )
+                  in
+                  let i = Yojson.Safe.map_ident p f lb in
+                  Atdgen_runtime.Oj_run.read_until_field_value p lb;
+                  (
+                    match i with
+                      | 0 ->
+                        field_x := (
+                          Some (
+                            (
+                              Atdgen_runtime.Oj_run.read_int
+                            ) p lb
+                          )
+                        );
+                      | 1 ->
+                        field_y := (
+                          Some (
+                            (
+                              Atdgen_runtime.Oj_run.read_number
+                            ) p lb
+                          )
+                        );
+                      | _ -> (
+                          Yojson.Safe.skip_json p lb
+                        )
+                  );
+                  while true do
+                    Yojson.Safe.read_space p lb;
+                    Yojson.Safe.read_object_sep p lb;
+                    Yojson.Safe.read_space p lb;
+                    let f =
+                      fun s pos len ->
+                        if pos < 0 || len < 0 || pos + len > String.length s then
+                          invalid_arg (Printf.sprintf "out-of-bounds substring position or length: string = %S, requested position = %i, requested length = %i" s pos len);
+                        if len = 1 then (
+                          match String.unsafe_get s pos with
+                            | 'x' -> (
+                                0
+                              )
+                            | 'y' -> (
+                                1
+                              )
+                            | _ -> (
+                                -1
+                              )
+                        )
+                        else (
+                          -1
+                        )
+                    in
+                    let i = Yojson.Safe.map_ident p f lb in
+                    Atdgen_runtime.Oj_run.read_until_field_value p lb;
+                    (
+                      match i with
+                        | 0 ->
+                          field_x := (
+                            Some (
+                              (
+                                Atdgen_runtime.Oj_run.read_int
+                              ) p lb
+                            )
+                          );
+                        | 1 ->
+                          field_y := (
+                            Some (
+                              (
+                                Atdgen_runtime.Oj_run.read_number
+                              ) p lb
+                            )
+                          );
+                        | _ -> (
+                            Yojson.Safe.skip_json p lb
+                          )
+                    );
+                  done;
+                  assert false;
+                with Yojson.End_of_object -> (
+                    (Foo
+                      {
+                        x = (match !field_x with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x");
+                        y = (match !field_y with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "y");
+                      }
+                     : foo)
+                  )
+              ) in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Foo x : foo)
+              x
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )

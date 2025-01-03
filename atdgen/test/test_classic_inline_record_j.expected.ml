@@ -7,8 +7,7 @@ let write_foo : _ -> foo -> _ = (
   fun ob (x : foo) ->
     match x with
       | Foo x ->
-        Buffer.add_string ob "<\"Foo\":";
-        Buffer.add_string ob "{";
+        Buffer.add_string ob "[\"Foo\",";
         begin
           Buffer.add_char ob '{';
           let is_first = ref true in
@@ -27,13 +26,12 @@ let write_foo : _ -> foo -> _ = (
             Buffer.add_char ob ',';
             Buffer.add_string ob "\"y\":";
           (
-            Yojson.Safe.write_float
+            Yojson.Safe.write_std_float
           )
             ob x.y;
           Buffer.add_char ob '}';
         end (* ob x *);
-        Buffer.add_string ob "}";
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
 )
 let string_of_foo ?(len = 1024) x =
   let ob = Buffer.create len in

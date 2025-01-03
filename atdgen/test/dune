@@ -286,7 +286,7 @@
 (rule
  (targets test_classic_inline_record_j.ml test_classic_inline_record_j.mli)
  (deps    test_classic_inline_record.atd)
- (action  (run %{bin:atdgen} -j %{deps})))
+ (action  (run %{bin:atdgen} -j-std -j %{deps})))
 
 (rule
  (alias runtest)
@@ -416,6 +416,8 @@
   test_ppx_t
   test_abstract_t
   test_abstract_j
+  test_classic_inline_record_t
+  test_classic_inline_record_j
   ))
 
 (rule

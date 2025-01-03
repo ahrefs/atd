@@ -674,6 +674,20 @@ let test_untyped_json () =
   let encoded = Test_abstract_j.string_of_any_items decoded in
   check (encoded = input)
 
+let test_inline_records () =
+  let open Test_classic_inline_record_t in
+  let foo = Foo { x = 42; y = 5.1 } in
+  Alcotest.(check string)
+    "test_inline_records"
+    (Test_classic_inline_record_j.string_of_foo foo)
+    {|["Foo",{"x":42,"y":5.1}]|};
+  Alcotest.(check bool)
+    "test_inline_records-involution"
+    (foo = (Test_classic_inline_record_j.string_of_foo foo
+            |> Test_classic_inline_record_j.foo_of_string))
+    true;
+  ()
+
 let all_tests : (string * (unit -> unit)) list = [
   "ocaml internals", test_ocaml_internals;
   "biniou missing record fields", test_biniou_missing_field;
@@ -722,6 +736,7 @@ let all_tests : (string * (unit -> unit)) list = [
   "json encoding & decoding int with string representation", test_encoding_decoding_int_with_string_repr;
   "abstract types", test_abstract_types;
   "untyped json", test_untyped_json;
+  "inline-records", test_inline_records;
 ]
 
 let () =

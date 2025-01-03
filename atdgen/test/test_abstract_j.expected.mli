@@ -99,3 +99,29 @@ val abs1_of_string :
   string -> 'x abs1
   (** Deserialize JSON data of type {!type:abs1}. *)
 
+
+
+(** {3 Generic Modules } *)
+module Any_items : sig
+type nonrec t = any_items
+val write :
+  Buffer.t -> any_items -> unit
+  (** Output a JSON value of type {!type:any_items}. *)
+
+val to_string :
+  ?len:int -> any_items -> string
+  (** Serialize a value of type {!type:any_items}
+      into a JSON string.
+      @param len specifies the initial length
+                 of the buffer used internally.
+                 Default: 1024. *)
+
+val read :
+  Yojson.Safe.lexer_state -> Lexing.lexbuf -> any_items
+  (** Input JSON data of type {!type:any_items}. *)
+
+val of_string :
+  string -> any_items
+  (** Deserialize JSON data of type {!type:any_items}. *)
+
+end

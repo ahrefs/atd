@@ -661,6 +661,38 @@ let test_raw_json () =
   let x' = Test3j_j.t_of_string s in
   check (x = x')
 
+let test_generic () =
+  let module Stringables = struct
+    module type Mono = sig
+      type t
+      val of_string: string -> t
+      val to_string: ?len: int -> t -> string
+    end
+  end in
+  let test_involution (module M : Stringables.Mono) name input =
+    let x = M.of_string input in
+    let s = M.to_string x in
+    Alcotest.(check string) (sprintf "involution-%s" name) input s;
+  in
+  test_involution (module Test_abstract_j.Any_items) "abstract_j" "[]";
+  test_involution (module Test_int_with_string_repr_j.Afloat) "test_int_with_string_repr_j.Afloat" {|"42"|};
+  let module Mono_poly_wrap = 
+    struct
+      include Test_polymorphic_wrap_j.T
+      type nonrec t = Test_int_with_string_repr_j.int32 t
+      let of_string = 
+        of_string Test_int_with_string_repr_j.read_int32
+      let to_string =
+        to_string Test_int_with_string_repr_j.write_int32
+    end
+  in
+  test_involution (module Mono_poly_wrap) "test_monopoly_wrap" {|["42","4000000"]|};
+  test_involution (module Test_ambiguous_record_j.Ambiguous) "test_ambiguous_record"
+    {|{"ambiguous":"Hello","not_ambiguous1":42}|};
+  test_involution (module Test_ambiguous_variant_j.Ambiguous') "test_ambiguous_variant"
+    {|["Int",42]|};
+  ()
+
 let test_abstract_types () =
   let input = ["a", 1; "b", 2] in
   let encoded = Test_abstract_j.string_of_int_assoc_list input in
@@ -722,6 +754,7 @@ let all_tests : (string * (unit -> unit)) list = [
   "json encoding & decoding int with string representation", test_encoding_decoding_int_with_string_repr;
   "abstract types", test_abstract_types;
   "untyped json", test_untyped_json;
+  "generic", test_generic;
 ]
 
 let () =

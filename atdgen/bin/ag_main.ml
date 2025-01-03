@@ -62,6 +62,7 @@ let main () =
   let out_prefix = ref None in
   let mode = ref (None : mode option) in
   let std_json = ref false in
+  let add_generic_modules = ref false in
   let j_preprocess_input = ref None in
   let j_defaults = ref false in
   let unknown_field_handler = ref None in
@@ -183,6 +184,12 @@ let main () =
           Convert tuples and variants into standard JSON and
           refuse to print NaN and infinities (implying -json mode
           unless another mode is specified).";
+
+    "-j-gen-modules",
+    Arg.Unit (fun () ->
+                add_generic_modules := true),
+    "
+          Add genericity-friendly modules to -j output.";
 
     "-std-json",
     Arg.Unit (fun () ->
@@ -402,6 +409,7 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd" Sys.argv.(0) in
                   ~std: !std_json
                   ~unknown_field_handler: !unknown_field_handler
                   ~preprocess_input: !j_preprocess_input
+                  ~add_generic_modules: !add_generic_modules
             | V | Validate ->
                 Ov_emit.make_ocaml_files
             | Melange ->

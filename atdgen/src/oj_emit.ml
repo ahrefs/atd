@@ -34,40 +34,35 @@ type param = {
 
 }
 
-let make_ocaml_json_intf ~with_create buf deref defs =
-  List.concat_map snd defs
-  |> List.filter Ox_emit.include_intf
-  |> List.iter (fun x ->
-    let s = x.def_name in
-    let full_name = Ox_emit.get_full_type_name x in
-    let writer_params =
-      String.concat "" (
-        List.map
-          (fun s -> sprintf "\n  (Buffer.t -> '%s -> unit) ->" s)
-          x.def_param
-      )
-    in
-    let reader_params =
-      String.concat "" (
-        List.map
-          (fun s ->
-             sprintf "\n  (Yojson.Safe.lexer_state -> \
-                      Lexing.lexbuf -> '%s) ->" s)
-          x.def_param
-      )
-    in
+let writer_parameters params =
+  String.concat "" (
+    List.map
+      (fun s -> sprintf "\n  (Buffer.t -> '%s -> unit) ->" s)
+      params
+  )
+let reader_parameters params =
+  String.concat "" (
+    List.map
+      (fun s ->
+         sprintf "\n  (Yojson.Safe.lexer_state -> \
+                  Lexing.lexbuf -> '%s) ->" s)
+      params
+  )
+
+let val_write buf fun_name writer_params full_name short_name =
     bprintf buf "\
-val write_%s :%s
+val %s :%s
   Buffer.t -> %s -> unit
   (** Output a JSON value of type {!type:%s}. *)
 
 "
-      s writer_params
+      fun_name writer_params
       full_name
-      s;
+      short_name
 
+let val_string_of buf fun_name writer_params full_name short_name =
     bprintf buf "\
-val string_of_%s :%s
+val %s :%s
   ?len:int -> %s -> string
   (** Serialize a value of type {!type:%s}
       into a JSON string.
@@ -76,29 +71,48 @@ val string_of_%s :%s
                  Default: 1024. *)
 
 "
-      s writer_params
+      fun_name writer_params
       full_name
-      s;
+      short_name
 
+let val_read buf fun_name reader_params full_name short_name =
     bprintf buf "\
-val read_%s :%s
+val %s :%s
   Yojson.Safe.lexer_state -> Lexing.lexbuf -> %s
   (** Input JSON data of type {!type:%s}. *)
 
 "
-      s reader_params
+      fun_name reader_params
       full_name
-      s;
+      short_name
 
+let val_of_string buf fun_name reader_params full_name short_name =
     bprintf buf "\
-val %s_of_string :%s
+val %s :%s
   string -> %s
   (** Deserialize JSON data of type {!type:%s}. *)
 
 "
-      s reader_params
+      fun_name reader_params
       full_name
-      s;
+      short_name
+
+let make_ocaml_json_intf ~with_create buf deref defs =
+  List.concat_map snd defs
+  |> List.filter Ox_emit.include_intf
+  |> List.iter (fun x ->
+    let s = x.def_name in
+    let full_name = Ox_emit.get_full_type_name x in
+    let writer_params = writer_parameters x.def_param in
+    let reader_params = reader_parameters x.def_param in
+    val_write buf (sprintf "write_%s" s)
+      writer_params full_name s;
+    val_string_of buf (sprintf "string_of_%s" s)
+      writer_params full_name s;
+    val_read buf (sprintf "read_%s" s)
+      reader_params full_name s;
+    val_of_string buf (sprintf "%s_of_string" s)
+      reader_params full_name s;
     Ox_emit.maybe_write_creator_intf ~with_create deref buf x
   )
 
@@ -1323,6 +1337,50 @@ let make_ml
       buf deref defs;
   Buffer.contents buf
 
+let make_extra_generic_modules definitions =
+  let ml = Buffer.create 42 in
+  let mli = Buffer.create 42 in
+  let oof buf fmt = Format.kasprintf (Buffer.add_string buf) fmt in
+  let mlf fmt = oof ml fmt in
+  let mlif fmt = oof mli fmt in
+  let bothf fmt=
+    Format.kasprintf (fun s -> 
+      Buffer.add_string ml s; Buffer.add_string mli s) fmt in
+  bothf "\n\n(** {3 Generic Modules } *)\n";
+  let make_module name params =
+    bothf "module %s" (String.capitalize_ascii name);
+    mlf " = struct\n";
+    mlif " : sig\n";
+    let type_params =
+      List.map (sprintf "'%s") params |> String.concat ", " in
+    let type_params_prefix =
+      match params with [] -> "" | _ -> sprintf "(%s) " type_params in
+    bothf "type nonrec %st = %s%s\n" type_params_prefix type_params_prefix name;
+    mlf "let write = write_%s\n" name;
+    mlf "let read = read_%s\n" name;
+    mlf "let to_string = string_of_%s\n" name;
+    mlf "let of_string = %s_of_string\n" name;
+    val_write mli (sprintf "write" ) (writer_parameters params) 
+      (type_params_prefix ^ name) name;
+    val_string_of mli (sprintf "to_string" ) (writer_parameters params) 
+      (type_params_prefix ^ name) name;
+    val_read mli (sprintf "read" ) (reader_parameters params) 
+      (type_params_prefix ^ name) name;
+    val_of_string mli (sprintf "of_string" ) (reader_parameters params) 
+      (type_params_prefix ^ name) name;
+    bothf "end\n"
+  in
+  List.iter
+    (fun (_, body) ->
+      List.iter
+        (fun (Atd.Ast.Type (_, (name, params, _), type_expr)) ->
+          match type_expr with
+          | Name (_, (_, "abstract", _), _) -> ()
+          | _ -> make_module name params)
+        body)
+    definitions;
+  (`Ml (Buffer.contents ml), `Mli (Buffer.contents mli))
+
 let make_ocaml_files
     ~opens
     ~with_typedefs
@@ -1338,6 +1396,7 @@ let make_ocaml_files
     ~preprocess_input
     ~ocaml_version
     ~pp_convs
+    ~add_generic_modules
     atd_file out =
   let ((head, m0), _) =
     match atd_file with
@@ -1393,5 +1452,11 @@ let make_ocaml_files
       ~force_defaults ~preprocess_input ~original_types
       ~ocaml_version
       ocaml_typedefs (Mapping.make_deref defs) defs
+  in
+  let mli, ml =
+    if not add_generic_modules then mli, ml
+    else
+      let `Ml extra_ml, `Mli extra_mli = make_extra_generic_modules m1 in
+      (mli ^ extra_mli, ml ^ extra_ml)
   in
   Ox_emit.write_ocaml out mli ml

@@ -8,6 +8,7 @@ Unreleased
 * atdcpp: Initial Release (#404)
 * atdcpp: Use `double` c++ type as default floating point type (#411)
 * atdgen: Fix JSON I/O for inline records (#419)
+* atdgen: Add option `-j-gen-modules` to generate JSON generic submodules (#420)
 
 
 2.15.0 (2023-10-26)

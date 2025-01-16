@@ -10,6 +10,7 @@ type conf = {
   new_file: string;
   out_file: string option;
   filter: Atddiff.filter;
+  root_types_superset: string list option;
   json_defaults_old: bool;
   json_defaults_new: bool;
   with_locations: bool;
@@ -43,6 +44,7 @@ let run conf =
   else
     let out_data =
       Atddiff.compare_files
+        ?root_types_superset:conf.root_types_superset
         ~filter:conf.filter
         ~json_defaults_old:conf.json_defaults_old
         ~json_defaults_new:conf.json_defaults_new
@@ -121,6 +123,26 @@ let types_term : string list option Term.t =
             provided, all types are selected. For example, \
             '--type foo,bar' selects the findings that affect type 'foo', \
             type 'bar', or both."
+  in
+  Arg.value (Arg.opt (Arg.some (Arg.list Arg.string)) None info)
+
+let ignore_term : string list option Term.t =
+  let info =
+    Arg.info ["ignore"]
+      ~docv:"TYPE_NAME1,TYPE_NAME2,..."
+      ~doc:"Specify the root types that may not have been selected with \
+            '--types'. A root type is a type defined in an ATD file that \
+            is not a dependency of the other root types. \
+            Note that in the case of mutually recursive type definitions, the \
+            assignment of root types may not be unique. \
+            When the '--root-types' option is used, the union \
+            of the types specified with '--types' and '--root-types' \
+            determines the set of allowed root types. \
+            Any type found in an ATD file that is not a dependency \
+            of any of the allowed root types causes atddiff to fail \
+            with a nonzero exit status. \
+            This ensures that a newly-added root type won't be \
+            accidentally ignored by not updating the argument of '--types'."
   in
   Arg.value (Arg.opt (Arg.some (Arg.list Arg.string)) None info)
 
@@ -248,7 +270,7 @@ let man = [
 let cmdline_term run =
   let combine
       old_file new_file out_file
-      backward forward types
+      backward forward types ignore_
       json_defaults json_defaults_old json_defaults_new
       output_format no_locations
       exit_success version =
@@ -268,6 +290,15 @@ let cmdline_term run =
       in
       A.And (List.concat [backward; forward; types])
     in
+    let root_types_superset =
+      match types, ignore_ with
+      | Some selected_root_types, Some ignore_ ->
+          Some (selected_root_types @ ignore_)
+      | None, Some ignore_ ->
+          Some ignore_
+      | None, None
+      | Some _, None -> None
+    in
     let json_defaults_old = json_defaults_old || json_defaults in
     let json_defaults_new = json_defaults_new || json_defaults in
     run {
@@ -275,6 +306,7 @@ let cmdline_term run =
       new_file;
       out_file;
       filter;
+      root_types_superset;
       json_defaults_old;
       json_defaults_new;
       output_format;
@@ -290,6 +322,7 @@ let cmdline_term run =
         $ backward_term
         $ forward_term
         $ types_term
+        $ ignore_term
         $ json_defaults_term
         $ json_defaults_old_term
         $ json_defaults_new_term

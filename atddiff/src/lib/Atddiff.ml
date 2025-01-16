@@ -2,6 +2,8 @@
     Internal Atddiff library used by the 'atddiff' command.
 *)
 
+open Printf
+
 module T = Atddiff_output_t
 
 type simple_filter =
@@ -40,7 +42,26 @@ let rec select_finding filter (x : T.finding) =
        | Backward -> false
       )
 
+let check_forgotten_root_types ~root_types_superset atd_file ast =
+  match root_types_superset with
+  | None -> ()
+  | Some root_types_superset ->
+      let remaining_types =
+        Root_types.check_root_types_superset root_types_superset ast
+      in
+      match remaining_types with
+      | [] -> ()
+      | _ ->
+          let msg =
+            sprintf "The following types were discovered in file %s \
+                     but were not declared with --types or --ignore: %s"
+              atd_file
+              (String.concat ", " remaining_types)
+          in
+          failwith msg
+
 let compare_files
+  ?root_types_superset
   ?(filter = And [] (* all *))
   ?(json_defaults_old = false)
   ?(json_defaults_new = false)
@@ -57,6 +78,8 @@ let compare_files
   in
   let ast1 = load_file old_file in
   let ast2 = load_file new_file in
+  check_forgotten_root_types ~root_types_superset old_file ast1;
+  check_forgotten_root_types ~root_types_superset new_file ast2;
   let res =
     let options : Compare.options = {
       json_defaults_old;

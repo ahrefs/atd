@@ -8,7 +8,8 @@ Unreleased
 * atdcpp: Initial Release (#404)
 * atdcpp: Use `double` c++ type as default floating point type (#411)
 * atdgen: Fix JSON I/O for inline records (#419)
-
+* atdgen: The deprecated `atdgen` library is no longer available.
+          Use `atdgen-runtime` instead (#421)
 
 2.15.0 (2023-10-26)
 -------------------

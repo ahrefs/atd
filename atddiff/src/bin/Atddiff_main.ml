@@ -131,18 +131,20 @@ let ignore_term : string list option Term.t =
     Arg.info ["ignore"]
       ~docv:"TYPE_NAME1,TYPE_NAME2,..."
       ~doc:"Specify the root types that may not have been selected with \
-            '--types'. A root type is a type defined in an ATD file that \
+            '--types'. A root type (or entry point) is a type defined in \
+            an ATD file that \
             is not a dependency of the other root types. \
             Note that in the case of mutually recursive type definitions, the \
             assignment of root types may not be unique. \
-            When the '--root-types' option is used, the union \
-            of the types specified with '--types' and '--root-types' \
+            When the '--ignore' option is used, the union \
+            of the types specified with '--types' and '--ignore' \
             determines the set of allowed root types. \
             Any type found in an ATD file that is not a dependency \
             of any of the allowed root types causes atddiff to fail \
             with a nonzero exit status. \
             This ensures that a newly-added root type won't be \
-            accidentally ignored by not updating the argument of '--types'."
+            accidentally ignored if the programmer forgets \
+            to update the argument of '--types'."
   in
   Arg.value (Arg.opt (Arg.some (Arg.list Arg.string)) None info)
 

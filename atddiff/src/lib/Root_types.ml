@@ -8,8 +8,9 @@
 open Atd
 
 let get_type_name_dependencies
-    (module_ : Ast.full_module) : string list * (string -> string list) =
-  let (_head, items) = module_ in
+    ~(ast_with_inherits : Ast.full_module)
+  : string list * (string -> string list) =
+  let (_head, items) = ast_with_inherits in
   let defs = List.map (function Ast.Type x -> x) items in
   (* dependency table: left-hand type name -> right-hand type names *)
   let deps = Hashtbl.create 100 in
@@ -34,8 +35,11 @@ let get_type_name_dependencies
    2. Extract the list of type definitions that were not visited. Return
    them.
 *)
-let check_root_types_superset roots (module_ : Atd.Ast.full_module) =
-  let defined_names, get_deps = get_type_name_dependencies module_ in
+let check_root_types_superset ~root_types_superset
+    ~(ast_with_inherits : Atd.Ast.full_module) =
+  let defined_names, get_deps =
+    get_type_name_dependencies ~ast_with_inherits
+  in
   let visited = Hashtbl.create 100 in
   let rec visit name =
     if not (Hashtbl.mem visited name) then (
@@ -43,5 +47,24 @@ let check_root_types_superset roots (module_ : Atd.Ast.full_module) =
       List.iter visit (get_deps name)
     )
   in
-  List.iter visit roots;
-  List.filter (fun name -> not (Hashtbl.mem visited name)) defined_names
+  List.iter visit root_types_superset;
+  let unvisited =
+    List.filter (fun name -> not (Hashtbl.mem visited name)) defined_names
+  in
+  (*
+     Identify names that need to be added to root_types_superset.
+     It's not sufficient if some entry points are recursive type definitions.
+
+     referenced = { B for (A, B) in directed edges }
+  *)
+  let referenced = Hashtbl.create 100 in
+  let identify_referenced_names def_name =
+    List.iter
+      (fun name -> Hashtbl.replace referenced name ())
+      (get_deps def_name)
+  in
+  List.iter identify_referenced_names defined_names;
+  let unvisited_unreferenced =
+    List.filter (fun name -> not (Hashtbl.mem referenced name)) unvisited
+  in
+  unvisited, unvisited_unreferenced

@@ -67,4 +67,5 @@ let check_root_types_superset ~root_types_superset
   let unvisited_unreferenced =
     List.filter (fun name -> not (Hashtbl.mem referenced name)) unvisited
   in
-  unvisited, unvisited_unreferenced
+  (List.sort String.compare unvisited,
+   List.sort String.compare unvisited_unreferenced)

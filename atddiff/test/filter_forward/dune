@@ -3,7 +3,11 @@
 (rule
  (targets filter.txt)
  (deps filter_old.atd filter_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success --forward)))
+ (action
+  (with-accepted-exit-codes
+    0
+    (with-outputs-to %{targets}
+      (run %{bin:atddiff} %{deps} --exit-success --forward)))))
 
 (rule
  (alias runtest)

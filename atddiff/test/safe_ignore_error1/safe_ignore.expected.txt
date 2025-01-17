@@ -1,0 +1,3 @@
+Error: Some types in file 'safe_ignore_old.atd' were not declared with '--types' or '--ignore'. You should identify types that are entry points and add them to '--types' if you want to check them or to '--ignore' otherwise.
+The following types are not being checked: recursive1, recursive2
+At least the following types need to be added to '--types' or '--ignore': <none, check for recursive definitions>

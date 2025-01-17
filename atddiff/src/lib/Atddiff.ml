@@ -62,7 +62,7 @@ let check_forgotten_root_types
                      were not declared with '--types' or '--ignore'. \
                      You should identify types that are \
                      entry points and add them to '--types' if \
-                     you want to check them or to '--ignore' otherwise. \n\
+                     you want to check them or to '--ignore' otherwise.\n\
                      The following types are not being checked: %s\n\
                      At least the following types need to be added to '--types' or '--ignore': %s"
               atd_file

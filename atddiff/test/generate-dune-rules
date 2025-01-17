@@ -27,7 +27,11 @@ EOF
 (rule
  (targets $name.txt)
  (deps ${name}_old.atd ${name}_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} $atddiff_options)))
+ (action
+  (with-accepted-exit-codes
+    $expected_exit_code
+    (with-outputs-to %{targets}
+      (run %{bin:atddiff} %{deps} $atddiff_options)))))
 
 (rule
  (alias runtest)
@@ -55,7 +59,14 @@ folders="
   json_output
   no_locations_text
   no_locations_json
+  safe_ignore
+  safe_ignore_error1
+  safe_ignore_error2
 "
+
+# Like the atddiff options, the expected exit code can be changed
+# on a per-folder basis.
+expected_exit_code=0
 
 for folder in $folders; do
   atddiff_options="--exit-success "
@@ -88,6 +99,17 @@ for folder in $folders; do
       ;;
     no_locations_json)
       atddiff_options+="--no-locations -f json"
+      ;;
+    safe_ignore)
+      atddiff_options+="--types nonrec_root --ignore recursive2,deleted_type,new_type"
+      ;;
+    safe_ignore_error1)
+      atddiff_options+="--types nonrec_root --ignore deleted_type,new_type"
+      expected_exit_code=1
+      ;;
+    safe_ignore_error2)
+      atddiff_options+="--types nonrec_root --ignore recursive2,new_type"
+      expected_exit_code=1
       ;;
     *)
       echo "Error: Unknown atddiff command for test folder $folder" >&2

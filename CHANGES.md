@@ -1,4 +1,4 @@
-Unreleased
+2.16.0 (2025-01-22)
 -------------------
 
 * atdgen: Breaking change, migrate from Bucklescript to Melange (#375)

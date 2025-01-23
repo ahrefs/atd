@@ -1,0 +1,12 @@
+[1bd853be] Forward incompatibility:
+File "safe_ignore_old.atd", line 3, characters 2-20:
+Required field 'deleted_field' disappeared.
+The following types are affected:
+  nonrec_root
+
+[319452bf] Backward incompatibility:
+File "safe_ignore_new.atd", line 3, characters 2-16:
+Required field 'new_field' is new.
+The following types are affected:
+  nonrec_root
+

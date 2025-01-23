@@ -3,7 +3,11 @@
 (rule
  (targets all_errors.txt)
  (deps all_errors_old.atd all_errors_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success --output-format json)))
+ (action
+  (with-accepted-exit-codes
+    0
+    (with-outputs-to %{targets}
+      (run %{bin:atddiff} %{deps} --exit-success --output-format json)))))
 
 (rule
  (alias runtest)

@@ -1,4 +1,10 @@
 Unreleased
+----------
+
+* atdgen: Add option `-j-gen-modules` to generate JSON generic submodules (#420)
+
+
+2.16.0 (2025-01-22)
 -------------------
 
 * atdgen: Breaking change, migrate from Bucklescript to Melange (#375)
@@ -8,8 +14,12 @@ Unreleased
 * atdcpp: Initial Release (#404)
 * atdcpp: Use `double` c++ type as default floating point type (#411)
 * atdgen: Fix JSON I/O for inline records (#419)
-* atdgen: Add option `-j-gen-modules` to generate JSON generic submodules (#420)
-
+* atdgen: The deprecated `atdgen` library is no longer available.
+          Use `atdgen-runtime` instead (#421)
+* atddiff: To ensure that all the intended types are checked when new
+           type definitions are added to an ATD file, an `--ignore`
+           option is now available. It makes atddiff fail if some types
+           are neither selected via `--types` nor ignored via `--ignore`.
 
 2.15.0 (2023-10-26)
 -------------------

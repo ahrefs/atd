@@ -36,6 +36,7 @@ type output_format = Text | JSON
                       populated in new JSON data.
 *)
 val compare_files :
+  ?root_types_superset:string list ->
   ?filter:filter ->
   ?json_defaults_old:bool ->
   ?json_defaults_new:bool ->

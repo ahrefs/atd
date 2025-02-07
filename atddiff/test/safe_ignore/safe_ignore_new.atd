@@ -1,0 +1,16 @@
+type nonrec_root = {
+  field: b;
+  new_field: int;
+  inherit c;
+}
+
+type b = int
+
+type c = {
+  field2: int;
+}
+
+type recursive1 = [ Rec2 of recursive2 list | New_case ]
+type recursive2 = [ Rec1 of recursive1 list ]
+
+type new_type = string

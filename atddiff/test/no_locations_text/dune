@@ -3,7 +3,11 @@
 (rule
  (targets ordering.txt)
  (deps ordering_old.atd ordering_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success --no-locations -f text)))
+ (action
+  (with-accepted-exit-codes
+    0
+    (with-outputs-to %{targets}
+      (run %{bin:atddiff} %{deps} --exit-success --no-locations -f text)))))
 
 (rule
  (alias runtest)
@@ -13,7 +17,11 @@
 (rule
  (targets same_hash.txt)
  (deps same_hash_old.atd same_hash_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success --no-locations -f text)))
+ (action
+  (with-accepted-exit-codes
+    0
+    (with-outputs-to %{targets}
+      (run %{bin:atddiff} %{deps} --exit-success --no-locations -f text)))))
 
 (rule
  (alias runtest)
@@ -23,7 +31,11 @@
 (rule
  (targets simple.txt)
  (deps simple_old.atd simple_new.atd)
- (action (run %{bin:atddiff} %{deps} -o %{targets} --exit-success --no-locations -f text)))
+ (action
+  (with-accepted-exit-codes
+    0
+    (with-outputs-to %{targets}
+      (run %{bin:atddiff} %{deps} --exit-success --no-locations -f text)))))
 
 (rule
  (alias runtest)

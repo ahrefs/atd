@@ -189,7 +189,9 @@ let main () =
     Arg.Unit (fun () ->
                 add_generic_modules := true),
     "
-          Add genericity-friendly modules to -j output.";
+          Add genericity-friendly modules to -j output,
+          they allow for instance manipulation as first-class modules:
+          module Typename: sig type t ... val read: ... val to_string: ... end";
 
     "-std-json",
     Arg.Unit (fun () ->

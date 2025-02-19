@@ -328,3 +328,20 @@ let create_ambiguous
     ambiguous = ambiguous;
     not_ambiguous1 = not_ambiguous1;
   }
+
+
+(** {3 Generic Modules } *)
+module Ambiguous' = struct
+type nonrec t = ambiguous'
+let write = write_ambiguous'
+let read = read_ambiguous'
+let to_string = string_of_ambiguous'
+let of_string = ambiguous'_of_string
+end
+module Ambiguous = struct
+type nonrec t = ambiguous
+let write = write_ambiguous
+let read = read_ambiguous
+let to_string = string_of_ambiguous
+let of_string = ambiguous_of_string
+end

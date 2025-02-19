@@ -50,3 +50,13 @@ let read_t read__a = (
 )
 let t_of_string read__a s =
   read_t read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+
+
+(** {3 Generic Modules } *)
+module T = struct
+type nonrec ('a) t = ('a) t
+let write = write_t
+let read = read_t
+let to_string = string_of_t
+let of_string = t_of_string
+end

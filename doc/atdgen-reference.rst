@@ -161,6 +161,37 @@ module. For example, the OCaml expressions
 ``((x : Example_t.date) : Example_j.date)`` and
 ``x.Example_t.year = x.Example_j.year`` are both valid.
 
+Moreover, the option ``-j-gen-modules`` can be used to generate extra modules
+which offer a more generic module type, for instance for `type profile` in the
+example above (documentation comments stripped for brevity):
+
+.. code:: ocaml
+    module Profile : sig
+      type nonrec t = profile
+      val write : Buffer.t -> profile -> unit
+      val to_string : ?len:int -> profile -> string
+      val read : Yojson.Safe.lexer_state -> Lexing.lexbuf -> profile
+      val of_string : string -> profile
+    end
+
+One can treat this module more generically as a functor argument or a first
+class module:
+
+.. code:: ocaml
+    module type Stringable_monomorphic = sig
+      type t
+      val of_string: string -> t
+      val to_string: ?len: int -> t -> string
+    end
+
+    let test_involution (module M : Stringable_monomorphic) input =
+      let x = M.of_string input in
+      let s = M.to_string x in
+      assert (s = input)
+
+    test_involution (module Profile) "{ /* ... */ }";
+
+
 Atdgen-biniou example
 ^^^^^^^^^^^^^^^^^^^^^
 

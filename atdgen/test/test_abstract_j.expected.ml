@@ -75,3 +75,13 @@ let read_abs1 read__x = (
 )
 let abs1_of_string read__x s =
   read_abs1 read__x (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
+
+
+(** {3 Generic Modules } *)
+module Any_items = struct
+type nonrec t = any_items
+let write = write_any_items
+let read = read_any_items
+let to_string = string_of_any_items
+let of_string = any_items_of_string
+end

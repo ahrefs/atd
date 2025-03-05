@@ -651,13 +651,14 @@ let get_ts_default (e : type_expr) (an : annot) : string option =
 (* piggy-back on ocaml annotations TODO check ts ones first *)
 let get_annot an field = Atd.Annot.get_opt_field ~parse:(fun s -> Some s) ~sections:["ocaml"] ~field an
 
-let get_from an =
+let get_from ~default_t an =
   match get_annot an "from", get_annot an "t" with
   | Some from, Some t -> Some (from,t)
+  | Some from, None -> Some (from,default_t)
   | _ -> None
 
-let get_export_from an = function
-  | Name (_loc, (_loc2, "abstract", []), _) -> get_from an
+let get_export_from ~default_t an = function
+  | Name (_loc, (_loc2, "abstract", []), _) -> get_from ~default_t an
   | _ -> None
 
 (* If the field is '?foo: bar option', its ts or json value has type
@@ -803,7 +804,7 @@ let record_type env loc name (fields : field list) an =
 
 let alias_type env name an type_expr =
   let ts_type_name = type_name env name in
-  match get_export_from an type_expr with
+  match get_export_from ~default_t:name an type_expr with
   | None ->
       let value_type = type_name_of_expr env type_expr in
       [
@@ -1115,7 +1116,7 @@ let write_root_expr env ~ts_type_name e =
 let make_reader env loc name an e =
   let ts_type_name = type_name env name in
   let ts_name = reader_name env name in
-  match get_export_from an e with
+  match get_export_from ~default_t:name an e with
   | Some (from,t) ->
       [
         Line (sprintf "import { %s as %s } from \"./%s\"" (reader_name env t) ts_name (String.lowercase_ascii from));
@@ -1133,7 +1134,7 @@ let make_reader env loc name an e =
 let make_writer env loc name an e =
   let ts_type_name = type_name env name in
   let ts_name = writer_name env name in
-  match get_export_from an e with
+  match get_export_from ~default_t:name an e with
   | Some (from,t) ->
       [
         Line (sprintf "import { %s as %s } from \"./%s\"" (writer_name env t) ts_name (String.lowercase_ascii from));

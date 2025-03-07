@@ -168,12 +168,12 @@
 (rule
  (alias runtest)
  (package atdgen)
- (action (diff testjstd.expected.ml testjstd_j.ml)))
+ (action (diff testjstd_j.expected.ml testjstd_j.ml)))
 
 (rule
  (alias runtest)
  (package atdgen)
- (action (diff testjstd.expected.mli testjstd_j.mli)))
+ (action (diff testjstd_j.expected.mli testjstd_j.mli)))
 
 (rule
  (targets testv.ml testv.mli)

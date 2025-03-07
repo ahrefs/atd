@@ -11,7 +11,7 @@
 (rule
  (targets melangespec_j.ml melangespec_j.mli)
  (deps melangespec.atd)
- (action (run atdgen %{deps} -j -j-std)))
+ (action (run atdgen %{deps} -j)))
 
 (library
  (name melangespec_types)

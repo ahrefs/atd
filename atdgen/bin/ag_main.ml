@@ -1,6 +1,11 @@
 open Atd.Import
 open Atdgen_emit
 
+let maybe_fail_deprecated where =
+  match Sys.getenv "ATDGEN_FAIL_DEPRECATED_OPTIONS" with
+  | "true" -> Printf.ksprintf failwith "Error: option %S is forbidden." where
+  | _ | exception _ -> ()
+
 let append l1 l2 =
   List.concat_map (fun s1 -> List.map (fun s2 -> s1 ^ s2) l2) l1
 
@@ -61,7 +66,6 @@ let main () =
   let all_rec = ref false in
   let out_prefix = ref None in
   let mode = ref (None : mode option) in
-  let std_json = ref false in
   let add_generic_modules = ref false in
   let j_preprocess_input = ref None in
   let j_defaults = ref false in
@@ -178,12 +182,9 @@ let main () =
           including OCaml type definitions.";
 
     "-j-std",
-    Arg.Unit (fun () ->
-                std_json := true),
+    Arg.Unit (fun () -> maybe_fail_deprecated "-j-std"),
     "
-          Convert tuples and variants into standard JSON and
-          refuse to print NaN and infinities (implying -json mode
-          unless another mode is specified).";
+          This option does nothing; kept for backwards compatibility.";
 
     "-j-gen-modules",
     Arg.Unit (fun () ->
@@ -194,11 +195,9 @@ let main () =
           module Typename: sig type t ... val read: ... val to_string: ... end";
 
     "-std-json",
-    Arg.Unit (fun () ->
-                std_json := true),
+    Arg.Unit (fun () -> maybe_fail_deprecated "-std-json"),
     "
-          [deprecated in favor of -j-std]
-          Same as -j-std.";
+          No-op: same as -j-std.";
 
     "-j-pp",
     Arg.String (fun s -> set_once "-j-pp" j_preprocess_input s),
@@ -299,8 +298,7 @@ Generate OCaml code offering:
 Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd" Sys.argv.(0) in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
-  if (!std_json
-      || !unknown_field_handler <> None) && !mode = None then
+  if (!unknown_field_handler <> None) && !mode = None then
     set_once "output mode" mode Json;
 
   let mode =
@@ -408,7 +406,6 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd" Sys.argv.(0) in
                 Ob_emit.make_ocaml_files
             | J | Json ->
                 Oj_emit.make_ocaml_files
-                  ~std: !std_json
                   ~unknown_field_handler: !unknown_field_handler
                   ~preprocess_input: !j_preprocess_input
                   ~add_generic_modules: !add_generic_modules

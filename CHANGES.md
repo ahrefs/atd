@@ -2,7 +2,10 @@ Unreleased
 ----------
 
 * atdgen: Add option `-j-gen-modules` to generate JSON generic submodules (#420)
-
+* atdgen: Remove option `-j-std`, now it's the default, one cannot generate extended-JSON (#425).
+  Options `-j-std` and `-std-json` are still available as backward-compatibility no-ops unless
+  environment variable `ATDGEN_FAIL_DEPRECATED_OPTIONS` is set to `true` in
+  which case their use results in an exception.
 
 2.16.0 (2025-01-22)
 -------------------

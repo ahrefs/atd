@@ -6,7 +6,6 @@ val make_ocaml_files
   -> with_create:bool
   -> with_fundefs:bool
   -> all_rec:bool
-  -> std:bool
   -> unknown_field_handler:string option
   -> pos_fname:string option
   -> pos_lnum:int option

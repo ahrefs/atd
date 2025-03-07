@@ -20,7 +20,6 @@ let annot_schema = Ocaml.annot_schema_of_target target
 type param = {
   deref : (Ocaml.Repr.t, Json.json_repr) Mapping.mapping ->
     (Ocaml.Repr.t, Json.json_repr) Mapping.mapping;
-  std : bool;
   unknown_field_handler : string option;
   (* Optional handler that takes a field name as argument
      and does something with it such as displaying a warning message. *)
@@ -157,14 +156,9 @@ let rec get_writer_name
 
   | Float (_, Float, Float j) ->
       (match j with
-         Float None ->
-           if p.std then "Yojson.Safe.write_std_float"
-           else "Yojson.Safe.write_float"
+         Float None -> "Yojson.Safe.write_std_float"
        | Float (Some precision) ->
-           if p.std then
-             sprintf "Yojson.Safe.write_std_float_prec %i" precision
-           else
-             sprintf "Yojson.Safe.write_float_prec %i" precision
+           sprintf "Yojson.Safe.write_std_float_prec %i" precision
        | Int ->
            "Atdgen_runtime.Oj_run.write_float_as_int"
       )
@@ -348,10 +342,7 @@ let rec make_writer ?type_constraint p (x : Oj_mapping.t) : Indent.t list =
       let l =
         insert (Line "Buffer.add_char ob ',';") (Array.to_list a)
       in
-      let op, cl =
-        if p.std then '[', ']'
-        else '(', ')'
-      in
+      let op, cl = '[', ']' in
       [
         Annot ("fun", Line "fun ob x ->");
         Block [
@@ -393,8 +384,7 @@ let rec make_writer ?type_constraint p (x : Oj_mapping.t) : Indent.t list =
 
   | Option (_, x, Option, Option) ->
       [
-        Line (sprintf "Atdgen_runtime.Oj_run.write_%soption ("
-                (if p.std then "std_" else ""));
+        Line "Atdgen_runtime.Oj_run.write_std_option (";
         Block (make_writer p x);
         Line ")";
       ]
@@ -434,14 +424,10 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
   let json_cons = j.Json.json_cons in
   match x.var_arg with
   | None ->
-      let enclose s =
-        if p.std then s
-        else "<" ^ s ^ ">"
-      in
       [
         Line (sprintf "| %s%s -> Buffer.add_string ob %S"
                 tick ocaml_cons
-                (enclose (make_json_string json_cons)))
+                (make_json_string json_cons))
       ]
   | Some v when open_enum ->
       (* v should resolve to type string. *)
@@ -454,10 +440,7 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
       ]
   | Some (Record (_, a, Record o, Record _)) ->
       (* We need a special case because inline-records cannot escape their scope. *)
-      let op, sep, cl =
-        if p.std then "[", ",", ']'
-        else "<", ":", '>'
-      in
+      let op, sep, cl = "[", ",", ']' in
       [
         Line (sprintf "| %s%s x ->" tick ocaml_cons);
         Block [
@@ -470,10 +453,7 @@ and make_variant_writer p ~tick ~open_enum x : Indent.t list =
         ]
       ]
   | Some v ->
-      let op, sep, cl =
-        if p.std then "[", ",", ']'
-        else "<", ":", '>'
-      in
+      let op, sep, cl = "[", ",", ']' in
       [
         Line (sprintf "| %s%s x ->" tick ocaml_cons);
         Block [
@@ -1295,13 +1275,12 @@ let make_ocaml_json_reader p ~original_types is_rec let1 let2 def =
 
 
 let make_ocaml_json_impl
-    ~std ~unknown_field_handler
+    ~unknown_field_handler
     ~with_create ~force_defaults ~preprocess_input ~original_types
     ~ocaml_version
     buf deref defs =
   let p =
     { deref
-    ; std
     ; unknown_field_handler
     ; force_defaults
     ; preprocess_input
@@ -1346,7 +1325,7 @@ let make_mli
 
 let make_ml
     ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-    ~std ~unknown_field_handler
+    ~unknown_field_handler
     ~force_defaults ~preprocess_input ~original_types
     ~ocaml_version
     ocaml_typedefs deref defs =
@@ -1359,7 +1338,7 @@ let make_ml
     bprintf buf "\n";
   if with_fundefs then
     make_ocaml_json_impl
-      ~std ~unknown_field_handler
+      ~unknown_field_handler
       ~with_create ~force_defaults ~preprocess_input ~original_types
       ~ocaml_version
       buf deref defs;
@@ -1415,7 +1394,6 @@ let make_ocaml_files
     ~with_create
     ~with_fundefs
     ~all_rec
-    ~std
     ~unknown_field_handler
     ~pos_fname
     ~pos_lnum
@@ -1476,7 +1454,7 @@ let make_ocaml_files
   in
   let ml =
     make_ml ~header ~opens ~with_typedefs ~with_create ~with_fundefs
-      ~std ~unknown_field_handler
+      ~unknown_field_handler
       ~force_defaults ~preprocess_input ~original_types
       ~ocaml_version
       ocaml_typedefs (Mapping.make_deref defs) defs

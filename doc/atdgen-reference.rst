@@ -42,7 +42,7 @@ Atdgen-json example
 ::
 
     $ atdgen -t example.atd
-    $ atdgen -j -j-std example.atd
+    $ atdgen -j example.atd
 
 Input file ``example.atd``:
 
@@ -506,16 +506,14 @@ Notes:
 -  The optional values of record fields denoted in ATD by a question
    mark are unwrapped or omitted in both biniou and JSON.
 -  JSON option values and JSON variants are represented in standard JSON
-   (``atdgen -j -j-std``) by a single string e.g. ``"None"`` or a pair
+   (``atdgen -j``) by a single string e.g. ``"None"`` or a pair
    in which the first element is the name (constructor) e.g.
-   ``["Some", 1234]``. Yojson also provides a specific syntax for
-   variants using edgy brackets: ``<"None">``, ``<"Some": 1234>``.
+   ``["Some", 1234]``.
 -  Biniou field names and variant names other than the option types use
    the hash of the ATD field or variant name and cannot currently be
    overridden by annotations.
--  JSON tuples in standard JSON (``atdgen -j -j-std``) use the array
-   notation e.g. ``["ABC", 123]``. Yojson also provides a specific
-   syntax for tuples using parentheses, e.g. ``("ABC", 123)``.
+-  JSON tuples in standard JSON (``atdgen -j``) use the array
+   notation e.g. ``["ABC", 123]``.
 -  Types defined as abstract are defined in another module.
 
 ATD Annotations

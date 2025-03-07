@@ -1,8 +1,9 @@
 open Atd.Import
 open Atdgen_emit
 
+let fail_deprecated_variable = "ATDGEN_FAIL_DEPRECATED_OPTIONS"
 let maybe_fail_deprecated where =
-  match Sys.getenv "ATDGEN_FAIL_DEPRECATED_OPTIONS" with
+  match Sys.getenv fail_deprecated_variable with
   | "true" -> Printf.ksprintf failwith "Error: option %S is forbidden." where
   | _ | exception _ -> ()
 
@@ -167,6 +168,7 @@ let main () =
 
     "-biniou",
     Arg.Unit (fun () ->
+                maybe_fail_deprecated "-biniou";
                 set_once "output type" mode Biniou),
     "
           [deprecated in favor of -t and -b]
@@ -175,6 +177,7 @@ let main () =
 
     "-json",
     Arg.Unit (fun () ->
+                maybe_fail_deprecated "-json";
                 set_once "output type" mode Json),
     "
           [deprecated in favor of -t and -j]
@@ -184,7 +187,7 @@ let main () =
     "-j-std",
     Arg.Unit (fun () -> maybe_fail_deprecated "-j-std"),
     "
-          This option does nothing; kept for backwards compatibility.";
+          [deprecated] This option does nothing; kept for backwards compatibility.";
 
     "-j-gen-modules",
     Arg.Unit (fun () ->
@@ -197,7 +200,7 @@ let main () =
     "-std-json",
     Arg.Unit (fun () -> maybe_fail_deprecated "-std-json"),
     "
-          No-op: same as -j-std.";
+          [deprecated] No-op: same as -j-std.";
 
     "-j-pp",
     Arg.String (fun s -> set_once "-j-pp" j_preprocess_input s),
@@ -237,6 +240,7 @@ let main () =
 
     "-validate",
     Arg.Unit (fun () ->
+                maybe_fail_deprecated "-validate";
                 set_once "output type" mode Validate),
     "
           [deprecated in favor of -t and -v]
@@ -287,15 +291,19 @@ let main () =
           Print the version identifier of atdgen and exit.";
   ]
   in
-  let msg = sprintf "\
-Generate OCaml code offering:
+  let msg = sprintf 
+  {|Generate OCaml code offering:
   * OCaml type definitions translated from ATD file (-t)
   * serializers and deserializers for Biniou (-b)
   * serializers and deserializers for JSON (-j)
   * record-creating functions supporting default fields (-v)
   * user-specified data validators (-v)
 
-Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd" Sys.argv.(0) in
+Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd
+
+Some options are deprecated. Use the environment variable `%s=true`
+to make their use fail and hence help clean-up your build scripts.
+|} Sys.argv.(0) fail_deprecated_variable in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
   if (!unknown_field_handler <> None) && !mode = None then

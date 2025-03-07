@@ -1160,7 +1160,7 @@ files (``foo.atd``, ``foo.ml``, ``bar.atd``, ``bar.ml`` and ``main.ml``):
   # OCaml modules we want to build
   OCAMLFILES = foo_t foo_j foo bar_t bar_j bar main
 
-  Atdgen(foo bar, -j-std)
+  Atdgen(foo bar, )
   OCamlProgram(foobar, $(OCAMLFILES))
 
   .DEFAULT: foobar.opt
@@ -1193,7 +1193,7 @@ Here is a sample `Makefile` that takes advantage of
   default: opt
 
   ATDGEN_SOURCES = foo.atd bar.atd
-  ATDGEN_FLAGS = -j-std
+  ATDGEN_FLAGS =
   include Atdgen.mk
 
   SOURCES = \
@@ -1237,7 +1237,7 @@ this will usually look like:
    (targets example_j.ml
             example_j.mli)
    (deps    example.atd)
-   (action  (run atdgen -j -j-std %{deps})))
+   (action  (run atdgen -j %{deps})))
 
   (rule
    (targets example_t.ml
@@ -1350,7 +1350,7 @@ Compile either example with:
 ::
 
   $ atdgen -t untypable.atd
-  $ atdgen -j -j-std untypable.atd
+  $ atdgen -j untypable.atd
   $ ocamlfind ocamlc -a -o untypable.cma -package atdgen \
       untypable_t.mli untypable_t.ml untypable_j.mli untypable_j.ml
 

@@ -177,6 +177,7 @@ val test_variant_of_string :
   string -> test_variant
   (** Deserialize JSON data of type {!type:test_variant}. *)
 
+
 val write_poly :
   (Buffer.t -> 'x -> unit) ->
   (Buffer.t -> 'y -> unit) ->
@@ -205,6 +206,13 @@ val poly_of_string :
   string -> ('x, 'y) poly
   (** Deserialize JSON data of type {!type:poly}. *)
 
+val create_poly :
+  fst: 'x list ->
+  snd: ('x, 'y) poly option ->
+  unit -> ('x, 'y) poly
+  (** Create a record of type {!type:poly}. *)
+
+
 val write_p' :
   (Buffer.t -> 'a -> unit) ->
   Buffer.t -> 'a p' -> unit
@@ -229,6 +237,7 @@ val p'_of_string :
   string -> 'a p'
   (** Deserialize JSON data of type {!type:p'}. *)
 
+
 val write_p :
   Buffer.t -> p -> unit
   (** Output a JSON value of type {!type:p}. *)
@@ -248,6 +257,7 @@ val read_p :
 val p_of_string :
   string -> p
   (** Deserialize JSON data of type {!type:p}. *)
+
 
 val write_r :
   Buffer.t -> r -> unit
@@ -269,6 +279,14 @@ val r_of_string :
   string -> r
   (** Deserialize JSON data of type {!type:r}. *)
 
+val create_r :
+  a: int ->
+  b: bool ->
+  c: p ->
+  unit -> r
+  (** Create a record of type {!type:r}. *)
+
+
 val write_validated_string_check :
   Buffer.t -> validated_string_check -> unit
   (** Output a JSON value of type {!type:validated_string_check}. *)
@@ -288,6 +306,7 @@ val read_validated_string_check :
 val validated_string_check_of_string :
   string -> validated_string_check
   (** Deserialize JSON data of type {!type:validated_string_check}. *)
+
 
 val write_validate_me :
   Buffer.t -> validate_me -> unit
@@ -309,6 +328,7 @@ val validate_me_of_string :
   string -> validate_me
   (** Deserialize JSON data of type {!type:validate_me}. *)
 
+
 val write_val1 :
   Buffer.t -> val1 -> unit
   (** Output a JSON value of type {!type:val1}. *)
@@ -328,6 +348,12 @@ val read_val1 :
 val val1_of_string :
   string -> val1
   (** Deserialize JSON data of type {!type:val1}. *)
+
+val create_val1 :
+  val1_x: int ->
+  unit -> val1
+  (** Create a record of type {!type:val1}. *)
+
 
 val write_val2 :
   Buffer.t -> val2 -> unit
@@ -349,6 +375,13 @@ val val2_of_string :
   string -> val2
   (** Deserialize JSON data of type {!type:val2}. *)
 
+val create_val2 :
+  val2_x: val1 ->
+  ?val2_y: val1 ->
+  unit -> val2
+  (** Create a record of type {!type:val2}. *)
+
+
 val write_unixtime_list :
   Buffer.t -> unixtime_list -> unit
   (** Output a JSON value of type {!type:unixtime_list}. *)
@@ -368,6 +401,7 @@ val read_unixtime_list :
 val unixtime_list_of_string :
   string -> unixtime_list
   (** Deserialize JSON data of type {!type:unixtime_list}. *)
+
 
 val write_date :
   Buffer.t -> date -> unit
@@ -389,6 +423,7 @@ val date_of_string :
   string -> date
   (** Deserialize JSON data of type {!type:date}. *)
 
+
 val write_mixed_record :
   Buffer.t -> mixed_record -> unit
   (** Output a JSON value of type {!type:mixed_record}. *)
@@ -408,6 +443,26 @@ val read_mixed_record :
 val mixed_record_of_string :
   string -> mixed_record
   (** Deserialize JSON data of type {!type:mixed_record}. *)
+
+val create_mixed_record :
+  ?field0: int ->
+  ?field1: float ->
+  field2: string option ->
+  field3: Int64.t ->
+  field4: float Atdgen_runtime.Util.ocaml_array ->
+  ?field5: bool ->
+  ?field6: string ->
+  field7: test_variant ->
+  field8: string Atdgen_runtime.Util.ocaml_array ->
+  field9: (int * int * Char.t * int * Int32.t * Int64.t) ->
+  field10: bool ->
+  ?field11: bool ->
+  field12: unit list ->
+  field13: string option list ->
+  field14: date ->
+  unit -> mixed_record
+  (** Create a record of type {!type:mixed_record}. *)
+
 
 val write_mixed :
   Buffer.t -> mixed -> unit
@@ -429,6 +484,7 @@ val mixed_of_string :
   string -> mixed
   (** Deserialize JSON data of type {!type:mixed}. *)
 
+
 val write_test :
   Buffer.t -> test -> unit
   (** Output a JSON value of type {!type:test}. *)
@@ -448,6 +504,16 @@ val read_test :
 val test_of_string :
   string -> test
   (** Deserialize JSON data of type {!type:test}. *)
+
+val create_test :
+  ?x0: int ->
+  ?x1: float ->
+  x2: mixed ->
+  x3: mixed_record list ->
+  x4: Int64.t ->
+  unit -> test
+  (** Create a record of type {!type:test}. *)
+
 
 val write_tup :
   Buffer.t -> tup -> unit
@@ -469,6 +535,7 @@ val tup_of_string :
   string -> tup
   (** Deserialize JSON data of type {!type:tup}. *)
 
+
 val write_test_field_prefix :
   Buffer.t -> test_field_prefix -> unit
   (** Output a JSON value of type {!type:test_field_prefix}. *)
@@ -489,6 +556,13 @@ val test_field_prefix_of_string :
   string -> test_field_prefix
   (** Deserialize JSON data of type {!type:test_field_prefix}. *)
 
+val create_test_field_prefix :
+  theprefix_hello: bool ->
+  theprefix_world: int ->
+  unit -> test_field_prefix
+  (** Create a record of type {!type:test_field_prefix}. *)
+
+
 val write_star_rating :
   Buffer.t -> star_rating -> unit
   (** Output a JSON value of type {!type:star_rating}. *)
@@ -508,6 +582,7 @@ val read_star_rating :
 val star_rating_of_string :
   string -> star_rating
   (** Deserialize JSON data of type {!type:star_rating}. *)
+
 
 val write_generic :
   (Buffer.t -> 'a -> unit) ->
@@ -533,6 +608,12 @@ val generic_of_string :
   string -> 'a generic
   (** Deserialize JSON data of type {!type:generic}. *)
 
+val create_generic :
+  x294623: int ->
+  unit -> 'a generic
+  (** Create a record of type {!type:generic}. *)
+
+
 val write_specialized :
   Buffer.t -> specialized -> unit
   (** Output a JSON value of type {!type:specialized}. *)
@@ -552,6 +633,7 @@ val read_specialized :
 val specialized_of_string :
   string -> specialized
   (** Deserialize JSON data of type {!type:specialized}. *)
+
 
 val write_some_record :
   Buffer.t -> some_record -> unit
@@ -573,6 +655,12 @@ val some_record_of_string :
   string -> some_record
   (** Deserialize JSON data of type {!type:some_record}. *)
 
+val create_some_record :
+  some_field: int ->
+  unit -> some_record
+  (** Create a record of type {!type:some_record}. *)
+
+
 val write_precision :
   Buffer.t -> precision -> unit
   (** Output a JSON value of type {!type:precision}. *)
@@ -592,6 +680,14 @@ val read_precision :
 val precision_of_string :
   string -> precision
   (** Deserialize JSON data of type {!type:precision}. *)
+
+val create_precision :
+  sqrt2_5: float ->
+  small_2: float ->
+  large_2: float ->
+  unit -> precision
+  (** Create a record of type {!type:precision}. *)
+
 
 val write_p'' :
   Buffer.t -> p'' -> unit
@@ -613,6 +709,7 @@ val p''_of_string :
   string -> p''
   (** Deserialize JSON data of type {!type:p''}. *)
 
+
 val write_option_validation :
   Buffer.t -> option_validation -> unit
   (** Output a JSON value of type {!type:option_validation}. *)
@@ -632,6 +729,7 @@ val read_option_validation :
 val option_validation_of_string :
   string -> option_validation
   (** Deserialize JSON data of type {!type:option_validation}. *)
+
 
 val write_no_real_wrap :
   Buffer.t -> no_real_wrap -> unit
@@ -653,6 +751,7 @@ val no_real_wrap_of_string :
   string -> no_real_wrap
   (** Deserialize JSON data of type {!type:no_real_wrap}. *)
 
+
 val write_natural :
   Buffer.t -> natural -> unit
   (** Output a JSON value of type {!type:natural}. *)
@@ -672,6 +771,7 @@ val read_natural :
 val natural_of_string :
   string -> natural
   (** Deserialize JSON data of type {!type:natural}. *)
+
 
 val write_id :
   Buffer.t -> id -> unit
@@ -693,6 +793,7 @@ val id_of_string :
   string -> id
   (** Deserialize JSON data of type {!type:id}. *)
 
+
 val write_json_map :
   Buffer.t -> json_map -> unit
   (** Output a JSON value of type {!type:json_map}. *)
@@ -712,6 +813,7 @@ val read_json_map :
 val json_map_of_string :
   string -> json_map
   (** Deserialize JSON data of type {!type:json_map}. *)
+
 
 val write_intopt :
   Buffer.t -> intopt -> unit
@@ -733,6 +835,7 @@ val intopt_of_string :
   string -> intopt
   (** Deserialize JSON data of type {!type:intopt}. *)
 
+
 val write_int_assoc_list :
   Buffer.t -> int_assoc_list -> unit
   (** Output a JSON value of type {!type:int_assoc_list}. *)
@@ -752,6 +855,7 @@ val read_int_assoc_list :
 val int_assoc_list_of_string :
   string -> int_assoc_list
   (** Deserialize JSON data of type {!type:int_assoc_list}. *)
+
 
 val write_int_assoc_array :
   Buffer.t -> int_assoc_array -> unit
@@ -773,6 +877,7 @@ val int_assoc_array_of_string :
   string -> int_assoc_array
   (** Deserialize JSON data of type {!type:int_assoc_array}. *)
 
+
 val write_int8 :
   Buffer.t -> int8 -> unit
   (** Output a JSON value of type {!type:int8}. *)
@@ -792,6 +897,7 @@ val read_int8 :
 val int8_of_string :
   string -> int8
   (** Deserialize JSON data of type {!type:int8}. *)
+
 
 val write_int64 :
   Buffer.t -> int64 -> unit
@@ -813,6 +919,7 @@ val int64_of_string :
   string -> int64
   (** Deserialize JSON data of type {!type:int64}. *)
 
+
 val write_int32 :
   Buffer.t -> int32 -> unit
   (** Output a JSON value of type {!type:int32}. *)
@@ -832,6 +939,7 @@ val read_int32 :
 val int32_of_string :
   string -> int32
   (** Deserialize JSON data of type {!type:int32}. *)
+
 
 val write_hello :
   Buffer.t -> hello -> unit
@@ -853,6 +961,7 @@ val hello_of_string :
   string -> hello
   (** Deserialize JSON data of type {!type:hello}. *)
 
+
 val write_floats :
   Buffer.t -> floats -> unit
   (** Output a JSON value of type {!type:floats}. *)
@@ -872,6 +981,13 @@ val read_floats :
 val floats_of_string :
   string -> floats
   (** Deserialize JSON data of type {!type:floats}. *)
+
+val create_floats :
+  f32: float ->
+  f64: float ->
+  unit -> floats
+  (** Create a record of type {!type:floats}. *)
+
 
 val write_extended_tuple :
   Buffer.t -> extended_tuple -> unit
@@ -893,6 +1009,7 @@ val extended_tuple_of_string :
   string -> extended_tuple
   (** Deserialize JSON data of type {!type:extended_tuple}. *)
 
+
 val write_extended :
   Buffer.t -> extended -> unit
   (** Output a JSON value of type {!type:extended}. *)
@@ -912,6 +1029,17 @@ val read_extended :
 val extended_of_string :
   string -> extended
   (** Deserialize JSON data of type {!type:extended}. *)
+
+val create_extended :
+  b0x: int ->
+  b1x: bool ->
+  b2x: string ->
+  ?b3x: string ->
+  b4x: string option ->
+  ?b5x: float ->
+  unit -> extended
+  (** Create a record of type {!type:extended}. *)
+
 
 val write_even_natural :
   Buffer.t -> even_natural -> unit
@@ -933,6 +1061,7 @@ val even_natural_of_string :
   string -> even_natural
   (** Deserialize JSON data of type {!type:even_natural}. *)
 
+
 val write_def :
   Buffer.t -> def -> unit
   (** Output a JSON value of type {!type:def}. *)
@@ -952,6 +1081,7 @@ val read_def :
 val def_of_string :
   string -> def
   (** Deserialize JSON data of type {!type:def}. *)
+
 
 val write_char :
   Buffer.t -> char -> unit
@@ -973,6 +1103,7 @@ val char_of_string :
   string -> char
   (** Deserialize JSON data of type {!type:char}. *)
 
+
 val write_base_tuple :
   Buffer.t -> base_tuple -> unit
   (** Output a JSON value of type {!type:base_tuple}. *)
@@ -993,6 +1124,7 @@ val base_tuple_of_string :
   string -> base_tuple
   (** Deserialize JSON data of type {!type:base_tuple}. *)
 
+
 val write_base :
   Buffer.t -> base -> unit
   (** Output a JSON value of type {!type:base}. *)
@@ -1012,6 +1144,13 @@ val read_base :
 val base_of_string :
   string -> base
   (** Deserialize JSON data of type {!type:base}. *)
+
+val create_base :
+  b0: int ->
+  b1: bool ->
+  unit -> base
+  (** Create a record of type {!type:base}. *)
+
 
 val write_array :
   (Buffer.t -> 'a -> unit) ->
@@ -1037,6 +1176,7 @@ val array_of_string :
   string -> 'a array
   (** Deserialize JSON data of type {!type:array}. *)
 
+
 val write_abs3 :
   (Buffer.t -> 'a -> unit) ->
   Buffer.t -> 'a abs3 -> unit
@@ -1060,6 +1200,7 @@ val abs3_of_string :
   (Yojson.Safe.lexer_state -> Lexing.lexbuf -> 'a) ->
   string -> 'a abs3
   (** Deserialize JSON data of type {!type:abs3}. *)
+
 
 val write_abs2 :
   (Buffer.t -> 'a -> unit) ->
@@ -1085,6 +1226,7 @@ val abs2_of_string :
   string -> 'a abs2
   (** Deserialize JSON data of type {!type:abs2}. *)
 
+
 val write_abs1 :
   (Buffer.t -> 'a -> unit) ->
   Buffer.t -> 'a abs1 -> unit
@@ -1108,4 +1250,5 @@ val abs1_of_string :
   (Yojson.Safe.lexer_state -> Lexing.lexbuf -> 'a) ->
   string -> 'a abs1
   (** Deserialize JSON data of type {!type:abs1}. *)
+
 

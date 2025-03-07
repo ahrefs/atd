@@ -163,7 +163,7 @@
 (rule
  (targets testjstd_j.ml testjstd_j.mli)
  (deps    test.atd)
- (action  (run %{bin:atdgen} -extend Test test.atd -j -o testjstd)))
+ (action  (run %{bin:atdgen} -extend Test test.atd -json -o testjstd_j)))
 
 (rule
  (alias runtest)

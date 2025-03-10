@@ -11,7 +11,19 @@ let read_lexbuf
     lexbuf =
 
   Lexer.init_fname lexbuf pos_fname pos_lnum;
-  let head, body = Parser.full_module Lexer.token lexbuf in
+  let head, body = 
+    try
+      Parser.full_module Lexer.token lexbuf
+    with
+      Parser.Error ->
+        Printf.ksprintf failwith "File %S, %s, characters %d-%d: Syntax error"
+          lexbuf.Lexing.lex_start_p.pos_fname
+          (if lexbuf.Lexing.lex_start_p.pos_lnum = lexbuf.Lexing.lex_curr_p.pos_lnum
+           then Printf.sprintf "line %d" lexbuf.Lexing.lex_start_p.pos_lnum
+           else Printf.sprintf "lines %d-%d" lexbuf.Lexing.lex_start_p.pos_lnum lexbuf.Lexing.lex_curr_p.pos_lnum)
+          (lexbuf.Lexing.lex_start_p.pos_cnum - lexbuf.Lexing.lex_start_p.pos_bol)
+          (lexbuf.Lexing.lex_curr_p.pos_cnum - lexbuf.Lexing.lex_curr_p.pos_bol)
+  in
   Check.check body;
   let body =
     if inherit_fields || inherit_variants then

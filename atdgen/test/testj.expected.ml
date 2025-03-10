@@ -176,19 +176,19 @@ let _a_list_of_string read__a s =
 let rec write_p' write__a : _ -> 'a p' -> _ = (
   fun ob (x : 'a p') ->
     match x with
-      | A -> Buffer.add_string ob "<\"A\">"
+      | A -> Buffer.add_string ob "\"A\""
       | Bb x ->
-        Buffer.add_string ob "<\"Bb\":";
+        Buffer.add_string ob "[\"Bb\",";
         (
           write_p' write__a
         ) ob x;
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
       | Ccccc x ->
-        Buffer.add_string ob "<\"Ccccc\":";
+        Buffer.add_string ob "[\"Ccccc\",";
         (
           write__a
         ) ob x;
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
 )
 and string_of_p' write__a ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -265,14 +265,14 @@ and p'_of_string read__a s =
 let rec write_p = (
   fun ob x ->
     match x with
-      | `A -> Buffer.add_string ob "<\"A\">"
+      | `A -> Buffer.add_string ob "\"A\""
       | `B x ->
-        Buffer.add_string ob "<\"B\":";
+        Buffer.add_string ob "[\"B\",";
         (
           write_r
         ) ob x;
-        Buffer.add_char ob '>'
-      | `C -> Buffer.add_string ob "<\"C\">"
+        Buffer.add_char ob ']'
+      | `C -> Buffer.add_string ob "\"C\""
 )
 and string_of_p ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -524,25 +524,25 @@ and string_of__test_variant_list ?(len = 1024) x =
 and write_test_variant = (
   fun ob x ->
     match x with
-      | `Case1 -> Buffer.add_string ob "<\"Case1\">"
+      | `Case1 -> Buffer.add_string ob "\"Case1\""
       | `Case2 x ->
-        Buffer.add_string ob "<\"Case2\":";
+        Buffer.add_string ob "[\"Case2\",";
         (
           Yojson.Safe.write_int
         ) ob x;
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
       | `Case3 x ->
-        Buffer.add_string ob "<\"Case3\":";
+        Buffer.add_string ob "[\"Case3\",";
         (
           Yojson.Safe.write_string
         ) ob x;
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
       | `Case4 x ->
-        Buffer.add_string ob "<\"Case4\":";
+        Buffer.add_string ob "[\"Case4\",";
         (
           write__test_variant_list
         ) ob x;
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
 )
 and string_of_test_variant ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -646,19 +646,19 @@ and test_variant_of_string s =
 let rec write__int_p : _ -> _ p' -> _ = (
   fun ob (x : _ p') ->
     match x with
-      | A -> Buffer.add_string ob "<\"A\">"
+      | A -> Buffer.add_string ob "\"A\""
       | Bb x ->
-        Buffer.add_string ob "<\"Bb\":";
+        Buffer.add_string ob "[\"Bb\",";
         (
           write__int_p
         ) ob x;
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
       | Ccccc x ->
-        Buffer.add_string ob "<\"Ccccc\":";
+        Buffer.add_string ob "[\"Ccccc\",";
         (
           Yojson.Safe.write_int
         ) ob x;
-        Buffer.add_char ob '>'
+        Buffer.add_char ob ']'
 )
 and string_of__int_p ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -733,7 +733,7 @@ let rec read__int_p = (
 and _int_p_of_string s =
   read__int_p (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let rec write__a_b_poly_option write__a write__b ob x = (
-  Atdgen_runtime.Oj_run.write_option (
+  Atdgen_runtime.Oj_run.write_std_option (
     write_poly write__a write__b
   )
 ) ob x
@@ -1101,7 +1101,7 @@ let read_val1 = (
 let val1_of_string s =
   read_val1 (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__val1_option = (
-  Atdgen_runtime.Oj_run.write_option (
+  Atdgen_runtime.Oj_run.write_std_option (
     write_val1
   )
 )
@@ -1359,7 +1359,7 @@ let _int_nullable_of_string s =
   read__int_nullable (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_date = (
   fun ob x ->
-    Buffer.add_char ob '(';
+    Buffer.add_char ob '[';
     (let x, _, _ = x in
     (
       Yojson.Safe.write_int
@@ -1377,7 +1377,7 @@ let write_date = (
       write__int_nullable
     ) ob x
     );
-    Buffer.add_char ob ')';
+    Buffer.add_char ob ']';
 )
 let string_of_date ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -1442,7 +1442,7 @@ let date_of_string s =
   read_date (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__x_adbef7e = (
   Atdgen_runtime.Oj_run.write_array (
-    Yojson.Safe.write_float
+    Yojson.Safe.write_std_float
   )
 )
 let string_of__x_adbef7e ?(len = 1024) x =
@@ -1489,7 +1489,7 @@ let read__unit_list = (
 let _unit_list_of_string s =
   read__unit_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__string_option = (
-  Atdgen_runtime.Oj_run.write_option (
+  Atdgen_runtime.Oj_run.write_std_option (
     Yojson.Safe.write_string
   )
 )
@@ -1562,7 +1562,7 @@ let read__string_option_list = (
 let _string_option_list_of_string s =
   read__string_option_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__int_option = (
-  Atdgen_runtime.Oj_run.write_option (
+  Atdgen_runtime.Oj_run.write_std_option (
     Yojson.Safe.write_int
   )
 )
@@ -1619,8 +1619,8 @@ let read__int_option = (
 let _int_option_of_string s =
   read__int_option (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__float_option = (
-  Atdgen_runtime.Oj_run.write_option (
-    Yojson.Safe.write_float
+  Atdgen_runtime.Oj_run.write_std_option (
+    Yojson.Safe.write_std_float
   )
 )
 let string_of__float_option ?(len = 1024) x =
@@ -1676,7 +1676,7 @@ let read__float_option = (
 let _float_option_of_string s =
   read__float_option (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__bool_option = (
-  Atdgen_runtime.Oj_run.write_option (
+  Atdgen_runtime.Oj_run.write_std_option (
     Yojson.Safe.write_bool
   )
 )
@@ -1754,7 +1754,7 @@ let write_mixed_record : _ -> mixed_record -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"field1\":";
       (
-        Yojson.Safe.write_float
+        Yojson.Safe.write_std_float
       )
         ob x;
     );
@@ -1832,7 +1832,7 @@ let write_mixed_record : _ -> mixed_record -> _ = (
       Buffer.add_string ob "\"field9\":";
     (
       fun ob x ->
-        Buffer.add_char ob '(';
+        Buffer.add_char ob '[';
         (let x, _, _, _, _, _ = x in
         (
           Yojson.Safe.write_int
@@ -1868,7 +1868,7 @@ let write_mixed_record : _ -> mixed_record -> _ = (
           Atdgen_runtime.Oj_run.write_int64
         ) ob x
         );
-        Buffer.add_char ob ')';
+        Buffer.add_char ob ']';
     )
       ob x.field9;
     if !is_first then
@@ -2616,7 +2616,7 @@ let _x_7de077c_of_string s =
 let write__x_c393fa9 = (
   Atdgen_runtime.Oj_run.write_list (
     fun ob x ->
-      Buffer.add_char ob '(';
+      Buffer.add_char ob '[';
       (let x, _ = x in
       (
         write__x_d88f1c8
@@ -2628,7 +2628,7 @@ let write__x_c393fa9 = (
         write__x_7de077c
       ) ob x
       );
-      Buffer.add_char ob ')';
+      Buffer.add_char ob ']';
   )
 )
 let string_of__x_c393fa9 ?(len = 1024) x =
@@ -2733,7 +2733,7 @@ let write_test : _ -> test -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"x1\":";
       (
-        Yojson.Safe.write_float
+        Yojson.Safe.write_std_float
       )
         ob x;
     );
@@ -2971,7 +2971,7 @@ let test_of_string s =
   read_test (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_tup = (
   fun ob x ->
-    Buffer.add_char ob '(';
+    Buffer.add_char ob '[';
     (let x, _ = x in
     (
       Yojson.Safe.write_int
@@ -2983,7 +2983,7 @@ let write_tup = (
       write_test
     ) ob x
     );
-    Buffer.add_char ob ')';
+    Buffer.add_char ob ']';
 )
 let string_of_tup ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -3440,7 +3440,7 @@ let write_precision : _ -> precision -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"sqrt2_5\":";
     (
-      Yojson.Safe.write_float_prec 5
+      Yojson.Safe.write_std_float_prec 5
     )
       ob x.sqrt2_5;
     if !is_first then
@@ -3449,7 +3449,7 @@ let write_precision : _ -> precision -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"small_2\":";
     (
-      Yojson.Safe.write_float_prec 2
+      Yojson.Safe.write_std_float_prec 2
     )
       ob x.small_2;
     if !is_first then
@@ -3458,7 +3458,7 @@ let write_precision : _ -> precision -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"large_2\":";
     (
-      Yojson.Safe.write_float_prec 2
+      Yojson.Safe.write_std_float_prec 2
     )
       ob x.large_2;
     Buffer.add_char ob '}';
@@ -3673,7 +3673,7 @@ let read_p'' = (
 let p''_of_string s =
   read_p'' (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write__x_bee1b88 = (
-  Atdgen_runtime.Oj_run.write_option (
+  Atdgen_runtime.Oj_run.write_std_option (
     Yojson.Safe.write_int
   )
 )
@@ -3975,12 +3975,12 @@ let write_hello = (
   fun ob x ->
     match x with
       | `Hello x ->
-        Buffer.add_string ob "<\"Hello\":";
+        Buffer.add_string ob "[\"Hello\",";
         (
           Yojson.Safe.write_string
         ) ob x;
-        Buffer.add_char ob '>'
-      | `World -> Buffer.add_string ob "<\"World\">"
+        Buffer.add_char ob ']'
+      | `World -> Buffer.add_string ob "\"World\""
 )
 let string_of_hello ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -4144,7 +4144,7 @@ let write_floats : _ -> floats -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"f32\":";
     (
-      Yojson.Safe.write_float
+      Yojson.Safe.write_std_float
     )
       ob x.f32;
     if !is_first then
@@ -4153,7 +4153,7 @@ let write_floats : _ -> floats -> _ = (
       Buffer.add_char ob ',';
       Buffer.add_string ob "\"f64\":";
     (
-      Yojson.Safe.write_float
+      Yojson.Safe.write_std_float
     )
       ob x.f64;
     Buffer.add_char ob '}';
@@ -4323,7 +4323,7 @@ let _string_list_of_string s =
   read__string_list (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_extended_tuple = (
   fun ob x ->
-    Buffer.add_char ob '(';
+    Buffer.add_char ob '[';
     (let x, _, _, _, _, _ = x in
     (
       Yojson.Safe.write_int
@@ -4332,7 +4332,7 @@ let write_extended_tuple = (
     Buffer.add_char ob ',';
     (let _, x, _, _, _, _ = x in
     (
-      Yojson.Safe.write_float
+      Yojson.Safe.write_std_float
     ) ob x
     );
     Buffer.add_char ob ',';
@@ -4359,7 +4359,7 @@ let write_extended_tuple = (
       write__string_list
     ) ob x
     );
-    Buffer.add_char ob ')';
+    Buffer.add_char ob ']';
 )
 let string_of_extended_tuple ?(len = 1024) x =
   let ob = Buffer.create len in
@@ -4519,7 +4519,7 @@ let write_extended : _ -> extended -> _ = (
         Buffer.add_char ob ',';
         Buffer.add_string ob "\"b5\":";
       (
-        Yojson.Safe.write_float
+        Yojson.Safe.write_std_float
       )
         ob x.b5x;
     );
@@ -4805,7 +4805,7 @@ let char_of_string s =
   read_char (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
 let write_base_tuple = (
   fun ob x ->
-    Buffer.add_char ob '(';
+    Buffer.add_char ob '[';
     (let x, _ = x in
     (
       Yojson.Safe.write_int
@@ -4814,10 +4814,10 @@ let write_base_tuple = (
     Buffer.add_char ob ',';
     (let _, x = x in
     (
-      Yojson.Safe.write_float
+      Yojson.Safe.write_std_float
     ) ob x
     );
-    Buffer.add_char ob ')';
+    Buffer.add_char ob ']';
 )
 let string_of_base_tuple ?(len = 1024) x =
   let ob = Buffer.create len in

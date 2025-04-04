@@ -1,12 +1,19 @@
 ;
 ; Convert ATD -> TypeScript
 ;
+
 (rule
-  (targets
-    everything.ts
-  )
-  (deps
-    ../atd-input/everything.atd
-  )
-  (action
-    (run %{bin:atdts} %{deps})))
+ (mode
+  (promote (until-clean)))
+ (targets everything.ts)
+ (deps ../atd-input/everything.atd)
+ (action
+  (run %{bin:atdts} %{deps})))
+
+(rule
+ (mode
+  (promote (until-clean)))
+ (targets import.ts)
+ (deps ../atd-input/import.atd)
+ (action
+  (run %{bin:atdts} %{deps})))

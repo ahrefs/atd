@@ -63,6 +63,9 @@ export type Foo = {
 
 export type SpecialString = string
 
+import { type Import as Import } from "./import"
+export { type Import }
+
 export type IntFloatParametrizedRecord = {
   field_a: number /*int*/;
   field_b: number[];
@@ -226,6 +229,12 @@ export function writeSpecialString(x: SpecialString, context: any = x): any {
 export function readSpecialString(x: any, context: any = x): SpecialString {
   return _atd_read_string(x, context);
 }
+
+import { writeImport as writeImport } from "./import"
+export { writeImport }
+
+import { readImport as readImport } from "./import"
+export { readImport }
 
 export function writeIntFloatParametrizedRecord(x: IntFloatParametrizedRecord, context: any = x): any {
   return {

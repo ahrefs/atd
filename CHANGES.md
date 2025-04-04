@@ -3,6 +3,7 @@ Unreleased
 
 * atdgen: Add option `-j-gen-modules` to generate JSON generic submodules (#420)
 * atd-parser: improve (syntax) error messages (#426)
+* atdts: support <ocaml from...> annotation
 
 2.16.0 (2025-01-22)
 -------------------
@@ -33,7 +34,7 @@ Unreleased
 2.14.1 (2023-10-20)
 -------------------
 
-* atddiff: Fixed reports for new variant cases. They are now correctly 
+* atddiff: Fixed reports for new variant cases. They are now correctly
   reported as forward incompatibilities (#373)
 
 2.14.0 (2023-10-19)
@@ -42,8 +43,8 @@ Unreleased
 * atdd: Fix various issues with the interoperability of user defined types,
   used in or outside of records (#355)
 * atdd: Generated `.d` files now have the suffix `_atd.d` (#355)
-* atddiff now supports options for filtering the findings based on the 
-  direction of the incompatibility (`--backward`, `--forward`) or based on the  
+* atddiff now supports options for filtering the findings based on the
+  direction of the incompatibility (`--backward`, `--forward`) or based on the
   name of the affected types (`--types`) (#365)
 * atddiff: new option `--output-format json` for exporting the results to
   JSON (#360)
@@ -57,7 +58,7 @@ Unreleased
   definitions without `wrap` constructs (#353)
 * atdd: Add `dlang` backend to generate D code from ATD definitions (#349)
 * new tool: atddiff. Compares two versions of an ATD file and reports
-  possible incompatibilities in the JSON data. Atddiff ships as part of the 
+  possible incompatibilities in the JSON data. Atddiff ships as part of the
   `atd` package together with `atdcat` (#352, #358)
 
 2.12.0 (2023-05-12)

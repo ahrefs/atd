@@ -649,7 +649,7 @@ let get_ts_default (e : type_expr) (an : annot) : string option =
   | None -> get_default_default e
 
 (* piggy-back on ocaml annotations TODO check ts ones first *)
-let get_annot an field = Atd.Annot.get_opt_field ~parse:(fun s -> Some s) ~sections:["ocaml"] ~field an
+let get_annot an field = Atd.Annot.get_opt_field ~parse:(fun s -> Some s) ~sections:["ts"] ~field an
 
 let get_from ~default_t an =
   match get_annot an "from", get_annot an "t" with

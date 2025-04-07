@@ -351,6 +351,39 @@ alternate names in the JSON representation. Here's an example:
    | Beta <json name="beta"> of int
    ]
 
+Field ``from``
+""""""""""""""
+
+Position: left-hand side of a type definition, after the type name
+
+Values: .ts file with exported types. This can be also seen as the
+name of the original ATD file, without the ``.atd`` extension and
+capitalized like an OCaml module name.
+
+Semantics: specifies the base name of the OCaml modules where the type
+and values coming with that type are defined.
+
+Example: First input file ``part1.atd``:
+
+.. code:: ocaml
+
+    type point = { x : int; y : int }
+
+Second input file ``part2.atd`` depending on the first one:
+
+.. code:: ocaml
+
+    type point <ocaml from="Part1"> = abstract
+    type points = point list
+
+To use a different type name than defined in the ``Part1`` module, add a
+``t`` field declaration to the annotation which refers to the original
+type name:
+
+.. code:: ocaml
+
+    type point_xy <ocaml from="Part1" t="point"> = abstract
+    type points = point_xy list
 
 Alternate representations for association lists
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

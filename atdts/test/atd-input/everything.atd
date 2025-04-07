@@ -61,4 +61,4 @@ type foo = {
 
 type special_string = string wrap
 
-type import <ocaml from="Import" t="import"> = abstract
+type import <ts from="Import" t="import"> = abstract

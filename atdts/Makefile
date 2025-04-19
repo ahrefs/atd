@@ -7,6 +7,7 @@ DUNE ?= dune
 .PHONY: build
 build:
 	rm -f bin/atdts
+	$(MAKE) clean-for-dune
 	$(DUNE) build @all
 	mkdir -p bin
 	ln -s ../../_build/install/default/bin/atdts bin/atdts
@@ -24,8 +25,12 @@ test:
 	# Compile and run the TypeScript code
 	$(MAKE) -C test/ts-tests
 
+.PHONY: clean-for-dune
+clean-for-dune:
+
+
 .PHONY: clean
 clean:
-	$(MAKE) -C test/ts-tests clean
+	$(MAKE) clean-for-dune
 	$(DUNE) clean
 	rm -rf bin

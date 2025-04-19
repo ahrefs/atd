@@ -373,7 +373,7 @@ Second input file ``part2.atd`` depending on the first one:
 
 .. code:: ocaml
 
-    type point <ocaml from="Part1"> = abstract
+    type point <ts from="Part1"> = abstract
     type points = point list
 
 To use a different type name than defined in the ``Part1`` module, add a

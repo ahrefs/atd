@@ -3,7 +3,7 @@ Unreleased
 
 * atdgen: Add option `-j-gen-modules` to generate JSON generic submodules (#420)
 * atd-parser: improve (syntax) error messages (#426)
-* atdts: support <ocaml from...> annotation
+* atdts: support <ts from...> annotation
 
 2.16.0 (2025-01-22)
 -------------------

@@ -25,3 +25,13 @@ val get_ts_default : Atd.Annot.t -> string option
     The default is ["array"].
 *)
 val get_ts_assoc_repr : Atd.Annot.t -> assoc_repr
+
+(** Extract ["ModuleName"] from [<ts from="ModuleName">].
+    This is used to identify the source module for imported types.
+*)
+val get_ts_from : Atd.Annot.t -> string option
+
+(** Extract ["TypeName"] from [<ts t="TypeName">].
+    This is used to identify the original type name in the source module.
+*)
+val get_ts_type : Atd.Annot.t -> string option

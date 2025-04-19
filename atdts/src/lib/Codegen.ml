@@ -25,6 +25,8 @@ let annot_schema_ts : Atd.Annot.schema_section =
     fields = [
       Type_expr, "repr";
       Field, "default";
+      Type_def, "from";
+      Type_def, "t";
     ]
   }
 
@@ -648,17 +650,13 @@ let get_ts_default (e : type_expr) (an : annot) : string option =
   | Some s -> Some s
   | None -> get_default_default e
 
-(* piggy-back on ocaml annotations TODO check ts ones first *)
-let get_annot an field = Atd.Annot.get_opt_field ~parse:(fun s -> Some s) ~sections:["ts"] ~field an
-
-let get_from ~default_t an =
-  match get_annot an "from", get_annot an "t" with
-  | Some from, Some t -> Some (from,t)
-  | Some from, None -> Some (from,default_t)
-  | _ -> None
-
 let get_export_from ~default_t an = function
-  | Name (_loc, (_loc2, "abstract", []), _) -> get_from ~default_t an
+  | Name (loc, (_loc2, "abstract", _params), _) ->
+      (* For abstract types, require the 'from' annotation *)
+      (match TS_annot.get_ts_from an, TS_annot.get_ts_type an with
+       | Some from, Some t -> Some (from,t)
+       | Some from, None -> Some (from,default_t)
+       | _ -> None)
   | _ -> None
 
 (* If the field is '?foo: bar option', its ts or json value has type

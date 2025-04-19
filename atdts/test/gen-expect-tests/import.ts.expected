@@ -14,7 +14,17 @@
 /* tslint:disable */
 /* eslint-disable */
 
+export type ImportDefault = boolean
+
 export type Import = string
+
+export function writeImportDefault(x: ImportDefault, context: any = x): any {
+  return _atd_write_bool(x, context);
+}
+
+export function readImportDefault(x: any, context: any = x): ImportDefault {
+  return _atd_read_bool(x, context);
+}
 
 export function writeImport(x: Import, context: any = x): any {
   return _atd_write_string(x, context);

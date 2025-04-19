@@ -2,6 +2,8 @@ JS ?= node
 
 .PHONY: test
 test:
+	# To get the latest generated *.ts files
+	dune build
 	# Install TypeScript and JavaScript dependencies locally
 	npm install
 	$(MAKE) lint
@@ -18,4 +20,5 @@ lint:
 
 .PHONY: clean
 clean:
+	dune clean
 	git clean -dfX

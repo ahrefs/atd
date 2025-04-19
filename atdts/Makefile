@@ -7,7 +7,6 @@ DUNE ?= dune
 .PHONY: build
 build:
 	rm -f bin/atdts
-	$(MAKE) clean-for-dune
 	$(DUNE) build @all
 	mkdir -p bin
 	ln -s ../../_build/install/default/bin/atdts bin/atdts
@@ -16,7 +15,6 @@ build:
 # generated code.
 .PHONY: test
 test:
-	$(MAKE) clean-for-dune
 	# Run atdts to convert ATD -> TypeScript
 	$(DUNE) runtest -f; status=$$?; \
           if [ "$$status" != 0 ]; then \
@@ -26,12 +24,8 @@ test:
 	# Compile and run the TypeScript code
 	$(MAKE) -C test/ts-tests
 
-.PHONY: clean-for-dune
-clean-for-dune:
-	rm -f test/ts-tests/everything.ts
-
 .PHONY: clean
 clean:
-	$(MAKE) clean-for-dune
+	$(MAKE) -C test/ts-tests clean
 	$(DUNE) clean
 	rm -rf bin

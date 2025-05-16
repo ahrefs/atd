@@ -358,9 +358,9 @@ Position: left-hand side of a type definition, after the type name
 
 Values: .ts file with exported types. This can be also seen as the
 name of the original ATD file, without the ``.atd`` extension and
-capitalized like an OCaml module name.
+capitalized like an ATD module name.
 
-Semantics: specifies the base name of the OCaml modules where the type
+Semantics: specifies the base name of the ATD modules where the type
 and values coming with that type are defined.
 
 Example: First input file ``part1.atd``:
@@ -382,7 +382,7 @@ type name:
 
 .. code:: ocaml
 
-    type point_xy <ocaml from="Part1" t="point"> = abstract
+    type point_xy <ts from="Part1" t="point"> = abstract
     type points = point_xy list
 
 Alternate representations for association lists

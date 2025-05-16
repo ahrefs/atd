@@ -1,12 +1,8 @@
 (executable
-  (name Main)
-  (libraries
-     atdts
-     alcotest
-  )
-)
+ (name Main)
+ (libraries atdts alcotest))
 
 (rule
-  (alias runtest)
-  (action (run ./Main.exe))
-)
+ (alias runtest)
+ (action
+  (run ./Main.exe)))

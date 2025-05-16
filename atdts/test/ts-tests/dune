@@ -1,12 +1,14 @@
-;
-; Convert ATD -> TypeScript
-;
+; Copy generated .ts files here so that the JS tests can find them The
+;  reason why we don't put the rules to generate .ts here is because
+;  we'd have to use the (mode (promote (until-clean))) atom to have
+;  the files added to the source tree and that somehow breaks the
+;  diffing-promotion dune mechanism
+
 (rule
-  (targets
-    everything.ts
-  )
-  (deps
-    ../atd-input/everything.atd
-  )
-  (action
-    (run %{bin:atdts} %{deps})))
+ (mode
+  (promote (until-clean)))
+ (deps ../gen-expect-tests/everything.ts ../gen-expect-tests/import.ts)
+ (action
+  (progn
+   (copy ../gen-expect-tests/everything.ts everything.ts)
+   (copy ../gen-expect-tests/import.ts import.ts))))

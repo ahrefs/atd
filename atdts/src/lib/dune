@@ -1,7 +1,3 @@
 (library
  (name atdts)
- (libraries
-   re
-   atd
- )
-)
+ (libraries re atd))

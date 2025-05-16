@@ -25,6 +25,8 @@ let annot_schema_ts : Atd.Annot.schema_section =
     fields = [
       Type_expr, "repr";
       Field, "default";
+      Type_def, "from";
+      Type_def, "t";
     ]
   }
 
@@ -95,7 +97,7 @@ let init_env () : env =
      may not be a reserved word.
   *)
   let keywords = [
-   (* Reserved Words *)
+    (* Reserved Words *)
     "break"; "case"; "catch"; "class"; "const"; "continue"; "debugger";
     "default"; "delete"; "do"; "else"; "enum"; "export"; "extends"; "false";
     "finally"; "for"; "function"; "if"; "import"; "in"; "instanceof";
@@ -578,7 +580,7 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
 (* Map ATD built-in types to built-in TypeScript types *)
 let ts_type_name env (name : string) =
   match name with
-  | "unit" -> "Null"
+  | "unit" -> "null"
   | "bool" -> "boolean"
   | "int" -> "number /*int*/"
   | "float" -> "number"
@@ -648,6 +650,15 @@ let get_ts_default (e : type_expr) (an : annot) : string option =
   | Some s -> Some s
   | None -> get_default_default e
 
+let get_export_from ~default_t an = function
+  | Name (loc, (_loc2, "abstract", _params), _) ->
+      (* For abstract types, require the 'from' annotation *)
+      (match TS_annot.get_ts_from an, TS_annot.get_ts_type an with
+       | Some from, Some t -> Some (from,t)
+       | Some from, None -> Some (from,default_t)
+       | _ -> None)
+  | _ -> None
+
 (* If the field is '?foo: bar option', its ts or json value has type
    'bar' rather than 'bar option'. *)
 let unwrap_field_type loc field_name kind e =
@@ -691,7 +702,7 @@ let rec json_reader env e =
   | Wrap (loc, e, an) -> json_reader env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
+       | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_read_%s" name
        | "abstract" -> "((x: any, context): any => x)"
        | _ -> reader_name env name)
   | Name (loc, _, _) -> assert false
@@ -708,7 +719,7 @@ and tuple_reader env cells =
     |> String.concat ", "
   in
   sprintf "((x, context): %s => \
-            { _atd_check_json_tuple(%d, x, context); return [%s] })"
+           { _atd_check_json_tuple(%d, x, context); return [%s] })"
     (type_name_of_tuple env cells)
     (List.length cells)
     tuple_body
@@ -739,7 +750,7 @@ let rec json_writer env e =
   | Wrap (loc, e, an) -> json_writer env e
   | Name (loc, (loc2, name, []), an) ->
       (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
+       | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_write_%s" name
        | "abstract" -> "((x: any, context): any => x)"
        | _ -> writer_name env name)
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
@@ -789,12 +800,19 @@ let record_type env loc name (fields : field list) an =
     Line "}";
   ]
 
-let alias_type env name type_expr =
+let alias_type env name an type_expr =
   let ts_type_name = type_name env name in
-  let value_type = type_name_of_expr env type_expr in
-  [
-    Line (sprintf "export type %s = %s" ts_type_name value_type)
-  ]
+  match get_export_from ~default_t:name an type_expr with
+  | None ->
+      let value_type = type_name_of_expr env type_expr in
+      [
+        Line (sprintf "export type %s = %s" ts_type_name value_type)
+      ]
+  | Some (from,t) ->
+      [
+        Line (sprintf "import { type %s as %s } from \"./%s\"" (type_name env t) ts_type_name (String.lowercase_ascii from));
+        Line (sprintf "export { type %s }" ts_type_name)
+      ]
 
 let string_of_case_name name =
   sprintf "'%s'" (escape_string_content Single name)
@@ -850,7 +868,7 @@ let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   | List _
   | Option _
   | Nullable _
-  | Name _ -> alias_type env name e
+  | Name _ -> alias_type env name an e
   | Shared (loc, e, an) -> assert false
   | Wrap (loc, e, an) -> assert false
   | Tvar _ -> assert false
@@ -975,7 +993,7 @@ let read_root_expr env ~ts_type_name e =
                | Required ->
                    Line (
                      sprintf "%s: _atd_read_required_field(\
-                               '%s', '%s', %s, x['%s'], x),"
+                              '%s', '%s', %s, x['%s'], x),"
                        ts_name
                        (single_esc ts_type_name)
                        json_name_lit
@@ -1046,7 +1064,7 @@ let write_root_expr env ~ts_type_name e =
               (match kind with
                | Required ->
                    Line (sprintf "%s: _atd_write_required_field\
-                                    ('%s', '%s', %s, x.%s, x),"
+                                  ('%s', '%s', %s, x.%s, x),"
                            json_name_lit
                            (single_esc ts_type_name)
                            (single_esc name)
@@ -1054,7 +1072,7 @@ let write_root_expr env ~ts_type_name e =
                            ts_name)
                | Optional ->
                    Line (sprintf "%s: _atd_write_optional_field\
-                                    (%s, x.%s, x),"
+                                  (%s, x.%s, x),"
                            json_name_lit
                            (json_writer env unwrapped_e)
                            ts_name)
@@ -1063,12 +1081,12 @@ let write_root_expr env ~ts_type_name e =
                      match get_ts_default e an with
                      | None ->
                          A.error_at loc
-                          "a default field value must be specified with \
-                           <ts default=\"...\">"
+                           "a default field value must be specified with \
+                            <ts default=\"...\">"
                      | Some x -> x
                    in
                    Line (sprintf "%s: _atd_write_field_with_default\
-                                    (%s, %s, x.%s, x),"
+                                  (%s, %s, x.%s, x),"
                            json_name_lit
                            (json_writer env unwrapped_e)
                            ts_default
@@ -1096,24 +1114,38 @@ let write_root_expr env ~ts_type_name e =
 let make_reader env loc name an e =
   let ts_type_name = type_name env name in
   let ts_name = reader_name env name in
-  let read = read_root_expr env ~ts_type_name e in
-  [
-    Line (sprintf "export function %s(x: any, context: any = x): %s {"
-            ts_name ts_type_name);
-    Block read;
-    Line "}";
-  ]
+  match get_export_from ~default_t:name an e with
+  | Some (from,t) ->
+      [
+        Line (sprintf "import { %s as %s } from \"./%s\"" (reader_name env t) ts_name (String.lowercase_ascii from));
+        Line (sprintf "export { %s }" ts_name)
+      ]
+  | None ->
+      let read = read_root_expr env ~ts_type_name e in
+      [
+        Line (sprintf "export function %s(x: any, context: any = x): %s {"
+                ts_name ts_type_name);
+        Block read;
+        Line "}";
+      ]
 
 let make_writer env loc name an e =
   let ts_type_name = type_name env name in
   let ts_name = writer_name env name in
-  let write = write_root_expr env ~ts_type_name e in
-  [
-    Line (sprintf "export function %s(x: %s, context: any = x): any {"
-            ts_name ts_type_name);
-    Block write;
-    Line "}";
-  ]
+  match get_export_from ~default_t:name an e with
+  | Some (from,t) ->
+      [
+        Line (sprintf "import { %s as %s } from \"./%s\"" (writer_name env t) ts_name (String.lowercase_ascii from));
+        Line (sprintf "export { %s }" ts_name)
+      ]
+  | None ->
+      let write = write_root_expr env ~ts_type_name e in
+      [
+        Line (sprintf "export function %s(x: %s, context: any = x): any {"
+                ts_name ts_type_name);
+        Block write;
+        Line "}";
+      ]
 
 let make_functions env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then

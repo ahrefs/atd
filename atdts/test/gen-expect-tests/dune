@@ -1,0 +1,35 @@
+;
+; Convert ATD -> TypeScript
+;
+
+(rule
+ (deps everything.atd)
+ (targets everything.ts)
+ (action
+  (run %{bin:atdts} %{deps})))
+
+(rule
+ (deps import.atd)
+ (targets import.ts)
+ (action
+  (run %{bin:atdts} %{deps})))
+
+;
+; We test in two phases:
+;
+; 1. Check that the generated TypeScript code is what we expect.
+;
+
+(rule
+ (alias runtest)
+ (package atdts)
+ (deps everything.ts import.ts)
+ (action
+  (progn
+   (diff import.ts.expected import.ts)
+   (diff everything.ts.expected everything.ts))))
+
+; 2. Run the generated TypeScript code and check that is reads or writes JSON
+;    data as expected.
+;
+; See ../ts-tests/dune

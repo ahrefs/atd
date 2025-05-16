@@ -26,3 +26,17 @@ let get_ts_assoc_repr an : assoc_repr =
     ~sections:["ts"]
     ~field:"repr"
     an
+
+let get_ts_from an : string option =
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["ts"]
+    ~field:"from"
+    an
+
+let get_ts_type an : string option =
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["ts"]
+    ~field:"t"
+    an

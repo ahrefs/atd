@@ -60,3 +60,6 @@ type foo = {
 }
 
 type special_string = string wrap
+
+type import_default <ts from="Import"> = abstract
+type import <ts from="Import" t="import"> = abstract

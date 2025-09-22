@@ -30,6 +30,11 @@ All can installed with opam e.g.
 $ opam install atdgen
 ```
 
+Related
+--
+
+[atd-lsp](https://github.com/ahrefs/atd-lsp) - Language Server for ATD
+
 Documentation
 --
 

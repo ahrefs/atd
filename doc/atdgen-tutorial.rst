@@ -1238,29 +1238,24 @@ Given an ``example.atd``, you can manually specify rules like:
 ::
 
   (rule
-   (targets example_j.ml example_j.mli)
+   (targets example_j.ml
+            example_j.mli)
    (deps    example.atd)
-   (mode    fallback)
    (action  (run atdgen -j -j-std %{deps})))
 
   (rule
-   (targets example_t.ml example_t.mli)
+   (targets example_t.ml
+            example_t.mli)
    (deps    example.atd)
-   (mode    fallback)
    (action  (run atdgen -t %{deps})))
 
-  (rule
-   (targets example_v.ml example_v.mli)
-   (deps    example.atd)
-   (mode    fallback)
-   (action  (run atdgen -v %{deps})))
-
-You can refer to ``example_t.ml``, ``example_j.ml``, and ``example_v.ml`` as usual 
-(by default, they will be automatically linked into the library being built in the 
-same directory).
+You can refer to ``example_t.ml`` and ``example_j.ml`` as usual (by default, they
+will be automatically linked into the library being built in the same directory).
 
 Note that any options ``atdgen`` supports can be included in the ``run atdgen``
 section (``-open``, ``-deriving-conv``, etc.).
+
+You will need to write rules for each .atd file individually or ...
 
 Automated Approach with Code Generation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

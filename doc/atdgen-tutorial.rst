@@ -1281,7 +1281,6 @@ to automatically generate rules for all ``.atd`` files in a directory.
       {|(rule
    (targets %s_j.ml %s_j.mli)
    (deps %s.atd)
-   (mode fallback)
    (action
     (run atdgen -j -j-std %%{deps})))
 
@@ -1292,7 +1291,6 @@ to automatically generate rules for all ``.atd`` files in a directory.
       {|(rule
    (targets %s_t.ml %s_t.mli)
    (deps %s.atd)
-   (mode fallback)
    (action
     (run atdgen -t %%{deps})))
 
@@ -1303,7 +1301,6 @@ to automatically generate rules for all ``.atd`` files in a directory.
       {|(rule
    (targets %s_v.ml %s_v.mli)
    (deps %s.atd)
-   (mode fallback)
    (action
     (run atdgen -v %%{deps})))
 

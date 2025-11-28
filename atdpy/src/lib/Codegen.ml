@@ -683,6 +683,17 @@ let construct_json_field env trans_meth
         Block assignment
       ]
 
+let translate_doc_to_docstring loc an : node list =
+  match Atd.Doc.get_doc loc an with
+  | None -> []
+  | Some blocks ->
+      Codegen_doc.make_unquoted_multiline_docstring
+        ~paragraph_width:74
+        blocks
+
+let get_field_doc env ((loc, (name, kind, an), e) : simple_field) =
+  translate_doc_to_docstring loc an
+
 (*
    Function value that can be applied to a JSON node, converting it
    to the desired value.
@@ -803,7 +814,10 @@ let inst_var_declaration
     Line (sprintf "%s: %s%s" var_name type_name default)
   ]
 
-let record env ~class_decorators loc name (fields : field list) an =
+let record env
+    ~class_decorators
+    ~(class_doc:node list)
+    loc name (fields : field list) an =
   let py_class_name = class_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
@@ -882,11 +896,29 @@ let record env ~class_decorators loc name (fields : field list) an =
       ]
     ]
   in
+  (* We create a docstring for the class corresponding to an ATD record from
+     - a generated title
+     - optional text coming from a <doc ...> annotation on the ATD definition
+     - optional text for each record field using ':param ...' syntax
+       (Sphinx syntax)
+  *)
+  let field_doc =
+    List.map (get_field_doc env) fields
+    |> List.flatten
+  in
+  let docstring =
+    [
+      Line (sprintf {|"""Original type: %s = { ... }|} name);
+      Inline class_doc;
+      Inline field_doc;
+      Line {|"""|};
+    ]
+  in
   [
     Inline class_decorators;
     Line (sprintf "class %s:" py_class_name);
     Block (spaced [
-      Line (sprintf {|"""Original type: %s = { ... }"""|} name);
+      Inline docstring;
       Inline inst_var_declarations;
       Inline from_json;
       Inline to_json;
@@ -911,7 +943,7 @@ class Foo:
   def from_json_string(x):
     ...
 *)
-let alias_wrapper env ~class_decorators name type_expr =
+let alias_wrapper env ~class_decorators ~class_doc name type_expr =
   let py_class_name = class_name env name in
   let value_type = type_name_of_expr env type_expr in
   [
@@ -1135,7 +1167,7 @@ let sum_container env ~class_decorators loc name cases =
     ]
   ]
 
-let sum env ~class_decorators loc name cases =
+let sum env ~class_decorators ~class_doc loc name cases =
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1169,6 +1201,14 @@ let get_class_decorators an =
   else
     decorators @ ["dataclass"]
 
+let get_class_doc loc an =
+  match Atd.Doc.get_doc loc an with
+  | None -> []
+  | Some doc ->
+      Codegen_doc.make_unquoted_multiline_docstring
+        ~paragraph_width:74
+        doc
+
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
@@ -1176,17 +1216,20 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     get_class_decorators an
     |> List.map (fun s -> Line ("@" ^ s))
   in
+  let class_doc =
+    get_class_doc loc an
+  in
   let rec unwrap e =
     match e with
     | Sum (loc, cases, an) ->
-        sum env ~class_decorators loc name cases
+        sum env ~class_decorators ~class_doc loc name cases
     | Record (loc, fields, an) ->
-        record env  ~class_decorators loc name fields an
+        record env ~class_decorators ~class_doc loc name fields an
     | Tuple _
     | List _
     | Option _
     | Nullable _
-    | Name _ -> alias_wrapper env ~class_decorators name e
+    | Name _ -> alias_wrapper env ~class_decorators ~class_doc name e
     | Shared _ -> not_implemented loc "cyclic references"
     | Wrap (loc, e, an) -> unwrap e
     | Tvar _ -> not_implemented loc "parametrized type"

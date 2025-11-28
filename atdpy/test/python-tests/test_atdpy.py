@@ -88,7 +88,8 @@ def test_everything_to_json() -> None:
         ),
         parametrized_tuple=e.KindParametrizedTuple(
             (e.Kind(e.WOW()), e.Kind(e.WOW()), 100)
-        )
+        ),
+        num=42,
     )
     a_str = a_obj.to_json_string(indent=2)
     print(a_str)
@@ -196,6 +197,7 @@ def test_everything_to_json() -> None:
     "wow",
     100
   ],
+  "num": 42,
   "extras": [
     17,
     53

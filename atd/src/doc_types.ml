@@ -4,4 +4,4 @@ type inline =
 
 type block =
   | Paragraph of inline list
-  | Pre of string
+  | Pre of string list

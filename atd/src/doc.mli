@@ -40,11 +40,14 @@ type inline =
 
 type block =
   | Paragraph of inline list
-  | Pre of string
+  | Pre of string list
   (** [Paragraph] is a regular paragraph.
       [Pre] is preformatted text that was enclosed
-      within [\{\{\{ \}\}\}] and should be rendered using a fixed-width
-      font preserving all space and newline characters. *)
+      within [\{\{\{ \}\}\}], and then broken up into lines.
+      Leading space is removed evenly from each line.
+      It should be rendered using a fixed-width font preserving spaces
+      and line breaks.
+  *)
 
 (** A document is a list of paragraph-like blocks. *)
 type doc = block list

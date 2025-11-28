@@ -26,9 +26,9 @@ let test_parser_and_printer =
     "{{ {a} }}", "{{ {a} }}";
     "{{{}}}", "";
     "{{{a}}}", "{{{\na\n}}}";
-    "{{{ }}}", "{{{\n \n}}}";
-    "{{{ {{a}} }}}", "{{{\n {{a}} \n}}}";
-    "{{{ a\n\n  b }}}", "{{{\n a\n\n  b \n}}}";
+    "{{{ }}}", "";
+    "{{{ {{a}} }}}", "{{{\n{{a}} \n}}}";
+    "{{{ a\n\n  b }}}", "{{{\na\n\n b \n}}}";
   ]
   |> List.map (fun (input, expected_output) ->
     let name = sprintf "normalize %S" input in

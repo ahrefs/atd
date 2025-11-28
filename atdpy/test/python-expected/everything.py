@@ -267,7 +267,8 @@ from dataclasses import dataclass
 
 @dataclass
 class RecursiveClass:
-    """Original type: recursive_class = { ... }"""
+    """Original type: recursive_class = { ... }
+    """
 
     id: int
     flag: bool
@@ -452,7 +453,8 @@ class KindParametrizedTuple:
 
 @dataclass
 class IntFloatParametrizedRecord:
-    """Original type: _int_float_parametrized_record = { ... }"""
+    """Original type: _int_float_parametrized_record = { ... }
+    """
 
     field_a: int
     field_b: List[float] = field(default_factory=lambda: [])
@@ -483,7 +485,19 @@ class IntFloatParametrizedRecord:
 
 @dataclass
 class Root:
-    """Original type: root = { ... }"""
+    """Original type: root = { ... }
+    First paragraph explaining ``num``. This paragraph should be nicely
+    rewrapped into multiple lines of even length. A super long URL such as
+    https://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    should end up on its own line.
+
+    Second paragraph.
+
+        Preformatted block.
+          Second line with extra indentation.
+
+    End.
+    """
 
     id: str
     await_: bool
@@ -501,6 +515,7 @@ class Root:
     untyped_things: List[Any]
     parametrized_record: IntFloatParametrizedRecord
     parametrized_tuple: KindParametrizedTuple
+    num: int
     maybe: Optional[int] = None
     extras: List[int] = field(default_factory=lambda: [])
     answer: int = field(default_factory=lambda: 42)
@@ -525,6 +540,7 @@ class Root:
                 untyped_things=_atd_read_list((lambda x: x))(x['untyped_things']) if 'untyped_things' in x else _atd_missing_json_field('Root', 'untyped_things'),
                 parametrized_record=IntFloatParametrizedRecord.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
                 parametrized_tuple=KindParametrizedTuple.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
+                num=_atd_read_int(x['num']) if 'num' in x else _atd_missing_json_field('Root', 'num'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
@@ -550,6 +566,7 @@ class Root:
         res['untyped_things'] = _atd_write_list((lambda x: x))(self.untyped_things)
         res['parametrized_record'] = (lambda x: x.to_json())(self.parametrized_record)
         res['parametrized_tuple'] = (lambda x: x.to_json())(self.parametrized_tuple)
+        res['num'] = _atd_write_int(self.num)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['extras'] = _atd_write_list(_atd_write_int)(self.extras)
@@ -568,7 +585,8 @@ class Root:
 @deco.deco2(42)
 @dataclass(order=True)
 class RequireField:
-    """Original type: require_field = { ... }"""
+    """Original type: require_field = { ... }
+    """
 
     req: str
 
@@ -687,7 +705,8 @@ class Frozen:
 
 @dataclass
 class DefaultList:
-    """Original type: default_list = { ... }"""
+    """Original type: default_list = { ... }
+    """
 
     items: List[int] = field(default_factory=lambda: [])
 

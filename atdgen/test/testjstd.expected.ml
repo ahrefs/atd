@@ -122,13 +122,13 @@ type even_natural = Test.even_natural
   \}\}\}abc[def]ghi
   
 {v
-j  *  j
- k * k
-  l*l
+  j  *  j
+   k * k
+    l*l
 v}
   
 {v
-mno
+  mno
 v}
   
   [pqr]\{stu\}vwx
@@ -138,7 +138,7 @@ v}
   [\} \[ \] \{v]
   
 {v
-\} [x] v\} \{v [ @ 
+  \} [x] v\} \{v [ @ 
 v}
 *)
 type def = Test_lib.Json.def

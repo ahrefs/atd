@@ -4,7 +4,18 @@
 
 type kind = [
   | Root (* class name conflict *)
-  | Thing of int
+  | Thing
+      <doc text="
+    First paragraph explaining {{Thing}}.
+
+    Second paragraph.
+{{{
+  Preformatted block.
+    Second line with extra indentation.
+}}}
+    End.
+">
+    of int
   | WOW <json name="wow">
   | Amaze <json name="!!!"> of string list
 ]
@@ -42,7 +53,31 @@ type root = {
   untyped_things: abstract list;
   parametrized_record: (int, float) parametrized_record;
   parametrized_tuple: kind parametrized_tuple;
+  num <doc text="
+    First paragraph explaining {{num}}. This paragraph
+    should be
+       nicely
+    rewrapped into multiple lines of even length.
+    A super long URL such as https://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx should end up on its
+    own line.
+
+    Second paragraph.
+{{{
+  Preformatted block.
+    Second line with extra indentation.
+}}}
+    End.
+">: int;
 }
+  <doc text="This is a comment on the {{root}} type.
+
+     This is a second paragraph and here's a preformatted block:
+{{{
+first line of the preformatted block
+  second line with extra indentation indented
+}}}
+     End.
+">
 
 type alias = int list
 

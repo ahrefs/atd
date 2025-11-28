@@ -6,7 +6,7 @@ type inline = Doc_types.inline =
 
 type block = Doc_types.block =
   | Paragraph of inline list
-  | Pre of string
+  | Pre of string list
 
 type doc = block list
 
@@ -50,12 +50,17 @@ module Text = struct
       | s -> s (* bug *)
     ) s
 
-  let escape_pre s =
+  let escape_pre_line s =
     Re.Pcre.substitute ~rex:escape_pre_re ~subst:(function
       | "}}}" -> {|\}\}\}|}
       | {|\|} -> {|\\|}
       | s -> s (* bug *)
     ) s
+
+  let escape_pre lines =
+    lines
+    |> List.map escape_pre_line
+    |> String.concat "\n"
 
   let compact_whitespace =
     let rex = Re.Pcre.regexp "(?: \t\r\n)+" in
@@ -102,8 +107,8 @@ module Text = struct
         xs
         |> List.map print_inline
         |> concat_nonempty " "
-    | Pre s ->
-        let content = escape_pre s in
+    | Pre lines ->
+        let content = escape_pre lines in
         match content with
         | "" -> ""
         | s ->
@@ -179,9 +184,12 @@ let html_of_doc blocks =
         Buffer.add_string buf "<p>\n";
         List.iter (print_inline buf) l;
         Buffer.add_string buf "\n</p>\n"
-    | Pre s ->
+    | Pre lines ->
         Buffer.add_string buf "<pre>\n";
-        html_escape buf s;
+        List.iter (fun line ->
+          html_escape buf line;
+          Buffer.add_char buf '\n'
+        ) lines;
         Buffer.add_string buf "</pre>\n"
   ) blocks;
   bprintf buf "\n</div>\n";

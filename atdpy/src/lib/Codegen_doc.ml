@@ -18,56 +18,8 @@ let make_ocamldoc_block = function
       List (("", "", "", plist), atoms)
 *)
 
-open Printf
 open Atd
 open Indent
-
-let split_on_blank =
-  let rex = Re.Pcre.regexp {|[ \t]+|} in
-  fun str ->
-    Re.Pcre.split ~rex str
-
-(* Concatenate a list of strings ("words") into lines where the words
-   are separated by a single space character. Each line will not exceed
-   'max_length' bytes unless a word is longer than this. *)
-let concatenate_into_lines ~max_length (words : string list) : string list =
-  let max_length = max 0 max_length in
-  let buf = Buffer.create max_length in
-  let finish_line () =
-    let line = Buffer.contents buf in
-    Buffer.clear buf;
-    line
-  in
-  let rec make_lines orig_words =
-    match orig_words with
-    | [] -> [finish_line ()]
-    | word :: words ->
-        let word_len = String.length word in
-        let len = Buffer.length buf in
-        if len = 0 then (
-          (* The word may be longer than 'max_length'. Putting it on its
-             own line is the best we can do without hyphenating it. *)
-          Buffer.add_string buf word;
-          make_lines words
-        )
-        else
-          (* Add the word to the current line only if it fits. *)
-          let new_len = len + 1 + word_len in
-          if new_len <= max_length then (
-            bprintf buf " %s" word;
-            make_lines words
-          )
-          else
-            (* The new word doesn't fit on the current line. Start a new one. *)
-            let line = finish_line () in
-            line :: make_lines orig_words
-  in
-  make_lines words
-
-let rewrap_paragraph ~max_length str =
-  str
-  |> split_on_blank
-  |> concatenate_into_lines ~max_length
 
 let docstring_escape str =
   (* TODO *)
@@ -101,8 +53,7 @@ let translate_block ~max_length (block : Doc.block) : Indent.node list =
   | Paragraph elements ->
       elements
       |> List.map translate_inline_element
-      |> String.concat ""
-      |> rewrap_paragraph ~max_length
+      |> Doc.rewrap_paragraph ~max_length
       |> List.map (fun line -> Line line)
 
 let make_unquoted_multiline_docstring

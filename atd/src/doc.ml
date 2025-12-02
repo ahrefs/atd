@@ -194,3 +194,49 @@ let html_of_doc blocks =
   ) blocks;
   bprintf buf "\n</div>\n";
   Buffer.contents buf
+
+let split_on_blank =
+  let rex = Re.Pcre.regexp {|[ \t\r\n]+|} in
+  fun str ->
+    Re.Pcre.split ~rex str
+    |> (* make sure to ignore leading and trailing whitespace *)
+    List.filter (function "" -> false | _ -> true)
+
+let concatenate_into_lines ~max_length (words : string list) : string list =
+  let max_length = max 0 max_length in
+  let buf = Buffer.create max_length in
+  let finish_line () =
+    let line = Buffer.contents buf in
+    Buffer.clear buf;
+    line
+  in
+  let rec make_lines orig_words =
+    match orig_words with
+    | [] -> [finish_line ()]
+    | word :: words ->
+        let word_len = String.length word in
+        let len = Buffer.length buf in
+        if len = 0 then (
+          (* The word may be longer than 'max_length'. Putting it on its
+             own line is the best we can do without hyphenating it. *)
+          Buffer.add_string buf word;
+          make_lines words
+        )
+        else
+          (* Add the word to the current line only if it fits. *)
+          let new_len = len + 1 + word_len in
+          if new_len <= max_length then (
+            bprintf buf " %s" word;
+            make_lines words
+          )
+          else
+            (* The new word doesn't fit on the current line. Start a new one. *)
+            let line = finish_line () in
+            line :: make_lines orig_words
+  in
+  make_lines words
+
+let rewrap_paragraph ~max_length strs =
+  strs
+  |> List.concat_map split_on_blank
+  |> concatenate_into_lines ~max_length

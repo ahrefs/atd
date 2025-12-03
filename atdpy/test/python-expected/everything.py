@@ -486,8 +486,21 @@ class IntFloatParametrizedRecord:
 @dataclass
 class Root:
     """Original type: root = { ... }
-    First paragraph explaining ``num``. This paragraph should be nicely
-    rewrapped into multiple lines of even length. A super long URL such as
+
+    Definition-level doc.
+
+    Record-level doc. This is a comment on the ``root`` type.
+
+    This is a second paragraph and here's a preformatted block:
+
+        first line of the preformatted block
+          second line with extra indentation
+
+    Escape these: "\"\" and '''
+
+    :param num: First paragraph explaining ``num``. This paragraph should be
+    nicely rewrapped into multiple lines of even length. A super long URL such
+    as
     https://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     should end up on its own line.
 
@@ -497,6 +510,7 @@ class Root:
           Second line with extra indentation.
 
     End.
+    :param num2: Another field.
     """
 
     id: str
@@ -516,6 +530,7 @@ class Root:
     parametrized_record: IntFloatParametrizedRecord
     parametrized_tuple: KindParametrizedTuple
     num: int
+    num2: int
     maybe: Optional[int] = None
     extras: List[int] = field(default_factory=lambda: [])
     answer: int = field(default_factory=lambda: 42)
@@ -541,6 +556,7 @@ class Root:
                 parametrized_record=IntFloatParametrizedRecord.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
                 parametrized_tuple=KindParametrizedTuple.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
                 num=_atd_read_int(x['num']) if 'num' in x else _atd_missing_json_field('Root', 'num'),
+                num2=_atd_read_int(x['num2']) if 'num2' in x else _atd_missing_json_field('Root', 'num2'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
@@ -567,6 +583,7 @@ class Root:
         res['parametrized_record'] = (lambda x: x.to_json())(self.parametrized_record)
         res['parametrized_tuple'] = (lambda x: x.to_json())(self.parametrized_tuple)
         res['num'] = _atd_write_int(self.num)
+        res['num2'] = _atd_write_int(self.num2)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['extras'] = _atd_write_list(_atd_write_int)(self.extras)

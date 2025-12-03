@@ -72,13 +72,11 @@ val html_of_doc : doc -> string
 
 (** Rewrap a paragraph of text.
 
-    This generic utility concatenates a list of strings
-    into lines where the "words" (any sequence of non-whitespace characters)
-    are separated by a single space character. Each line will not exceed
-    [max_length] bytes unless a word is longer than this maximum length.
+    This generic utility splits a string into lines where the "words"
+    defined by any sequence of non-whitespace characters are separated by
+    a single space character. Each line will not exceed [max_length] bytes
+    unless a word is longer than this maximum length.
 
-    The input is a list of lines but may also be an unsplit multiline
-    paragraph provided as [[paragraph]]. The result is a list of lines that
-    are not newline-terminated.
+    The result is a list of lines that are not newline-terminated.
 *)
-val rewrap_paragraph : max_length:int -> string list -> string list
+val rewrap_paragraph : max_length:int -> string -> string list

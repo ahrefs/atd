@@ -236,7 +236,7 @@ let concatenate_into_lines ~max_length (words : string list) : string list =
   in
   make_lines words
 
-let rewrap_paragraph ~max_length strs =
-  strs
-  |> List.concat_map split_on_blank
+let rewrap_paragraph ~max_length str =
+  str
+  |> split_on_blank
   |> concatenate_into_lines ~max_length

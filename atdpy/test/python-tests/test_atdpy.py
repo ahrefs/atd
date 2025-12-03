@@ -90,6 +90,7 @@ def test_everything_to_json() -> None:
             (e.Kind(e.WOW()), e.Kind(e.WOW()), 100)
         ),
         num=42,
+        num2=43,
     )
     a_str = a_obj.to_json_string(indent=2)
     print(a_str)
@@ -198,6 +199,7 @@ def test_everything_to_json() -> None:
     100
   ],
   "num": 42,
+  "num2": 43,
   "extras": [
     17,
     53

@@ -474,6 +474,12 @@ let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
 let double_spaced blocks =
   spaced ~spacer:[Line ""; Line ""] blocks
 
+(** [blank_line_before nodes] inserts [n] blank lines iff [nodes]
+      is empty. *)
+let blank_lines_before ?(n = 1) nodes =
+  if is_empty nodes then []
+  else List.init n (fun _ -> Line "")
+
 (*
    Representations of ATD type '(string * value) list' in JSON and Python.
    Key type or value type are provided when it's useful.
@@ -683,16 +689,42 @@ let construct_json_field env trans_meth
         Block assignment
       ]
 
-let translate_doc_to_docstring loc an : node list =
+let class_doc_paragraph_width = 74
+
+let trans_field_doc_to_docstring
+    env trans_meth ((loc, (name, kind, an), e) : simple_field) : node list =
+  match Atd.Doc.get_doc loc an with
+  | None -> []
+  | Some blocks ->
+      (* Insert a prefix containing the field name (Sphinx format) *)
+      let prefix =
+        sprintf ":param %s: " (inst_var_name trans_meth name)
+      in
+      let blocks =
+         match blocks with
+          | Paragraph elements :: blocks ->
+              Atd.Doc.Paragraph (Text prefix :: elements) :: blocks
+          | _ -> Paragraph [Text prefix] :: blocks
+      in
+      Codegen_doc.make_unquoted_multiline_docstring
+        ~paragraph_width:class_doc_paragraph_width
+        blocks
+
+let trans_record_doc_to_docstring loc an : node list =
   match Atd.Doc.get_doc loc an with
   | None -> []
   | Some blocks ->
       Codegen_doc.make_unquoted_multiline_docstring
-        ~paragraph_width:74
+        ~paragraph_width:class_doc_paragraph_width
         blocks
 
-let get_field_doc env ((loc, (name, kind, an), e) : simple_field) =
-  translate_doc_to_docstring loc an
+let trans_def_doc_to_docstring loc an =
+  match Atd.Doc.get_doc loc an with
+  | None -> []
+  | Some doc ->
+      Codegen_doc.make_unquoted_multiline_docstring
+        ~paragraph_width:class_doc_paragraph_width
+        doc
 
 (*
    Function value that can be applied to a JSON node, converting it
@@ -899,17 +931,24 @@ let record env
   (* We create a docstring for the class corresponding to an ATD record from
      - a generated title
      - optional text coming from a <doc ...> annotation on the ATD definition
-     - optional text for each record field using ':param ...' syntax
+     - optional text for each record field using ':param ...: ...' syntax
        (Sphinx syntax)
   *)
+  let record_doc =
+    trans_record_doc_to_docstring loc an
+  in
   let field_doc =
-    List.map (get_field_doc env) fields
+    List.map (trans_field_doc_to_docstring env trans_meth) fields
     |> List.flatten
   in
   let docstring =
     [
       Line (sprintf {|"""Original type: %s = { ... }|} name);
+      Inline (blank_lines_before class_doc);
       Inline class_doc;
+      Inline (blank_lines_before record_doc);
+      Inline record_doc;
+      Inline (blank_lines_before field_doc);
       Inline field_doc;
       Line {|"""|};
     ]
@@ -1201,14 +1240,6 @@ let get_class_decorators an =
   else
     decorators @ ["dataclass"]
 
-let get_class_doc loc an =
-  match Atd.Doc.get_doc loc an with
-  | None -> []
-  | Some doc ->
-      Codegen_doc.make_unquoted_multiline_docstring
-        ~paragraph_width:74
-        doc
-
 let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   if param <> [] then
     not_implemented loc "parametrized type";
@@ -1217,7 +1248,7 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
     |> List.map (fun s -> Line ("@" ^ s))
   in
   let class_doc =
-    get_class_doc loc an
+    trans_def_doc_to_docstring loc an
   in
   let rec unwrap e =
     match e with

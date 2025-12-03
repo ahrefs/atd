@@ -7,6 +7,7 @@ type node =
 
 type t = node list
 
+val is_empty : node list -> bool
 val is_empty_node : node -> bool
 
 val to_buffer : ?offset:int -> ?indent:int -> Buffer.t -> t -> unit

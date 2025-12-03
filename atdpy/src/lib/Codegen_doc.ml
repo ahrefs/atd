@@ -2,22 +2,6 @@
    Convert ATD <doc text==...> annotations to Python docstrings
 *)
 
-(*
-let split = Re.Str.split (Re.Str.regexp " ")
-
-let make_ocamldoc_block = function
-  | Atd.Doc.Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
-  | Paragraph l ->
-      let l = List.map (function
-        | Atd.Doc.Text s -> ocamldoc_escape s
-        | Code s -> "[" ^ ocamldoc_escape s ^ "]"
-      ) l
-      in
-      let words = split (String.concat "" l) in
-      let atoms = List.map (fun s -> Atom (s, atom)) words in
-      List (("", "", "", plist), atoms)
-*)
-
 open Atd
 open Indent
 
@@ -66,7 +50,7 @@ let translate_inline_element (x : Doc.inline) : string =
   match x with
   | Text str -> str
   | Code str ->
-      (* Using two backticks because it's what Sphinx uses *)
+      (* Using two backticks because it's what Sphinx uses (best effort!) *)
       "``" ^ str ^ "``"
 
 let translate_block ~max_length (block : Doc.block) : Indent.node list =
@@ -82,6 +66,7 @@ let translate_block ~max_length (block : Doc.block) : Indent.node list =
   | Paragraph elements ->
       elements
       |> List.map translate_inline_element
+      |> String.concat ""
       |> Doc.rewrap_paragraph ~max_length
       |> List.map (fun line -> Line (escape_docstring line))
 

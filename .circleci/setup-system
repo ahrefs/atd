@@ -9,7 +9,7 @@ set -eu
 sudo apt-get update
 
 # Add repo to install a sufficiently-recent version of node (for atdts tests)
-curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 
 # This includes compilers and libraries to support the various target
 # languages of atd.

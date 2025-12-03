@@ -2,6 +2,8 @@
 
 This implements classes for the types defined in 'everything.atd', providing
 methods and functions to convert data from/to JSON.
+
+User-inserted doc
 """
 
 # Disable flake8 entirely on this file:

@@ -1,6 +1,7 @@
 <python text="# This was inserted by the user.">
 <python json_py.text="import deco">
 <python json_py.text="from dataclasses import dataclass">
+<doc text="User-inserted doc">
 
 type kind <doc text="Definition-level doc"> = [
   | Root (* class name conflict *)

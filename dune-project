@@ -127,7 +127,7 @@ This package should be used only in conjunction with the atdgen code
 generator")
  (depends
   (ocaml (>= 4.08))
-  (yojson (>= 2.0.2))
+  (yojson (and (>= 2.0.2) (< 3.0.0)))
   (biniou (>= 1.0.6))
   (odoc :with-doc)))
 

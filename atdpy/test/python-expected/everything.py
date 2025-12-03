@@ -429,7 +429,8 @@ class Kind:
 
 @dataclass
 class Alias:
-    """Original type: alias"""
+    """Original type: alias
+    """
 
     value: List[int]
 
@@ -450,7 +451,8 @@ class Alias:
 
 @dataclass
 class KindParametrizedTuple:
-    """Original type: _kind_parametrized_tuple"""
+    """Original type: _kind_parametrized_tuple
+    """
 
     value: Tuple[Kind, Kind, int]
 
@@ -649,7 +651,12 @@ class RequireField:
 
 @dataclass
 class Pair:
-    """Original type: pair"""
+    """Original type: pair
+
+    Def-level doc
+
+    Type-level doc
+    """
 
     value: Tuple[str, int]
 

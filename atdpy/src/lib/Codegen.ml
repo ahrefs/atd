@@ -519,34 +519,42 @@ let py_type_name env (name : string) =
   | "abstract" -> "Any"
   | user_defined -> class_name env user_defined
 
-let rec type_name_of_expr env (e : type_expr) : string =
+(* Return the mypy type name for type expression that doesn't require
+   us to create a new class (type aliases).
+
+   Also return the outermost annotation.
+*)
+let rec type_name_of_expr env (e : type_expr) : string * (loc * annot) =
   match e with
   | Sum (loc, _, _) -> not_implemented loc "inline sum types"
   | Record (loc, _, _) -> not_implemented loc "inline records"
   | Tuple (loc, xs, an) ->
       let type_names =
         xs
-        |> List.map (fun (loc, x, an) -> type_name_of_expr env x)
+        |> List.map (fun (loc, x, an) -> type_name_of_expr env x |> fst)
       in
-      sprintf "Tuple[%s]" (String.concat ", " type_names)
+      sprintf "Tuple[%s]" (String.concat ", " type_names), (loc, an)
   | List (loc, e, an) ->
      (match assoc_kind loc e an with
        | Array_list
        | Object_list _ ->
            sprintf "List[%s]"
-             (type_name_of_expr env e)
+             (type_name_of_expr env e |> fst)
        | Array_dict (key, value) ->
            sprintf "Dict[%s, %s]"
-             (type_name_of_expr env key) (type_name_of_expr env value)
+             (type_name_of_expr env key |> fst)
+             (type_name_of_expr env value |> fst)
        | Object_dict value ->
            sprintf "Dict[str, %s]"
-             (type_name_of_expr env value)
-      )
-  | Option (loc, e, an) -> sprintf "Optional[%s]" (type_name_of_expr env e)
-  | Nullable (loc, e, an) -> sprintf "Optional[%s]" (type_name_of_expr env e)
+             (type_name_of_expr env value |> fst)
+      ), (loc, an)
+  | Option (loc, e, an) ->
+      sprintf "Optional[%s]" (type_name_of_expr env e |> fst), (loc, an)
+  | Nullable (loc, e, an) ->
+      sprintf "Optional[%s]" (type_name_of_expr env e |> fst), (loc, an)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
-  | Name (loc, (loc2, name, []), an) -> py_type_name env name
+  | Name (loc, (loc2, name, []), an) -> py_type_name env name, (loc, an)
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -831,7 +839,7 @@ let from_json_class_argument
 let inst_var_declaration
     env trans_meth ((loc, (name, kind, an), e) : simple_field) =
   let var_name = inst_var_name trans_meth name in
-  let type_name = type_name_of_expr env e in
+  let type_name, _an = type_name_of_expr env e in
   let unwrapped_e = unwrap_field_type loc name kind e in
   let default =
     match kind with
@@ -988,12 +996,18 @@ class Foo:
 *)
 let alias_wrapper env ~class_decorators ~class_doc name type_expr =
   let py_class_name = class_name env name in
-  let value_type = type_name_of_expr env type_expr in
+  let value_type, (loc, an) = type_name_of_expr env type_expr in
+  let type_doc = trans_any_doc_to_docstring loc an in
   [
     Inline class_decorators;
     Line (sprintf "class %s:" py_class_name);
     Block [
-      Line (sprintf {|"""Original type: %s"""|} name);
+      Line (sprintf {|"""Original type: %s|} name);
+      Inline (blank_lines_before class_doc);
+      Inline class_doc;
+      Inline (blank_lines_before class_doc);
+      Inline type_doc;
+      Line {|"""|};
       Line "";
       Line (sprintf "value: %s" value_type);
       Line "";
@@ -1071,7 +1085,7 @@ let case_class env ~class_decorators type_name
           Inline case_doc;
           Line {|"""|};
           Line "";
-          Line (sprintf "value: %s" (type_name_of_expr env e));
+          Line (sprintf "value: %s" (type_name_of_expr env e |> fst));
           Line "";
           Line "@property";
           Line "def kind(self) -> str:";

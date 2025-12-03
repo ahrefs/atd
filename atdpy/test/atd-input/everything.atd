@@ -82,7 +82,8 @@ first line of the preformatted block
 
 type alias = int list
 
-type pair = (string * int)
+type pair <doc text="Def-level doc"> =
+  (string * int) <doc text="Type-level doc">
 
 type require_field <python decorator="deco.deco1"
                            decorator="deco.deco2(42)"

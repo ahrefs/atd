@@ -1027,7 +1027,7 @@ let alias_wrapper env ~class_decorators ~class_doc name type_expr =
       Line (sprintf {|"""Original type: %s|} name);
       Inline (blank_lines_before class_doc);
       Inline class_doc;
-      Inline (blank_lines_before class_doc);
+      Inline (blank_lines_before type_doc);
       Inline type_doc;
       Line {|"""|};
       Line "";

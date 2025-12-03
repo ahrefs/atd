@@ -23,14 +23,14 @@ commands:
 jobs:
   build_latest_ocaml:
     docker:
-      - image: ocaml/opam:ubuntu-20.04-ocaml-4.13
+      - image: ocaml/opam:ubuntu-24.04-ocaml-4.13
     working_directory: ~/atd
     steps:
       - build
 
   build_min_ocaml:
     docker:
-      - image: ocaml/opam:ubuntu-20.04-ocaml-4.08
+      - image: ocaml/opam:ubuntu-24.04-ocaml-4.08
     working_directory: ~/atd
     steps:
       - build

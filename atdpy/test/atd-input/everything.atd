@@ -2,11 +2,11 @@
 <python json_py.text="import deco">
 <python json_py.text="from dataclasses import dataclass">
 
-type kind = [
+type kind <doc text="Definition-level doc"> = [
   | Root (* class name conflict *)
   | Thing
       <doc text="
-    First paragraph explaining {{Thing}}.
+    Case-level doc. First paragraph explaining {{Thing}}.
 
     Second paragraph.
 {{{
@@ -18,7 +18,7 @@ type kind = [
     of int
   | WOW <json name="wow">
   | Amaze <json name="!!!"> of string list
-]
+] <doc text="Sum-level doc">
 
 type frozen
   <python decorator="dataclass(frozen=True)"> = [

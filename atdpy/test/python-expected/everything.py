@@ -302,7 +302,8 @@ class RecursiveClass:
 
 @dataclass
 class Root_:
-    """Original type: kind = [ ... | Root | ... ]"""
+    """Original type: kind = [ ... | Root | ... ]
+    """
 
     @property
     def kind(self) -> str:
@@ -319,7 +320,17 @@ class Root_:
 
 @dataclass
 class Thing:
-    """Original type: kind = [ ... | Thing of ... | ... ]"""
+    """Original type: kind = [ ... | Thing of ... | ... ]
+
+    Case-level doc. First paragraph explaining ``Thing``.
+
+    Second paragraph.
+
+        Preformatted block.
+          Second line with extra indentation.
+
+    End.
+    """
 
     value: int
 
@@ -337,7 +348,8 @@ class Thing:
 
 @dataclass
 class WOW:
-    """Original type: kind = [ ... | WOW | ... ]"""
+    """Original type: kind = [ ... | WOW | ... ]
+    """
 
     @property
     def kind(self) -> str:
@@ -354,7 +366,8 @@ class WOW:
 
 @dataclass
 class Amaze:
-    """Original type: kind = [ ... | Amaze of ... | ... ]"""
+    """Original type: kind = [ ... | Amaze of ... | ... ]
+    """
 
     value: List[str]
 
@@ -372,7 +385,12 @@ class Amaze:
 
 @dataclass
 class Kind:
-    """Original type: kind = [ ... ]"""
+    """Original type: kind = [ ... ]
+
+    Definition-level doc
+
+    Sum-level doc
+    """
 
     value: Union[Root_, Thing, WOW, Amaze]
 
@@ -652,7 +670,8 @@ class Pair:
 
 @dataclass(frozen=True)
 class A:
-    """Original type: frozen = [ ... | A | ... ]"""
+    """Original type: frozen = [ ... | A | ... ]
+    """
 
     @property
     def kind(self) -> str:
@@ -669,7 +688,8 @@ class A:
 
 @dataclass(frozen=True)
 class B:
-    """Original type: frozen = [ ... | B of ... | ... ]"""
+    """Original type: frozen = [ ... | B of ... | ... ]
+    """
 
     value: int
 
@@ -687,7 +707,8 @@ class B:
 
 @dataclass(frozen=True)
 class Frozen:
-    """Original type: frozen = [ ... ]"""
+    """Original type: frozen = [ ... ]
+    """
 
     value: Union[A, B]
 

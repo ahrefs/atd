@@ -710,7 +710,7 @@ let trans_field_doc_to_docstring
         ~paragraph_width:class_doc_paragraph_width
         blocks
 
-let trans_record_doc_to_docstring loc an : node list =
+let trans_any_doc_to_docstring loc an : node list =
   match Atd.Doc.get_doc loc an with
   | None -> []
   | Some blocks ->
@@ -718,13 +718,17 @@ let trans_record_doc_to_docstring loc an : node list =
         ~paragraph_width:class_doc_paragraph_width
         blocks
 
+let trans_case_doc_to_docstring loc an =
+  trans_any_doc_to_docstring loc an
+
+let trans_record_doc_to_docstring loc an =
+  trans_any_doc_to_docstring loc an
+
+let trans_sum_doc_to_docstring loc an =
+  trans_any_doc_to_docstring loc an
+
 let trans_def_doc_to_docstring loc an =
-  match Atd.Doc.get_doc loc an with
-  | None -> []
-  | Some doc ->
-      Codegen_doc.make_unquoted_multiline_docstring
-        ~paragraph_width:class_doc_paragraph_width
-        doc
+  trans_any_doc_to_docstring loc an
 
 (*
    Function value that can be applied to a JSON node, converting it
@@ -1022,15 +1026,19 @@ let alias_wrapper env ~class_decorators ~class_doc name type_expr =
 let case_class env ~class_decorators type_name
     (loc, orig_name, unique_name, an, opt_e) =
   let json_name = Atd.Json.get_json_cons orig_name an in
+  let case_doc = trans_case_doc_to_docstring loc an in
   match opt_e with
   | None ->
       [
         Inline class_decorators;
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
-          Line (sprintf {|"""Original type: %s = [ ... | %s | ... ]"""|}
+          Line (sprintf {|"""Original type: %s = [ ... | %s | ... ]|}
                   type_name
                   orig_name);
+          Inline (blank_lines_before case_doc);
+          Inline case_doc;
+          Line {|"""|};
           Line "";
           Line "@property";
           Line "def kind(self) -> str:";
@@ -1056,9 +1064,12 @@ let case_class env ~class_decorators type_name
         Inline class_decorators;
         Line (sprintf "class %s:" (trans env unique_name));
         Block [
-          Line (sprintf {|"""Original type: %s = [ ... | %s of ... | ... ]"""|}
+          Line (sprintf {|"""Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
+          Inline (blank_lines_before case_doc);
+          Inline case_doc;
+          Line {|"""|};
           Line "";
           Line (sprintf "value: %s" (type_name_of_expr env e));
           Line "";
@@ -1128,7 +1139,7 @@ let read_cases1 env loc name cases1 =
             (class_name env name |> single_esc))
   ]
 
-let sum_container env ~class_decorators loc name cases =
+let sum_container env ~class_decorators ~class_doc loc name cases an =
   let py_class_name = class_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1162,11 +1173,19 @@ let sum_container env ~class_decorators loc name cases =
     else
       []
   in
+  let sum_doc =
+    trans_sum_doc_to_docstring loc an
+  in
   [
     Inline class_decorators;
     Line (sprintf "class %s:" py_class_name);
     Block [
-      Line (sprintf {|"""Original type: %s = [ ... ]"""|} name);
+      Line (sprintf {|"""Original type: %s = [ ... ]|} name);
+      Inline (blank_lines_before class_doc);
+      Inline class_doc;
+      Inline (blank_lines_before sum_doc);
+      Inline sum_doc;
+      Line {|"""|};
       Line "";
       Line (sprintf "value: Union[%s]" type_list);
       Line "";
@@ -1206,7 +1225,7 @@ let sum_container env ~class_decorators loc name cases =
     ]
   ]
 
-let sum env ~class_decorators ~class_doc loc name cases =
+let sum env ~class_decorators ~class_doc loc name cases an =
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1220,7 +1239,8 @@ let sum env ~class_decorators ~class_doc loc name cases =
     List.map (fun x -> Inline (case_class env ~class_decorators name x)) cases
     |> double_spaced
   in
-  let container_class = sum_container env ~class_decorators loc name cases in
+  let container_class =
+    sum_container env ~class_decorators ~class_doc loc name cases an in
   [
     Inline case_classes;
     Inline container_class;
@@ -1253,7 +1273,7 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   let rec unwrap e =
     match e with
     | Sum (loc, cases, an) ->
-        sum env ~class_decorators ~class_doc loc name cases
+        sum env ~class_decorators ~class_doc loc name cases an
     | Record (loc, fields, an) ->
         record env ~class_decorators ~class_doc loc name fields an
     | Tuple _

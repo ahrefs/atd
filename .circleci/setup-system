@@ -9,7 +9,7 @@ set -eu
 sudo apt-get update
 
 # Add repo to install a sufficiently-recent version of node (for atdts tests)
-curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 
 # This includes compilers and libraries to support the various target
 # languages of atd.
@@ -17,13 +17,14 @@ curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get install -y \
   default-jdk \
   nodejs \
-  python3 \
-  python3-pip \
   python-is-python3 \
+  python3 \
+  python3-flake8 \
+  python3-jsonschema \
+  python3-mypy \
+  python3-pip \
+  python3-pytest \
   scala
-
-# For JSON Schema and atdpy testing
-pip install jsonschema pytest mypy flake8
 
 # For atdcpp testing
 sudo apt install -y \

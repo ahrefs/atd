@@ -1228,8 +1228,12 @@ There is an `atdgen plugin for ocamlbuild <https://github.com/hcarty/ocamlbuild-
 Dune (formerly jbuilder)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Dune currently needs atdgen build rules specified manually. Given an ``example.atd``,
-this will usually look like:
+Dune requires atdgen build rules to be specified for each ``.atd`` file. 
+
+Manual Approach
+~~~~~~~~~~~~~~~
+
+Given an ``example.atd``, you can manually specify rules like:
 
 ::
 
@@ -1247,11 +1251,124 @@ this will usually look like:
 
 You can refer to ``example_t.ml`` and ``example_j.ml`` as usual (by default, they
 will be automatically linked into the library being built in the same directory).
-You will need to write rules for each .atd file individually until
-`Dune supports wildcard rules <https://github.com/ocaml/dune/issues/307>`_.
 
 Note that any options ``atdgen`` supports can be included in the ``run atdgen``
 section (``-open``, ``-deriving-conv``, etc.).
+
+You will need to write rules for each .atd file individually or ...
+
+Automated Approach with Code Generation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+While Dune does not yet support `wildcard rules <https://github.com/ocaml/dune/issues/307>`_,
+you can work around this limitation using Dune's `rule generation feature <https://dune.readthedocs.io/en/latest/howto/rule-generation.html>`_
+to automatically generate rules for all ``.atd`` files in a directory.
+
+**Step 1:** Create a generator directory (e.g., ``gen/``) with a ``dune`` file:
+
+::
+
+  (executable
+   (name gen))
+
+**Step 2:** Create the generator OCaml program (``gen/gen.ml``):
+
+::
+
+  let generate_atdgen_rules base =
+    (* Generate -j rules *)
+    Printf.printf
+      {|(rule
+   (targets %s_j.ml %s_j.mli)
+   (deps %s.atd)
+   (action
+    (run atdgen -j -j-std %%{deps})))
+
+  |}
+      base base base;
+    (* Generate -t rules *)
+    Printf.printf
+      {|(rule
+   (targets %s_t.ml %s_t.mli)
+   (deps %s.atd)
+   (action
+    (run atdgen -t %%{deps})))
+
+  |}
+      base base base;
+    (* Generate -v rules *)
+    Printf.printf
+      {|(rule
+   (targets %s_v.ml %s_v.mli)
+   (deps %s.atd)
+   (action
+    (run atdgen -v %%{deps})))
+
+  |}
+      base base base
+  ;;
+
+  let collect_atd_files () =
+    Sys.readdir "."
+    |> Array.to_list
+    |> List.sort String.compare
+    |> List.filter_map (fun filename ->
+      match Filename.chop_suffix_opt ~suffix:".atd" filename with
+      | Some base -> Some base
+      | None -> None)
+  ;;
+
+  let () =
+    let atd_files = collect_atd_files () in
+    List.iter generate_atdgen_rules atd_files
+  ;;
+
+**Step 3:** Create an empty ``dune.inc`` file:
+
+::
+
+  ; Generated rules will be included here
+
+**Step 4:** Update your main ``dune`` file to include and generate ``dune.inc``:
+
+::
+
+  ; Include auto-generated rules for .atd files
+  (include dune.inc)
+
+  ; Generate the dune.inc file from all .atd files
+  (rule
+   (alias genatd)
+   (mode promote)
+   (deps (glob_files *.atd))
+   (action
+    (with-stdout-to
+     dune.inc
+     (run gen/gen.exe))))
+
+**Step 5:** Generate the initial ``dune.inc`` file:
+
+::
+
+  $ dune build @genatd
+
+This only needs to be run once when you first create the empty ``dune.inc`` file.
+
+**Step 6:** Build your project:
+
+::
+
+  $ dune build
+
+From this point forward, Dune will automatically regenerate ``dune.inc`` whenever
+you add, remove, or modify ``.atd`` files. The generated rules will be promoted
+to your source tree automatically.
+
+This approach is especially useful when working with many ``.atd`` files, as it
+eliminates the need to manually maintain build rules for each file. You can also
+customize the generator to add project-specific ``atdgen`` flags (like 
+``-deriving-conv "eq,show"`` or ``-j-strict-fields``) or generate additional 
+stanzas (like library definitions with auto-discovered modules).
 
 Dealing with untypable JSON
 ---------------------------

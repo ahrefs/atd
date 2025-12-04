@@ -1,6 +1,12 @@
 open Atd.Import
 open Atdgen_emit
 
+let fail_deprecated_variable = "ATDGEN_FAIL_DEPRECATED_OPTIONS"
+let maybe_fail_deprecated where =
+  match Sys.getenv fail_deprecated_variable with
+  | "true" -> Printf.ksprintf failwith "Error: option %S is forbidden." where
+  | _ | exception _ -> ()
+
 let append l1 l2 =
   List.concat_map (fun s1 -> List.map (fun s2 -> s1 ^ s2) l2) l1
 
@@ -61,7 +67,6 @@ let main () =
   let all_rec = ref false in
   let out_prefix = ref None in
   let mode = ref (None : mode option) in
-  let std_json = ref false in
   let add_generic_modules = ref false in
   let j_preprocess_input = ref None in
   let j_defaults = ref false in
@@ -163,6 +168,7 @@ let main () =
 
     "-biniou",
     Arg.Unit (fun () ->
+                maybe_fail_deprecated "-biniou";
                 set_once "output type" mode Biniou),
     "
           [deprecated in favor of -t and -b]
@@ -171,6 +177,7 @@ let main () =
 
     "-json",
     Arg.Unit (fun () ->
+                maybe_fail_deprecated "-json";
                 set_once "output type" mode Json),
     "
           [deprecated in favor of -t and -j]
@@ -178,12 +185,9 @@ let main () =
           including OCaml type definitions.";
 
     "-j-std",
-    Arg.Unit (fun () ->
-                std_json := true),
+    Arg.Unit (fun () -> maybe_fail_deprecated "-j-std"),
     "
-          Convert tuples and variants into standard JSON and
-          refuse to print NaN and infinities (implying -json mode
-          unless another mode is specified).";
+          [deprecated] This option does nothing; kept for backwards compatibility.";
 
     "-j-gen-modules",
     Arg.Unit (fun () ->
@@ -194,11 +198,9 @@ let main () =
           module Typename: sig type t ... val read: ... val to_string: ... end";
 
     "-std-json",
-    Arg.Unit (fun () ->
-                std_json := true),
+    Arg.Unit (fun () -> maybe_fail_deprecated "-std-json"),
     "
-          [deprecated in favor of -j-std]
-          Same as -j-std.";
+          [deprecated] No-op: same as -j-std.";
 
     "-j-pp",
     Arg.String (fun s -> set_once "-j-pp" j_preprocess_input s),
@@ -238,6 +240,7 @@ let main () =
 
     "-validate",
     Arg.Unit (fun () ->
+                maybe_fail_deprecated "-validate";
                 set_once "output type" mode Validate),
     "
           [deprecated in favor of -t and -v]
@@ -288,19 +291,22 @@ let main () =
           Print the version identifier of atdgen and exit.";
   ]
   in
-  let msg = sprintf "\
-Generate OCaml code offering:
+  let msg = sprintf 
+  {|Generate OCaml code offering:
   * OCaml type definitions translated from ATD file (-t)
   * serializers and deserializers for Biniou (-b)
   * serializers and deserializers for JSON (-j)
   * record-creating functions supporting default fields (-v)
   * user-specified data validators (-v)
 
-Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd" Sys.argv.(0) in
+Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd
+
+Some options are deprecated. Use the environment variable `%s=true`
+to make their use fail and hence help clean-up your build scripts.
+|} Sys.argv.(0) fail_deprecated_variable in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
-  if (!std_json
-      || !unknown_field_handler <> None) && !mode = None then
+  if (!unknown_field_handler <> None) && !mode = None then
     set_once "output mode" mode Json;
 
   let mode =
@@ -408,7 +414,6 @@ Recommended usage: %s (-t|-b|-j|-v|-dep|-list|-mel) example.atd" Sys.argv.(0) in
                 Ob_emit.make_ocaml_files
             | J | Json ->
                 Oj_emit.make_ocaml_files
-                  ~std: !std_json
                   ~unknown_field_handler: !unknown_field_handler
                   ~preprocess_input: !j_preprocess_input
                   ~add_generic_modules: !add_generic_modules

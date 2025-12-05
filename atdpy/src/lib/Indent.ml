@@ -14,8 +14,11 @@ type t = node list
 let rec is_empty_node = function
   | Line "" -> true
   | Line _ -> false
-  | Block xs -> List.for_all is_empty_node xs
-  | Inline xs -> List.for_all is_empty_node xs
+  | Block xs -> is_empty xs
+  | Inline xs -> is_empty xs
+
+and is_empty nodes =
+  List.for_all is_empty_node nodes
 
 let to_buffer ?(offset = 0) ?(indent = 2) buf l =
   let rec print n = function

@@ -6,7 +6,7 @@ type inline = Doc_types.inline =
 
 type block = Doc_types.block =
   | Paragraph of inline list
-  | Pre of string
+  | Pre of string list
 
 type doc = block list
 
@@ -50,12 +50,17 @@ module Text = struct
       | s -> s (* bug *)
     ) s
 
-  let escape_pre s =
+  let escape_pre_line s =
     Re.Pcre.substitute ~rex:escape_pre_re ~subst:(function
       | "}}}" -> {|\}\}\}|}
       | {|\|} -> {|\\|}
       | s -> s (* bug *)
     ) s
+
+  let escape_pre lines =
+    lines
+    |> List.map escape_pre_line
+    |> String.concat "\n"
 
   let compact_whitespace =
     let rex = Re.Pcre.regexp "(?: \t\r\n)+" in
@@ -102,8 +107,8 @@ module Text = struct
         xs
         |> List.map print_inline
         |> concat_nonempty " "
-    | Pre s ->
-        let content = escape_pre s in
+    | Pre lines ->
+        let content = escape_pre lines in
         match content with
         | "" -> ""
         | s ->
@@ -179,10 +184,59 @@ let html_of_doc blocks =
         Buffer.add_string buf "<p>\n";
         List.iter (print_inline buf) l;
         Buffer.add_string buf "\n</p>\n"
-    | Pre s ->
+    | Pre lines ->
         Buffer.add_string buf "<pre>\n";
-        html_escape buf s;
+        List.iter (fun line ->
+          html_escape buf line;
+          Buffer.add_char buf '\n'
+        ) lines;
         Buffer.add_string buf "</pre>\n"
   ) blocks;
   bprintf buf "\n</div>\n";
   Buffer.contents buf
+
+let split_on_blank =
+  let rex = Re.Pcre.regexp {|[ \t\r\n]+|} in
+  fun str ->
+    Re.Pcre.split ~rex str
+    |> (* make sure to ignore leading and trailing whitespace *)
+    List.filter (function "" -> false | _ -> true)
+
+let concatenate_into_lines ~max_length (words : string list) : string list =
+  let max_length = max 0 max_length in
+  let buf = Buffer.create max_length in
+  let finish_line () =
+    let line = Buffer.contents buf in
+    Buffer.clear buf;
+    line
+  in
+  let rec make_lines orig_words =
+    match orig_words with
+    | [] -> [finish_line ()]
+    | word :: words ->
+        let word_len = String.length word in
+        let len = Buffer.length buf in
+        if len = 0 then (
+          (* The word may be longer than 'max_length'. Putting it on its
+             own line is the best we can do without hyphenating it. *)
+          Buffer.add_string buf word;
+          make_lines words
+        )
+        else
+          (* Add the word to the current line only if it fits. *)
+          let new_len = len + 1 + word_len in
+          if new_len <= max_length then (
+            bprintf buf " %s" word;
+            make_lines words
+          )
+          else
+            (* The new word doesn't fit on the current line. Start a new one. *)
+            let line = finish_line () in
+            line :: make_lines orig_words
+  in
+  make_lines words
+
+let rewrap_paragraph ~max_length str =
+  str
+  |> split_on_blank
+  |> concatenate_into_lines ~max_length

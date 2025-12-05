@@ -10,8 +10,43 @@
     match List.rev a2 with
         [] -> a1
       | l -> Paragraph l :: a1
+
+  let rev_concat rev_fragments =
+    List.rev rev_fragments |> String.concat ""
+
+  let count_leading_spaces line =
+    let n = ref 0 in
+    try
+      String.iter (function ' ' -> incr n | _ -> raise Exit) line;
+      (* blank line = infinite indentation *)
+      max_int
+    with Exit -> !n
+
+  (* Remove as many leading spaces as possible while maintaining the relative
+     visual positioning of the text *)
+  let trim_indentation lines =
+    match lines with
+    | [] -> []
+    | first :: other_lines ->
+        let removable_indentation =
+          List.fold_left
+            (fun mini line ->
+               min (count_leading_spaces line) mini)
+            (count_leading_spaces first) other_lines
+        in
+        List.map (fun str ->
+          let len = String.length str in
+          if removable_indentation <= len then
+            String.sub str
+              removable_indentation
+              (String.length str - removable_indentation)
+          else
+            (* blank line with no or too few leading spaces *)
+            ""
+        ) lines
 }
 
+let line_break = '\r'? '\n'
 let space = [' ' '\t' '\r' '\n']
 let space' = space#['\n']
 
@@ -36,8 +71,8 @@ rule paragraph a1 a2 a3 = parse
                           let a2 = Code code :: a2 in
                           paragraph a1 a2 [] lexbuf
                         }
-  | space* "{{{" (("\r"?) "\n")?
-                        { let pre = verbatim [] lexbuf in
+  | space* "{{{" line_break?
+                        { let pre = verbatim [] [] lexbuf in
                           let a1 = close_paragraph a1 a2 a3 in
                           let a1 = Pre pre :: a1 in
                           paragraph a1 [] [] lexbuf
@@ -80,16 +115,17 @@ and inline_verbatim accu = parse
   Only "}}}" need to be escaped.
   Backslashes can be escaped but single backslashes are tolerated.
 *)
-and verbatim accu = parse
-    "\\\\"              { verbatim ("\\" :: accu) lexbuf }
-  | "\\}}}"             { verbatim ("}}}" :: accu) lexbuf }
-  | '\t'                { verbatim ("        " :: accu) lexbuf }
-  | "\r\n"              { verbatim ("\n" :: accu) lexbuf }
+and verbatim lines line = parse
+    "\\\\"              { verbatim lines ("\\" :: line) lexbuf }
+  | "\\}}}"             { verbatim lines ("}}}" :: line) lexbuf }
+  | '\t'                { verbatim lines ("        " :: line) lexbuf }
+  | line_break          { verbatim (rev_concat line :: lines) [] lexbuf }
   | verb_not_special+ as s
-                        { verbatim (s :: accu) lexbuf }
-  | _ as c              { verbatim (String.make 1 c :: accu) lexbuf }
+                        { verbatim lines (s :: line) lexbuf }
+  | _ as c              { verbatim lines (String.make 1 c :: line) lexbuf }
 
-  | ('\r'? '\n')? "}}}" { String.concat "" (List.rev accu) }
+  | line_break? "}}}"   { List.rev (rev_concat line :: lines)
+                          |> trim_indentation }
 
   | eof                 { failwith "Missing `}}}'" }
 

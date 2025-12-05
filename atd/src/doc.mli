@@ -40,11 +40,14 @@ type inline =
 
 type block =
   | Paragraph of inline list
-  | Pre of string
+  | Pre of string list
   (** [Paragraph] is a regular paragraph.
       [Pre] is preformatted text that was enclosed
-      within [\{\{\{ \}\}\}] and should be rendered using a fixed-width
-      font preserving all space and newline characters. *)
+      within [\{\{\{ \}\}\}], and then broken up into lines.
+      Leading space is removed evenly from each line.
+      It should be rendered using a fixed-width font preserving spaces
+      and line breaks.
+  *)
 
 (** A document is a list of paragraph-like blocks. *)
 type doc = block list
@@ -66,3 +69,14 @@ val get_doc : Ast.loc -> Ast.annot -> doc option
 
 (** Convert parsed doc into HTML. *)
 val html_of_doc : doc -> string
+
+(** Rewrap a paragraph of text.
+
+    This generic utility splits a string into lines where the "words"
+    defined by any sequence of non-whitespace characters are separated by
+    a single space character. Each line will not exceed [max_length] bytes
+    unless a word is longer than this maximum length.
+
+    The result is a list of lines that are not newline-terminated.
+*)
+val rewrap_paragraph : max_length:int -> string -> string list

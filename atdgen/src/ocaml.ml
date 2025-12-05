@@ -770,11 +770,20 @@ let ocamldoc_verbatim_escape s =
   in
   escape esc s
 
+let ocamldoc_verbatim_escape_lines ~indent lines =
+  lines
+  |> List.map (fun line -> indent ^ ocamldoc_verbatim_escape line)
+  |> String.concat "\n"
+
 let split = Re.Str.split (Re.Str.regexp " ")
 
 
 let make_ocamldoc_block = function
-  | Atd.Doc.Pre s -> Atom ("\n{v\n" ^ ocamldoc_verbatim_escape s ^ "\nv}", atom)
+  | Atd.Doc.Pre lines ->
+      Atom ("\n{v\n"
+            ^ ocamldoc_verbatim_escape_lines ~indent:"  " lines
+            ^ "\nv}",
+            atom)
   | Paragraph l ->
       let l = List.map (function
         | Atd.Doc.Text s -> ocamldoc_escape s

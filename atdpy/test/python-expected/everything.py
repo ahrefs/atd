@@ -2,6 +2,8 @@
 
 This implements classes for the types defined in 'everything.atd', providing
 methods and functions to convert data from/to JSON.
+
+User-inserted doc
 """
 
 # Disable flake8 entirely on this file:
@@ -267,7 +269,8 @@ from dataclasses import dataclass
 
 @dataclass
 class RecursiveClass:
-    """Original type: recursive_class = { ... }"""
+    """Original type: recursive_class = { ... }
+    """
 
     id: int
     flag: bool
@@ -301,7 +304,8 @@ class RecursiveClass:
 
 @dataclass
 class Root_:
-    """Original type: kind = [ ... | Root | ... ]"""
+    """Original type: kind = [ ... | Root | ... ]
+    """
 
     @property
     def kind(self) -> str:
@@ -318,7 +322,17 @@ class Root_:
 
 @dataclass
 class Thing:
-    """Original type: kind = [ ... | Thing of ... | ... ]"""
+    """Original type: kind = [ ... | Thing of ... | ... ]
+
+    Case-level doc. First paragraph explaining ``Thing``.
+
+    Second paragraph.
+
+        Preformatted block.
+          Second line with extra indentation.
+
+    End.
+    """
 
     value: int
 
@@ -336,7 +350,8 @@ class Thing:
 
 @dataclass
 class WOW:
-    """Original type: kind = [ ... | WOW | ... ]"""
+    """Original type: kind = [ ... | WOW | ... ]
+    """
 
     @property
     def kind(self) -> str:
@@ -353,7 +368,8 @@ class WOW:
 
 @dataclass
 class Amaze:
-    """Original type: kind = [ ... | Amaze of ... | ... ]"""
+    """Original type: kind = [ ... | Amaze of ... | ... ]
+    """
 
     value: List[str]
 
@@ -371,7 +387,12 @@ class Amaze:
 
 @dataclass
 class Kind:
-    """Original type: kind = [ ... ]"""
+    """Original type: kind = [ ... ]
+
+    Definition-level doc
+
+    Sum-level doc
+    """
 
     value: Union[Root_, Thing, WOW, Amaze]
 
@@ -410,7 +431,8 @@ class Kind:
 
 @dataclass
 class Alias:
-    """Original type: alias"""
+    """Original type: alias
+    """
 
     value: List[int]
 
@@ -431,7 +453,8 @@ class Alias:
 
 @dataclass
 class KindParametrizedTuple:
-    """Original type: _kind_parametrized_tuple"""
+    """Original type: _kind_parametrized_tuple
+    """
 
     value: Tuple[Kind, Kind, int]
 
@@ -452,7 +475,8 @@ class KindParametrizedTuple:
 
 @dataclass
 class IntFloatParametrizedRecord:
-    """Original type: _int_float_parametrized_record = { ... }"""
+    """Original type: _int_float_parametrized_record = { ... }
+    """
 
     field_a: int
     field_b: List[float] = field(default_factory=lambda: [])
@@ -483,7 +507,33 @@ class IntFloatParametrizedRecord:
 
 @dataclass
 class Root:
-    """Original type: root = { ... }"""
+    """Original type: root = { ... }
+
+    Definition-level doc.
+
+    Record-level doc. This is a comment on the ``root`` type.
+
+    This is a second paragraph and here's a preformatted block:
+
+        first line of the preformatted block
+          second line with extra indentation
+
+    Escape these: "\"\" and '''
+
+    :param num: First paragraph explaining ``num``. This paragraph should be
+    nicely rewrapped into multiple lines of even length. A super long URL such
+    as
+    https://example.com/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    should end up on its own line.
+
+    Second paragraph.
+
+        Preformatted block.
+          Second line with extra indentation.
+
+    End.
+    :param num2: Another field.
+    """
 
     id: str
     await_: bool
@@ -501,6 +551,8 @@ class Root:
     untyped_things: List[Any]
     parametrized_record: IntFloatParametrizedRecord
     parametrized_tuple: KindParametrizedTuple
+    num: int
+    num2: int
     maybe: Optional[int] = None
     extras: List[int] = field(default_factory=lambda: [])
     answer: int = field(default_factory=lambda: 42)
@@ -525,6 +577,8 @@ class Root:
                 untyped_things=_atd_read_list((lambda x: x))(x['untyped_things']) if 'untyped_things' in x else _atd_missing_json_field('Root', 'untyped_things'),
                 parametrized_record=IntFloatParametrizedRecord.from_json(x['parametrized_record']) if 'parametrized_record' in x else _atd_missing_json_field('Root', 'parametrized_record'),
                 parametrized_tuple=KindParametrizedTuple.from_json(x['parametrized_tuple']) if 'parametrized_tuple' in x else _atd_missing_json_field('Root', 'parametrized_tuple'),
+                num=_atd_read_int(x['num']) if 'num' in x else _atd_missing_json_field('Root', 'num'),
+                num2=_atd_read_int(x['num2']) if 'num2' in x else _atd_missing_json_field('Root', 'num2'),
                 maybe=_atd_read_int(x['maybe']) if 'maybe' in x else None,
                 extras=_atd_read_list(_atd_read_int)(x['extras']) if 'extras' in x else [],
                 answer=_atd_read_int(x['answer']) if 'answer' in x else 42,
@@ -550,6 +604,8 @@ class Root:
         res['untyped_things'] = _atd_write_list((lambda x: x))(self.untyped_things)
         res['parametrized_record'] = (lambda x: x.to_json())(self.parametrized_record)
         res['parametrized_tuple'] = (lambda x: x.to_json())(self.parametrized_tuple)
+        res['num'] = _atd_write_int(self.num)
+        res['num2'] = _atd_write_int(self.num2)
         if self.maybe is not None:
             res['maybe'] = _atd_write_int(self.maybe)
         res['extras'] = _atd_write_list(_atd_write_int)(self.extras)
@@ -568,7 +624,8 @@ class Root:
 @deco.deco2(42)
 @dataclass(order=True)
 class RequireField:
-    """Original type: require_field = { ... }"""
+    """Original type: require_field = { ... }
+    """
 
     req: str
 
@@ -596,7 +653,12 @@ class RequireField:
 
 @dataclass
 class Pair:
-    """Original type: pair"""
+    """Original type: pair
+
+    Def-level doc
+
+    Type-level doc
+    """
 
     value: Tuple[str, int]
 
@@ -617,7 +679,8 @@ class Pair:
 
 @dataclass(frozen=True)
 class A:
-    """Original type: frozen = [ ... | A | ... ]"""
+    """Original type: frozen = [ ... | A | ... ]
+    """
 
     @property
     def kind(self) -> str:
@@ -634,7 +697,8 @@ class A:
 
 @dataclass(frozen=True)
 class B:
-    """Original type: frozen = [ ... | B of ... | ... ]"""
+    """Original type: frozen = [ ... | B of ... | ... ]
+    """
 
     value: int
 
@@ -652,7 +716,8 @@ class B:
 
 @dataclass(frozen=True)
 class Frozen:
-    """Original type: frozen = [ ... ]"""
+    """Original type: frozen = [ ... ]
+    """
 
     value: Union[A, B]
 
@@ -687,7 +752,8 @@ class Frozen:
 
 @dataclass
 class DefaultList:
-    """Original type: default_list = { ... }"""
+    """Original type: default_list = { ... }
+    """
 
     items: List[int] = field(default_factory=lambda: [])
 

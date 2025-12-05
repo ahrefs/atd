@@ -3,7 +3,9 @@ Unreleased
 
 * atdgen: Add option `-j-gen-modules` to generate JSON generic submodules (#420)
 * atd-parser: improve (syntax) error messages (#426)
-* atdts: support <ts from...> annotation
+* atdts: Add support for `<ts from...>` annotations
+* atdpy: Add support for `<doc text=...>` annotations, turning them
+  into docstrings similar to the ocamldoc comments produced by atdgen.
 
 2.16.0 (2025-01-22)
 -------------------

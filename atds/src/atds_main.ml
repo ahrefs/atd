@@ -9,7 +9,13 @@ let args_spec env = Arg.align
       " Package name of generated files";
       "-o",
       Arg.String (fun x -> env := { !env with output = open_out x }),
-      " File name for Scala output"
+      " File name for Scala output";
+      "-tag",
+      Arg.String (fun x -> env := { !env with tags = (x :: !env.tags) }),
+      " Only evaluate annotations which have either \n
+          - the provided TAG as a field value <... tag=TAG>, \n
+          - or have no tags specified. \n
+        Option can be used multiple times to specify several tags"
     ]
 
 let usage_msg = "Usage: " ^ Sys.argv.(0) ^ " <options> <file>\nOptions are:"
@@ -49,7 +55,7 @@ let main () =
   (* Parse ATD file *)
   let (atd_head, atd_module), _original_types =
     Atd.Util.load_file
-      ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
+      ~expand:false ~inherit_fields:true ~inherit_variants:true ~tags:env.tags input_file
   in
   let env = {
     env with

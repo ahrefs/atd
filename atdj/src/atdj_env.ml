@@ -13,6 +13,7 @@ type ty =
 
 type env_t = {
   module_items : (string * Atd.Ast.type_expr) list;
+  tags         : string list;
   package      : string;
   package_dir  : string;
   input_file   : string option;
@@ -20,6 +21,7 @@ type env_t = {
 
 let default_env = {
   module_items = [];
+  tags         = [];
   package      = "out";
   package_dir  = "out";
   input_file   = None;

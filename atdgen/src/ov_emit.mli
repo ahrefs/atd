@@ -12,4 +12,5 @@ val make_ocaml_files
   -> force_defaults:_ (* TODO unused *)
   -> ocaml_version:_ (* TODO unused *)
   -> pp_convs:Ocaml.pp_convs
+  -> tags:string list
   -> string option -> Ox_emit.target -> unit

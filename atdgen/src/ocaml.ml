@@ -169,6 +169,12 @@ let annot_schema_ocaml : Atd.Annot.schema_section =
       Field, "mutable";
       Field, "name";
       Field, "repr";
+      Module_head, "tag";
+      Type_def, "tag";
+      Type_expr, "tag";
+      Variant, "tag";
+      Cell, "tag";
+      Field, "tag";
     ]
   }
 

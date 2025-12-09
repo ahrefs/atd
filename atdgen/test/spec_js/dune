@@ -11,7 +11,7 @@
 (rule
  (targets spec_j.ml spec_j.mli)
  (deps spec.atd)
- (action (run atdgen %{deps} -j -j-std)))
+ (action (run atdgen %{deps} -j)))
 
 (rule
  (targets spec_mel.ml spec_mel.mli)

@@ -355,9 +355,9 @@ let test_json_correctness () =
   let s' = Testj.string_of_test x' in
   let x'' = Testj.test_of_string s' in
   save "test-2.json" s';
-  let std_x' = Testjstd.test_of_string s in
-  let std_s' = Testjstd.string_of_test std_x' in
-  let std_x'' = Testjstd.test_of_string std_s' in
+  let std_x' = Testjstd_j.test_of_string s in
+  let std_s' = Testjstd_j.string_of_test std_x' in
+  let std_x'' = Testjstd_j.test_of_string std_s' in
   save "test-std.json" std_s';
   if x <> x' then (
     eprintf "%s\n" (Yojson.Safe.prettify s);

@@ -37,30 +37,7 @@ let read_ambiguous' = (
   Atdgen_runtime.Oj_run.read_with_adapter Json_adapters.Identity.normalize (
     fun p lb ->
       Yojson.Safe.read_space p lb;
-      match Yojson.Safe.start_any_variant p lb with
-        | `Edgy_bracket -> (
-            match Yojson.Safe.read_ident p lb with
-              | "Int" ->
-                Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                let x = (
-                    Atdgen_runtime.Oj_run.read_int
-                  ) p lb
-                in
-                Yojson.Safe.read_space p lb;
-                Yojson.Safe.read_gt p lb;
-                (Int x : ambiguous')
-              | "String" ->
-                Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                let x = (
-                    Atdgen_runtime.Oj_run.read_string
-                  ) p lb
-                in
-                Yojson.Safe.read_space p lb;
-                Yojson.Safe.read_gt p lb;
-                (String x : ambiguous')
-              | x ->
-                Atdgen_runtime.Oj_run.invalid_variant_tag p x
-          )
+      match Atdgen_runtime.Yojson_extra.start_any_variant p lb with
         | `Double_quote -> (
             match Yojson.Safe.finish_string p lb with
               | x ->
@@ -123,30 +100,7 @@ let read_ambiguous = (
   Atdgen_runtime.Oj_run.read_with_adapter Json_adapters.Identity.normalize (
     fun p lb ->
       Yojson.Safe.read_space p lb;
-      match Yojson.Safe.start_any_variant p lb with
-        | `Edgy_bracket -> (
-            match Yojson.Safe.read_ident p lb with
-              | "Int" ->
-                Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                let x = (
-                    Atdgen_runtime.Oj_run.read_int
-                  ) p lb
-                in
-                Yojson.Safe.read_space p lb;
-                Yojson.Safe.read_gt p lb;
-                (Int x : ambiguous)
-              | "String" ->
-                Atdgen_runtime.Oj_run.read_until_field_value p lb;
-                let x = (
-                    Atdgen_runtime.Oj_run.read_string
-                  ) p lb
-                in
-                Yojson.Safe.read_space p lb;
-                Yojson.Safe.read_gt p lb;
-                (String x : ambiguous)
-              | x ->
-                Atdgen_runtime.Oj_run.invalid_variant_tag p x
-          )
+      match Atdgen_runtime.Yojson_extra.start_any_variant p lb with
         | `Double_quote -> (
             match Yojson.Safe.finish_string p lb with
               | x ->

@@ -643,10 +643,6 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       let fallback_expr =
         [ Line "Atdgen_runtime.Oj_run.invalid_variant_tag p x" ]
       in
-      let cases =
-        make_cases_reader p type_annot
-          ~tick ~open_enum ~std:false ~fallback_expr l
-      in
       let l0, l1 =
         List.partition (fun x -> x.var_arg = None || open_enum) l
       in
@@ -661,16 +657,8 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       let read_tag =
         [
           Line "Yojson.Safe.read_space p lb;";
-          Line "match Yojson.Safe.start_any_variant p lb with";
+          Line "match Atdgen_runtime.Yojson_extra.start_any_variant p lb with";
           Block [
-            Line "| `Edgy_bracket -> (";
-            Block [
-              Block [
-                Line "match Yojson.Safe.read_ident p lb with";
-                Block cases;
-              ];
-              Line ")";
-            ];
             Line "| `Double_quote -> (";
             Block [
               Block [

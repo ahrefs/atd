@@ -14,7 +14,7 @@ test:
 	# The empty comments are used to force Make to call the shell without
 	# which it tries to execute the command directly and fails in some
 	# setups (nvm, Node v24.1.0, Ubuntu 24.04, GNU Make 4.3)
-        # with "Permission denied" for an unknown reason.
+	# with "Permission denied" for an unknown reason.
 	$(JS) manual_sample.js   #
 	$(JS) test_atdts.js      #
 

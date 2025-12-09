@@ -1,8 +1,10 @@
 (**
    This module complements the Yojson.Safe lexer and was extracted from the
    original source file [read.mll].
+
    It provides the functions that were removed accidentally during
    the transition from Yojson 2 to Yojson 3.
+   See https://github.com/ocaml-community/yojson/pull/158#issuecomment-3630022314
 *)
 
 exception End_of_tuple

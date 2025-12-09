@@ -27,7 +27,9 @@
       result
   end
 
-  (* see description in common.mli *)
+  exception End_of_tuple
+
+  (* see description in common.mli (in yojson) *)
   type lexer_state = Yojson.Safe.lexer_state = {
     buf : Buffer.t;
     mutable lnum : int;
@@ -77,6 +79,16 @@ rule start_any_variant v = parse
   | eof      { custom_error "Unexpected end of input" v lexbuf }
 
 and start_any_tuple v = parse
-  | '['      { true }
+  | '['      { () }
   | _        { long_error "Expected '[' but found" v lexbuf }
+  | eof      { custom_error "Unexpected end of input" v lexbuf }
+
+and read_tuple_end2 v = parse
+  | ']'      { raise End_of_tuple }
+  | ""       { () }
+
+and read_tuple_sep2 v = parse
+    ','      { () }
+  | ']'      { raise End_of_tuple }
+  | _        { long_error "Expected ',' or ')' but found" v lexbuf }
   | eof      { custom_error "Unexpected end of input" v lexbuf }

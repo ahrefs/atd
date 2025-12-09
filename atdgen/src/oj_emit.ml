@@ -1076,7 +1076,7 @@ and make_tuple_reader p a =
                   Line "in";
                   Line "incr len;";
                   Line "Yojson.Safe.read_space p lb;";
-                  Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+                  Line "Atdgen_runtime.Yojson_extra.read_tuple_sep2 p lb;";
                   Line "x"
                 ]
               else if i = min_length - 1 then
@@ -1088,9 +1088,9 @@ and make_tuple_reader p a =
                   Line "(try";
                   Block [
                     Line "Yojson.Safe.read_space p lb;";
-                    Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+                    Line "Atdgen_runtime.Yojson_extra.read_tuple_sep2 p lb;";
                   ];
-                  Line "with Yojson.End_of_tuple -> end_of_tuple := true);";
+                  Line "with Atdgen_runtime.Yojson_extra.End_of_tuple -> end_of_tuple := true);";
                   Line "x"
                 ]
               else
@@ -1106,9 +1106,9 @@ and make_tuple_reader p a =
                     Line "(try";
                     Block [
                       Line "Yojson.Safe.read_space p lb;";
-                      Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+                      Line "Atdgen_runtime.Yojson_extra.read_tuple_sep2 p lb;";
                     ];
-                    Line "with Yojson.End_of_tuple ->";
+                    Line "with Atdgen_runtime.Yojson_extra.End_of_tuple ->";
                     Block [
                       Line "end_of_tuple := true);";
                     ];
@@ -1145,8 +1145,8 @@ and make_tuple_reader p a =
   let finish_empty_tuple =
     if min_length = 0 then
       [
-        Line "(try Yojson.Safe.read_tuple_end2 p std_tuple lb";
-        Line "with Yojson.End_of_tuple -> end_of_tuple := true)";
+        Line "(try Atdgen_runtime.Yojson_extra.read_tuple_end2 p lb";
+        Line "with Atdgen_runtime.Yojson_extra.End_of_tuple -> end_of_tuple := true)";
       ]
     else []
   in
@@ -1161,11 +1161,11 @@ and make_tuple_reader p a =
           Block [
             Line "Yojson.Safe.skip_json p lb;";
             Line "Yojson.Safe.read_space p lb;";
-            Line "Yojson.Safe.read_tuple_sep2 p std_tuple lb;";
+            Line "Atdgen_runtime.Yojson_extra.read_tuple_sep2 p lb;";
           ];
           Line "done";
         ];
-        Line "with Yojson.End_of_tuple -> ()";
+        Line "with Atdgen_runtime.Yojson_extra.End_of_tuple -> ()";
       ];
       Line ");"
     ]
@@ -1173,7 +1173,7 @@ and make_tuple_reader p a =
 
   [
     Line "Yojson.Safe.read_space p lb;";
-    Line "let std_tuple = Yojson.Safe.start_any_tuple p lb in";
+    Line "Atdgen_runtime.Yojson_extra.start_any_tuple p lb;";
     Line "let len = ref 0 in";
     Line "let end_of_tuple = ref false in";
     Inline finish_empty_tuple;
@@ -1183,7 +1183,7 @@ and make_tuple_reader p a =
       Inline skip_remaining_cells;
       Line make_tuple;
     ];
-    Line "with Yojson.End_of_tuple ->";
+    Line "with Atdgen_runtime.Yojson_extra.End_of_tuple ->";
     Block [
       Line (sprintf
               "Atdgen_runtime.Oj_run.missing_tuple_fields p !len %s);"

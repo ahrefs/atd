@@ -7,9 +7,7 @@ type t =
   | `Intlit of string
   | `List of t list
   | `Null
-  | `String of string
-  | `Tuple of t list
-  | `Variant of string * t option ]
+  | `String of string ]
 
 val constr0 : string -> t
 val constr1 : string -> t -> t

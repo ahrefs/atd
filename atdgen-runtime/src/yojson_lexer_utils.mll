@@ -1,3 +1,7 @@
+(*
+   Imported from Yojson, required by Yojson_extra.
+   See notes in yojson_extra.mli.
+*)
 rule read_junk buf n = parse
   | eof { () }
   | _ {

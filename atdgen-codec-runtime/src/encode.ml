@@ -69,13 +69,13 @@ let obj fields =
     ) [] fields
   )
 
-let tuple1 f x = `Tuple [f x]
-let tuple2 f g (w, x) = `Tuple [f w; g x]
-let tuple3 f g h (w, x, y) = `Tuple [f w; g x; h y]
-let tuple4 f g h i (w, x, y, z) = `Tuple [f w; g x; h y;i z]
+let tuple1 f x = `List [f x]
+let tuple2 f g (w, x) = `List [f w; g x]
+let tuple3 f g h (w, x, y) = `List [f w; g x; h y]
+let tuple4 f g h i (w, x, y, z) = `List [f w; g x; h y;i z]
 
-let constr0 s = `Variant (s, None)
-let constr1 s f x = `Variant (s, Some (f x))
+let constr0 s = `String s
+let constr1 s f x = `List [`String s; f x]
 
 let contramap f g b = g (f b)
 
@@ -84,8 +84,8 @@ let nullable f = function
   | Some s -> f s
 
 let option_as_constr f = function
-  | None -> `Variant ("None", None)
-  | Some s -> `Variant ("Some", Some (f s))
+  | None -> `String "None"
+  | Some s -> `List [`String "Some"; f s]
 
 let adapter (restore: Json.t -> Json.t) (writer: 'a t) x =
   let encoded = writer x in

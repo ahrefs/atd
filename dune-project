@@ -100,7 +100,7 @@ utilities."))
   (ocaml (>= 4.08))
   (alcotest :with-test)
   (atd (>= 2.14.0))
-  (atdgen-runtime (>= 2.1.0))
+  (atdgen-runtime (>= 3.0.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
   (yojson (>= 2.0.1))
@@ -127,7 +127,7 @@ This package should be used only in conjunction with the atdgen code
 generator")
  (depends
   (ocaml (>= 4.08))
-  (yojson (and (>= 2.0.2) (< 3.0.0)))
+  (yojson (>= 3.0.0))
   (biniou (>= 1.0.6))
   (odoc :with-doc)))
 

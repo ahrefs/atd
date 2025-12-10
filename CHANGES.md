@@ -6,8 +6,9 @@ Unreleased
 * atdts: Add support for `<ts from...>` annotations
 * atdpy: Add support for `<doc text=...>` annotations, turning them
   into docstrings similar to the ocamldoc comments produced by atdgen.
-* atdgen: Remove option `-j-std`, now it's the default, one cannot generate extended-JSON (#425).
-  Options `-j-std` and `-std-json` are still available as backward-compatibility no-ops unless
+* atdgen: Remove option `-j-std`, now it's the default, one cannot
+  generate extended-JSON (#425). Options `-j-std` and `-std-json` are
+  still available as backward-compatibility no-ops unless
   environment variable `ATDGEN_FAIL_DEPRECATED_OPTIONS` is set to `true` in
   which case their use results in an exception.
 

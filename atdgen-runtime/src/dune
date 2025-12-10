@@ -2,3 +2,6 @@
  (name atdgen_runtime)
  (public_name atdgen-runtime)
  (libraries biniou yojson))
+
+(ocamllex yojson_lexer_utils)
+(ocamllex yojson_extra)

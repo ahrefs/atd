@@ -7,10 +7,8 @@ type t =
   | `Intlit of string
   | `List of t list
   | `Null
-  | `String of string
-  | `Tuple of t list
-  | `Variant of string * t option ]
+  | `String of string ]
 
-let constr0 s = `Variant (s, None)
+let constr0 s = `String s
 
-let constr1 s a = `Variant (s, Some a)
+let constr1 s a = `List [`String s; a]

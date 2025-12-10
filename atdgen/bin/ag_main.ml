@@ -2,10 +2,13 @@ open Atd.Import
 open Atdgen_emit
 
 let fail_deprecated_variable = "ATDGEN_FAIL_DEPRECATED_OPTIONS"
+
 let maybe_fail_deprecated where =
   match Sys.getenv fail_deprecated_variable with
-  | "true" -> Printf.ksprintf failwith "Error: option %S is forbidden." where
-  | _ | exception _ -> ()
+  | "true" ->
+      Printf.ksprintf failwith "Error: option %S is forbidden." where
+  | _ | exception _ ->
+      Printf.eprintf "Warning: option %S is deprecated.\n%!" where
 
 let append l1 l2 =
   List.concat_map (fun s1 -> List.map (fun s2 -> s1 ^ s2) l2) l1
@@ -67,6 +70,9 @@ let main () =
   let all_rec = ref false in
   let out_prefix = ref None in
   let mode = ref (None : mode option) in
+  (* uses_deprecated_jstd_option is now only used to imply '-j' if a user
+     passes '-j-std' or '-std-json' without '-j' *)
+  let uses_deprecated_jstd_option = ref false in
   let add_generic_modules = ref false in
   let j_preprocess_input = ref None in
   let j_defaults = ref false in
@@ -185,9 +191,12 @@ let main () =
           including OCaml type definitions.";
 
     "-j-std",
-    Arg.Unit (fun () -> maybe_fail_deprecated "-j-std"),
+    Arg.Unit (fun () ->
+      uses_deprecated_jstd_option := true;
+      maybe_fail_deprecated "-j-std"),
     "
-          [deprecated] This option does nothing; kept for backwards compatibility.";
+          [deprecated] This option is now equivalent to -j;
+          kept for backward compatibility.";
 
     "-j-gen-modules",
     Arg.Unit (fun () ->
@@ -198,7 +207,9 @@ let main () =
           module Typename: sig type t ... val read: ... val to_string: ... end";
 
     "-std-json",
-    Arg.Unit (fun () -> maybe_fail_deprecated "-std-json"),
+    Arg.Unit (fun () ->
+      uses_deprecated_jstd_option := true;
+      maybe_fail_deprecated "-std-json"),
     "
           [deprecated] No-op: same as -j-std.";
 
@@ -306,7 +317,8 @@ to make their use fail and hence help clean-up your build scripts.
 |} Sys.argv.(0) fail_deprecated_variable in
   Arg.parse options (fun file -> files := file :: !files) msg;
 
-  if (!unknown_field_handler <> None) && !mode = None then
+  if (!uses_deprecated_jstd_option
+      || !unknown_field_handler <> None) && !mode = None then
     set_once "output mode" mode Json;
 
   let mode =

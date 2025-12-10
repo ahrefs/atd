@@ -124,7 +124,7 @@ utilities."))
  (depends
   (ocaml (>= 4.08))
   (alcotest :with-test)
-  (atd (>= 2.14.0))
+  (atd (>= 3.0.0))
   (atdgen-runtime (>= 3.0.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
@@ -195,7 +195,7 @@ automatically handled")
  (description "Python/mypy code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.11.0))
+  (atd (>= 3.0.0))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)
@@ -223,7 +223,6 @@ Melange backend")
   re
   (alcotest :with-test)
   (odoc :with-doc)))
-
 
 (package
  (name atdd)

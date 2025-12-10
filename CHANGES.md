@@ -1,3 +1,9 @@
+3.0.1 (2025-12-09)
+------------------
+
+* atdgen: `-j-std` now implies `-j` like before to avoid breaking
+  existing uses. A warning is now also printed to encourage migration (#443)
+
 3.0.0 (2025-12-09)
 ------------------
 

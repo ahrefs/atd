@@ -6,8 +6,10 @@ Welcome to ATD's documentation!
 
    atd-project
    atd-language
-   atdgen
+   atdcpp
+   atdd
    atdj
-   atds
+   atdgen
    atdpy
+   atds
    atdts

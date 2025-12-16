@@ -1,4 +1,4 @@
-(lang dune 2.8)
+(lang dune 3.18)
 (using menhir 2.0)
 (implicit_transitive_deps false)
 (cram enable)
@@ -11,6 +11,9 @@
   "Martin Jambon <martin@mjambon.com>"
   "Rudi Grinberg <me@rgrinberg.com>"
 )
+
+; See https://github.com/ocaml/opam-repository/blob/master/governance/policies/archiving.md
+(maintenance_intent "(latest)")
 
 (authors
 ; All authors according to git log, sorted by decreasing number of commits.

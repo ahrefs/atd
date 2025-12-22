@@ -2,4 +2,4 @@
  (name atdj_main)
  (public_name atdj)
  (package atdj)
- (libraries re atd))
+ (libraries unix re atd))

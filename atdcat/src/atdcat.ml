@@ -78,7 +78,7 @@ let parse
       fun file ->
         let m, _orig_defs =
           Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
-            ~inherit_fields ~inherit_variants file
+            ~inherit_fields ~inherit_variants ~tags:[] file
         in
         if remove_wraps then
           Atd.Ast.remove_wrap_constructs m

@@ -7,6 +7,7 @@ open Cmdliner
 
 type conf = {
   input_files: string list;
+  tags: string list;
   version: bool;
 }
 
@@ -18,7 +19,7 @@ let run conf =
   else
     conf.input_files
     |> List.iter (fun atd_file ->
-      Atdd.Codegen.run_file atd_file
+      Atdd.Codegen.run_file ~tags:conf.tags atd_file
     )
 
 (***************************************************************************)
@@ -37,6 +38,13 @@ let input_files_term =
   in
   let default = [] in
   Arg.value (Arg.pos_all Arg.file default info)
+
+let tags_term =
+  let info =
+    Arg.info ["tag"]
+      ~doc:"Only evaluate annotations which have either the provided TAG as a field value <... tag=TAG>, or have no tags specified.\nOption can be used multiple times to specify several tags"
+  in
+  Arg.value (Arg.opt_all Arg.string [] info)
 
 let version_term =
   let info =
@@ -94,14 +102,16 @@ type bar = [
 ]
 
 let cmdline_term run =
-  let combine input_files version =
+  let combine input_files tags version =
     run {
       input_files;
       version;
+      tags;
     }
   in
   Term.(const combine
         $ input_files_term
+        $ tags_term
         $ version_term
        )
 

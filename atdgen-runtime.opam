@@ -88,13 +88,14 @@ license: "MIT"
 homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
-  "dune" {>= "2.8"}
+  "dune" {>= "3.18"}
   "ocaml" {>= "4.08"}
   "yojson" {>= "3.0.0"}
   "biniou" {>= "1.0.6"}
   "odoc" {with-doc}
 ]
 dev-repo: "git+https://github.com/ahrefs/atd.git"
+x-maintenance-intent: ["(latest)"]
 build: [
   ["dune" "subst"] {dev}
   [

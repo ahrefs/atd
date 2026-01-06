@@ -15,7 +15,6 @@ module B = Indent
    naming conflicts. *)
 type env = {
   (* Global *)
-  create_variable: string -> string;
   translate_variable: string -> string;
 }
 
@@ -130,14 +129,10 @@ let init_env () : env =
       ~reserved_prefixes:["atd_"; "_atd_"]
       ~safe_prefix:"x_"
   in
-  let create_variable name =
-    Atd.Unique_name.create variables name
-  in
   let translate_variable id =
     Atd.Unique_name.translate variables id
   in
   {
-    create_variable;
     translate_variable;
   }
 

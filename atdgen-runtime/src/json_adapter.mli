@@ -73,7 +73,7 @@ module Type_field : sig
 module Kind = Type_field.Make (struct type_field_name = "kind" end)
 ]}
   *)
-  module Make (Param : Param) : S
+  module Make : Param -> S
 end
 
 (** Alternatively, function-based definition of the JSON adapter is supported.
@@ -245,6 +245,6 @@ module Type_and_value_fields : sig
   end
 
   (** Functor needed to produce a module using the correct parameters. *)
-  module Make (Param : Param) : S
+  module Make : Param -> S
 end
 

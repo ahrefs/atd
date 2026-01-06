@@ -18,7 +18,6 @@ type name = (loc * loc * string)
 
 type names = {
   field_names : name list list;
-  poly_variant_names : name list list;
   classic_variant_names : name list list;
 }
 
@@ -102,7 +101,7 @@ and extract_names_from_cell root_loc acc x =
 
 
 let extract_ocaml_names_from_defs l =
-  let fn, pvn, cvn =
+  let fn, _pvn, cvn =
     List.fold_left (
       fun acc def ->
         match def.def_value with
@@ -114,7 +113,6 @@ let extract_ocaml_names_from_defs l =
   in
   {
     field_names = List.rev fn;
-    poly_variant_names = List.rev pvn;
     classic_variant_names = List.rev cvn;
   }
 

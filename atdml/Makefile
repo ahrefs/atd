@@ -6,14 +6,14 @@ DUNE ?= dune
 
 .PHONY: build
 build:
-	rm -f bin/atdml
+	rm -f atdml
 	$(DUNE) build @all
-	mkdir -p bin
-	ln -s ../../_build/install/default/bin/atdml bin/atdml
+	ln -s ../_build/default/atdml/src/bin/Atdml_main.exe atdml
 
 .PHONY: test
 test:
-	$(DUNE) runtest -f
+	$(DUNE) build tests/test.exe
+	./test
 
 .PHONY: clean
 clean:

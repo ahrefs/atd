@@ -4,6 +4,12 @@ type id = string
 and score = float
 and tag_list = string list
 and opt_name = string option
+and all = {
+  id: id;
+  score: score;
+  tags: tag_list;
+  name: opt_name;
+}
 
 val id_of_yojson : Yojson.Safe.t -> id
 val yojson_of_id : id -> Yojson.Safe.t
@@ -32,6 +38,14 @@ val opt_name_of_string : string -> opt_name
 val string_of_opt_name : opt_name -> string
 val opt_name_of_channel : in_channel -> opt_name
 val opt_name_of_file : string -> opt_name
+
+val make_all : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> all
+val all_of_yojson : Yojson.Safe.t -> all
+val yojson_of_all : all -> Yojson.Safe.t
+val all_of_string : string -> all
+val string_of_all : all -> string
+val all_of_channel : in_channel -> all
+val all_of_file : string -> all
 
 --- ml ---
 (* Auto-generated from "type_aliases.atd" by atdml. *)
@@ -110,6 +124,15 @@ type id = string
 and score = float
 and tag_list = string list
 and opt_name = string option
+and all = {
+  id: id;
+  score: score;
+  tags: tag_list;
+  name: opt_name;
+}
+
+let make_all ~id ~score ~tags ~name () : all =
+  { id; score; tags; name }
 
 let rec id_of_yojson (x : Yojson.Safe.t) : id =
   Atdml_runtime.string_of_yojson x
@@ -119,6 +142,31 @@ and tag_list_of_yojson (x : Yojson.Safe.t) : tag_list =
   (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) x
 and opt_name_of_yojson (x : Yojson.Safe.t) : opt_name =
   (Atdml_runtime.option_of_yojson Atdml_runtime.string_of_yojson) x
+and all_of_yojson (x : Yojson.Safe.t) : all =
+  match x with
+  | `Assoc fields ->
+    let id =
+      match List.assoc_opt "id" fields with
+      | Some v -> id_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "id"
+    in
+    let score =
+      match List.assoc_opt "score" fields with
+      | Some v -> score_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "score"
+    in
+    let tags =
+      match List.assoc_opt "tags" fields with
+      | Some v -> tag_list_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "tags"
+    in
+    let name =
+      match List.assoc_opt "name" fields with
+      | Some v -> opt_name_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "name"
+    in
+    { id; score; tags; name }
+  | _ -> Atdml_runtime.bad_type "all" x
 
 let rec yojson_of_id (x : id) : Yojson.Safe.t =
   Atdml_runtime.yojson_of_string x
@@ -128,6 +176,13 @@ and yojson_of_tag_list (x : tag_list) : Yojson.Safe.t =
   (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x
 and yojson_of_opt_name (x : opt_name) : Yojson.Safe.t =
   (Atdml_runtime.yojson_of_option Atdml_runtime.yojson_of_string) x
+and yojson_of_all (x : all) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("id", yojson_of_id x.id)];
+    [("score", yojson_of_score x.score)];
+    [("tags", yojson_of_tag_list x.tags)];
+    [("name", yojson_of_opt_name x.name)];
+  ])
 
 let id_of_string s =
   id_of_yojson (Yojson.Safe.from_string s)
@@ -165,3 +220,16 @@ let opt_name_of_channel ic =
 let opt_name_of_file path =
   opt_name_of_yojson (Yojson.Safe.from_file path)
 
+let all_of_string s =
+  all_of_yojson (Yojson.Safe.from_string s)
+let string_of_all x =
+  Yojson.Safe.to_string (yojson_of_all x)
+let all_of_channel ic =
+  all_of_yojson (Yojson.Safe.from_channel ic)
+let all_of_file path =
+  all_of_yojson (Yojson.Safe.from_file path)
+
+--- Input:
+{ "id": "abc", "score": 1.23, "tags": [ "a", "b" ], "name": [ "Some", "x" ] }
+--- Output:
+{ "id": "abc", "score": 1.23, "tags": [ "a", "b" ], "name": [ "Some", "x" ] }

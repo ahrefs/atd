@@ -11,7 +11,6 @@
 # Build with 'dune build' before running.
 #
 set -e
-here="$(cd "$(dirname "$0")" && pwd)"
-cd "$here/.."   # workspace root, so dune can find the executable
+here=$(dirname "${BASH_SOURCE[0]}")
 exec dune exec --no-build --no-print-directory \
-  atdml/tests/test.exe -- "$@" --chdir "$here"
+  tests/test.exe -- "$@" --chdir "$here"

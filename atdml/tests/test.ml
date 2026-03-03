@@ -5,89 +5,162 @@
    captures both the generated .mli and .ml as a snapshot.
 *)
 
-let read_file path =
-  let ic = open_in path in
-  let n = in_channel_length ic in
-  let s = Bytes.create n in
-  really_input ic s 0 n;
-  close_in ic;
-  Bytes.to_string s
+open Printf
 
 (* Run the code generator on [atd_src] and return (mli_content, ml_content).
    Uses a temp directory so as not to pollute the working directory. *)
 let run_codegen ~test_name ~file_name atd_src =
-  Testo.with_temp_dir ~chdir:true (fun tmpdir ->
-    let atd_file = Fpath.add_seg tmpdir (file_name ^ ".atd") in
-    let oc = open_out (Fpath.to_string atd_file) in
-    output_string oc atd_src;
-    close_out oc;
-    Atdml.Codegen.run_file (Fpath.to_string atd_file);
-    let mli = read_file (file_name ^ ".mli") in
-    let ml  = read_file (file_name ^ ".ml")  in
+  Testo.with_temp_dir ~chdir:true (fun _dir ->
+    let atd_file = file_name ^ ".atd" in
+    Testo.write_text_file (Fpath.v atd_file) atd_src;
+    Atdml.Codegen.run_file atd_file;
+    let mli = Testo.read_text_file (Fpath.v (file_name ^ ".mli")) in
+    let ml = Testo.read_text_file (Fpath.v (file_name ^ ".ml"))  in
     (mli, ml)
+  )
+
+(* Create a test program that reads JSON and writes it back.
+   JSON data is printed so it can be captured by the test framework. *)
+let test_program ~type_name ~json_in = sprintf {|
+let () =
+  let json_in = %S in
+  let yojson_in = Yojson.Safe.from_string json_in in
+  let typed_data = Types.%s_of_yojson yojson_in in
+  let yojson_out = Types.yojson_of_%s typed_data in
+  let json_out = Yojson.Safe.pretty_to_string yojson_out in
+  let json_in_comparable = Yojson.Safe.pretty_to_string yojson_in in
+  Printf.printf "--- Input:\n%%s\n" json_in_comparable;
+  Printf.printf "--- Output:\n%%s\n" json_out
+|}
+    json_in type_name type_name
+
+let build_and_run ~mli ~ml ~type_name ~json_in =
+  Testo.with_temp_dir ~chdir:true (fun _dir ->
+    Testo.write_text_file (Fpath.v "Types.mli") mli;
+    Testo.write_text_file (Fpath.v "Types.ml") ml;
+    Testo.write_text_file
+      (Fpath.v "Main.ml")
+      (test_program ~type_name ~json_in);
+    let command =
+      "ocamlfind opt -o test_atdml Types.mli Types.ml Main.ml \
+       -package yojson -linkpkg \
+       && ./test_atdml"
+    in
+    flush stdout;
+    flush stderr;
+    match Sys.command command with
+    | 0 -> ()
+    | n -> failwith (sprintf "Command %S failed with exit code %i" command n)
   )
 
 let make_filename_from_test_name str =
   String.concat "_" (String.split_on_char ' ' str)
 
-let test test_name atd_src =
+let test test_name ~atd_src ~type_name ~json_in =
   let file_name = make_filename_from_test_name test_name in
   Testo.create test_name
     ~checked_output:(Testo.stdout
-                       ~expected_stdout_path:(Fpath.(v "tests/named-snapshots"
-                                                        / file_name))
+                       ~expected_stdout_path:(
+                         Fpath.(v "tests/named-snapshots" / file_name))
                        ())
     (fun () ->
       let mli, ml = run_codegen ~test_name ~file_name atd_src in
       print_string mli;
       print_string "--- ml ---\n";
-      print_string ml)
+      print_string ml;
+      build_and_run ~mli ~ml ~type_name ~json_in
+    )
 
 let tests _env = [
-
   test "color enum"
-    {|type color = [
+    ~atd_src:{|
+type color = [
   | Red
   | Green <json name="green">
   | Blue
 ]
-|};
+
+type colors = (color * color * color)
+|}
+    ~type_name:"colors"
+    ~json_in:{|
+[
+  "Red", "green", "Blue"
+]
+|}
+  ;
 
   test "type aliases"
-    {|type id = string
+    ~atd_src:{|
+type id = string
 type score = float
 type tag_list = string list
 type opt_name = string option
-|};
+
+type all = {
+  id: id;
+  score: score;
+  tags: tag_list;
+  name: opt_name;
+}
+|}
+    ~type_name:"all"
+    ~json_in:{|
+{
+  "id": "abc",
+  "score": 1.23,
+  "tags": ["a", "b"],
+  "name": ["Some", "x"]
+}
+|}
+;
 
   test "classic sum types"
-    {|type direction = [
-  | North
-  | South
-  | East
-  | West
-]
-
+    ~atd_src:{|
 type shape = [
   | Circle of float
   | Rect <json name="rectangle"> of (float * float)
   | Dot <ocaml name="Point">
   | Arc <json name="arc"> <ocaml name="ArcShape"> of float
 ]
-|};
+
+type shapes = shape list
+|}
+    ~type_name:"shapes"
+    ~json_in:{|
+[
+  [ "Circle", 1 ],
+  [ "rect", [1.2, 3]],
+  "Dot",
+  [ "arc", 3.0 ]
+]
+|}
+;
 
   test "polymorphic variants"
-    {|type status = [
+    ~atd_src:{|
+type status = [
   | Active
   | Inactive
   | Pending of string
 ] <ocaml repr="poly">
-|};
+
+type statuses = status list
+|}
+    ~type_name:"statuses"
+    ~json_in:{|
+[
+  "Active", [ "Pending", "abc" ]
+]
+|}
+;
 
   test "records"
-    {|type person = {
+    ~atd_src:{|
+type person = {
   name: string;
   age: int;
+  lol: int nullable;
   ?email: string option;
   ~score: float;
   ~active: bool;
@@ -95,10 +168,20 @@ type shape = [
   ~level <ocaml default="1">: int;
   address <json name="addr">: string;
 }
-|};
+|}
+    ~type_name:"person"
+    ~json_in:{|
+{
+  "name": "X",
+  "age": 42,
+  "lol": null,
+  "addr": "xxxx"
+|}
+;
 
   test "builtin types"
-    {|type all_types = {
+    ~atd_src:{|
+type all_types = {
   a_unit: unit;
   a_bool: bool;
   a_int: int;
@@ -111,10 +194,28 @@ type shape = [
   a_tuple: (int * string * bool);
   a_nested: (float list) option;
 }
-|};
+|}
+    ~type_name:"all_types"
+    ~json_in:{|
+{
+  "a_unit": null,
+  "a_bool": false,
+  "a_int": -2,
+  "a_float": 9.6,
+  "a_string": "x y",
+  "a_list": [1,2,3],
+  "a_option": "None",
+  "a_nullable": null,
+  "a_abstract": abstract,
+  "a_tuple": [ 12, "ddd", 3000 ],
+  "a_nested": [ [ "Some", [1, 2.3] ] ]
+}
+|}
+;
 
   test "parametric types"
-    {|type 'a result = [
+    ~atd_src:{|
+type 'a result = [
   | Ok of 'a
   | Error of string
 ]
@@ -124,24 +225,34 @@ type ('a, 'b) either = [
   | Right of 'b
 ]
 
-type 'a page = {
-  items: 'a list;
-  total: int;
-  ?cursor: string option;
-}
-|};
+type all = (int result * (bool, string) either)
+|}
+    ~type_name:"all"
+    ~json_in:{|
+[
+  [ "Ok", 12 ],
+  [ "Right", "a" ]
+]
+|}
+;
 
   test "mutually recursive types"
-    {|type tree = [
+    ~atd_src:{|
+type tree = [
   | Leaf
   | Node of node
 ]
+
 type node = {
   value: int;
-  children: tree list;
+  children: (tree * tree);
 }
-|};
-
+|}
+    ~type_name:"tree"
+    ~json_in:{|
+  [ "Node", { "value": 0, "children": [ "Leaf", "Leaf" ] } ]
+|}
+;
 ]
 
 let () =

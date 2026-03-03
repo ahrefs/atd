@@ -4,6 +4,7 @@ type color =
   | Red
   | Green
   | Blue
+and colors = (color * color * color)
 
 val color_of_yojson : Yojson.Safe.t -> color
 val yojson_of_color : color -> Yojson.Safe.t
@@ -11,6 +12,13 @@ val color_of_string : string -> color
 val string_of_color : color -> string
 val color_of_channel : in_channel -> color
 val color_of_file : string -> color
+
+val colors_of_yojson : Yojson.Safe.t -> colors
+val yojson_of_colors : colors -> Yojson.Safe.t
+val colors_of_string : string -> colors
+val string_of_colors : colors -> string
+val colors_of_channel : in_channel -> colors
+val colors_of_file : string -> colors
 
 --- ml ---
 (* Auto-generated from "color_enum.atd" by atdml. *)
@@ -89,6 +97,7 @@ type color =
   | Red
   | Green
   | Blue
+and colors = (color * color * color)
 
 let rec color_of_yojson (x : Yojson.Safe.t) : color =
   match x with
@@ -96,12 +105,16 @@ let rec color_of_yojson (x : Yojson.Safe.t) : color =
   | `String "green" -> Green
   | `String "Blue" -> Blue
   | _ -> Atdml_runtime.bad_sum "color" x
+and colors_of_yojson (x : Yojson.Safe.t) : colors =
+  (fun x -> match x with | `List lst when List.length lst = 3 -> (color_of_yojson (List.nth lst 0), color_of_yojson (List.nth lst 1), color_of_yojson (List.nth lst 2)) | _ -> Atdml_runtime.bad_type "tuple" x) x
 
 let rec yojson_of_color (x : color) : Yojson.Safe.t =
   match x with
   | Red -> `String "Red"
   | Green -> `String "green"
   | Blue -> `String "Blue"
+and yojson_of_colors (x : colors) : Yojson.Safe.t =
+  (fun (x0, x1, x2) -> `List [yojson_of_color x0; yojson_of_color x1; yojson_of_color x2]) x
 
 let color_of_string s =
   color_of_yojson (Yojson.Safe.from_string s)
@@ -112,3 +125,16 @@ let color_of_channel ic =
 let color_of_file path =
   color_of_yojson (Yojson.Safe.from_file path)
 
+let colors_of_string s =
+  colors_of_yojson (Yojson.Safe.from_string s)
+let string_of_colors x =
+  Yojson.Safe.to_string (yojson_of_colors x)
+let colors_of_channel ic =
+  colors_of_yojson (Yojson.Safe.from_channel ic)
+let colors_of_file path =
+  colors_of_yojson (Yojson.Safe.from_file path)
+
+--- Input:
+[ "Red", "green", "Blue" ]
+--- Output:
+[ "Red", "green", "Blue" ]

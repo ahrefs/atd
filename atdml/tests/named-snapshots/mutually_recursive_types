@@ -5,7 +5,7 @@ type tree =
   | Node of node
 and node = {
   value: int;
-  children: tree list;
+  children: (tree * tree);
 }
 
 val tree_of_yojson : Yojson.Safe.t -> tree
@@ -15,7 +15,7 @@ val string_of_tree : tree -> string
 val tree_of_channel : in_channel -> tree
 val tree_of_file : string -> tree
 
-val make_node : value:int -> children:tree list -> unit -> node
+val make_node : value:int -> children:(tree * tree) -> unit -> node
 val node_of_yojson : Yojson.Safe.t -> node
 val yojson_of_node : node -> Yojson.Safe.t
 val node_of_string : string -> node
@@ -101,7 +101,7 @@ type tree =
   | Node of node
 and node = {
   value: int;
-  children: tree list;
+  children: (tree * tree);
 }
 
 let make_node ~value ~children () : node =
@@ -122,7 +122,7 @@ and node_of_yojson (x : Yojson.Safe.t) : node =
     in
     let children =
       match List.assoc_opt "children" fields with
-      | Some v -> (Atdml_runtime.list_of_yojson tree_of_yojson) v
+      | Some v -> (fun x -> match x with | `List lst when List.length lst = 2 -> (tree_of_yojson (List.nth lst 0), tree_of_yojson (List.nth lst 1)) | _ -> Atdml_runtime.bad_type "tuple" x) v
       | None -> Atdml_runtime.missing_field "node" "children"
     in
     { value; children }
@@ -135,7 +135,7 @@ let rec yojson_of_tree (x : tree) : Yojson.Safe.t =
 and yojson_of_node (x : node) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("value", Atdml_runtime.yojson_of_int x.value)];
-    [("children", (Atdml_runtime.yojson_of_list yojson_of_tree) x.children)];
+    [("children", (fun (x0, x1) -> `List [yojson_of_tree x0; yojson_of_tree x1]) x.children)];
   ])
 
 let tree_of_string s =
@@ -156,3 +156,7 @@ let node_of_channel ic =
 let node_of_file path =
   node_of_yojson (Yojson.Safe.from_file path)
 
+--- Input:
+[ "Node", { "value": 0, "children": [ "Leaf", "Leaf" ] } ]
+--- Output:
+[ "Node", { "value": 0, "children": [ "Leaf", "Leaf" ] } ]

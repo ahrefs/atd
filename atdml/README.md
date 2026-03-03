@@ -42,7 +42,7 @@ How atdml differs from atdgen
 | Creation functions | Optional (`-create-mandatory`) | Always generated |
 | Naming convention | `read_foo` / `write_foo` | `foo_of_yojson` / `yojson_of_foo` |
 | PPX naming compat. | No | Yes (`ppx_yojson_conv`) |
-| Runtime library | `atdgen-runtime` | `atdml-runtime` |
+| Runtime library | `atdgen-runtime` | Inlined in generated file |
 | Performance | Optimized | Simpler but slower (?) |
 | Biniou support | Yes | No |
 
@@ -94,8 +94,10 @@ To build and run atdml:
 
 - OCaml >= 4.08
 - `atd` library
-- `atdml-runtime` (for the generated code)
 - `yojson` >= 2.0.0
+
+Generated files have no dependency beyond `yojson`: the small runtime helpers
+are inlined as a local `Atdml_runtime` submodule inside each generated `.ml`.
 
 Install via opam (tbd — atdml is not yet published to opam):
 
@@ -116,7 +118,7 @@ This produces `foo.ml` and `foo.mli` in the current directory. Add
 ```
 (library
  (name mylib)
- (libraries atdml-runtime yojson)
+ (libraries yojson)
 )
 ```
 

@@ -1,5 +1,0 @@
-(library
- (name atdml_runtime)
- (public_name atdml-runtime)
- (libraries yojson)
-)

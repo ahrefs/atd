@@ -1,4 +1,4 @@
 (cram
  (package atdml)
- (deps (package atdml) (package atdml-runtime))
+ (deps (package atdml))
 )

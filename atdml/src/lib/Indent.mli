@@ -1,7 +1,7 @@
 (** Simple indentation utility for code generators *)
 
 type node =
-  | Line of string           (** single line (not indented) **)
+  | Line of string           (** one or multiple lines (not indented) **)
   | Block of node list       (** indented sequence **)
   | Inline of node list      (** in-line sequence (not indented) **)
 

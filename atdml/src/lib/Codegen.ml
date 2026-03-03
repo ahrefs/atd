@@ -220,74 +220,74 @@ let flatten_variants variants =
 
 let runtime_module : B.t =
   [
-    B.Line "(* Inlined runtime — no external dependency needed. *)";
-    B.Line "module Atdml_runtime = struct";
-    B.Line "  let bad_type expected_type x =";
-    B.Line "    Printf.ksprintf failwith \"expected %s, got: %s\"";
-    B.Line "      expected_type (Yojson.Safe.to_string x)";
-    B.Line "";
-    B.Line "  let bad_sum type_name x =";
-    B.Line "    Printf.ksprintf failwith \"invalid variant for type '%s': %s\"";
-    B.Line "      type_name (Yojson.Safe.to_string x)";
-    B.Line "";
-    B.Line "  let missing_field type_name field_name =";
-    B.Line "    Printf.ksprintf failwith \"missing field '%s' in object of type '%s'\"";
-    B.Line "      field_name type_name";
-    B.Line "";
-    B.Line "  let bool_of_yojson = function";
-    B.Line "    | `Bool b -> b";
-    B.Line "    | x -> bad_type \"bool\" x";
-    B.Line "";
-    B.Line "  let yojson_of_bool b = `Bool b";
-    B.Line "";
-    B.Line "  let int_of_yojson = function";
-    B.Line "    | `Int n -> n";
-    B.Line "    | x -> bad_type \"int\" x";
-    B.Line "";
-    B.Line "  let yojson_of_int n = `Int n";
-    B.Line "";
-    B.Line "  let float_of_yojson = function";
-    B.Line "    | `Float f -> f";
-    B.Line "    | `Int n -> Float.of_int n";
-    B.Line "    | x -> bad_type \"float\" x";
-    B.Line "";
-    B.Line "  let yojson_of_float f = `Float f";
-    B.Line "";
-    B.Line "  let string_of_yojson = function";
-    B.Line "    | `String s -> s";
-    B.Line "    | x -> bad_type \"string\" x";
-    B.Line "";
-    B.Line "  let yojson_of_string s = `String s";
-    B.Line "";
-    B.Line "  let unit_of_yojson = function";
-    B.Line "    | `Null -> ()";
-    B.Line "    | x -> bad_type \"null\" x";
-    B.Line "";
-    B.Line "  let yojson_of_unit () = `Null";
-    B.Line "";
-    B.Line "  let list_of_yojson f = function";
-    B.Line "    | `List xs -> List.map f xs";
-    B.Line "    | x -> bad_type \"array\" x";
-    B.Line "";
-    B.Line "  let yojson_of_list f xs = `List (List.map f xs)";
-    B.Line "";
-    B.Line "  let option_of_yojson f = function";
-    B.Line "    | `String \"None\" -> None";
-    B.Line "    | `List [`String \"Some\"; x] -> Some (f x)";
-    B.Line "    | x -> bad_type \"option\" x";
-    B.Line "";
-    B.Line "  let yojson_of_option f = function";
-    B.Line "    | None -> `String \"None\"";
-    B.Line "    | Some x -> `List [`String \"Some\"; f x]";
-    B.Line "";
-    B.Line "  let nullable_of_yojson f = function";
-    B.Line "    | `Null -> None";
-    B.Line "    | x -> Some (f x)";
-    B.Line "";
-    B.Line "  let yojson_of_nullable f = function";
-    B.Line "    | None -> `Null";
-    B.Line "    | Some x -> f x";
-    B.Line "end";
+    B.Line {|(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+end|};
   ]
 
 (* ============ Type definition generation ============ *)

@@ -1,0 +1,10 @@
+(executable
+ (name Atdml_main)
+ (public_name atdml)
+ (package atdml)
+ (libraries
+   cmdliner
+   atdml
+   atd
+ )
+)

@@ -120,7 +120,7 @@ Polymorphic variants via <ocaml repr="poly">.
   
 
 Records: required, optional (?), and with-default (~) fields; implicit defaults
-for common types; explicit default via <ml default="...">; <json name> on a
+for common types; explicit default via <ocaml default="...">; <json name> on a
 field.
 
   $ cat > records.atd << 'EOF'
@@ -131,7 +131,7 @@ field.
   >   ~score: float;
   >   ~active: bool;
   >   ~tags: string list;
-  >   ~level <ml default="1">: int;
+  >   ~level <ocaml default="1">: int;
   >   address <json name="addr">: string;
   > }
   > EOF

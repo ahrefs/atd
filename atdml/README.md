@@ -49,7 +49,7 @@ How atdml differs from atdgen
 Polymorphic variants can be opted into per sum type with
 `<ocaml repr="poly">`. Default field values are inferred from the type for
 common cases (`list` → `[]`, `option` → `None`, `bool` → `false`, etc.) or
-specified explicitly with `<ml default="...">`.
+specified explicitly with `<ocaml default="...">`.
 
 Who should use atdml
 --

@@ -27,15 +27,17 @@ module B = Indent
 
 (* ============ Annotation schema ============ *)
 
-let annot_schema_ml : Atd.Annot.schema_section = {
-  section = "ml";
+let annot_schema_ocaml : Atd.Annot.schema_section = {
+  section = "ocaml";
   fields = [
-    Field, "default";
+    Type_expr, "repr";   (* <ocaml repr="poly"> on a sum type *)
+    Variant, "name";     (* <ocaml name="..."> on a variant constructor *)
+    Field, "default";    (* <ocaml default="..."> on a with-default field *)
   ]
 }
 
 let annot_schema : Atd.Annot.schema =
-  annot_schema_ml :: Atd.Json.annot_schema_json
+  annot_schema_ocaml :: Atd.Json.annot_schema_json
 
 (* ============ Errors ============ *)
 
@@ -44,11 +46,11 @@ let not_implemented loc msg =
 
 (* ============ Annotation helpers ============ *)
 
-(* Get <ml default="..."> or <ocaml default="..."> for with-default fields *)
-let get_ml_default an =
+(* Get <ocaml default="..."> for with-default fields *)
+let get_ocaml_default an =
   Atd.Annot.get_opt_field
     ~parse:(fun s -> Some s)
-    ~sections:["ml"; "ocaml"]
+    ~sections:["ocaml"]
     ~field:"default"
     an
 
@@ -370,7 +372,7 @@ let gen_make_fun ((loc, (name, params, an), e) : A.type_def) : B.t =
         | Optional -> sprintf "?%s" fname
         | With_default ->
             let default =
-              match get_ml_default an with
+              match get_ocaml_default an with
               | Some d -> d
               | None ->
                   match get_implicit_default e with
@@ -426,7 +428,7 @@ let gen_of_yojson_field type_name (loc, (fname, kind, an), e) : B.node =
         ]
     | With_default ->
         let default =
-          match get_ml_default an with
+          match get_ocaml_default an with
           | Some d -> d
           | None ->
               match get_implicit_default e with

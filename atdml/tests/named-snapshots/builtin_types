@@ -1,0 +1,199 @@
+(* Auto-generated from "builtin_types.atd" by atdml. *)
+
+type all_types = {
+  a_unit: unit;
+  a_bool: bool;
+  a_int: int;
+  a_float: float;
+  a_string: string;
+  a_list: int list;
+  a_option: string option;
+  a_nullable: bool option;
+  a_abstract: Yojson.Safe.t;
+  a_tuple: (int * string * bool);
+  a_nested: (float list) option;
+}
+
+val make_all_types : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> all_types
+val all_types_of_yojson : Yojson.Safe.t -> all_types
+val yojson_of_all_types : all_types -> Yojson.Safe.t
+val all_types_of_string : string -> all_types
+val string_of_all_types : all_types -> string
+val all_types_of_channel : in_channel -> all_types
+val all_types_of_file : string -> all_types
+
+--- ml ---
+(* Auto-generated from "builtin_types.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+end
+
+type all_types = {
+  a_unit: unit;
+  a_bool: bool;
+  a_int: int;
+  a_float: float;
+  a_string: string;
+  a_list: int list;
+  a_option: string option;
+  a_nullable: bool option;
+  a_abstract: Yojson.Safe.t;
+  a_tuple: (int * string * bool);
+  a_nested: (float list) option;
+}
+
+let make_all_types ~a_unit ~a_bool ~a_int ~a_float ~a_string ~a_list ~a_option ~a_nullable ~a_abstract ~a_tuple ~a_nested () : all_types =
+  { a_unit; a_bool; a_int; a_float; a_string; a_list; a_option; a_nullable; a_abstract; a_tuple; a_nested }
+
+let rec all_types_of_yojson (x : Yojson.Safe.t) : all_types =
+  match x with
+  | `Assoc fields ->
+    let a_unit =
+      match List.assoc_opt "a_unit" fields with
+      | Some v -> Atdml_runtime.unit_of_yojson v
+      | None -> Atdml_runtime.missing_field "all_types" "a_unit"
+    in
+    let a_bool =
+      match List.assoc_opt "a_bool" fields with
+      | Some v -> Atdml_runtime.bool_of_yojson v
+      | None -> Atdml_runtime.missing_field "all_types" "a_bool"
+    in
+    let a_int =
+      match List.assoc_opt "a_int" fields with
+      | Some v -> Atdml_runtime.int_of_yojson v
+      | None -> Atdml_runtime.missing_field "all_types" "a_int"
+    in
+    let a_float =
+      match List.assoc_opt "a_float" fields with
+      | Some v -> Atdml_runtime.float_of_yojson v
+      | None -> Atdml_runtime.missing_field "all_types" "a_float"
+    in
+    let a_string =
+      match List.assoc_opt "a_string" fields with
+      | Some v -> Atdml_runtime.string_of_yojson v
+      | None -> Atdml_runtime.missing_field "all_types" "a_string"
+    in
+    let a_list =
+      match List.assoc_opt "a_list" fields with
+      | Some v -> (Atdml_runtime.list_of_yojson Atdml_runtime.int_of_yojson) v
+      | None -> Atdml_runtime.missing_field "all_types" "a_list"
+    in
+    let a_option =
+      match List.assoc_opt "a_option" fields with
+      | Some v -> (Atdml_runtime.option_of_yojson Atdml_runtime.string_of_yojson) v
+      | None -> Atdml_runtime.missing_field "all_types" "a_option"
+    in
+    let a_nullable =
+      match List.assoc_opt "a_nullable" fields with
+      | Some v -> (Atdml_runtime.nullable_of_yojson Atdml_runtime.bool_of_yojson) v
+      | None -> Atdml_runtime.missing_field "all_types" "a_nullable"
+    in
+    let a_abstract =
+      match List.assoc_opt "a_abstract" fields with
+      | Some v -> (fun x -> x) v
+      | None -> Atdml_runtime.missing_field "all_types" "a_abstract"
+    in
+    let a_tuple =
+      match List.assoc_opt "a_tuple" fields with
+      | Some v -> (fun x -> match x with | `List lst when List.length lst = 3 -> (Atdml_runtime.int_of_yojson (List.nth lst 0), Atdml_runtime.string_of_yojson (List.nth lst 1), Atdml_runtime.bool_of_yojson (List.nth lst 2)) | _ -> Atdml_runtime.bad_type "tuple" x) v
+      | None -> Atdml_runtime.missing_field "all_types" "a_tuple"
+    in
+    let a_nested =
+      match List.assoc_opt "a_nested" fields with
+      | Some v -> (Atdml_runtime.option_of_yojson (fun x -> match x with | `List lst when List.length lst = 1 -> ((Atdml_runtime.list_of_yojson Atdml_runtime.float_of_yojson) (List.nth lst 0)) | _ -> Atdml_runtime.bad_type "tuple" x)) v
+      | None -> Atdml_runtime.missing_field "all_types" "a_nested"
+    in
+    { a_unit; a_bool; a_int; a_float; a_string; a_list; a_option; a_nullable; a_abstract; a_tuple; a_nested }
+  | _ -> Atdml_runtime.bad_type "all_types" x
+
+let rec yojson_of_all_types (x : all_types) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("a_unit", Atdml_runtime.yojson_of_unit x.a_unit)];
+    [("a_bool", Atdml_runtime.yojson_of_bool x.a_bool)];
+    [("a_int", Atdml_runtime.yojson_of_int x.a_int)];
+    [("a_float", Atdml_runtime.yojson_of_float x.a_float)];
+    [("a_string", Atdml_runtime.yojson_of_string x.a_string)];
+    [("a_list", (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_int) x.a_list)];
+    [("a_option", (Atdml_runtime.yojson_of_option Atdml_runtime.yojson_of_string) x.a_option)];
+    [("a_nullable", (Atdml_runtime.yojson_of_nullable Atdml_runtime.yojson_of_bool) x.a_nullable)];
+    [("a_abstract", (fun x -> x) x.a_abstract)];
+    [("a_tuple", (fun (x0, x1, x2) -> `List [Atdml_runtime.yojson_of_int x0; Atdml_runtime.yojson_of_string x1; Atdml_runtime.yojson_of_bool x2]) x.a_tuple)];
+    [("a_nested", (Atdml_runtime.yojson_of_option (fun (x0) -> `List [(Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_float) x0])) x.a_nested)];
+  ])
+
+let all_types_of_string s =
+  all_types_of_yojson (Yojson.Safe.from_string s)
+let string_of_all_types x =
+  Yojson.Safe.to_string (yojson_of_all_types x)
+let all_types_of_channel ic =
+  all_types_of_yojson (Yojson.Safe.from_channel ic)
+let all_types_of_file path =
+  all_types_of_yojson (Yojson.Safe.from_file path)
+

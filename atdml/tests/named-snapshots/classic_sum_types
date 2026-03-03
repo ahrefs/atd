@@ -1,0 +1,157 @@
+(* Auto-generated from "classic_sum_types.atd" by atdml. *)
+
+type direction =
+  | North
+  | South
+  | East
+  | West
+and shape =
+  | Circle of float
+  | Rect of (float * float)
+  | Point
+  | ArcShape of float
+
+val direction_of_yojson : Yojson.Safe.t -> direction
+val yojson_of_direction : direction -> Yojson.Safe.t
+val direction_of_string : string -> direction
+val string_of_direction : direction -> string
+val direction_of_channel : in_channel -> direction
+val direction_of_file : string -> direction
+
+val shape_of_yojson : Yojson.Safe.t -> shape
+val yojson_of_shape : shape -> Yojson.Safe.t
+val shape_of_string : string -> shape
+val string_of_shape : shape -> string
+val shape_of_channel : in_channel -> shape
+val shape_of_file : string -> shape
+
+--- ml ---
+(* Auto-generated from "classic_sum_types.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+end
+
+type direction =
+  | North
+  | South
+  | East
+  | West
+and shape =
+  | Circle of float
+  | Rect of (float * float)
+  | Point
+  | ArcShape of float
+
+let rec direction_of_yojson (x : Yojson.Safe.t) : direction =
+  match x with
+  | `String "North" -> North
+  | `String "South" -> South
+  | `String "East" -> East
+  | `String "West" -> West
+  | _ -> Atdml_runtime.bad_sum "direction" x
+and shape_of_yojson (x : Yojson.Safe.t) : shape =
+  match x with
+  | `List [`String "Circle"; v] -> Circle (Atdml_runtime.float_of_yojson v)
+  | `List [`String "rectangle"; v] -> Rect ((fun x -> match x with | `List lst when List.length lst = 2 -> (Atdml_runtime.float_of_yojson (List.nth lst 0), Atdml_runtime.float_of_yojson (List.nth lst 1)) | _ -> Atdml_runtime.bad_type "tuple" x) v)
+  | `String "Dot" -> Point
+  | `List [`String "arc"; v] -> ArcShape (Atdml_runtime.float_of_yojson v)
+  | _ -> Atdml_runtime.bad_sum "shape" x
+
+let rec yojson_of_direction (x : direction) : Yojson.Safe.t =
+  match x with
+  | North -> `String "North"
+  | South -> `String "South"
+  | East -> `String "East"
+  | West -> `String "West"
+and yojson_of_shape (x : shape) : Yojson.Safe.t =
+  match x with
+  | Circle v -> `List [`String "Circle"; Atdml_runtime.yojson_of_float v]
+  | Rect v -> `List [`String "rectangle"; (fun (x0, x1) -> `List [Atdml_runtime.yojson_of_float x0; Atdml_runtime.yojson_of_float x1]) v]
+  | Point -> `String "Dot"
+  | ArcShape v -> `List [`String "arc"; Atdml_runtime.yojson_of_float v]
+
+let direction_of_string s =
+  direction_of_yojson (Yojson.Safe.from_string s)
+let string_of_direction x =
+  Yojson.Safe.to_string (yojson_of_direction x)
+let direction_of_channel ic =
+  direction_of_yojson (Yojson.Safe.from_channel ic)
+let direction_of_file path =
+  direction_of_yojson (Yojson.Safe.from_file path)
+
+let shape_of_string s =
+  shape_of_yojson (Yojson.Safe.from_string s)
+let string_of_shape x =
+  Yojson.Safe.to_string (yojson_of_shape x)
+let shape_of_channel ic =
+  shape_of_yojson (Yojson.Safe.from_channel ic)
+let shape_of_file path =
+  shape_of_yojson (Yojson.Safe.from_file path)
+

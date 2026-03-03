@@ -685,7 +685,8 @@ let make_ml ~atd_filename (items : A.module_body) : B.t =
   let defs = List.map (fun (Type x) -> x) items in
   let header =
     [
-      B.Line (sprintf "(* Auto-generated from \"%s\". *)" atd_filename);
+      B.Line (sprintf "(* Auto-generated from \"%s\" by atdml. *)"
+                atd_filename);
       B.Line "[@@@ocaml.warning \"-27-32-33-35-39\"]";
       B.Line "";
     ]
@@ -785,7 +786,8 @@ let make_mli ~atd_filename (items : A.module_body) : B.t =
   let defs = List.map (fun (Type x) -> x) items in
   let header =
     [
-      B.Line (sprintf "(* Auto-generated from \"%s\". *)" atd_filename);
+      B.Line (sprintf "(* Auto-generated from \"%s\" by atdml. *)"
+                atd_filename);
       B.Line "";
     ]
   in

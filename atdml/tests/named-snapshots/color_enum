@@ -1,0 +1,114 @@
+(* Auto-generated from "color_enum.atd" by atdml. *)
+
+type color =
+  | Red
+  | Green
+  | Blue
+
+val color_of_yojson : Yojson.Safe.t -> color
+val yojson_of_color : color -> Yojson.Safe.t
+val color_of_string : string -> color
+val string_of_color : color -> string
+val color_of_channel : in_channel -> color
+val color_of_file : string -> color
+
+--- ml ---
+(* Auto-generated from "color_enum.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+end
+
+type color =
+  | Red
+  | Green
+  | Blue
+
+let rec color_of_yojson (x : Yojson.Safe.t) : color =
+  match x with
+  | `String "Red" -> Red
+  | `String "green" -> Green
+  | `String "Blue" -> Blue
+  | _ -> Atdml_runtime.bad_sum "color" x
+
+let rec yojson_of_color (x : color) : Yojson.Safe.t =
+  match x with
+  | Red -> `String "Red"
+  | Green -> `String "green"
+  | Blue -> `String "Blue"
+
+let color_of_string s =
+  color_of_yojson (Yojson.Safe.from_string s)
+let string_of_color x =
+  Yojson.Safe.to_string (yojson_of_color x)
+let color_of_channel ic =
+  color_of_yojson (Yojson.Safe.from_channel ic)
+let color_of_file path =
+  color_of_yojson (Yojson.Safe.from_file path)
+

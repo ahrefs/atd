@@ -95,6 +95,7 @@ depends: [
   "atd" {>= "3.0.0"}
   "yojson" {>= "2.0.0"}
   "cmdliner" {>= "1.1.0"}
+  "testo" {with-test}
   "odoc" {with-doc}
 ]
 build: [

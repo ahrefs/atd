@@ -1,0 +1,17 @@
+#! /usr/bin/env bash
+#
+# Run the atdml test suite (built with the Testo library).
+#
+# Usage:
+#   ./test              run all tests
+#   ./test status       show results without re-running
+#   ./test approve      approve pending snapshots
+#
+# All arguments are forwarded to the test executable.
+# Build with 'dune build' before running.
+#
+set -e
+here="$(cd "$(dirname "$0")" && pwd)"
+cd "$here/.."   # workspace root, so dune can find the executable
+exec dune exec --no-build --no-print-directory \
+  atdml/tests/test.exe -- "$@" --chdir "$here"

@@ -1,4 +1,0 @@
-(cram
- (package atdml)
- (deps (package atdml))
-)

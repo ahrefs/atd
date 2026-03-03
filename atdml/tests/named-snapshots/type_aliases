@@ -1,0 +1,167 @@
+(* Auto-generated from "type_aliases.atd" by atdml. *)
+
+type id = string
+and score = float
+and tag_list = string list
+and opt_name = string option
+
+val id_of_yojson : Yojson.Safe.t -> id
+val yojson_of_id : id -> Yojson.Safe.t
+val id_of_string : string -> id
+val string_of_id : id -> string
+val id_of_channel : in_channel -> id
+val id_of_file : string -> id
+
+val score_of_yojson : Yojson.Safe.t -> score
+val yojson_of_score : score -> Yojson.Safe.t
+val score_of_string : string -> score
+val string_of_score : score -> string
+val score_of_channel : in_channel -> score
+val score_of_file : string -> score
+
+val tag_list_of_yojson : Yojson.Safe.t -> tag_list
+val yojson_of_tag_list : tag_list -> Yojson.Safe.t
+val tag_list_of_string : string -> tag_list
+val string_of_tag_list : tag_list -> string
+val tag_list_of_channel : in_channel -> tag_list
+val tag_list_of_file : string -> tag_list
+
+val opt_name_of_yojson : Yojson.Safe.t -> opt_name
+val yojson_of_opt_name : opt_name -> Yojson.Safe.t
+val opt_name_of_string : string -> opt_name
+val string_of_opt_name : opt_name -> string
+val opt_name_of_channel : in_channel -> opt_name
+val opt_name_of_file : string -> opt_name
+
+--- ml ---
+(* Auto-generated from "type_aliases.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+end
+
+type id = string
+and score = float
+and tag_list = string list
+and opt_name = string option
+
+let rec id_of_yojson (x : Yojson.Safe.t) : id =
+  Atdml_runtime.string_of_yojson x
+and score_of_yojson (x : Yojson.Safe.t) : score =
+  Atdml_runtime.float_of_yojson x
+and tag_list_of_yojson (x : Yojson.Safe.t) : tag_list =
+  (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) x
+and opt_name_of_yojson (x : Yojson.Safe.t) : opt_name =
+  (Atdml_runtime.option_of_yojson Atdml_runtime.string_of_yojson) x
+
+let rec yojson_of_id (x : id) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_string x
+and yojson_of_score (x : score) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_float x
+and yojson_of_tag_list (x : tag_list) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x
+and yojson_of_opt_name (x : opt_name) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_option Atdml_runtime.yojson_of_string) x
+
+let id_of_string s =
+  id_of_yojson (Yojson.Safe.from_string s)
+let string_of_id x =
+  Yojson.Safe.to_string (yojson_of_id x)
+let id_of_channel ic =
+  id_of_yojson (Yojson.Safe.from_channel ic)
+let id_of_file path =
+  id_of_yojson (Yojson.Safe.from_file path)
+
+let score_of_string s =
+  score_of_yojson (Yojson.Safe.from_string s)
+let string_of_score x =
+  Yojson.Safe.to_string (yojson_of_score x)
+let score_of_channel ic =
+  score_of_yojson (Yojson.Safe.from_channel ic)
+let score_of_file path =
+  score_of_yojson (Yojson.Safe.from_file path)
+
+let tag_list_of_string s =
+  tag_list_of_yojson (Yojson.Safe.from_string s)
+let string_of_tag_list x =
+  Yojson.Safe.to_string (yojson_of_tag_list x)
+let tag_list_of_channel ic =
+  tag_list_of_yojson (Yojson.Safe.from_channel ic)
+let tag_list_of_file path =
+  tag_list_of_yojson (Yojson.Safe.from_file path)
+
+let opt_name_of_string s =
+  opt_name_of_yojson (Yojson.Safe.from_string s)
+let string_of_opt_name x =
+  Yojson.Safe.to_string (yojson_of_opt_name x)
+let opt_name_of_channel ic =
+  opt_name_of_yojson (Yojson.Safe.from_channel ic)
+let opt_name_of_file path =
+  opt_name_of_yojson (Yojson.Safe.from_file path)
+

@@ -451,11 +451,9 @@ let gen_of_yojson_field type_name (loc, (fname, kind, an), e) : B.node =
     ]
 
 let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
-  let param_strs =
-    List.map
-      (fun v -> sprintf "(of_yojson_%s : Yojson.Safe.t -> '%s)" v v)
-      params
-  in
+  (* Note: no type annotations on extra_params to avoid OCaml sharing the
+     same type variable 'a across all functions in a let rec ... and ... block *)
+  let param_strs = List.map (fun v -> "of_yojson_" ^ v) params in
   let extra_params =
     if param_strs = [] then ""
     else String.concat " " param_strs ^ " "
@@ -510,12 +508,13 @@ let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
     | e ->
         B.Block [B.Line (sprintf "%s x" (reader_expr e))]
   in
-  [
-    B.Line
-      (sprintf "let %s %s(x : Yojson.Safe.t) : %s ="
-         (of_yojson_name name) extra_params return_type);
-    body;
-  ]
+  let sig_line =
+    if params = [] then
+      sprintf "let %s (x : Yojson.Safe.t) : %s =" (of_yojson_name name) return_type
+    else
+      sprintf "let %s %s x =" (of_yojson_name name) extra_params
+  in
+  [B.Line sig_line; body]
 
 (* ============ Serialization function generation ============ *)
 
@@ -536,11 +535,8 @@ let gen_yojson_of_field (_, (fname, kind, an), e) : B.node =
            fname json_name (writer_expr inner_e))
 
 let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
-  let param_strs =
-    List.map
-      (fun v -> sprintf "(yojson_of_%s : '%s -> Yojson.Safe.t)" v v)
-      params
-  in
+  (* Note: no type annotations on extra_params — same reason as gen_of_yojson *)
+  let param_strs = List.map (fun v -> "yojson_of_" ^ v) params in
   let extra_params =
     if param_strs = [] then ""
     else String.concat " " param_strs ^ " "
@@ -588,12 +584,13 @@ let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
     | e ->
         B.Block [B.Line (sprintf "%s x" (writer_expr e))]
   in
-  [
-    B.Line
-      (sprintf "let %s %s(x : %s) : Yojson.Safe.t ="
-         (yojson_of_name name) extra_params arg_type);
-    body;
-  ]
+  let sig_line =
+    if params = [] then
+      sprintf "let %s (x : %s) : Yojson.Safe.t =" (yojson_of_name name) arg_type
+    else
+      sprintf "let %s %s x =" (yojson_of_name name) extra_params
+  in
+  [B.Line sig_line; body]
 
 (* ============ Top-level I/O functions (non-parametrized only) ============ *)
 

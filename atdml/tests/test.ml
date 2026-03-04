@@ -7,13 +7,44 @@
 
 open Printf
 
+let ( // ) = Fpath.( // )
+
+(* Require 'dune install --prefix local' to have executables under the project
+   root in local/bin *)
+let get_atdml_command () =
+  Fpath.v (Sys.getcwd ()) // Fpath.v "../local/bin/atdml"
+
+let atdml = get_atdml_command () |> Fpath.to_string
+
+let run_command args =
+  let shell_command =
+    (* Escape the arguments using the OCaml conventions rather than
+       the local shell's conventions.
+       This should be good enough for testing. *)
+    args
+    |> List.map (sprintf "%S")
+    |> String.concat " "
+  in
+  eprintf "CWD %s\n" (Sys.getcwd ());
+  eprintf "RUN %s\n" shell_command;
+  flush stdout;
+  flush stderr;
+  match Sys.command shell_command with
+  | 0 -> ()
+  | n ->
+      let msg =
+        sprintf "Error: shell command failed with code %i: %s\n"
+          n shell_command
+      in
+      failwith msg
+
 (* Run the code generator on [atd_src] and return (mli_content, ml_content).
    Uses a temp directory so as not to pollute the working directory. *)
 let run_codegen ~test_name ~file_name atd_src =
   Testo.with_temp_dir ~chdir:true (fun _dir ->
     let atd_file = file_name ^ ".atd" in
     Testo.write_text_file (Fpath.v atd_file) atd_src;
-    Atdml.Codegen.run_file atd_file;
+    run_command [atdml; atd_file];
     let mli = Testo.read_text_file (Fpath.v (file_name ^ ".mli")) in
     let ml = Testo.read_text_file (Fpath.v (file_name ^ ".ml"))  in
     (mli, ml)
@@ -41,22 +72,33 @@ let build_and_run ~mli ~ml ~type_name ~json_in =
     Testo.write_text_file
       (Fpath.v "Main.ml")
       (test_program ~type_name ~json_in);
-    let command =
-      "ocamlfind opt -o test_atdml Types.mli Types.ml Main.ml \
-       -package yojson -linkpkg \
-       && ./test_atdml"
+    let build_cmd =
+      [ "ocamlfind"; "opt"; "-o"; "test_atdml"; "Types.mli"; "Types.ml";
+        "Main.ml"; "-package"; "yojson"; "-linkpkg" ]
     in
-    flush stdout;
-    flush stderr;
-    match Sys.command command with
-    | 0 -> ()
-    | n -> failwith (sprintf "Command %S failed with exit code %i" command n)
+    let run_cmd = ["./test_atdml"] in
+    run_command build_cmd;
+    run_command run_cmd
   )
 
+(* Convert test name into a safe file name *)
 let make_filename_from_test_name str =
-  String.concat "_" (String.split_on_char ' ' str)
+  String.map (function
+    | ' ' -> '_'
+    | 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '-' as c -> c
+    | c -> failwith (sprintf "Invalid character %C in test name %S" c str)
+  )
+    str
 
-let test test_name ~atd_src ~type_name ~json_in =
+(* Run an end-to-end test:
+   - invoke atdml to translate an ATD file into OCaml
+   - compile it into a program that reads and writes JSON of a designated type
+   - run it to check that the conversions from JSON data to Yojson and back
+     work as intended
+   The interesting outputs (mli, ml, JSON) are printed to stdout and
+   captured as a test snapshot.
+*)
+let test_e2e test_name ~atd_src ~type_name ~json_in =
   let file_name = make_filename_from_test_name test_name in
   Testo.create test_name
     ~checked_output:(Testo.stdout
@@ -72,7 +114,15 @@ let test test_name ~atd_src ~type_name ~json_in =
     )
 
 let tests _env = [
-  test "color enum"
+  Testo.create "run atdml from temp folder"
+    (fun () ->
+       (* Avoid relying on 'dune exec' which is tricky *)
+       Testo.with_temp_dir ~chdir:true (fun _dir ->
+         run_command [atdml; "--help"]
+       )
+    );
+
+  test_e2e "color enum"
     ~atd_src:{|
 type color = [
   | Red
@@ -90,7 +140,7 @@ type colors = (color * color * color)
 |}
   ;
 
-  test "type aliases"
+  test_e2e "type aliases"
     ~atd_src:{|
 type id = string
 type score = float
@@ -115,7 +165,7 @@ type all = {
 |}
 ;
 
-  test "classic sum types"
+  test_e2e "classic sum types"
     ~atd_src:{|
 type shape = [
   | Circle of float
@@ -130,14 +180,14 @@ type shapes = shape list
     ~json_in:{|
 [
   [ "Circle", 1 ],
-  [ "rect", [1.2, 3]],
+  [ "rectangle", [1.2, 3]],
   "Dot",
   [ "arc", 3.0 ]
 ]
 |}
 ;
 
-  test "polymorphic variants"
+  test_e2e "polymorphic variants"
     ~atd_src:{|
 type status = [
   | Active
@@ -155,7 +205,7 @@ type statuses = status list
 |}
 ;
 
-  test "records"
+  test_e2e "records"
     ~atd_src:{|
 type person = {
   name: string;
@@ -176,10 +226,11 @@ type person = {
   "age": 42,
   "lol": null,
   "addr": "xxxx"
+}
 |}
 ;
 
-  test "builtin types"
+  test_e2e "builtin types"
     ~atd_src:{|
 type all_types = {
   a_unit: unit;
@@ -206,14 +257,14 @@ type all_types = {
   "a_list": [1,2,3],
   "a_option": "None",
   "a_nullable": null,
-  "a_abstract": abstract,
-  "a_tuple": [ 12, "ddd", 3000 ],
-  "a_nested": [ [ "Some", [1, 2.3] ] ]
+  "a_abstract": {"key": "val"},
+  "a_tuple": [ 12, "ddd", true ],
+  "a_nested": [ "Some", [[1, 2.3]] ]
 }
 |}
 ;
 
-  test "parametric types"
+  test_e2e "parametric types"
     ~atd_src:{|
 type 'a result = [
   | Ok of 'a
@@ -236,7 +287,7 @@ type all = (int result * (bool, string) either)
 |}
 ;
 
-  test "mutually recursive types"
+  test_e2e "mutually recursive types"
     ~atd_src:{|
 type tree = [
   | Leaf

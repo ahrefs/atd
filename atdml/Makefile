@@ -6,12 +6,13 @@ DUNE ?= dune
 
 .PHONY: build
 build:
-	rm -f atdml
 	$(DUNE) build @all
-	ln -s ../_build/default/atdml/src/bin/Atdml_main.exe atdml
+	# Install atdml into $ROOT/local/bin/
+	dune install --prefix local
 
+# Running the tests requires the latest atdml executable in ../local/bin/
 .PHONY: test
-test:
+test: build
 	$(DUNE) build tests/test.exe
 	./test
 

@@ -113,7 +113,7 @@ atdml foo.atd
 ```
 
 This produces `foo.ml` and `foo.mli` in the current directory. Add
-`atdml-runtime` and `yojson` as dependencies in your project's `dune` file:
+`yojson` as a dependency in your project's `dune` file:
 
 ```
 (library

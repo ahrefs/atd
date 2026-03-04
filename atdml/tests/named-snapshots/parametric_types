@@ -6,11 +6,7 @@ type 'a result =
 and ('a, 'b) either =
   | Left of 'a
   | Right of 'b
-and 'a page = {
-  items: 'a list;
-  total: int;
-  cursor: string option;
-}
+and all = ((int) result * (bool, string) either)
 
 val result_of_yojson :
   (Yojson.Safe.t -> 'a) ->
@@ -32,15 +28,12 @@ val yojson_of_either :
   ('a, 'b) either ->
   Yojson.Safe.t
 
-val make_page : items:'a list -> total:int -> ?cursor:string -> unit -> 'a page
-val page_of_yojson :
-  (Yojson.Safe.t -> 'a) ->
-  Yojson.Safe.t ->
-  'a page
-val yojson_of_page :
-  ('a -> Yojson.Safe.t) ->
-  'a page ->
-  Yojson.Safe.t
+val all_of_yojson : Yojson.Safe.t -> all
+val yojson_of_all : all -> Yojson.Safe.t
+val all_of_string : string -> all
+val string_of_all : all -> string
+val all_of_channel : in_channel -> all
+val all_of_file : string -> all
 
 --- ml ---
 (* Auto-generated from "parametric_types.atd" by atdml. *)
@@ -121,58 +114,46 @@ type 'a result =
 and ('a, 'b) either =
   | Left of 'a
   | Right of 'b
-and 'a page = {
-  items: 'a list;
-  total: int;
-  cursor: string option;
-}
+and all = ((int) result * (bool, string) either)
 
-let make_page ~items ~total ?cursor () : 'a page =
-  { items; total; cursor }
+let rec result_of_yojson : 'a. (Yojson.Safe.t -> 'a) -> Yojson.Safe.t -> 'a result =
+  fun of_yojson_a x ->
+    match x with
+    | `List [`String "Ok"; v] -> Ok (of_yojson_a v)
+    | `List [`String "Error"; v] -> Error (Atdml_runtime.string_of_yojson v)
+    | _ -> Atdml_runtime.bad_sum "result" x
+and either_of_yojson : 'a 'b. (Yojson.Safe.t -> 'a) -> (Yojson.Safe.t -> 'b) -> Yojson.Safe.t -> ('a, 'b) either =
+  fun of_yojson_a of_yojson_b x ->
+    match x with
+    | `List [`String "Left"; v] -> Left (of_yojson_a v)
+    | `List [`String "Right"; v] -> Right (of_yojson_b v)
+    | _ -> Atdml_runtime.bad_sum "either" x
+and all_of_yojson (x : Yojson.Safe.t) : all =
+  (fun x -> match x with | `List lst when List.length lst = 2 -> ((result_of_yojson Atdml_runtime.int_of_yojson) (List.nth lst 0), (either_of_yojson Atdml_runtime.bool_of_yojson Atdml_runtime.string_of_yojson) (List.nth lst 1)) | _ -> Atdml_runtime.bad_type "tuple" x) x
 
-let rec result_of_yojson (of_yojson_a : Yojson.Safe.t -> 'a) (x : Yojson.Safe.t) : 'a result =
-  match x with
-  | `List [`String "Ok"; v] -> Ok (of_yojson_a v)
-  | `List [`String "Error"; v] -> Error (Atdml_runtime.string_of_yojson v)
-  | _ -> Atdml_runtime.bad_sum "result" x
-and either_of_yojson (of_yojson_a : Yojson.Safe.t -> 'a) (of_yojson_b : Yojson.Safe.t -> 'b) (x : Yojson.Safe.t) : ('a, 'b) either =
-  match x with
-  | `List [`String "Left"; v] -> Left (of_yojson_a v)
-  | `List [`String "Right"; v] -> Right (of_yojson_b v)
-  | _ -> Atdml_runtime.bad_sum "either" x
-and page_of_yojson (of_yojson_a : Yojson.Safe.t -> 'a) (x : Yojson.Safe.t) : 'a page =
-  match x with
-  | `Assoc fields ->
-    let items =
-      match List.assoc_opt "items" fields with
-      | Some v -> (Atdml_runtime.list_of_yojson of_yojson_a) v
-      | None -> Atdml_runtime.missing_field "page" "items"
-    in
-    let total =
-      match List.assoc_opt "total" fields with
-      | Some v -> Atdml_runtime.int_of_yojson v
-      | None -> Atdml_runtime.missing_field "page" "total"
-    in
-    let cursor =
-      match List.assoc_opt "cursor" fields with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.string_of_yojson v)
-    in
-    { items; total; cursor }
-  | _ -> Atdml_runtime.bad_type "page" x
+let rec yojson_of_result : 'a. ('a -> Yojson.Safe.t) -> 'a result -> Yojson.Safe.t =
+  fun yojson_of_a x ->
+    match x with
+    | Ok v -> `List [`String "Ok"; yojson_of_a v]
+    | Error v -> `List [`String "Error"; Atdml_runtime.yojson_of_string v]
+and yojson_of_either : 'a 'b. ('a -> Yojson.Safe.t) -> ('b -> Yojson.Safe.t) -> ('a, 'b) either -> Yojson.Safe.t =
+  fun yojson_of_a yojson_of_b x ->
+    match x with
+    | Left v -> `List [`String "Left"; yojson_of_a v]
+    | Right v -> `List [`String "Right"; yojson_of_b v]
+and yojson_of_all (x : all) : Yojson.Safe.t =
+  (fun (x0, x1) -> `List [(yojson_of_result Atdml_runtime.yojson_of_int) x0; (yojson_of_either Atdml_runtime.yojson_of_bool Atdml_runtime.yojson_of_string) x1]) x
 
-let rec yojson_of_result (yojson_of_a : 'a -> Yojson.Safe.t) (x : 'a result) : Yojson.Safe.t =
-  match x with
-  | Ok v -> `List [`String "Ok"; yojson_of_a v]
-  | Error v -> `List [`String "Error"; Atdml_runtime.yojson_of_string v]
-and yojson_of_either (yojson_of_a : 'a -> Yojson.Safe.t) (yojson_of_b : 'b -> Yojson.Safe.t) (x : ('a, 'b) either) : Yojson.Safe.t =
-  match x with
-  | Left v -> `List [`String "Left"; yojson_of_a v]
-  | Right v -> `List [`String "Right"; yojson_of_b v]
-and yojson_of_page (yojson_of_a : 'a -> Yojson.Safe.t) (x : 'a page) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    [("items", (Atdml_runtime.yojson_of_list yojson_of_a) x.items)];
-    [("total", Atdml_runtime.yojson_of_int x.total)];
-    (match x.cursor with None -> [] | Some v -> [("cursor", Atdml_runtime.yojson_of_string v)]);
-  ])
+let all_of_string s =
+  all_of_yojson (Yojson.Safe.from_string s)
+let string_of_all x =
+  Yojson.Safe.to_string (yojson_of_all x)
+let all_of_channel ic =
+  all_of_yojson (Yojson.Safe.from_channel ic)
+let all_of_file path =
+  all_of_yojson (Yojson.Safe.from_file path)
 
+--- Input:
+[ [ "Ok", 12 ], [ "Right", "a" ] ]
+--- Output:
+[ [ "Ok", 12 ], [ "Right", "a" ] ]

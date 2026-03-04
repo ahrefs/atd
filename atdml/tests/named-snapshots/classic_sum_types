@@ -1,22 +1,11 @@
 (* Auto-generated from "classic_sum_types.atd" by atdml. *)
 
-type direction =
-  | North
-  | South
-  | East
-  | West
-and shape =
+type shape =
   | Circle of float
   | Rect of (float * float)
   | Point
   | ArcShape of float
-
-val direction_of_yojson : Yojson.Safe.t -> direction
-val yojson_of_direction : direction -> Yojson.Safe.t
-val direction_of_string : string -> direction
-val string_of_direction : direction -> string
-val direction_of_channel : in_channel -> direction
-val direction_of_file : string -> direction
+and shapes = shape list
 
 val shape_of_yojson : Yojson.Safe.t -> shape
 val yojson_of_shape : shape -> Yojson.Safe.t
@@ -24,6 +13,13 @@ val shape_of_string : string -> shape
 val string_of_shape : shape -> string
 val shape_of_channel : in_channel -> shape
 val shape_of_file : string -> shape
+
+val shapes_of_yojson : Yojson.Safe.t -> shapes
+val yojson_of_shapes : shapes -> Yojson.Safe.t
+val shapes_of_string : string -> shapes
+val string_of_shapes : shapes -> string
+val shapes_of_channel : in_channel -> shapes
+val shapes_of_file : string -> shapes
 
 --- ml ---
 (* Auto-generated from "classic_sum_types.atd" by atdml. *)
@@ -98,53 +94,31 @@ module Atdml_runtime = struct
     | Some x -> f x
 end
 
-type direction =
-  | North
-  | South
-  | East
-  | West
-and shape =
+type shape =
   | Circle of float
   | Rect of (float * float)
   | Point
   | ArcShape of float
+and shapes = shape list
 
-let rec direction_of_yojson (x : Yojson.Safe.t) : direction =
-  match x with
-  | `String "North" -> North
-  | `String "South" -> South
-  | `String "East" -> East
-  | `String "West" -> West
-  | _ -> Atdml_runtime.bad_sum "direction" x
-and shape_of_yojson (x : Yojson.Safe.t) : shape =
+let rec shape_of_yojson (x : Yojson.Safe.t) : shape =
   match x with
   | `List [`String "Circle"; v] -> Circle (Atdml_runtime.float_of_yojson v)
   | `List [`String "rectangle"; v] -> Rect ((fun x -> match x with | `List lst when List.length lst = 2 -> (Atdml_runtime.float_of_yojson (List.nth lst 0), Atdml_runtime.float_of_yojson (List.nth lst 1)) | _ -> Atdml_runtime.bad_type "tuple" x) v)
   | `String "Dot" -> Point
   | `List [`String "arc"; v] -> ArcShape (Atdml_runtime.float_of_yojson v)
   | _ -> Atdml_runtime.bad_sum "shape" x
+and shapes_of_yojson (x : Yojson.Safe.t) : shapes =
+  (Atdml_runtime.list_of_yojson shape_of_yojson) x
 
-let rec yojson_of_direction (x : direction) : Yojson.Safe.t =
-  match x with
-  | North -> `String "North"
-  | South -> `String "South"
-  | East -> `String "East"
-  | West -> `String "West"
-and yojson_of_shape (x : shape) : Yojson.Safe.t =
+let rec yojson_of_shape (x : shape) : Yojson.Safe.t =
   match x with
   | Circle v -> `List [`String "Circle"; Atdml_runtime.yojson_of_float v]
   | Rect v -> `List [`String "rectangle"; (fun (x0, x1) -> `List [Atdml_runtime.yojson_of_float x0; Atdml_runtime.yojson_of_float x1]) v]
   | Point -> `String "Dot"
   | ArcShape v -> `List [`String "arc"; Atdml_runtime.yojson_of_float v]
-
-let direction_of_string s =
-  direction_of_yojson (Yojson.Safe.from_string s)
-let string_of_direction x =
-  Yojson.Safe.to_string (yojson_of_direction x)
-let direction_of_channel ic =
-  direction_of_yojson (Yojson.Safe.from_channel ic)
-let direction_of_file path =
-  direction_of_yojson (Yojson.Safe.from_file path)
+and yojson_of_shapes (x : shapes) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list yojson_of_shape) x
 
 let shape_of_string s =
   shape_of_yojson (Yojson.Safe.from_string s)
@@ -155,3 +129,16 @@ let shape_of_channel ic =
 let shape_of_file path =
   shape_of_yojson (Yojson.Safe.from_file path)
 
+let shapes_of_string s =
+  shapes_of_yojson (Yojson.Safe.from_string s)
+let string_of_shapes x =
+  Yojson.Safe.to_string (yojson_of_shapes x)
+let shapes_of_channel ic =
+  shapes_of_yojson (Yojson.Safe.from_channel ic)
+let shapes_of_file path =
+  shapes_of_yojson (Yojson.Safe.from_file path)
+
+--- Input:
+[ [ "Circle", 1 ], [ "rectangle", [ 1.2, 3 ] ], "Dot", [ "arc", 3.0 ] ]
+--- Output:
+[ [ "Circle", 1.0 ], [ "rectangle", [ 1.2, 3.0 ] ], "Dot", [ "arc", 3.0 ] ]

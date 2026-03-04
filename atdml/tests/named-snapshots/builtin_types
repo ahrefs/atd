@@ -197,3 +197,31 @@ let all_types_of_channel ic =
 let all_types_of_file path =
   all_types_of_yojson (Yojson.Safe.from_file path)
 
+--- Input:
+{
+  "a_unit": null,
+  "a_bool": false,
+  "a_int": -2,
+  "a_float": 9.6,
+  "a_string": "x y",
+  "a_list": [ 1, 2, 3 ],
+  "a_option": "None",
+  "a_nullable": null,
+  "a_abstract": { "key": "val" },
+  "a_tuple": [ 12, "ddd", true ],
+  "a_nested": [ "Some", [ [ 1, 2.3 ] ] ]
+}
+--- Output:
+{
+  "a_unit": null,
+  "a_bool": false,
+  "a_int": -2,
+  "a_float": 9.6,
+  "a_string": "x y",
+  "a_list": [ 1, 2, 3 ],
+  "a_option": "None",
+  "a_nullable": null,
+  "a_abstract": { "key": "val" },
+  "a_tuple": [ 12, "ddd", true ],
+  "a_nested": [ "Some", [ [ 1.0, 2.3 ] ] ]
+}

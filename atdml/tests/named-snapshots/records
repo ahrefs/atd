@@ -3,6 +3,7 @@
 type person = {
   name: string;
   age: int;
+  lol: int option;
   email: string option;
   score: float;
   active: bool;
@@ -11,7 +12,7 @@ type person = {
   address: string;
 }
 
-val make_person : name:string -> age:int -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> person
+val make_person : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> person
 val person_of_yojson : Yojson.Safe.t -> person
 val yojson_of_person : person -> Yojson.Safe.t
 val person_of_string : string -> person
@@ -95,6 +96,7 @@ end
 type person = {
   name: string;
   age: int;
+  lol: int option;
   email: string option;
   score: float;
   active: bool;
@@ -103,8 +105,8 @@ type person = {
   address: string;
 }
 
-let make_person ~name ~age ?email ?(score = 0.) ?(active = false) ?(tags = []) ?(level = 1) ~address () : person =
-  { name; age; email; score; active; tags; level; address }
+let make_person ~name ~age ~lol ?email ?(score = 0.) ?(active = false) ?(tags = []) ?(level = 1) ~address () : person =
+  { name; age; lol; email; score; active; tags; level; address }
 
 let rec person_of_yojson (x : Yojson.Safe.t) : person =
   match x with
@@ -118,6 +120,11 @@ let rec person_of_yojson (x : Yojson.Safe.t) : person =
       match List.assoc_opt "age" fields with
       | Some v -> Atdml_runtime.int_of_yojson v
       | None -> Atdml_runtime.missing_field "person" "age"
+    in
+    let lol =
+      match List.assoc_opt "lol" fields with
+      | Some v -> (Atdml_runtime.nullable_of_yojson Atdml_runtime.int_of_yojson) v
+      | None -> Atdml_runtime.missing_field "person" "lol"
     in
     let email =
       match List.assoc_opt "email" fields with
@@ -149,13 +156,14 @@ let rec person_of_yojson (x : Yojson.Safe.t) : person =
       | Some v -> Atdml_runtime.string_of_yojson v
       | None -> Atdml_runtime.missing_field "person" "addr"
     in
-    { name; age; email; score; active; tags; level; address }
+    { name; age; lol; email; score; active; tags; level; address }
   | _ -> Atdml_runtime.bad_type "person" x
 
 let rec yojson_of_person (x : person) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("name", Atdml_runtime.yojson_of_string x.name)];
     [("age", Atdml_runtime.yojson_of_int x.age)];
+    [("lol", (Atdml_runtime.yojson_of_nullable Atdml_runtime.yojson_of_int) x.lol)];
     (match x.email with None -> [] | Some v -> [("email", Atdml_runtime.yojson_of_string v)]);
     [("score", Atdml_runtime.yojson_of_float x.score)];
     [("active", Atdml_runtime.yojson_of_bool x.active)];
@@ -173,3 +181,16 @@ let person_of_channel ic =
 let person_of_file path =
   person_of_yojson (Yojson.Safe.from_file path)
 
+--- Input:
+{ "name": "X", "age": 42, "lol": null, "addr": "xxxx" }
+--- Output:
+{
+  "name": "X",
+  "age": 42,
+  "lol": null,
+  "score": 0.0,
+  "active": false,
+  "tags": [],
+  "level": 1,
+  "addr": "xxxx"
+}

@@ -451,8 +451,6 @@ let gen_of_yojson_field type_name (loc, (fname, kind, an), e) : B.node =
     ]
 
 let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
-  (* Note: no type annotations on extra_params to avoid OCaml sharing the
-     same type variable 'a across all functions in a let rec ... and ... block *)
   let param_strs = List.map (fun v -> "of_yojson_" ^ v) params in
   let extra_params =
     if param_strs = [] then ""
@@ -508,13 +506,25 @@ let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
     | e ->
         B.Block [B.Line (sprintf "%s x" (reader_expr e))]
   in
-  let sig_line =
-    if params = [] then
-      sprintf "let %s (x : Yojson.Safe.t) : %s =" (of_yojson_name name) return_type
-    else
-      sprintf "let %s %s x =" (of_yojson_name name) extra_params
-  in
-  [B.Line sig_line; body]
+  (* For parametric functions we use explicit universal quantification so that
+     OCaml treats each function as polymorphic within the let rec...and block.
+     Without this, a use site like 'result_of_yojson int_of_yojson' would fix
+     the type of 'result_of_yojson' for the entire block. *)
+  if params = [] then
+    [
+      B.Line (sprintf "let %s (x : Yojson.Safe.t) : %s =" (of_yojson_name name) return_type);
+      body;
+    ]
+  else
+    let quant = String.concat " " (List.map (fun v -> "'" ^ v) params) in
+    let param_types =
+      String.concat " " (List.map (fun v -> sprintf "(Yojson.Safe.t -> '%s) ->" v) params)
+    in
+    let full_type = sprintf "%s Yojson.Safe.t -> %s" param_types return_type in
+    [
+      B.Line (sprintf "let %s : %s. %s =" (of_yojson_name name) quant full_type);
+      B.Block [B.Line (sprintf "fun %sx ->" extra_params); body];
+    ]
 
 (* ============ Serialization function generation ============ *)
 
@@ -535,7 +545,6 @@ let gen_yojson_of_field (_, (fname, kind, an), e) : B.node =
            fname json_name (writer_expr inner_e))
 
 let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
-  (* Note: no type annotations on extra_params — same reason as gen_of_yojson *)
   let param_strs = List.map (fun v -> "yojson_of_" ^ v) params in
   let extra_params =
     if param_strs = [] then ""
@@ -584,13 +593,22 @@ let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
     | e ->
         B.Block [B.Line (sprintf "%s x" (writer_expr e))]
   in
-  let sig_line =
-    if params = [] then
-      sprintf "let %s (x : %s) : Yojson.Safe.t =" (yojson_of_name name) arg_type
-    else
-      sprintf "let %s %s x =" (yojson_of_name name) extra_params
-  in
-  [B.Line sig_line; body]
+  (* Same universal-quantification approach as gen_of_yojson *)
+  if params = [] then
+    [
+      B.Line (sprintf "let %s (x : %s) : Yojson.Safe.t =" (yojson_of_name name) arg_type);
+      body;
+    ]
+  else
+    let quant = String.concat " " (List.map (fun v -> "'" ^ v) params) in
+    let param_types =
+      String.concat " " (List.map (fun v -> sprintf "('%s -> Yojson.Safe.t) ->" v) params)
+    in
+    let full_type = sprintf "%s %s -> Yojson.Safe.t" param_types arg_type in
+    [
+      B.Line (sprintf "let %s : %s. %s =" (yojson_of_name name) quant full_type);
+      B.Block [B.Line (sprintf "fun %sx ->" extra_params); body];
+    ]
 
 (* ============ Top-level I/O functions (non-parametrized only) ============ *)
 

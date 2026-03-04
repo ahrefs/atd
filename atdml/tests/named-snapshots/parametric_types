@@ -16,6 +16,14 @@ val yojson_of_result :
   ('a -> Yojson.Safe.t) ->
   'a result ->
   Yojson.Safe.t
+val result_of_json :
+  (Yojson.Safe.t -> 'a) ->
+  string ->
+  'a result
+val json_of_result :
+  ('a -> Yojson.Safe.t) ->
+  'a result ->
+  string
 
 val either_of_yojson :
   (Yojson.Safe.t -> 'a) ->
@@ -27,13 +35,73 @@ val yojson_of_either :
   ('b -> Yojson.Safe.t) ->
   ('a, 'b) either ->
   Yojson.Safe.t
+val either_of_json :
+  (Yojson.Safe.t -> 'a) ->
+  (Yojson.Safe.t -> 'b) ->
+  string ->
+  ('a, 'b) either
+val json_of_either :
+  ('a -> Yojson.Safe.t) ->
+  ('b -> Yojson.Safe.t) ->
+  ('a, 'b) either ->
+  string
 
 val all_of_yojson : Yojson.Safe.t -> all
 val yojson_of_all : all -> Yojson.Safe.t
-val all_of_string : string -> all
-val string_of_all : all -> string
-val all_of_channel : in_channel -> all
-val all_of_file : string -> all
+val all_of_json : string -> all
+val json_of_all : all -> string
+
+module Result : sig
+  type nonrec 'a t = 'a result
+  val of_yojson :
+    (Yojson.Safe.t -> 'a) ->
+    Yojson.Safe.t ->
+    'a t
+  val to_yojson :
+    ('a -> Yojson.Safe.t) ->
+    'a t ->
+    Yojson.Safe.t
+  val of_json :
+    (Yojson.Safe.t -> 'a) ->
+    string ->
+    'a t
+  val to_json :
+    ('a -> Yojson.Safe.t) ->
+    'a t ->
+    string
+end
+
+module Either : sig
+  type nonrec ('a, 'b) t = ('a, 'b) either
+  val of_yojson :
+    (Yojson.Safe.t -> 'a) ->
+    (Yojson.Safe.t -> 'b) ->
+    Yojson.Safe.t ->
+    ('a, 'b) t
+  val to_yojson :
+    ('a -> Yojson.Safe.t) ->
+    ('b -> Yojson.Safe.t) ->
+    ('a, 'b) t ->
+    Yojson.Safe.t
+  val of_json :
+    (Yojson.Safe.t -> 'a) ->
+    (Yojson.Safe.t -> 'b) ->
+    string ->
+    ('a, 'b) t
+  val to_json :
+    ('a -> Yojson.Safe.t) ->
+    ('b -> Yojson.Safe.t) ->
+    ('a, 'b) t ->
+    string
+end
+
+module All : sig
+  type nonrec t = all
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 
 --- ml ---
 (* Auto-generated from "parametric_types.atd" by atdml. *)
@@ -144,14 +212,44 @@ and yojson_of_either : 'a 'b. ('a -> Yojson.Safe.t) -> ('b -> Yojson.Safe.t) -> 
 and yojson_of_all (x : all) : Yojson.Safe.t =
   (fun (x0, x1) -> `List [(yojson_of_result Atdml_runtime.yojson_of_int) x0; (yojson_of_either Atdml_runtime.yojson_of_bool Atdml_runtime.yojson_of_string) x1]) x
 
-let all_of_string s =
+let result_of_json of_yojson_a s =
+  (result_of_yojson of_yojson_a) (Yojson.Safe.from_string s)
+let json_of_result yojson_of_a x =
+  Yojson.Safe.to_string ((yojson_of_result yojson_of_a) x)
+
+let either_of_json of_yojson_a of_yojson_b s =
+  (either_of_yojson of_yojson_a of_yojson_b) (Yojson.Safe.from_string s)
+let json_of_either yojson_of_a yojson_of_b x =
+  Yojson.Safe.to_string ((yojson_of_either yojson_of_a yojson_of_b) x)
+
+let all_of_json s =
   all_of_yojson (Yojson.Safe.from_string s)
-let string_of_all x =
+let json_of_all x =
   Yojson.Safe.to_string (yojson_of_all x)
-let all_of_channel ic =
-  all_of_yojson (Yojson.Safe.from_channel ic)
-let all_of_file path =
-  all_of_yojson (Yojson.Safe.from_file path)
+
+module Result = struct
+  type nonrec 'a t = 'a result
+  let of_yojson = result_of_yojson
+  let to_yojson = yojson_of_result
+  let of_json = result_of_json
+  let to_json = json_of_result
+end
+
+module Either = struct
+  type nonrec ('a, 'b) t = ('a, 'b) either
+  let of_yojson = either_of_yojson
+  let to_yojson = yojson_of_either
+  let of_json = either_of_json
+  let to_json = json_of_either
+end
+
+module All = struct
+  type nonrec t = all
+  let of_yojson = all_of_yojson
+  let to_yojson = yojson_of_all
+  let of_json = all_of_json
+  let to_json = json_of_all
+end
 
 --- Input:
 [ [ "Ok", 12 ], [ "Right", "a" ] ]

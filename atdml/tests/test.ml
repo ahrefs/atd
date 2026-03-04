@@ -51,7 +51,10 @@ let run_codegen ~test_name ~file_name atd_src =
   )
 
 (* Create a test program that reads JSON and writes it back.
-   JSON data is printed so it can be captured by the test framework. *)
+   JSON data is printed so it can be captured by the test framework.
+
+   type_name: the OCaml type name, not the ATD type name (in case they differ)
+*)
 let test_program ~type_name ~json_in = sprintf {|
 let () =
   let json_in = %S in
@@ -89,6 +92,38 @@ let make_filename_from_test_name str =
     | c -> failwith (sprintf "Invalid character %C in test name %S" c str)
   )
     str
+
+(* Run an end-to-end test that expects the code generator to fail.
+   The error message (without the location prefix) is captured as a snapshot. *)
+let _test_codegen_error test_name ~atd_src =
+  let file_name = make_filename_from_test_name test_name in
+  Testo.create test_name
+    ~checked_output:(Testo.stdout
+                       ~expected_stdout_path:(
+                         Fpath.(v "tests/named-snapshots" / file_name))
+                       ())
+    (fun () ->
+      Testo.with_temp_dir ~chdir:true (fun _dir ->
+        let atd_file = file_name ^ ".atd" in
+        Testo.write_text_file (Fpath.v atd_file) atd_src;
+        match
+          (try Atdml.Codegen.run_file atd_file; `Ok
+           with
+           | Atd.Ast.Atd_error msg -> `Error msg
+           | Failure msg -> `Error msg)
+        with
+        | `Ok -> failwith "Expected code generation to fail but it succeeded"
+        | `Error msg ->
+            (* The message starts with a location "path, line X, chars Y-Z:\n".
+               Strip that prefix so the snapshot is stable across runs. *)
+            let body =
+              match String.split_on_char '\n' msg with
+              | _ :: rest when rest <> [] -> String.concat "\n" rest
+              | _ -> msg
+            in
+            print_endline body
+      )
+    )
 
 (* Run an end-to-end test:
    - invoke atdml to translate an ATD file into OCaml
@@ -286,6 +321,41 @@ type all = (int result * (bool, string) either)
 ]
 |}
 ;
+
+  test_e2e "type name t"
+    ~atd_src:{|
+type t = int
+|}
+    ~type_name:"t"
+    ~json_in:"42"
+  ;
+
+  test_e2e "type name yojson"
+    ~atd_src:{|
+type yojson = int
+|}
+    ~type_name:"yojson_"
+    ~json_in:"42"
+  ;
+
+  test_e2e "type name json"
+    ~atd_src:{|
+type json = string
+|}
+    ~type_name:"json_"
+    ~json_in:{|"hello"|}
+  ;
+
+  test_e2e "type name module"
+    ~atd_src:{|
+type module__ = bool
+type module_1 = string list
+type module = int
+type module_ = string
+|}
+    ~type_name:"module_" (* ATD type name "module" -> int *)
+    ~json_in:"42"
+  ;
 
   test_e2e "mutually recursive types"
     ~atd_src:{|

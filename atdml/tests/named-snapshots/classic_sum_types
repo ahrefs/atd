@@ -9,17 +9,29 @@ and shapes = shape list
 
 val shape_of_yojson : Yojson.Safe.t -> shape
 val yojson_of_shape : shape -> Yojson.Safe.t
-val shape_of_string : string -> shape
-val string_of_shape : shape -> string
-val shape_of_channel : in_channel -> shape
-val shape_of_file : string -> shape
+val shape_of_json : string -> shape
+val json_of_shape : shape -> string
 
 val shapes_of_yojson : Yojson.Safe.t -> shapes
 val yojson_of_shapes : shapes -> Yojson.Safe.t
-val shapes_of_string : string -> shapes
-val string_of_shapes : shapes -> string
-val shapes_of_channel : in_channel -> shapes
-val shapes_of_file : string -> shapes
+val shapes_of_json : string -> shapes
+val json_of_shapes : shapes -> string
+
+module Shape : sig
+  type nonrec t = shape
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+module Shapes : sig
+  type nonrec t = shapes
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 
 --- ml ---
 (* Auto-generated from "classic_sum_types.atd" by atdml. *)
@@ -120,23 +132,31 @@ let rec yojson_of_shape (x : shape) : Yojson.Safe.t =
 and yojson_of_shapes (x : shapes) : Yojson.Safe.t =
   (Atdml_runtime.yojson_of_list yojson_of_shape) x
 
-let shape_of_string s =
+let shape_of_json s =
   shape_of_yojson (Yojson.Safe.from_string s)
-let string_of_shape x =
+let json_of_shape x =
   Yojson.Safe.to_string (yojson_of_shape x)
-let shape_of_channel ic =
-  shape_of_yojson (Yojson.Safe.from_channel ic)
-let shape_of_file path =
-  shape_of_yojson (Yojson.Safe.from_file path)
 
-let shapes_of_string s =
+let shapes_of_json s =
   shapes_of_yojson (Yojson.Safe.from_string s)
-let string_of_shapes x =
+let json_of_shapes x =
   Yojson.Safe.to_string (yojson_of_shapes x)
-let shapes_of_channel ic =
-  shapes_of_yojson (Yojson.Safe.from_channel ic)
-let shapes_of_file path =
-  shapes_of_yojson (Yojson.Safe.from_file path)
+
+module Shape = struct
+  type nonrec t = shape
+  let of_yojson = shape_of_yojson
+  let to_yojson = yojson_of_shape
+  let of_json = shape_of_json
+  let to_json = json_of_shape
+end
+
+module Shapes = struct
+  type nonrec t = shapes
+  let of_yojson = shapes_of_yojson
+  let to_yojson = yojson_of_shapes
+  let of_json = shapes_of_json
+  let to_json = json_of_shapes
+end
 
 --- Input:
 [ [ "Circle", 1 ], [ "rectangle", [ 1.2, 3 ] ], "Dot", [ "arc", 3.0 ] ]

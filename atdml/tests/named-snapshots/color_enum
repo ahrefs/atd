@@ -8,17 +8,29 @@ and colors = (color * color * color)
 
 val color_of_yojson : Yojson.Safe.t -> color
 val yojson_of_color : color -> Yojson.Safe.t
-val color_of_string : string -> color
-val string_of_color : color -> string
-val color_of_channel : in_channel -> color
-val color_of_file : string -> color
+val color_of_json : string -> color
+val json_of_color : color -> string
 
 val colors_of_yojson : Yojson.Safe.t -> colors
 val yojson_of_colors : colors -> Yojson.Safe.t
-val colors_of_string : string -> colors
-val string_of_colors : colors -> string
-val colors_of_channel : in_channel -> colors
-val colors_of_file : string -> colors
+val colors_of_json : string -> colors
+val json_of_colors : colors -> string
+
+module Color : sig
+  type nonrec t = color
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+module Colors : sig
+  type nonrec t = colors
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 
 --- ml ---
 (* Auto-generated from "color_enum.atd" by atdml. *)
@@ -116,23 +128,31 @@ let rec yojson_of_color (x : color) : Yojson.Safe.t =
 and yojson_of_colors (x : colors) : Yojson.Safe.t =
   (fun (x0, x1, x2) -> `List [yojson_of_color x0; yojson_of_color x1; yojson_of_color x2]) x
 
-let color_of_string s =
+let color_of_json s =
   color_of_yojson (Yojson.Safe.from_string s)
-let string_of_color x =
+let json_of_color x =
   Yojson.Safe.to_string (yojson_of_color x)
-let color_of_channel ic =
-  color_of_yojson (Yojson.Safe.from_channel ic)
-let color_of_file path =
-  color_of_yojson (Yojson.Safe.from_file path)
 
-let colors_of_string s =
+let colors_of_json s =
   colors_of_yojson (Yojson.Safe.from_string s)
-let string_of_colors x =
+let json_of_colors x =
   Yojson.Safe.to_string (yojson_of_colors x)
-let colors_of_channel ic =
-  colors_of_yojson (Yojson.Safe.from_channel ic)
-let colors_of_file path =
-  colors_of_yojson (Yojson.Safe.from_file path)
+
+module Color = struct
+  type nonrec t = color
+  let of_yojson = color_of_yojson
+  let to_yojson = yojson_of_color
+  let of_json = color_of_json
+  let to_json = json_of_color
+end
+
+module Colors = struct
+  type nonrec t = colors
+  let of_yojson = colors_of_yojson
+  let to_yojson = yojson_of_colors
+  let of_json = colors_of_json
+  let to_json = json_of_colors
+end
 
 --- Input:
 [ "Red", "green", "Blue" ]

@@ -15,10 +15,17 @@ type person = {
 val make_person : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> person
 val person_of_yojson : Yojson.Safe.t -> person
 val yojson_of_person : person -> Yojson.Safe.t
-val person_of_string : string -> person
-val string_of_person : person -> string
-val person_of_channel : in_channel -> person
-val person_of_file : string -> person
+val person_of_json : string -> person
+val json_of_person : person -> string
+
+module Person : sig
+  type nonrec t = person
+  val make : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 
 --- ml ---
 (* Auto-generated from "records.atd" by atdml. *)
@@ -172,14 +179,19 @@ let rec yojson_of_person (x : person) : Yojson.Safe.t =
     [("addr", Atdml_runtime.yojson_of_string x.address)];
   ])
 
-let person_of_string s =
+let person_of_json s =
   person_of_yojson (Yojson.Safe.from_string s)
-let string_of_person x =
+let json_of_person x =
   Yojson.Safe.to_string (yojson_of_person x)
-let person_of_channel ic =
-  person_of_yojson (Yojson.Safe.from_channel ic)
-let person_of_file path =
-  person_of_yojson (Yojson.Safe.from_file path)
+
+module Person = struct
+  type nonrec t = person
+  let make = make_person
+  let of_yojson = person_of_yojson
+  let to_yojson = yojson_of_person
+  let of_json = person_of_json
+  let to_json = json_of_person
+end
 
 --- Input:
 { "name": "X", "age": 42, "lol": null, "addr": "xxxx" }

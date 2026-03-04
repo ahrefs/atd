@@ -13,39 +13,70 @@ and all = {
 
 val id_of_yojson : Yojson.Safe.t -> id
 val yojson_of_id : id -> Yojson.Safe.t
-val id_of_string : string -> id
-val string_of_id : id -> string
-val id_of_channel : in_channel -> id
-val id_of_file : string -> id
+val id_of_json : string -> id
+val json_of_id : id -> string
 
 val score_of_yojson : Yojson.Safe.t -> score
 val yojson_of_score : score -> Yojson.Safe.t
-val score_of_string : string -> score
-val string_of_score : score -> string
-val score_of_channel : in_channel -> score
-val score_of_file : string -> score
+val score_of_json : string -> score
+val json_of_score : score -> string
 
 val tag_list_of_yojson : Yojson.Safe.t -> tag_list
 val yojson_of_tag_list : tag_list -> Yojson.Safe.t
-val tag_list_of_string : string -> tag_list
-val string_of_tag_list : tag_list -> string
-val tag_list_of_channel : in_channel -> tag_list
-val tag_list_of_file : string -> tag_list
+val tag_list_of_json : string -> tag_list
+val json_of_tag_list : tag_list -> string
 
 val opt_name_of_yojson : Yojson.Safe.t -> opt_name
 val yojson_of_opt_name : opt_name -> Yojson.Safe.t
-val opt_name_of_string : string -> opt_name
-val string_of_opt_name : opt_name -> string
-val opt_name_of_channel : in_channel -> opt_name
-val opt_name_of_file : string -> opt_name
+val opt_name_of_json : string -> opt_name
+val json_of_opt_name : opt_name -> string
 
 val make_all : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> all
 val all_of_yojson : Yojson.Safe.t -> all
 val yojson_of_all : all -> Yojson.Safe.t
-val all_of_string : string -> all
-val string_of_all : all -> string
-val all_of_channel : in_channel -> all
-val all_of_file : string -> all
+val all_of_json : string -> all
+val json_of_all : all -> string
+
+module Id : sig
+  type nonrec t = id
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+module Score : sig
+  type nonrec t = score
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+module Tag_list : sig
+  type nonrec t = tag_list
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+module Opt_name : sig
+  type nonrec t = opt_name
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+module All : sig
+  type nonrec t = all
+  val make : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 
 --- ml ---
 (* Auto-generated from "type_aliases.atd" by atdml. *)
@@ -184,50 +215,71 @@ and yojson_of_all (x : all) : Yojson.Safe.t =
     [("name", yojson_of_opt_name x.name)];
   ])
 
-let id_of_string s =
+let id_of_json s =
   id_of_yojson (Yojson.Safe.from_string s)
-let string_of_id x =
+let json_of_id x =
   Yojson.Safe.to_string (yojson_of_id x)
-let id_of_channel ic =
-  id_of_yojson (Yojson.Safe.from_channel ic)
-let id_of_file path =
-  id_of_yojson (Yojson.Safe.from_file path)
 
-let score_of_string s =
+let score_of_json s =
   score_of_yojson (Yojson.Safe.from_string s)
-let string_of_score x =
+let json_of_score x =
   Yojson.Safe.to_string (yojson_of_score x)
-let score_of_channel ic =
-  score_of_yojson (Yojson.Safe.from_channel ic)
-let score_of_file path =
-  score_of_yojson (Yojson.Safe.from_file path)
 
-let tag_list_of_string s =
+let tag_list_of_json s =
   tag_list_of_yojson (Yojson.Safe.from_string s)
-let string_of_tag_list x =
+let json_of_tag_list x =
   Yojson.Safe.to_string (yojson_of_tag_list x)
-let tag_list_of_channel ic =
-  tag_list_of_yojson (Yojson.Safe.from_channel ic)
-let tag_list_of_file path =
-  tag_list_of_yojson (Yojson.Safe.from_file path)
 
-let opt_name_of_string s =
+let opt_name_of_json s =
   opt_name_of_yojson (Yojson.Safe.from_string s)
-let string_of_opt_name x =
+let json_of_opt_name x =
   Yojson.Safe.to_string (yojson_of_opt_name x)
-let opt_name_of_channel ic =
-  opt_name_of_yojson (Yojson.Safe.from_channel ic)
-let opt_name_of_file path =
-  opt_name_of_yojson (Yojson.Safe.from_file path)
 
-let all_of_string s =
+let all_of_json s =
   all_of_yojson (Yojson.Safe.from_string s)
-let string_of_all x =
+let json_of_all x =
   Yojson.Safe.to_string (yojson_of_all x)
-let all_of_channel ic =
-  all_of_yojson (Yojson.Safe.from_channel ic)
-let all_of_file path =
-  all_of_yojson (Yojson.Safe.from_file path)
+
+module Id = struct
+  type nonrec t = id
+  let of_yojson = id_of_yojson
+  let to_yojson = yojson_of_id
+  let of_json = id_of_json
+  let to_json = json_of_id
+end
+
+module Score = struct
+  type nonrec t = score
+  let of_yojson = score_of_yojson
+  let to_yojson = yojson_of_score
+  let of_json = score_of_json
+  let to_json = json_of_score
+end
+
+module Tag_list = struct
+  type nonrec t = tag_list
+  let of_yojson = tag_list_of_yojson
+  let to_yojson = yojson_of_tag_list
+  let of_json = tag_list_of_json
+  let to_json = json_of_tag_list
+end
+
+module Opt_name = struct
+  type nonrec t = opt_name
+  let of_yojson = opt_name_of_yojson
+  let to_yojson = yojson_of_opt_name
+  let of_json = opt_name_of_json
+  let to_json = json_of_opt_name
+end
+
+module All = struct
+  type nonrec t = all
+  let make = make_all
+  let of_yojson = all_of_yojson
+  let to_yojson = yojson_of_all
+  let of_json = all_of_json
+  let to_json = json_of_all
+end
 
 --- Input:
 { "id": "abc", "score": 1.23, "tags": [ "a", "b" ], "name": [ "Some", "x" ] }

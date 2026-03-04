@@ -9,17 +9,29 @@ and statuses = status list
 
 val status_of_yojson : Yojson.Safe.t -> status
 val yojson_of_status : status -> Yojson.Safe.t
-val status_of_string : string -> status
-val string_of_status : status -> string
-val status_of_channel : in_channel -> status
-val status_of_file : string -> status
+val status_of_json : string -> status
+val json_of_status : status -> string
 
 val statuses_of_yojson : Yojson.Safe.t -> statuses
 val yojson_of_statuses : statuses -> Yojson.Safe.t
-val statuses_of_string : string -> statuses
-val string_of_statuses : statuses -> string
-val statuses_of_channel : in_channel -> statuses
-val statuses_of_file : string -> statuses
+val statuses_of_json : string -> statuses
+val json_of_statuses : statuses -> string
+
+module Status : sig
+  type nonrec t = status
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+module Statuses : sig
+  type nonrec t = statuses
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 
 --- ml ---
 (* Auto-generated from "polymorphic_variants.atd" by atdml. *)
@@ -118,23 +130,31 @@ let rec yojson_of_status (x : status) : Yojson.Safe.t =
 and yojson_of_statuses (x : statuses) : Yojson.Safe.t =
   (Atdml_runtime.yojson_of_list yojson_of_status) x
 
-let status_of_string s =
+let status_of_json s =
   status_of_yojson (Yojson.Safe.from_string s)
-let string_of_status x =
+let json_of_status x =
   Yojson.Safe.to_string (yojson_of_status x)
-let status_of_channel ic =
-  status_of_yojson (Yojson.Safe.from_channel ic)
-let status_of_file path =
-  status_of_yojson (Yojson.Safe.from_file path)
 
-let statuses_of_string s =
+let statuses_of_json s =
   statuses_of_yojson (Yojson.Safe.from_string s)
-let string_of_statuses x =
+let json_of_statuses x =
   Yojson.Safe.to_string (yojson_of_statuses x)
-let statuses_of_channel ic =
-  statuses_of_yojson (Yojson.Safe.from_channel ic)
-let statuses_of_file path =
-  statuses_of_yojson (Yojson.Safe.from_file path)
+
+module Status = struct
+  type nonrec t = status
+  let of_yojson = status_of_yojson
+  let to_yojson = yojson_of_status
+  let of_json = status_of_json
+  let to_json = json_of_status
+end
+
+module Statuses = struct
+  type nonrec t = statuses
+  let of_yojson = statuses_of_yojson
+  let to_yojson = yojson_of_statuses
+  let of_json = statuses_of_json
+  let to_json = json_of_statuses
+end
 
 --- Input:
 [ "Active", [ "Pending", "abc" ] ]

@@ -6,7 +6,7 @@
    - A creation function 'let make_foo ...' (for record types only)
    - A deserialization function 'let foo_of_yojson ...'
    - A serialization function 'let yojson_of_foo ...'
-   - Top-level I/O functions (for non-parametrized types only)
+   - Top-level I/O functions
 
    Two files are produced: 'foo.ml' and 'foo.mli'.
 
@@ -18,6 +18,9 @@
    - No separate _t.ml / _j.ml split: one ATD file → one OCaml module.
    - Naming convention: foo_of_yojson / yojson_of_foo (same as
      ppx_yojson_conv, compatible with ppx_deriving.yojson).
+   - ATD type names that are OCaml keywords or conflict with the naming
+     scheme ('json', 'yojson') are automatically renamed with a trailing '_'
+     (or '_2', '_3', … if needed to avoid conflicts). See init_env.
 *)
 
 open Printf
@@ -43,6 +46,55 @@ let annot_schema : Atd.Annot.schema =
 
 let not_implemented loc msg =
   A.error_at loc ("not implemented in atdml: " ^ msg)
+
+(* ============ Identifier translation ============ *)
+
+(*
+   All OCaml keywords. Type names matching these cannot appear as-is in
+   generated OCaml code. See init_env for how conflicts are resolved.
+*)
+let ocaml_keywords = [
+  "and"; "as"; "assert"; "asr"; "begin"; "class"; "constraint"; "do";
+  "done"; "downto"; "else"; "end"; "exception"; "external"; "false";
+  "for"; "fun"; "function"; "functor"; "if"; "in"; "include"; "inherit";
+  "initializer"; "land"; "lazy"; "let"; "lor"; "lsl"; "lsr"; "lxor";
+  "match"; "method"; "mod"; "module"; "mutable"; "new"; "nonrec";
+  "object"; "of"; "open"; "or"; "private"; "rec"; "sig"; "struct";
+  "then"; "to"; "true"; "try"; "type"; "val"; "virtual"; "when";
+  "while"; "with";
+]
+
+(*
+   Names that conflict with our function naming scheme:
+   - 'yojson' would yield both 'yojson_of_yojson' (serializer) and
+     'yojson_of_yojson' (deserializer) — identical names.
+   - 'json' would yield both 'json_of_json' — same problem.
+*)
+let naming_conflicts = ["yojson"; "json"]
+
+(*
+   Build a translate function that maps each ATD type name in [defs] to a
+   unique, valid OCaml identifier. The mapping is stable (idempotent) and
+   consistent across calls with the same inputs:
+   - Reserved names (keywords, naming conflicts) get a trailing '_' appended,
+     or '_2', '_3', … if there are further conflicts.
+   - All other names are returned unchanged.
+   - Pre-registers all names in definition order to resolve clashes
+     deterministically.
+*)
+let init_env (defs : A.type_def list) : string -> string =
+  let registry =
+    Atd.Unique_name.init
+      ~reserved_identifiers:(ocaml_keywords @ naming_conflicts)
+      ~reserved_prefixes:[]
+      ~safe_prefix:"x_"
+  in
+  (* Register all type names upfront so conflict resolution is deterministic
+     regardless of where in the file each name is first referenced. *)
+  List.iter (fun (_, (name, _, _), _) ->
+    ignore (Atd.Unique_name.translate registry name)
+  ) defs;
+  Atd.Unique_name.translate registry
 
 (* ============ Annotation helpers ============ *)
 
@@ -75,13 +127,20 @@ let get_ocaml_name default_name an =
 
 let of_yojson_name name = name ^ "_of_yojson"
 let yojson_of_name name = "yojson_of_" ^ name
+let of_json_name name = name ^ "_of_json"
+let json_of_name name = "json_of_" ^ name
 let make_name name = "make_" ^ name
+let module_name name = String.capitalize_ascii name
 
 (* Function parameter name for reading/writing a type variable *)
 let tvar_reader v = "of_yojson_" ^ v
 let tvar_writer v = "yojson_of_" ^ v
 
 (* ============ Builtin OCaml type names ============ *)
+
+let is_atd_builtin = function
+  | "unit" | "bool" | "int" | "float" | "string" | "abstract" -> true
+  | _ -> false
 
 let builtin_ocaml_name = function
   | "unit" -> "unit"
@@ -94,21 +153,26 @@ let builtin_ocaml_name = function
 
 (* ============ OCaml type expression from ATD type ============ *)
 
-let rec type_expr_str (e : type_expr) : string =
+(*
+   [tr] is the type-name translation function from init_env. It maps ATD
+   type names to the OCaml identifiers used in the generated code.
+*)
+let rec type_expr_str tr (e : type_expr) : string =
   match e with
   | Sum _ | Record _ -> failwith "inline types are not supported"
   | Tuple (_, cells, _) ->
-      let parts = List.map (fun (_, e, _) -> type_expr_str e) cells in
+      let parts = List.map (fun (_, e, _) -> type_expr_str tr e) cells in
       "(" ^ String.concat " * " parts ^ ")"
-  | List (_, e, _) -> type_expr_str e ^ " list"
-  | Option (_, e, _) -> type_expr_str e ^ " option"
-  | Nullable (_, e, _) -> type_expr_str e ^ " option"
+  | List (_, e, _) -> type_expr_str tr e ^ " list"
+  | Option (_, e, _) -> type_expr_str tr e ^ " option"
+  | Nullable (_, e, _) -> type_expr_str tr e ^ " option"
   | Shared (loc, _, _) -> not_implemented loc "shared"
   | Wrap (loc, _, _) -> not_implemented loc "wrap"
-  | Name (_, (_, name, []), _) -> builtin_ocaml_name name
+  | Name (_, (_, name, []), _) ->
+      if is_atd_builtin name then builtin_ocaml_name name else tr name
   | Name (_, (_, name, params), _) ->
-      let pstrs = List.map type_expr_str params in
-      "(" ^ String.concat ", " pstrs ^ ") " ^ name
+      let pstrs = List.map (type_expr_str tr) params in
+      "(" ^ String.concat ", " pstrs ^ ") " ^ tr name
   | Tvar (_, v) -> "'" ^ v
 
 (* ============ Type parameter formatting ============ *)
@@ -130,7 +194,7 @@ let full_type_name name params =
    These are used as arguments to combinators like list_of_yojson.
 *)
 
-let rec reader_expr (e : type_expr) : string =
+let rec reader_expr tr (e : type_expr) : string =
   match e with
   | Name (_, (_, "unit", []), _) -> "Atdml_runtime.unit_of_yojson"
   | Name (_, (_, "bool", []), _) -> "Atdml_runtime.bool_of_yojson"
@@ -138,21 +202,21 @@ let rec reader_expr (e : type_expr) : string =
   | Name (_, (_, "float", []), _) -> "Atdml_runtime.float_of_yojson"
   | Name (_, (_, "string", []), _) -> "Atdml_runtime.string_of_yojson"
   | Name (_, (_, "abstract", []), _) -> "(fun x -> x)"
-  | Name (_, (_, name, []), _) -> of_yojson_name name
+  | Name (_, (_, name, []), _) -> of_yojson_name (tr name)
   | Name (_, (_, name, params), _) ->
-      let readers = List.map reader_expr params in
-      sprintf "(%s %s)" (of_yojson_name name) (String.concat " " readers)
+      let readers = List.map (reader_expr tr) params in
+      sprintf "(%s %s)" (of_yojson_name (tr name)) (String.concat " " readers)
   | List (_, e, _) ->
-      sprintf "(Atdml_runtime.list_of_yojson %s)" (reader_expr e)
+      sprintf "(Atdml_runtime.list_of_yojson %s)" (reader_expr tr e)
   | Option (_, e, _) ->
-      sprintf "(Atdml_runtime.option_of_yojson %s)" (reader_expr e)
+      sprintf "(Atdml_runtime.option_of_yojson %s)" (reader_expr tr e)
   | Nullable (_, e, _) ->
-      sprintf "(Atdml_runtime.nullable_of_yojson %s)" (reader_expr e)
+      sprintf "(Atdml_runtime.nullable_of_yojson %s)" (reader_expr tr e)
   | Tuple (_, cells, _) ->
       let n = List.length cells in
       let reads =
         List.mapi (fun i (_, e, _) ->
-          sprintf "%s (List.nth lst %d)" (reader_expr e) i
+          sprintf "%s (List.nth lst %d)" (reader_expr tr e) i
         ) cells
       in
       sprintf
@@ -172,7 +236,7 @@ let rec reader_expr (e : type_expr) : string =
    These are used as arguments to combinators like yojson_of_list.
 *)
 
-let rec writer_expr (e : type_expr) : string =
+let rec writer_expr tr (e : type_expr) : string =
   match e with
   | Name (_, (_, "unit", []), _) -> "Atdml_runtime.yojson_of_unit"
   | Name (_, (_, "bool", []), _) -> "Atdml_runtime.yojson_of_bool"
@@ -180,21 +244,21 @@ let rec writer_expr (e : type_expr) : string =
   | Name (_, (_, "float", []), _) -> "Atdml_runtime.yojson_of_float"
   | Name (_, (_, "string", []), _) -> "Atdml_runtime.yojson_of_string"
   | Name (_, (_, "abstract", []), _) -> "(fun x -> x)"
-  | Name (_, (_, name, []), _) -> yojson_of_name name
+  | Name (_, (_, name, []), _) -> yojson_of_name (tr name)
   | Name (_, (_, name, params), _) ->
-      let writers = List.map writer_expr params in
-      sprintf "(%s %s)" (yojson_of_name name) (String.concat " " writers)
+      let writers = List.map (writer_expr tr) params in
+      sprintf "(%s %s)" (yojson_of_name (tr name)) (String.concat " " writers)
   | List (_, e, _) ->
-      sprintf "(Atdml_runtime.yojson_of_list %s)" (writer_expr e)
+      sprintf "(Atdml_runtime.yojson_of_list %s)" (writer_expr tr e)
   | Option (_, e, _) ->
-      sprintf "(Atdml_runtime.yojson_of_option %s)" (writer_expr e)
+      sprintf "(Atdml_runtime.yojson_of_option %s)" (writer_expr tr e)
   | Nullable (_, e, _) ->
-      sprintf "(Atdml_runtime.yojson_of_nullable %s)" (writer_expr e)
+      sprintf "(Atdml_runtime.yojson_of_nullable %s)" (writer_expr tr e)
   | Tuple (_, cells, _) ->
       let vars = List.mapi (fun i _ -> sprintf "x%d" i) cells in
       let writes =
         List.mapi (fun i (_, e, _) ->
-          sprintf "%s %s" (writer_expr e) (List.nth vars i)
+          sprintf "%s %s" (writer_expr tr e) (List.nth vars i)
         ) cells
       in
       sprintf "(fun (%s) -> `List [%s])"
@@ -294,7 +358,8 @@ end|};
 
 (* ============ Type definition generation ============ *)
 
-let gen_type_def ((loc, (name, params, an), e) : A.type_def) : B.t =
+let gen_type_def tr ((loc, (name, params, an), e) : A.type_def) : B.t =
+  let ocaml_name = tr name in
   let params_str = type_params_str params in
   match e with
   | Sum (_, variants, an) ->
@@ -306,22 +371,22 @@ let gen_type_def ((loc, (name, params, an), e) : A.type_def) : B.t =
       let tick = if is_poly then "`" else "" in
       let flat = flatten_variants variants in
       let gen_case (_, orig_name, an, opt_e) =
-        let ocaml_name = get_ocaml_name orig_name an in
+        let cons_name = get_ocaml_name orig_name an in
         match opt_e with
         | None ->
-            B.Line (sprintf "| %s%s" tick ocaml_name)
+            B.Line (sprintf "| %s%s" tick cons_name)
         | Some e ->
-            B.Line (sprintf "| %s%s of %s" tick ocaml_name (type_expr_str e))
+            B.Line (sprintf "| %s%s of %s" tick cons_name (type_expr_str tr e))
       in
       if is_poly then
         [
-          B.Line (sprintf "type %s%s = [" params_str name);
+          B.Line (sprintf "type %s%s = [" params_str ocaml_name);
           B.Block (List.map gen_case flat);
           B.Line "]";
         ]
       else
         [
-          B.Line (sprintf "type %s%s =" params_str name);
+          B.Line (sprintf "type %s%s =" params_str ocaml_name);
           B.Block (List.map gen_case flat);
         ]
   | Record (_, fields, _) ->
@@ -332,16 +397,16 @@ let gen_type_def ((loc, (name, params, an), e) : A.type_def) : B.t =
         ) fields
       in
       [
-        B.Line (sprintf "type %s%s = {" params_str name);
+        B.Line (sprintf "type %s%s = {" params_str ocaml_name);
         B.Block
           (List.map
              (fun (_, (fname, _, _), e) ->
-               B.Line (sprintf "%s: %s;" fname (type_expr_str e)))
+               B.Line (sprintf "%s: %s;" fname (type_expr_str tr e)))
              fields);
         B.Line "}";
       ]
   | e ->
-      [B.Line (sprintf "type %s%s = %s" params_str name (type_expr_str e))]
+      [B.Line (sprintf "type %s%s = %s" params_str ocaml_name (type_expr_str tr e))]
 
 (* ============ Creation function generation (records only) ============ *)
 
@@ -357,7 +422,8 @@ let get_implicit_default (e : type_expr) : string option =
   | Nullable _ -> Some "None"
   | _ -> None
 
-let gen_make_fun ((loc, (name, params, an), e) : A.type_def) : B.t =
+let gen_make_fun tr ((loc, (name, params, an), e) : A.type_def) : B.t =
+  let ocaml_name = tr name in
   match e with
   | Record (_, fields, _) ->
       let fields =
@@ -393,9 +459,9 @@ let gen_make_fun ((loc, (name, params, an), e) : A.type_def) : B.t =
       [
         B.Line
           (sprintf "let %s %s () : %s ="
-             (make_name name)
+             (make_name ocaml_name)
              (String.concat " " param_strs)
-             (full_type_name name params));
+             (full_type_name ocaml_name params));
         B.Block
           [B.Line (sprintf "{ %s }" (String.concat "; " field_names))];
       ]
@@ -403,14 +469,14 @@ let gen_make_fun ((loc, (name, params, an), e) : A.type_def) : B.t =
 
 (* ============ Deserialization function generation ============ *)
 
-let gen_of_yojson_field type_name (loc, (fname, kind, an), e) : B.node =
+let gen_of_yojson_field tr type_name (loc, (fname, kind, an), e) : B.node =
   let json_name = Atd.Json.get_json_fname fname an in
   let match_nodes =
     match kind with
     | Required ->
         [
           B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
-          B.Line (sprintf "| Some v -> %s v" (reader_expr e));
+          B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
           B.Line
             (sprintf "| None -> Atdml_runtime.missing_field \"%s\" \"%s\""
                type_name json_name);
@@ -424,7 +490,7 @@ let gen_of_yojson_field type_name (loc, (fname, kind, an), e) : B.node =
         [
           B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
           B.Line "| None | Some `Null -> None";
-          B.Line (sprintf "| Some v -> Some (%s v)" (reader_expr inner_e));
+          B.Line (sprintf "| Some v -> Some (%s v)" (reader_expr tr inner_e));
         ]
     | With_default ->
         let default =
@@ -440,7 +506,7 @@ let gen_of_yojson_field type_name (loc, (fname, kind, an), e) : B.node =
         [
           B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
           B.Line (sprintf "| None -> %s" default);
-          B.Line (sprintf "| Some v -> %s v" (reader_expr e));
+          B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
         ]
   in
   B.Inline
@@ -450,13 +516,14 @@ let gen_of_yojson_field type_name (loc, (fname, kind, an), e) : B.node =
       B.Line "in";
     ]
 
-let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
+let gen_of_yojson tr ((loc, (name, params, an), e) : A.type_def) : B.t =
+  let ocaml_name = tr name in
   let param_strs = List.map (fun v -> "of_yojson_" ^ v) params in
   let extra_params =
     if param_strs = [] then ""
     else String.concat " " param_strs ^ " "
   in
-  let return_type = full_type_name name params in
+  let return_type = full_type_name ocaml_name params in
   let body =
     match e with
     | Sum (_, variants, an) ->
@@ -469,16 +536,16 @@ let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
         let flat = flatten_variants variants in
         let gen_case (_, orig_name, an, opt_e) =
           let json_name = Atd.Json.get_json_cons orig_name an in
-          let ocaml_name = get_ocaml_name orig_name an in
+          let cons_name = get_ocaml_name orig_name an in
           match opt_e with
           | None ->
               B.Line
                 (sprintf "| `String \"%s\" -> %s%s"
-                   json_name tick ocaml_name)
+                   json_name tick cons_name)
           | Some e ->
               B.Line
                 (sprintf "| `List [`String \"%s\"; v] -> %s%s (%s v)"
-                   json_name tick ocaml_name (reader_expr e))
+                   json_name tick cons_name (reader_expr tr e))
         in
         B.Block
           (B.Line "match x with"
@@ -499,12 +566,12 @@ let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
             B.Line "match x with";
             B.Line "| `Assoc fields ->";
             B.Block
-              (List.map (gen_of_yojson_field name) fields
+              (List.map (gen_of_yojson_field tr name) fields
                @ [B.Line (sprintf "{ %s }" (String.concat "; " field_names))]);
             B.Line (sprintf "| _ -> Atdml_runtime.bad_type \"%s\" x" name);
           ]
     | e ->
-        B.Block [B.Line (sprintf "%s x" (reader_expr e))]
+        B.Block [B.Line (sprintf "%s x" (reader_expr tr e))]
   in
   (* For parametric functions we use explicit universal quantification so that
      OCaml treats each function as polymorphic within the let rec...and block.
@@ -512,7 +579,8 @@ let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
      the type of 'result_of_yojson' for the entire block. *)
   if params = [] then
     [
-      B.Line (sprintf "let %s (x : Yojson.Safe.t) : %s =" (of_yojson_name name) return_type);
+      B.Line (sprintf "let %s (x : Yojson.Safe.t) : %s ="
+                (of_yojson_name ocaml_name) return_type);
       body;
     ]
   else
@@ -522,17 +590,17 @@ let gen_of_yojson ((loc, (name, params, an), e) : A.type_def) : B.t =
     in
     let full_type = sprintf "%s Yojson.Safe.t -> %s" param_types return_type in
     [
-      B.Line (sprintf "let %s : %s. %s =" (of_yojson_name name) quant full_type);
+      B.Line (sprintf "let %s : %s. %s =" (of_yojson_name ocaml_name) quant full_type);
       B.Block [B.Line (sprintf "fun %sx ->" extra_params); body];
     ]
 
 (* ============ Serialization function generation ============ *)
 
-let gen_yojson_of_field (_, (fname, kind, an), e) : B.node =
+let gen_yojson_of_field tr (_, (fname, kind, an), e) : B.node =
   let json_name = Atd.Json.get_json_fname fname an in
   match kind with
   | Required | With_default ->
-      B.Line (sprintf "[(\"%s\", %s x.%s)];" json_name (writer_expr e) fname)
+      B.Line (sprintf "[(\"%s\", %s x.%s)];" json_name (writer_expr tr e) fname)
   | Optional ->
       let inner_e =
         match e with
@@ -542,15 +610,16 @@ let gen_yojson_of_field (_, (fname, kind, an), e) : B.node =
       B.Line
         (sprintf
            "(match x.%s with None -> [] | Some v -> [(\"%s\", %s v)]);"
-           fname json_name (writer_expr inner_e))
+           fname json_name (writer_expr tr inner_e))
 
-let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
+let gen_yojson_of tr ((loc, (name, params, an), e) : A.type_def) : B.t =
+  let ocaml_name = tr name in
   let param_strs = List.map (fun v -> "yojson_of_" ^ v) params in
   let extra_params =
     if param_strs = [] then ""
     else String.concat " " param_strs ^ " "
   in
-  let arg_type = full_type_name name params in
+  let arg_type = full_type_name ocaml_name params in
   let body =
     match e with
     | Sum (_, variants, an) ->
@@ -563,16 +632,16 @@ let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
         let flat = flatten_variants variants in
         let gen_case (_, orig_name, an, opt_e) =
           let json_name = Atd.Json.get_json_cons orig_name an in
-          let ocaml_name = get_ocaml_name orig_name an in
+          let cons_name = get_ocaml_name orig_name an in
           match opt_e with
           | None ->
               B.Line
                 (sprintf "| %s%s -> `String \"%s\""
-                   tick ocaml_name json_name)
+                   tick cons_name json_name)
           | Some e ->
               B.Line
                 (sprintf "| %s%s v -> `List [`String \"%s\"; %s v]"
-                   tick ocaml_name json_name (writer_expr e))
+                   tick cons_name json_name (writer_expr tr e))
         in
         B.Block
           (B.Line "match x with"
@@ -587,16 +656,17 @@ let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
         B.Block
           [
             B.Line "`Assoc (List.concat [";
-            B.Block (List.map gen_yojson_of_field fields);
+            B.Block (List.map (gen_yojson_of_field tr) fields);
             B.Line "])";
           ]
     | e ->
-        B.Block [B.Line (sprintf "%s x" (writer_expr e))]
+        B.Block [B.Line (sprintf "%s x" (writer_expr tr e))]
   in
   (* Same universal-quantification approach as gen_of_yojson *)
   if params = [] then
     [
-      B.Line (sprintf "let %s (x : %s) : Yojson.Safe.t =" (yojson_of_name name) arg_type);
+      B.Line (sprintf "let %s (x : %s) : Yojson.Safe.t ="
+                (yojson_of_name ocaml_name) arg_type);
       body;
     ]
   else
@@ -606,55 +676,101 @@ let gen_yojson_of ((loc, (name, params, an), e) : A.type_def) : B.t =
     in
     let full_type = sprintf "%s %s -> Yojson.Safe.t" param_types arg_type in
     [
-      B.Line (sprintf "let %s : %s. %s =" (yojson_of_name name) quant full_type);
+      B.Line (sprintf "let %s : %s. %s =" (yojson_of_name ocaml_name) quant full_type);
       B.Block [B.Line (sprintf "fun %sx ->" extra_params); body];
     ]
 
-(* ============ Top-level I/O functions (non-parametrized only) ============ *)
+(* ============ Top-level I/O functions (all types, with converter args for parametric) ============ *)
 
-let gen_io_funs name : B.t =
+let gen_io_funs tr ((_, (name, params, _), _) : A.type_def) : B.t =
+  let ocaml_name = tr name in
+  let reader_params = List.map tvar_reader params in
+  let writer_params = List.map tvar_writer params in
+  let reader_args =
+    if reader_params = [] then "" else String.concat " " reader_params ^ " "
+  in
+  let writer_args =
+    if writer_params = [] then "" else String.concat " " writer_params ^ " "
+  in
+  let yojson_reader =
+    if params = [] then of_yojson_name ocaml_name
+    else sprintf "(%s %s)" (of_yojson_name ocaml_name) (String.concat " " reader_params)
+  in
+  let yojson_writer =
+    if params = [] then yojson_of_name ocaml_name
+    else sprintf "(%s %s)" (yojson_of_name ocaml_name) (String.concat " " writer_params)
+  in
   [
-    B.Line (sprintf "let %s_of_string s =" name);
-    B.Block [B.Line (sprintf "%s (Yojson.Safe.from_string s)" (of_yojson_name name))];
-    B.Line (sprintf "let string_of_%s x =" name);
-    B.Block [B.Line (sprintf "Yojson.Safe.to_string (%s x)" (yojson_of_name name))];
-    B.Line (sprintf "let %s_of_channel ic =" name);
-    B.Block [B.Line (sprintf "%s (Yojson.Safe.from_channel ic)" (of_yojson_name name))];
-    B.Line (sprintf "let %s_of_file path =" name);
-    B.Block [B.Line (sprintf "%s (Yojson.Safe.from_file path)" (of_yojson_name name))];
+    B.Line (sprintf "let %s %ss =" (of_json_name ocaml_name) reader_args);
+    B.Block [B.Line (sprintf "%s (Yojson.Safe.from_string s)" yojson_reader)];
+    B.Line (sprintf "let %s %sx =" (json_of_name ocaml_name) writer_args);
+    B.Block [B.Line (sprintf "Yojson.Safe.to_string (%s x)" yojson_writer)];
+  ]
+
+(* ============ Submodule generation (.ml) ============ *)
+
+let gen_submodule_ml tr ((_, (name, params, _), e) : A.type_def) : B.t =
+  let ocaml_name = tr name in
+  let params_str = type_params_str params in
+  let type_decl =
+    sprintf "type nonrec %st = %s%s" params_str (type_params_str params) ocaml_name
+  in
+  let make_binding =
+    match e with
+    | Record _ -> [B.Line (sprintf "let make = %s" (make_name ocaml_name))]
+    | _ -> []
+  in
+  let bindings =
+    make_binding
+    @ [
+        B.Line (sprintf "let of_yojson = %s" (of_yojson_name ocaml_name));
+        B.Line (sprintf "let to_yojson = %s" (yojson_of_name ocaml_name));
+        B.Line (sprintf "let of_json = %s" (of_json_name ocaml_name));
+        B.Line (sprintf "let to_json = %s" (json_of_name ocaml_name));
+      ]
+  in
+  [
+    B.Line (sprintf "module %s = struct" (module_name ocaml_name));
+    B.Block (B.Line type_decl :: bindings);
+    B.Line "end";
   ]
 
 (* ============ MLI: type signatures ============ *)
 
-let gen_of_yojson_sig ((_, (name, params, _), _) : A.type_def) : B.t =
+let gen_of_yojson_sig tr ((_, (name, params, _), _) : A.type_def) : B.t =
+  let ocaml_name = tr name in
   match params with
   | [] ->
-      [B.Line (sprintf "val %s : Yojson.Safe.t -> %s" (of_yojson_name name) name)]
+      [B.Line (sprintf "val %s : Yojson.Safe.t -> %s"
+                 (of_yojson_name ocaml_name) ocaml_name)]
   | _ ->
       let param_sigs = List.map (fun v -> sprintf "(Yojson.Safe.t -> '%s) ->" v) params in
-      let return_type = full_type_name name params in
+      let return_type = full_type_name ocaml_name params in
       [
-        B.Line (sprintf "val %s :" (of_yojson_name name));
+        B.Line (sprintf "val %s :" (of_yojson_name ocaml_name));
         B.Block
           (List.map (fun s -> B.Line s) param_sigs
            @ [B.Line "Yojson.Safe.t ->"; B.Line return_type]);
       ]
 
-let gen_yojson_of_sig ((_, (name, params, _), _) : A.type_def) : B.t =
+let gen_yojson_of_sig tr ((_, (name, params, _), _) : A.type_def) : B.t =
+  let ocaml_name = tr name in
   match params with
   | [] ->
-      [B.Line (sprintf "val %s : %s -> Yojson.Safe.t" (yojson_of_name name) name)]
+      [B.Line (sprintf "val %s : %s -> Yojson.Safe.t"
+                 (yojson_of_name ocaml_name) ocaml_name)]
   | _ ->
       let param_sigs = List.map (fun v -> sprintf "('%s -> Yojson.Safe.t) ->" v) params in
-      let arg_type = full_type_name name params in
+      let arg_type = full_type_name ocaml_name params in
       [
-        B.Line (sprintf "val %s :" (yojson_of_name name));
+        B.Line (sprintf "val %s :" (yojson_of_name ocaml_name));
         B.Block
           (List.map (fun s -> B.Line s) param_sigs
            @ [B.Line (sprintf "%s ->" arg_type); B.Line "Yojson.Safe.t"]);
       ]
 
-let gen_make_sig ((loc, (name, params, _), e) : A.type_def) : B.t =
+let gen_make_sig tr ((loc, (name, params, _), e) : A.type_def) : B.t =
+  let ocaml_name = tr name in
   match e with
   | Record (_, fields, _) ->
       let fields =
@@ -665,38 +781,166 @@ let gen_make_sig ((loc, (name, params, _), e) : A.type_def) : B.t =
       in
       let gen_param_sig (loc, (fname, kind, an), e) =
         match kind with
-        | Required -> sprintf "%s:%s ->" fname (type_expr_str e)
+        | Required -> sprintf "%s:%s ->" fname (type_expr_str tr e)
         | Optional ->
             let inner =
               match e with
               | Option (_, ie, _) -> ie
               | _ -> e
             in
-            sprintf "?%s:%s ->" fname (type_expr_str inner)
-        | With_default -> sprintf "?%s:%s ->" fname (type_expr_str e)
+            sprintf "?%s:%s ->" fname (type_expr_str tr inner)
+        | With_default -> sprintf "?%s:%s ->" fname (type_expr_str tr e)
       in
       let param_sigs = List.map gen_param_sig fields in
-      let return_type = full_type_name name params in
+      let return_type = full_type_name ocaml_name params in
       [
         B.Line
           (sprintf "val %s : %sunit -> %s"
-             (make_name name)
+             (make_name ocaml_name)
              (String.concat " " param_sigs ^ " ")
              return_type);
       ]
   | _ -> []
 
-let gen_io_sigs name : B.t =
+let gen_io_sigs tr ((_, (name, params, _), _) : A.type_def) : B.t =
+  let ocaml_name = tr name in
+  let return_type = full_type_name ocaml_name params in
+  match params with
+  | [] ->
+      [
+        B.Line (sprintf "val %s : string -> %s" (of_json_name ocaml_name) ocaml_name);
+        B.Line (sprintf "val %s : %s -> string" (json_of_name ocaml_name) ocaml_name);
+      ]
+  | _ ->
+      let reader_sigs =
+        List.map (fun v -> sprintf "(Yojson.Safe.t -> '%s) ->" v) params
+      in
+      let writer_sigs =
+        List.map (fun v -> sprintf "('%s -> Yojson.Safe.t) ->" v) params
+      in
+      [
+        B.Line (sprintf "val %s :" (of_json_name ocaml_name));
+        B.Block
+          (List.map (fun s -> B.Line s) reader_sigs
+           @ [B.Line "string ->"; B.Line return_type]);
+        B.Line (sprintf "val %s :" (json_of_name ocaml_name));
+        B.Block
+          (List.map (fun s -> B.Line s) writer_sigs
+           @ [B.Line (sprintf "%s ->" return_type); B.Line "string"]);
+      ]
+
+(* ============ Submodule signature generation (.mli) ============ *)
+
+let gen_submodule_mli tr ((loc, (name, params, _), e) : A.type_def) : B.t =
+  let ocaml_name = tr name in
+  let params_str = type_params_str params in
+  let t_type = type_params_str params ^ "t" in
+  let type_decl =
+    sprintf "type nonrec %st = %s%s" params_str (type_params_str params) ocaml_name
+  in
+  let make_sig =
+    match e with
+    | Record (_, fields, _) ->
+        let fields =
+          List.filter_map (function
+            | `Field x -> Some x
+            | `Inherit _ -> assert false)
+            fields
+        in
+        let gen_param_sig (loc, (fname, kind, an), e) =
+          match kind with
+          | Required -> sprintf "%s:%s ->" fname (type_expr_str tr e)
+          | Optional ->
+              let inner =
+                match e with
+                | Option (_, ie, _) -> ie
+                | _ -> e
+              in
+              sprintf "?%s:%s ->" fname (type_expr_str tr inner)
+          | With_default -> sprintf "?%s:%s ->" fname (type_expr_str tr e)
+        in
+        let param_sigs = List.map gen_param_sig fields in
+        [
+          B.Line
+            (sprintf "val make : %sunit -> %s"
+               (String.concat " " param_sigs ^ " ")
+               t_type);
+        ]
+    | _ -> []
+  in
+  let of_yojson_sig =
+    match params with
+    | [] -> [B.Line (sprintf "val of_yojson : Yojson.Safe.t -> %s" t_type)]
+    | _ ->
+        let param_sigs =
+          List.map (fun v -> sprintf "(Yojson.Safe.t -> '%s) ->" v) params
+        in
+        [
+          B.Line "val of_yojson :";
+          B.Block
+            (List.map (fun s -> B.Line s) param_sigs
+             @ [B.Line "Yojson.Safe.t ->"; B.Line t_type]);
+        ]
+  in
+  let to_yojson_sig =
+    match params with
+    | [] -> [B.Line (sprintf "val to_yojson : %s -> Yojson.Safe.t" t_type)]
+    | _ ->
+        let param_sigs =
+          List.map (fun v -> sprintf "('%s -> Yojson.Safe.t) ->" v) params
+        in
+        [
+          B.Line "val to_yojson :";
+          B.Block
+            (List.map (fun s -> B.Line s) param_sigs
+             @ [B.Line (sprintf "%s ->" t_type); B.Line "Yojson.Safe.t"]);
+        ]
+  in
+  let of_json_sig =
+    match params with
+    | [] -> [B.Line (sprintf "val of_json : string -> %s" t_type)]
+    | _ ->
+        let param_sigs =
+          List.map (fun v -> sprintf "(Yojson.Safe.t -> '%s) ->" v) params
+        in
+        [
+          B.Line "val of_json :";
+          B.Block
+            (List.map (fun s -> B.Line s) param_sigs
+             @ [B.Line "string ->"; B.Line t_type]);
+        ]
+  in
+  let to_json_sig =
+    match params with
+    | [] -> [B.Line (sprintf "val to_json : %s -> string" t_type)]
+    | _ ->
+        let param_sigs =
+          List.map (fun v -> sprintf "('%s -> Yojson.Safe.t) ->" v) params
+        in
+        [
+          B.Line "val to_json :";
+          B.Block
+            (List.map (fun s -> B.Line s) param_sigs
+             @ [B.Line (sprintf "%s ->" t_type); B.Line "string"]);
+        ]
+  in
+  let body =
+    [B.Line type_decl]
+    @ make_sig
+    @ of_yojson_sig
+    @ to_yojson_sig
+    @ of_json_sig
+    @ to_json_sig
+  in
   [
-    B.Line (sprintf "val %s_of_string : string -> %s" name name);
-    B.Line (sprintf "val string_of_%s : %s -> string" name name);
-    B.Line (sprintf "val %s_of_channel : in_channel -> %s" name name);
-    B.Line (sprintf "val %s_of_file : string -> %s" name name);
+    B.Line (sprintf "module %s : sig" (module_name ocaml_name));
+    B.Block body;
+    B.Line "end";
   ]
 
 (* ============ Assemble the .ml file ============ *)
 
-let make_ml ~atd_filename (items : A.module_body) : B.t =
+let make_ml ~tr ~atd_filename (items : A.module_body) : B.t =
   let defs = List.map (fun (Type x) -> x) items in
   let header =
     [
@@ -710,14 +954,14 @@ let make_ml ~atd_filename (items : A.module_body) : B.t =
   let type_defs =
     match defs with
     | [] -> []
-    | [def] -> gen_type_def def @ [B.Line ""]
+    | [def] -> gen_type_def tr def @ [B.Line ""]
     | first :: rest ->
         (* Use 'type ... and ...' for the whole block so mutual recursion works *)
-        let first_lines = gen_type_def first in
+        let first_lines = gen_type_def tr first in
         let rest_lines =
           List.concat_map (fun def ->
             (* Replace 'type' with 'and' for subsequent definitions *)
-            match gen_type_def def with
+            match gen_type_def tr def with
             | B.Line s :: rest when String.length s >= 4
               && String.sub s 0 4 = "type" ->
                 B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: rest
@@ -729,7 +973,7 @@ let make_ml ~atd_filename (items : A.module_body) : B.t =
   (* Creation functions (no mutual recursion needed) *)
   let make_funs =
     List.concat_map (fun def ->
-      let lines = gen_make_fun def in
+      let lines = gen_make_fun tr def in
       if lines = [] then [] else lines @ [B.Line ""]
     ) defs
   in
@@ -740,7 +984,7 @@ let make_ml ~atd_filename (items : A.module_body) : B.t =
     | defs ->
         let all =
           List.mapi (fun i def ->
-            let lines = gen_of_yojson def in
+            let lines = gen_of_yojson tr def in
             (* Replace 'let' with 'let rec' for first, 'and' for rest *)
             match lines with
             | B.Line s :: rest ->
@@ -767,7 +1011,7 @@ let make_ml ~atd_filename (items : A.module_body) : B.t =
     | defs ->
         let all =
           List.mapi (fun i def ->
-            let lines = gen_yojson_of def in
+            let lines = gen_yojson_of tr def in
             match lines with
             | B.Line s :: rest ->
                 let keyword =
@@ -786,18 +1030,20 @@ let make_ml ~atd_filename (items : A.module_body) : B.t =
         in
         List.concat all @ [B.Line ""]
   in
-  (* Top-level I/O functions (only for non-parametrized types) *)
+  (* Top-level I/O functions (all types; parametric types get converter args) *)
   let io_funs =
-    List.concat_map (fun (_, (name, params, _), _) ->
-      if params = [] then gen_io_funs name @ [B.Line ""]
-      else []
-    ) defs
+    List.concat_map (fun def -> gen_io_funs tr def @ [B.Line ""]) defs
   in
-  header @ runtime_module @ [B.Line ""] @ type_defs @ make_funs @ of_yojson_funs @ yojson_of_funs @ io_funs
+  (* Submodule per type *)
+  let submodules =
+    List.concat_map (fun def -> gen_submodule_ml tr def @ [B.Line ""]) defs
+  in
+  header @ runtime_module @ [B.Line ""] @ type_defs @ make_funs
+  @ of_yojson_funs @ yojson_of_funs @ io_funs @ submodules
 
 (* ============ Assemble the .mli file ============ *)
 
-let make_mli ~atd_filename (items : A.module_body) : B.t =
+let make_mli ~tr ~atd_filename (items : A.module_body) : B.t =
   let defs = List.map (fun (Type x) -> x) items in
   let header =
     [
@@ -810,12 +1056,12 @@ let make_mli ~atd_filename (items : A.module_body) : B.t =
   let type_defs =
     match defs with
     | [] -> []
-    | [def] -> gen_type_def def @ [B.Line ""]
+    | [def] -> gen_type_def tr def @ [B.Line ""]
     | first :: rest ->
-        let first_lines = gen_type_def first in
+        let first_lines = gen_type_def tr first in
         let rest_lines =
           List.concat_map (fun def ->
-            match gen_type_def def with
+            match gen_type_def tr def with
             | B.Line s :: rest when String.length s >= 4
               && String.sub s 0 4 = "type" ->
                 B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: rest
@@ -826,15 +1072,19 @@ let make_mli ~atd_filename (items : A.module_body) : B.t =
   in
   (* Signatures for each type's functions *)
   let sigs =
-    List.concat_map (fun ((_, (name, params, _), _) as def) ->
-      let make_sigs = gen_make_sig def in
-      let of_sig = gen_of_yojson_sig def in
-      let yojson_sig = gen_yojson_of_sig def in
-      let io_sigs = if params = [] then gen_io_sigs name else [] in
+    List.concat_map (fun def ->
+      let make_sigs = gen_make_sig tr def in
+      let of_sig = gen_of_yojson_sig tr def in
+      let yojson_sig = gen_yojson_of_sig tr def in
+      let io_sigs = gen_io_sigs tr def in
       make_sigs @ of_sig @ yojson_sig @ io_sigs @ [B.Line ""]
     ) defs
   in
-  header @ type_defs @ sigs
+  (* Submodule signatures *)
+  let submodule_sigs =
+    List.concat_map (fun def -> gen_submodule_mli tr def @ [B.Line ""]) defs
+  in
+  header @ type_defs @ sigs @ submodule_sigs
 
 (* ============ Entry point ============ *)
 
@@ -858,7 +1108,9 @@ let run_file src_path =
       src_path
   in
   let _atd_head, atd_module = full_module in
-  let ml_contents = make_ml ~atd_filename:src_name atd_module in
-  let mli_contents = make_mli ~atd_filename:src_name atd_module in
+  let defs = List.map (fun (Type x) -> x) atd_module in
+  let tr = init_env defs in
+  let ml_contents = make_ml ~tr ~atd_filename:src_name atd_module in
+  let mli_contents = make_mli ~tr ~atd_filename:src_name atd_module in
   B.to_file ~indent:2 ml_path ml_contents;
   B.to_file ~indent:2 mli_path mli_contents

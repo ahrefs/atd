@@ -17,10 +17,17 @@ type all_types = {
 val make_all_types : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> all_types
 val all_types_of_yojson : Yojson.Safe.t -> all_types
 val yojson_of_all_types : all_types -> Yojson.Safe.t
-val all_types_of_string : string -> all_types
-val string_of_all_types : all_types -> string
-val all_types_of_channel : in_channel -> all_types
-val all_types_of_file : string -> all_types
+val all_types_of_json : string -> all_types
+val json_of_all_types : all_types -> string
+
+module All_types : sig
+  type nonrec t = all_types
+  val make : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 
 --- ml ---
 (* Auto-generated from "builtin_types.atd" by atdml. *)
@@ -188,14 +195,19 @@ let rec yojson_of_all_types (x : all_types) : Yojson.Safe.t =
     [("a_nested", (Atdml_runtime.yojson_of_option (fun (x0) -> `List [(Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_float) x0])) x.a_nested)];
   ])
 
-let all_types_of_string s =
+let all_types_of_json s =
   all_types_of_yojson (Yojson.Safe.from_string s)
-let string_of_all_types x =
+let json_of_all_types x =
   Yojson.Safe.to_string (yojson_of_all_types x)
-let all_types_of_channel ic =
-  all_types_of_yojson (Yojson.Safe.from_channel ic)
-let all_types_of_file path =
-  all_types_of_yojson (Yojson.Safe.from_file path)
+
+module All_types = struct
+  type nonrec t = all_types
+  let make = make_all_types
+  let of_yojson = all_types_of_yojson
+  let to_yojson = yojson_of_all_types
+  let of_json = all_types_of_json
+  let to_json = json_of_all_types
+end
 
 --- Input:
 {

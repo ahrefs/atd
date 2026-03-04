@@ -12,6 +12,7 @@
 (executable
  (name test)
  (libraries
+   atd
    atdml
    fpath
    testo

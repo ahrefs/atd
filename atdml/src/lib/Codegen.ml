@@ -801,11 +801,16 @@ let gen_io_funs tr ((_, (name, params, _), _) : A.type_def) : B.t =
 
 (* ============ Submodule generation (.ml) ============ *)
 
-let gen_submodule_ml tr ((_, (name, params, _), e) : A.type_def) : B.t =
+let gen_submodule_ml tr ((_, (name, params, def_an), e) : A.type_def) : B.t =
   let ocaml_name = tr name in
   let params_str = type_params_str params in
   let type_decl =
     sprintf "type nonrec %st = %s%s" params_str (type_params_str params) ocaml_name
+  in
+  let attr_lines =
+    match get_ocaml_attr def_an with
+    | None -> []
+    | Some attr -> [B.Line (sprintf "[@@%s]" attr)]
   in
   let make_binding =
     match e with
@@ -823,7 +828,7 @@ let gen_submodule_ml tr ((_, (name, params, _), e) : A.type_def) : B.t =
   in
   [
     B.Line (sprintf "module %s = struct" (module_name ocaml_name));
-    B.Block (B.Line type_decl :: bindings);
+    B.Block (B.Line type_decl :: attr_lines @ bindings);
     B.Line "end";
   ]
 
@@ -923,12 +928,17 @@ let gen_io_sigs tr ((_, (name, params, _), _) : A.type_def) : B.t =
 
 (* ============ Submodule signature generation (.mli) ============ *)
 
-let gen_submodule_mli tr ((loc, (name, params, _), e) : A.type_def) : B.t =
+let gen_submodule_mli tr ((loc, (name, params, def_an), e) : A.type_def) : B.t =
   let ocaml_name = tr name in
   let params_str = type_params_str params in
   let t_type = type_params_str params ^ "t" in
   let type_decl =
     sprintf "type nonrec %st = %s%s" params_str (type_params_str params) ocaml_name
+  in
+  let attr_lines =
+    match get_ocaml_attr def_an with
+    | None -> []
+    | Some attr -> [B.Line (sprintf "[@@%s]" attr)]
   in
   let make_sig =
     match e with
@@ -1018,6 +1028,7 @@ let gen_submodule_mli tr ((loc, (name, params, _), e) : A.type_def) : B.t =
   in
   let body =
     [B.Line type_decl]
+    @ attr_lines
     @ make_sig
     @ of_yojson_sig
     @ to_yojson_sig

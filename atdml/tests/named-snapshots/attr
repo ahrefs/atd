@@ -14,6 +14,7 @@ val json_of_point : point -> string
 
 module Point : sig
   type nonrec t = point
+  [@@deriving show]
   val make : x:float -> y:float -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
@@ -31,6 +32,7 @@ val json_of_points : points -> string
 
 module Points : sig
   type nonrec t = points
+  [@@deriving show]
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -149,6 +151,7 @@ let json_of_point x =
 
 module Point = struct
   type nonrec t = point
+  [@@deriving show]
   let make = make_point
   let of_yojson = point_of_yojson
   let to_yojson = yojson_of_point
@@ -173,6 +176,7 @@ let json_of_points x =
 
 module Points = struct
   type nonrec t = points
+  [@@deriving show]
   let of_yojson = points_of_yojson
   let to_yojson = yojson_of_points
   let of_json = points_of_json

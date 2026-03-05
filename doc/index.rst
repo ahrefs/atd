@@ -10,6 +10,7 @@ Welcome to ATD's documentation!
    atdd
    atdj
    atdgen
+   atdml
    atdpy
    atds
    atdts

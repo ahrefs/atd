@@ -1,4 +1,6 @@
 (lang dune 3.18)
+; dune >= 3.18 is required to build the tools in this repository.
+; The generated OCaml code targets OCaml >= 4.08 (see per-package constraints).
 (using menhir 2.0)
 (implicit_transitive_deps false)
 (cram enable)

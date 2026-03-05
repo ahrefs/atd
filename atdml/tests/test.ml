@@ -447,6 +447,19 @@ Second paragraph."> = {
 }
 
 type alias <doc text="An alias for string."> = string
+
+(* Mutually recursive types with doc annotations, to verify
+   that (** comment *) before 'and' is rendered correctly. *)
+type tree <doc text="A binary tree."> = [
+  | Leaf
+  | Node of node
+]
+
+type node <doc text="An internal tree node."> = {
+  value: int;
+  left: tree;
+  right: tree;
+}
 |}
   ;
 
@@ -465,6 +478,25 @@ type record = {
 |}
     ~type_name:"record"
     ~json_in:{|{"id": "42", "label": "hello"}|}
+  ;
+
+  test_codegen_snapshot "keyword field and variant names"
+    (* Fields named after OCaml keywords must be auto-renamed (e.g. 'type' ->
+       'type_').  Variant constructors are always capitalized so they cannot
+       conflict with lowercase keywords; the vtr layer is still exercised. *)
+    ~atd_src:{|
+type record_with_keyword_fields = {
+  method: string;
+  object: int;
+  ?begin: bool option;
+  ~end: string list;
+}
+
+type sum_with_keyword_names = [
+  | Fun
+  | Method of string
+]
+|}
   ;
 
   test_e2e "mutually recursive types"

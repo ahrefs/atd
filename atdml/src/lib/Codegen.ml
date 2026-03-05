@@ -33,9 +33,13 @@ module B = Indent
 let annot_schema_ocaml : Atd.Annot.schema_section = {
   section = "ocaml";
   fields = [
-    Type_expr, "repr";   (* <ocaml repr="poly"> on a sum type *)
-    Variant, "name";     (* <ocaml name="..."> on a variant constructor *)
-    Field, "default";    (* <ocaml default="..."> on a with-default field *)
+    Type_expr, "repr";    (* <ocaml repr="poly"> on a sum type *)
+    Type_expr, "module";  (* <ocaml module="M"> on a wrap: use M.t/M.wrap/M.unwrap *)
+    Type_expr, "t";       (* <ocaml t="..."> on a wrap: explicit OCaml type *)
+    Type_expr, "wrap";    (* <ocaml wrap="..."> on a wrap: deserialize function *)
+    Type_expr, "unwrap";  (* <ocaml unwrap="..."> on a wrap: serialize function *)
+    Variant, "name";      (* <ocaml name="..."> on a variant constructor *)
+    Field, "default";     (* <ocaml default="..."> on a with-default field *)
   ]
 }
 
@@ -114,6 +118,27 @@ let get_ocaml_repr an =
     ~field:"repr"
     an
 
+(* Get wrap-related annotations for a 'wrap' type expression.
+   Supports:
+     <ocaml module="M">              → uses M.t, M.wrap, M.unwrap
+     <ocaml module="M" t="T">       → M.wrap, M.unwrap; explicit type T
+     <ocaml t="T" wrap="f" unwrap="g">  → fully explicit
+   Any field not specified defaults to None (identity / inner type). *)
+let get_ocaml_wrap an =
+  let get field =
+    Atd.Annot.get_opt_field
+      ~parse:(fun s -> Some s)
+      ~sections:["ocaml"]
+      ~field
+      an
+  in
+  let module_name = get "module" in
+  let from_module suffix = Option.map (fun m -> m ^ "." ^ suffix) module_name in
+  let wrap_t    = match get "t"      with Some v -> Some v | None -> from_module "t" in
+  let wrap_fn   = match get "wrap"   with Some v -> Some v | None -> from_module "wrap" in
+  let unwrap_fn = match get "unwrap" with Some v -> Some v | None -> from_module "unwrap" in
+  (wrap_t, wrap_fn, unwrap_fn)
+
 (* Get <ocaml name="..."> to rename OCaml identifiers *)
 let get_ocaml_name default_name an =
   Atd.Annot.get_field
@@ -167,7 +192,11 @@ let rec type_expr_str tr (e : type_expr) : string =
   | Option (_, e, _) -> type_expr_str tr e ^ " option"
   | Nullable (_, e, _) -> type_expr_str tr e ^ " option"
   | Shared (loc, _, _) -> not_implemented loc "shared"
-  | Wrap (loc, _, _) -> not_implemented loc "wrap"
+  | Wrap (_, inner_e, an) ->
+      let (wrap_t, _, _) = get_ocaml_wrap an in
+      (match wrap_t with
+      | Some t -> t
+      | None -> type_expr_str tr inner_e)
   | Name (_, (_, name, []), _) ->
       if is_atd_builtin name then builtin_ocaml_name name else tr name
   | Name (_, (_, name, params), _) ->
@@ -227,7 +256,12 @@ let rec reader_expr tr (e : type_expr) : string =
         (String.concat ", " reads)
   | Tvar (_, v) -> tvar_reader v
   | Shared (loc, _, _) -> not_implemented loc "shared"
-  | Wrap (loc, _, _) -> not_implemented loc "wrap"
+  | Wrap (_, inner_e, an) ->
+      let inner = reader_expr tr inner_e in
+      let (_, wrap_fn, _) = get_ocaml_wrap an in
+      (match wrap_fn with
+      | None -> inner
+      | Some f -> sprintf "(fun x -> (%s) (%s x))" f inner)
   | Sum _ | Record _ -> failwith "inline types are not supported"
 
 (* ============ Writer function expressions ============ *)
@@ -266,7 +300,12 @@ let rec writer_expr tr (e : type_expr) : string =
         (String.concat "; " writes)
   | Tvar (_, v) -> tvar_writer v
   | Shared (loc, _, _) -> not_implemented loc "shared"
-  | Wrap (loc, _, _) -> not_implemented loc "wrap"
+  | Wrap (_, inner_e, an) ->
+      let inner = writer_expr tr inner_e in
+      let (_, _, unwrap_fn) = get_ocaml_wrap an in
+      (match unwrap_fn with
+      | None -> inner
+      | Some f -> sprintf "(fun x -> %s ((%s) x))" inner f)
   | Sum _ | Record _ -> failwith "inline types are not supported"
 
 (* ============ Flatten variants ============ *)

@@ -357,6 +357,23 @@ type module_ = string
     ~json_in:"42"
   ;
 
+  test_e2e "wrap"
+    ~atd_src:{|
+(* wrap with explicit t/wrap/unwrap: string in JSON, int in OCaml *)
+type uid = string wrap <ocaml t="int" wrap="int_of_string" unwrap="string_of_int">
+
+(* wrap without annotation: identity, behaves like a plain alias *)
+type tag = string wrap
+
+type record = {
+  id: uid;
+  label: tag;
+}
+|}
+    ~type_name:"record"
+    ~json_in:{|{"id": "42", "label": "hello"}|}
+  ;
+
   test_e2e "mutually recursive types"
     ~atd_src:{|
 type tree = [

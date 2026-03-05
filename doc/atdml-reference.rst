@@ -6,7 +6,7 @@ Description
 -----------
 
 Atdml is a command-line program that takes as input type definitions in the
-ATD syntax and produces a self-contained OCaml module that serializes and
+`ATD syntax <atd-language.html>`__ and produces a self-contained OCaml module that serializes and
 deserializes values to and from JSON via the
 `Yojson <https://github.com/ocaml-community/yojson>`__ ``Safe.t``
 intermediate representation.
@@ -28,7 +28,7 @@ Compared to atdgen, atdml:
 Atdml uses the following packages:
 
 - ``atd``: parser for the syntax of type definitions
-- ```yojson`` <https://github.com/ocaml-community/yojson>`__: parser and
+- `yojson <https://github.com/ocaml-community/yojson>`__: parser and
   printer for JSON
 
 Command-line usage

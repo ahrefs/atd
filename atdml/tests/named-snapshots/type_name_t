@@ -90,10 +90,10 @@ end
 
 type t = int
 
-let rec t_of_yojson (x : Yojson.Safe.t) : t =
+let t_of_yojson (x : Yojson.Safe.t) : t =
   Atdml_runtime.int_of_yojson x
 
-let rec yojson_of_t (x : t) : Yojson.Safe.t =
+let yojson_of_t (x : t) : Yojson.Safe.t =
   Atdml_runtime.yojson_of_int x
 
 let t_of_json s =

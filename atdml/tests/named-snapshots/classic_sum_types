@@ -5,17 +5,11 @@ type shape =
   | Rect of (float * float)
   | Point
   | ArcShape of float
-and shapes = shape list
 
 val shape_of_yojson : Yojson.Safe.t -> shape
 val yojson_of_shape : shape -> Yojson.Safe.t
 val shape_of_json : string -> shape
 val json_of_shape : shape -> string
-
-val shapes_of_yojson : Yojson.Safe.t -> shapes
-val yojson_of_shapes : shapes -> Yojson.Safe.t
-val shapes_of_json : string -> shapes
-val json_of_shapes : shapes -> string
 
 module Shape : sig
   type nonrec t = shape
@@ -24,6 +18,13 @@ module Shape : sig
   val of_json : string -> t
   val to_json : t -> string
 end
+
+type shapes = shape list
+
+val shapes_of_yojson : Yojson.Safe.t -> shapes
+val yojson_of_shapes : shapes -> Yojson.Safe.t
+val shapes_of_json : string -> shapes
+val json_of_shapes : shapes -> string
 
 module Shapes : sig
   type nonrec t = shapes
@@ -111,36 +112,26 @@ type shape =
   | Rect of (float * float)
   | Point
   | ArcShape of float
-and shapes = shape list
 
-let rec shape_of_yojson (x : Yojson.Safe.t) : shape =
+let shape_of_yojson (x : Yojson.Safe.t) : shape =
   match x with
   | `List [`String "Circle"; v] -> Circle (Atdml_runtime.float_of_yojson v)
   | `List [`String "rectangle"; v] -> Rect ((fun x -> match x with | `List lst when List.length lst = 2 -> (Atdml_runtime.float_of_yojson (List.nth lst 0), Atdml_runtime.float_of_yojson (List.nth lst 1)) | _ -> Atdml_runtime.bad_type "tuple" x) v)
   | `String "Dot" -> Point
   | `List [`String "arc"; v] -> ArcShape (Atdml_runtime.float_of_yojson v)
   | _ -> Atdml_runtime.bad_sum "shape" x
-and shapes_of_yojson (x : Yojson.Safe.t) : shapes =
-  (Atdml_runtime.list_of_yojson shape_of_yojson) x
 
-let rec yojson_of_shape (x : shape) : Yojson.Safe.t =
+let yojson_of_shape (x : shape) : Yojson.Safe.t =
   match x with
   | Circle v -> `List [`String "Circle"; Atdml_runtime.yojson_of_float v]
   | Rect v -> `List [`String "rectangle"; (fun (x0, x1) -> `List [Atdml_runtime.yojson_of_float x0; Atdml_runtime.yojson_of_float x1]) v]
   | Point -> `String "Dot"
   | ArcShape v -> `List [`String "arc"; Atdml_runtime.yojson_of_float v]
-and yojson_of_shapes (x : shapes) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_shape) x
 
 let shape_of_json s =
   shape_of_yojson (Yojson.Safe.from_string s)
 let json_of_shape x =
   Yojson.Safe.to_string (yojson_of_shape x)
-
-let shapes_of_json s =
-  shapes_of_yojson (Yojson.Safe.from_string s)
-let json_of_shapes x =
-  Yojson.Safe.to_string (yojson_of_shapes x)
 
 module Shape = struct
   type nonrec t = shape
@@ -149,6 +140,19 @@ module Shape = struct
   let of_json = shape_of_json
   let to_json = json_of_shape
 end
+
+type shapes = shape list
+
+let shapes_of_yojson (x : Yojson.Safe.t) : shapes =
+  (Atdml_runtime.list_of_yojson shape_of_yojson) x
+
+let yojson_of_shapes (x : shapes) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list yojson_of_shape) x
+
+let shapes_of_json s =
+  shapes_of_yojson (Yojson.Safe.from_string s)
+let json_of_shapes x =
+  Yojson.Safe.to_string (yojson_of_shapes x)
 
 module Shapes = struct
   type nonrec t = shapes

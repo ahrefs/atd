@@ -90,10 +90,10 @@ end
 
 type json_ = string
 
-let rec json__of_yojson (x : Yojson.Safe.t) : json_ =
+let json__of_yojson (x : Yojson.Safe.t) : json_ =
   Atdml_runtime.string_of_yojson x
 
-let rec yojson_of_json_ (x : json_) : Yojson.Safe.t =
+let yojson_of_json_ (x : json_) : Yojson.Safe.t =
   Atdml_runtime.yojson_of_string x
 
 let json__of_json s =

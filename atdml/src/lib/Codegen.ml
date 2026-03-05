@@ -938,10 +938,50 @@ let gen_submodule_mli tr ((loc, (name, params, _), e) : A.type_def) : B.t =
     B.Line "end";
   ]
 
+(* ============ Group emission helpers (based on Atd.Util.tsort output) ============ *)
+
+(* Emit type definitions for one tsort group, connecting them with 'and'
+   when there are multiple defs (mutual recursion). *)
+let emit_type_group tr (defs : A.type_def list) : B.t =
+  match defs with
+  | [] -> []
+  | [def] -> gen_type_def tr def @ [B.Line ""]
+  | first :: rest ->
+      let first_lines = gen_type_def tr first in
+      let rest_lines =
+        List.concat_map (fun def ->
+          match gen_type_def tr def with
+          | B.Line s :: tl when String.length s >= 4
+            && String.sub s 0 4 = "type" ->
+              B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: tl
+          | lines -> lines
+        ) rest
+      in
+      first_lines @ rest_lines @ [B.Line ""]
+
+(* Replace the leading "let" keyword in a B.t block. *)
+let replace_let keyword = function
+  | B.Line s :: rest when String.length s >= 3 && String.sub s 0 3 = "let" ->
+      B.Line (keyword ^ String.sub s 3 (String.length s - 3)) :: rest
+  | lines -> lines
+
+(* Emit function definitions for one tsort group.
+   Uses 'let rec' (and 'and' for subsequent) when is_recursive,
+   plain 'let' otherwise. *)
+let emit_fun_group ~is_recursive gen_fun (defs : A.type_def list) : B.t =
+  let funs = List.map gen_fun defs in
+  let first_kw = if is_recursive then "let rec" else "let" in
+  match funs with
+  | [] -> []
+  | [f] -> replace_let first_kw f @ [B.Line ""]
+  | first :: rest ->
+      replace_let first_kw first
+      @ List.concat_map (replace_let "and") rest
+      @ [B.Line ""]
+
 (* ============ Assemble the .ml file ============ *)
 
 let make_ml ~tr ~atd_filename (items : A.module_body) : B.t =
-  let defs = List.map (fun (Type x) -> x) items in
   let header =
     [
       B.Line (sprintf "(* Auto-generated from \"%s\" by atdml. *)"
@@ -950,101 +990,33 @@ let make_ml ~tr ~atd_filename (items : A.module_body) : B.t =
       B.Line "";
     ]
   in
-  (* All type definitions *)
-  let type_defs =
-    match defs with
-    | [] -> []
-    | [def] -> gen_type_def tr def @ [B.Line ""]
-    | first :: rest ->
-        (* Use 'type ... and ...' for the whole block so mutual recursion works *)
-        let first_lines = gen_type_def tr first in
-        let rest_lines =
-          List.concat_map (fun def ->
-            (* Replace 'type' with 'and' for subsequent definitions *)
-            match gen_type_def tr def with
-            | B.Line s :: rest when String.length s >= 4
-              && String.sub s 0 4 = "type" ->
-                B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: rest
-            | lines -> lines
-          ) rest
-        in
-        first_lines @ rest_lines @ [B.Line ""]
+  let gen_group (is_recursive, group_items) =
+    let defs = List.map (fun (Type x) -> x) group_items in
+    let types = emit_type_group tr defs in
+    let makes =
+      List.concat_map (fun def ->
+        let lines = gen_make_fun tr def in
+        if lines = [] then [] else lines @ [B.Line ""]
+      ) defs
+    in
+    let of_yojsons = emit_fun_group ~is_recursive (gen_of_yojson tr) defs in
+    let yojson_ofs = emit_fun_group ~is_recursive (gen_yojson_of tr) defs in
+    let ios =
+      List.concat_map (fun def -> gen_io_funs tr def @ [B.Line ""]) defs
+    in
+    let submods =
+      List.concat_map (fun def -> gen_submodule_ml tr def @ [B.Line ""]) defs
+    in
+    types @ makes @ of_yojsons @ yojson_ofs @ ios @ submods
   in
-  (* Creation functions (no mutual recursion needed) *)
-  let make_funs =
-    List.concat_map (fun def ->
-      let lines = gen_make_fun tr def in
-      if lines = [] then [] else lines @ [B.Line ""]
-    ) defs
-  in
-  (* of_yojson functions - one 'let rec ... and ...' block *)
-  let of_yojson_funs =
-    match defs with
-    | [] -> []
-    | defs ->
-        let all =
-          List.mapi (fun i def ->
-            let lines = gen_of_yojson tr def in
-            (* Replace 'let' with 'let rec' for first, 'and' for rest *)
-            match lines with
-            | B.Line s :: rest ->
-                let keyword =
-                  if i = 0 then
-                    if String.length s >= 3 && String.sub s 0 3 = "let" then
-                      "let rec" ^ String.sub s 3 (String.length s - 3)
-                    else s
-                  else
-                    if String.length s >= 3 && String.sub s 0 3 = "let" then
-                      "and" ^ String.sub s 3 (String.length s - 3)
-                    else s
-                in
-                B.Line keyword :: rest
-            | lines -> lines
-          ) defs
-        in
-        List.concat all @ [B.Line ""]
-  in
-  (* yojson_of functions - one 'let rec ... and ...' block *)
-  let yojson_of_funs =
-    match defs with
-    | [] -> []
-    | defs ->
-        let all =
-          List.mapi (fun i def ->
-            let lines = gen_yojson_of tr def in
-            match lines with
-            | B.Line s :: rest ->
-                let keyword =
-                  if i = 0 then
-                    if String.length s >= 3 && String.sub s 0 3 = "let" then
-                      "let rec" ^ String.sub s 3 (String.length s - 3)
-                    else s
-                  else
-                    if String.length s >= 3 && String.sub s 0 3 = "let" then
-                      "and" ^ String.sub s 3 (String.length s - 3)
-                    else s
-                in
-                B.Line keyword :: rest
-            | lines -> lines
-          ) defs
-        in
-        List.concat all @ [B.Line ""]
-  in
-  (* Top-level I/O functions (all types; parametric types get converter args) *)
-  let io_funs =
-    List.concat_map (fun def -> gen_io_funs tr def @ [B.Line ""]) defs
-  in
-  (* Submodule per type *)
-  let submodules =
-    List.concat_map (fun def -> gen_submodule_ml tr def @ [B.Line ""]) defs
-  in
-  header @ runtime_module @ [B.Line ""] @ type_defs @ make_funs
-  @ of_yojson_funs @ yojson_of_funs @ io_funs @ submodules
+  header
+  @ runtime_module
+  @ [B.Line ""]
+  @ List.concat_map gen_group (Atd.Util.tsort items)
 
 (* ============ Assemble the .mli file ============ *)
 
 let make_mli ~tr ~atd_filename (items : A.module_body) : B.t =
-  let defs = List.map (fun (Type x) -> x) items in
   let header =
     [
       B.Line (sprintf "(* Auto-generated from \"%s\" by atdml. *)"
@@ -1052,39 +1024,24 @@ let make_mli ~tr ~atd_filename (items : A.module_body) : B.t =
       B.Line "";
     ]
   in
-  (* All type definitions (same as .ml) *)
-  let type_defs =
-    match defs with
-    | [] -> []
-    | [def] -> gen_type_def tr def @ [B.Line ""]
-    | first :: rest ->
-        let first_lines = gen_type_def tr first in
-        let rest_lines =
-          List.concat_map (fun def ->
-            match gen_type_def tr def with
-            | B.Line s :: rest when String.length s >= 4
-              && String.sub s 0 4 = "type" ->
-                B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: rest
-            | lines -> lines
-          ) rest
-        in
-        first_lines @ rest_lines @ [B.Line ""]
+  let gen_group (_, group_items) =
+    let defs = List.map (fun (Type x) -> x) group_items in
+    let types = emit_type_group tr defs in
+    let sigs =
+      List.concat_map (fun def ->
+        gen_make_sig tr def
+        @ gen_of_yojson_sig tr def
+        @ gen_yojson_of_sig tr def
+        @ gen_io_sigs tr def
+        @ [B.Line ""]
+      ) defs
+    in
+    let submod_sigs =
+      List.concat_map (fun def -> gen_submodule_mli tr def @ [B.Line ""]) defs
+    in
+    types @ sigs @ submod_sigs
   in
-  (* Signatures for each type's functions *)
-  let sigs =
-    List.concat_map (fun def ->
-      let make_sigs = gen_make_sig tr def in
-      let of_sig = gen_of_yojson_sig tr def in
-      let yojson_sig = gen_yojson_of_sig tr def in
-      let io_sigs = gen_io_sigs tr def in
-      make_sigs @ of_sig @ yojson_sig @ io_sigs @ [B.Line ""]
-    ) defs
-  in
-  (* Submodule signatures *)
-  let submodule_sigs =
-    List.concat_map (fun def -> gen_submodule_mli tr def @ [B.Line ""]) defs
-  in
-  header @ type_defs @ sigs @ submodule_sigs
+  header @ List.concat_map gen_group (Atd.Util.tsort items)
 
 (* ============ Entry points ============ *)
 

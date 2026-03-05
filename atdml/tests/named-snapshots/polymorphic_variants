@@ -5,17 +5,11 @@ type status = [
   | `Inactive
   | `Pending of string
 ]
-and statuses = status list
 
 val status_of_yojson : Yojson.Safe.t -> status
 val yojson_of_status : status -> Yojson.Safe.t
 val status_of_json : string -> status
 val json_of_status : status -> string
-
-val statuses_of_yojson : Yojson.Safe.t -> statuses
-val yojson_of_statuses : statuses -> Yojson.Safe.t
-val statuses_of_json : string -> statuses
-val json_of_statuses : statuses -> string
 
 module Status : sig
   type nonrec t = status
@@ -24,6 +18,13 @@ module Status : sig
   val of_json : string -> t
   val to_json : t -> string
 end
+
+type statuses = status list
+
+val statuses_of_yojson : Yojson.Safe.t -> statuses
+val yojson_of_statuses : statuses -> Yojson.Safe.t
+val statuses_of_json : string -> statuses
+val json_of_statuses : statuses -> string
 
 module Statuses : sig
   type nonrec t = statuses
@@ -111,34 +112,24 @@ type status = [
   | `Inactive
   | `Pending of string
 ]
-and statuses = status list
 
-let rec status_of_yojson (x : Yojson.Safe.t) : status =
+let status_of_yojson (x : Yojson.Safe.t) : status =
   match x with
   | `String "Active" -> `Active
   | `String "Inactive" -> `Inactive
   | `List [`String "Pending"; v] -> `Pending (Atdml_runtime.string_of_yojson v)
   | _ -> Atdml_runtime.bad_sum "status" x
-and statuses_of_yojson (x : Yojson.Safe.t) : statuses =
-  (Atdml_runtime.list_of_yojson status_of_yojson) x
 
-let rec yojson_of_status (x : status) : Yojson.Safe.t =
+let yojson_of_status (x : status) : Yojson.Safe.t =
   match x with
   | `Active -> `String "Active"
   | `Inactive -> `String "Inactive"
   | `Pending v -> `List [`String "Pending"; Atdml_runtime.yojson_of_string v]
-and yojson_of_statuses (x : statuses) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list yojson_of_status) x
 
 let status_of_json s =
   status_of_yojson (Yojson.Safe.from_string s)
 let json_of_status x =
   Yojson.Safe.to_string (yojson_of_status x)
-
-let statuses_of_json s =
-  statuses_of_yojson (Yojson.Safe.from_string s)
-let json_of_statuses x =
-  Yojson.Safe.to_string (yojson_of_statuses x)
 
 module Status = struct
   type nonrec t = status
@@ -147,6 +138,19 @@ module Status = struct
   let of_json = status_of_json
   let to_json = json_of_status
 end
+
+type statuses = status list
+
+let statuses_of_yojson (x : Yojson.Safe.t) : statuses =
+  (Atdml_runtime.list_of_yojson status_of_yojson) x
+
+let yojson_of_statuses (x : statuses) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list yojson_of_status) x
+
+let statuses_of_json s =
+  statuses_of_yojson (Yojson.Safe.from_string s)
+let json_of_statuses x =
+  Yojson.Safe.to_string (yojson_of_statuses x)
 
 module Statuses = struct
   type nonrec t = statuses

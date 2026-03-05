@@ -115,7 +115,7 @@ type person = {
 let make_person ~name ~age ~lol ?email ?(score = 0.) ?(active = false) ?(tags = []) ?(level = 1) ~address () : person =
   { name; age; lol; email; score; active; tags; level; address }
 
-let rec person_of_yojson (x : Yojson.Safe.t) : person =
+let person_of_yojson (x : Yojson.Safe.t) : person =
   match x with
   | `Assoc fields ->
     let name =
@@ -166,7 +166,7 @@ let rec person_of_yojson (x : Yojson.Safe.t) : person =
     { name; age; lol; email; score; active; tags; level; address }
   | _ -> Atdml_runtime.bad_type "person" x
 
-let rec yojson_of_person (x : person) : Yojson.Safe.t =
+let yojson_of_person (x : person) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("name", Atdml_runtime.yojson_of_string x.name)];
     [("age", Atdml_runtime.yojson_of_int x.age)];

@@ -1,29 +1,11 @@
 (* Auto-generated from "type_name_module.atd" by atdml. *)
 
 type module__ = bool
-and module_1 = string list
-and module_ = int
-and module_2 = string
 
 val module___of_yojson : Yojson.Safe.t -> module__
 val yojson_of_module__ : module__ -> Yojson.Safe.t
 val module___of_json : string -> module__
 val json_of_module__ : module__ -> string
-
-val module_1_of_yojson : Yojson.Safe.t -> module_1
-val yojson_of_module_1 : module_1 -> Yojson.Safe.t
-val module_1_of_json : string -> module_1
-val json_of_module_1 : module_1 -> string
-
-val module__of_yojson : Yojson.Safe.t -> module_
-val yojson_of_module_ : module_ -> Yojson.Safe.t
-val module__of_json : string -> module_
-val json_of_module_ : module_ -> string
-
-val module_2_of_yojson : Yojson.Safe.t -> module_2
-val yojson_of_module_2 : module_2 -> Yojson.Safe.t
-val module_2_of_json : string -> module_2
-val json_of_module_2 : module_2 -> string
 
 module Module__ : sig
   type nonrec t = module__
@@ -33,6 +15,13 @@ module Module__ : sig
   val to_json : t -> string
 end
 
+type module_1 = string list
+
+val module_1_of_yojson : Yojson.Safe.t -> module_1
+val yojson_of_module_1 : module_1 -> Yojson.Safe.t
+val module_1_of_json : string -> module_1
+val json_of_module_1 : module_1 -> string
+
 module Module_1 : sig
   type nonrec t = module_1
   val of_yojson : Yojson.Safe.t -> t
@@ -41,16 +30,30 @@ module Module_1 : sig
   val to_json : t -> string
 end
 
-module Module_ : sig
-  type nonrec t = module_
+type module_2 = string
+
+val module_2_of_yojson : Yojson.Safe.t -> module_2
+val yojson_of_module_2 : module_2 -> Yojson.Safe.t
+val module_2_of_json : string -> module_2
+val json_of_module_2 : module_2 -> string
+
+module Module_2 : sig
+  type nonrec t = module_2
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
 
-module Module_2 : sig
-  type nonrec t = module_2
+type module_ = int
+
+val module__of_yojson : Yojson.Safe.t -> module_
+val yojson_of_module_ : module_ -> Yojson.Safe.t
+val module__of_json : string -> module_
+val json_of_module_ : module_ -> string
+
+module Module_ : sig
+  type nonrec t = module_
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -131,47 +134,17 @@ module Atdml_runtime = struct
 end
 
 type module__ = bool
-and module_1 = string list
-and module_ = int
-and module_2 = string
 
-let rec module___of_yojson (x : Yojson.Safe.t) : module__ =
+let module___of_yojson (x : Yojson.Safe.t) : module__ =
   Atdml_runtime.bool_of_yojson x
-and module_1_of_yojson (x : Yojson.Safe.t) : module_1 =
-  (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) x
-and module__of_yojson (x : Yojson.Safe.t) : module_ =
-  Atdml_runtime.int_of_yojson x
-and module_2_of_yojson (x : Yojson.Safe.t) : module_2 =
-  Atdml_runtime.string_of_yojson x
 
-let rec yojson_of_module__ (x : module__) : Yojson.Safe.t =
+let yojson_of_module__ (x : module__) : Yojson.Safe.t =
   Atdml_runtime.yojson_of_bool x
-and yojson_of_module_1 (x : module_1) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x
-and yojson_of_module_ (x : module_) : Yojson.Safe.t =
-  Atdml_runtime.yojson_of_int x
-and yojson_of_module_2 (x : module_2) : Yojson.Safe.t =
-  Atdml_runtime.yojson_of_string x
 
 let module___of_json s =
   module___of_yojson (Yojson.Safe.from_string s)
 let json_of_module__ x =
   Yojson.Safe.to_string (yojson_of_module__ x)
-
-let module_1_of_json s =
-  module_1_of_yojson (Yojson.Safe.from_string s)
-let json_of_module_1 x =
-  Yojson.Safe.to_string (yojson_of_module_1 x)
-
-let module__of_json s =
-  module__of_yojson (Yojson.Safe.from_string s)
-let json_of_module_ x =
-  Yojson.Safe.to_string (yojson_of_module_ x)
-
-let module_2_of_json s =
-  module_2_of_yojson (Yojson.Safe.from_string s)
-let json_of_module_2 x =
-  Yojson.Safe.to_string (yojson_of_module_2 x)
 
 module Module__ = struct
   type nonrec t = module__
@@ -181,6 +154,19 @@ module Module__ = struct
   let to_json = json_of_module__
 end
 
+type module_1 = string list
+
+let module_1_of_yojson (x : Yojson.Safe.t) : module_1 =
+  (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) x
+
+let yojson_of_module_1 (x : module_1) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x
+
+let module_1_of_json s =
+  module_1_of_yojson (Yojson.Safe.from_string s)
+let json_of_module_1 x =
+  Yojson.Safe.to_string (yojson_of_module_1 x)
+
 module Module_1 = struct
   type nonrec t = module_1
   let of_yojson = module_1_of_yojson
@@ -189,13 +175,18 @@ module Module_1 = struct
   let to_json = json_of_module_1
 end
 
-module Module_ = struct
-  type nonrec t = module_
-  let of_yojson = module__of_yojson
-  let to_yojson = yojson_of_module_
-  let of_json = module__of_json
-  let to_json = json_of_module_
-end
+type module_2 = string
+
+let module_2_of_yojson (x : Yojson.Safe.t) : module_2 =
+  Atdml_runtime.string_of_yojson x
+
+let yojson_of_module_2 (x : module_2) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_string x
+
+let module_2_of_json s =
+  module_2_of_yojson (Yojson.Safe.from_string s)
+let json_of_module_2 x =
+  Yojson.Safe.to_string (yojson_of_module_2 x)
 
 module Module_2 = struct
   type nonrec t = module_2
@@ -203,6 +194,27 @@ module Module_2 = struct
   let to_yojson = yojson_of_module_2
   let of_json = module_2_of_json
   let to_json = json_of_module_2
+end
+
+type module_ = int
+
+let module__of_yojson (x : Yojson.Safe.t) : module_ =
+  Atdml_runtime.int_of_yojson x
+
+let yojson_of_module_ (x : module_) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_int x
+
+let module__of_json s =
+  module__of_yojson (Yojson.Safe.from_string s)
+let json_of_module_ x =
+  Yojson.Safe.to_string (yojson_of_module_ x)
+
+module Module_ = struct
+  type nonrec t = module_
+  let of_yojson = module__of_yojson
+  let to_yojson = yojson_of_module_
+  let of_json = module__of_json
+  let to_json = json_of_module_
 end
 
 --- Input:

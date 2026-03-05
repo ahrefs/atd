@@ -1,17 +1,12 @@
 (* Auto-generated from "mutually_recursive_types.atd" by atdml. *)
 
-type tree =
-  | Leaf
-  | Node of node
-and node = {
+type node = {
   value: int;
   children: (tree * tree);
 }
-
-val tree_of_yojson : Yojson.Safe.t -> tree
-val yojson_of_tree : tree -> Yojson.Safe.t
-val tree_of_json : string -> tree
-val json_of_tree : tree -> string
+and tree =
+  | Leaf
+  | Node of node
 
 val make_node : value:int -> children:(tree * tree) -> unit -> node
 val node_of_yojson : Yojson.Safe.t -> node
@@ -19,17 +14,22 @@ val yojson_of_node : node -> Yojson.Safe.t
 val node_of_json : string -> node
 val json_of_node : node -> string
 
-module Tree : sig
-  type nonrec t = tree
+val tree_of_yojson : Yojson.Safe.t -> tree
+val yojson_of_tree : tree -> Yojson.Safe.t
+val tree_of_json : string -> tree
+val json_of_tree : tree -> string
+
+module Node : sig
+  type nonrec t = node
+  val make : value:int -> children:(tree * tree) -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
 
-module Node : sig
-  type nonrec t = node
-  val make : value:int -> children:(tree * tree) -> unit -> t
+module Tree : sig
+  type nonrec t = tree
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -109,23 +109,18 @@ module Atdml_runtime = struct
     | Some x -> f x
 end
 
-type tree =
-  | Leaf
-  | Node of node
-and node = {
+type node = {
   value: int;
   children: (tree * tree);
 }
+and tree =
+  | Leaf
+  | Node of node
 
 let make_node ~value ~children () : node =
   { value; children }
 
-let rec tree_of_yojson (x : Yojson.Safe.t) : tree =
-  match x with
-  | `String "Leaf" -> Leaf
-  | `List [`String "Node"; v] -> Node (node_of_yojson v)
-  | _ -> Atdml_runtime.bad_sum "tree" x
-and node_of_yojson (x : Yojson.Safe.t) : node =
+let rec node_of_yojson (x : Yojson.Safe.t) : node =
   match x with
   | `Assoc fields ->
     let value =
@@ -140,34 +135,31 @@ and node_of_yojson (x : Yojson.Safe.t) : node =
     in
     { value; children }
   | _ -> Atdml_runtime.bad_type "node" x
-
-let rec yojson_of_tree (x : tree) : Yojson.Safe.t =
+and tree_of_yojson (x : Yojson.Safe.t) : tree =
   match x with
-  | Leaf -> `String "Leaf"
-  | Node v -> `List [`String "Node"; yojson_of_node v]
-and yojson_of_node (x : node) : Yojson.Safe.t =
+  | `String "Leaf" -> Leaf
+  | `List [`String "Node"; v] -> Node (node_of_yojson v)
+  | _ -> Atdml_runtime.bad_sum "tree" x
+
+let rec yojson_of_node (x : node) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("value", Atdml_runtime.yojson_of_int x.value)];
     [("children", (fun (x0, x1) -> `List [yojson_of_tree x0; yojson_of_tree x1]) x.children)];
   ])
-
-let tree_of_json s =
-  tree_of_yojson (Yojson.Safe.from_string s)
-let json_of_tree x =
-  Yojson.Safe.to_string (yojson_of_tree x)
+and yojson_of_tree (x : tree) : Yojson.Safe.t =
+  match x with
+  | Leaf -> `String "Leaf"
+  | Node v -> `List [`String "Node"; yojson_of_node v]
 
 let node_of_json s =
   node_of_yojson (Yojson.Safe.from_string s)
 let json_of_node x =
   Yojson.Safe.to_string (yojson_of_node x)
 
-module Tree = struct
-  type nonrec t = tree
-  let of_yojson = tree_of_yojson
-  let to_yojson = yojson_of_tree
-  let of_json = tree_of_json
-  let to_json = json_of_tree
-end
+let tree_of_json s =
+  tree_of_yojson (Yojson.Safe.from_string s)
+let json_of_tree x =
+  Yojson.Safe.to_string (yojson_of_tree x)
 
 module Node = struct
   type nonrec t = node
@@ -176,6 +168,14 @@ module Node = struct
   let to_yojson = yojson_of_node
   let of_json = node_of_json
   let to_json = json_of_node
+end
+
+module Tree = struct
+  type nonrec t = tree
+  let of_yojson = tree_of_yojson
+  let to_yojson = yojson_of_tree
+  let of_json = tree_of_json
+  let to_json = json_of_tree
 end
 
 --- Input:

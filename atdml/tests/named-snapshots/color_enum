@@ -4,17 +4,11 @@ type color =
   | Red
   | Green
   | Blue
-and colors = (color * color * color)
 
 val color_of_yojson : Yojson.Safe.t -> color
 val yojson_of_color : color -> Yojson.Safe.t
 val color_of_json : string -> color
 val json_of_color : color -> string
-
-val colors_of_yojson : Yojson.Safe.t -> colors
-val yojson_of_colors : colors -> Yojson.Safe.t
-val colors_of_json : string -> colors
-val json_of_colors : colors -> string
 
 module Color : sig
   type nonrec t = color
@@ -23,6 +17,13 @@ module Color : sig
   val of_json : string -> t
   val to_json : t -> string
 end
+
+type colors = (color * color * color)
+
+val colors_of_yojson : Yojson.Safe.t -> colors
+val yojson_of_colors : colors -> Yojson.Safe.t
+val colors_of_json : string -> colors
+val json_of_colors : colors -> string
 
 module Colors : sig
   type nonrec t = colors
@@ -109,34 +110,24 @@ type color =
   | Red
   | Green
   | Blue
-and colors = (color * color * color)
 
-let rec color_of_yojson (x : Yojson.Safe.t) : color =
+let color_of_yojson (x : Yojson.Safe.t) : color =
   match x with
   | `String "Red" -> Red
   | `String "green" -> Green
   | `String "Blue" -> Blue
   | _ -> Atdml_runtime.bad_sum "color" x
-and colors_of_yojson (x : Yojson.Safe.t) : colors =
-  (fun x -> match x with | `List lst when List.length lst = 3 -> (color_of_yojson (List.nth lst 0), color_of_yojson (List.nth lst 1), color_of_yojson (List.nth lst 2)) | _ -> Atdml_runtime.bad_type "tuple" x) x
 
-let rec yojson_of_color (x : color) : Yojson.Safe.t =
+let yojson_of_color (x : color) : Yojson.Safe.t =
   match x with
   | Red -> `String "Red"
   | Green -> `String "green"
   | Blue -> `String "Blue"
-and yojson_of_colors (x : colors) : Yojson.Safe.t =
-  (fun (x0, x1, x2) -> `List [yojson_of_color x0; yojson_of_color x1; yojson_of_color x2]) x
 
 let color_of_json s =
   color_of_yojson (Yojson.Safe.from_string s)
 let json_of_color x =
   Yojson.Safe.to_string (yojson_of_color x)
-
-let colors_of_json s =
-  colors_of_yojson (Yojson.Safe.from_string s)
-let json_of_colors x =
-  Yojson.Safe.to_string (yojson_of_colors x)
 
 module Color = struct
   type nonrec t = color
@@ -145,6 +136,19 @@ module Color = struct
   let of_json = color_of_json
   let to_json = json_of_color
 end
+
+type colors = (color * color * color)
+
+let colors_of_yojson (x : Yojson.Safe.t) : colors =
+  (fun x -> match x with | `List lst when List.length lst = 3 -> (color_of_yojson (List.nth lst 0), color_of_yojson (List.nth lst 1), color_of_yojson (List.nth lst 2)) | _ -> Atdml_runtime.bad_type "tuple" x) x
+
+let yojson_of_colors (x : colors) : Yojson.Safe.t =
+  (fun (x0, x1, x2) -> `List [yojson_of_color x0; yojson_of_color x1; yojson_of_color x2]) x
+
+let colors_of_json s =
+  colors_of_yojson (Yojson.Safe.from_string s)
+let json_of_colors x =
+  Yojson.Safe.to_string (yojson_of_colors x)
 
 module Colors = struct
   type nonrec t = colors

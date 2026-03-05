@@ -119,7 +119,7 @@ type all_types = {
 let make_all_types ~a_unit ~a_bool ~a_int ~a_float ~a_string ~a_list ~a_option ~a_nullable ~a_abstract ~a_tuple ~a_nested () : all_types =
   { a_unit; a_bool; a_int; a_float; a_string; a_list; a_option; a_nullable; a_abstract; a_tuple; a_nested }
 
-let rec all_types_of_yojson (x : Yojson.Safe.t) : all_types =
+let all_types_of_yojson (x : Yojson.Safe.t) : all_types =
   match x with
   | `Assoc fields ->
     let a_unit =
@@ -180,7 +180,7 @@ let rec all_types_of_yojson (x : Yojson.Safe.t) : all_types =
     { a_unit; a_bool; a_int; a_float; a_string; a_list; a_option; a_nullable; a_abstract; a_tuple; a_nested }
   | _ -> Atdml_runtime.bad_type "all_types" x
 
-let rec yojson_of_all_types (x : all_types) : Yojson.Safe.t =
+let yojson_of_all_types (x : all_types) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("a_unit", Atdml_runtime.yojson_of_unit x.a_unit)];
     [("a_bool", Atdml_runtime.yojson_of_bool x.a_bool)];

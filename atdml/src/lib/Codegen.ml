@@ -33,6 +33,7 @@ module B = Indent
 let annot_schema_ocaml : Atd.Annot.schema_section = {
   section = "ocaml";
   fields = [
+    Type_def,  "attr";    (* <ocaml attr="..."> on a type def: append [@@...] *)
     Type_expr, "repr";    (* <ocaml repr="poly"> on a sum type *)
     Type_expr, "module";  (* <ocaml module="M"> on a wrap: use M.t/M.wrap/M.unwrap *)
     Type_expr, "t";       (* <ocaml t="..."> on a wrap: explicit OCaml type *)
@@ -116,6 +117,14 @@ let get_ocaml_repr an =
     ~parse:(fun s -> Some s)
     ~sections:["ocaml"]
     ~field:"repr"
+    an
+
+(* Get <ocaml attr="..."> for a type definition; value is placed inside [@@...] *)
+let get_ocaml_attr an =
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
     an
 
 (* Get wrap-related annotations for a 'wrap' type expression.
@@ -981,13 +990,19 @@ let gen_submodule_mli tr ((loc, (name, params, _), e) : A.type_def) : B.t =
 (* ============ Group emission helpers (based on Atd.Util.tsort output) ============ *)
 
 (* Emit type definitions for one tsort group, connecting them with 'and'
-   when there are multiple defs (mutual recursion). *)
+   when there are multiple defs (mutual recursion).
+   Appends [@@attr] when an <ocaml attr="..."> annotation is present. *)
 let emit_type_group tr (defs : A.type_def list) : B.t =
+  let attr_line (_, (_, _, def_an), _) =
+    match get_ocaml_attr def_an with
+    | None -> []
+    | Some attr -> [B.Line (sprintf "[@@%s]" attr)]
+  in
   match defs with
   | [] -> []
-  | [def] -> gen_type_def tr def @ [B.Line ""]
+  | [def] -> gen_type_def tr def @ attr_line def @ [B.Line ""]
   | first :: rest ->
-      let first_lines = gen_type_def tr first in
+      let first_lines = gen_type_def tr first @ attr_line first in
       let rest_lines =
         List.concat_map (fun def ->
           let lines =
@@ -997,7 +1012,7 @@ let emit_type_group tr (defs : A.type_def list) : B.t =
                 B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: tl
             | lines -> lines
           in
-          B.Line "" :: lines
+          B.Line "" :: lines @ attr_line def
         ) rest
       in
       first_lines @ rest_lines @ [B.Line ""]

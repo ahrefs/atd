@@ -1,0 +1,181 @@
+(* Auto-generated from "attr.atd" by atdml. *)
+
+type point = {
+  x: float;
+  y: float;
+}
+[@@deriving show]
+
+val make_point : x:float -> y:float -> unit -> point
+val point_of_yojson : Yojson.Safe.t -> point
+val yojson_of_point : point -> Yojson.Safe.t
+val point_of_json : string -> point
+val json_of_point : point -> string
+
+module Point : sig
+  type nonrec t = point
+  val make : x:float -> y:float -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type points = point list
+[@@deriving show]
+
+val points_of_yojson : Yojson.Safe.t -> points
+val yojson_of_points : points -> Yojson.Safe.t
+val points_of_json : string -> points
+val json_of_points : points -> string
+
+module Points : sig
+  type nonrec t = points
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "attr.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+end
+
+type point = {
+  x: float;
+  y: float;
+}
+[@@deriving show]
+
+let make_point ~x ~y () : point =
+  { x; y }
+
+let point_of_yojson (x : Yojson.Safe.t) : point =
+  match x with
+  | `Assoc fields ->
+    let x =
+      match List.assoc_opt "x" fields with
+      | Some v -> Atdml_runtime.float_of_yojson v
+      | None -> Atdml_runtime.missing_field "point" "x"
+    in
+    let y =
+      match List.assoc_opt "y" fields with
+      | Some v -> Atdml_runtime.float_of_yojson v
+      | None -> Atdml_runtime.missing_field "point" "y"
+    in
+    { x; y }
+  | _ -> Atdml_runtime.bad_type "point" x
+
+let yojson_of_point (x : point) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("x", Atdml_runtime.yojson_of_float x.x)];
+    [("y", Atdml_runtime.yojson_of_float x.y)];
+  ])
+
+let point_of_json s =
+  point_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_point x =
+  Yojson.Safe.to_string (yojson_of_point x)
+
+module Point = struct
+  type nonrec t = point
+  let make = make_point
+  let of_yojson = point_of_yojson
+  let to_yojson = yojson_of_point
+  let of_json = point_of_json
+  let to_json = json_of_point
+end
+
+type points = point list
+[@@deriving show]
+
+let points_of_yojson (x : Yojson.Safe.t) : points =
+  (Atdml_runtime.list_of_yojson point_of_yojson) x
+
+let yojson_of_points (x : points) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list yojson_of_point) x
+
+let points_of_json s =
+  points_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_points x =
+  Yojson.Safe.to_string (yojson_of_points x)
+
+module Points = struct
+  type nonrec t = points
+  let of_yojson = points_of_yojson
+  let to_yojson = yojson_of_points
+  let of_json = points_of_json
+  let to_json = json_of_points
+end
+

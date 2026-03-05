@@ -93,6 +93,23 @@ let make_filename_from_test_name str =
   )
     str
 
+(* Run a test that only checks the generated .mli and .ml output (no
+   compilation), useful when the generated code uses ppx attributes that
+   require libraries not available in the test environment. *)
+let test_codegen_snapshot test_name ~atd_src =
+  let file_name = make_filename_from_test_name test_name in
+  Testo.create test_name
+    ~checked_output:(Testo.stdout
+                       ~expected_stdout_path:(
+                         Fpath.(v "tests/named-snapshots" / file_name))
+                       ())
+    (fun () ->
+      let mli, ml = run_codegen ~test_name ~file_name atd_src in
+      print_string mli;
+      print_string "--- ml ---\n";
+      print_string ml
+    )
+
 (* Run an end-to-end test that expects the code generator to fail.
    The error message (without the location prefix) is captured as a snapshot. *)
 let _test_codegen_error test_name ~atd_src =
@@ -355,6 +372,17 @@ type module_ = string
 |}
     ~type_name:"module_" (* ATD type name "module" -> int *)
     ~json_in:"42"
+  ;
+
+  test_codegen_snapshot "attr"
+    ~atd_src:{|
+type point <ocaml attr="deriving show"> = {
+  x: float;
+  y: float;
+}
+
+type points <ocaml attr="deriving show"> = point list
+|}
   ;
 
   test_e2e "wrap"

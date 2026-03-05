@@ -4,6 +4,7 @@ type node = {
   value: int;
   children: (tree * tree);
 }
+
 and tree =
   | Leaf
   | Node of node
@@ -113,6 +114,7 @@ type node = {
   value: int;
   children: (tree * tree);
 }
+
 and tree =
   | Leaf
   | Node of node
@@ -135,6 +137,7 @@ let rec node_of_yojson (x : Yojson.Safe.t) : node =
     in
     { value; children }
   | _ -> Atdml_runtime.bad_type "node" x
+
 and tree_of_yojson (x : Yojson.Safe.t) : tree =
   match x with
   | `String "Leaf" -> Leaf
@@ -146,6 +149,7 @@ let rec yojson_of_node (x : node) : Yojson.Safe.t =
     [("value", Atdml_runtime.yojson_of_int x.value)];
     [("children", (fun (x0, x1) -> `List [yojson_of_tree x0; yojson_of_tree x1]) x.children)];
   ])
+
 and yojson_of_tree (x : tree) : Yojson.Safe.t =
   match x with
   | Leaf -> `String "Leaf"

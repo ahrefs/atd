@@ -951,11 +951,14 @@ let emit_type_group tr (defs : A.type_def list) : B.t =
       let first_lines = gen_type_def tr first in
       let rest_lines =
         List.concat_map (fun def ->
-          match gen_type_def tr def with
-          | B.Line s :: tl when String.length s >= 4
-            && String.sub s 0 4 = "type" ->
-              B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: tl
-          | lines -> lines
+          let lines =
+            match gen_type_def tr def with
+            | B.Line s :: tl when String.length s >= 4
+              && String.sub s 0 4 = "type" ->
+                B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: tl
+            | lines -> lines
+          in
+          B.Line "" :: lines
         ) rest
       in
       first_lines @ rest_lines @ [B.Line ""]
@@ -977,7 +980,7 @@ let emit_fun_group ~is_recursive gen_fun (defs : A.type_def list) : B.t =
   | [f] -> replace_let first_kw f @ [B.Line ""]
   | first :: rest ->
       replace_let first_kw first
-      @ List.concat_map (replace_let "and") rest
+      @ List.concat_map (fun f -> B.Line "" :: replace_let "and" f) rest
       @ [B.Line ""]
 
 (* ============ Assemble the .ml file ============ *)

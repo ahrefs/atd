@@ -1086,7 +1086,45 @@ let make_mli ~tr ~atd_filename (items : A.module_body) : B.t =
   in
   header @ type_defs @ sigs @ submodule_sigs
 
-(* ============ Entry point ============ *)
+(* ============ Entry points ============ *)
+
+(*
+   Generate a self-contained OCaml snippet from ATD source, suitable for
+   copy-pasting into utop or ocaml:
+
+     module type Types = sig
+       [mli content]
+     end
+
+     module Types : Types = struct
+       [ml content]
+     end
+*)
+let run_stdin () =
+  let full_module, _ =
+    Atd.Util.read_channel
+      ~annot_schema
+      ~expand:false
+      ~keep_builtins:false
+      ~inherit_fields:true
+      ~inherit_variants:true
+      stdin
+  in
+  let _, atd_module = full_module in
+  let defs = List.map (fun (Type x) -> x) atd_module in
+  let tr = init_env defs in
+  let mli = make_mli ~tr ~atd_filename:"<stdin>" atd_module in
+  let ml = make_ml ~tr ~atd_filename:"<stdin>" atd_module in
+  B.to_stdout ~indent:2
+    [
+      B.Line "module type Types = sig";
+      B.Block mli;
+      B.Line "end";
+      B.Line "";
+      B.Line "module Types : Types = struct";
+      B.Block ml;
+      B.Line "end";
+    ]
 
 let run_file src_path =
   let src_name = Filename.basename src_path in

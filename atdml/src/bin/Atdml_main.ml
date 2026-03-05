@@ -16,10 +16,9 @@ let run conf =
     exit 0
   )
   else
-    conf.input_files
-    |> List.iter (fun atd_file ->
-      Atdml.Codegen.run_file atd_file
-    )
+    match conf.input_files with
+    | [] -> Atdml.Codegen.run_stdin ()
+    | files -> List.iter Atdml.Codegen.run_file files
 
 (***************************************************************************)
 (* Command-line processing *)
@@ -50,17 +49,24 @@ let doc =
 
 let man = [
   `S Manpage.s_description;
-  `P "atdml turns a file containing ATD type definitions into an OCaml \
-      module (.ml and .mli files) that serializes and deserializes values \
-      to and from JSON via the Yojson.Safe.t intermediate representation.";
+  `P "atdml turns ATD type definitions into an OCaml module that serializes \
+      and deserializes values to and from JSON via the Yojson.Safe.t \
+      intermediate representation.";
 
   `P "Unlike atdgen, atdml does not use semi-secret Yojson streaming \
       functions. This makes the generated code easier to read and \
       understand at the cost of some performance.";
 
+  `P "When given a file, atdml writes 'foo.ml' and 'foo.mli' next to it. \
+      When reading from stdin, atdml writes a self-contained OCaml snippet \
+      to stdout that can be copy-pasted into utop or ocaml:";
+  `Pre "module type Types = sig ... end\nmodule Types : Types = struct ... end";
+
   `S Manpage.s_examples;
-  `P "The following command generates 'foo.ml' and 'foo.mli' from 'foo.atd':";
+  `P "Generate 'foo.ml' and 'foo.mli' from 'foo.atd':";
   `Pre "atdml foo.atd";
+  `P "Generate a self-contained snippet from stdin:";
+  `Pre "atdml < foo.atd";
   `P "Sample ATD file 'foo.atd':";
   `Pre "\
 type color = [

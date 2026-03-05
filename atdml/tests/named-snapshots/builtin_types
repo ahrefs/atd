@@ -197,6 +197,7 @@ let yojson_of_all_types (x : all_types) : Yojson.Safe.t =
 
 let all_types_of_json s =
   all_types_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_all_types x =
   Yojson.Safe.to_string (yojson_of_all_types x)
 

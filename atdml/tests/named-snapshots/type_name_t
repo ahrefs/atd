@@ -98,6 +98,7 @@ let yojson_of_t (x : t) : Yojson.Safe.t =
 
 let t_of_json s =
   t_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_t x =
   Yojson.Safe.to_string (yojson_of_t x)
 

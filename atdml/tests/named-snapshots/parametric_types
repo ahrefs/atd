@@ -197,6 +197,7 @@ let yojson_of_result : 'a. ('a -> Yojson.Safe.t) -> 'a result -> Yojson.Safe.t =
 
 let result_of_json of_yojson_a s =
   (result_of_yojson of_yojson_a) (Yojson.Safe.from_string s)
+
 let json_of_result yojson_of_a x =
   Yojson.Safe.to_string ((yojson_of_result yojson_of_a) x)
 
@@ -227,6 +228,7 @@ let yojson_of_either : 'a 'b. ('a -> Yojson.Safe.t) -> ('b -> Yojson.Safe.t) -> 
 
 let either_of_json of_yojson_a of_yojson_b s =
   (either_of_yojson of_yojson_a of_yojson_b) (Yojson.Safe.from_string s)
+
 let json_of_either yojson_of_a yojson_of_b x =
   Yojson.Safe.to_string ((yojson_of_either yojson_of_a yojson_of_b) x)
 
@@ -248,6 +250,7 @@ let yojson_of_all (x : all) : Yojson.Safe.t =
 
 let all_of_json s =
   all_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_all x =
   Yojson.Safe.to_string (yojson_of_all x)
 

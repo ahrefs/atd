@@ -128,6 +128,7 @@ let yojson_of_status (x : status) : Yojson.Safe.t =
 
 let status_of_json s =
   status_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_status x =
   Yojson.Safe.to_string (yojson_of_status x)
 
@@ -149,6 +150,7 @@ let yojson_of_statuses (x : statuses) : Yojson.Safe.t =
 
 let statuses_of_json s =
   statuses_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_statuses x =
   Yojson.Safe.to_string (yojson_of_statuses x)
 

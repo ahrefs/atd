@@ -165,6 +165,7 @@ let yojson_of_tag_list (x : tag_list) : Yojson.Safe.t =
 
 let tag_list_of_json s =
   tag_list_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_tag_list x =
   Yojson.Safe.to_string (yojson_of_tag_list x)
 
@@ -186,6 +187,7 @@ let yojson_of_score (x : score) : Yojson.Safe.t =
 
 let score_of_json s =
   score_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_score x =
   Yojson.Safe.to_string (yojson_of_score x)
 
@@ -207,6 +209,7 @@ let yojson_of_opt_name (x : opt_name) : Yojson.Safe.t =
 
 let opt_name_of_json s =
   opt_name_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_opt_name x =
   Yojson.Safe.to_string (yojson_of_opt_name x)
 
@@ -228,6 +231,7 @@ let yojson_of_id (x : id) : Yojson.Safe.t =
 
 let id_of_json s =
   id_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_id x =
   Yojson.Safe.to_string (yojson_of_id x)
 
@@ -285,6 +289,7 @@ let yojson_of_all (x : all) : Yojson.Safe.t =
 
 let all_of_json s =
   all_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_all x =
   Yojson.Safe.to_string (yojson_of_all x)
 

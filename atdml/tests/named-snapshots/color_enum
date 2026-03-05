@@ -126,6 +126,7 @@ let yojson_of_color (x : color) : Yojson.Safe.t =
 
 let color_of_json s =
   color_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_color x =
   Yojson.Safe.to_string (yojson_of_color x)
 
@@ -147,6 +148,7 @@ let yojson_of_colors (x : colors) : Yojson.Safe.t =
 
 let colors_of_json s =
   colors_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_colors x =
   Yojson.Safe.to_string (yojson_of_colors x)
 

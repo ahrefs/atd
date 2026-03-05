@@ -143,6 +143,7 @@ let yojson_of_module__ (x : module__) : Yojson.Safe.t =
 
 let module___of_json s =
   module___of_yojson (Yojson.Safe.from_string s)
+
 let json_of_module__ x =
   Yojson.Safe.to_string (yojson_of_module__ x)
 
@@ -164,6 +165,7 @@ let yojson_of_module_1 (x : module_1) : Yojson.Safe.t =
 
 let module_1_of_json s =
   module_1_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_module_1 x =
   Yojson.Safe.to_string (yojson_of_module_1 x)
 
@@ -185,6 +187,7 @@ let yojson_of_module_2 (x : module_2) : Yojson.Safe.t =
 
 let module_2_of_json s =
   module_2_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_module_2 x =
   Yojson.Safe.to_string (yojson_of_module_2 x)
 
@@ -206,6 +209,7 @@ let yojson_of_module_ (x : module_) : Yojson.Safe.t =
 
 let module__of_json s =
   module__of_yojson (Yojson.Safe.from_string s)
+
 let json_of_module_ x =
   Yojson.Safe.to_string (yojson_of_module_ x)
 

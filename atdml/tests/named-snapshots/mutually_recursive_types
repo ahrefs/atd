@@ -153,11 +153,13 @@ and yojson_of_tree (x : tree) : Yojson.Safe.t =
 
 let node_of_json s =
   node_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_node x =
   Yojson.Safe.to_string (yojson_of_node x)
 
 let tree_of_json s =
   tree_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_tree x =
   Yojson.Safe.to_string (yojson_of_tree x)
 

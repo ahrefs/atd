@@ -130,6 +130,7 @@ let yojson_of_shape (x : shape) : Yojson.Safe.t =
 
 let shape_of_json s =
   shape_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_shape x =
   Yojson.Safe.to_string (yojson_of_shape x)
 
@@ -151,6 +152,7 @@ let yojson_of_shapes (x : shapes) : Yojson.Safe.t =
 
 let shapes_of_json s =
   shapes_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_shapes x =
   Yojson.Safe.to_string (yojson_of_shapes x)
 

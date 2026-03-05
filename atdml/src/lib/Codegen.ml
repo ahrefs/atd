@@ -703,6 +703,7 @@ let gen_io_funs tr ((_, (name, params, _), _) : A.type_def) : B.t =
   [
     B.Line (sprintf "let %s %ss =" (of_json_name ocaml_name) reader_args);
     B.Block [B.Line (sprintf "%s (Yojson.Safe.from_string s)" yojson_reader)];
+    B.Line "";
     B.Line (sprintf "let %s %sx =" (json_of_name ocaml_name) writer_args);
     B.Block [B.Line (sprintf "Yojson.Safe.to_string (%s x)" yojson_writer)];
   ]

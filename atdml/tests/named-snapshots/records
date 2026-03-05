@@ -181,6 +181,7 @@ let yojson_of_person (x : person) : Yojson.Safe.t =
 
 let person_of_json s =
   person_of_yojson (Yojson.Safe.from_string s)
+
 let json_of_person x =
   Yojson.Safe.to_string (yojson_of_person x)
 

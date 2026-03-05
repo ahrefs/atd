@@ -989,6 +989,9 @@ let gen_submodule_mli tr ((loc, (name, params, _), e) : A.type_def) : B.t =
 
 (* ============ Group emission helpers (based on Atd.Util.tsort output) ============ *)
 
+(* List.concat_map was added in OCaml 4.10; provide a compatible version. *)
+let concat_map f l = List.concat (List.map f l)
+
 (* Emit type definitions for one tsort group, connecting them with 'and'
    when there are multiple defs (mutual recursion).
    Appends [@@attr] when an <ocaml attr="..."> annotation is present. *)
@@ -1004,7 +1007,7 @@ let emit_type_group tr (defs : A.type_def list) : B.t =
   | first :: rest ->
       let first_lines = gen_type_def tr first @ attr_line first in
       let rest_lines =
-        List.concat_map (fun def ->
+        concat_map (fun def ->
           let lines =
             match gen_type_def tr def with
             | B.Line s :: tl when String.length s >= 4
@@ -1034,7 +1037,7 @@ let emit_fun_group ~is_recursive gen_fun (defs : A.type_def list) : B.t =
   | [f] -> replace_let first_kw f @ [B.Line ""]
   | first :: rest ->
       replace_let first_kw first
-      @ List.concat_map (fun f -> B.Line "" :: replace_let "and" f) rest
+      @ concat_map (fun f -> B.Line "" :: replace_let "and" f) rest
       @ [B.Line ""]
 
 (* ============ Assemble the .ml file ============ *)
@@ -1052,7 +1055,7 @@ let make_ml ~tr ~atd_filename (items : A.module_body) : B.t =
     let defs = List.map (fun (Type x) -> x) group_items in
     let types = emit_type_group tr defs in
     let makes =
-      List.concat_map (fun def ->
+      concat_map (fun def ->
         let lines = gen_make_fun tr def in
         if lines = [] then [] else lines @ [B.Line ""]
       ) defs
@@ -1060,17 +1063,17 @@ let make_ml ~tr ~atd_filename (items : A.module_body) : B.t =
     let of_yojsons = emit_fun_group ~is_recursive (gen_of_yojson tr) defs in
     let yojson_ofs = emit_fun_group ~is_recursive (gen_yojson_of tr) defs in
     let ios =
-      List.concat_map (fun def -> gen_io_funs tr def @ [B.Line ""]) defs
+      concat_map (fun def -> gen_io_funs tr def @ [B.Line ""]) defs
     in
     let submods =
-      List.concat_map (fun def -> gen_submodule_ml tr def @ [B.Line ""]) defs
+      concat_map (fun def -> gen_submodule_ml tr def @ [B.Line ""]) defs
     in
     types @ makes @ of_yojsons @ yojson_ofs @ ios @ submods
   in
   header
   @ runtime_module
   @ [B.Line ""]
-  @ List.concat_map gen_group (Atd.Util.tsort items)
+  @ concat_map gen_group (Atd.Util.tsort items)
 
 (* ============ Assemble the .mli file ============ *)
 
@@ -1086,7 +1089,7 @@ let make_mli ~tr ~atd_filename (items : A.module_body) : B.t =
     let defs = List.map (fun (Type x) -> x) group_items in
     let types = emit_type_group tr defs in
     let sigs =
-      List.concat_map (fun def ->
+      concat_map (fun def ->
         gen_make_sig tr def
         @ gen_of_yojson_sig tr def
         @ gen_yojson_of_sig tr def
@@ -1095,11 +1098,11 @@ let make_mli ~tr ~atd_filename (items : A.module_body) : B.t =
       ) defs
     in
     let submod_sigs =
-      List.concat_map (fun def -> gen_submodule_mli tr def @ [B.Line ""]) defs
+      concat_map (fun def -> gen_submodule_mli tr def @ [B.Line ""]) defs
     in
     types @ sigs @ submod_sigs
   in
-  header @ List.concat_map gen_group (Atd.Util.tsort items)
+  header @ concat_map gen_group (Atd.Util.tsort items)
 
 (* ============ Entry points ============ *)
 

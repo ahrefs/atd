@@ -68,16 +68,21 @@ let () =
 |}
     json_in type_name type_name
 
-let build_and_run ~mli ~ml ~type_name ~json_in =
+let build_and_run ?(extra_sources = []) ~mli ~ml ~type_name ~json_in () =
   Testo.with_temp_dir ~chdir:true (fun _dir ->
+    List.iter (fun (fname, content) ->
+      Testo.write_text_file (Fpath.v fname) content
+    ) extra_sources;
     Testo.write_text_file (Fpath.v "Types.mli") mli;
     Testo.write_text_file (Fpath.v "Types.ml") ml;
     Testo.write_text_file
       (Fpath.v "Main.ml")
       (test_program ~type_name ~json_in);
+    let extra_files = List.map fst extra_sources in
     let build_cmd =
-      [ "ocamlfind"; "opt"; "-o"; "test_atdml"; "Types.mli"; "Types.ml";
-        "Main.ml"; "-package"; "yojson"; "-linkpkg" ]
+      [ "ocamlfind"; "opt"; "-o"; "test_atdml" ]
+      @ extra_files
+      @ [ "Types.mli"; "Types.ml"; "Main.ml"; "-package"; "yojson"; "-linkpkg" ]
     in
     let run_cmd = ["./test_atdml"] in
     run_command build_cmd;
@@ -150,7 +155,7 @@ let _test_codegen_error test_name ~atd_src =
    The interesting outputs (mli, ml, JSON) are printed to stdout and
    captured as a test snapshot.
 *)
-let test_e2e test_name ~atd_src ~type_name ~json_in =
+let test_e2e ?(extra_sources = []) test_name ~atd_src ~type_name ~json_in =
   let file_name = make_filename_from_test_name test_name in
   Testo.create test_name
     ~checked_output:(Testo.stdout
@@ -162,7 +167,7 @@ let test_e2e test_name ~atd_src ~type_name ~json_in =
       print_string mli;
       print_string "--- ml ---\n";
       print_string ml;
-      build_and_run ~mli ~ml ~type_name ~json_in
+      build_and_run ~extra_sources ~mli ~ml ~type_name ~json_in ()
     )
 
 let tests _env = [
@@ -372,6 +377,44 @@ type module_ = string
 |}
     ~type_name:"module_" (* ATD type name "module" -> int *)
     ~json_in:"42"
+  ;
+
+  test_e2e "adapter"
+    (* The adapter converts between ATD's ["Constructor", ...] sum encoding
+       and an object with a "type" field, i.e. {"type": "Image", "url": "..."}.
+       We use adapter.to_ocaml / adapter.from_ocaml with inline expressions. *)
+    ~extra_sources:[
+      ("My_adapter.ml", {|
+(* Converts {"type": "Foo", ...rest} <-> ["Foo", {...rest}] *)
+let normalize = function
+  | `Assoc fields ->
+      let tag =
+        match List.assoc_opt "type" fields with
+        | Some (`String s) -> s
+        | _ -> failwith "My_adapter.normalize: missing 'type' field"
+      in
+      let rest = List.filter (fun (k, _) -> k <> "type") fields in
+      `List [`String tag; `Assoc rest]
+  | x -> x
+
+let restore = function
+  | `List [`String tag; `Assoc rest] ->
+      `Assoc (("type", `String tag) :: rest)
+  | `String tag ->
+      `Assoc [("type", `String tag)]
+  | x -> x
+|})]
+    ~atd_src:{|
+type image = { url: string }
+type text = { title: string; body: string }
+
+type document = [
+  | Image of image
+  | Text of text
+] <json adapter.ocaml="My_adapter">
+|}
+    ~type_name:"document"
+    ~json_in:{|{"type": "Image", "url": "https://example.com/pic.jpg"}|}
   ;
 
   test_codegen_snapshot "attr"

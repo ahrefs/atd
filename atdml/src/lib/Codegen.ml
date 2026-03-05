@@ -148,6 +148,12 @@ let get_ocaml_wrap an =
   let unwrap_fn = match get "unwrap" with Some v -> Some v | None -> from_module "unwrap" in
   (wrap_t, wrap_fn, unwrap_fn)
 
+(* Extract (normalize_expr, restore_expr) from an ocaml_adapter, if present. *)
+let adapter_exprs (adapter : Atd.Json.json_adapter) =
+  match adapter.ocaml_adapter with
+  | None -> (None, None)
+  | Some a -> (Some a.normalize, Some a.restore)
+
 (* Get <ocaml name="..."> to rename OCaml identifiers *)
 let get_ocaml_name default_name an =
   Atd.Annot.get_field
@@ -574,9 +580,9 @@ let gen_of_yojson tr ((loc, (name, params, an), e) : A.type_def) : B.t =
   let return_type = full_type_name ocaml_name params in
   let body =
     match e with
-    | Sum (_, variants, an) ->
+    | Sum (_, variants, sum_an) ->
         let is_poly =
-          match get_ocaml_repr an with
+          match get_ocaml_repr sum_an with
           | Some "poly" -> true
           | _ -> false
         in
@@ -595,11 +601,19 @@ let gen_of_yojson tr ((loc, (name, params, an), e) : A.type_def) : B.t =
                 (sprintf "| `List [`String \"%s\"; v] -> %s%s (%s v)"
                    json_name tick cons_name (reader_expr tr e))
         in
+        let (normalize, _) =
+          adapter_exprs (Atd.Json.get_json_sum sum_an).json_sum_adapter
+        in
+        let pre = match normalize with
+          | None -> []
+          | Some f -> [B.Line (sprintf "let x = %s x in" f)]
+        in
         B.Block
-          (B.Line "match x with"
-           :: List.map gen_case flat
+          (pre
+           @ [B.Line "match x with"]
+           @ List.map gen_case flat
            @ [B.Line (sprintf "| _ -> Atdml_runtime.bad_sum \"%s\" x" name)])
-    | Record (_, fields, _) ->
+    | Record (_, fields, rec_an) ->
         let fields =
           List.filter_map (function
             | `Field x -> Some x
@@ -609,15 +623,24 @@ let gen_of_yojson tr ((loc, (name, params, an), e) : A.type_def) : B.t =
         let field_names =
           List.map (fun (_, (fname, _, _), _) -> fname) fields
         in
-        B.Block
-          [
-            B.Line "match x with";
-            B.Line "| `Assoc fields ->";
-            B.Block
-              (List.map (gen_of_yojson_field tr name) fields
-               @ [B.Line (sprintf "{ %s }" (String.concat "; " field_names))]);
-            B.Line (sprintf "| _ -> Atdml_runtime.bad_type \"%s\" x" name);
-          ]
+        let (normalize, _) =
+          adapter_exprs (Atd.Json.get_json_record rec_an).json_record_adapter
+        in
+        let pre = match normalize with
+          | None -> []
+          | Some f -> [B.Line (sprintf "let x = %s x in" f)]
+        in
+        let match_block =
+          B.Block
+            (pre
+             @ [ B.Line "match x with";
+                 B.Line "| `Assoc fields ->";
+                 B.Block
+                   (List.map (gen_of_yojson_field tr name) fields
+                    @ [B.Line (sprintf "{ %s }" (String.concat "; " field_names))]);
+                 B.Line (sprintf "| _ -> Atdml_runtime.bad_type \"%s\" x" name) ])
+        in
+        match_block
     | e ->
         B.Block [B.Line (sprintf "%s x" (reader_expr tr e))]
   in
@@ -660,6 +683,18 @@ let gen_yojson_of_field tr (_, (fname, kind, an), e) : B.node =
            "(match x.%s with None -> [] | Some v -> [(\"%s\", %s v)]);"
            fname json_name (writer_expr tr inner_e))
 
+(* Wrap a writer body with a restore call when an adapter is present.
+   Produces: let atdml_result_ = <body> in (restore) atdml_result_ *)
+let apply_restore restore body =
+  match restore with
+  | None -> body
+  | Some f ->
+      B.Block [
+        B.Line "let atdml_result_ =";
+        body;
+        B.Line (sprintf "in %s atdml_result_" f);
+      ]
+
 let gen_yojson_of tr ((loc, (name, params, an), e) : A.type_def) : B.t =
   let ocaml_name = tr name in
   let param_strs = List.map (fun v -> "yojson_of_" ^ v) params in
@@ -670,9 +705,9 @@ let gen_yojson_of tr ((loc, (name, params, an), e) : A.type_def) : B.t =
   let arg_type = full_type_name ocaml_name params in
   let body =
     match e with
-    | Sum (_, variants, an) ->
+    | Sum (_, variants, sum_an) ->
         let is_poly =
-          match get_ocaml_repr an with
+          match get_ocaml_repr sum_an with
           | Some "poly" -> true
           | _ -> false
         in
@@ -691,22 +726,30 @@ let gen_yojson_of tr ((loc, (name, params, an), e) : A.type_def) : B.t =
                 (sprintf "| %s%s v -> `List [`String \"%s\"; %s v]"
                    tick cons_name json_name (writer_expr tr e))
         in
-        B.Block
-          (B.Line "match x with"
-           :: List.map gen_case flat)
-    | Record (_, fields, _) ->
+        let (_, restore) =
+          adapter_exprs (Atd.Json.get_json_sum sum_an).json_sum_adapter
+        in
+        apply_restore restore
+          (B.Block
+            (B.Line "match x with"
+             :: List.map gen_case flat))
+    | Record (_, fields, rec_an) ->
         let fields =
           List.filter_map (function
             | `Field x -> Some x
             | `Inherit _ -> assert false)
             fields
         in
-        B.Block
-          [
-            B.Line "`Assoc (List.concat [";
-            B.Block (List.map (gen_yojson_of_field tr) fields);
-            B.Line "])";
-          ]
+        let (_, restore) =
+          adapter_exprs (Atd.Json.get_json_record rec_an).json_record_adapter
+        in
+        apply_restore restore
+          (B.Block
+            [
+              B.Line "`Assoc (List.concat [";
+              B.Block (List.map (gen_yojson_of_field tr) fields);
+              B.Line "])";
+            ])
     | e ->
         B.Block [B.Line (sprintf "%s x" (writer_expr tr e))]
   in

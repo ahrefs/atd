@@ -619,35 +619,93 @@ generates
     val result_of_yojson : (Yojson.Safe.t -> 'a) -> Yojson.Safe.t -> 'a result
     val yojson_of_result : ('a -> Yojson.Safe.t) -> 'a result -> Yojson.Safe.t
 
-Adapters (planned)
-------------------
+JSON adapters
+-------------
 
-JSON adapters will be a mechanism for rearranging JSON data on-the-fly so as
-to make it compatible with ATD, without modifying the ATD type definitions.
-They are particularly useful when the JSON API uses conventions that differ
-from the ATD defaults, for instance when sum types are encoded as objects with
-a ``"type"`` discriminator field rather than as ``["Constructor", ...]`` arrays.
+JSON adapters are a mechanism for rearranging JSON data on-the-fly so as to
+make it compatible with ATD, without modifying the ATD type definitions. They
+are particularly useful when a JSON API uses conventions that differ from the
+ATD defaults — for instance when sum types are encoded as objects with a
+``"type"`` discriminator field rather than as ``["Constructor", ...]`` arrays.
 
-The planned annotation syntax is:
+The user-provided adapter module must implement two functions:
+
+.. code:: ocaml
+
+    val normalize : Yojson.Safe.t -> Yojson.Safe.t
+    (** Convert from the original JSON to ATD-compatible JSON.
+        Called before deserialization. *)
+
+    val restore : Yojson.Safe.t -> Yojson.Safe.t
+    (** Convert from ATD-compatible JSON back to the original JSON.
+        Called after serialization. *)
+
+Field ``adapter.ocaml``
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Position: on a sum type or record type expression
+
+Value: an OCaml module identifier providing ``normalize`` and ``restore``
+
+Example — adapting a type-field encoded sum type:
+
+.. code:: ocaml
+
+    type image = { url: string }
+    type text  = { title: string; body: string }
+
+    type document = [
+      | Image of image
+      | Text of text
+    ] <json adapter.ocaml="My_adapter">
+
+With the following adapter module:
+
+.. code:: ocaml
+
+    (* My_adapter.ml *)
+    (* Converts {"type": "Image", ...rest} <-> ["Image", {...rest}] *)
+    let normalize = function
+      | `Assoc fields ->
+          let tag = match List.assoc_opt "type" fields with
+            | Some (`String s) -> s
+            | _ -> failwith "missing 'type' field"
+          in
+          let rest = List.filter (fun (k, _) -> k <> "type") fields in
+          `List [`String tag; `Assoc rest]
+      | x -> x
+
+    let restore = function
+      | `List [`String tag; `Assoc rest] ->
+          `Assoc (("type", `String tag) :: rest)
+      | x -> x
+
+ATD-compatible JSON values for ``document``:
+
+- ``["Image", {"url": "https://example.com/pic.jpg"}]``
+- ``["Text", {"title": "Hello", "body": "World"}]``
+
+Original JSON values (as produced and consumed by the adapter):
+
+- ``{"type": "Image", "url": "https://example.com/pic.jpg"}``
+- ``{"type": "Text", "title": "Hello", "body": "World"}``
+
+Fields ``adapter.to_ocaml`` and ``adapter.from_ocaml``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An alternative form that allows specifying the ``normalize`` and ``restore``
+functions as inline OCaml expressions, without requiring a dedicated module:
 
 .. code:: ocaml
 
     type document = [
       | Image of image
       | Text of text
-    ] <json adapter.ocaml="Atdml_runtime.Json_adapter.Type_field">
+    ]
+    <json
+      adapter.to_ocaml="My_adapter.normalize"
+      adapter.from_ocaml="My_adapter.restore"
+    >
 
-The user-provided module must implement:
-
-.. code:: ocaml
-
-    sig
-      val normalize : Yojson.Safe.t -> Yojson.Safe.t
-      (** Convert from original JSON to ATD-compatible JSON *)
-
-      val restore : Yojson.Safe.t -> Yojson.Safe.t
-      (** Convert from ATD-compatible JSON to original JSON *)
-    end
-
-This feature is not yet implemented in atdml but is planned for a future
-release.
+Both fields must be provided together. The values are OCaml expressions of
+type ``Yojson.Safe.t -> Yojson.Safe.t``.

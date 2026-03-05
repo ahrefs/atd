@@ -21,6 +21,9 @@ unreleased
     `and` is used only when strictly necessary)
   - `wrap` construct with `<ocaml module="M">` or explicit
     `<ocaml t="..." wrap="..." unwrap="...">`
+  - JSON adapters via `<json adapter.ocaml="M">` (module providing `normalize`
+    and `restore`) or `<json adapter.to_ocaml="..." adapter.from_ocaml="...">`
+    (inline expressions); supported on sum types and records
   - `<json name="...">` to override JSON field or constructor names
   - `<ocaml name="...">` to rename variant constructors in OCaml
   - `<ocaml attr="...">` to attach ppx attributes (e.g. `[@@deriving show]`)

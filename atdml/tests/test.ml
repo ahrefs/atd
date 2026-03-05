@@ -428,6 +428,28 @@ type points <ocaml attr="deriving show"> = point list
 |}
   ;
 
+  test_codegen_snapshot "doc"
+    ~atd_src:{|
+<doc text="Module-level documentation.">
+
+type color <doc text="A color value."> = [
+  | Red   <doc text="The color red.">
+  | Green <doc text="The color green.">
+  | Blue
+]
+
+type person <doc text="A person record.
+
+Second paragraph."> = {
+  name <doc text="The person's name.">: string;
+  age  <doc text="Age in years.">: int;
+  ?email: string option;
+}
+
+type alias <doc text="An alias for string."> = string
+|}
+  ;
+
   test_e2e "wrap"
     ~atd_src:{|
 (* wrap with explicit t/wrap/unwrap: string in JSON, int in OCaml *)

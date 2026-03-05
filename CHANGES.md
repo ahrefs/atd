@@ -28,6 +28,9 @@ unreleased
   - `<ocaml name="...">` to rename variant constructors in OCaml
   - `<ocaml attr="...">` to attach ppx attributes (e.g. `[@@deriving show]`)
     to generated type definitions
+  - `<doc text="...">` documentation annotations, translated into ocamldoc
+    `(** ... *)` comments in the generated code; supported on type definitions,
+    record fields, and variant constructors
   - Automatic renaming of ATD type names that conflict with OCaml keywords
     or with the `foo_of_yojson`/`yojson_of_foo` naming scheme
   - Stdin mode: reads ATD from stdin, writes a copy-pasteable

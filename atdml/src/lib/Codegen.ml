@@ -28,6 +28,9 @@ open Atd.Ast
 module A = Atd.Ast
 module B = Indent
 
+(* List.concat_map was added in OCaml 4.10; provide a compatible version. *)
+let concat_map f l = List.concat (List.map f l)
+
 (* ============ Annotation schema ============ *)
 
 let annot_schema_ocaml : Atd.Annot.schema_section = {
@@ -45,7 +48,7 @@ let annot_schema_ocaml : Atd.Annot.schema_section = {
 }
 
 let annot_schema : Atd.Annot.schema =
-  annot_schema_ocaml :: Atd.Json.annot_schema_json
+  annot_schema_ocaml :: (Atd.Json.annot_schema_json @ Atd.Doc.annot_schema)
 
 (* ============ Errors ============ *)
 
@@ -153,6 +156,66 @@ let adapter_exprs (adapter : Atd.Json.json_adapter) =
   match adapter.ocaml_adapter with
   | None -> (None, None)
   | Some a -> (Some a.normalize, Some a.restore)
+
+(* ============ Doc comment helpers ============ *)
+
+(* Escape special characters for OCaml's ocamldoc format *)
+let ocamldoc_escape s =
+  let buf = Buffer.create (String.length s) in
+  String.iter (fun c ->
+    Buffer.add_string buf (match c with
+      | '{' -> "\\{" | '}' -> "\\}" | '[' -> "\\[" | ']' -> "\\]"
+      | '@' -> "\\@" | '\\' -> "\\\\" | c -> String.make 1 c)
+  ) s;
+  Buffer.contents buf
+
+let render_doc_inline = function
+  | Atd.Doc.Text s -> ocamldoc_escape s
+  | Atd.Doc.Code s -> "[" ^ ocamldoc_escape s ^ "]"
+
+(* Render a doc block to a list of strings (lines of comment body) *)
+let render_doc_block = function
+  | Atd.Doc.Paragraph inlines ->
+      let text = String.concat "" (List.map render_doc_inline inlines) in
+      Atd.Doc.rewrap_paragraph ~max_length:70 text
+  | Atd.Doc.Pre lines ->
+      "{v" :: List.map (sprintf "  %s") lines @ ["v}"]
+
+(* Convert a doc to a flat list of content lines (without the (** and *)) *)
+let doc_content_lines doc =
+  List.concat (List.mapi (fun i block ->
+    (if i = 0 then [] else [""])
+    @ render_doc_block block
+  ) doc)
+
+(* Generate a (** ... *) comment as B.t given body lines *)
+let ocamldoc_comment_block (lines : string list) : B.t =
+  match lines with
+  | [] -> []
+  | [line] -> [B.Line (sprintf "(** %s *)" line)]
+  | _ ->
+      [B.Line "(**"]
+      @ List.map (fun l ->
+          if l = "" then B.Line ""
+          else B.Line ("   " ^ l)
+        ) lines
+      @ [B.Line "*)"]
+
+(* Return B.t lines to prepend before a declaration, from a doc annotation *)
+let doc_comment_prepend loc an : B.t =
+  match Atd.Doc.get_doc loc an with
+  | None -> []
+  | Some doc -> ocamldoc_comment_block (doc_content_lines doc)
+
+(* Wrap a declaration line with an optional trailing inline doc comment *)
+let with_inline_doc decl_str loc an : B.t =
+  match Atd.Doc.get_doc loc an with
+  | None -> [B.Line decl_str]
+  | Some doc ->
+      match doc_content_lines doc with
+      | [] -> [B.Line decl_str]
+      | [one_line] -> [B.Line (sprintf "%s  (** %s *)" decl_str one_line)]
+      | lines -> B.Line decl_str :: ocamldoc_comment_block lines
 
 (* Get <ocaml name="..."> to rename OCaml identifiers *)
 let get_ocaml_name default_name an =
@@ -424,24 +487,26 @@ let gen_type_def tr ((loc, (name, params, an), e) : A.type_def) : B.t =
       in
       let tick = if is_poly then "`" else "" in
       let flat = flatten_variants variants in
-      let gen_case (_, orig_name, an, opt_e) =
+      let gen_case (loc, orig_name, an, opt_e) =
         let cons_name = get_ocaml_name orig_name an in
         match opt_e with
         | None ->
-            B.Line (sprintf "| %s%s" tick cons_name)
+            with_inline_doc (sprintf "| %s%s" tick cons_name) loc an
         | Some e ->
-            B.Line (sprintf "| %s%s of %s" tick cons_name (type_expr_str tr e))
+            with_inline_doc
+              (sprintf "| %s%s of %s" tick cons_name (type_expr_str tr e))
+              loc an
       in
       if is_poly then
         [
           B.Line (sprintf "type %s%s = [" params_str ocaml_name);
-          B.Block (List.map gen_case flat);
+          B.Block (concat_map gen_case flat);
           B.Line "]";
         ]
       else
         [
           B.Line (sprintf "type %s%s =" params_str ocaml_name);
-          B.Block (List.map gen_case flat);
+          B.Block (concat_map gen_case flat);
         ]
   | Record (_, fields, _) ->
       let fields =
@@ -453,9 +518,11 @@ let gen_type_def tr ((loc, (name, params, an), e) : A.type_def) : B.t =
       [
         B.Line (sprintf "type %s%s = {" params_str ocaml_name);
         B.Block
-          (List.map
-             (fun (_, (fname, _, _), e) ->
-               B.Line (sprintf "%s: %s;" fname (type_expr_str tr e)))
+          (concat_map
+             (fun (loc, (fname, _, an), e) ->
+               with_inline_doc
+                 (sprintf "%s: %s;" fname (type_expr_str tr e))
+                 loc an)
              fields);
         B.Line "}";
       ]
@@ -1043,23 +1110,25 @@ let gen_submodule_mli tr ((loc, (name, params, def_an), e) : A.type_def) : B.t =
 
 (* ============ Group emission helpers (based on Atd.Util.tsort output) ============ *)
 
-(* List.concat_map was added in OCaml 4.10; provide a compatible version. *)
-let concat_map f l = List.concat (List.map f l)
-
 (* Emit type definitions for one tsort group, connecting them with 'and'
    when there are multiple defs (mutual recursion).
-   Appends [@@attr] when an <ocaml attr="..."> annotation is present. *)
+   Appends [@@attr] when an <ocaml attr="..."> annotation is present.
+   Prepends a (** ... *) ocamldoc comment when a <doc text="..."> annotation
+   is present. *)
 let emit_type_group tr (defs : A.type_def list) : B.t =
   let attr_line (_, (_, _, def_an), _) =
     match get_ocaml_attr def_an with
     | None -> []
     | Some attr -> [B.Line (sprintf "[@@%s]" attr)]
   in
+  let doc_lines ((loc, (_, _, def_an), _) : A.type_def) : B.t =
+    doc_comment_prepend loc def_an
+  in
   match defs with
   | [] -> []
-  | [def] -> gen_type_def tr def @ attr_line def @ [B.Line ""]
+  | [def] -> doc_lines def @ gen_type_def tr def @ attr_line def @ [B.Line ""]
   | first :: rest ->
-      let first_lines = gen_type_def tr first @ attr_line first in
+      let first_lines = doc_lines first @ gen_type_def tr first @ attr_line first in
       let rest_lines =
         concat_map (fun def ->
           let lines =
@@ -1069,7 +1138,7 @@ let emit_type_group tr (defs : A.type_def list) : B.t =
                 B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: tl
             | lines -> lines
           in
-          B.Line "" :: lines @ attr_line def
+          B.Line "" :: doc_lines def @ lines @ attr_line def
         ) rest
       in
       first_lines @ rest_lines @ [B.Line ""]

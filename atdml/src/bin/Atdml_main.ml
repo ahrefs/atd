@@ -75,17 +75,35 @@ type point = {
   ?label: string option;
 }
 ";
-  `P "The generated code exposes functions such as:";
+  `P "The generated code exposes functions and submodules such as:";
   `Pre "\
 val color_of_yojson : Yojson.Safe.t -> color
 val yojson_of_color : color -> Yojson.Safe.t
-val color_of_string : string -> color
-val string_of_color : color -> string
+val color_of_json : string -> color
+val json_of_color : color -> string
+
+module Color : sig
+  type nonrec t = color
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
 val make_point : x:float -> y:float -> ?label:string -> unit -> point
 val point_of_yojson : Yojson.Safe.t -> point
 val yojson_of_point : point -> Yojson.Safe.t
-val point_of_string : string -> point
-val string_of_point : point -> string
+val point_of_json : string -> point
+val json_of_point : point -> string
+
+module Point : sig
+  type nonrec t = point
+  val make : x:float -> y:float -> ?label:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
 ";
 
   `S Manpage.s_authors;

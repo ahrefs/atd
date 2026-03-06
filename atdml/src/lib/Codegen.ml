@@ -502,6 +502,12 @@ module Atdml_runtime = struct
     | None -> `Null
     | Some x -> f x
 
+  (* Returns true iff the list has strictly more than [n] elements,
+     without traversing past element n+1. *)
+  let rec list_length_gt n = function
+    | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
+    | [] -> false
+
   let assoc_of_yojson f = function
     | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
     | x -> bad_type "object" x
@@ -710,7 +716,7 @@ let gen_of_yojson_field tr ftr type_name (loc, (fname, kind, an), e) : B.node =
     match kind with
     | Required ->
         [
-          B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+          B.Line (sprintf "match assoc_ \"%s\" with" json_name);
           B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
           B.Line
             (sprintf "| None -> Atdml_runtime.missing_field \"%s\" \"%s\""
@@ -723,7 +729,7 @@ let gen_of_yojson_field tr ftr type_name (loc, (fname, kind, an), e) : B.node =
           | _ -> e
         in
         [
-          B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+          B.Line (sprintf "match assoc_ \"%s\" with" json_name);
           B.Line "| None | Some `Null -> None";
           B.Line (sprintf "| Some v -> Some (%s v)" (reader_expr tr inner_e));
         ]
@@ -731,7 +737,7 @@ let gen_of_yojson_field tr ftr type_name (loc, (fname, kind, an), e) : B.node =
         (match get_ocaml_default an with
         | Some default ->
             [
-              B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+              B.Line (sprintf "match assoc_ \"%s\" with" json_name);
               B.Line (sprintf "| None -> %s" default);
               B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
             ]
@@ -739,14 +745,14 @@ let gen_of_yojson_field tr ftr type_name (loc, (fname, kind, an), e) : B.node =
             match get_implicit_default e with
             | Some default ->
                 [
-                  B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+                  B.Line (sprintf "match assoc_ \"%s\" with" json_name);
                   B.Line (sprintf "| None -> %s" default);
                   B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
                 ]
             | None ->
                 (* No OCaml default — treat as required; warned by warn_defs *)
                 [
-                  B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+                  B.Line (sprintf "match assoc_ \"%s\" with" json_name);
                   B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
                   B.Line
                     (sprintf "| None -> Atdml_runtime.missing_field \"%s\" \"%s\""
@@ -833,7 +839,22 @@ let gen_of_yojson tr ((loc, (name, params, an), e) : A.type_def) : B.t =
              @ [ B.Line "match x with";
                  B.Line "| `Assoc fields ->";
                  B.Block
-                   (List.map (gen_of_yojson_field tr ftr name) fields
+                   ([ (* Duplicate JSON keys: behavior is intentionally unspecified.
+                         The list path returns the first binding; the hashtable path
+                         returns the last. JSON keys SHOULD be unique (RFC 8259 §4). *)
+                      B.Line "(* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD";
+                      B.Line "   be unique). Below the threshold, List.assoc_opt returns the first binding;";
+                      B.Line "   above it, the hashtable returns the last. *)";
+                      B.Line "let assoc_ =";
+                      B.Block
+                        [ B.Line "if Atdml_runtime.list_length_gt 5 fields then";
+                          B.Block
+                            [ B.Line "let tbl = Hashtbl.create 16 in";
+                              B.Line "List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;";
+                              B.Line "(fun key -> Hashtbl.find_opt tbl key)" ];
+                          B.Line "else (fun key -> List.assoc_opt key fields)" ];
+                      B.Line "in" ]
+                    @ List.map (gen_of_yojson_field tr ftr name) fields
                     @ [B.Line (sprintf "{ %s }" (String.concat "; " field_names))]);
                  B.Line (sprintf "| _ -> Atdml_runtime.bad_type \"%s\" x" name) ])
         in

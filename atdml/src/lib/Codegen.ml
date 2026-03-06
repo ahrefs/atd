@@ -37,6 +37,8 @@ let annot_schema_ocaml : Atd.Annot.schema_section = {
   section = "ocaml";
   fields = [
     Type_def,  "attr";    (* <ocaml attr="..."> on a type def: append [@@...] *)
+    Type_def,  "module";  (* <ocaml module="M"> on a type def: not supported, warns *)
+    Type_def,  "t";       (* <ocaml t="..."> on a type def: not supported, warns *)
     Type_expr, "repr";    (* <ocaml repr="poly"> on a sum type *)
     Type_expr, "module";  (* <ocaml module="M"> on a wrap: use M.t/M.wrap/M.unwrap *)
     Type_expr, "t";       (* <ocaml t="..."> on a wrap: explicit OCaml type *)
@@ -44,6 +46,7 @@ let annot_schema_ocaml : Atd.Annot.schema_section = {
     Type_expr, "unwrap";  (* <ocaml unwrap="..."> on a wrap: serialize function *)
     Variant, "name";      (* <ocaml name="..."> on a variant constructor *)
     Field, "default";     (* <ocaml default="..."> on a with-default field *)
+    Field, "name";        (* <ocaml name="..."> on a field: not supported, warns *)
   ]
 }
 
@@ -54,6 +57,10 @@ let annot_schema : Atd.Annot.schema =
 
 let not_implemented loc msg =
   A.error_at loc ("not implemented in atdml: " ^ msg)
+
+let warn_not_supported loc annot_str =
+  eprintf "Warning: %s: %s is not supported by atdml; annotation ignored.\n%!"
+    (A.string_of_loc loc) annot_str
 
 (* ============ Identifier translation ============ *)
 
@@ -331,6 +338,9 @@ let rec reader_expr tr (e : type_expr) : string =
   | Name (_, (_, name, params), _) ->
       let readers = List.map (reader_expr tr) params in
       sprintf "(%s %s)" (of_yojson_name (tr name)) (String.concat " " readers)
+  | List (_, Tuple (_, [(_, Name (_, (_, "string", []), _), _); (_, val_e, _)], _), an)
+    when Atd.Json.get_json_list an = Atd.Json.Object ->
+      sprintf "(Atdml_runtime.assoc_of_yojson %s)" (reader_expr tr val_e)
   | List (_, e, _) ->
       sprintf "(Atdml_runtime.list_of_yojson %s)" (reader_expr tr e)
   | Option (_, e, _) ->
@@ -378,6 +388,9 @@ let rec writer_expr tr (e : type_expr) : string =
   | Name (_, (_, name, params), _) ->
       let writers = List.map (writer_expr tr) params in
       sprintf "(%s %s)" (yojson_of_name (tr name)) (String.concat " " writers)
+  | List (_, Tuple (_, [(_, Name (_, (_, "string", []), _), _); (_, val_e, _)], _), an)
+    when Atd.Json.get_json_list an = Atd.Json.Object ->
+      sprintf "(Atdml_runtime.yojson_of_assoc %s)" (writer_expr tr val_e)
   | List (_, e, _) ->
       sprintf "(Atdml_runtime.yojson_of_list %s)" (writer_expr tr e)
   | Option (_, e, _) ->
@@ -488,12 +501,20 @@ module Atdml_runtime = struct
   let yojson_of_nullable f = function
     | None -> `Null
     | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
 end|};
   ]
 
 (* ============ Type definition generation ============ *)
 
 let gen_type_def tr ((loc, (name, params, an), e) : A.type_def) : B.t =
+  ignore loc; ignore an;
   let ocaml_name = tr name in
   let params_str = type_params_str params in
   match e with
@@ -568,6 +589,63 @@ let get_implicit_default (e : type_expr) : string option =
   | Nullable _ -> Some "None"
   | _ -> None
 
+(* Single warning pass over all type definitions, called once before codegen.
+   Deduplicates by source location so that inherited fields warn only once. *)
+let warn_defs (defs : A.type_def list) =
+  let warned : (string, unit) Hashtbl.t = Hashtbl.create 8 in
+  let once key f =
+    if not (Hashtbl.mem warned key) then begin
+      Hashtbl.add warned key ();
+      f ()
+    end
+  in
+  let warn_once loc msg =
+    once (A.string_of_loc loc ^ ": " ^ msg)
+      (fun () -> warn_not_supported loc msg)
+  in
+  let warn_once_raw loc msg =
+    once (A.string_of_loc loc ^ ": " ^ msg)
+      (fun () -> eprintf "Warning: %s: %s\n%!" (A.string_of_loc loc) msg)
+  in
+  List.iter (fun (loc, (name, _params, an), e) ->
+    (* Warn about <ocaml module="..."> / <ocaml t="..."> on type definitions *)
+    (match get_ocaml_wrap an with
+     | (Some _, _, _) | (_, Some _, _) | (_, _, Some _) ->
+         warn_once loc
+           "<ocaml module=\"...\"> / <ocaml t=\"...\"> on type definitions"
+     | (None, None, None) -> ());
+    (* Warn about field-level unsupported annotations and missing defaults *)
+    (match e with
+     | Record (_, fields, _) ->
+         List.iter (function
+           | `Inherit _ -> ()
+           | `Field (floc, (fname, kind, fan), fe) ->
+               (* <ocaml name="..."> on record fields *)
+               (match Atd.Annot.get_opt_field
+                        ~parse:(fun s -> Some s)
+                        ~sections:["ocaml"] ~field:"name" fan with
+                | None -> ()
+                | Some _ ->
+                    warn_once floc "<ocaml name=\"...\"> on record fields");
+               (* ~field without a determinable OCaml default *)
+               (match kind with
+                | Required | Optional -> ()
+                | With_default ->
+                    (match get_ocaml_default fan with
+                     | Some _ -> ()
+                     | None ->
+                         (match get_implicit_default fe with
+                          | Some _ -> ()
+                          | None ->
+                              warn_once_raw floc
+                                (sprintf "field '%s' in type '%s' has no OCaml \
+                                          default; make_%s will not be generated \
+                                          and the field will be required in JSON"
+                                   fname name name))))
+         ) fields
+     | _ -> ())
+  ) defs
+
 let gen_make_fun tr ((loc, (name, params, an), e) : A.type_def) : B.t =
   let ocaml_name = tr name in
   match e with
@@ -581,28 +659,34 @@ let gen_make_fun tr ((loc, (name, params, an), e) : A.type_def) : B.t =
       let ftr =
         make_local_env (List.map (fun (_, (fname, _, _), _) -> fname) fields)
       in
-      let gen_param (_, (fname, kind, an), e) =
+      (* Try to resolve the default for a With_default field.
+         Returns None if no default can be determined, in which case
+         we skip generating make_* for this type. *)
+      let try_get_default (_, (fname, kind, an), e) =
+        match kind with
+        | Required | Optional -> Some None
+        | With_default ->
+            match get_ocaml_default an with
+            | Some d -> Some (Some d)
+            | None ->
+                match get_implicit_default e with
+                | Some d -> Some (Some d)
+                | None ->
+                    None
+      in
+      let resolved = List.map try_get_default fields in
+      if List.exists (fun r -> r = None) resolved then []
+      else
+      let gen_param (_, (fname, kind, _), _) default_opt =
         let ofname = ftr fname in
         match kind with
         | Required -> sprintf "~%s" ofname
         | Optional -> sprintf "?%s" ofname
         | With_default ->
-            let default =
-              match get_ocaml_default an with
-              | Some d -> d
-              | None ->
-                  match get_implicit_default e with
-                  | Some d -> d
-                  | None ->
-                      A.error_at loc
-                        (sprintf
-                           "field '%s' needs a default value; \
-                            use <ocaml default=\"...\"> annotation"
-                           fname)
-            in
+            let default = Option.get (Option.get default_opt) in
             sprintf "?(%s = %s)" ofname default
       in
-      let param_strs = List.map gen_param fields in
+      let param_strs = List.map2 gen_param fields resolved in
       let field_names =
         List.map (fun (_, (fname, _, _), _) -> ftr fname) fields
       in
@@ -644,21 +728,30 @@ let gen_of_yojson_field tr ftr type_name (loc, (fname, kind, an), e) : B.node =
           B.Line (sprintf "| Some v -> Some (%s v)" (reader_expr tr inner_e));
         ]
     | With_default ->
-        let default =
-          match get_ocaml_default an with
-          | Some d -> d
-          | None ->
-              match get_implicit_default e with
-              | Some d -> d
-              | None ->
-                  A.error_at loc
-                    (sprintf "field '%s' needs a default value" fname)
-        in
-        [
-          B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
-          B.Line (sprintf "| None -> %s" default);
-          B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
-        ]
+        (match get_ocaml_default an with
+        | Some default ->
+            [
+              B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+              B.Line (sprintf "| None -> %s" default);
+              B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
+            ]
+        | None ->
+            match get_implicit_default e with
+            | Some default ->
+                [
+                  B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+                  B.Line (sprintf "| None -> %s" default);
+                  B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
+                ]
+            | None ->
+                (* No OCaml default — treat as required; warned by warn_defs *)
+                [
+                  B.Line (sprintf "match List.assoc_opt \"%s\" fields with" json_name);
+                  B.Line (sprintf "| Some v -> %s v" (reader_expr tr e));
+                  B.Line
+                    (sprintf "| None -> Atdml_runtime.missing_field \"%s\" \"%s\""
+                       type_name json_name);
+                ])
   in
   B.Inline
     [
@@ -1311,6 +1404,7 @@ let run_stdin () =
   let (head_loc, head_an), atd_module = full_module in
   let module_doc = doc_comment_prepend head_loc head_an in
   let defs = List.map (fun (Type x) -> x) atd_module in
+  let () = warn_defs defs in
   let tr = init_env defs in
   let mli = make_mli ~tr ~atd_filename:"<stdin>" ~module_doc atd_module in
   let ml = make_ml ~tr ~atd_filename:"<stdin>" ~module_doc atd_module in
@@ -1347,6 +1441,7 @@ let run_file src_path =
   let (head_loc, head_an), atd_module = full_module in
   let module_doc = doc_comment_prepend head_loc head_an in
   let defs = List.map (fun (Type x) -> x) atd_module in
+  let () = warn_defs defs in
   let tr = init_env defs in
   let ml_contents = make_ml ~tr ~atd_filename:src_name ~module_doc atd_module in
   let mli_contents = make_mli ~tr ~atd_filename:src_name ~module_doc atd_module in

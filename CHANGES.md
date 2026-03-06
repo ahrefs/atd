@@ -33,6 +33,17 @@ unreleased
     record fields, and variant constructors
   - Automatic renaming of ATD type names that conflict with OCaml keywords
     or with the `foo_of_yojson`/`yojson_of_foo` naming scheme
+  - Automatic renaming of record fields and variant constructors that conflict
+    with OCaml keywords (e.g. `end` → `end_`)
+  - `(string * 'a) list <json repr="object">`: encode association lists as
+    JSON objects `{"key": value, ...}` rather than arrays
+  - `<doc text="...">` documentation annotations, including module-level
+    head annotations
+  - Graceful handling of atdgen annotations not supported by atdml:
+    `<ocaml module="...">` on type definitions and `<ocaml name="...">` on
+    record fields emit a warning and are otherwise ignored
+  - `~field: user_type` with no OCaml default: warns and treats the field as
+    required in JSON (no `make_` function generated for that type)
   - Stdin mode: reads ATD from stdin, writes a copy-pasteable
     `module type Types = sig ... end / module Types : Types = struct ... end`
     snippet to stdout

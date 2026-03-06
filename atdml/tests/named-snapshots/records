@@ -98,6 +98,13 @@ module Atdml_runtime = struct
   let yojson_of_nullable f = function
     | None -> `Null
     | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
 end
 
 type person = {

@@ -1,29 +1,29 @@
-(* Auto-generated from "wrap.atd" by atdml. *)
+(* Auto-generated from "json_repr_object.atd" by atdml. *)
 
-type uid = int
+type string_map = (string * int) list
 
-val uid_of_yojson : Yojson.Safe.t -> uid
-val yojson_of_uid : uid -> Yojson.Safe.t
-val uid_of_json : string -> uid
-val json_of_uid : uid -> string
+val string_map_of_yojson : Yojson.Safe.t -> string_map
+val yojson_of_string_map : string_map -> Yojson.Safe.t
+val string_map_of_json : string -> string_map
+val json_of_string_map : string_map -> string
 
-module Uid : sig
-  type nonrec t = uid
+module String_map : sig
+  type nonrec t = string_map
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
 
-type tag = string
+type nested = (string * string list) list
 
-val tag_of_yojson : Yojson.Safe.t -> tag
-val yojson_of_tag : tag -> Yojson.Safe.t
-val tag_of_json : string -> tag
-val json_of_tag : tag -> string
+val nested_of_yojson : Yojson.Safe.t -> nested
+val yojson_of_nested : nested -> Yojson.Safe.t
+val nested_of_json : string -> nested
+val json_of_nested : nested -> string
 
-module Tag : sig
-  type nonrec t = tag
+module Nested : sig
+  type nonrec t = nested
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -31,11 +31,11 @@ module Tag : sig
 end
 
 type record = {
-  id: uid;
-  label: tag;
+  counts: string_map;
+  tags: nested;
 }
 
-val make_record : id:uid -> label:tag -> unit -> record
+val make_record : counts:string_map -> tags:nested -> unit -> record
 val record_of_yojson : Yojson.Safe.t -> record
 val yojson_of_record : record -> Yojson.Safe.t
 val record_of_json : string -> record
@@ -43,7 +43,7 @@ val json_of_record : record -> string
 
 module Record : sig
   type nonrec t = record
-  val make : id:uid -> label:tag -> unit -> t
+  val make : counts:string_map -> tags:nested -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -51,7 +51,7 @@ module Record : sig
 end
 
 --- ml ---
-(* Auto-generated from "wrap.atd" by atdml. *)
+(* Auto-generated from "json_repr_object.atd" by atdml. *)
 [@@@ocaml.warning "-27-32-33-35-39"]
 
 (* Inlined runtime — no external dependency needed. *)
@@ -130,78 +130,78 @@ module Atdml_runtime = struct
     `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
 end
 
-type uid = int
+type string_map = (string * int) list
 
-let uid_of_yojson (x : Yojson.Safe.t) : uid =
-  (fun x -> (int_of_string) (Atdml_runtime.string_of_yojson x)) x
+let string_map_of_yojson (x : Yojson.Safe.t) : string_map =
+  (Atdml_runtime.assoc_of_yojson Atdml_runtime.int_of_yojson) x
 
-let yojson_of_uid (x : uid) : Yojson.Safe.t =
-  (fun x -> Atdml_runtime.yojson_of_string ((string_of_int) x)) x
+let yojson_of_string_map (x : string_map) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_assoc Atdml_runtime.yojson_of_int) x
 
-let uid_of_json s =
-  uid_of_yojson (Yojson.Safe.from_string s)
+let string_map_of_json s =
+  string_map_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_uid x =
-  Yojson.Safe.to_string (yojson_of_uid x)
+let json_of_string_map x =
+  Yojson.Safe.to_string (yojson_of_string_map x)
 
-module Uid = struct
-  type nonrec t = uid
-  let of_yojson = uid_of_yojson
-  let to_yojson = yojson_of_uid
-  let of_json = uid_of_json
-  let to_json = json_of_uid
+module String_map = struct
+  type nonrec t = string_map
+  let of_yojson = string_map_of_yojson
+  let to_yojson = yojson_of_string_map
+  let of_json = string_map_of_json
+  let to_json = json_of_string_map
 end
 
-type tag = string
+type nested = (string * string list) list
 
-let tag_of_yojson (x : Yojson.Safe.t) : tag =
-  Atdml_runtime.string_of_yojson x
+let nested_of_yojson (x : Yojson.Safe.t) : nested =
+  (Atdml_runtime.assoc_of_yojson (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson)) x
 
-let yojson_of_tag (x : tag) : Yojson.Safe.t =
-  Atdml_runtime.yojson_of_string x
+let yojson_of_nested (x : nested) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_assoc (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string)) x
 
-let tag_of_json s =
-  tag_of_yojson (Yojson.Safe.from_string s)
+let nested_of_json s =
+  nested_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_tag x =
-  Yojson.Safe.to_string (yojson_of_tag x)
+let json_of_nested x =
+  Yojson.Safe.to_string (yojson_of_nested x)
 
-module Tag = struct
-  type nonrec t = tag
-  let of_yojson = tag_of_yojson
-  let to_yojson = yojson_of_tag
-  let of_json = tag_of_json
-  let to_json = json_of_tag
+module Nested = struct
+  type nonrec t = nested
+  let of_yojson = nested_of_yojson
+  let to_yojson = yojson_of_nested
+  let of_json = nested_of_json
+  let to_json = json_of_nested
 end
 
 type record = {
-  id: uid;
-  label: tag;
+  counts: string_map;
+  tags: nested;
 }
 
-let make_record ~id ~label () : record =
-  { id; label }
+let make_record ~counts ~tags () : record =
+  { counts; tags }
 
 let record_of_yojson (x : Yojson.Safe.t) : record =
   match x with
   | `Assoc fields ->
-    let id =
-      match List.assoc_opt "id" fields with
-      | Some v -> uid_of_yojson v
-      | None -> Atdml_runtime.missing_field "record" "id"
+    let counts =
+      match List.assoc_opt "counts" fields with
+      | Some v -> string_map_of_yojson v
+      | None -> Atdml_runtime.missing_field "record" "counts"
     in
-    let label =
-      match List.assoc_opt "label" fields with
-      | Some v -> tag_of_yojson v
-      | None -> Atdml_runtime.missing_field "record" "label"
+    let tags =
+      match List.assoc_opt "tags" fields with
+      | Some v -> nested_of_yojson v
+      | None -> Atdml_runtime.missing_field "record" "tags"
     in
-    { id; label }
+    { counts; tags }
   | _ -> Atdml_runtime.bad_type "record" x
 
 let yojson_of_record (x : record) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("id", yojson_of_uid x.id)];
-    [("label", yojson_of_tag x.label)];
+    [("counts", yojson_of_string_map x.counts)];
+    [("tags", yojson_of_nested x.tags)];
   ])
 
 let record_of_json s =
@@ -220,6 +220,6 @@ module Record = struct
 end
 
 --- Input:
-{ "id": "42", "label": "hello" }
+{ "counts": { "a": 1, "b": 2 }, "tags": { "x": [ "p", "q" ] } }
 --- Output:
-{ "id": "42", "label": "hello" }
+{ "counts": { "a": 1, "b": 2 }, "tags": { "x": [ "p", "q" ] } }

@@ -499,6 +499,21 @@ type sum_with_keyword_names = [
 |}
   ;
 
+  test_e2e "json repr object"
+    ~atd_src:{|
+type string_map = (string * int) list <json repr="object">
+
+type nested = (string * string list) list <json repr="object">
+
+type record = {
+  counts: string_map;
+  tags: nested;
+}
+|}
+    ~type_name:"record"
+    ~json_in:{|{"counts": {"a": 1, "b": 2}, "tags": {"x": ["p", "q"]}}|}
+  ;
+
   test_e2e "mutually recursive types"
     ~atd_src:{|
 type tree = [

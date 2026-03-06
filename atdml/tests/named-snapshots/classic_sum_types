@@ -106,6 +106,12 @@ module Atdml_runtime = struct
     | None -> `Null
     | Some x -> f x
 
+  (* Returns true iff the list has strictly more than [n] elements,
+     without traversing past element n+1. *)
+  let rec list_length_gt n = function
+    | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
+    | [] -> false
+
   let assoc_of_yojson f = function
     | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
     | x -> bad_type "object" x

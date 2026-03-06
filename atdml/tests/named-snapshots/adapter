@@ -128,6 +128,12 @@ module Atdml_runtime = struct
     | None -> `Null
     | Some x -> f x
 
+  (* Returns true iff the list has strictly more than [n] elements,
+     without traversing past element n+1. *)
+  let rec list_length_gt n = function
+    | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
+    | [] -> false
+
   let assoc_of_yojson f = function
     | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
     | x -> bad_type "object" x
@@ -147,13 +153,23 @@ let make_text ~title ~body () : text =
 let text_of_yojson (x : Yojson.Safe.t) : text =
   match x with
   | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc_ =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
     let title =
-      match List.assoc_opt "title" fields with
+      match assoc_ "title" with
       | Some v -> Atdml_runtime.string_of_yojson v
       | None -> Atdml_runtime.missing_field "text" "title"
     in
     let body =
-      match List.assoc_opt "body" fields with
+      match assoc_ "body" with
       | Some v -> Atdml_runtime.string_of_yojson v
       | None -> Atdml_runtime.missing_field "text" "body"
     in
@@ -191,8 +207,18 @@ let make_image ~url () : image =
 let image_of_yojson (x : Yojson.Safe.t) : image =
   match x with
   | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc_ =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
     let url =
-      match List.assoc_opt "url" fields with
+      match assoc_ "url" with
       | Some v -> Atdml_runtime.string_of_yojson v
       | None -> Atdml_runtime.missing_field "image" "url"
     in

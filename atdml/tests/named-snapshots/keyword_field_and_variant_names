@@ -1,0 +1,209 @@
+(* Auto-generated from "keyword_field_and_variant_names.atd" by atdml. *)
+
+type sum_with_keyword_names =
+  | Fun
+  | Method of string
+
+val sum_with_keyword_names_of_yojson : Yojson.Safe.t -> sum_with_keyword_names
+val yojson_of_sum_with_keyword_names : sum_with_keyword_names -> Yojson.Safe.t
+val sum_with_keyword_names_of_json : string -> sum_with_keyword_names
+val json_of_sum_with_keyword_names : sum_with_keyword_names -> string
+
+module Sum_with_keyword_names : sig
+  type nonrec t = sum_with_keyword_names
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type record_with_keyword_fields = {
+  method_: string;
+  object_: int;
+  begin_: bool option;
+  end_: string list;
+}
+
+val make_record_with_keyword_fields : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> record_with_keyword_fields
+val record_with_keyword_fields_of_yojson : Yojson.Safe.t -> record_with_keyword_fields
+val yojson_of_record_with_keyword_fields : record_with_keyword_fields -> Yojson.Safe.t
+val record_with_keyword_fields_of_json : string -> record_with_keyword_fields
+val json_of_record_with_keyword_fields : record_with_keyword_fields -> string
+
+module Record_with_keyword_fields : sig
+  type nonrec t = record_with_keyword_fields
+  val make : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "keyword_field_and_variant_names.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type sum_with_keyword_names =
+  | Fun
+  | Method of string
+
+let sum_with_keyword_names_of_yojson (x : Yojson.Safe.t) : sum_with_keyword_names =
+  match x with
+  | `String "Fun" -> Fun
+  | `List [`String "Method"; v] -> Method (Atdml_runtime.string_of_yojson v)
+  | _ -> Atdml_runtime.bad_sum "sum_with_keyword_names" x
+
+let yojson_of_sum_with_keyword_names (x : sum_with_keyword_names) : Yojson.Safe.t =
+  match x with
+  | Fun -> `String "Fun"
+  | Method v -> `List [`String "Method"; Atdml_runtime.yojson_of_string v]
+
+let sum_with_keyword_names_of_json s =
+  sum_with_keyword_names_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_sum_with_keyword_names x =
+  Yojson.Safe.to_string (yojson_of_sum_with_keyword_names x)
+
+module Sum_with_keyword_names = struct
+  type nonrec t = sum_with_keyword_names
+  let of_yojson = sum_with_keyword_names_of_yojson
+  let to_yojson = yojson_of_sum_with_keyword_names
+  let of_json = sum_with_keyword_names_of_json
+  let to_json = json_of_sum_with_keyword_names
+end
+
+type record_with_keyword_fields = {
+  method_: string;
+  object_: int;
+  begin_: bool option;
+  end_: string list;
+}
+
+let make_record_with_keyword_fields ~method_ ~object_ ?begin_ ?(end_ = []) () : record_with_keyword_fields =
+  { method_; object_; begin_; end_ }
+
+let record_with_keyword_fields_of_yojson (x : Yojson.Safe.t) : record_with_keyword_fields =
+  match x with
+  | `Assoc fields ->
+    let method_ =
+      match List.assoc_opt "method" fields with
+      | Some v -> Atdml_runtime.string_of_yojson v
+      | None -> Atdml_runtime.missing_field "record_with_keyword_fields" "method"
+    in
+    let object_ =
+      match List.assoc_opt "object" fields with
+      | Some v -> Atdml_runtime.int_of_yojson v
+      | None -> Atdml_runtime.missing_field "record_with_keyword_fields" "object"
+    in
+    let begin_ =
+      match List.assoc_opt "begin" fields with
+      | None | Some `Null -> None
+      | Some v -> Some (Atdml_runtime.bool_of_yojson v)
+    in
+    let end_ =
+      match List.assoc_opt "end" fields with
+      | None -> []
+      | Some v -> (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) v
+    in
+    { method_; object_; begin_; end_ }
+  | _ -> Atdml_runtime.bad_type "record_with_keyword_fields" x
+
+let yojson_of_record_with_keyword_fields (x : record_with_keyword_fields) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("method", Atdml_runtime.yojson_of_string x.method_)];
+    [("object", Atdml_runtime.yojson_of_int x.object_)];
+    (match x.begin_ with None -> [] | Some v -> [("begin", Atdml_runtime.yojson_of_bool v)]);
+    [("end", (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x.end_)];
+  ])
+
+let record_with_keyword_fields_of_json s =
+  record_with_keyword_fields_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_record_with_keyword_fields x =
+  Yojson.Safe.to_string (yojson_of_record_with_keyword_fields x)
+
+module Record_with_keyword_fields = struct
+  type nonrec t = record_with_keyword_fields
+  let make = make_record_with_keyword_fields
+  let of_yojson = record_with_keyword_fields_of_yojson
+  let to_yojson = yojson_of_record_with_keyword_fields
+  let of_json = record_with_keyword_fields_of_json
+  let to_json = json_of_record_with_keyword_fields
+end
+

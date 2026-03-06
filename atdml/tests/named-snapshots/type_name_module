@@ -1,0 +1,234 @@
+(* Auto-generated from "type_name_module.atd" by atdml. *)
+
+type module__ = bool
+
+val module___of_yojson : Yojson.Safe.t -> module__
+val yojson_of_module__ : module__ -> Yojson.Safe.t
+val module___of_json : string -> module__
+val json_of_module__ : module__ -> string
+
+module Module__ : sig
+  type nonrec t = module__
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type module_1 = string list
+
+val module_1_of_yojson : Yojson.Safe.t -> module_1
+val yojson_of_module_1 : module_1 -> Yojson.Safe.t
+val module_1_of_json : string -> module_1
+val json_of_module_1 : module_1 -> string
+
+module Module_1 : sig
+  type nonrec t = module_1
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type module_2 = string
+
+val module_2_of_yojson : Yojson.Safe.t -> module_2
+val yojson_of_module_2 : module_2 -> Yojson.Safe.t
+val module_2_of_json : string -> module_2
+val json_of_module_2 : module_2 -> string
+
+module Module_2 : sig
+  type nonrec t = module_2
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type module_ = int
+
+val module__of_yojson : Yojson.Safe.t -> module_
+val yojson_of_module_ : module_ -> Yojson.Safe.t
+val module__of_json : string -> module_
+val json_of_module_ : module_ -> string
+
+module Module_ : sig
+  type nonrec t = module_
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "type_name_module.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type module__ = bool
+
+let module___of_yojson (x : Yojson.Safe.t) : module__ =
+  Atdml_runtime.bool_of_yojson x
+
+let yojson_of_module__ (x : module__) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_bool x
+
+let module___of_json s =
+  module___of_yojson (Yojson.Safe.from_string s)
+
+let json_of_module__ x =
+  Yojson.Safe.to_string (yojson_of_module__ x)
+
+module Module__ = struct
+  type nonrec t = module__
+  let of_yojson = module___of_yojson
+  let to_yojson = yojson_of_module__
+  let of_json = module___of_json
+  let to_json = json_of_module__
+end
+
+type module_1 = string list
+
+let module_1_of_yojson (x : Yojson.Safe.t) : module_1 =
+  (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) x
+
+let yojson_of_module_1 (x : module_1) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x
+
+let module_1_of_json s =
+  module_1_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_module_1 x =
+  Yojson.Safe.to_string (yojson_of_module_1 x)
+
+module Module_1 = struct
+  type nonrec t = module_1
+  let of_yojson = module_1_of_yojson
+  let to_yojson = yojson_of_module_1
+  let of_json = module_1_of_json
+  let to_json = json_of_module_1
+end
+
+type module_2 = string
+
+let module_2_of_yojson (x : Yojson.Safe.t) : module_2 =
+  Atdml_runtime.string_of_yojson x
+
+let yojson_of_module_2 (x : module_2) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_string x
+
+let module_2_of_json s =
+  module_2_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_module_2 x =
+  Yojson.Safe.to_string (yojson_of_module_2 x)
+
+module Module_2 = struct
+  type nonrec t = module_2
+  let of_yojson = module_2_of_yojson
+  let to_yojson = yojson_of_module_2
+  let of_json = module_2_of_json
+  let to_json = json_of_module_2
+end
+
+type module_ = int
+
+let module__of_yojson (x : Yojson.Safe.t) : module_ =
+  Atdml_runtime.int_of_yojson x
+
+let yojson_of_module_ (x : module_) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_int x
+
+let module__of_json s =
+  module__of_yojson (Yojson.Safe.from_string s)
+
+let json_of_module_ x =
+  Yojson.Safe.to_string (yojson_of_module_ x)
+
+module Module_ = struct
+  type nonrec t = module_
+  let of_yojson = module__of_yojson
+  let to_yojson = yojson_of_module_
+  let of_json = module__of_json
+  let to_json = json_of_module_
+end
+
+--- Input:
+42
+--- Output:
+42

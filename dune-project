@@ -1,4 +1,6 @@
 (lang dune 3.18)
+; dune >= 3.18 is required to build the tools in this repository.
+; The generated OCaml code targets OCaml >= 4.08 (see per-package constraints).
 (using menhir 2.0)
 (implicit_transitive_deps false)
 (cram enable)
@@ -247,4 +249,20 @@ Melange backend")
   (atd (>= 2.11.0))
   (cmdliner (>= 1.1.0))
   re
+  (odoc :with-doc)))
+
+(package
+ (name atdml)
+ (synopsis "Simplified OCaml JSON serializers using the Yojson AST")
+ (description "\
+atdml generates OCaml .ml and .mli files from ATD type definitions.
+Unlike atdgen, it uses the standard Yojson.Safe.t intermediate representation
+instead of semi-secret streaming parser functions, making the generated code
+simpler and more maintainable at the cost of some performance.")
+ (depends
+  (ocaml (>= 4.08))
+  (atd (>= 3.0.0))
+  (yojson (>= 2.0.0))
+  (cmdliner (>= 1.1.0))
+  (testo (and (>= 0.3.0) :with-test))
   (odoc :with-doc)))

@@ -1,0 +1,225 @@
+(* Auto-generated from "wrap.atd" by atdml. *)
+
+type uid = int
+
+val uid_of_yojson : Yojson.Safe.t -> uid
+val yojson_of_uid : uid -> Yojson.Safe.t
+val uid_of_json : string -> uid
+val json_of_uid : uid -> string
+
+module Uid : sig
+  type nonrec t = uid
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type tag = string
+
+val tag_of_yojson : Yojson.Safe.t -> tag
+val yojson_of_tag : tag -> Yojson.Safe.t
+val tag_of_json : string -> tag
+val json_of_tag : tag -> string
+
+module Tag : sig
+  type nonrec t = tag
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type record = {
+  id: uid;
+  label: tag;
+}
+
+val make_record : id:uid -> label:tag -> unit -> record
+val record_of_yojson : Yojson.Safe.t -> record
+val yojson_of_record : record -> Yojson.Safe.t
+val record_of_json : string -> record
+val json_of_record : record -> string
+
+module Record : sig
+  type nonrec t = record
+  val make : id:uid -> label:tag -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "wrap.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type uid = int
+
+let uid_of_yojson (x : Yojson.Safe.t) : uid =
+  (fun x -> (int_of_string) (Atdml_runtime.string_of_yojson x)) x
+
+let yojson_of_uid (x : uid) : Yojson.Safe.t =
+  (fun x -> Atdml_runtime.yojson_of_string ((string_of_int) x)) x
+
+let uid_of_json s =
+  uid_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_uid x =
+  Yojson.Safe.to_string (yojson_of_uid x)
+
+module Uid = struct
+  type nonrec t = uid
+  let of_yojson = uid_of_yojson
+  let to_yojson = yojson_of_uid
+  let of_json = uid_of_json
+  let to_json = json_of_uid
+end
+
+type tag = string
+
+let tag_of_yojson (x : Yojson.Safe.t) : tag =
+  Atdml_runtime.string_of_yojson x
+
+let yojson_of_tag (x : tag) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_string x
+
+let tag_of_json s =
+  tag_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_tag x =
+  Yojson.Safe.to_string (yojson_of_tag x)
+
+module Tag = struct
+  type nonrec t = tag
+  let of_yojson = tag_of_yojson
+  let to_yojson = yojson_of_tag
+  let of_json = tag_of_json
+  let to_json = json_of_tag
+end
+
+type record = {
+  id: uid;
+  label: tag;
+}
+
+let make_record ~id ~label () : record =
+  { id; label }
+
+let record_of_yojson (x : Yojson.Safe.t) : record =
+  match x with
+  | `Assoc fields ->
+    let id =
+      match List.assoc_opt "id" fields with
+      | Some v -> uid_of_yojson v
+      | None -> Atdml_runtime.missing_field "record" "id"
+    in
+    let label =
+      match List.assoc_opt "label" fields with
+      | Some v -> tag_of_yojson v
+      | None -> Atdml_runtime.missing_field "record" "label"
+    in
+    { id; label }
+  | _ -> Atdml_runtime.bad_type "record" x
+
+let yojson_of_record (x : record) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("id", yojson_of_uid x.id)];
+    [("label", yojson_of_tag x.label)];
+  ])
+
+let record_of_json s =
+  record_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_record x =
+  Yojson.Safe.to_string (yojson_of_record x)
+
+module Record = struct
+  type nonrec t = record
+  let make = make_record
+  let of_yojson = record_of_yojson
+  let to_yojson = yojson_of_record
+  let of_json = record_of_json
+  let to_json = json_of_record
+end
+
+--- Input:
+{ "id": "42", "label": "hello" }
+--- Output:
+{ "id": "42", "label": "hello" }

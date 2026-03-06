@@ -1,0 +1,216 @@
+(* Auto-generated from "records.atd" by atdml. *)
+
+type person = {
+  name: string;
+  age: int;
+  lol: int option;
+  email: string option;
+  score: float;
+  active: bool;
+  tags: string list;
+  level: int;
+  address: string;
+}
+
+val make_person : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> person
+val person_of_yojson : Yojson.Safe.t -> person
+val yojson_of_person : person -> Yojson.Safe.t
+val person_of_json : string -> person
+val json_of_person : person -> string
+
+module Person : sig
+  type nonrec t = person
+  val make : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "records.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type person = {
+  name: string;
+  age: int;
+  lol: int option;
+  email: string option;
+  score: float;
+  active: bool;
+  tags: string list;
+  level: int;
+  address: string;
+}
+
+let make_person ~name ~age ~lol ?email ?(score = 0.) ?(active = false) ?(tags = []) ?(level = 1) ~address () : person =
+  { name; age; lol; email; score; active; tags; level; address }
+
+let person_of_yojson (x : Yojson.Safe.t) : person =
+  match x with
+  | `Assoc fields ->
+    let name =
+      match List.assoc_opt "name" fields with
+      | Some v -> Atdml_runtime.string_of_yojson v
+      | None -> Atdml_runtime.missing_field "person" "name"
+    in
+    let age =
+      match List.assoc_opt "age" fields with
+      | Some v -> Atdml_runtime.int_of_yojson v
+      | None -> Atdml_runtime.missing_field "person" "age"
+    in
+    let lol =
+      match List.assoc_opt "lol" fields with
+      | Some v -> (Atdml_runtime.nullable_of_yojson Atdml_runtime.int_of_yojson) v
+      | None -> Atdml_runtime.missing_field "person" "lol"
+    in
+    let email =
+      match List.assoc_opt "email" fields with
+      | None | Some `Null -> None
+      | Some v -> Some (Atdml_runtime.string_of_yojson v)
+    in
+    let score =
+      match List.assoc_opt "score" fields with
+      | None -> 0.
+      | Some v -> Atdml_runtime.float_of_yojson v
+    in
+    let active =
+      match List.assoc_opt "active" fields with
+      | None -> false
+      | Some v -> Atdml_runtime.bool_of_yojson v
+    in
+    let tags =
+      match List.assoc_opt "tags" fields with
+      | None -> []
+      | Some v -> (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) v
+    in
+    let level =
+      match List.assoc_opt "level" fields with
+      | None -> 1
+      | Some v -> Atdml_runtime.int_of_yojson v
+    in
+    let address =
+      match List.assoc_opt "addr" fields with
+      | Some v -> Atdml_runtime.string_of_yojson v
+      | None -> Atdml_runtime.missing_field "person" "addr"
+    in
+    { name; age; lol; email; score; active; tags; level; address }
+  | _ -> Atdml_runtime.bad_type "person" x
+
+let yojson_of_person (x : person) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("name", Atdml_runtime.yojson_of_string x.name)];
+    [("age", Atdml_runtime.yojson_of_int x.age)];
+    [("lol", (Atdml_runtime.yojson_of_nullable Atdml_runtime.yojson_of_int) x.lol)];
+    (match x.email with None -> [] | Some v -> [("email", Atdml_runtime.yojson_of_string v)]);
+    [("score", Atdml_runtime.yojson_of_float x.score)];
+    [("active", Atdml_runtime.yojson_of_bool x.active)];
+    [("tags", (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x.tags)];
+    [("level", Atdml_runtime.yojson_of_int x.level)];
+    [("addr", Atdml_runtime.yojson_of_string x.address)];
+  ])
+
+let person_of_json s =
+  person_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_person x =
+  Yojson.Safe.to_string (yojson_of_person x)
+
+module Person = struct
+  type nonrec t = person
+  let make = make_person
+  let of_yojson = person_of_yojson
+  let to_yojson = yojson_of_person
+  let of_json = person_of_json
+  let to_json = json_of_person
+end
+
+--- Input:
+{ "name": "X", "age": 42, "lol": null, "addr": "xxxx" }
+--- Output:
+{
+  "name": "X",
+  "age": 42,
+  "lol": null,
+  "score": 0.0,
+  "active": false,
+  "tags": [],
+  "level": 1,
+  "addr": "xxxx"
+}

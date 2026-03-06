@@ -1,0 +1,315 @@
+(* Auto-generated from "type_aliases.atd" by atdml. *)
+
+type tag_list = string list
+
+val tag_list_of_yojson : Yojson.Safe.t -> tag_list
+val yojson_of_tag_list : tag_list -> Yojson.Safe.t
+val tag_list_of_json : string -> tag_list
+val json_of_tag_list : tag_list -> string
+
+module Tag_list : sig
+  type nonrec t = tag_list
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type score = float
+
+val score_of_yojson : Yojson.Safe.t -> score
+val yojson_of_score : score -> Yojson.Safe.t
+val score_of_json : string -> score
+val json_of_score : score -> string
+
+module Score : sig
+  type nonrec t = score
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type opt_name = string option
+
+val opt_name_of_yojson : Yojson.Safe.t -> opt_name
+val yojson_of_opt_name : opt_name -> Yojson.Safe.t
+val opt_name_of_json : string -> opt_name
+val json_of_opt_name : opt_name -> string
+
+module Opt_name : sig
+  type nonrec t = opt_name
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type id = string
+
+val id_of_yojson : Yojson.Safe.t -> id
+val yojson_of_id : id -> Yojson.Safe.t
+val id_of_json : string -> id
+val json_of_id : id -> string
+
+module Id : sig
+  type nonrec t = id
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type all = {
+  id: id;
+  score: score;
+  tags: tag_list;
+  name: opt_name;
+}
+
+val make_all : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> all
+val all_of_yojson : Yojson.Safe.t -> all
+val yojson_of_all : all -> Yojson.Safe.t
+val all_of_json : string -> all
+val json_of_all : all -> string
+
+module All : sig
+  type nonrec t = all
+  val make : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "type_aliases.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type tag_list = string list
+
+let tag_list_of_yojson (x : Yojson.Safe.t) : tag_list =
+  (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) x
+
+let yojson_of_tag_list (x : tag_list) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x
+
+let tag_list_of_json s =
+  tag_list_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_tag_list x =
+  Yojson.Safe.to_string (yojson_of_tag_list x)
+
+module Tag_list = struct
+  type nonrec t = tag_list
+  let of_yojson = tag_list_of_yojson
+  let to_yojson = yojson_of_tag_list
+  let of_json = tag_list_of_json
+  let to_json = json_of_tag_list
+end
+
+type score = float
+
+let score_of_yojson (x : Yojson.Safe.t) : score =
+  Atdml_runtime.float_of_yojson x
+
+let yojson_of_score (x : score) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_float x
+
+let score_of_json s =
+  score_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_score x =
+  Yojson.Safe.to_string (yojson_of_score x)
+
+module Score = struct
+  type nonrec t = score
+  let of_yojson = score_of_yojson
+  let to_yojson = yojson_of_score
+  let of_json = score_of_json
+  let to_json = json_of_score
+end
+
+type opt_name = string option
+
+let opt_name_of_yojson (x : Yojson.Safe.t) : opt_name =
+  (Atdml_runtime.option_of_yojson Atdml_runtime.string_of_yojson) x
+
+let yojson_of_opt_name (x : opt_name) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_option Atdml_runtime.yojson_of_string) x
+
+let opt_name_of_json s =
+  opt_name_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_opt_name x =
+  Yojson.Safe.to_string (yojson_of_opt_name x)
+
+module Opt_name = struct
+  type nonrec t = opt_name
+  let of_yojson = opt_name_of_yojson
+  let to_yojson = yojson_of_opt_name
+  let of_json = opt_name_of_json
+  let to_json = json_of_opt_name
+end
+
+type id = string
+
+let id_of_yojson (x : Yojson.Safe.t) : id =
+  Atdml_runtime.string_of_yojson x
+
+let yojson_of_id (x : id) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_string x
+
+let id_of_json s =
+  id_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_id x =
+  Yojson.Safe.to_string (yojson_of_id x)
+
+module Id = struct
+  type nonrec t = id
+  let of_yojson = id_of_yojson
+  let to_yojson = yojson_of_id
+  let of_json = id_of_json
+  let to_json = json_of_id
+end
+
+type all = {
+  id: id;
+  score: score;
+  tags: tag_list;
+  name: opt_name;
+}
+
+let make_all ~id ~score ~tags ~name () : all =
+  { id; score; tags; name }
+
+let all_of_yojson (x : Yojson.Safe.t) : all =
+  match x with
+  | `Assoc fields ->
+    let id =
+      match List.assoc_opt "id" fields with
+      | Some v -> id_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "id"
+    in
+    let score =
+      match List.assoc_opt "score" fields with
+      | Some v -> score_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "score"
+    in
+    let tags =
+      match List.assoc_opt "tags" fields with
+      | Some v -> tag_list_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "tags"
+    in
+    let name =
+      match List.assoc_opt "name" fields with
+      | Some v -> opt_name_of_yojson v
+      | None -> Atdml_runtime.missing_field "all" "name"
+    in
+    { id; score; tags; name }
+  | _ -> Atdml_runtime.bad_type "all" x
+
+let yojson_of_all (x : all) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("id", yojson_of_id x.id)];
+    [("score", yojson_of_score x.score)];
+    [("tags", yojson_of_tag_list x.tags)];
+    [("name", yojson_of_opt_name x.name)];
+  ])
+
+let all_of_json s =
+  all_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_all x =
+  Yojson.Safe.to_string (yojson_of_all x)
+
+module All = struct
+  type nonrec t = all
+  let make = make_all
+  let of_yojson = all_of_yojson
+  let to_yojson = yojson_of_all
+  let of_json = all_of_json
+  let to_json = json_of_all
+end
+
+--- Input:
+{ "id": "abc", "score": 1.23, "tags": [ "a", "b" ], "name": [ "Some", "x" ] }
+--- Output:
+{ "id": "abc", "score": 1.23, "tags": [ "a", "b" ], "name": [ "Some", "x" ] }

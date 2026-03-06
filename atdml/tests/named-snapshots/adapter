@@ -1,0 +1,257 @@
+(* Auto-generated from "adapter.atd" by atdml. *)
+
+type text = {
+  title: string;
+  body: string;
+}
+
+val make_text : title:string -> body:string -> unit -> text
+val text_of_yojson : Yojson.Safe.t -> text
+val yojson_of_text : text -> Yojson.Safe.t
+val text_of_json : string -> text
+val json_of_text : text -> string
+
+module Text : sig
+  type nonrec t = text
+  val make : title:string -> body:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type image = {
+  url: string;
+}
+
+val make_image : url:string -> unit -> image
+val image_of_yojson : Yojson.Safe.t -> image
+val yojson_of_image : image -> Yojson.Safe.t
+val image_of_json : string -> image
+val json_of_image : image -> string
+
+module Image : sig
+  type nonrec t = image
+  val make : url:string -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type document =
+  | Image of image
+  | Text of text
+
+val document_of_yojson : Yojson.Safe.t -> document
+val yojson_of_document : document -> Yojson.Safe.t
+val document_of_json : string -> document
+val json_of_document : document -> string
+
+module Document : sig
+  type nonrec t = document
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "adapter.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type text = {
+  title: string;
+  body: string;
+}
+
+let make_text ~title ~body () : text =
+  { title; body }
+
+let text_of_yojson (x : Yojson.Safe.t) : text =
+  match x with
+  | `Assoc fields ->
+    let title =
+      match List.assoc_opt "title" fields with
+      | Some v -> Atdml_runtime.string_of_yojson v
+      | None -> Atdml_runtime.missing_field "text" "title"
+    in
+    let body =
+      match List.assoc_opt "body" fields with
+      | Some v -> Atdml_runtime.string_of_yojson v
+      | None -> Atdml_runtime.missing_field "text" "body"
+    in
+    { title; body }
+  | _ -> Atdml_runtime.bad_type "text" x
+
+let yojson_of_text (x : text) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("title", Atdml_runtime.yojson_of_string x.title)];
+    [("body", Atdml_runtime.yojson_of_string x.body)];
+  ])
+
+let text_of_json s =
+  text_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_text x =
+  Yojson.Safe.to_string (yojson_of_text x)
+
+module Text = struct
+  type nonrec t = text
+  let make = make_text
+  let of_yojson = text_of_yojson
+  let to_yojson = yojson_of_text
+  let of_json = text_of_json
+  let to_json = json_of_text
+end
+
+type image = {
+  url: string;
+}
+
+let make_image ~url () : image =
+  { url }
+
+let image_of_yojson (x : Yojson.Safe.t) : image =
+  match x with
+  | `Assoc fields ->
+    let url =
+      match List.assoc_opt "url" fields with
+      | Some v -> Atdml_runtime.string_of_yojson v
+      | None -> Atdml_runtime.missing_field "image" "url"
+    in
+    { url }
+  | _ -> Atdml_runtime.bad_type "image" x
+
+let yojson_of_image (x : image) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("url", Atdml_runtime.yojson_of_string x.url)];
+  ])
+
+let image_of_json s =
+  image_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_image x =
+  Yojson.Safe.to_string (yojson_of_image x)
+
+module Image = struct
+  type nonrec t = image
+  let make = make_image
+  let of_yojson = image_of_yojson
+  let to_yojson = yojson_of_image
+  let of_json = image_of_json
+  let to_json = json_of_image
+end
+
+type document =
+  | Image of image
+  | Text of text
+
+let document_of_yojson (x : Yojson.Safe.t) : document =
+  let x = My_adapter.normalize x in
+  match x with
+  | `List [`String "Image"; v] -> Image (image_of_yojson v)
+  | `List [`String "Text"; v] -> Text (text_of_yojson v)
+  | _ -> Atdml_runtime.bad_sum "document" x
+
+let yojson_of_document (x : document) : Yojson.Safe.t =
+  let atdml_result_ =
+    match x with
+    | Image v -> `List [`String "Image"; yojson_of_image v]
+    | Text v -> `List [`String "Text"; yojson_of_text v]
+  in My_adapter.restore atdml_result_
+
+let document_of_json s =
+  document_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_document x =
+  Yojson.Safe.to_string (yojson_of_document x)
+
+module Document = struct
+  type nonrec t = document
+  let of_yojson = document_of_yojson
+  let to_yojson = yojson_of_document
+  let of_json = document_of_json
+  let to_json = json_of_document
+end
+
+--- Input:
+{ "type": "Image", "url": "https://example.com/pic.jpg" }
+--- Output:
+{ "type": "Image", "url": "https://example.com/pic.jpg" }

@@ -66,6 +66,7 @@ test-ocaml:
 	$(MAKE) test-common
 	$(MAKE) -C atdgen-runtime test
 	$(MAKE) -C atdgen test
+	$(MAKE) -C atdml test
 
 # Test only the Scala backend
 .PHONY: test-scala

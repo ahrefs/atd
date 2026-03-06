@@ -1,0 +1,173 @@
+(* Auto-generated from "color_enum.atd" by atdml. *)
+
+type color =
+  | Red
+  | Green
+  | Blue
+
+val color_of_yojson : Yojson.Safe.t -> color
+val yojson_of_color : color -> Yojson.Safe.t
+val color_of_json : string -> color
+val json_of_color : color -> string
+
+module Color : sig
+  type nonrec t = color
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type colors = (color * color * color)
+
+val colors_of_yojson : Yojson.Safe.t -> colors
+val yojson_of_colors : colors -> Yojson.Safe.t
+val colors_of_json : string -> colors
+val json_of_colors : colors -> string
+
+module Colors : sig
+  type nonrec t = colors
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "color_enum.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type color =
+  | Red
+  | Green
+  | Blue
+
+let color_of_yojson (x : Yojson.Safe.t) : color =
+  match x with
+  | `String "Red" -> Red
+  | `String "green" -> Green
+  | `String "Blue" -> Blue
+  | _ -> Atdml_runtime.bad_sum "color" x
+
+let yojson_of_color (x : color) : Yojson.Safe.t =
+  match x with
+  | Red -> `String "Red"
+  | Green -> `String "green"
+  | Blue -> `String "Blue"
+
+let color_of_json s =
+  color_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_color x =
+  Yojson.Safe.to_string (yojson_of_color x)
+
+module Color = struct
+  type nonrec t = color
+  let of_yojson = color_of_yojson
+  let to_yojson = yojson_of_color
+  let of_json = color_of_json
+  let to_json = json_of_color
+end
+
+type colors = (color * color * color)
+
+let colors_of_yojson (x : Yojson.Safe.t) : colors =
+  (fun x -> match x with | `List lst when List.length lst = 3 -> (color_of_yojson (List.nth lst 0), color_of_yojson (List.nth lst 1), color_of_yojson (List.nth lst 2)) | _ -> Atdml_runtime.bad_type "tuple" x) x
+
+let yojson_of_colors (x : colors) : Yojson.Safe.t =
+  (fun (x0, x1, x2) -> `List [yojson_of_color x0; yojson_of_color x1; yojson_of_color x2]) x
+
+let colors_of_json s =
+  colors_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_colors x =
+  Yojson.Safe.to_string (yojson_of_colors x)
+
+module Colors = struct
+  type nonrec t = colors
+  let of_yojson = colors_of_yojson
+  let to_yojson = yojson_of_colors
+  let of_json = colors_of_json
+  let to_json = json_of_colors
+end
+
+--- Input:
+[ "Red", "green", "Blue" ]
+--- Output:
+[ "Red", "green", "Blue" ]

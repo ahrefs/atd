@@ -1,3 +1,55 @@
+unreleased
+----------
+
+* atdml: New tool. Generates a single self-contained OCaml module (`.ml` +
+  `.mli`) from a single `.atd` file, with JSON support via `Yojson.Safe.t`.
+  No separate runtime library is required; the runtime helpers are inlined
+  into each generated `.ml`. Atdml is the recommended successor to atdgen
+  for OCaml JSON support.
+  Supported features in the initial release:
+  - All primitive ATD types: `unit`, `bool`, `int`, `float`, `string`
+  - `abstract` type, represented as `Yojson.Safe.t`
+  - `'a list`, `'a option`, `'a nullable`
+  - Tuples: `('a * 'b * ...)`
+  - Records, including required fields, optional fields (`?foo`),
+    and with-default fields (`~foo`) with implicit or explicit defaults
+    (`<ocaml default="...">`)
+  - Classic sum types (regular OCaml variants) and polymorphic variants
+    (`<ocaml repr="poly">`)
+  - Parametric types
+  - Mutually recursive types (detected automatically via topological sort;
+    `and` is used only when strictly necessary)
+  - `wrap` construct with `<ocaml module="M">` or explicit
+    `<ocaml t="..." wrap="..." unwrap="...">`
+  - JSON adapters via `<json adapter.ocaml="M">` (module providing `normalize`
+    and `restore`) or `<json adapter.to_ocaml="..." adapter.from_ocaml="...">`
+    (inline expressions); supported on sum types and records
+  - `<json name="...">` to override JSON field or constructor names
+  - `<ocaml name="...">` to rename variant constructors in OCaml
+  - `<ocaml attr="...">` to attach ppx attributes (e.g. `[@@deriving show]`)
+    to generated type definitions
+  - `<doc text="...">` documentation annotations, translated into ocamldoc
+    `(** ... *)` comments in the generated code; supported on type definitions,
+    record fields, and variant constructors
+  - Automatic renaming of ATD type names that conflict with OCaml keywords
+    or with the `foo_of_yojson`/`yojson_of_foo` naming scheme
+  - Automatic renaming of record fields and variant constructors that conflict
+    with OCaml keywords (e.g. `end` → `end_`)
+  - `(string * 'a) list <json repr="object">`: encode association lists as
+    JSON objects `{"key": value, ...}` rather than arrays
+  - `<doc text="...">` documentation annotations, including module-level
+    head annotations
+  - Graceful handling of atdgen annotations not supported by atdml:
+    `<ocaml module="...">` on type definitions and `<ocaml name="...">` on
+    record fields emit a warning and are otherwise ignored
+  - `~field: user_type` with no OCaml default: warns and treats the field as
+    required in JSON (no `make_` function generated for that type)
+  - Stdin mode: reads ATD from stdin, writes a copy-pasteable
+    `module type Types = sig ... end / module Types : Types = struct ... end`
+    snippet to stdout
+  - Each generated type gets a submodule (`module Foo`) bundling the type
+    and its conversion functions
+
 3.0.1 (2025-12-09)
 ------------------
 

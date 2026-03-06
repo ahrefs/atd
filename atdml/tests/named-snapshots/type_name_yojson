@@ -1,0 +1,123 @@
+(* Auto-generated from "type_name_yojson.atd" by atdml. *)
+
+type yojson_ = int
+
+val yojson__of_yojson : Yojson.Safe.t -> yojson_
+val yojson_of_yojson_ : yojson_ -> Yojson.Safe.t
+val yojson__of_json : string -> yojson_
+val json_of_yojson_ : yojson_ -> string
+
+module Yojson_ : sig
+  type nonrec t = yojson_
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "type_name_yojson.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type yojson_ = int
+
+let yojson__of_yojson (x : Yojson.Safe.t) : yojson_ =
+  Atdml_runtime.int_of_yojson x
+
+let yojson_of_yojson_ (x : yojson_) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_int x
+
+let yojson__of_json s =
+  yojson__of_yojson (Yojson.Safe.from_string s)
+
+let json_of_yojson_ x =
+  Yojson.Safe.to_string (yojson_of_yojson_ x)
+
+module Yojson_ = struct
+  type nonrec t = yojson_
+  let of_yojson = yojson__of_yojson
+  let to_yojson = yojson_of_yojson_
+  let of_json = yojson__of_json
+  let to_json = json_of_yojson_
+end
+
+--- Input:
+42
+--- Output:
+42

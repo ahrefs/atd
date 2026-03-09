@@ -85,7 +85,7 @@ let rec get_reader_name
   match x with
     Unit (_, Unit, Unit) -> decoder_ident "unit"
   | Bool (_, Bool, Bool) -> decoder_ident "bool"
-  | Int (_, Int o, Int) ->
+  | Int (_, Int o, Int _) ->
       decoder_ident (
         match o with
         | Int -> "int"
@@ -371,7 +371,7 @@ let rec get_writer_name
       encoder_ident "unit"
   | Bool (_, Bool, Bool) ->
       encoder_ident "bool"
-  | Int (_, Int o, Int) ->
+  | Int (_, Int o, Int _) ->
       encoder_ident (
         match o with
         | Int -> "int"

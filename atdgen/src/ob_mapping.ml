@@ -57,6 +57,7 @@ let rec mapping_of_expr (x : type_expr) : ob_mapping =
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
   | Name (loc, (_, s, l), an) ->
+      let s = Atd.Type_name.basename s in
       (match s with
          "unit" ->
            Unit (loc, Unit, Biniou.Unit)
@@ -102,9 +103,10 @@ and mapping_of_variant = function
       ; var_brepr = Biniou.Variant
       }
 
-and mapping_of_field ocaml_field_prefix = function
-  | `Inherit _ -> assert false
-  | `Field (f_loc, (f_name, f_kind, an), x) ->
+and mapping_of_field ocaml_field_prefix (field : Atd.Ast.field) =
+  match field with
+  | Inherit _ -> assert false
+  | Field (f_loc, (f_name, f_kind, an), x) ->
       let { Ox_mapping.ocaml_default; unwrapped } =
         Ox_mapping.analyze_field Biniou f_loc f_kind an in
       { f_loc
@@ -128,7 +130,7 @@ let def_of_atd atd =
     ~mapping_of_expr ~def:Biniou.Def
 
 let defs_of_atd_module l =
-  List.map (function Atd.Ast.Type def -> def_of_atd def) l
+  List.map (fun def -> def_of_atd def) l
 
 let defs_of_atd_modules l =
   List.map (fun (is_rec, l) -> (is_rec, defs_of_atd_module l)) l

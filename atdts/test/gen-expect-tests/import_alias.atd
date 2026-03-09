@@ -1,0 +1,5 @@
+import ext_types <ts name="etypes">
+
+type item = {
+  tag: ext_types.tag;
+}

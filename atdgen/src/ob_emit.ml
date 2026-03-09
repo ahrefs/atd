@@ -1358,7 +1358,7 @@ let make_ocaml_files
     ~ocaml_version
     ~pp_convs
     atd_file out =
-  let ((head, m0), _) =
+  let module_ =
     match atd_file with
       Some file ->
         Atd.Util.load_file
@@ -1373,17 +1373,29 @@ let make_ocaml_files
           ?pos_fname ?pos_lnum
           stdin
   in
+  let head = module_.Atd.Ast.module_head in
+  let m0 = module_.Atd.Ast.type_defs in
   let tsort =
     if all_rec then
       function m -> [ (true, m) ]
     else
-      Atd.Util.tsort
+      fun m -> Atd.Util.tsort m
   in
   let m1 = tsort m0 in
   let defs1 = defs_of_atd_modules m1 in
   Xb_emit.check defs1;
-  let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_poly:true m0
+  let m1' = Atd.Expand.expand_type_defs ~keep_poly:true m0 in
+  let original_types =
+    let tbl = Hashtbl.create 16 in
+    List.iter (fun (def : Atd.Ast.type_def) ->
+      match def.orig with
+      | None -> ()
+      | Some orig_def ->
+        let poly_name = Atd.Type_name.basename orig_def.name in
+        let n_params = List.length orig_def.param in
+        Hashtbl.replace tbl (Atd.Type_name.basename def.name) (poly_name, n_params)
+    ) m1';
+    tbl
   in
   let m2 = tsort m1' in
   (* m0 = original type definitions

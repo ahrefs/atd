@@ -52,9 +52,7 @@ val get_let : is_rec:bool -> is_first:bool -> string * string
 val write_opens : Buffer.t -> string list -> unit
 
 val def_of_atd
-  : Atd.Ast.loc
-    * (string * string list * Atd.Annot.t)
-    * Atd.Ast.type_expr
+  : Atd.Ast.type_def
   -> target:Ocaml.target
   -> def:'a
   -> external_:'a

@@ -26,4 +26,4 @@ val print :
   ?xprop:bool ->
   src_name:string ->
   root_type:string ->
-  out_channel -> Ast.full_module -> unit
+  out_channel -> Ast.module_ -> unit

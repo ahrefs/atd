@@ -40,23 +40,23 @@ let format_html_comments ((section, (_, l)) as x) =
         | Some _ | None ->
             begin match List.assoc "text" l with
               | Some (loc, Some s) -> comment (html_of_doc loc s)
-              | Some _ | None -> Atd.Print.default_annot x
+              | Some _ | None -> Atd.Print.default_format_annot x
             end
       end
-  | _ -> Atd.Print.default_annot x
+  | _ -> Atd.Print.default_format_annot x
 
 let print_atd ~html_doc oc ast =
-  let annot =
+  let format_annot =
     if html_doc then Some format_html_comments
     else None
   in
-  let pp = Atd.Print.format ?annot ast in
+  let pp = Atd.Print.format ?format_annot (Atd.Ast.Module ast) in
   Easy_format.Pretty.to_channel oc pp;
   output_string oc "\n"
 
 let print_ml ~name oc ast =
   let buf = Buffer.create 1000 in
-  Atd.Reflect.print_full_module_def buf name ast;
+  Atd.Reflect.print_module_def buf name ast;
   output_string oc (Buffer.contents buf);
   output_string oc "\n"
 
@@ -69,6 +69,7 @@ let strip all sections x =
   in
   Atd.Ast.map_all_annot filter x
 
+(* TODO: explain why we're taking multiple ATD files as input *)
 let parse
     ~annot_schema
     ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
@@ -76,24 +77,24 @@ let parse
   let l =
     List.map (
       fun file ->
-        let m, _orig_defs =
-          Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
-            ~inherit_fields ~inherit_variants file
-        in
-        if remove_wraps then
-          Atd.Ast.remove_wrap_constructs m
-        else
-          m
+        Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
+          ~inherit_fields ~inherit_variants file
     ) files
   in
-  let heads, bodies = List.split l in
-  let first_head =
-    (* heads in other files than the first one are tolerated but ignored *)
-    match heads with
-        x :: _ -> x
-      | [] -> (Atd.Ast.dummy_loc, [])
+  let first_head, first_imports =
+    (* heads and imports in other files than the first one are tolerated
+       but ignored *)
+    match l with
+        (first : Atd.Ast.module_) :: _ -> first.module_head, first.imports
+      | [] -> (Atd.Ast.dummy_loc, []), []
   in
-  let m = first_head, List.flatten bodies in
+  let all_type_defs = List.concat_map (fun m -> m.Atd.Ast.type_defs) l in
+  let m : Atd.Ast.module_ =
+    { module_head = first_head;
+      imports = first_imports;
+      type_defs = all_type_defs }
+  in
+  ignore remove_wraps; (* remove_wrap_constructs no longer available *)
   strip strip_all strip_sections m
 
 let print

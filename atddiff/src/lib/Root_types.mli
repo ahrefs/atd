@@ -11,5 +11,5 @@
 *)
 val check_root_types_superset :
   root_types_superset:string list ->
-  ast_with_inherits:Atd.Ast.full_module ->
+  ast_with_inherits:Atd.Ast.module_ ->
   string list * string list

@@ -3,6 +3,9 @@
 <python json_py.text="from dataclasses import dataclass">
 <doc text="User-inserted doc">
 
+import def <python name="def_"> as class <python name="class_">
+import if <python name="if_">
+
 type kind <doc text="Definition-level doc"> = [
   | Root (* class name conflict *)
   | Thing
@@ -100,4 +103,9 @@ type recursive_class = {
 
 type default_list = {
   ~items: int list;
+}
+
+type tagged = {
+  ext_tag: if.tag;
+  priority: class.priority;
 }

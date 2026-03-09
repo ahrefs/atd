@@ -31,6 +31,7 @@ module B = Indent
    naming conflicts. *)
 type env = {
   (* Global *)
+  imports: Atd.Imports.t;
   create_variable: string -> string;
   translate_variable: string -> string;
   (* Local to a class: instance variables, including method names *)
@@ -44,6 +45,7 @@ let annot_schema_python : Atd.Annot.schema_section =
       Module_head, "text";
       Module_head, "json_py.text";
       Type_def, "decorator";
+      Import, "name";
       Type_expr, "repr";
       Field, "default";
     ]
@@ -97,7 +99,9 @@ let create_class_name env name =
   let preferred_id = to_camel_case name in
   env.create_variable preferred_id
 
-let init_env () : env =
+let init_env (imports : import list) : env =
+  let local_module_names = List.map (fun (x : import) -> x.name) imports in
+  let imports = Atd.Imports.load imports in
   let keywords = [
     (* Keywords
        https://docs.python.org/3/reference/lexical_analysis.html#keywords
@@ -139,7 +143,7 @@ let init_env () : env =
   ] in
   let variables =
     Atd.Unique_name.init
-      ~reserved_identifiers:(reserved_variables @ keywords)
+      ~reserved_identifiers:(reserved_variables @ keywords @ local_module_names)
       ~reserved_prefixes:["atd_"; "_atd_"]
       ~safe_prefix:"x_"
   in
@@ -164,6 +168,7 @@ let init_env () : env =
     fun id -> Atd.Unique_name.translate u id
   in
   {
+    imports;
     create_variable;
     translate_variable;
     translate_inst_variable;
@@ -502,17 +507,17 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Dict ->
       Array_dict (key, value)
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, Dict ->
       Object_dict value
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, List -> Object_list value
   | _, Array, List -> Array_list
   | _, Object, _ -> error_at loc "not a (string * _) list"
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
-(* Map ATD built-in types to built-in mypy types *)
+(* Map ATD built-in types to built-in mypy types (for a local unqualified name) *)
 let py_type_name env (name : string) =
   match name with
   | "unit" -> "None"
@@ -522,6 +527,35 @@ let py_type_name env (name : string) =
   | "string" -> "str"
   | "abstract" -> "Any"
   | user_defined -> class_name env user_defined
+
+(* Python module name: what appears after 'import' in generated code.
+   <python name="X"> on the path overrides the raw path (needed when the
+   ATD module path is a Python keyword, e.g. 'import def <python name="def_">') *)
+let py_module_of_import (x : A.import) =
+  match Atd.Annot.get_opt_field
+          ~parse:(fun s -> Some s) ~sections:["python"] ~field:"name" x.annot
+  with
+  | Some name -> name
+  | None -> String.concat "." x.path
+
+(* Python local name: used in generated code (e.g. 'local.ClassName').
+   Priority: <python name> on alias > alias name > <python name> on path > x.name *)
+let py_name_of_import (x : A.import) =
+  match x.alias with
+  | Some (alias_name, alias_annot) ->
+      (match Atd.Annot.get_opt_field
+               ~parse:(fun s -> Some s) ~sections:["python"] ~field:"name" alias_annot
+       with
+       | Some name -> name
+       | None -> alias_name)
+  | None -> py_module_of_import x
+
+(* Map an ATD type_name (possibly qualified) to a Python type string *)
+let py_type_name_of_name env loc (name : type_name) =
+  let import, base_name = Atd.Imports.resolve env.imports loc name in
+  match import with
+  | None -> py_type_name env base_name
+  | Some import -> py_name_of_import import ^ "." ^ to_camel_case base_name
 
 (* Return the mypy type name for type expression that doesn't require
    us to create a new class (type aliases).
@@ -558,8 +592,8 @@ let rec type_name_of_expr env (e : type_expr) : string * (loc * annot) =
       sprintf "Optional[%s]" (type_name_of_expr env e |> fst), (loc, an)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> todo "wrap"
-  | Name (loc, (loc2, name, []), an) -> py_type_name env name, (loc, an)
-  | Name (loc, (_, name, _::_), _) -> assert false
+  | Name (loc, (loc2, name, []), an) -> py_type_name_of_name env loc name, (loc, an)
+  | Name (loc, (_, name, _::_), _) -> not_implemented loc "parametrized imported types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 let rec get_default_default (e : type_expr) : string option =
@@ -573,7 +607,7 @@ let rec get_default_default (e : type_expr) : string option =
   | Shared (loc, e, an) -> get_default_default e
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (match Atd.Type_name.basename name with
        | "unit" -> Some "None"
        | "bool" -> Some "False"
        | "int" -> Some "0"
@@ -653,7 +687,8 @@ let rec json_writer env e =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_writer env e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (let name = Atd.Type_name.basename name in
+       match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
        | "abstract" -> "(lambda x: x)"
        | _ -> "(lambda x: x.to_json())")
@@ -794,10 +829,15 @@ let rec json_reader env (e : type_expr) =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_reader env e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
-       | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
-       | "abstract" -> "(lambda x: x)"
-       | _ -> sprintf "%s.from_json" (class_name env name))
+      let import, base_name = Atd.Imports.resolve env.imports loc name in
+      (match import with
+       | None ->
+           (match base_name with
+            | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" base_name
+            | "abstract" -> "(lambda x: x)"
+            | local_name -> sprintf "%s.from_json" (class_name env local_name))
+       | Some import ->
+           sprintf "%s.%s.from_json" (py_name_of_import import) (to_camel_case base_name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -887,9 +927,9 @@ let record env
   let py_class_name = class_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
+    List.map (fun (f : field) -> match f with
+      | Field x -> x
+      | Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   (*
@@ -1296,7 +1336,12 @@ let get_class_decorators an =
   else
     decorators @ ["dataclass"]
 
-let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
+let type_def env (def : A.type_def) : B.t =
+  let loc = def.loc in
+  let name = Atd.Type_name.basename def.name in
+  let param = def.param in
+  let an = def.annot in
+  let e = def.value in
   if param <> [] then
     not_implemented loc "parametrized type";
   let class_decorators =
@@ -1324,12 +1369,12 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   unwrap e
 
 let module_body env x =
-  List.fold_left (fun acc (Type x) -> Inline (type_def env x) :: acc) [] x
+  List.fold_left (fun acc x -> Inline (type_def env x) :: acc) [] x
   |> List.rev
   |> spaced
 
 let definition_group ~atd_filename env
-    (is_recursive, (items: A.module_body)) : B.t =
+    (is_recursive, (items: A.type_def list)) : B.t =
   [
     Inline (module_body env items);
   ]
@@ -1343,22 +1388,40 @@ let definition_group ~atd_filename env
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_class_names env (items: A.module_body) =
+let reserve_good_class_names env (items: A.type_def list) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (class_name env name))
+    (fun (def : A.type_def) -> ignore (class_name env (Atd.Type_name.basename def.name)))
     items
 
-let to_file ~atd_filename ~user_docstring ~head
-    (items : A.module_body) dst_path =
-  let env = init_env () in
+let format_atd_import (x : A.import) =
+  let py_module = py_module_of_import x in
+  let local = py_name_of_import x in
+  let as_ =
+    if local = py_module then ""
+    else sprintf " as %s" local
+  in
+  Line (sprintf "import %s%s" py_module as_)
+
+let to_file ~atd_filename ~user_docstring ~head ~imports
+    (items : A.type_def list) dst_path =
+  let env = init_env imports in
   reserve_good_class_names env items;
   let python_defs =
     Atd.Util.tsort items
     |> List.map (fun x -> Inline (definition_group ~atd_filename env x))
   in
+  let import_lines =
+    match imports with
+    | [] -> []
+    | _ ->
+        [Line ""]
+        @ List.map format_atd_import imports
+        @ [Line ""]
+  in
   [
     Inline (preamble ~atd_filename ~user_docstring);
     Inline head;
+    Inline import_lines;
     Line "";
     Line "";
     Inline (double_spaced python_defs);
@@ -1376,7 +1439,7 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let full_module, _original_types =
+  let module_ =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization = eliminate parametrized type defs *)
@@ -1385,8 +1448,9 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module = Atd.Ast.use_only_specific_variants full_module in
-  let (atd_head, atd_module) = full_module in
+  let module_ = Atd.Ast.use_only_specific_variants module_ in
+  let atd_head = module_.Atd.Ast.module_head in
+  let atd_module = module_.Atd.Ast.type_defs in
   let user_docstring =
     let loc, an = atd_head in
     trans_head_doc_to_docstring loc an
@@ -1395,4 +1459,5 @@ let run_file src_path =
     Python_annot.get_python_json_text (snd atd_head)
     |> List.map (fun s -> Line s)
   in
-  to_file ~atd_filename:src_name ~user_docstring ~head atd_module dst_path
+  let imports = module_.Atd.Ast.imports in
+  to_file ~atd_filename:src_name ~user_docstring ~head ~imports atd_module dst_path

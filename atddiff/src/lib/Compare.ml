@@ -50,21 +50,21 @@ type options = {
 }
 
 let is_builtin_name =
-  let tbl = Atd.Predef.make_table () in
+  let tbl = Atd.Predef.make_table [] in
   fun name -> Hashtbl.mem tbl name
 
 let kind_of_expr (e : A.type_expr) =
   match e with
   | Name (_, (_, name, _args), _) ->
       if is_builtin_name name then
-        name
+        Atd.Type_name.to_string name
       else
         "unresolved type name"
   | Sum _ -> "sum type or enum"
   | Record _ -> "record/object"
   | Tuple _ -> "tuple"
-  | List _ as e ->
-      if Atd.Json.is_json_map e then "map"
+  | List (_, _, an) ->
+      if Atd.Json.get_json_list an = Atd.Json.Object then "map"
       else "list/array"
   | Option _ -> "option"
   | Nullable _ -> "nullable"
@@ -85,7 +85,7 @@ let a_kind_of_expr e =
   (a noun) ^ " " ^ noun
 
 let get_type_names defs =
-  List.map (fun (_loc, (name, _param, _an), expr) -> name) defs
+  List.map (fun (def : A.type_def) -> Atd.Type_name.to_string def.name) defs
 
 (* Split type names into:
    - left-only
@@ -121,13 +121,14 @@ let complete_finding (x : finding) ~affected_types =
   { x with hash }
 
 let report_deleted_types defs name_set =
-  List.filter_map (fun (loc, (name, _param, _an), _expr) ->
+  List.filter_map (fun (def : A.type_def) ->
+    let name = Atd.Type_name.to_string def.name in
     if Strings.mem name name_set then
       Some (([name], []),
             create_finding
               ~direction:Backward
               ~kind:Deleted_type
-              ~location_old: (loc |> Loc.of_atd_loc)
+              ~location_old: (def.loc |> Loc.of_atd_loc)
               ~description:(
                 sprintf "The definition for type '%s' no longer exists."
                    name
@@ -139,13 +140,14 @@ let report_deleted_types defs name_set =
   ) defs
 
 let report_added_types defs name_set =
-  List.filter_map (fun (loc, (name, _param, _an), _expr) ->
+  List.filter_map (fun (def : A.type_def) ->
+    let name = Atd.Type_name.to_string def.name in
     if Strings.mem name name_set then
       Some (([], [name]),
             create_finding
               ~direction:Forward
               ~kind:Deleted_type
-              ~location_new:(loc |> Loc.of_atd_loc)
+              ~location_new:(def.loc |> Loc.of_atd_loc)
               ~description:(sprintf "There is a new type named '%s'." name)
               ()
            )
@@ -156,8 +158,8 @@ let report_added_types defs name_set =
 (* Produce a read-only table of type definitions *)
 let make_def_table (defs : A.type_def list) : (string, A.type_def) Hashtbl.t =
   let tbl = Hashtbl.create 100 in
-  List.iter (fun ((loc, (name, _param, _an), _expr) as def) ->
-    Hashtbl.replace tbl name def
+  List.iter (fun (def : A.type_def) ->
+    Hashtbl.replace tbl (Atd.Type_name.to_string def.name) def
   ) defs;
   tbl
 
@@ -222,10 +224,9 @@ let create_env_from_pairs bindings =
      type '0 t = ' list   vs.  type '0 t = '0 list
 *)
 let normalize_type_params_in_definition (def : A.type_def) : A.type_def =
-  let loc, (name, params, an), e = def in
-  let new_params, env = create_normalized_environment loc params in
-  let new_e = replace_type_variables env e in
-  (loc, (name, new_params, an), new_e)
+  let new_params, env = create_normalized_environment def.loc def.param in
+  let new_e = replace_type_variables env def.value in
+  { def with param = new_params; value = new_e }
 
 (*
    Resolve the type expression into one that is not a name, if possible.
@@ -248,17 +249,18 @@ let deref_expr def_tbl orig_e =
         if is_builtin_name name then
           e
         else (
-          add_visited_name name;
-          let (_loc, (_name, param, _an), e) = get_def def_tbl name in
-          let e = replace_type_variables env e in
-          let n_param = List.length param in
+          let name_str = Atd.Type_name.to_string name in
+          add_visited_name name_str;
+          let def = get_def def_tbl name_str in
+          let e = replace_type_variables env def.value in
+          let n_param = List.length def.param in
           let n_args = List.length args in
           if n_param <> n_args then
             A.error_at loc2
               (sprintf "Type '%s' expects %i arguments but %i were given"
-                 name n_param n_args)
+                 name_str n_param n_args)
           else
-            let bindings = List.combine param args in
+            let bindings = List.combine def.param args in
             let new_env = create_env_from_pairs bindings in
             check_deref_expr new_env e
         )
@@ -287,7 +289,7 @@ let unwrap_option (kind : A.field_kind) (e : A.type_expr) : A.type_expr =
   | Optional ->
       (match e with
       | Option (_, e, _)
-      | Name (_, (_, "option", [e]), _) -> e
+      | Name (_, (_, Atd.Ast.TN ["option"], [e]), _) -> e
       | Sum _
       | Record _
       | Tuple _
@@ -395,7 +397,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
       | Tuple (loc1, cells1, an1), Tuple (loc2, cells2, an2) ->
           cmp_tuple_cells stacks loc1 loc2 cells1 cells2
       | List (loc1, sub_e1, an1), List (loc2, sub_e2, an2)
-        when Atd.Json.is_json_map e1 = Atd.Json.is_json_map e2 ->
+        when Atd.Json.get_json_list an1 = Atd.Json.get_json_list an2 ->
           cmp_expr stacks sub_e1 sub_e2
       | Option (loc1, e1, an1), Option (loc2, e2, an2)
       | Nullable (loc1, e1, an1), Nullable (loc2, e2, an2)
@@ -412,7 +414,7 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
               ~description:(
                 sprintf "Type names '%s' and '%s' are not the same and \
                          may not be compatible."
-                  name1 name2
+                  (Atd.Type_name.to_string name1) (Atd.Type_name.to_string name2)
               )
           else
             ()
@@ -513,12 +515,11 @@ let report_structural_mismatches options def_tbl1 def_tbl2 shared_types :
     and cmp_fields stacks loc1 loc2 fields1 fields2 =
       let with_names fields =
         fields
-        |> List.map (fun (field : A.field) ->
-          match field with
-          | `Field ((_, (name, _, an), _) as x) ->
+        |> List.map (fun (field : A.field) -> match field with
+          | Field ((_, (name, _, an), _) as x) ->
               let json_name = Atd.Json.get_json_fname name an in
               json_name, x
-          | `Inherit _ -> assert false
+          | Inherit _ -> assert false
         )
       in
       let named1 = with_names fields1 in
@@ -648,9 +649,9 @@ then there's no problem and you should use
   in
   let visited_names =
     List.fold_left (fun (acc1, acc2) name ->
-      let (loc1, (_name, param, _an), e1) = get_def def_tbl1 name in
-      let (loc2, (_name, param, _an), e2) = get_def def_tbl2 name in
-      let visited1, visited2 = cmp_expr name e1 e2 in
+      let def1 = get_def def_tbl1 name in
+      let def2 = get_def def_tbl2 name in
+      let visited1, visited2 = cmp_expr name def1.value def2.value in
       (visited1 @ acc1, visited2 @ acc2)
     ) ([], []) shared_types
   in
@@ -737,16 +738,13 @@ let group_and_sort_findings ~sort_by xs : finding list =
    - where a node substitution occurred in the AST, the location was preserved
      so as to point accurately to the source code location.
 *)
-let asts options (ast1 : A.full_module) (ast2 : A.full_module) : result =
-  let _head1, body1 = ast1 in
-  let _head2, body2 = ast2 in
-  let extract_normalized_defs body =
-    body
-    |> List.map (function A.Type x -> x)
+let asts options (ast1 : A.module_) (ast2 : A.module_) : result =
+  let extract_normalized_defs (ast : A.module_) =
+    ast.type_defs
     |> List.map normalize_type_params_in_definition
   in
-  let defs1 = extract_normalized_defs body1 in
-  let defs2 = extract_normalized_defs body2 in
+  let defs1 = extract_normalized_defs ast1 in
+  let defs2 = extract_normalized_defs ast2 in
   let def_tbl1 = make_def_table defs1 in
   let def_tbl2 = make_def_table defs2 in
   let type_names1 = get_type_names defs1 in

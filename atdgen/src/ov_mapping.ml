@@ -91,6 +91,7 @@ let rec scan_expr
 and name_is_shallow defs visited results x =
   match x with
     Name (_, (_, name, _), _) ->
+      let name = Atd.Type_name.basename name in
       (match get_def defs name with
          None ->
            (match name with
@@ -195,6 +196,7 @@ let rec mapping_of_expr
       Wrap (loc, mapping_of_expr is_shallow x, ocaml_t, validator)
 
   | Name (loc, (_, s, l), an) ->
+      let s = Atd.Type_name.basename s in
       (match s with
          "unit" ->
            Unit (loc, Unit, (v an, true))
@@ -268,8 +270,9 @@ and mapping_of_variant is_shallow = function
 
   | Inherit _ -> assert false
 
-and mapping_of_field is_shallow ocaml_field_prefix = function
-    `Field (loc, (s, fk, an), x) ->
+and mapping_of_field is_shallow ocaml_field_prefix (field : Atd.Ast.field) =
+  match field with
+  | Field (loc, (s, fk, an), x) ->
       let fvalue = mapping_of_expr is_shallow x in
       let ocaml_default =
         match fk, Ocaml.get_ocaml_default Validate an with
@@ -300,10 +303,15 @@ and mapping_of_field is_shallow ocaml_field_prefix = function
         f_brepr = (None, noval x && is_shallow x);
       }
 
-  | `Inherit _ -> assert false
+  | Inherit _ -> assert false
 
 
-let def_of_atd is_shallow (loc, (name, param, an), x) =
+let def_of_atd is_shallow (def : Atd.Ast.type_def) =
+  let loc = def.loc in
+  let name = Atd.Type_name.basename def.name in
+  let param = def.param in
+  let an = def.annot in
+  let x = def.value in
   let ocaml_predef = Ocaml.get_ocaml_predef Validate an in
   let doc = Atd.Doc.get_doc loc an in
   let o =
@@ -331,8 +339,8 @@ let def_of_atd is_shallow (loc, (name, param, an), x) =
   }
 
 let fill_def_tbl defs l =
-  List.iter (
-    function Atd.Ast.Type (_, (name, _, _), x) -> Hashtbl.add defs name x
+  List.iter (fun (def : Atd.Ast.type_def) ->
+    Hashtbl.add defs (Atd.Type_name.basename def.name) def.value
   ) l
 
 let init_def_tbl () =
@@ -344,7 +352,7 @@ let make_def_tbl2 l =
   defs
 
 let defs_of_atd_module_gen is_shallow l =
-  List.map (function Atd.Ast.Type def -> def_of_atd is_shallow def) l
+  List.map (fun def -> def_of_atd is_shallow def) l
 
 let defs_of_atd_modules l =
   let defs = make_def_tbl2 l in

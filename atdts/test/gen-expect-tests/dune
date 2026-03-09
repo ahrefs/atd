@@ -3,6 +3,12 @@
 ;
 
 (rule
+ (deps ext_types.atd)
+ (targets ext_types.ts)
+ (action
+  (run %{bin:atdts} %{deps})))
+
+(rule
  (deps everything.atd)
  (targets everything.ts)
  (action
@@ -11,6 +17,12 @@
 (rule
  (deps import.atd)
  (targets import.ts)
+ (action
+  (run %{bin:atdts} %{deps})))
+
+(rule
+ (deps import_alias.atd)
+ (targets import_alias.ts)
  (action
   (run %{bin:atdts} %{deps})))
 
@@ -23,10 +35,12 @@
 (rule
  (alias runtest)
  (package atdts)
- (deps everything.ts import.ts)
+ (deps ext_types.ts everything.ts import.ts import_alias.ts)
  (action
   (progn
+   (diff ext_types.ts.expected ext_types.ts)
    (diff import.ts.expected import.ts)
+   (diff import_alias.ts.expected import_alias.ts)
    (diff everything.ts.expected everything.ts))))
 
 ; 2. Run the generated TypeScript code and check that is reads or writes JSON

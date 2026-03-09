@@ -9,12 +9,12 @@ open Printf
 
 let ( // ) = Fpath.( // )
 
-(* Require 'dune install --prefix local' to have executables under the project
-   root in local/bin *)
-let get_atdml_command () =
-  Fpath.v (Sys.getcwd ()) // Fpath.v "../local/bin/atdml"
-
-let atdml = get_atdml_command () |> Fpath.to_string
+(* Find the atdml binary.
+   Run 'make' from /atdml/ to install it at '../local/bin/atdml'.
+   See CONTRIBUTING.md for the recommended workflow. *)
+let atdml =
+  (Fpath.v (Sys.getcwd ()) // Fpath.v "../local/bin/atdml")
+  |> Fpath.to_string
 
 let run_command args =
   let shell_command =
@@ -68,11 +68,21 @@ let () =
 |}
     json_in type_name type_name
 
-let build_and_run ?(extra_sources = []) ~mli ~ml ~type_name ~json_in () =
+let build_and_run ?(extra_sources = []) ?(extra_atd_files = []) ~mli ~ml ~type_name ~json_in () =
   Testo.with_temp_dir ~chdir:true (fun _dir ->
     List.iter (fun (fname, content) ->
       Testo.write_text_file (Fpath.v fname) content
     ) extra_sources;
+    (* Generate OCaml files from extra ATD files (e.g. imported modules).
+       Each "foo.atd" produces "foo.mli" and "foo.ml" via atdml. *)
+    let extra_ocaml_files =
+      List.concat (List.map (fun (atd_fname, atd_src) ->
+        let base = Filename.chop_suffix atd_fname ".atd" in
+        Testo.write_text_file (Fpath.v atd_fname) atd_src;
+        run_command [atdml; atd_fname];
+        [ base ^ ".mli"; base ^ ".ml" ]
+      ) extra_atd_files)
+    in
     Testo.write_text_file (Fpath.v "Types.mli") mli;
     Testo.write_text_file (Fpath.v "Types.ml") ml;
     Testo.write_text_file
@@ -82,6 +92,7 @@ let build_and_run ?(extra_sources = []) ~mli ~ml ~type_name ~json_in () =
     let build_cmd =
       [ "ocamlfind"; "opt"; "-o"; "test_atdml" ]
       @ extra_files
+      @ extra_ocaml_files
       @ [ "Types.mli"; "Types.ml"; "Main.ml"; "-package"; "yojson"; "-linkpkg" ]
     in
     let run_cmd = ["./test_atdml"] in
@@ -155,7 +166,7 @@ let _test_codegen_error test_name ~atd_src =
    The interesting outputs (mli, ml, JSON) are printed to stdout and
    captured as a test snapshot.
 *)
-let test_e2e ?(extra_sources = []) test_name ~atd_src ~type_name ~json_in =
+let test_e2e ?(extra_sources = []) ?(extra_atd_files = []) test_name ~atd_src ~type_name ~json_in =
   let file_name = make_filename_from_test_name test_name in
   Testo.create test_name
     ~checked_output:(Testo.stdout
@@ -167,7 +178,7 @@ let test_e2e ?(extra_sources = []) test_name ~atd_src ~type_name ~json_in =
       print_string mli;
       print_string "--- ml ---\n";
       print_string ml;
-      build_and_run ~extra_sources ~mli ~ml ~type_name ~json_in ()
+      build_and_run ~extra_sources ~extra_atd_files ~mli ~ml ~type_name ~json_in ()
     )
 
 let tests _env = [
@@ -531,6 +542,76 @@ type node = {
   [ "Node", { "value": 0, "children": [ "Leaf", "Leaf" ] } ]
 |}
 ;
+
+  (* End-to-end test for imports:
+     - 'import base_types' uses extra_atd_files: atdml generates base_types.ml
+       from an ATD source, producing module Base_types (no alias needed).
+     - 'import long.module.path as ext' uses extra_sources: a hand-written
+       Path module that mimics what the generated code expects.  The .ml file
+       will contain 'module Ext = Path' and use Ext throughout; the .mli uses
+       Path directly. *)
+  test_e2e "imports e2e"
+    ~extra_atd_files:[
+      ("base_types.atd", {|
+type person_name = string
+type label = string
+|})]
+    ~extra_sources:[
+      (* 'import long.module.path as ext' resolves to OCaml module
+         Long.Module.Path, so we provide Long.ml with that nested structure. *)
+      ("Long.mli", {|
+module Module : sig
+  module Path : sig
+    type tag = string
+    val tag_of_yojson : Yojson.Safe.t -> tag
+    val yojson_of_tag : tag -> Yojson.Safe.t
+  end
+end
+|});
+      ("Long.ml", {|
+module Module = struct
+  module Path = struct
+    type tag = string
+
+    let tag_of_yojson : Yojson.Safe.t -> tag = function
+      | `String s -> s
+      | x -> failwith ("Long.Module.Path.tag_of_yojson: " ^ Yojson.Safe.to_string x)
+
+    let yojson_of_tag (s : tag) : Yojson.Safe.t = `String s
+  end
+end
+|})]
+    ~atd_src:{|
+import base_types
+import long.module.path as ext
+
+type item = {
+  name: base_types.person_name;
+  tag: ext.tag;
+}
+|}
+    ~type_name:"item"
+    ~json_in:{|{"name": "Alice", "tag": "hello"}|}
+  ;
+
+  (* Snapshot test only: verify that qualified type names (imports) produce
+     correct OCaml module references. *)
+  test_codegen_snapshot "imports"
+    ~atd_src:{|
+import base_types
+
+import long.module.path as ext
+
+type greeting = {
+  name: base_types.person_name;
+  message: string;
+}
+
+type tagged = {
+  value: ext.tag;
+  label: base_types.label;
+}
+|};
 ]
 
 let () =

@@ -609,11 +609,11 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Dict ->
       Array_dict (key, value)
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, Dict ->
       Object_dict value
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, List -> Object_list value
   | _, Array, List -> Array_list
   | _, Object, _ -> error_at loc "not a (string * _) list"
@@ -677,7 +677,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
        | Some { cpp_wrap_t ; cpp_templatize=false; _ } -> cpp_wrap_t
        | Some { cpp_wrap_t ; cpp_templatize=true; _ } -> sprintf "%s<%s>" cpp_wrap_t (type_name_of_expr env e)        
       )
-  | Name (loc, (loc2, name, []), an) -> cpp_type_name_namespaced env name
+  | Name (loc, (loc2, name, []), an) -> cpp_type_name_namespaced env (Atd.Type_name.basename name)
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -692,7 +692,7 @@ let rec get_default_default (e : type_expr) : string option =
   | Shared (loc, e, an) -> get_default_default e
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (match Atd.Type_name.basename name with
        | "unit" -> None
        | "bool" -> Some "false"
        | "int" -> Some "0"
@@ -768,10 +768,13 @@ let rec json_writer ?(nested=false) env e =
       sprintf "_atd_write_wrap([](const auto &v, auto &w){%sv, w);}, [](const auto &e){return %s(e);}, " (json_writer ~nested:true env e) cpp_unwrap
     ) 
   | Name (loc, (loc2, name, []), an) ->
+      let name = Atd.Type_name.basename name in
       (match name with
        | "bool" | "int" | "float" | "string" | "abstract" -> sprintf "_atd_write_%s(" name
-       | _ -> let dtype_name = (cpp_type_name env name) in
-          sprintf "%s::to_json(" dtype_name)
+       | _ ->
+          let dtype_name = cpp_type_name env name in
+          sprintf "%s::to_json(" dtype_name
+      )
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -870,11 +873,12 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
       sprintf "_atd_read_wrap([](const auto& v){return %sv);}, [](const auto &e){return %s(e);}," (json_reader ~nested:true env e) cpp_wrap
     )
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (let name = Atd.Type_name.basename name in
+       match name with
        | "bool" | "int" | "float" | "string" | "abstract" -> sprintf "_atd_read_%s(" name
-       | _ -> sprintf "%s::from_json(" 
+       | _ -> sprintf "%s::from_json("
        (struct_name env name)
-       )
+      )
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -1047,9 +1051,9 @@ let record env loc name (fields : field list) an codegen_type =
   let cpp_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields_l =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
+    List.map (fun (f : field) -> match f with
+      | Field x -> x
+      | Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   let inst_var_declarations =
@@ -1479,7 +1483,11 @@ let enum env loc name cases codegen_type =
     | _ -> []
 
 
-let type_def env ((loc, (name, param, an), e) : A.type_def) codegen_type : B.t =
+let type_def env (def : A.type_def) codegen_type : B.t =
+  let loc = def.loc in
+  let name = Atd.Type_name.basename def.name in
+  let param = def.param in
+  let e = def.value in
   if param <> [] then
     not_implemented loc "parametrized type";
   let unwrap e =
@@ -1502,8 +1510,8 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) codegen_type : B.t =
   unwrap e
 
 let module_body env x codegen_type =
-  let gen = 
-  List.fold_left (fun acc (Type x) -> Inline (type_def env x codegen_type) :: acc) [] x
+  let gen =
+  List.fold_left (fun acc x -> Inline (type_def env x codegen_type) :: acc) [] x
   |> List.rev
   in
   match codegen_type with
@@ -1511,7 +1519,7 @@ let module_body env x codegen_type =
   | _ -> gen
 
 let definition_group ~atd_filename env codegen_type
-    (is_recursive, (items: A.module_body)) : B.t =
+    (is_recursive, (items: A.type_def list)) : B.t =
   [
     Inline (module_body env items codegen_type);
   ]
@@ -1525,12 +1533,12 @@ let definition_group ~atd_filename env codegen_type
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_struct_names env (items: A.module_body) =
+let reserve_good_struct_names env (items: A.type_def list) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (struct_name env name))
+    (fun (def : A.type_def) -> ignore (struct_name env (Atd.Type_name.basename def.name)))
     items
 
-let to_header_file ~atd_filename ~head (items : A.module_body) dst_path namespace_name =
+let to_header_file ~atd_filename ~head (items : A.type_def list) dst_path namespace_name =
   let env = init_env () in
   reserve_good_struct_names env items;
   let head = List.map (fun s -> Line s) head in
@@ -1564,7 +1572,7 @@ let to_header_file ~atd_filename ~head (items : A.module_body) dst_path namespac
     @ namespace_end
   |> Indent.to_file ~indent:4 dst_path
 
-let to_cpp_file ~atd_filename (items : A.module_body) dst_path namespace_name =
+let to_cpp_file ~atd_filename (items : A.type_def list) dst_path namespace_name =
   let env = init_env () in
   reserve_good_struct_names env items;
   let cpp_defs =
@@ -1587,7 +1595,7 @@ let run_file src_path =
   in
   let hpp_dst_path = dst_name ^ ".hpp" in
   let cpp_dst_path = dst_name ^ ".cpp" in
-  let full_module, _original_types =
+  let module_ =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization = eliminate parametrized type defs *)
@@ -1596,10 +1604,11 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module = Atd.Ast.use_only_specific_variants full_module in
-  let (atd_head, atd_module) = full_module in
+  let module_ = Atd.Ast.use_only_specific_variants module_ in
+  let atd_head = module_.Atd.Ast.module_head in
+  let atd_module = module_.Atd.Ast.type_defs in
   let head =
-     Cpp_annot.get_cpp_include (snd atd_head) 
+     Cpp_annot.get_cpp_include (snd atd_head)
     |> List.map (sprintf "#include %s")
   in
   let namespace_name = match Cpp_annot.get_cpp_namespace (snd atd_head) with | Some v -> sprintf "atd::%s" v | None -> "atd" in

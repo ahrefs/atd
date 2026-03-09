@@ -267,6 +267,12 @@ import deco
 from dataclasses import dataclass
 
 
+
+import def_ as class_
+import if_
+
+
+
 @dataclass
 class RecursiveClass:
     """Original type: recursive_class = { ... }
@@ -296,6 +302,38 @@ class RecursiveClass:
 
     @classmethod
     def from_json_string(cls, x: str) -> 'RecursiveClass':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class Tagged:
+    """Original type: tagged = { ... }
+    """
+
+    ext_tag: if_.Tag
+    priority: class_.Priority
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'Tagged':
+        if isinstance(x, dict):
+            return cls(
+                ext_tag=if_.Tag.from_json(x['ext_tag']) if 'ext_tag' in x else _atd_missing_json_field('Tagged', 'ext_tag'),
+                priority=class_.Priority.from_json(x['priority']) if 'priority' in x else _atd_missing_json_field('Tagged', 'priority'),
+            )
+        else:
+            _atd_bad_json('Tagged', x)
+
+    def to_json(self) -> Any:
+        res: Dict[str, Any] = {}
+        res['ext_tag'] = (lambda x: x.to_json())(self.ext_tag)
+        res['priority'] = (lambda x: x.to_json())(self.priority)
+        return res
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'Tagged':
         return cls.from_json(json.loads(x))
 
     def to_json_string(self, **kw: Any) -> str:

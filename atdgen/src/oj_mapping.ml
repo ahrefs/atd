@@ -87,6 +87,7 @@ let rec mapping_of_expr (x : type_expr) =
       Wrap (loc, mapping_of_expr x, ocaml_t, json_t)
 
   | Name (loc, (_, s, l), an) ->
+      let s = Atd.Type_name.basename s in
       (match s with
          "unit" ->
            Unit (loc, Unit, Unit)
@@ -94,8 +95,7 @@ let rec mapping_of_expr (x : type_expr) =
            Bool (loc, Bool, Bool)
        | "int" ->
            let o = Ocaml.get_ocaml_int Json an in
-           let j = Json.get_json_int an in
-           Int (loc, Int o, Int j)
+           Int (loc, Int o, Int)
        | "float" ->
            let j = Json.get_json_float an in
            Float (loc, Float, Float j)
@@ -138,9 +138,10 @@ and mapping_of_variant = function
             }
       }
 
-and mapping_of_field ocaml_field_prefix = function
-  | `Inherit _ -> assert false
-  | `Field (f_loc, (f_name, f_kind, an), x) ->
+and mapping_of_field ocaml_field_prefix (field : Atd.Ast.field) =
+  match field with
+  | Inherit _ -> assert false
+  | Field (f_loc, (f_name, f_kind, an), x) ->
       let { Ox_mapping.ocaml_default; unwrapped } =
         Ox_mapping.analyze_field Json f_loc f_kind an in
       { f_loc
@@ -167,7 +168,7 @@ let defs_of_atd_modules l ~(target : Ocaml.target)=
    | t -> invalid_arg "target must be json or melange");
   List.map (fun (is_rec, l) ->
     ( is_rec
-    , List.map (function Atd.Ast.Type atd ->
+    , List.map (fun atd ->
         Ox_emit.def_of_atd atd ~target ~external_:Json.External
           ~mapping_of_expr ~def:Json.Def
       ) l

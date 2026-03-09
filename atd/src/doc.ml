@@ -1,4 +1,4 @@
-open Import
+open Stdlib_extra
 
 type inline = Doc_types.inline =
   | Text of string

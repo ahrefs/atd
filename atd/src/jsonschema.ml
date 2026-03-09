@@ -64,7 +64,7 @@ type t = {
 }
 
 let make_id type_name =
-  "#/definitions/" ^ type_name
+  "#/definitions/" ^ Print.tn type_name
 
 let trans_description_simple loc an =
   match Doc.get_doc loc an with
@@ -99,7 +99,7 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
         let fields =
           List.map (fun (x : field) ->
             match x with
-            | `Field ((loc, (name, kind, an), e) : simple_field) ->
+            | Field ((loc, (name, kind, an), e) : simple_field) ->
                 let json_name = Json.get_json_fname name an in
                 let required =
                   match kind with
@@ -114,7 +114,7 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
                 in
                 let descr = trans_description loc an in
                 ((json_name, trans_type_expr unwrapped_e, descr), required)
-            | `Inherit _ -> assert false
+            | Inherit _ -> assert false
           ) fl
         in
         let properties = List.map fst fields in
@@ -133,7 +133,7 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
         (match e, json_repr with
          | _, Array ->
              Array (trans_type_expr e)
-         | Tuple (loc, [(_, Name (_, (_, "string", _), _), _);
+         | Tuple (loc, [(_, Name (_, (_, TN ["string"], _), _), _);
                         (_, value, _)], an2), Object ->
              Map (trans_type_expr value)
          | _, Object ->
@@ -156,36 +156,36 @@ let trans_type_expr ~xprop (x : Ast.type_expr) : type_expr =
     | Tvar (loc, name) -> error_at loc "unsupported: parametrized types"
     | Name (loc, (loc2, name, args), a) ->
         (match name with
-         | "unit" -> Null
-         | "bool" -> Boolean
-         | "int" -> Integer
-         | "float" -> Number
-         | "string" -> String
-         | "abstract" -> Any
+         | TN ["unit"] -> Null
+         | TN ["bool"] -> Boolean
+         | TN ["int"] -> Integer
+         | TN ["float"] -> Number
+         | TN ["string"] -> String
+         | TN ["abstract"] -> Any
          | _ -> Ref (make_id name)
         )
   in
   trans_type_expr x
 
-let trans_item
+let trans_def
     ~xprop
-    (Type (loc, (name, param, an), e) : module_item) : def =
-  if param <> [] then
-    error_at loc "unsupported: parametrized types";
-  let description = trans_description_simple loc an in
+    (x : type_def) : def =
+  if x.param <> [] then
+    error_at x.loc "unsupported: parametrized types";
+  let description = trans_description_simple x.loc x.annot in
   {
-    name;
+    name = (Print.tn x.name);
     description;
-    type_expr = trans_type_expr ~xprop e;
+    type_expr = trans_type_expr ~xprop x.value;
   }
 
-let trans_full_module
+let trans_module
     ~version
     ~xprop
     ~src_name
     ~root_type
-    ((head, body) : full_module) : t =
-  let defs = List.map (trans_item ~xprop) body in
+    (module_ : module_) : t =
+  let defs = List.map (trans_def ~xprop) module_.type_defs in
   let root_defs, defs = List.partition (fun x -> x.name = root_type) defs in
   let root_def =
     match root_defs with
@@ -204,7 +204,7 @@ let trans_full_module
        - description of the whole module
        - description of the root type
     *)
-    let loc, an = head in
+    let loc, an = module_.module_head in
     let auto_comment = sprintf "Translated by atdcat from %s." src_name in
     [
       Some auto_comment;
@@ -362,7 +362,7 @@ let print
     ?(xprop = true)
     ~src_name ~root_type oc ast =
   ast
-  |> trans_full_module ~version ~xprop ~src_name ~root_type
+  |> trans_module ~version ~xprop ~src_name ~root_type
   |> to_json ~version
   |> Yojson.Safe.pretty_to_channel oc;
   output_char oc '\n'

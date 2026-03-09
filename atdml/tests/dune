@@ -1,13 +1,3 @@
-; Allow running the tests by invoking 'dune runtest'.
-; The --chdir flag tells Testo where to store snapshot files,
-; matching the location used when running './test' by hand.
-(rule
- (alias runtest)
- (package atdml)
- (action
-  (run ./test.exe --chdir %{workspace_root}/atdml)
- )
-)
 
 (executable
  (name test)

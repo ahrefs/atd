@@ -12,6 +12,9 @@ open Atd.Ast
 open Mapping
 module Json = Atd.Json
 
+(* Compatibility alias: module_body used to be a type in Atd.Ast *)
+type module_body = type_def list
+
 type pp_convs =
   | Camlp4 of string list
   | Ppx_deriving of string list
@@ -483,7 +486,7 @@ let rec map_expr target
        | Some { ocaml_wrap_t ; _ } -> `Name (ocaml_wrap_t, [])
       )
   | Name (_, (_2, s, l), an) ->
-      let s = get_ocaml_type_path target s an in
+      let s = get_ocaml_type_path target (Atd.Type_name.basename s) an in
       `Name (s, List.map (map_expr target []) l)
   | Tvar (_, s) ->
       `Tvar s
@@ -500,8 +503,8 @@ and map_variant ~kind target (x : variant) : ocaml_variant =
 
 and map_field target ocaml_field_prefix (x : field) : ocaml_field =
   match x with
-    `Inherit _ -> assert false
-  | `Field (loc, (atd_fname, _, an), x) ->
+    Inherit _ -> assert false
+  | Field (loc, (atd_fname, _, an), x) ->
       let ocaml_fname =
         get_ocaml_fname target (ocaml_field_prefix ^ atd_fname) an in
       if is_ocaml_keyword ocaml_fname then
@@ -517,16 +520,16 @@ and map_field target ocaml_field_prefix (x : field) : ocaml_field =
 
 
 (* hack to deal with legacy behavior *)
-let lhs_has_possibly_relevant_annotation
-    ((loc, (name, param, an1), x) : type_def) =
+let lhs_has_possibly_relevant_annotation (def : type_def) =
+  let name = Atd.Type_name.basename def.name in
   List.exists
-    (fun target -> get_ocaml_module_and_t target name an1 <> None)
+    (fun target -> get_ocaml_module_and_t target name def.annot <> None)
     all_targets
 
 (* hack to deal with legacy behavior *)
-let rhs_is_just_abstract ((loc, (name, param, an1), x) : type_def) =
-  match x with
-  | Atd.Ast.Name (_, (loc, "abstract", type_params), an2) ->
+let rhs_is_just_abstract (def : type_def) =
+  match def.value with
+  | Atd.Ast.Name (_, (loc, TN ["abstract"], type_params), an2) ->
       if type_params <> [] then
         Error.error loc "\"abstract\" takes no type parameters";
       true
@@ -567,7 +570,12 @@ let is_abstract_def (x : type_def) =
 let map_def
     ~(target : target)
     ~(type_aliases : string option)
-    ((loc, (s, param, an1), x) as def : type_def) : ocaml_def option =
+    (def : type_def) : ocaml_def option =
+  let loc = def.loc in
+  let s = Atd.Type_name.basename def.name in
+  let param = def.param in
+  let an1 = def.annot in
+  let x = def.value in
   if is_ocaml_keyword s then
     Error.error loc
       ("\"" ^ s ^ "\" cannot be used as type name (reserved OCaml keyword)");
@@ -628,7 +636,7 @@ let map_def
 
 let map_module ~target ~type_aliases (l : module_body) : ocaml_module_body =
   List.filter_map (
-    fun (Atd.Ast.Type td) ->
+    fun td ->
       Option.map (fun x -> `Type x) (map_def ~target ~type_aliases td)
   ) l
 

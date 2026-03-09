@@ -517,6 +517,13 @@ let use_only_name_variant x =
   let mappers = { Map.type_expr } in
   Map.module_ mappers x
 
+let rec shallow_unwrap = function
+  | Wrap (_, e, _) -> shallow_unwrap e
+  | e -> e
+
+let remove_wrap_constructs (m : module_) : module_ =
+  Map.module_ { type_expr = shallow_unwrap } m
+
 let create_import ~loc ~path ~annot ?alias () : import =
   let name =
     match List.rev path, alias with

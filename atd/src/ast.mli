@@ -205,6 +205,9 @@ type any =
   (** Type for any kind of node, used to define a visitor root.
       Also used to simplify the interface of the [Print] module. *)
 
+val remove_wrap_constructs : module_ -> module_
+  (** Remove all [Wrap] constructs from the module. *)
+
 val create_import :
   loc:loc ->
   path:string list ->

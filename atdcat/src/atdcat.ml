@@ -94,7 +94,7 @@ let parse
       imports = first_imports;
       type_defs = all_type_defs }
   in
-  ignore remove_wraps; (* remove_wrap_constructs no longer available *)
+  let m = if remove_wraps then Atd.Ast.remove_wrap_constructs m else m in
   strip strip_all strip_sections m
 
 let print

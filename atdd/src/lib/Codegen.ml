@@ -1155,6 +1155,18 @@ let run_file src_path =
   let atd_head = module_.Atd.Ast.module_head in
   let atd_module = module_.Atd.Ast.type_defs in
   let head =
+    (* The ATD language now has a dedicated 'import' statement that
+       allows referencing other ATD types from other ATD files.
+       This is different than what these annotations are used for
+       (e.g. <dlang import="std.stdint : uint32_t, uint16_t">).
+       The ATD parser treats 'import' as a soft keyword to avoid breaking
+       things for atdd. It would be nice if the grammar didn't have to
+       resort to soft keywords. This would require deprecating
+       <dlang import="..."> in favor of another name or syntax, and eventually
+       retiring it. Or maybe we could go the other way and generalize
+       soft keywords. Feel free to bring up the issue on GitHub if you
+       have opinions on this.
+     *)
      Dlang_annot.get_dlang_import (snd atd_head)
     |> List.map (sprintf "import %s;")
   in

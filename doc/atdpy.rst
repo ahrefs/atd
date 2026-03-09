@@ -382,3 +382,45 @@ The generated Python class will start like this:
 
 If extra class decorators are specifed on a sum type, the python classes generated
 for the constructors of the sum type will also have the extra class decorators.
+
+
+Import annotations
+^^^^^^^^^^^^^^^^^^
+
+ATD import statements allow referencing types defined in other ATD files:
+
+.. code-block:: ocaml
+
+   import other_module
+   import foo.bar as baz
+
+By default, ``import foo`` generates ``import foo`` in the Python output, and
+``import foo.bar as baz`` generates ``import foo.bar as baz``.
+
+The ``<python name="NAME">`` annotation on the module path controls the Python
+module name used in the generated import statement. This is useful when the ATD
+module name is a Python keyword (e.g. ``def``, ``if``) or otherwise conflicts
+with a Python identifier:
+
+.. code-block:: ocaml
+
+   import def <python name="def_">
+
+generates:
+
+.. code-block:: python
+
+   import def_
+
+The ``<python name="NAME">`` annotation on the alias controls the local alias
+name used in the generated import statement:
+
+.. code-block:: ocaml
+
+   import def <python name="def_"> as defs <python name="defs_mod">
+
+generates:
+
+.. code-block:: python
+
+   import def_ as defs_mod

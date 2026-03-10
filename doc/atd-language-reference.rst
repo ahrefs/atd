@@ -545,7 +545,7 @@ Examples:
    feature. Each code generator maps them to file paths in its own way and
    there is currently no guarantee of consistent behavior across backends.
    When possible, prefer single-component module names (e.g. ``import baz``
-   or ``import baz as baz``). Support for dotted module paths may be removed
+   or ``import foo as bar``). Support for dotted module paths may be removed
    in a future release.
 
 Predefined type names

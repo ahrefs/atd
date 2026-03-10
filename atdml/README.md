@@ -39,12 +39,13 @@ How atdml differs from atdgen
 | Output files | `foo_t.ml` + `foo_j.ml` (+ `_b`, `_v`) | `foo.ml` + `foo.mli` |
 | JSON intermediate | Streaming (no AST) | `Yojson.Safe.t` |
 | Default variants | Polymorphic (`` `Foo ``) | Classic (`Foo`) |
-| Creation functions | Optional (`-create-mandatory`) | Always generated |
-| Naming convention | `read_foo` / `write_foo` | `foo_of_yojson` / `yojson_of_foo` |
+| Naming convention | `foo_of_string` / `string_of_foo` | `foo_of_json` / `json_of_foo` |
+| Submodules | No | Yes (`foo` = `Foo.t`) |
 | PPX naming compat. | No | Yes (`ppx_yojson_conv`) |
 | Runtime library | `atdgen-runtime` | Inlined in generated file |
 | Performance | Optimized | Simpler but slower (?) |
 | Biniou support | Yes | No |
+| ATD module imports | No | Yes |
 
 Polymorphic variants can be opted into per sum type with
 `<ocaml repr="poly">`. Default field values are inferred from the type for
@@ -65,10 +66,9 @@ Consider atdml if:
 
 Stick with atdgen if:
 
-- You have an existing codebase that already uses atdgen and migration is not
-  worthwhile.
 - You need Biniou support.
-- JSON parsing performance is critical.
+- JSON parsing performance is already your bottleneck with atdgen.
+- You don't need new features.
 
 Status and reliability
 --
@@ -80,12 +80,14 @@ possible bugs. Contributions and bug reports are very welcome.
 
 Features not yet implemented:
 
-- `wrap` construct for custom type conversions
-- `shared` construct
-- JSON adapters (`<json adapter.ocaml=...>`)
+- Record field prefix (`<ocaml field_prefix="...">`)
 - Open enums (`<json open_enum>`)
 - Biniou format (not planned)
 - `abstract` types beyond the identity case
+
+See
+[Issues](https://github.com/ahrefs/atd/issues?q=is%3Aissue%20state%3Aopen%20label%3Atarget%3Aocaml)
+for all open issues related to atdgen and atdml.
 
 Requirements
 --

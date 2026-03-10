@@ -59,7 +59,6 @@ Consider atdml if:
 
 - You are writing a new OCaml project and want clean, readable generated code
   that is easy to debug.
-- JSON parsing performance is not a bottleneck in your application.
 - You want generated code that is compatible with the `ppx_yojson_conv`
   naming convention, so it can coexist with PPX-derived types.
 - You want a single output module per ATD file instead of the `_t`/`_j` split.

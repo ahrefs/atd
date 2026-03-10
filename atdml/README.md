@@ -77,13 +77,6 @@ Status and reliability
 battle-tested in production. Expect rough edges, missing features, and
 possible bugs. Contributions and bug reports are very welcome.
 
-Features not yet implemented:
-
-- Record field prefix (`<ocaml field_prefix="...">`)
-- Open enums (`<json open_enum>`)
-- Biniou format (not planned)
-- `abstract` types beyond the identity case
-
 See
 [Issues](https://github.com/ahrefs/atd/issues?q=is%3Aissue%20state%3Aopen%20label%3Atarget%3Aocaml)
 for all open issues related to atdgen and atdml.

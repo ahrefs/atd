@@ -24,11 +24,6 @@ module List = struct
 
   let init n f = Array.to_list (Array.init n f)
 
-  let mapi l f =
-    Array.of_list l
-    |> Array.mapi f
-    |> Array.to_list
-
   let rec find_map f = function
     | [] -> None
     | x :: l ->

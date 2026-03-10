@@ -402,10 +402,7 @@ let is_required = function
   | With_default -> false
   | Required -> true
 
-let local_name_of_import (x : import) =
-  match x.alias with
-  | None -> x.name
-  | Some (local_name, _an) -> local_name
+let local_name_of_import (x : import) = x.name
 
 module Map = struct
 

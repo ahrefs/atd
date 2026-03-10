@@ -332,8 +332,9 @@ val is_parametrized : type_expr -> bool
 val is_required : field_kind -> bool
 
 val local_name_of_import : import -> string
-  (** Extract the name of the imported module, taking into account the
-      possible aliasing. *)
+  (** The local name of the imported module. Equivalent to [x.name].
+      This is the alias if one was specified, or the last component of
+      the dotted path otherwise. *)
 
 (** Replace nodes by other nodes of the same type.
     First the user-given mapper is applied to a node,

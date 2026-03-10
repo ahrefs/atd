@@ -1233,8 +1233,10 @@ let reserve_good_type_names env (items: A.type_def list) =
     items
 
 let format_ts_import (x : A.import) =
+  (* Dotted module paths (e.g. long.module.path) are mapped to path separators
+     in the TypeScript import (e.g. "./long/module/path"). *)
   let module_file =
-    "./" ^ String.lowercase_ascii (List.rev x.path |> List.hd)
+    "./" ^ String.concat "/" (List.map String.lowercase_ascii x.path)
   in
   sprintf "import * as %s from \"%s\"" (ts_name_of_import x) module_file
 

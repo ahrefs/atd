@@ -398,11 +398,12 @@ generates:
 
 .. code-block:: typescript
 
-   import * as external_mod from "./path"
+   import * as external_mod from "./long/module/path"
 
-Note that the generated file path always uses only the last component of
-the dotted module path (lowercased), regardless of how many components
-the import path has.
+Note that dotted module paths are mapped to file paths using ``/`` as the
+separator (e.g. ``long.module.path`` becomes ``"./long/module/path"``).
+Support for dotted module paths is experimental; prefer single-component
+module names when possible.
 
 Note: The ``<ts from="...">`` annotation on individual type definitions
 is an older mechanism for referencing types from other modules.

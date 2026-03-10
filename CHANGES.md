@@ -1,6 +1,11 @@
 unreleased
 ----------
 
+* atdts: Dotted module paths in `import` declarations are now mapped to
+  path-separator form in the generated TypeScript import path. For example,
+  `import long.module.path` generates `import * as path from "./long/module/path"`
+  rather than `"./path"`.
+
 * ATD: Import statements now support aliases and per-component language
   annotations. The full syntax is:
 

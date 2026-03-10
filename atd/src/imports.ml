@@ -8,9 +8,16 @@ open Ast
 (* Map local module name to import info. *)
 type t = (string, import) Hashtbl.t
 
+(* Use a type-safe hash table keyed on string list (module path). *)
+module PathTbl = Hashtbl.Make (struct
+  type t = string list
+  let equal = ( = )
+  let hash = Hashtbl.hash
+end)
+
 let load imports =
   (* keep track of full module names that were already loaded *)
-  let globals = Hashtbl.create 100 in
+  let globals : unit PathTbl.t = PathTbl.create 16 in
   (* our main table *)
   let locals = Hashtbl.create 100 in
   imports
@@ -23,12 +30,12 @@ let load imports =
 Consider using 'as' to give it a non-conflicting name.|}
           name
         )
-    else if Hashtbl.mem globals x.path then
+    else if PathTbl.mem globals x.path then
       error_at x.loc
         (sprintf "Module %s is loaded twice." (String.concat "." x.path))
     else (
       Hashtbl.add locals name x;
-      Hashtbl.add globals x.path ()
+      PathTbl.add globals x.path ()
     )
   );
   locals

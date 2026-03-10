@@ -539,6 +539,14 @@ Examples:
   (* Language-specific name annotation on the alias *)
   import mylib.common as c <ocaml name="Common">
 
+.. warning::
+
+   Dotted module paths (e.g. ``import foo.bar.baz``) are an experimental
+   feature. Each code generator maps them to file paths in its own way and
+   there is currently no guarantee of consistent behavior across backends.
+   When possible, prefer single-component module names (e.g. ``import baz``
+   or ``import baz as baz``). Support for dotted module paths may be removed
+   in a future release.
 
 Predefined type names
 ^^^^^^^^^^^^^^^^^^^^^

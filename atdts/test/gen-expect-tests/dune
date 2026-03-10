@@ -26,6 +26,12 @@
  (action
   (run %{bin:atdts} %{deps})))
 
+(rule
+ (deps dotted_import.atd)
+ (targets dotted_import.ts)
+ (action
+  (run %{bin:atdts} %{deps})))
+
 ;
 ; We test in two phases:
 ;
@@ -35,12 +41,13 @@
 (rule
  (alias runtest)
  (package atdts)
- (deps ext_types.ts everything.ts import.ts import_alias.ts)
+ (deps ext_types.ts everything.ts import.ts import_alias.ts dotted_import.ts)
  (action
   (progn
    (diff ext_types.ts.expected ext_types.ts)
    (diff import.ts.expected import.ts)
    (diff import_alias.ts.expected import_alias.ts)
+   (diff dotted_import.ts.expected dotted_import.ts)
    (diff everything.ts.expected everything.ts))))
 
 ; 2. Run the generated TypeScript code and check that is reads or writes JSON

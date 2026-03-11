@@ -44,11 +44,12 @@ let annot_schema_ocaml : Atd.Annot.schema_section = {
     Type_def,  "attr";    (* <ocaml attr="..."> on a type def: append [@@...] *)
     Type_def,  "module";  (* <ocaml module="M"> on a type def: not supported, warns *)
     Type_def,  "t";       (* <ocaml t="..."> on a type def: not supported, warns *)
-    Type_expr, "repr";    (* <ocaml repr="poly"> on a sum type *)
-    Type_expr, "module";  (* <ocaml module="M"> on a wrap: use M.t/M.wrap/M.unwrap *)
-    Type_expr, "t";       (* <ocaml t="..."> on a wrap: explicit OCaml type *)
-    Type_expr, "wrap";    (* <ocaml wrap="..."> on a wrap: deserialize function *)
-    Type_expr, "unwrap";  (* <ocaml unwrap="..."> on a wrap: serialize function *)
+    Type_expr, "repr";         (* <ocaml repr="poly"> on a sum type *)
+    Type_expr, "field_prefix"; (* <ocaml field_prefix="t_"> on a record type *)
+    Type_expr, "module";       (* <ocaml module="M"> on a wrap: use M.t/M.wrap/M.unwrap *)
+    Type_expr, "t";            (* <ocaml t="..."> on a wrap: explicit OCaml type *)
+    Type_expr, "wrap";         (* <ocaml wrap="..."> on a wrap: deserialize function *)
+    Type_expr, "unwrap";       (* <ocaml unwrap="..."> on a wrap: serialize function *)
     Import, "name";       (* <ocaml name="..."> on an import: override OCaml alias *)
     Variant, "name";      (* <ocaml name="..."> on a variant constructor *)
     Field, "default";     (* <ocaml default="..."> on a with-default field *)
@@ -168,6 +169,26 @@ let make_local_env names =
   List.iter (fun n -> ignore (Atd.Unique_name.translate registry n)) names;
   Atd.Unique_name.translate registry
 
+(*
+   Build two name translators for a prefixed record:
+   - label_tr: ATD field name → OCaml-safe label name (no prefix applied).
+     E.g. "if" → "if_".
+   - pftr: ATD field name → OCaml-safe record field name (prefix concatenated
+     with the raw ATD name *before* checking for keyword conflicts).
+     E.g. with prefix "mod": "ule" → "module_", "if" → "modif".
+   When prefix = "" both translators are identical.
+*)
+let make_prefixed_trs prefix field_names =
+  let label_tr = make_local_env field_names in
+  let pftr =
+    if prefix = "" then label_tr
+    else
+      let pnames = List.map (fun n -> prefix ^ n) field_names in
+      let field_tr = make_local_env pnames in
+      fun fname -> field_tr (prefix ^ fname)
+  in
+  (label_tr, pftr)
+
 (* ============ Annotation helpers ============ *)
 
 (* Get <ocaml default="..."> for with-default fields *)
@@ -280,6 +301,17 @@ let with_inline_doc decl_str loc an : B.t =
       | [] -> [B.Line decl_str]
       | [one_line] -> [B.Line (sprintf "%s  (** %s *)" decl_str one_line)]
       | lines -> B.Line decl_str :: ocamldoc_comment_block lines
+
+(* Get <ocaml field_prefix="..."> from a record type expression's annotation.
+   Returns the prefix string, or "" if the annotation is absent. *)
+let get_field_prefix rec_an =
+  match Atd.Annot.get_opt_field
+          ~parse:(fun s -> Some s)
+          ~sections:["ocaml"] ~field:"field_prefix"
+          rec_an
+  with
+  | None -> ""
+  | Some prefix -> prefix
 
 (* Get <ocaml name="..."> to rename OCaml identifiers *)
 let get_ocaml_name default_name an =
@@ -657,15 +689,16 @@ let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as de
           B.Line (sprintf "type %s%s =" params_str ocaml_name);
           B.Block (concat_map gen_case flat);
         ]
-  | Record (_, fields, _) ->
+  | Record (_, fields, rec_an) ->
+      let prefix = get_field_prefix rec_an in
       let fields =
         List.filter_map (fun (f : field) -> match f with
           | Field x -> Some x
           | Inherit _ -> assert false
         ) fields
       in
-      let ftr =
-        make_local_env (List.map (fun (_, (fname, _, _), _) -> fname) fields)
+      let (_, pftr) =
+        make_prefixed_trs prefix (List.map (fun (_, (fname, _, _), _) -> fname) fields)
       in
       [
         B.Line (sprintf "type %s%s = {" params_str ocaml_name);
@@ -673,7 +706,7 @@ let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as de
           (concat_map
              (fun (loc, (fname, _, an), e) ->
                with_inline_doc
-                 (sprintf "%s: %s;" (ftr fname) (type_expr_str env e))
+                 (sprintf "%s: %s;" (pftr fname) (type_expr_str env e))
                  loc an)
              fields);
         B.Line "}";
@@ -763,16 +796,16 @@ let gen_make_fun env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   match e with
-  | Record (_, fields, _) ->
+  | Record (_, fields, rec_an) ->
+      let prefix = get_field_prefix rec_an in
       let fields =
         List.filter_map (fun (f : field) -> match f with
           | Field x -> Some x
           | Inherit _ -> assert false
         ) fields
       in
-      let ftr =
-        make_local_env (List.map (fun (_, (fname, _, _), _) -> fname) fields)
-      in
+      let fnames = List.map (fun (_, (fname, _, _), _) -> fname) fields in
+      let (label_tr, pftr) = make_prefixed_trs prefix fnames in
       (* Try to resolve the default for a With_default field.
          Returns None if no default can be determined, in which case
          we skip generating make_* for this type. *)
@@ -792,17 +825,24 @@ let gen_make_fun env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
       if List.exists (fun r -> r = None) resolved then []
       else
       let gen_param (_, (fname, kind, _), _) default_opt =
-        let ofname = ftr fname in
+        let lname = label_tr fname in
         match kind with
-        | Required -> sprintf "~%s" ofname
-        | Optional -> sprintf "?%s" ofname
+        | Required -> sprintf "~%s" lname
+        | Optional -> sprintf "?%s" lname
         | With_default ->
             let default = Option.get (Option.get default_opt) in
-            sprintf "?(%s = %s)" ofname default
+            sprintf "?(%s = %s)" lname default
       in
       let param_strs = List.map2 gen_param fields resolved in
-      let field_names =
-        List.map (fun (_, (fname, _, _), _) -> ftr fname) fields
+      (* Labels are unprefixed; record field names carry the prefix.
+         Emit 'pfname = lname' when they differ, else use shorthand. *)
+      let field_assigns =
+        List.map (fun (_, (fname, _, _), _) ->
+          let lname = label_tr fname in
+          let pfname = pftr fname in
+          if pfname = lname then pfname
+          else sprintf "%s = %s" pfname lname
+        ) fields
       in
       [
         B.Line
@@ -811,7 +851,7 @@ let gen_make_fun env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
              (String.concat " " param_strs)
              (full_type_name ocaml_name params));
         B.Block
-          [B.Line (sprintf "{ %s }" (String.concat "; " field_names))];
+          [B.Line (sprintf "{ %s }" (String.concat "; " field_assigns))];
       ]
   | _ -> []
 
@@ -944,17 +984,25 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
            @ List.map gen_case flat
            @ [B.Line (sprintf "| _ -> Atdml_runtime.bad_sum \"%s\" x" name)])
     | Record (_, fields, rec_an) ->
+        let prefix = get_field_prefix rec_an in
         let fields =
           List.filter_map (fun (f : field) -> match f with
             | Field x -> Some x
             | Inherit _ -> assert false)
             fields
         in
-        let ftr =
-          make_local_env (List.map (fun (_, (fname, _, _), _) -> fname) fields)
-        in
-        let field_names =
-          List.map (fun (_, (fname, _, _), _) -> ftr fname) fields
+        let fnames = List.map (fun (_, (fname, _, _), _) -> fname) fields in
+        let (label_tr, pftr) = make_prefixed_trs prefix fnames in
+        (* Local variable bindings use label_tr (unprefixed, keyword-safe).
+           The record literal uses pftr (prefix applied before keyword check).
+           Emit 'pfname = lname' when they differ, else use shorthand. *)
+        let field_assigns =
+          List.map (fun (_, (fname, _, _), _) ->
+            let lname = label_tr fname in
+            let pfname = pftr fname in
+            if pfname = lname then pfname
+            else sprintf "%s = %s" pfname lname
+          ) fields
         in
         let (normalize, _) =
           adapter_exprs (Atd.Json.get_json_record rec_an).json_record_adapter
@@ -984,8 +1032,8 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
                               B.Line "(fun key -> Hashtbl.find_opt tbl key)" ];
                           B.Line "else (fun key -> List.assoc_opt key fields)" ];
                       B.Line "in" ]
-                    @ List.map (gen_of_yojson_field env ftr name) fields
-                    @ [B.Line (sprintf "{ %s }" (String.concat "; " field_names))]);
+                    @ List.map (gen_of_yojson_field env label_tr name) fields
+                    @ [B.Line (sprintf "{ %s }" (String.concat "; " field_assigns))]);
                  B.Line (sprintf "| _ -> Atdml_runtime.bad_type \"%s\" x" name) ])
         in
         match_block
@@ -1015,9 +1063,11 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
 
 (* ============ Serialization function generation ============ *)
 
-let gen_yojson_of_field env ftr (_, (fname, kind, an), e) : B.node =
+(* [pftr] maps the ATD field name to the prefixed OCaml field name
+   used in the record type definition (e.g. "pre_" ^ ftr fname). *)
+let gen_yojson_of_field env pftr (_, (fname, kind, an), e) : B.node =
   let json_name = Atd.Json.get_json_fname fname an in
-  let ofname = ftr fname in
+  let ofname = pftr fname in
   match kind with
   | Required | With_default ->
       B.Line (sprintf "[(\"%s\", %s x.%s)];" json_name (writer_expr env e) ofname)
@@ -1088,15 +1138,17 @@ let gen_yojson_of env ({A.name; param=params; annot=an; value=e; _} : A.type_def
             (B.Line "match x with"
              :: List.map gen_case flat))
     | Record (_, fields, rec_an) ->
+        let prefix = get_field_prefix rec_an in
         let fields =
           List.filter_map (fun (f : field) -> match f with
             | Field x -> Some x
             | Inherit _ -> assert false)
             fields
         in
-        let ftr =
-          make_local_env (List.map (fun (_, (fname, _, _), _) -> fname) fields)
-        in
+        let fnames = List.map (fun (_, (fname, _, _), _) -> fname) fields in
+        (* pftr maps ATD field names to the prefixed OCaml record field names,
+           with the prefix applied before keyword checking. *)
+        let (_, pftr) = make_prefixed_trs prefix fnames in
         let (_, restore) =
           adapter_exprs (Atd.Json.get_json_record rec_an).json_record_adapter
         in
@@ -1104,7 +1156,7 @@ let gen_yojson_of env ({A.name; param=params; annot=an; value=e; _} : A.type_def
           (B.Block
             [
               B.Line "`Assoc (List.concat [";
-              B.Block (List.map (gen_yojson_of_field env ftr) fields);
+              B.Block (List.map (gen_yojson_of_field env pftr) fields);
               B.Line "])";
             ])
     | e ->

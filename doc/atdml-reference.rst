@@ -120,7 +120,7 @@ conversion functions, and a submodule:
       label: string option;
     }
 
-    val make_point : x:float -> y:float -> ?label:string -> unit -> point
+    val create_point : x:float -> y:float -> ?label:string -> unit -> point
     val point_of_yojson : Yojson.Safe.t -> point
     val yojson_of_point : point -> Yojson.Safe.t
     val point_of_json : string -> point
@@ -128,7 +128,7 @@ conversion functions, and a submodule:
 
     module Point : sig
       type nonrec t = point
-      val make : x:float -> y:float -> ?label:string -> unit -> t
+      val create : x:float -> y:float -> ?label:string -> unit -> t
       val of_yojson : Yojson.Safe.t -> t
       val to_yojson : t -> Yojson.Safe.t
       val of_json : string -> t
@@ -151,13 +151,13 @@ described in the `Default type mapping`_ section below.
 
     type foo = ...
 
-For record types, a ``make_foo`` constructor with labelled arguments is also
+For record types, a ``create_foo`` constructor with labelled arguments is also
 generated. Required fields use mandatory labelled arguments; optional fields
 (``?foo``) and with-default fields (``~foo``) use optional labelled arguments:
 
 .. code:: ocaml
 
-    val make_foo : required_field:int -> ?optional_field:string -> unit -> foo
+    val create_foo : required_field:int -> ?optional_field:string -> unit -> foo
 
 Conversion functions
 ^^^^^^^^^^^^^^^^^^^^
@@ -198,7 +198,7 @@ which is convenient for use as a module argument:
 
     module Foo : sig
       type nonrec t = foo
-      val make : required_field:int -> ?optional_field:string -> unit -> t  (* record types only *)
+      val create : required_field:int -> ?optional_field:string -> unit -> t  (* record types only *)
       val of_yojson : Yojson.Safe.t -> t
       val to_yojson : t -> Yojson.Safe.t
       val of_json : string -> t
@@ -212,6 +212,57 @@ Some ATD type names can conflict with OCaml keywords (``module``, ``type``,
 …) or with the naming convention used by atdml (``yojson``, ``json``).
 Atdml automatically renames such types by appending an underscore. For
 example, an ATD type named ``module`` becomes ``module_`` in OCaml.
+
+The same treatment applies to record field names and variant constructor
+names: any name that is an OCaml keyword (``if``, ``end``, ``type``, …)
+gets a trailing underscore appended.
+
+Primitive type aliases
+^^^^^^^^^^^^^^^^^^^^^^
+
+When an ATD type is an unparameterized alias of a primitive type
+(``unit``, ``bool``, ``int``, ``float``, or ``string``), atdml emits a
+*private* type in the generated ``.mli``:
+
+.. code:: ocaml
+
+    (* ATD *)
+    type email = string
+    type score = float
+
+.. code:: ocaml
+
+    (* generated .mli *)
+    type email = private string
+    type score = private float
+
+    val create_email : string -> email
+    val create_score : float -> score
+
+The ``private`` keyword prevents direct construction of the alias type
+outside the generated module, so the compiler names the alias (``email``,
+``score``) rather than the underlying primitive in error messages, and
+rejects accidental direct construction (e.g. ``let x : email = "hello"``).
+The ``create_*`` function is the intended constructor.
+
+Coercing back to the primitive uses the standard ``:>`` operator:
+
+.. code:: ocaml
+
+    let s : string = (my_email :> string)
+
+The generated ``.ml`` keeps a transparent alias, so ``create_email`` is an
+identity function with no runtime overhead.
+
+Each alias also gets a submodule with a ``create`` alias:
+
+.. code:: ocaml
+
+    module Email : sig
+      type nonrec t = email
+      val create : string -> t
+      ...
+    end
 
 Default type mapping
 --------------------
@@ -365,6 +416,55 @@ Example:
       ~label <ocaml default="\"unnamed\"">: string;
     }
 
+Field ``field_prefix``
+""""""""""""""""""""""
+
+Position: on a record type expression (after the closing ``}``)
+
+Values: any string that, when prepended to a field name, forms a valid
+OCaml identifier prefix (e.g. ``"t_"``, ``"my_record_"``)
+
+Semantics: prepends the given string to each OCaml record field name in the
+generated type definition and in all serialization/deserialization code. The
+prefix is applied to the raw ATD field name *before* checking for OCaml
+keyword conflicts, so the result is always a valid, unique OCaml identifier.
+The JSON field names are unaffected.
+
+The labeled arguments of the generated ``create_`` function are *not*
+prefixed: they use the ATD field names directly (with keyword escaping
+applied to the unprefixed names). This allows callers to write
+``create_point ~x ~y`` regardless of what prefix the type definition uses
+internally.
+
+Example:
+
+.. code:: ocaml
+
+    (* ATD *)
+    type point = {
+      x: float;
+      y: float;
+    } <ocaml field_prefix="p_">
+
+.. code:: ocaml
+
+    (* generated OCaml *)
+    type point = {
+      p_x: float;
+      p_y: float;
+    }
+
+    val create_point : x:float -> y:float -> unit -> point
+
+Keyword escaping is applied independently to labels and to prefixed field
+names. For example, with prefix ``"mod"``:
+
+- ATD field ``ule``: label ``~ule``, field name ``module_``
+  (``"mod" ^ "ule"`` = ``"module"``, which is a keyword, so ``"_"`` is
+  appended)
+- ATD field ``if``: label ``~if_`` (``"if"`` is a keyword), field name
+  ``modif`` (``"mod" ^ "if"`` = ``"modif"``, which is not a keyword)
+
 Field ``name``
 """"""""""""""
 
@@ -513,11 +613,11 @@ object.
       ?email: string option;
     }
 
-The ``make_person`` function uses an OCaml optional argument for ``email``:
+The ``create_person`` function uses an OCaml optional argument for ``email``:
 
 .. code:: ocaml
 
-    val make_person : name:string -> ?email:string -> unit -> person
+    val create_person : name:string -> ?email:string -> unit -> person
 
 Note that ``?email:string`` (not ``?email:string option``) — OCaml wraps the
 value in ``Some`` implicitly.
@@ -545,12 +645,12 @@ The default value is determined as follows:
       ~prefix <ocaml default="\"api_\"">: string;
     }
 
-The ``make_config`` function uses OCaml optional arguments for all
+The ``create_config`` function uses OCaml optional arguments for all
 with-default fields:
 
 .. code:: ocaml
 
-    val make_config : ?timeout:int -> ?verbose:bool -> ?prefix:string -> unit -> config
+    val create_config : ?timeout:int -> ?verbose:bool -> ?prefix:string -> unit -> config
 
 Mutually recursive types
 ------------------------
@@ -776,7 +876,7 @@ Atdml generates ``greeting.mli``:
       message: string;
     }
 
-    val make_greeting : name:Base_types.person_name -> message:string -> unit -> greeting
+    val create_greeting : name:Base_types.person_name -> message:string -> unit -> greeting
     val greeting_of_yojson : Yojson.Safe.t -> greeting
     val yojson_of_greeting : greeting -> Yojson.Safe.t
     ...

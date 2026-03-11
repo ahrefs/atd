@@ -594,6 +594,21 @@ type item = {
     ~json_in:{|{"name": "Alice", "tag": "hello"}|}
   ;
 
+  test_e2e "field prefix"
+    ~atd_src:{|
+(* 'ule' + prefix "mod" = "module" (keyword) → field name "module_", label "ule"
+   'if' (keyword) + prefix "mod" = "modif" (not a keyword) → field name "modif", label "if_"
+   'if_' + prefix "mod" = "modif_" → field name "modif_", label ??? (conflicts with "if" → "if_") *)
+type t = {
+  ule: int;
+  if: int;
+  if_: int;
+} <ocaml field_prefix="mod">
+|}
+    ~type_name:"t"
+    ~json_in:{|{"ule": 1, "if": 2, "if_": 3}|}
+  ;
+
   (* Snapshot test only: verify that qualified type names (imports) produce
      correct OCaml module references. *)
   test_codegen_snapshot "imports"

@@ -3,9 +3,10 @@
 type t = {
   module_: int;
   modif: int;
+  modif_: int;
 }
 
-val create_t : ule:int -> if_:int -> unit -> t
+val create_t : ule:int -> if_:int -> if__:int -> unit -> t
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val t_of_json : string -> t
@@ -13,7 +14,7 @@ val json_of_t : t -> string
 
 module T : sig
   type nonrec t = t
-  val create : ule:int -> if_:int -> unit -> t
+  val create : ule:int -> if_:int -> if__:int -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -109,10 +110,11 @@ end
 type t = {
   module_: int;
   modif: int;
+  modif_: int;
 }
 
-let create_t ~ule ~if_ () : t =
-  { module_ = ule; modif = if_ }
+let create_t ~ule ~if_ ~if__ () : t =
+  { module_ = ule; modif = if_; modif_ = if__ }
 
 let t_of_yojson (x : Yojson.Safe.t) : t =
   match x with
@@ -137,13 +139,19 @@ let t_of_yojson (x : Yojson.Safe.t) : t =
       | Some v -> Atdml_runtime.int_of_yojson v
       | None -> Atdml_runtime.missing_field "t" "if"
     in
-    { module_ = ule; modif = if_ }
+    let if__ =
+      match assoc_ "if_" with
+      | Some v -> Atdml_runtime.int_of_yojson v
+      | None -> Atdml_runtime.missing_field "t" "if_"
+    in
+    { module_ = ule; modif = if_; modif_ = if__ }
   | _ -> Atdml_runtime.bad_type "t" x
 
 let yojson_of_t (x : t) : Yojson.Safe.t =
   `Assoc (List.concat [
     [("ule", Atdml_runtime.yojson_of_int x.module_)];
     [("if", Atdml_runtime.yojson_of_int x.modif)];
+    [("if_", Atdml_runtime.yojson_of_int x.modif_)];
   ])
 
 let t_of_json s =
@@ -162,6 +170,6 @@ module T = struct
 end
 
 --- Input:
-{ "ule": 1, "if": 2 }
+{ "ule": 1, "if": 2, "if_": 3 }
 --- Output:
-{ "ule": 1, "if": 2 }
+{ "ule": 1, "if": 2, "if_": 3 }

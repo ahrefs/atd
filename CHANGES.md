@@ -13,6 +13,12 @@ unreleased
   (e.g. `(x :> string)`). The `.ml` implementation keeps a transparent alias,
   so `create_email` is an identity function with no runtime overhead.
 
+* atdml: The `<ocaml field_prefix="pre_">` annotation is now supported on record
+  types. It prepends the given prefix to all generated OCaml record field names
+  (e.g. `type point = { p_x: float; p_y: float }`) while keeping the labeled
+  arguments of the `create_` function unprefixed (e.g.
+  `create_point ~x ~y () : point`). JSON field names are unaffected.
+
 * atdml: Record creation functions renamed from `make_foo` to `create_foo`
   (and `val make` in the submodule to `val create`) to align with the naming
   used by the new primitive alias constructors and to match atdgen's convention.

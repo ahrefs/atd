@@ -594,6 +594,18 @@ type item = {
     ~json_in:{|{"name": "Alice", "tag": "hello"}|}
   ;
 
+  test_e2e "field prefix"
+    ~atd_src:{|
+type point = {
+  x: float;
+  y: float;
+  label: string;
+} <ocaml field_prefix="p_">
+|}
+    ~type_name:"point"
+    ~json_in:{|{"x": 1.5, "y": 2.5, "label": "origin"}|}
+  ;
+
   (* Snapshot test only: verify that qualified type names (imports) produce
      correct OCaml module references. *)
   test_codegen_snapshot "imports"

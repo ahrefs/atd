@@ -15,8 +15,9 @@ module Tag_list : sig
   val to_json : t -> string
 end
 
-type score = float
+type score = private float
 
+val create_score : float -> score
 val score_of_yojson : Yojson.Safe.t -> score
 val yojson_of_score : score -> Yojson.Safe.t
 val score_of_json : string -> score
@@ -24,6 +25,7 @@ val json_of_score : score -> string
 
 module Score : sig
   type nonrec t = score
+  val create : float -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -45,8 +47,9 @@ module Opt_name : sig
   val to_json : t -> string
 end
 
-type id = string
+type id = private string
 
+val create_id : string -> id
 val id_of_yojson : Yojson.Safe.t -> id
 val yojson_of_id : id -> Yojson.Safe.t
 val id_of_json : string -> id
@@ -54,6 +57,7 @@ val json_of_id : id -> string
 
 module Id : sig
   type nonrec t = id
+  val create : string -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -67,7 +71,7 @@ type all = {
   name: opt_name;
 }
 
-val make_all : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> all
+val create_all : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> all
 val all_of_yojson : Yojson.Safe.t -> all
 val yojson_of_all : all -> Yojson.Safe.t
 val all_of_json : string -> all
@@ -75,7 +79,7 @@ val json_of_all : all -> string
 
 module All : sig
   type nonrec t = all
-  val make : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> t
+  val create : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -192,6 +196,9 @@ end
 
 type score = float
 
+let create_score (x : float) : score = x
+
+
 let score_of_yojson (x : Yojson.Safe.t) : score =
   Atdml_runtime.float_of_yojson x
 
@@ -206,6 +213,7 @@ let json_of_score x =
 
 module Score = struct
   type nonrec t = score
+  let create = create_score
   let of_yojson = score_of_yojson
   let to_yojson = yojson_of_score
   let of_json = score_of_json
@@ -236,6 +244,9 @@ end
 
 type id = string
 
+let create_id (x : string) : id = x
+
+
 let id_of_yojson (x : Yojson.Safe.t) : id =
   Atdml_runtime.string_of_yojson x
 
@@ -250,6 +261,7 @@ let json_of_id x =
 
 module Id = struct
   type nonrec t = id
+  let create = create_id
   let of_yojson = id_of_yojson
   let to_yojson = yojson_of_id
   let of_json = id_of_json
@@ -263,7 +275,7 @@ type all = {
   name: opt_name;
 }
 
-let make_all ~id ~score ~tags ~name () : all =
+let create_all ~id ~score ~tags ~name () : all =
   { id; score; tags; name }
 
 let all_of_yojson (x : Yojson.Safe.t) : all =
@@ -318,7 +330,7 @@ let json_of_all x =
 
 module All = struct
   type nonrec t = all
-  let make = make_all
+  let create = create_all
   let of_yojson = all_of_yojson
   let to_yojson = yojson_of_all
   let of_json = all_of_json

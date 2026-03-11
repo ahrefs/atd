@@ -3,7 +3,12 @@
 
    For each ATD type 'foo', the generated code contains:
    - A type definition 'type foo = ...'
-   - A creation function 'let make_foo ...' (for record types only)
+     For unparameterized aliases of primitive types (unit, bool, int, float,
+     string), the .mli uses 'type foo = private <prim>' so that the compiler
+     refers to the alias name rather than the underlying type in error messages.
+   - For record types: 'let create_foo ...' with labeled arguments
+   - For primitive aliases: 'let create_foo (x : <prim>) : foo = x'
+     Coercion back to the primitive is done with the ':>' operator.
    - A deserialization function 'let foo_of_yojson ...'
    - A serialization function 'let yojson_of_foo ...'
    - Top-level I/O functions
@@ -291,7 +296,7 @@ let of_yojson_name name = name ^ "_of_yojson"
 let yojson_of_name name = "yojson_of_" ^ name
 let of_json_name name = name ^ "_of_json"
 let json_of_name name = "json_of_" ^ name
-let make_name name = "make_" ^ name
+let create_name name = "create_" ^ name
 let module_name name = String.capitalize_ascii name
 
 (* Emit 'module Alias = OcamlMod' for imports where the local alias name
@@ -316,6 +321,17 @@ let tvar_writer v = "yojson_of_" ^ v
 let is_atd_builtin = function
   | "unit" | "bool" | "int" | "float" | "string" | "abstract" -> true
   | _ -> false
+
+(* Returns the ATD primitive name ('unit', 'bool', 'int', 'float', or 'string')
+   if the type definition is an unparameterized alias of exactly that primitive.
+   Used to decide whether to emit 'private' in the .mli and generate create/to_*
+   helper functions. 'abstract' is intentionally excluded. *)
+let primitive_alias_of_def ({A.param; value=e; _} : A.type_def) =
+  match param, e with
+  | [], Name (_, (_, TN [name], []), _)
+    when List.mem name ["unit"; "bool"; "int"; "float"; "string"] ->
+      Some name
+  | _ -> None
 
 let builtin_ocaml_name = function
   | "unit" -> "unit"
@@ -602,7 +618,7 @@ end|};
 
 (* ============ Type definition generation ============ *)
 
-let gen_type_def env ({A.name; param=params; annot=an; value=e; _} : A.type_def) : B.t =
+let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as def : A.type_def) : B.t =
   ignore an;
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
@@ -663,7 +679,13 @@ let gen_type_def env ({A.name; param=params; annot=an; value=e; _} : A.type_def)
         B.Line "}";
       ]
   | e ->
-      [B.Line (sprintf "type %s%s = %s" params_str ocaml_name (type_expr_str env e))]
+      (* In .mli, emit 'private' for unparameterized primitive aliases so that
+         the compiler names the alias rather than the underlying type in errors,
+         and so that direct construction is rejected outside the module. *)
+      let private_kw =
+        if is_mli && primitive_alias_of_def def <> None then "private " else ""
+      in
+      [B.Line (sprintf "type %s%s = %s%s" params_str ocaml_name private_kw (type_expr_str env e))]
 
 (* ============ Creation function generation (records only) ============ *)
 
@@ -730,7 +752,7 @@ let warn_defs (defs : A.type_def list) =
                           | None ->
                               warn_once_raw floc
                                 (sprintf "field '%s' in type '%s' has no OCaml \
-                                          default; make_%s will not be generated \
+                                          default; create_%s will not be generated \
                                           and the field will be required in JSON"
                                    fname name name))))
          ) fields
@@ -785,13 +807,34 @@ let gen_make_fun env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
       [
         B.Line
           (sprintf "let %s %s () : %s ="
-             (make_name ocaml_name)
+             (create_name ocaml_name)
              (String.concat " " param_strs)
              (full_type_name ocaml_name params));
         B.Block
           [B.Line (sprintf "{ %s }" (String.concat "; " field_names))];
       ]
   | _ -> []
+
+(* ============ Creation functions for primitive aliases ============ *)
+
+(* For 'type foo = string' (or bool/int/float/unit), emit:
+     let create_foo (x : string) : foo = x
+   In the .ml the types are transparent (no 'private'), so this is an
+   identity function.  Its value is the type-annotated API it exposes,
+   which matches the opaque 'private' interface in the .mli.
+   Coercion back to the primitive is done with ':>' and is not generated. *)
+let gen_alias_create_funs env (def : A.type_def) : B.t =
+  let name = Atd.Type_name.basename def.A.name in
+  let ocaml_name = env.tr name in
+  match primitive_alias_of_def def with
+  | None -> []
+  | Some prim ->
+      let prim_ocaml = builtin_ocaml_name prim in
+      [
+        B.Line (sprintf "let %s (x : %s) : %s = x"
+                  (create_name ocaml_name) prim_ocaml ocaml_name);
+        B.Line "";
+      ]
 
 (* ============ Deserialization function generation ============ *)
 
@@ -1116,7 +1159,7 @@ let gen_io_funs env ({A.name; param=params; _} : A.type_def) : B.t =
 
 (* ============ Submodule generation (.ml) ============ *)
 
-let gen_submodule_ml env ({A.name; param=params; annot=def_an; value=e; _} : A.type_def) : B.t =
+let gen_submodule_ml env ({A.name; param=params; annot=def_an; value=e; _} as def : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   let params_str = type_params_str params in
@@ -1128,13 +1171,18 @@ let gen_submodule_ml env ({A.name; param=params; annot=def_an; value=e; _} : A.t
     | None -> []
     | Some attr -> [B.Line (sprintf "[@@%s]" attr)]
   in
-  let make_binding =
+  let create_binding =
     match e with
-    | Record _ -> [B.Line (sprintf "let make = %s" (make_name ocaml_name))]
-    | _ -> []
+    | Record _ ->
+        [B.Line (sprintf "let create = %s" (create_name ocaml_name))]
+    | _ ->
+        (match primitive_alias_of_def def with
+         | None -> []
+         | Some _ ->
+             [B.Line (sprintf "let create = %s" (create_name ocaml_name))])
   in
   let bindings =
-    make_binding
+    create_binding
     @ [
         B.Line (sprintf "let of_yojson = %s" (of_yojson_name ocaml_name));
         B.Line (sprintf "let to_yojson = %s" (yojson_of_name ocaml_name));
@@ -1216,11 +1264,24 @@ let gen_make_sig env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
       [
         B.Line
           (sprintf "val %s : %sunit -> %s"
-             (make_name ocaml_name)
+             (create_name ocaml_name)
              (String.concat " " param_sigs ^ " ")
              return_type);
       ]
   | _ -> []
+
+(* Signature for the create function of primitive aliases. *)
+let gen_alias_create_sigs env (def : A.type_def) : B.t =
+  let name = Atd.Type_name.basename def.A.name in
+  let ocaml_name = env.tr name in
+  match primitive_alias_of_def def with
+  | None -> []
+  | Some prim ->
+      let prim_ocaml = builtin_ocaml_name prim in
+      [
+        B.Line (sprintf "val %s : %s -> %s"
+                  (create_name ocaml_name) prim_ocaml ocaml_name);
+      ]
 
 let gen_io_sigs env ({A.name; param=params; _} : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
@@ -1252,7 +1313,7 @@ let gen_io_sigs env ({A.name; param=params; _} : A.type_def) : B.t =
 
 (* ============ Submodule signature generation (.mli) ============ *)
 
-let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} : A.type_def) : B.t =
+let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} as def : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   let params_str = type_params_str params in
@@ -1265,7 +1326,7 @@ let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} : A.
     | None -> []
     | Some attr -> [B.Line (sprintf "[@@%s]" attr)]
   in
-  let make_sig =
+  let create_sig =
     match e with
     | Record (_, fields, _) ->
         let fields =
@@ -1293,11 +1354,16 @@ let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} : A.
         let param_sigs = List.map gen_param_sig fields in
         [
           B.Line
-            (sprintf "val make : %sunit -> %s"
+            (sprintf "val create : %sunit -> %s"
                (String.concat " " param_sigs ^ " ")
                t_type);
         ]
-    | _ -> []
+    | _ ->
+        (match primitive_alias_of_def def with
+         | None -> []
+         | Some prim ->
+             let prim_ocaml = builtin_ocaml_name prim in
+             [B.Line (sprintf "val create : %s -> %s" prim_ocaml t_type)])
   in
   let of_yojson_sig =
     match params with
@@ -1358,7 +1424,7 @@ let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} : A.
   let body =
     [B.Line type_decl]
     @ attr_lines
-    @ make_sig
+    @ create_sig
     @ of_yojson_sig
     @ to_yojson_sig
     @ of_json_sig
@@ -1377,7 +1443,7 @@ let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} : A.
    Appends [@@attr] when an <ocaml attr="..."> annotation is present.
    Prepends a (** ... *) ocamldoc comment when a <doc text="..."> annotation
    is present. *)
-let emit_type_group env (defs : A.type_def list) : B.t =
+let emit_type_group ~is_mli env (defs : A.type_def list) : B.t =
   let attr_line ({A.annot=def_an; _} : A.type_def) =
     match get_ocaml_attr def_an with
     | None -> []
@@ -1388,13 +1454,13 @@ let emit_type_group env (defs : A.type_def list) : B.t =
   in
   match defs with
   | [] -> []
-  | [def] -> doc_lines def @ gen_type_def env def @ attr_line def @ [B.Line ""]
+  | [def] -> doc_lines def @ gen_type_def ~is_mli env def @ attr_line def @ [B.Line ""]
   | first :: rest ->
-      let first_lines = doc_lines first @ gen_type_def env first @ attr_line first in
+      let first_lines = doc_lines first @ gen_type_def ~is_mli env first @ attr_line first in
       let rest_lines =
         concat_map (fun def ->
           let lines =
-            match gen_type_def env def with
+            match gen_type_def ~is_mli env def with
             | B.Line s :: tl when String.length s >= 4
               && String.sub s 0 4 = "type" ->
                 B.Line ("and" ^ String.sub s 4 (String.length s - 4)) :: tl
@@ -1443,10 +1509,10 @@ let make_ml ~imports ~env ~atd_filename ~module_doc (items : A.type_def list) : 
   in
   let gen_group (is_recursive, group_items) =
     let defs = group_items in
-    let types = emit_type_group env defs in
-    let makes =
+    let types = emit_type_group ~is_mli:false env defs in
+    let creates =
       concat_map (fun def ->
-        let lines = gen_make_fun env def in
+        let lines = gen_make_fun env def @ gen_alias_create_funs env def in
         if lines = [] then [] else lines @ [B.Line ""]
       ) defs
     in
@@ -1458,7 +1524,7 @@ let make_ml ~imports ~env ~atd_filename ~module_doc (items : A.type_def list) : 
     let submods =
       concat_map (fun def -> gen_submodule_ml env def @ [B.Line ""]) defs
     in
-    types @ makes @ of_yojsons @ yojson_ofs @ ios @ submods
+    types @ creates @ of_yojsons @ yojson_ofs @ ios @ submods
   in
   let aliases = module_alias_decls imports in
   header
@@ -1484,10 +1550,11 @@ let make_mli ~env ~atd_filename ~module_doc (items : A.type_def list) : B.t =
   in
   let gen_group (_, group_items) =
     let defs = group_items in
-    let types = emit_type_group env defs in
+    let types = emit_type_group ~is_mli:true env defs in
     let sigs =
       concat_map (fun def ->
         gen_make_sig env def
+        @ gen_alias_create_sigs env def
         @ gen_of_yojson_sig env def
         @ gen_yojson_of_sig env def
         @ gen_io_sigs env def

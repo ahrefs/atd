@@ -9,7 +9,7 @@ and tree =
   | Leaf
   | Node of node
 
-val make_node : value:int -> children:(tree * tree) -> unit -> node
+val create_node : value:int -> children:(tree * tree) -> unit -> node
 val node_of_yojson : Yojson.Safe.t -> node
 val yojson_of_node : node -> Yojson.Safe.t
 val node_of_json : string -> node
@@ -22,7 +22,7 @@ val json_of_tree : tree -> string
 
 module Node : sig
   type nonrec t = node
-  val make : value:int -> children:(tree * tree) -> unit -> t
+  val create : value:int -> children:(tree * tree) -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -132,7 +132,7 @@ and tree =
   | Leaf
   | Node of node
 
-let make_node ~value ~children () : node =
+let create_node ~value ~children () : node =
   { value; children }
 
 let rec node_of_yojson (x : Yojson.Safe.t) : node =
@@ -192,7 +192,7 @@ let json_of_tree x =
 
 module Node = struct
   type nonrec t = node
-  let make = make_node
+  let create = create_node
   let of_yojson = node_of_yojson
   let to_yojson = yojson_of_node
   let of_json = node_of_json

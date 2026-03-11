@@ -1,7 +1,8 @@
 (* Auto-generated from "type_name_json.atd" by atdml. *)
 
-type json_ = string
+type json_ = private string
 
+val create_json_ : string -> json_
 val json__of_yojson : Yojson.Safe.t -> json_
 val yojson_of_json_ : json_ -> Yojson.Safe.t
 val json__of_json : string -> json_
@@ -9,6 +10,7 @@ val json_of_json_ : json_ -> string
 
 module Json_ : sig
   type nonrec t = json_
+  val create : string -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -103,6 +105,9 @@ end
 
 type json_ = string
 
+let create_json_ (x : string) : json_ = x
+
+
 let json__of_yojson (x : Yojson.Safe.t) : json_ =
   Atdml_runtime.string_of_yojson x
 
@@ -117,6 +122,7 @@ let json_of_json_ x =
 
 module Json_ = struct
   type nonrec t = json_
+  let create = create_json_
   let of_yojson = json__of_yojson
   let to_yojson = yojson_of_json_
   let of_json = json__of_json

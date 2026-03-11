@@ -35,7 +35,7 @@ type record = {
   label: tag;
 }
 
-val make_record : id:uid -> label:tag -> unit -> record
+val create_record : id:uid -> label:tag -> unit -> record
 val record_of_yojson : Yojson.Safe.t -> record
 val yojson_of_record : record -> Yojson.Safe.t
 val record_of_json : string -> record
@@ -43,7 +43,7 @@ val json_of_record : record -> string
 
 module Record : sig
   type nonrec t = record
-  val make : id:uid -> label:tag -> unit -> t
+  val create : id:uid -> label:tag -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -185,7 +185,7 @@ type record = {
   label: tag;
 }
 
-let make_record ~id ~label () : record =
+let create_record ~id ~label () : record =
   { id; label }
 
 let record_of_yojson (x : Yojson.Safe.t) : record =
@@ -228,7 +228,7 @@ let json_of_record x =
 
 module Record = struct
   type nonrec t = record
-  let make = make_record
+  let create = create_record
   let of_yojson = record_of_yojson
   let to_yojson = yojson_of_record
   let of_json = record_of_json

@@ -6,13 +6,12 @@ unreleased
   `.mli`. For example, `type email = string` becomes `type email = private string`
   in the interface, so that the compiler names the alias rather than the
   underlying type in error messages, and so that direct construction is rejected
-  outside the generated module. Two new functions are generated:
-  - `create_email : string -> email` (constructor)
-  - `email_to_string : email -> string` (accessor; analogously `_to_int`,
-    `_to_float`, `_to_bool`, `_to_unit` for the respective primitives)
-  These are also exposed as `val create` and `val to_string` (etc.) in the
-  submodule `Email`. The `.ml` implementation keeps the transparent alias, so
-  the functions are identity functions with no runtime overhead.
+  outside the generated module. A constructor function is generated:
+  - `create_email : string -> email`
+  also exposed as `val create` in the submodule `Email`.
+  Coercing back to the primitive uses the standard `:>` operator
+  (e.g. `(x :> string)`). The `.ml` implementation keeps a transparent alias,
+  so `create_email` is an identity function with no runtime overhead.
 
 * atdml: Record creation functions renamed from `make_foo` to `create_foo`
   (and `val make` in the submodule to `val create`) to align with the naming

@@ -8,7 +8,7 @@
      refers to the alias name rather than the underlying type in error messages.
    - For record types: 'let create_foo ...' with labeled arguments
    - For primitive aliases: 'let create_foo (x : <prim>) : foo = x'
-     and 'let foo_to_<prim> (x : foo) : <prim> = x'
+     Coercion back to the primitive is done with the ':>' operator.
    - A deserialization function 'let foo_of_yojson ...'
    - A serialization function 'let yojson_of_foo ...'
    - Top-level I/O functions
@@ -297,7 +297,6 @@ let yojson_of_name name = "yojson_of_" ^ name
 let of_json_name name = name ^ "_of_json"
 let json_of_name name = "json_of_" ^ name
 let create_name name = "create_" ^ name
-let to_primitive_name name prim = name ^ "_to_" ^ prim
 let module_name name = String.capitalize_ascii name
 
 (* Emit 'module Alias = OcamlMod' for imports where the local alias name
@@ -820,10 +819,10 @@ let gen_make_fun env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
 
 (* For 'type foo = string' (or bool/int/float/unit), emit:
      let create_foo (x : string) : foo = x
-     let foo_to_string (x : foo) : string = x
-   In the .ml the types are transparent (no 'private'), so these are
-   identity functions.  Their value is the type-annotated API they expose,
-   which matches the opaque interface in the .mli. *)
+   In the .ml the types are transparent (no 'private'), so this is an
+   identity function.  Its value is the type-annotated API it exposes,
+   which matches the opaque 'private' interface in the .mli.
+   Coercion back to the primitive is done with ':>' and is not generated. *)
 let gen_alias_create_funs env (def : A.type_def) : B.t =
   let name = Atd.Type_name.basename def.A.name in
   let ocaml_name = env.tr name in
@@ -834,9 +833,6 @@ let gen_alias_create_funs env (def : A.type_def) : B.t =
       [
         B.Line (sprintf "let %s (x : %s) : %s = x"
                   (create_name ocaml_name) prim_ocaml ocaml_name);
-        B.Line "";
-        B.Line (sprintf "let %s (x : %s) : %s = x"
-                  (to_primitive_name ocaml_name prim) ocaml_name prim_ocaml);
         B.Line "";
       ]
 
@@ -1182,13 +1178,8 @@ let gen_submodule_ml env ({A.name; param=params; annot=def_an; value=e; _} as de
     | _ ->
         (match primitive_alias_of_def def with
          | None -> []
-         | Some prim ->
-             [
-               B.Line (sprintf "let create = %s" (create_name ocaml_name));
-               B.Line (sprintf "let to_%s = %s"
-                         (builtin_ocaml_name prim)
-                         (to_primitive_name ocaml_name prim));
-             ])
+         | Some _ ->
+             [B.Line (sprintf "let create = %s" (create_name ocaml_name))])
   in
   let bindings =
     create_binding
@@ -1279,7 +1270,7 @@ let gen_make_sig env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
       ]
   | _ -> []
 
-(* Signatures for the create/to_* functions of primitive aliases. *)
+(* Signature for the create function of primitive aliases. *)
 let gen_alias_create_sigs env (def : A.type_def) : B.t =
   let name = Atd.Type_name.basename def.A.name in
   let ocaml_name = env.tr name in
@@ -1290,8 +1281,6 @@ let gen_alias_create_sigs env (def : A.type_def) : B.t =
       [
         B.Line (sprintf "val %s : %s -> %s"
                   (create_name ocaml_name) prim_ocaml ocaml_name);
-        B.Line (sprintf "val %s : %s -> %s"
-                  (to_primitive_name ocaml_name prim) ocaml_name prim_ocaml);
       ]
 
 let gen_io_sigs env ({A.name; param=params; _} : A.type_def) : B.t =
@@ -1374,10 +1363,7 @@ let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} as d
          | None -> []
          | Some prim ->
              let prim_ocaml = builtin_ocaml_name prim in
-             [
-               B.Line (sprintf "val create : %s -> %s" prim_ocaml t_type);
-               B.Line (sprintf "val to_%s : %s -> %s" (builtin_ocaml_name prim) t_type prim_ocaml);
-             ])
+             [B.Line (sprintf "val create : %s -> %s" prim_ocaml t_type)])
   in
   let of_yojson_sig =
     match params with

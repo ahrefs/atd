@@ -18,7 +18,6 @@ end
 type score = private float
 
 val create_score : float -> score
-val score_to_float : score -> float
 val score_of_yojson : Yojson.Safe.t -> score
 val yojson_of_score : score -> Yojson.Safe.t
 val score_of_json : string -> score
@@ -27,7 +26,6 @@ val json_of_score : score -> string
 module Score : sig
   type nonrec t = score
   val create : float -> t
-  val to_float : t -> float
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -52,7 +50,6 @@ end
 type id = private string
 
 val create_id : string -> id
-val id_to_string : id -> string
 val id_of_yojson : Yojson.Safe.t -> id
 val yojson_of_id : id -> Yojson.Safe.t
 val id_of_json : string -> id
@@ -61,7 +58,6 @@ val json_of_id : id -> string
 module Id : sig
   type nonrec t = id
   val create : string -> t
-  val to_string : t -> string
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -202,8 +198,6 @@ type score = float
 
 let create_score (x : float) : score = x
 
-let score_to_float (x : score) : float = x
-
 
 let score_of_yojson (x : Yojson.Safe.t) : score =
   Atdml_runtime.float_of_yojson x
@@ -220,7 +214,6 @@ let json_of_score x =
 module Score = struct
   type nonrec t = score
   let create = create_score
-  let to_float = score_to_float
   let of_yojson = score_of_yojson
   let to_yojson = yojson_of_score
   let of_json = score_of_json
@@ -253,8 +246,6 @@ type id = string
 
 let create_id (x : string) : id = x
 
-let id_to_string (x : id) : string = x
-
 
 let id_of_yojson (x : Yojson.Safe.t) : id =
   Atdml_runtime.string_of_yojson x
@@ -271,7 +262,6 @@ let json_of_id x =
 module Id = struct
   type nonrec t = id
   let create = create_id
-  let to_string = id_to_string
   let of_yojson = id_of_yojson
   let to_yojson = yojson_of_id
   let of_json = id_of_json

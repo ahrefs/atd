@@ -91,7 +91,6 @@ end
 type alias = private string
 
 val create_alias : string -> alias
-val alias_to_string : alias -> string
 val alias_of_yojson : Yojson.Safe.t -> alias
 val yojson_of_alias : alias -> Yojson.Safe.t
 val alias_of_json : string -> alias
@@ -100,7 +99,6 @@ val json_of_alias : alias -> string
 module Alias : sig
   type nonrec t = alias
   val create : string -> t
-  val to_string : t -> string
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -393,8 +391,6 @@ type alias = string
 
 let create_alias (x : string) : alias = x
 
-let alias_to_string (x : alias) : string = x
-
 
 let alias_of_yojson (x : Yojson.Safe.t) : alias =
   Atdml_runtime.string_of_yojson x
@@ -411,7 +407,6 @@ let json_of_alias x =
 module Alias = struct
   type nonrec t = alias
   let create = create_alias
-  let to_string = alias_to_string
   let of_yojson = alias_of_yojson
   let to_yojson = yojson_of_alias
   let of_json = alias_of_json

@@ -3,7 +3,6 @@
 type t = private int
 
 val create_t : int -> t
-val t_to_int : t -> int
 val t_of_yojson : Yojson.Safe.t -> t
 val yojson_of_t : t -> Yojson.Safe.t
 val t_of_json : string -> t
@@ -12,7 +11,6 @@ val json_of_t : t -> string
 module T : sig
   type nonrec t = t
   val create : int -> t
-  val to_int : t -> int
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -109,8 +107,6 @@ type t = int
 
 let create_t (x : int) : t = x
 
-let t_to_int (x : t) : int = x
-
 
 let t_of_yojson (x : Yojson.Safe.t) : t =
   Atdml_runtime.int_of_yojson x
@@ -127,7 +123,6 @@ let json_of_t x =
 module T = struct
   type nonrec t = t
   let create = create_t
-  let to_int = t_to_int
   let of_yojson = t_of_yojson
   let to_yojson = yojson_of_t
   let of_json = t_of_json

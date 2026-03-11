@@ -1,7 +1,9 @@
 (* Auto-generated from "type_name_module.atd" by atdml. *)
 
-type module__ = bool
+type module__ = private bool
 
+val create_module__ : bool -> module__
+val module___to_bool : module__ -> bool
 val module___of_yojson : Yojson.Safe.t -> module__
 val yojson_of_module__ : module__ -> Yojson.Safe.t
 val module___of_json : string -> module__
@@ -9,6 +11,8 @@ val json_of_module__ : module__ -> string
 
 module Module__ : sig
   type nonrec t = module__
+  val create : bool -> t
+  val to_bool : t -> bool
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -30,8 +34,10 @@ module Module_1 : sig
   val to_json : t -> string
 end
 
-type module_2 = string
+type module_2 = private string
 
+val create_module_2 : string -> module_2
+val module_2_to_string : module_2 -> string
 val module_2_of_yojson : Yojson.Safe.t -> module_2
 val yojson_of_module_2 : module_2 -> Yojson.Safe.t
 val module_2_of_json : string -> module_2
@@ -39,14 +45,18 @@ val json_of_module_2 : module_2 -> string
 
 module Module_2 : sig
   type nonrec t = module_2
+  val create : string -> t
+  val to_string : t -> string
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
 
-type module_ = int
+type module_ = private int
 
+val create_module_ : int -> module_
+val module__to_int : module_ -> int
 val module__of_yojson : Yojson.Safe.t -> module_
 val yojson_of_module_ : module_ -> Yojson.Safe.t
 val module__of_json : string -> module_
@@ -54,6 +64,8 @@ val json_of_module_ : module_ -> string
 
 module Module_ : sig
   type nonrec t = module_
+  val create : int -> t
+  val to_int : t -> int
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -148,6 +160,11 @@ end
 
 type module__ = bool
 
+let create_module__ (x : bool) : module__ = x
+
+let module___to_bool (x : module__) : bool = x
+
+
 let module___of_yojson (x : Yojson.Safe.t) : module__ =
   Atdml_runtime.bool_of_yojson x
 
@@ -162,6 +179,8 @@ let json_of_module__ x =
 
 module Module__ = struct
   type nonrec t = module__
+  let create = create_module__
+  let to_bool = module___to_bool
   let of_yojson = module___of_yojson
   let to_yojson = yojson_of_module__
   let of_json = module___of_json
@@ -192,6 +211,11 @@ end
 
 type module_2 = string
 
+let create_module_2 (x : string) : module_2 = x
+
+let module_2_to_string (x : module_2) : string = x
+
+
 let module_2_of_yojson (x : Yojson.Safe.t) : module_2 =
   Atdml_runtime.string_of_yojson x
 
@@ -206,6 +230,8 @@ let json_of_module_2 x =
 
 module Module_2 = struct
   type nonrec t = module_2
+  let create = create_module_2
+  let to_string = module_2_to_string
   let of_yojson = module_2_of_yojson
   let to_yojson = yojson_of_module_2
   let of_json = module_2_of_json
@@ -213,6 +239,11 @@ module Module_2 = struct
 end
 
 type module_ = int
+
+let create_module_ (x : int) : module_ = x
+
+let module__to_int (x : module_) : int = x
+
 
 let module__of_yojson (x : Yojson.Safe.t) : module_ =
   Atdml_runtime.int_of_yojson x
@@ -228,6 +259,8 @@ let json_of_module_ x =
 
 module Module_ = struct
   type nonrec t = module_
+  let create = create_module_
+  let to_int = module__to_int
   let of_yojson = module__of_yojson
   let to_yojson = yojson_of_module_
   let of_json = module__of_json

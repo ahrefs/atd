@@ -6,7 +6,7 @@ type point = {
 }
 [@@deriving show]
 
-val make_point : x:float -> y:float -> unit -> point
+val create_point : x:float -> y:float -> unit -> point
 val point_of_yojson : Yojson.Safe.t -> point
 val yojson_of_point : point -> Yojson.Safe.t
 val point_of_json : string -> point
@@ -15,7 +15,7 @@ val json_of_point : point -> string
 module Point : sig
   type nonrec t = point
   [@@deriving show]
-  val make : x:float -> y:float -> unit -> t
+  val create : x:float -> y:float -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -131,7 +131,7 @@ type point = {
 }
 [@@deriving show]
 
-let make_point ~x ~y () : point =
+let create_point ~x ~y () : point =
   { x; y }
 
 let point_of_yojson (x : Yojson.Safe.t) : point =
@@ -175,7 +175,7 @@ let json_of_point x =
 module Point = struct
   type nonrec t = point
   [@@deriving show]
-  let make = make_point
+  let create = create_point
   let of_yojson = point_of_yojson
   let to_yojson = yojson_of_point
   let of_json = point_of_json

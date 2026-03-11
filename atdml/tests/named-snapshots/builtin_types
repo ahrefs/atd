@@ -14,7 +14,7 @@ type all_types = {
   a_nested: (float list) option;
 }
 
-val make_all_types : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> all_types
+val create_all_types : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> all_types
 val all_types_of_yojson : Yojson.Safe.t -> all_types
 val yojson_of_all_types : all_types -> Yojson.Safe.t
 val all_types_of_json : string -> all_types
@@ -22,7 +22,7 @@ val json_of_all_types : all_types -> string
 
 module All_types : sig
   type nonrec t = all_types
-  val make : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> t
+  val create : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -129,7 +129,7 @@ type all_types = {
   a_nested: (float list) option;
 }
 
-let make_all_types ~a_unit ~a_bool ~a_int ~a_float ~a_string ~a_list ~a_option ~a_nullable ~a_abstract ~a_tuple ~a_nested () : all_types =
+let create_all_types ~a_unit ~a_bool ~a_int ~a_float ~a_string ~a_list ~a_option ~a_nullable ~a_abstract ~a_tuple ~a_nested () : all_types =
   { a_unit; a_bool; a_int; a_float; a_string; a_list; a_option; a_nullable; a_abstract; a_tuple; a_nested }
 
 let all_types_of_yojson (x : Yojson.Safe.t) : all_types =
@@ -226,7 +226,7 @@ let json_of_all_types x =
 
 module All_types = struct
   type nonrec t = all_types
-  let make = make_all_types
+  let create = create_all_types
   let of_yojson = all_types_of_yojson
   let to_yojson = yojson_of_all_types
   let of_json = all_types_of_json

@@ -12,7 +12,7 @@ type person = {
   address: string;
 }
 
-val make_person : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> person
+val create_person : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> person
 val person_of_yojson : Yojson.Safe.t -> person
 val yojson_of_person : person -> Yojson.Safe.t
 val person_of_json : string -> person
@@ -20,7 +20,7 @@ val json_of_person : person -> string
 
 module Person : sig
   type nonrec t = person
-  val make : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> t
+  val create : name:string -> age:int -> lol:int option -> ?email:string -> ?score:float -> ?active:bool -> ?tags:string list -> ?level:int -> address:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -125,7 +125,7 @@ type person = {
   address: string;
 }
 
-let make_person ~name ~age ~lol ?email ?(score = 0.) ?(active = false) ?(tags = []) ?(level = 1) ~address () : person =
+let create_person ~name ~age ~lol ?email ?(score = 0.) ?(active = false) ?(tags = []) ?(level = 1) ~address () : person =
   { name; age; lol; email; score; active; tags; level; address }
 
 let person_of_yojson (x : Yojson.Safe.t) : person =
@@ -210,7 +210,7 @@ let json_of_person x =
 
 module Person = struct
   type nonrec t = person
-  let make = make_person
+  let create = create_person
   let of_yojson = person_of_yojson
   let to_yojson = yojson_of_person
   let of_json = person_of_json

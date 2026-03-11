@@ -14,7 +14,7 @@ and tree =
   | Leaf
   | Node of node
 
-val make_node : value:int -> left:tree -> right:tree -> unit -> node
+val create_node : value:int -> left:tree -> right:tree -> unit -> node
 val node_of_yojson : Yojson.Safe.t -> node
 val yojson_of_node : node -> Yojson.Safe.t
 val node_of_json : string -> node
@@ -27,7 +27,7 @@ val json_of_tree : tree -> string
 
 module Node : sig
   type nonrec t = node
-  val make : value:int -> left:tree -> right:tree -> unit -> t
+  val create : value:int -> left:tree -> right:tree -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -53,7 +53,7 @@ type person = {
   email: string option;
 }
 
-val make_person : name:string -> age:int -> ?email:string -> unit -> person
+val create_person : name:string -> age:int -> ?email:string -> unit -> person
 val person_of_yojson : Yojson.Safe.t -> person
 val yojson_of_person : person -> Yojson.Safe.t
 val person_of_json : string -> person
@@ -61,7 +61,7 @@ val json_of_person : person -> string
 
 module Person : sig
   type nonrec t = person
-  val make : name:string -> age:int -> ?email:string -> unit -> t
+  val create : name:string -> age:int -> ?email:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -88,8 +88,10 @@ module Color : sig
 end
 
 (** An alias for string. *)
-type alias = string
+type alias = private string
 
+val create_alias : string -> alias
+val alias_to_string : alias -> string
 val alias_of_yojson : Yojson.Safe.t -> alias
 val yojson_of_alias : alias -> Yojson.Safe.t
 val alias_of_json : string -> alias
@@ -97,6 +99,8 @@ val json_of_alias : alias -> string
 
 module Alias : sig
   type nonrec t = alias
+  val create : string -> t
+  val to_string : t -> string
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -203,7 +207,7 @@ and tree =
   | Leaf
   | Node of node
 
-let make_node ~value ~left ~right () : node =
+let create_node ~value ~left ~right () : node =
   { value; left; right }
 
 let rec node_of_yojson (x : Yojson.Safe.t) : node =
@@ -269,7 +273,7 @@ let json_of_tree x =
 
 module Node = struct
   type nonrec t = node
-  let make = make_node
+  let create = create_node
   let of_yojson = node_of_yojson
   let to_yojson = yojson_of_node
   let of_json = node_of_json
@@ -295,7 +299,7 @@ type person = {
   email: string option;
 }
 
-let make_person ~name ~age ?email () : person =
+let create_person ~name ~age ?email () : person =
   { name; age; email }
 
 let person_of_yojson (x : Yojson.Safe.t) : person =
@@ -344,7 +348,7 @@ let json_of_person x =
 
 module Person = struct
   type nonrec t = person
-  let make = make_person
+  let create = create_person
   let of_yojson = person_of_yojson
   let to_yojson = yojson_of_person
   let of_json = person_of_json
@@ -387,6 +391,11 @@ end
 (** An alias for string. *)
 type alias = string
 
+let create_alias (x : string) : alias = x
+
+let alias_to_string (x : alias) : string = x
+
+
 let alias_of_yojson (x : Yojson.Safe.t) : alias =
   Atdml_runtime.string_of_yojson x
 
@@ -401,6 +410,8 @@ let json_of_alias x =
 
 module Alias = struct
   type nonrec t = alias
+  let create = create_alias
+  let to_string = alias_to_string
   let of_yojson = alias_of_yojson
   let to_yojson = yojson_of_alias
   let of_json = alias_of_json

@@ -24,7 +24,7 @@ type record_with_keyword_fields = {
   end_: string list;
 }
 
-val make_record_with_keyword_fields : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> record_with_keyword_fields
+val create_record_with_keyword_fields : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> record_with_keyword_fields
 val record_with_keyword_fields_of_yojson : Yojson.Safe.t -> record_with_keyword_fields
 val yojson_of_record_with_keyword_fields : record_with_keyword_fields -> Yojson.Safe.t
 val record_with_keyword_fields_of_json : string -> record_with_keyword_fields
@@ -32,7 +32,7 @@ val json_of_record_with_keyword_fields : record_with_keyword_fields -> string
 
 module Record_with_keyword_fields : sig
   type nonrec t = record_with_keyword_fields
-  val make : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> t
+  val create : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -161,7 +161,7 @@ type record_with_keyword_fields = {
   end_: string list;
 }
 
-let make_record_with_keyword_fields ~method_ ~object_ ?begin_ ?(end_ = []) () : record_with_keyword_fields =
+let create_record_with_keyword_fields ~method_ ~object_ ?begin_ ?(end_ = []) () : record_with_keyword_fields =
   { method_; object_; begin_; end_ }
 
 let record_with_keyword_fields_of_yojson (x : Yojson.Safe.t) : record_with_keyword_fields =
@@ -216,7 +216,7 @@ let json_of_record_with_keyword_fields x =
 
 module Record_with_keyword_fields = struct
   type nonrec t = record_with_keyword_fields
-  let make = make_record_with_keyword_fields
+  let create = create_record_with_keyword_fields
   let of_yojson = record_with_keyword_fields_of_yojson
   let to_yojson = yojson_of_record_with_keyword_fields
   let of_json = record_with_keyword_fields_of_json

@@ -1,7 +1,9 @@
 (* Auto-generated from "type_name_yojson.atd" by atdml. *)
 
-type yojson_ = int
+type yojson_ = private int
 
+val create_yojson_ : int -> yojson_
+val yojson__to_int : yojson_ -> int
 val yojson__of_yojson : Yojson.Safe.t -> yojson_
 val yojson_of_yojson_ : yojson_ -> Yojson.Safe.t
 val yojson__of_json : string -> yojson_
@@ -9,6 +11,8 @@ val json_of_yojson_ : yojson_ -> string
 
 module Yojson_ : sig
   type nonrec t = yojson_
+  val create : int -> t
+  val to_int : t -> int
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -103,6 +107,11 @@ end
 
 type yojson_ = int
 
+let create_yojson_ (x : int) : yojson_ = x
+
+let yojson__to_int (x : yojson_) : int = x
+
+
 let yojson__of_yojson (x : Yojson.Safe.t) : yojson_ =
   Atdml_runtime.int_of_yojson x
 
@@ -117,6 +126,8 @@ let json_of_yojson_ x =
 
 module Yojson_ = struct
   type nonrec t = yojson_
+  let create = create_yojson_
+  let to_int = yojson__to_int
   let of_yojson = yojson__of_yojson
   let to_yojson = yojson_of_yojson_
   let of_json = yojson__of_json

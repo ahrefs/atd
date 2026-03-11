@@ -5,7 +5,7 @@ type item = {
   tag: Long.Module.Path.tag;
 }
 
-val make_item : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> item
+val create_item : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> item
 val item_of_yojson : Yojson.Safe.t -> item
 val yojson_of_item : item -> Yojson.Safe.t
 val item_of_json : string -> item
@@ -13,7 +13,7 @@ val json_of_item : item -> string
 
 module Item : sig
   type nonrec t = item
-  val make : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> t
+  val create : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -113,7 +113,7 @@ type item = {
   tag: Ext.tag;
 }
 
-let make_item ~name ~tag () : item =
+let create_item ~name ~tag () : item =
   { name; tag }
 
 let item_of_yojson (x : Yojson.Safe.t) : item =
@@ -156,7 +156,7 @@ let json_of_item x =
 
 module Item = struct
   type nonrec t = item
-  let make = make_item
+  let create = create_item
   let of_yojson = item_of_yojson
   let to_yojson = yojson_of_item
   let of_json = item_of_json

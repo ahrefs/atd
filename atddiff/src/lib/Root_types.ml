@@ -8,18 +8,21 @@
 open Atd
 
 let get_type_name_dependencies
-    ~(ast_with_inherits : Ast.full_module)
+    ~(ast_with_inherits : Ast.module_)
   : string list * (string -> string list) =
-  let (_head, items) = ast_with_inherits in
-  let defs = List.map (function Ast.Type x -> x) items in
+  let defs = ast_with_inherits.Ast.type_defs in
   (* dependency table: left-hand type name -> right-hand type names *)
   let deps = Hashtbl.create 100 in
-  List.iter (fun (_loc, (name, _param, _annot), expr) ->
-    let names = Ast.extract_type_names expr in
+  List.iter (fun (def : Ast.type_def) ->
+    let name = Type_name.to_string def.name in
+    let names =
+      Ast.extract_type_names def.value
+      |> List.map Type_name.to_string
+    in
     Hashtbl.add deps name names
   ) defs;
   let defined_names =
-    List.map (fun (_loc, (name, _param, _annot), expr) -> name) defs
+    List.map (fun (def : Ast.type_def) -> Type_name.to_string def.name) defs
   in
   let get_deps name =
     match Hashtbl.find_opt deps name with
@@ -36,7 +39,7 @@ let get_type_name_dependencies
    them.
 *)
 let check_root_types_superset ~root_types_superset
-    ~(ast_with_inherits : Atd.Ast.full_module) =
+    ~(ast_with_inherits : Atd.Ast.module_) =
   let defined_names, get_deps =
     get_type_name_dependencies ~ast_with_inherits
   in

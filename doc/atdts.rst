@@ -351,6 +351,65 @@ alternate names in the JSON representation. Here's an example:
    | Beta <json name="beta"> of int
    ]
 
+Import declarations
+^^^^^^^^^^^^^^^^^^^^
+
+ATD import statements allow types defined in other ATD files to be
+referenced from a given ATD file. For example:
+
+.. code-block:: ocaml
+
+   import ext_types
+   import long.module.path as ext
+
+For an import of the form ``import ext_types``, atdts generates a
+TypeScript import statement:
+
+.. code-block:: typescript
+
+   import * as ext_types from "./ext_types"
+
+Types from that module are then referenced as ``ext_types.FooType``,
+and the accompanying read/write functions as ``ext_types.readFooType``
+and ``ext_types.writeFooType``.
+
+The ``<ts name="NAME">`` annotation on the module path overrides the
+local TypeScript module name used in the import and in type references.
+For example:
+
+.. code-block:: ocaml
+
+   import ext_types <ts name="etypes">
+
+generates:
+
+.. code-block:: typescript
+
+   import * as etypes from "./ext_types"
+
+When an alias is given in the import statement, the ``<ts name="NAME">``
+annotation on the alias controls the local name. For example:
+
+.. code-block:: ocaml
+
+   import long.module.path as ext <ts name="external_mod">
+
+generates:
+
+.. code-block:: typescript
+
+   import * as external_mod from "./long/module/path"
+
+Note that dotted module paths are mapped to file paths using ``/`` as the
+separator (e.g. ``long.module.path`` becomes ``"./long/module/path"``).
+Support for dotted module paths is experimental; prefer single-component
+module names when possible.
+
+Note: The ``<ts from="...">`` annotation on individual type definitions
+is an older mechanism for referencing types from other modules.
+The ``import`` statement is the preferred approach for multi-file ATD
+projects.
+
 Field ``from``
 """"""""""""""
 

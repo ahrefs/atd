@@ -709,3 +709,74 @@ functions as inline OCaml expressions, without requiring a dedicated module:
 
 Both fields must be provided together. The values are OCaml expressions of
 type ``Yojson.Safe.t -> Yojson.Safe.t``.
+
+Import declarations
+-------------------
+
+Atdml supports ATD ``import`` declarations that reference types defined in
+other ATD modules.
+
+Syntax
+^^^^^^
+
+.. code:: ocaml
+
+    import module_name
+    import long.module.path as alias
+
+The imported module maps to an OCaml module. For a simple import like
+``import base_types``, atdml expects an OCaml module ``Base_types`` (the
+last component of the path, capitalised) to be available in scope.
+
+For a dotted path like ``import long.module.path``, atdml expects the
+OCaml module path ``Long.Module.Path`` to be in scope.
+
+For an alias like ``import long.module.path as ext``, the generated code
+uses ``Ext`` as the local module name and wraps it with
+``module Ext = Long.Module.Path`` in the generated ``.ml`` file. The
+generated ``.mli`` uses the full ``Long.Module.Path`` name directly.
+
+Language-specific name annotation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``<ocaml name="M">`` annotation can override the OCaml module name
+used for the import, on either the path or the alias:
+
+.. code:: ocaml
+
+    import foo <ocaml name="Foo_module">
+    import long.path as ext <ocaml name="External">
+
+Example
+^^^^^^^
+
+Given ``base_types.atd``:
+
+.. code:: ocaml
+
+    type person_name = string
+
+And ``greeting.atd``:
+
+.. code:: ocaml
+
+    import base_types
+
+    type greeting = {
+      name: base_types.person_name;
+      message: string;
+    }
+
+Atdml generates ``greeting.mli``:
+
+.. code:: ocaml
+
+    type greeting = {
+      name: Base_types.person_name;
+      message: string;
+    }
+
+    val make_greeting : name:Base_types.person_name -> message:string -> unit -> greeting
+    val greeting_of_yojson : Yojson.Safe.t -> greeting
+    val yojson_of_greeting : greeting -> Yojson.Safe.t
+    ...

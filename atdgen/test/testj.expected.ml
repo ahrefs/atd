@@ -173,8 +173,8 @@ let read__a_list read__a = (
 )
 let _a_list_of_string read__a s =
   read__a_list read__a (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let rec write_p' write__a : _ -> 'a p' -> _ = (
-  fun ob (x : 'a p') ->
+let rec write_p' write__a : _ -> _ p' -> _ = (
+  fun ob (x : _ p') ->
     match x with
       | A -> Buffer.add_string ob "\"A\""
       | Bb x ->
@@ -201,7 +201,7 @@ let rec read_p' read__a = (
       | `Double_quote -> (
           match Yojson.Safe.finish_string p lb with
             | "A" ->
-              (A : 'a p')
+              (A : _ p')
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -217,7 +217,7 @@ let rec read_p' read__a = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Bb x : 'a p')
+              (Bb x : _ p')
             | "Ccccc" ->
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_comma p lb;
@@ -228,7 +228,7 @@ let rec read_p' read__a = (
               in
               Yojson.Safe.read_space p lb;
               Yojson.Safe.read_rbr p lb;
-              (Ccccc x : 'a p')
+              (Ccccc x : _ p')
             | x ->
               Atdgen_runtime.Oj_run.invalid_variant_tag p x
         )
@@ -629,8 +629,8 @@ and string_of__a_b_poly_option write__a write__b ?(len = 1024) x =
   let ob = Buffer.create len in
   write__a_b_poly_option write__a write__b ob x;
   Buffer.contents ob
-and write_poly write__x write__y : _ -> ('x, 'y) poly -> _ = (
-  fun ob (x : ('x, 'y) poly) ->
+and write_poly write__x write__y : _ -> (_, _) poly -> _ = (
+  fun ob (x : (_, _) poly) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -825,7 +825,7 @@ and read_poly read__x read__y = (
             fst = (match !field_fst with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "fst");
             snd = (match !field_snd with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "snd");
           }
-         : ('x, 'y) poly)
+         : (_, _) poly)
       )
 )
 and poly_of_string read__x read__y s =
@@ -3778,8 +3778,8 @@ let read_hello = (
 )
 let hello_of_string s =
   read_hello (Yojson.Safe.init_lexer ()) (Lexing.from_string s)
-let write_generic write__a : _ -> 'a generic -> _ = (
-  fun ob (x : 'a generic) ->
+let write_generic write__a : _ -> _ generic -> _ = (
+  fun ob (x : _ generic) ->
     Buffer.add_char ob '{';
     let is_first = ref true in
     if !is_first then
@@ -3873,7 +3873,7 @@ let read_generic read__a = (
           {
             x294623 = (match !field_x294623 with Some x -> x | None -> Atdgen_runtime.Oj_run.missing_field p "x294623");
           }
-         : 'a generic)
+         : _ generic)
       )
 )
 let generic_of_string read__a s =

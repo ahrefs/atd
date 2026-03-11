@@ -1,6 +1,31 @@
 unreleased
 ----------
 
+* atdts: Dotted module paths in `import` declarations are now mapped to
+  path-separator form in the generated TypeScript import path. For example,
+  `import long.module.path` generates `import * as path from "./long/module/path"`
+  rather than `"./path"`.
+
+* ATD: Import statements now support aliases and per-component language
+  annotations. The full syntax is:
+
+      import module.path <path-annotations> as alias <alias-annotations>
+
+  The `path-annotations` control language-specific details for the module path
+  (e.g. `<python name="def_">` to rename a module that collides with a Python
+  keyword). The `alias-annotations` control the local name used in the
+  generated code (e.g. `<ocaml name="Definitions">`). If no alias is given,
+  the local name defaults to the last component of the dotted path. Example:
+
+      (* Import 'def' module as 'def_' in Python, aliased locally as 'class_' *)
+      import def <python name="def_"> as class <python name="class_">
+
+      (* Import 'long.module.path', aliased as 'ext' in all languages *)
+      import long.module.path as ext
+
+  Supported language-specific name annotations: `<python name="...">` for
+  atdpy, `<ts name="...">` for atdts, `<ocaml name="...">` for atdml.
+
 * atdml: New tool. Generates a single self-contained OCaml module (`.ml` +
   `.mli`) from a single `.atd` file, with JSON support via `Yojson.Safe.t`.
   No separate runtime library is required; the runtime helpers are inlined

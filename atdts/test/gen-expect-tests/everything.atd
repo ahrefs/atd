@@ -2,6 +2,8 @@
    ATD type definitions for testing their translation to TypeScript.
 *)
 
+import ext_types
+
 (* Testing raw JSON. Should map to type 'any'. *)
 type anything = abstract
 
@@ -49,6 +51,7 @@ type root = {
   parametrized_tuple: different_kinds_of_things parametrized_tuple;
   anything: anything;
   wrapped: string wrap list;
+  ext_tag: ext_types.tag;
 }
 
 type alias = int list
@@ -62,4 +65,4 @@ type foo = {
 type special_string = string wrap
 
 type import_default <ts from="Import"> = abstract
-type import <ts from="Import" t="import"> = abstract
+type import_ <ts from="Import" t="import"> = abstract

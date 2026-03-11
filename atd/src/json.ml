@@ -3,8 +3,8 @@
 *)
 
 type json_int =
-   | Int
-   | String
+  | Int
+  | String
 
 type json_float =
   | Float of int option (* max decimal places *)
@@ -42,6 +42,7 @@ type json_record = {
 type json_sum = {
   json_sum_adapter : json_adapter;
   json_open_enum : bool;
+  json_lowercase_tags : bool;
 }
 
 (*
@@ -62,6 +63,7 @@ type json_repr =
   | Float of json_float
   | Int of json_int
   | List of json_list
+  | Name
   | Nullable
   | Option
   | Record of json_record
@@ -104,16 +106,28 @@ let annot_schema_json : Annot.schema = [
   };
 ]
 
-let json_float_of_string s : [ `Float | `Int ] option =
-  match s with
-      "float" -> Some `Float
-    | "int" -> Some `Int
-    | _ -> None
-
 let json_int_of_string s : [ `String | `Int ] option =
   match s with
       "int" -> Some `Int
     | "string" -> Some `String
+    | _ -> None
+
+let get_json_int an : json_int =
+  match
+    Annot.get_field
+      ~parse:json_int_of_string
+      ~default:`Int
+      ~sections:["json"]
+      ~field:"repr"
+      an
+  with
+      `Int -> Int
+    | `String -> String
+
+let json_float_of_string s : [ `Float | `Int ] option =
+  match s with
+      "float" -> Some `Float
+    | "int" -> Some `Int
     | _ -> None
 
 let json_precision_of_string s =
@@ -138,18 +152,6 @@ let get_json_float an : json_float =
   with
       `Float -> Float (get_json_precision an)
     | `Int -> Int
-
-let get_json_int an : json_int =
-  match
-    Annot.get_field
-      ~parse:json_int_of_string
-      ~default:`Int
-      ~sections:["json"]
-      ~field:"repr"
-      an
-  with
-      `Int -> Int
-    | `String -> String
 
 let json_list_of_string s : json_list option =
   match s with
@@ -205,9 +207,13 @@ let get_json_adapter an =
 let get_json_open_enum an =
   Annot.get_flag ~sections:["json"] ~field:"open_enum" an
 
+let get_json_lowercase_tags an =
+  Annot.get_flag ~sections:["json"] ~field:"lowercase_tags" an
+
 let get_json_sum an = {
   json_sum_adapter = get_json_adapter an;
   json_open_enum = get_json_open_enum an;
+  json_lowercase_tags = get_json_lowercase_tags an;
 }
 
 let get_json_list an =
@@ -217,25 +223,6 @@ let get_json_list an =
     ~sections:["json"]
     ~field:"repr"
     an
-
-(*
-   Return true iff the type expression is of the form:
-
-     '(string * _) list <json repr="object">'
-*)
-let is_json_map (list_expr : Ast.type_expr) =
-  match list_expr with
-  | List (_, e, an) ->
-      (match e, get_json_list an with
-       | Tuple (_,
-                [
-                  (_, Name (_, (_, "string", _), _), _);
-                  _
-                ],
-                _), Object -> true
-       | _ -> false
-      )
-  | _ -> false
 
 let get_json_cons default an =
   Annot.get_field

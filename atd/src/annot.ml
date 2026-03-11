@@ -2,7 +2,7 @@
    Utilities for interpreting annotations of type Ast.annot.
 *)
 
-open Import
+open Stdlib_extra
 
 type t = Ast.annot
 
@@ -150,6 +150,7 @@ let create_id =
 
 type node_kind =
   | Module_head
+  | Import
   | Type_def
   | Type_expr
   | Variant
@@ -168,6 +169,7 @@ type schema = schema_section list
 let validate_section sec root =
   (* split fields by location where they may occur *)
   let in_module_head = ref [] in
+  let in_import = ref [] in
   let in_type_def = ref [] in
   let in_type_expr = ref [] in
   let in_variant = ref [] in
@@ -178,6 +180,7 @@ let validate_section sec root =
     let acc =
       match kind with
       | Module_head -> in_module_head
+      | Import -> in_import
       | Type_def -> in_type_def
       | Type_expr -> in_type_expr
       | Variant -> in_variant
@@ -202,7 +205,8 @@ let validate_section sec root =
       )
   in
   Ast.fold_annot
-    ~module_head:(check in_module_head)
+    ~module_:(check in_module_head)
+    ~import:(check in_import)
     ~type_def:(check in_type_def)
     ~type_expr:(check in_type_expr)
     ~variant:(check in_variant)

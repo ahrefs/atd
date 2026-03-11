@@ -4,10 +4,14 @@
 (rule
   (targets
     allcaps.py
+    def_.py
+    if_.py
     everything.py
   )
   (deps
     ../atd-input/ALLCAPS.atd
+    ../atd-input/def_.atd
+    ../atd-input/if_.atd
     ../atd-input/everything.atd
   )
   (action
@@ -20,6 +24,8 @@
  (alias runtest)
  (package atdpy)
  (deps
+  def_.py
+  if_.py
   everything.py
   (glob_files *.py))
  (action

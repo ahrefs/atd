@@ -15,6 +15,7 @@ module B = Indent
    naming conflicts. *)
 type env = {
   (* Global *)
+  imports: Atd.Imports.t;
   translate_variable: string -> string;
 }
 
@@ -22,6 +23,7 @@ let annot_schema_ts : Atd.Annot.schema_section =
   {
     section = "ts";
     fields = [
+      Import, "name";
       Type_expr, "repr";
       Field, "default";
       Type_def, "from";
@@ -75,6 +77,7 @@ let writer_name _env name =
 let reader_name _env name =
   "read" ^ to_camel_case name
 
+
 (* Insert blank lines *)
 let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
   let rec spaced xs =
@@ -85,7 +88,26 @@ let spaced ?(spacer = [Line ""]) (blocks : B.node list) : B.node list =
   in
   spaced blocks
 
-let init_env () : env =
+(*
+   Eliminate the 'wrap' constructs since we don't do anything with them,
+   and produce decent error messages for the unsupported constructs.
+*)
+let rec unwrap e =
+  match e with
+  | Wrap (_loc, e, _an) -> unwrap e
+  | Shared (loc, _e, _an) -> not_implemented loc "cyclic references"
+  | Tvar _
+  | Sum _
+  | Record _
+  | Tuple _
+  | List _
+  | Option _
+  | Nullable _
+  | Name _ -> e
+
+let init_env (imports : import list) : env =
+  let local_module_names = List.map (fun (x : import) -> x.name) imports in
+  let imports = Atd.Imports.load imports in
   (* The list of "keywords" is extracted from
      https://github.com/microsoft/TypeScript/issues/2536#issuecomment-87194347
      In the current implementation, we don't use variables named by the
@@ -125,7 +147,7 @@ let init_env () : env =
   ] in
   let variables =
     Atd.Unique_name.init
-      ~reserved_identifiers:(reserved_variables @ keywords)
+      ~reserved_identifiers:(reserved_variables @ keywords @ local_module_names)
       ~reserved_prefixes:["atd_"; "_atd_"]
       ~safe_prefix:"x_"
   in
@@ -133,6 +155,7 @@ let init_env () : env =
     Atd.Unique_name.translate variables id
   in
   {
+    imports;
     translate_variable;
   }
 
@@ -562,17 +585,17 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Map ->
       Array_map (key, value)
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, Map ->
       Object_map value
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, Array -> Object_array value
   | _, Array, Array -> Array_array
   | _, Object, _ -> error_at loc "not a (string * _) list"
   | _, Array, _ -> error_at loc "not a (_ * _) list"
 
-(* Map ATD built-in types to built-in TypeScript types *)
+(* Map ATD built-in types to built-in TypeScript types (local unqualified name) *)
 let ts_type_name env (name : string) =
   match name with
   | "unit" -> "null"
@@ -582,6 +605,28 @@ let ts_type_name env (name : string) =
   | "string" -> "string"
   | "abstract" -> "any"
   | user_defined -> type_name env user_defined
+
+let ts_name_of_import (x : A.import) =
+  match x.alias with
+  | Some (alias_name, alias_annot) ->
+      (match Atd.Annot.get_opt_field
+               ~parse:(fun s -> Some s) ~sections:["ts"] ~field:"name" alias_annot
+       with
+       | Some name -> name
+       | None -> alias_name)
+  | None ->
+      (match Atd.Annot.get_opt_field
+               ~parse:(fun s -> Some s) ~sections:["ts"] ~field:"name" x.annot
+       with
+       | Some name -> name
+       | None -> x.name)
+
+(* Map an ATD type_name (possibly qualified) to a TypeScript type string *)
+let ts_type_name_of_name env loc (name : type_name) =
+  let import, base_name = Atd.Imports.resolve env.imports loc name in
+  match import with
+  | None -> ts_type_name env base_name
+  | Some import -> sprintf "%s.%s" (ts_name_of_import import) (to_camel_case base_name)
 
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
@@ -605,8 +650,8 @@ let rec type_name_of_expr env (e : type_expr) : string =
   | Nullable (loc, e, an) -> sprintf "(%s | null)" (type_name_of_expr env e)
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> type_name_of_expr env e
-  | Name (loc, (loc2, name, []), an) -> ts_type_name env name
-  | Name (loc, _, _) -> assert false
+  | Name (loc, (loc2, name, []), an) -> ts_type_name_of_name env loc name
+  | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 and type_name_of_tuple env cells : string =
@@ -627,7 +672,7 @@ let rec get_default_default (e : type_expr) : string option =
   | Shared (loc, e, an) -> get_default_default e
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (match Atd.Type_name.basename name with
        | "unit" -> Some "null"
        | "bool" -> Some "false"
        | "int" -> Some "0"
@@ -646,7 +691,7 @@ let get_ts_default (e : type_expr) (an : annot) : string option =
   | None -> get_default_default e
 
 let get_export_from ~default_t an = function
-  | Name (loc, (_loc2, "abstract", _params), _) ->
+  | Name (loc, (_loc2, TN ["abstract"], _params), _) ->
       (* For abstract types, require the 'from' annotation *)
       (match TS_annot.get_ts_from an, TS_annot.get_ts_type an with
        | Some from, Some t -> Some (from,t)
@@ -696,11 +741,16 @@ let rec json_reader env e =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_reader env e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
-       | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_read_%s" name
-       | "abstract" -> "((x: any, context): any => x)"
-       | _ -> reader_name env name)
-  | Name (loc, _, _) -> assert false
+      let import, base_name = Atd.Imports.resolve env.imports loc name in
+      (match import with
+       | None ->
+           (match base_name with
+            | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_read_%s" base_name
+            | "abstract" -> "((x: any, context): any => x)"
+            | local_name -> reader_name env local_name)
+       | Some import ->
+           sprintf "%s.read%s" (ts_name_of_import import) (to_camel_case base_name))
+  | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
 (*
@@ -744,10 +794,15 @@ let rec json_writer env e =
   | Shared (loc, e, an) -> not_implemented loc "shared"
   | Wrap (loc, e, an) -> json_writer env e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
-       | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_write_%s" name
-       | "abstract" -> "((x: any, context): any => x)"
-       | _ -> writer_name env name)
+      let import, base_name = Atd.Imports.resolve env.imports loc name in
+      (match import with
+       | None ->
+           (match base_name with
+            | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_write_%s" base_name
+            | "abstract" -> "((x: any, context): any => x)"
+            | local_name -> writer_name env local_name)
+       | Some import ->
+           sprintf "%s.write%s" (ts_name_of_import import) (to_camel_case base_name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -781,9 +836,9 @@ let field_def env ((loc, (name, kind, an), e) : simple_field) =
 let record_type env loc name (fields : field list) an =
   let ts_type_name = type_name env name in
   let fields =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
+    List.map (fun (f : field) -> match f with
+      | Field x -> x
+      | Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   let field_defs =
@@ -851,7 +906,12 @@ let sum_type env loc name cases =
     Inline case_types;
   ]
 
-let make_type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
+let make_type_def env (def : A.type_def) : B.t =
+  let loc = def.loc in
+  let name = Atd.Type_name.basename def.name in
+  let param = def.param in
+  let an = def.annot in
+  let e = unwrap def.value in
   if param <> [] then
     not_implemented loc "parametrized type";
   match e with
@@ -976,9 +1036,9 @@ let read_root_expr env ~ts_type_name e =
 
   | Record (loc, fields, an) ->
       let read_fields =
-        List.map (function
-          | `Inherit _ -> assert false
-          | `Field ((loc, (name, kind, an), e) : simple_field) ->
+        List.map (fun (f : field) -> match f with
+          | Inherit _ -> assert false
+          | Field ((loc, (name, kind, an), e) : simple_field) ->
               let ts_name = trans env name in
               let json_name_lit =
                 Atd.Json.get_json_fname name an |> single_esc
@@ -1047,9 +1107,9 @@ let write_root_expr env ~ts_type_name e =
       ]
   | Record (loc, fields, an) ->
       let write_fields =
-        List.map (function
-          | `Inherit _ -> assert false
-          | `Field ((loc, (name, kind, an), e) : simple_field) ->
+        List.map (fun (f : field) -> match f with
+          | Inherit _ -> assert false
+          | Field ((loc, (name, kind, an), e) : simple_field) ->
               let ts_name = trans env name in
               let json_name_lit =
                 sprintf "'%s'"
@@ -1142,7 +1202,12 @@ let make_writer env loc name an e =
         Line "}";
       ]
 
-let make_functions env ((loc, (name, param, an), e) : A.type_def) : B.t =
+let make_functions env (def : A.type_def) : B.t =
+  let loc = def.loc in
+  let name = Atd.Type_name.basename def.name in
+  let param = def.param in
+  let an = def.annot in
+  let e = unwrap def.value in
   if param <> [] then
     not_implemented loc "parametrized type";
   let writer = make_writer env loc name an e in
@@ -1162,14 +1227,22 @@ let make_functions env ((loc, (name, param, an), e) : A.type_def) : B.t =
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_type_names env (items: A.module_body) =
+let reserve_good_type_names env (items: A.type_def list) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (type_name env name))
+    (fun (def : A.type_def) -> ignore (type_name env (Atd.Type_name.basename def.name)))
     items
 
-let to_file ~atd_filename (items : A.module_body) dst_path =
-  let env = init_env () in
-  let atd_defs = List.map (fun (Type x) -> x) items in
+let format_ts_import (x : A.import) =
+  (* Dotted module paths (e.g. long.module.path) are mapped to path separators
+     in the TypeScript import (e.g. "./long/module/path"). *)
+  let module_file =
+    "./" ^ String.concat "/" (List.map String.lowercase_ascii x.path)
+  in
+  sprintf "import * as %s from \"%s\"" (ts_name_of_import x) module_file
+
+let to_file ~atd_filename ~imports (items : A.type_def list) dst_path =
+  let env = init_env imports in
+  let atd_defs = items in
   reserve_good_type_names env items;
   let type_defs =
     List.map (fun x -> Inline (make_type_def env x)) atd_defs
@@ -1179,8 +1252,12 @@ let to_file ~atd_filename (items : A.module_body) dst_path =
       Inline (make_functions env x)
     ) atd_defs
   in
+  let import_lines =
+    List.map (fun x -> Line (format_ts_import x)) imports
+  in
   [
     Line (runtime_start atd_filename);
+    Inline import_lines;
     Inline (spaced type_defs);
     Inline (spaced functions);
     Line runtime_end;
@@ -1198,7 +1275,7 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let full_module, _original_types =
+  let module_ =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization *)
@@ -1207,10 +1284,7 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module =
-    full_module
-    |> Atd.Ast.use_only_specific_variants
-    |> Atd.Ast.remove_wrap_constructs
-  in
-  let atd_head, atd_module = full_module in
-  to_file ~atd_filename:src_name atd_module dst_path
+  let module_ = Atd.Ast.use_only_specific_variants module_ in
+  let atd_module = module_.Atd.Ast.type_defs in
+  let imports = module_.Atd.Ast.imports in
+  to_file ~atd_filename:src_name ~imports atd_module dst_path

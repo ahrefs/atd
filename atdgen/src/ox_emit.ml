@@ -312,8 +312,13 @@ let write_opens buf l =
   List.iter (fun s -> bprintf buf "open %s\n" s) l;
   bprintf buf "\n"
 
-let def_of_atd (loc, (name, param, an), x) ~target ~def ~external_
+let def_of_atd (atd : Atd.Ast.type_def) ~target ~def ~external_
     ~mapping_of_expr =
+  let loc = atd.loc in
+  let name = Atd.Type_name.basename atd.name in
+  let param = atd.param in
+  let an = atd.annot in
+  let x = atd.value in
   let ocaml_predef = Ocaml.get_ocaml_predef target an in
   let doc = Atd.Doc.get_doc loc an in
   let o =

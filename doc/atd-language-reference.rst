@@ -108,14 +108,14 @@ ATD supports:
 * parametrized types;
 * inheritance for both records and sum types;
 * abstract types;
-* arbitrary annotations.
+* arbitrary annotations;
+* cross-module type references via ``import`` statements.
 
 
 ATD by design does not support:
 
 * function types, function signatures or method signatures;
-* a syntax to represent values;
-* a syntax for submodules.
+* a syntax to represent values.
 
 Language overview
 ^^^^^^^^^^^^^^^^^
@@ -420,6 +420,8 @@ discarding whitespace and comments.
               \| ``|`` | ``=`` | ``?`` | ``~``
 
               \| ``type`` | ``of`` | ``inherit``
+
+              \| ``import`` | ``as``
    ============= ======================================== ====================
 
 
@@ -429,7 +431,12 @@ Grammar
 .. table::
 
    =============== ======================================== =================
-        module ::= annot* typedef*                          entry point
+        module ::= annot* import* typedef*                  entry point
+
+        import ::= ``import`` lident-path annot?            import
+                   (``as`` lident annot?)?                  declaration
+
+   lident-path ::= lident (```.``` lident)*
 
          annot ::= ``<`` lident annot-field* ``>``          annotation
 
@@ -480,6 +487,66 @@ Grammar
    =============== ======================================== =================
 
 
+
+Import declarations
+^^^^^^^^^^^^^^^^^^^
+
+An ATD file may import other ATD modules using ``import`` declarations.
+Import declarations must appear after any top-level annotations and before
+any type definitions.
+
+Syntax::
+
+  import module.path <annotations> as alias <annotations>
+
+The ``as`` clause is optional. Without it, the local name of the imported
+module is the last component of the dotted path (e.g. ``import foo.bar``
+binds the local name ``bar``).
+
+Type names from an imported module are referenced using dot notation:
+``alias.typename`` (or ``lastcomponent.typename`` when no alias is given).
+For example, if a module ``types`` is imported, the type ``date`` from
+that module is written ``types.date`` in type expressions.
+
+Annotations on the path or alias allow language-specific backends to
+override the module name used in generated code. The annotation
+``<ocaml name="...">`` (or the equivalent for another target language)
+on the path controls how the module is referenced in generated output,
+while the same annotation on the ``as`` clause controls the local alias
+name used in the generated code.
+
+Examples:
+
+.. code-block:: ocaml
+
+  (* Simple import: local name is "common" *)
+  import mylib.common
+
+  (* Import with an alias *)
+  import mylib.common as c
+
+  (* Using an imported type in a definition *)
+  type event = {
+    id : string;
+    timestamp : common.date;
+  }
+
+.. code-block:: ocaml
+
+  (* Language-specific name annotation on the path *)
+  import mylib.common <ocaml name="Mylib_common">
+
+  (* Language-specific name annotation on the alias *)
+  import mylib.common as c <ocaml name="Common">
+
+.. warning::
+
+   Dotted module paths (e.g. ``import foo.bar.baz``) are an experimental
+   feature. Each code generator maps them to file paths in its own way and
+   there is currently no guarantee of consistent behavior across backends.
+   When possible, prefer single-component module names (e.g. ``import baz``
+   or ``import foo as bar``). Support for dotted module paths may be removed
+   in a future release.
 
 Predefined type names
 ^^^^^^^^^^^^^^^^^^^^^

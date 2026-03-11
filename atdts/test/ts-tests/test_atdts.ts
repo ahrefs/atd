@@ -3,6 +3,8 @@
 /* tslint:disable no-console  */
 
 import * as API from "./everything"
+import * as ImportAlias from "./import_alias"
+import * as ext_types from "./ext_types"
 import * as fs from "fs"
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -77,6 +79,7 @@ function test_everything() {
       any_b: [ [], [[[]]], true, {}, null ]
     },
     wrapped: ["a", "b"],
+  ext_tag: "hello",
   }
   const aStr = JSON.stringify(API.writeRoot(aObj), null, 2)
   save('aStr', aStr)
@@ -209,7 +212,8 @@ ${aStr}`
   "wrapped": [
     "a",
     "b"
-  ]
+  ],
+  "ext_tag": "hello"
 }`
   save('bStr', bStr)
   const bObj = API.readRoot(JSON.parse(aStr))
@@ -236,4 +240,13 @@ ${aStr}
   )
 }
 
+function test_import_alias() {
+  const obj: ImportAlias.Item = { tag: ext_types.readTag(JSON.parse('"renamed"')) }
+  const j = JSON.stringify(ImportAlias.writeItem(obj))
+  assert(j === '{"tag":"renamed"}', `unexpected JSON: ${j}`)
+  const obj2 = ImportAlias.readItem(JSON.parse(j))
+  assert(ext_types.writeTag(obj2.tag) === "renamed", "tag round-trip failed")
+}
+
 test_everything()
+test_import_alias()

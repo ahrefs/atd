@@ -32,14 +32,17 @@ module A = Atd.Ast
  * then we wrap its values as necessary.
 *)
 let declare_field env
-    (`Field (_, (atd_field_name, kind, annots), atd_ty)) scala_ty =
+    (field : A.field) scala_ty =
+  let (_, (atd_field_name, kind, annots), atd_ty) =
+    match field with Field x -> x | Inherit _ -> assert false
+  in
   let field_name = get_scala_field_name atd_field_name annots in
   let opt_default =
     match kind with
     | A.With_default ->
         (match norm_ty env atd_ty with
          | Name (_, (_, name, _), _) ->
-             (match name with
+             (match Atd.Type_name.basename name with
               | "bool" -> Some "false"
               | "int" -> Some "0"
               | "float" -> Some "0.0"
@@ -60,12 +63,15 @@ let declare_field env
 
 
 (* Generate an argonaut field for a record field. *)
-let to_string_field env = function
-  | (`Field (_, (atd_field_name, kind, annots), atd_ty)) ->
-      let json_field_name = get_json_field_name atd_field_name annots in
-      let field_name = get_scala_field_name atd_field_name annots in
-      (* TODO: Omit fields with default value. *)
-      sprintf "    \"%s\" := %s" json_field_name field_name
+let to_string_field env (field : A.field) =
+  let (_, (atd_field_name, _kind, annots), _atd_ty) =
+    match field with Field x -> x | Inherit _ -> assert false
+  in
+  let json_field_name = get_json_field_name atd_field_name annots in
+  let field_name = get_scala_field_name atd_field_name annots in
+  (* TODO: Omit fields with default value. *)
+  ignore env;
+  sprintf "    \"%s\" := %s" json_field_name field_name
 
 (* Generate a javadoc comment *)
 let javadoc loc annots indent =
@@ -134,7 +140,10 @@ package object %s {
 
 let rec trans_module env items = List.fold_left trans_outer env items
 
-and trans_outer env (A.Type (_, (name, _, annots), atd_ty)) =
+and trans_outer env (def : A.type_def) =
+  let name = Atd.Type_name.basename def.name in
+  let annots = def.annot in
+  let atd_ty = def.value in
   match unwrap atd_ty with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
@@ -221,20 +230,23 @@ object %s {"
  * within the class.
 *)
 and trans_record my_name env (loc, fields, annots) =
-  (* Remove `Inherit values *)
-  let fields = List.map
-      (function
-        | `Field _ as f -> f
-        | `Inherit _ -> assert false
+  (* Remove Inherit values *)
+  let fields = List.filter_map
+      (fun (f : A.field) ->
+        match f with
+        | Field _ -> Some f
+        | Inherit _ -> assert false
       )
       fields in
   (* Translate field types *)
   let (java_tys, env) = List.fold_left
-      (fun (java_tys, env) -> function
-         | `Field (_, (field_name, _, annots), atd_ty) ->
-             let field_name = get_scala_field_name field_name annots in
-             let java_ty = trans_inner env atd_ty in
-             ((field_name, java_ty) :: java_tys, env)
+      (fun (java_tys, env) (field : A.field) ->
+        let (_, (field_name, _, annots), atd_ty) =
+          match field with Field x -> x | Inherit _ -> assert false
+        in
+        let field_name = get_scala_field_name field_name annots in
+        let java_ty = trans_inner env atd_ty in
+        ((field_name, java_ty) :: java_tys, env)
       )
       ([], env) fields in
   let java_tys = List.rev java_tys in
@@ -247,7 +259,10 @@ and trans_record my_name env (loc, fields, annots) =
   fprintf out "case class %s(\n" class_name;
 
   List.map
-      (fun (`Field (_, (field_name, _, annots), _) as field) ->
+      (fun (field : A.field) ->
+         let (_, (field_name, _, annots), _) =
+           match field with Field x -> x | Inherit _ -> assert false
+         in
          let field_name = get_scala_field_name field_name annots in
          declare_field env field (List.assoc_exn field_name java_tys)
   ) fields
@@ -282,9 +297,9 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
        | Name (_, (_, name2, _), _) ->
            (* It's a primitive type e.g. int *)
-           Atds_names.to_class_name name2
+           Atds_names.to_class_name (Atd.Type_name.basename name2)
        | _ ->
-           Atds_names.to_class_name name1
+           Atds_names.to_class_name (Atd.Type_name.basename name1)
       )
   | List (_, sub_atd_ty, _)  ->
       let ty' = trans_inner env sub_atd_ty in

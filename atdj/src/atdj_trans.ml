@@ -23,7 +23,7 @@ let json_of_atd env atd_ty =
   | Record _ -> "JSONObject"
   | List   _ -> "JSONArray"
   | Name (_, (_, ty, _), _) ->
-      (match ty with
+      (match Atd.Type_name.basename ty with
        | "bool"   -> "boolean"
        | "int"    -> "int"
        | "float"  -> "double"
@@ -68,7 +68,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
        | Record _ ->
            sprintf "new %s(%s)" java_ty src
        | Name (_, (_, ty, _), _) ->
-           (match ty with
+           (match Atd.Type_name.basename ty with
             | "bool" | "int" | "float" | "string" -> src
             | _  -> type_not_supported atd_ty
            )
@@ -95,7 +95,7 @@ let rec assign env opt_dst src java_ty atd_ty indent =
            ^ sprintf "%s}\n" indent
 
        | Name (_, (_, ty, _), _) ->
-           (match ty with
+           (match Atd.Type_name.basename ty with
             | "bool" | "int" | "float" | "string" ->
                 sprintf "%s%s = %s;\n" indent dst src
             | _  -> type_not_supported atd_ty
@@ -130,7 +130,10 @@ let rec assign env opt_dst src java_ty atd_ty indent =
  * then we wrap its values as necessary.
 *)
 let assign_field env
-    (`Field (_, (atd_field_name, kind, annots), atd_ty)) java_ty =
+    (field : A.field) java_ty =
+  let (_, (atd_field_name, kind, annots), atd_ty) =
+    match field with Field x -> x | Inherit _ -> assert false
+  in
   let json_field_name = get_json_field_name atd_field_name annots in
   let field_name = get_java_field_name atd_field_name annots in
   (* Check whether the field is optional *)
@@ -155,7 +158,7 @@ let assign_field env
       | A.With_default ->
           (match norm_ty ~unwrap_option:true env atd_ty with
            | Name (_, (_, name, _), _) ->
-               (match name with
+               (match Atd.Type_name.basename name with
                 | "bool" -> mk_else (Some "false")
                 | "int" -> mk_else (Some "0")
                 | "float" -> mk_else (Some "0.0")
@@ -189,7 +192,7 @@ let rec to_string env id atd_ty indent =
       ^ sprintf "%s    _out.append(\",\");\n" indent
       ^ sprintf "%s}\n" indent
       ^ sprintf "%s_out.append(\"]\");\n" indent
-  | Name (_, (_, "string", _), _) ->
+  | Name (_, (_, tn, _), _) when Atd.Type_name.basename tn = "string" ->
       (* TODO Check that this is the correct behaviour *)
       sprintf
         "%sUtil.writeJsonString(_out, %s);\n"
@@ -200,8 +203,10 @@ let rec to_string env id atd_ty indent =
       sprintf "%s%s.toJsonBuffer(_out);\n" indent id
 
 (* Generate a toJsonBuffer command for a record field. *)
-let to_string_field env = function
-  | (`Field (_, (atd_field_name, kind, annots), atd_ty)) ->
+let to_string_field env (field : A.field) =
+  let (_, (atd_field_name, kind, annots), atd_ty) =
+    match field with Field x -> x | Inherit _ -> assert false
+  in
       let json_field_name = get_json_field_name atd_field_name annots in
       let field_name = get_java_field_name atd_field_name annots in
       let atd_ty = norm_ty ~unwrap_option:true env atd_ty in
@@ -302,7 +307,9 @@ import org.json.*;
 
 let rec trans_module env items = List.fold_left trans_outer env items
 
-and trans_outer env (A.Type (_, (name, _, _), atd_ty)) =
+and trans_outer env (def : A.type_def) =
+  let name = Atd.Type_name.basename def.name in
+  let atd_ty = def.value in
   match unwrap atd_ty with
   | Sum (loc, v, a) ->
       trans_sum name env (loc, v, a)
@@ -497,20 +504,23 @@ public class %s {
  * within the class.
 *)
 and trans_record my_name env (loc, fields, annots) =
-  (* Remove `Inherit values *)
-  let fields = List.map
-      (function
-        | `Field _ as f -> f
-        | `Inherit _ -> assert false
+  (* Remove Inherit values *)
+  let fields = List.filter_map
+      (fun (f : A.field) ->
+        match f with
+        | Field _ -> Some f
+        | Inherit _ -> assert false
       )
       fields in
   (* Translate field types *)
   let (java_tys, env) = List.fold_left
-      (fun (java_tys, env) -> function
-         | `Field (_, (field_name, _, annots), atd_ty) ->
-             let field_name = get_java_field_name field_name annots in
-             let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
-             ((field_name, java_ty) :: java_tys, env)
+      (fun (java_tys, env) (field : A.field) ->
+        let (_, (field_name, _, annots), atd_ty) =
+          match field with Field x -> x | Inherit _ -> assert false
+        in
+        let field_name = get_java_field_name field_name annots in
+        let (java_ty, env) = trans_inner env (unwrap_option env atd_ty) in
+        ((field_name, java_ty) :: java_tys, env)
       )
       ([], env) fields in
   let java_tys = List.rev java_tys in
@@ -542,7 +552,10 @@ public class %s implements Atdj {
     class_name;
 
   let env = List.fold_left
-      (fun env (`Field (_, (field_name, _, annots), _) as field) ->
+      (fun env (field : A.field) ->
+         let (_, (field_name, _, annots), _) =
+           match field with Field x -> x | Inherit _ -> assert false
+         in
          let field_name = get_java_field_name field_name annots in
          let cmd =
            assign_field env field (List.assoc_exn field_name java_tys) in
@@ -572,11 +585,14 @@ public class %s implements Atdj {
     ) fields;
 
   List.iter
-    (function `Field (loc, (field_name, _, annots), _) ->
-       let field_name = get_java_field_name field_name annots in
-       let java_ty = List.assoc_exn field_name java_tys in
-       output_string out (javadoc loc annots "  ");
-       fprintf out "  public %s %s;\n" java_ty field_name)
+    (fun (field : A.field) ->
+      let (loc, (field_name, _, annots), _) =
+        match field with Field x -> x | Inherit _ -> assert false
+      in
+      let field_name = get_java_field_name field_name annots in
+      let java_ty = List.assoc_exn field_name java_tys in
+      output_string out (javadoc loc annots "  ");
+      fprintf out "  public %s %s;\n" java_ty field_name)
     fields;
   fprintf out "}\n";
   close_out out;
@@ -589,9 +605,9 @@ and trans_inner env atd_ty =
       (match norm_ty env atd_ty with
        | Name (_, (_, name2, _), _) ->
            (* It's a primitive type e.g. int *)
-           (Atdj_names.to_class_name name2, env)
+           (Atdj_names.to_class_name (Atd.Type_name.basename name2), env)
        | _ ->
-           (Atdj_names.to_class_name name1, env)
+           (Atdj_names.to_class_name (Atd.Type_name.basename name1), env)
       )
   | List (_, sub_atd_ty, _)  ->
       let (ty', env) = trans_inner env sub_atd_ty in

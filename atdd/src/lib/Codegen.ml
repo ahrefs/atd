@@ -546,11 +546,11 @@ let assoc_kind loc (e : type_expr) an : assoc_kind =
   | Tuple (loc, [(_, key, _); (_, value, _)], an2), Array, Dict ->
       Array_dict (key, value)
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, Dict ->
       Object_dict value
   | Tuple (loc,
-           [(_, Name (_, (_, "string", _), _), _); (_, value, _)], an2),
+           [(_, Name (_, (_, TN ["string"], _), _), _); (_, value, _)], an2),
     Object, List -> Object_list value
   | _, Array, List -> Array_list
   | _, Object, _ -> error_at loc "not a (string * _) list"
@@ -601,7 +601,7 @@ let rec type_name_of_expr env (e : type_expr) : string =
        | None -> error_at loc "wrap type declared, but no dlang annotation found"
        | Some { dlang_wrap_t ; _ } -> dlang_wrap_t
       )
-  | Name (loc, (loc2, name, []), an) -> dlang_type_name env name
+  | Name (loc, (loc2, name, []), an) -> dlang_type_name env (Atd.Type_name.basename name)
   | Name (loc, (_, name, _::_), _) -> assert false
   | Tvar (loc, _) -> not_implemented loc "type variables"
 
@@ -616,7 +616,7 @@ let rec get_default_default (e : type_expr) : string option =
   | Shared (loc, e, an) -> get_default_default e
   | Wrap (loc, e, an) -> get_default_default e
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (match Atd.Type_name.basename name with
        | "unit" -> None
        | "bool" -> Some "false"
        | "int" -> Some "0"
@@ -687,7 +687,8 @@ let rec json_writer ?(nested=false) env e =
       sprintf "_atd_write_wrap!(%s, (%s e) => %s(e))" (json_writer ~nested:true env e) dlang_wrap_t dlang_unwrap
     ) 
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (let name = Atd.Type_name.basename name in
+       match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_write_%s" name
        | "abstract" -> "(JSONValue x) => x"
        | _ -> let dtype_name = (dlang_type_name env name) in
@@ -771,10 +772,11 @@ let rec json_reader ?(nested=false) env (e : type_expr) =
       sprintf "_atd_read_wrap!(%s, (%s e) => %s(e))" (json_reader ~nested:true env e) (type_name_of_expr env e) dlang_wrap
     )
   | Name (loc, (loc2, name, []), an) ->
-      (match name with
+      (let name = Atd.Type_name.basename name in
+       match name with
        | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" name
        | "abstract" -> "((JSONValue x) => x)"
-       | _ -> sprintf "fromJson!%s" 
+       | _ -> sprintf "fromJson!%s"
        (struct_name env name)
        )
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
@@ -842,9 +844,9 @@ let record env loc name (fields : field list) an =
   let dlang_struct_name = struct_name env name in
   let trans_meth = env.translate_inst_variable () in
   let fields =
-    List.map (function
-      | `Field x -> x
-      | `Inherit _ -> (* expanded at loading time *) assert false)
+    List.map (fun (f : field) -> match f with
+      | Field x -> x
+      | Inherit _ -> (* expanded at loading time *) assert false)
       fields
   in
   let inst_var_declarations =
@@ -1069,7 +1071,11 @@ let sum env  loc name cases =
   ]
   |> double_spaced
 
-let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
+let type_def env (def : A.type_def) : B.t =
+  let loc = def.loc in
+  let name = Atd.Type_name.basename def.name in
+  let param = def.param in
+  let e = def.value in
   if param <> [] then
     not_implemented loc "parametrized type";
   let unwrap e =
@@ -1090,12 +1096,12 @@ let type_def env ((loc, (name, param, an), e) : A.type_def) : B.t =
   unwrap e
 
 let module_body env x =
-  List.fold_left (fun acc (Type x) -> Inline (type_def env x) :: acc) [] x
+  List.fold_left (fun acc x -> Inline (type_def env x) :: acc) [] x
   |> List.rev
   |> spaced
 
 let definition_group ~atd_filename env
-    (is_recursive, (items: A.module_body)) : B.t =
+    (is_recursive, (items: A.type_def list)) : B.t =
   [
     Inline (module_body env items);
   ]
@@ -1109,12 +1115,12 @@ let definition_group ~atd_filename env
    We want to ensure that the type 'foo' gets the name 'Foo' and that only
    later the case 'Foo' gets a lesser name like 'Foo_' or 'Foo2'.
 *)
-let reserve_good_struct_names env (items: A.module_body) =
+let reserve_good_struct_names env (items: A.type_def list) =
   List.iter
-    (fun (Type (loc, (name, param, an), e)) -> ignore (struct_name env name))
+    (fun (def : A.type_def) -> ignore (struct_name env (Atd.Type_name.basename def.name)))
     items
 
-let to_file ~atd_filename ~head (items : A.module_body) dst_path =
+let to_file ~atd_filename ~head (items : A.type_def list) dst_path =
   let env = init_env () in
   reserve_good_struct_names env items;
   let head = List.map (fun s -> Line s) head in
@@ -1136,7 +1142,7 @@ let run_file src_path =
     |> String.lowercase_ascii
   in
   let dst_path = dst_name in
-  let full_module, _original_types =
+  let module_ =
     Atd.Util.load_file
       ~annot_schema
       ~expand:true (* monomorphization = eliminate parametrized type defs *)
@@ -1145,10 +1151,23 @@ let run_file src_path =
       ~inherit_variants:true
       src_path
   in
-  let full_module = Atd.Ast.use_only_specific_variants full_module in
-  let (atd_head, atd_module) = full_module in
+  let module_ = Atd.Ast.use_only_specific_variants module_ in
+  let atd_head = module_.Atd.Ast.module_head in
+  let atd_module = module_.Atd.Ast.type_defs in
   let head =
-     Dlang_annot.get_dlang_import (snd atd_head) 
+    (* The ATD language now has a dedicated 'import' statement that
+       allows referencing other ATD types from other ATD files.
+       This is different than what these annotations are used for
+       (e.g. <dlang import="std.stdint : uint32_t, uint16_t">).
+       The ATD parser treats 'import' as a soft keyword to avoid breaking
+       things for atdd. It would be nice if the grammar didn't have to
+       resort to soft keywords. This would require deprecating
+       <dlang import="..."> in favor of another name or syntax, and eventually
+       retiring it. Or maybe we could go the other way and generalize
+       soft keywords. Feel free to bring up the issue on GitHub if you
+       have opinions on this.
+     *)
+     Dlang_annot.get_dlang_import (snd atd_head)
     |> List.map (sprintf "import %s;")
   in
   to_file ~atd_filename:src_name ~head atd_module dst_path

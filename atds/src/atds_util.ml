@@ -15,13 +15,14 @@ let rec norm_ty env atd_ty =
   let atd_ty = unwrap atd_ty in
   match atd_ty with
   | Atd.Ast.Name (_, (_, name, _), _) ->
-      (match name with
+      let name_str = Atd.Type_name.basename name in
+      (match name_str with
        | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
        | _ ->
-           (match List.assoc name env.module_items with
+           (match List.assoc name_str env.module_items with
             | Some x -> norm_ty env x
             | None ->
-                eprintf "Warning: unknown type %s\n%!" name;
+                eprintf "Warning: unknown type %s\n%!" name_str;
                 atd_ty)
       )
   | _ ->

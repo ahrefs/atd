@@ -162,7 +162,7 @@ let validate__a_list validate__a = (
     validate__a
   )
 )
-let rec validate_p' validate__a : _ -> 'a p' -> _ = (
+let rec validate_p' validate__a : _ -> _ p' -> _ = (
   fun path x ->
     match x with
       | A -> None
@@ -218,7 +218,7 @@ let rec validate__a_b_poly_option validate__a validate__b path x = (
     validate_poly validate__a validate__b
   )
 ) path x
-and validate_poly validate__x validate__y : _ -> ('x, 'y) poly -> _ = (
+and validate_poly validate__x validate__y : _ -> (_, _) poly -> _ = (
   fun path x ->
     match
       (
@@ -446,7 +446,7 @@ let validate_int32 = (
 let validate_hello = (
   fun _ _ -> None
 )
-let validate_generic validate__a : _ -> 'a generic -> _ = (
+let validate_generic validate__a : _ -> _ generic -> _ = (
   fun _ _ -> None
 )
 let validate_floats : _ -> floats -> _ = (

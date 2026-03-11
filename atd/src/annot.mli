@@ -166,6 +166,7 @@ val create_id : unit -> string
 
 type node_kind =
   | Module_head
+  | Import
   | Type_def
   | Type_expr
   | Variant

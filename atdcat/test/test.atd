@@ -3,6 +3,9 @@
 <doc html="<p>This <b>is</b> a test.</p>"
      text="This is a test.">
 
+import a <ocaml name="Aha">
+import a.b <ocaml name="AB"> as c <python name="cc">
+
 (* Double-quotes "\"" in comments must be matched. *)
 (* Don't worry about unmatched single quotes in comments. *)
 type test_string_syntax = int

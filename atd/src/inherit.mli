@@ -3,7 +3,7 @@
 val expand_module_body :
   ?inherit_fields : bool ->
   ?inherit_variants : bool ->
-  Ast.module_body -> Ast.module_body
+  Ast.import list -> Ast.type_def list -> Ast.type_def list
   (**
      Expand [inherit] statements found in sum types and product types.
 

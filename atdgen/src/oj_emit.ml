@@ -756,6 +756,7 @@ let rec make_reader p type_annot (x : Oj_mapping.t) : Indent.t list =
       let json_options = {
         Json.json_sum_adapter = Json.no_adapter;
         json_open_enum = false;
+        json_lowercase_tags = false;
       } in
       make_reader p
         (Some "_ option")
@@ -1368,9 +1369,12 @@ let make_extra_generic_modules definitions =
   List.iter
     (fun (_, body) ->
       List.iter
-        (fun (Atd.Ast.Type (_, (name, params, _), type_expr)) ->
+        (fun (def : Atd.Ast.type_def) ->
+          let name = Atd.Type_name.basename def.name in
+          let params = def.param in
+          let type_expr = def.value in
           match type_expr with
-          | Name (_, (_, "abstract", _), _) -> ()
+          | Name (_, (_, Atd.Ast.TN ["abstract"], _), _) -> ()
           | _ -> make_module name params)
         body)
     definitions;
@@ -1392,7 +1396,7 @@ let make_ocaml_files
     ~pp_convs
     ~add_generic_modules
     atd_file out =
-  let ((head, m0), _) =
+  let module_ =
     match atd_file with
       Some file ->
         Atd.Util.load_file
@@ -1407,17 +1411,29 @@ let make_ocaml_files
           ?pos_fname ?pos_lnum
           stdin
   in
+  let head = module_.Atd.Ast.module_head in
+  let m0 = module_.Atd.Ast.type_defs in
 
   let tsort =
     if all_rec then
       function m -> [ (true, m) ]
     else
-      Atd.Util.tsort
+      fun m -> Atd.Util.tsort m
   in
   let m1 = tsort m0 in
   let defs1 = Oj_mapping.defs_of_atd_modules m1 ~target in
-  let (m1', original_types) =
-    Atd.Expand.expand_module_body ~keep_builtins:false ~keep_poly:true m0
+  let m1' = Atd.Expand.expand_type_defs ~keep_builtins:false ~keep_poly:true m0 in
+  let original_types =
+    let tbl = Hashtbl.create 16 in
+    List.iter (fun (def : Atd.Ast.type_def) ->
+      match def.orig with
+      | None -> ()
+      | Some orig_def ->
+        let poly_name = Atd.Type_name.basename orig_def.name in
+        let n_params = List.length orig_def.param in
+        Hashtbl.replace tbl (Atd.Type_name.basename def.name) (poly_name, n_params)
+    ) m1';
+    tbl
   in
   let m2 = tsort m1' in
   (* m0 = original type definitions

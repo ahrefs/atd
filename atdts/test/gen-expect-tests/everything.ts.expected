@@ -14,6 +14,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import * as ext_types from "./ext_types"
+
 export type Anything = any
 
 export type DifferentKindsOfThings =
@@ -51,6 +53,7 @@ export type Root = {
   parametrized_tuple: TupleE1a4b40;
   anything: Anything;
   wrapped: string[];
+  ext_tag: ext_types.Tag;
 }
 
 export type Alias = number /*int*/[]
@@ -167,6 +170,7 @@ export function writeRoot(x: Root, context: any = x): any {
     'parametrized_tuple': _atd_write_required_field('Root', 'parametrized_tuple', writeTupleE1a4b40, x.parametrized_tuple, x),
     'anything': _atd_write_required_field('Root', 'anything', writeAnything, x.anything, x),
     'wrapped': _atd_write_required_field('Root', 'wrapped', _atd_write_array(_atd_write_string), x.wrapped, x),
+    'ext_tag': _atd_write_required_field('Root', 'ext_tag', ext_types.writeTag, x.ext_tag, x),
   };
 }
 
@@ -194,6 +198,7 @@ export function readRoot(x: any, context: any = x): Root {
     parametrized_tuple: _atd_read_required_field('Root', 'parametrized_tuple', readTupleE1a4b40, x['parametrized_tuple'], x),
     anything: _atd_read_required_field('Root', 'anything', readAnything, x['anything'], x),
     wrapped: _atd_read_required_field('Root', 'wrapped', _atd_read_array(_atd_read_string), x['wrapped'], x),
+    ext_tag: _atd_read_required_field('Root', 'ext_tag', ext_types.readTag, x['ext_tag'], x),
   };
 }
 

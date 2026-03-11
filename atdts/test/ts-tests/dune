@@ -7,8 +7,10 @@
 (rule
  (mode
   (promote (until-clean)))
- (deps ../gen-expect-tests/everything.ts ../gen-expect-tests/import.ts)
+ (deps ../gen-expect-tests/ext_types.ts ../gen-expect-tests/everything.ts ../gen-expect-tests/import.ts ../gen-expect-tests/import_alias.ts)
  (action
   (progn
+   (copy ../gen-expect-tests/ext_types.ts ext_types.ts)
    (copy ../gen-expect-tests/everything.ts everything.ts)
-   (copy ../gen-expect-tests/import.ts import.ts))))
+   (copy ../gen-expect-tests/import.ts import.ts)
+   (copy ../gen-expect-tests/import_alias.ts import_alias.ts))))

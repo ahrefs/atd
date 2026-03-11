@@ -47,15 +47,18 @@ let main () =
   );
 
   (* Parse ATD file *)
-  let (atd_head, atd_module), _original_types =
+  let module_ =
     Atd.Util.load_file
       ~expand:false ~inherit_fields:true ~inherit_variants:true input_file
   in
+  let _atd_head = module_.Atd.Ast.module_head in
+  let atd_module = module_.Atd.Ast.type_defs in
   let env = {
     env with
     module_items =
       List.map
-        (function (Atd.Ast.Type (_, (name, _, _), atd_ty)) -> (name, atd_ty))
+        (fun (def : Atd.Ast.type_def) ->
+          (Atd.Type_name.basename def.name, def.value))
         atd_module
   } in
 

@@ -89,24 +89,20 @@ let compare_files
     old_file new_file =
   let load_file atd_file =
     let ast_with_inherits =
-       atd_file
-       |> Atd.Util.load_file
-       |> fst
-       |> Atd.Ast.remove_wrap_constructs
+       Atd.Util.load_file atd_file
     in
     let ast_without_inherits =
-      let head, body = ast_with_inherits in
-      let body =
+      let type_defs =
         Atd.Inherit.expand_module_body
           ~inherit_fields:true (* simplifies comparison *)
           ~inherit_variants:true (* simplifies comparison *)
-          body
+          ast_with_inherits.Atd.Ast.imports
+          ast_with_inherits.Atd.Ast.type_defs
       in
-      head, body
+      { ast_with_inherits with Atd.Ast.type_defs }
     in
     ast_with_inherits, ast_without_inherits
   in
-  ignore Atd.Inherit.expand_module_body;
   let ast1_with_inherits, ast1_without_inherits = load_file old_file in
   let ast2_with_inherits, ast2_without_inherits = load_file new_file in
   check_forgotten_root_types

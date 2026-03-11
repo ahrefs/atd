@@ -1,2 +1,2 @@
 type import_default = bool
-type import = string
+type import_ = string

@@ -1,4 +1,6 @@
 <doc html="<p>This <b>is</b> a test.</p>" text="This is a test.">
+import a <ocaml name="Aha">
+import a.b <ocaml name="AB"> as c <python name="cc">
 type test_string_syntax =
   int
     <a b="\"">

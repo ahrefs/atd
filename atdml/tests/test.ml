@@ -596,14 +596,15 @@ type item = {
 
   test_e2e "field prefix"
     ~atd_src:{|
-type point = {
-  x: float;
-  y: float;
-  label: string;
-} <ocaml field_prefix="p_">
+(* 'ule' + prefix "mod" = "module" (keyword) → field name "module_", label "ule"
+   'if' (keyword) + prefix "mod" = "modif" (not a keyword) → field name "modif", label "if_" *)
+type t = {
+  ule: int;
+  if: int;
+} <ocaml field_prefix="mod">
 |}
-    ~type_name:"point"
-    ~json_in:{|{"x": 1.5, "y": 2.5, "label": "origin"}|}
+    ~type_name:"t"
+    ~json_in:{|{"ule": 1, "if": 2}|}
   ;
 
   (* Snapshot test only: verify that qualified type names (imports) produce

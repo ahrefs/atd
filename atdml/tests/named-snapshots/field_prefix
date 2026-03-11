@@ -1,20 +1,19 @@
 (* Auto-generated from "field_prefix.atd" by atdml. *)
 
-type point = {
-  p_x: float;
-  p_y: float;
-  p_label: string;
+type t = {
+  module_: int;
+  modif: int;
 }
 
-val create_point : x:float -> y:float -> label:string -> unit -> point
-val point_of_yojson : Yojson.Safe.t -> point
-val yojson_of_point : point -> Yojson.Safe.t
-val point_of_json : string -> point
-val json_of_point : point -> string
+val create_t : ule:int -> if_:int -> unit -> t
+val t_of_yojson : Yojson.Safe.t -> t
+val yojson_of_t : t -> Yojson.Safe.t
+val t_of_json : string -> t
+val json_of_t : t -> string
 
-module Point : sig
-  type nonrec t = point
-  val create : x:float -> y:float -> label:string -> unit -> t
+module T : sig
+  type nonrec t = t
+  val create : ule:int -> if_:int -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
@@ -107,16 +106,15 @@ module Atdml_runtime = struct
     `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
 end
 
-type point = {
-  p_x: float;
-  p_y: float;
-  p_label: string;
+type t = {
+  module_: int;
+  modif: int;
 }
 
-let create_point ~x ~y ~label () : point =
-  { p_x = x; p_y = y; p_label = label }
+let create_t ~ule ~if_ () : t =
+  { module_ = ule; modif = if_ }
 
-let point_of_yojson (x : Yojson.Safe.t) : point =
+let t_of_yojson (x : Yojson.Safe.t) : t =
   match x with
   | `Assoc fields ->
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
@@ -129,47 +127,41 @@ let point_of_yojson (x : Yojson.Safe.t) : point =
         (fun key -> Hashtbl.find_opt tbl key)
       else (fun key -> List.assoc_opt key fields)
     in
-    let x =
-      match assoc_ "x" with
-      | Some v -> Atdml_runtime.float_of_yojson v
-      | None -> Atdml_runtime.missing_field "point" "x"
+    let ule =
+      match assoc_ "ule" with
+      | Some v -> Atdml_runtime.int_of_yojson v
+      | None -> Atdml_runtime.missing_field "t" "ule"
     in
-    let y =
-      match assoc_ "y" with
-      | Some v -> Atdml_runtime.float_of_yojson v
-      | None -> Atdml_runtime.missing_field "point" "y"
+    let if_ =
+      match assoc_ "if" with
+      | Some v -> Atdml_runtime.int_of_yojson v
+      | None -> Atdml_runtime.missing_field "t" "if"
     in
-    let label =
-      match assoc_ "label" with
-      | Some v -> Atdml_runtime.string_of_yojson v
-      | None -> Atdml_runtime.missing_field "point" "label"
-    in
-    { p_x = x; p_y = y; p_label = label }
-  | _ -> Atdml_runtime.bad_type "point" x
+    { module_ = ule; modif = if_ }
+  | _ -> Atdml_runtime.bad_type "t" x
 
-let yojson_of_point (x : point) : Yojson.Safe.t =
+let yojson_of_t (x : t) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("x", Atdml_runtime.yojson_of_float x.p_x)];
-    [("y", Atdml_runtime.yojson_of_float x.p_y)];
-    [("label", Atdml_runtime.yojson_of_string x.p_label)];
+    [("ule", Atdml_runtime.yojson_of_int x.module_)];
+    [("if", Atdml_runtime.yojson_of_int x.modif)];
   ])
 
-let point_of_json s =
-  point_of_yojson (Yojson.Safe.from_string s)
+let t_of_json s =
+  t_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_point x =
-  Yojson.Safe.to_string (yojson_of_point x)
+let json_of_t x =
+  Yojson.Safe.to_string (yojson_of_t x)
 
-module Point = struct
-  type nonrec t = point
-  let create = create_point
-  let of_yojson = point_of_yojson
-  let to_yojson = yojson_of_point
-  let of_json = point_of_json
-  let to_json = json_of_point
+module T = struct
+  type nonrec t = t
+  let create = create_t
+  let of_yojson = t_of_yojson
+  let to_yojson = yojson_of_t
+  let of_json = t_of_json
+  let to_json = json_of_t
 end
 
 --- Input:
-{ "x": 1.5, "y": 2.5, "label": "origin" }
+{ "ule": 1, "if": 2 }
 --- Output:
-{ "x": 1.5, "y": 2.5, "label": "origin" }
+{ "ule": 1, "if": 2 }

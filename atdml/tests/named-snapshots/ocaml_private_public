@@ -1,0 +1,384 @@
+(* Auto-generated from "ocaml_private_public.atd" by atdml. *)
+
+type status = private [
+  | `Active
+  | `Inactive
+]
+
+val status_of_yojson : Yojson.Safe.t -> status
+val yojson_of_status : status -> Yojson.Safe.t
+val status_of_json : string -> status
+val json_of_status : status -> string
+
+module Status : sig
+  type nonrec t = status
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type point = private {
+  x: float;
+  y: float;
+}
+
+val create_point : x:float -> y:float -> unit -> point
+val point_of_yojson : Yojson.Safe.t -> point
+val yojson_of_point : point -> Yojson.Safe.t
+val point_of_json : string -> point
+val json_of_point : point -> string
+
+module Point : sig
+  type nonrec t = point
+  val create : x:float -> y:float -> unit -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type open_id = string
+
+val create_open_id : string -> open_id
+val open_id_of_yojson : Yojson.Safe.t -> open_id
+val yojson_of_open_id : open_id -> Yojson.Safe.t
+val open_id_of_json : string -> open_id
+val json_of_open_id : open_id -> string
+
+module Open_id : sig
+  type nonrec t = open_id
+  val create : string -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type id = private string
+
+val create_id : string -> id
+val id_of_yojson : Yojson.Safe.t -> id
+val yojson_of_id : id -> Yojson.Safe.t
+val id_of_json : string -> id
+val json_of_id : id -> string
+
+module Id : sig
+  type nonrec t = id
+  val create : string -> t
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type ids = private id list
+
+val ids_of_yojson : Yojson.Safe.t -> ids
+val yojson_of_ids : ids -> Yojson.Safe.t
+val ids_of_json : string -> ids
+val json_of_ids : ids -> string
+
+module Ids : sig
+  type nonrec t = ids
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type color = private
+  | Red
+  | Green
+  | Blue
+
+val color_of_yojson : Yojson.Safe.t -> color
+val yojson_of_color : color -> Yojson.Safe.t
+val color_of_json : string -> color
+val json_of_color : color -> string
+
+module Color : sig
+  type nonrec t = color
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+--- ml ---
+(* Auto-generated from "ocaml_private_public.atd" by atdml. *)
+[@@@ocaml.warning "-27-32-33-35-39"]
+
+(* Inlined runtime — no external dependency needed. *)
+module Atdml_runtime = struct
+  let bad_type expected_type x =
+    Printf.ksprintf failwith "expected %s, got: %s"
+      expected_type (Yojson.Safe.to_string x)
+
+  let bad_sum type_name x =
+    Printf.ksprintf failwith "invalid variant for type '%s': %s"
+      type_name (Yojson.Safe.to_string x)
+
+  let missing_field type_name field_name =
+    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+      field_name type_name
+
+  let bool_of_yojson = function
+    | `Bool b -> b
+    | x -> bad_type "bool" x
+
+  let yojson_of_bool b = `Bool b
+
+  let int_of_yojson = function
+    | `Int n -> n
+    | x -> bad_type "int" x
+
+  let yojson_of_int n = `Int n
+
+  let float_of_yojson = function
+    | `Float f -> f
+    | `Int n -> Float.of_int n
+    | x -> bad_type "float" x
+
+  let yojson_of_float f = `Float f
+
+  let string_of_yojson = function
+    | `String s -> s
+    | x -> bad_type "string" x
+
+  let yojson_of_string s = `String s
+
+  let unit_of_yojson = function
+    | `Null -> ()
+    | x -> bad_type "null" x
+
+  let yojson_of_unit () = `Null
+
+  let list_of_yojson f = function
+    | `List xs -> List.map f xs
+    | x -> bad_type "array" x
+
+  let yojson_of_list f xs = `List (List.map f xs)
+
+  let option_of_yojson f = function
+    | `String "None" -> None
+    | `List [`String "Some"; x] -> Some (f x)
+    | x -> bad_type "option" x
+
+  let yojson_of_option f = function
+    | None -> `String "None"
+    | Some x -> `List [`String "Some"; f x]
+
+  let nullable_of_yojson f = function
+    | `Null -> None
+    | x -> Some (f x)
+
+  let yojson_of_nullable f = function
+    | None -> `Null
+    | Some x -> f x
+
+  (* Returns true iff the list has strictly more than [n] elements,
+     without traversing past element n+1. *)
+  let rec list_length_gt n = function
+    | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
+    | [] -> false
+
+  let assoc_of_yojson f = function
+    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+    | x -> bad_type "object" x
+
+  let yojson_of_assoc f xs =
+    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+end
+
+type status = [
+  | `Active
+  | `Inactive
+]
+
+let status_of_yojson (x : Yojson.Safe.t) : status =
+  match x with
+  | `String "Active" -> `Active
+  | `String "Inactive" -> `Inactive
+  | _ -> Atdml_runtime.bad_sum "status" x
+
+let yojson_of_status (x : status) : Yojson.Safe.t =
+  match x with
+  | `Active -> `String "Active"
+  | `Inactive -> `String "Inactive"
+
+let status_of_json s =
+  status_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_status x =
+  Yojson.Safe.to_string (yojson_of_status x)
+
+module Status = struct
+  type nonrec t = status
+  let of_yojson = status_of_yojson
+  let to_yojson = yojson_of_status
+  let of_json = status_of_json
+  let to_json = json_of_status
+end
+
+type point = {
+  x: float;
+  y: float;
+}
+
+let create_point ~x ~y () : point =
+  { x; y }
+
+let point_of_yojson (x : Yojson.Safe.t) : point =
+  match x with
+  | `Assoc fields ->
+    (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
+       be unique). Below the threshold, List.assoc_opt returns the first binding;
+       above it, the hashtable returns the last. *)
+    let assoc_ =
+      if Atdml_runtime.list_length_gt 5 fields then
+        let tbl = Hashtbl.create 16 in
+        List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
+        (fun key -> Hashtbl.find_opt tbl key)
+      else (fun key -> List.assoc_opt key fields)
+    in
+    let x =
+      match assoc_ "x" with
+      | Some v -> Atdml_runtime.float_of_yojson v
+      | None -> Atdml_runtime.missing_field "point" "x"
+    in
+    let y =
+      match assoc_ "y" with
+      | Some v -> Atdml_runtime.float_of_yojson v
+      | None -> Atdml_runtime.missing_field "point" "y"
+    in
+    { x; y }
+  | _ -> Atdml_runtime.bad_type "point" x
+
+let yojson_of_point (x : point) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("x", Atdml_runtime.yojson_of_float x.x)];
+    [("y", Atdml_runtime.yojson_of_float x.y)];
+  ])
+
+let point_of_json s =
+  point_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_point x =
+  Yojson.Safe.to_string (yojson_of_point x)
+
+module Point = struct
+  type nonrec t = point
+  let create = create_point
+  let of_yojson = point_of_yojson
+  let to_yojson = yojson_of_point
+  let of_json = point_of_json
+  let to_json = json_of_point
+end
+
+type open_id = string
+
+let create_open_id (x : string) : open_id = x
+
+
+let open_id_of_yojson (x : Yojson.Safe.t) : open_id =
+  Atdml_runtime.string_of_yojson x
+
+let yojson_of_open_id (x : open_id) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_string x
+
+let open_id_of_json s =
+  open_id_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_open_id x =
+  Yojson.Safe.to_string (yojson_of_open_id x)
+
+module Open_id = struct
+  type nonrec t = open_id
+  let create = create_open_id
+  let of_yojson = open_id_of_yojson
+  let to_yojson = yojson_of_open_id
+  let of_json = open_id_of_json
+  let to_json = json_of_open_id
+end
+
+type id = string
+
+let create_id (x : string) : id = x
+
+
+let id_of_yojson (x : Yojson.Safe.t) : id =
+  Atdml_runtime.string_of_yojson x
+
+let yojson_of_id (x : id) : Yojson.Safe.t =
+  Atdml_runtime.yojson_of_string x
+
+let id_of_json s =
+  id_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_id x =
+  Yojson.Safe.to_string (yojson_of_id x)
+
+module Id = struct
+  type nonrec t = id
+  let create = create_id
+  let of_yojson = id_of_yojson
+  let to_yojson = yojson_of_id
+  let of_json = id_of_json
+  let to_json = json_of_id
+end
+
+type ids = id list
+
+let ids_of_yojson (x : Yojson.Safe.t) : ids =
+  (Atdml_runtime.list_of_yojson id_of_yojson) x
+
+let yojson_of_ids (x : ids) : Yojson.Safe.t =
+  (Atdml_runtime.yojson_of_list yojson_of_id) x
+
+let ids_of_json s =
+  ids_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_ids x =
+  Yojson.Safe.to_string (yojson_of_ids x)
+
+module Ids = struct
+  type nonrec t = ids
+  let of_yojson = ids_of_yojson
+  let to_yojson = yojson_of_ids
+  let of_json = ids_of_json
+  let to_json = json_of_ids
+end
+
+type color =
+  | Red
+  | Green
+  | Blue
+
+let color_of_yojson (x : Yojson.Safe.t) : color =
+  match x with
+  | `String "Red" -> Red
+  | `String "Green" -> Green
+  | `String "Blue" -> Blue
+  | _ -> Atdml_runtime.bad_sum "color" x
+
+let yojson_of_color (x : color) : Yojson.Safe.t =
+  match x with
+  | Red -> `String "Red"
+  | Green -> `String "Green"
+  | Blue -> `String "Blue"
+
+let color_of_json s =
+  color_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_color x =
+  Yojson.Safe.to_string (yojson_of_color x)
+
+module Color = struct
+  type nonrec t = color
+  let of_yojson = color_of_yojson
+  let to_yojson = yojson_of_color
+  let of_json = color_of_json
+  let to_json = json_of_color
+end
+

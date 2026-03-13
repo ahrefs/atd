@@ -128,7 +128,7 @@ let test_codegen_snapshot test_name ~atd_src =
 
 (* Run an end-to-end test that expects the code generator to fail.
    The error message (without the location prefix) is captured as a snapshot. *)
-let _test_codegen_error test_name ~atd_src =
+let test_codegen_error test_name ~atd_src =
   let file_name = make_filename_from_test_name test_name in
   Testo.create test_name
     ~checked_output:(Testo.stdout
@@ -626,6 +626,44 @@ type tagged = {
   value: ext.tag;
   label: base_types.label;
 }
+|};
+
+  test_codegen_error "ocaml private and public conflict"
+    ~atd_src:{|type t <ocaml public private> = int|};
+
+  (* Snapshot test for <ocaml private> and <ocaml public> annotations.
+     - primitive aliases are private by default
+     - <ocaml public> suppresses the default private on primitive aliases
+     - <ocaml private> adds private to any type (record, sum, alias) *)
+  test_codegen_snapshot "ocaml private public"
+    ~atd_src:{|
+(* Primitive alias: private by default *)
+type id = string
+
+(* Primitive alias: <ocaml public> suppresses private *)
+type open_id <ocaml public> = string
+
+(* Non-primitive alias: public by default, <ocaml private> makes it private *)
+type ids <ocaml private> = id list
+
+(* Record: private by default means nothing; <ocaml private> adds it *)
+type point <ocaml private> = {
+  x: float;
+  y: float;
+}
+
+(* Classic sum: <ocaml private> *)
+type color <ocaml private> = [
+  | Red
+  | Green
+  | Blue
+]
+
+(* Poly sum: <ocaml private> *)
+type status <ocaml private> = [
+  | Active
+  | Inactive
+] <ocaml repr="poly">
 |};
 ]
 

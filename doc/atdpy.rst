@@ -391,20 +391,39 @@ ATD import statements allow referencing types defined in other ATD files:
 
 .. code-block:: ocaml
 
-   import other_module
-   import foo.bar as baz
+   from other_module import some_type
+   from foo.bar as baz import some_type
 
-By default, ``import foo`` generates ``import foo`` in the Python output, and
-``import foo.bar as baz`` generates ``import foo.bar as baz``.
+Types must be listed explicitly in the import statement. The local module
+name is either the alias (if ``as`` is given) or the last component of the
+dotted path.
 
-The ``<python name="NAME">`` annotation on the module path controls the Python
-module name used in the generated import statement. This is useful when the ATD
-module name is a Python keyword (e.g. ``def``, ``if``) or otherwise conflicts
-with a Python identifier:
+By default, ``from foo import t`` generates ``import foo`` in the Python
+output and uses ``foo.SomeType`` in type references. ``from foo.bar as baz
+import t`` generates ``import foo.bar as baz``.
+
+If the local module name (alias or last path component) is a Python keyword,
+it is automatically suffixed with ``_``. For example:
 
 .. code-block:: ocaml
 
-   import def <python name="def_">
+   from if import tag
+
+generates:
+
+.. code-block:: python
+
+   import if_
+
+because ``if`` is a Python keyword.
+
+The ``<python name="NAME">`` annotation on the module path controls the Python
+module name used in the generated import statement. This is useful when the ATD
+module path component is a Python keyword:
+
+.. code-block:: ocaml
+
+   from def <python name="def_"> import some_type
 
 generates:
 
@@ -412,15 +431,15 @@ generates:
 
    import def_
 
-The ``<python name="NAME">`` annotation on the alias controls the local alias
-name used in the generated import statement:
+When both a path annotation and an alias are present, the alias (auto-escaped
+if needed) is used as the local name:
 
 .. code-block:: ocaml
 
-   import def <python name="def_"> as defs <python name="defs_mod">
+   from def <python name="def_"> as defs import some_type
 
 generates:
 
 .. code-block:: python
 
-   import def_ as defs_mod
+   import def_ as defs

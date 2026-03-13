@@ -14,7 +14,7 @@
 
 %token TYPE EQ OP_PAREN CL_PAREN OP_BRACK CL_BRACK OP_CURL CL_CURL
        SEMICOLON COMMA COLON STAR OF EOF BAR LT GT INHERIT
-       QUESTION TILDE DOT IMPORT AS
+       QUESTION TILDE DOT FROM IMPORT AS
 %token < string > STRING LIDENT UIDENT TIDENT
 
 %start module_
@@ -23,7 +23,7 @@
 
 module_:
 | an = annot;
-  imports = list(import);
+  imports = list(from_import);
   type_defs = list(type_def);
   EOF
                { let loc = ($startpos(an), $endpos(an)) in
@@ -68,9 +68,10 @@ lident_path:
 ;
 
 (* Allow some keywords as annotation field names for backward compatibility
-   with <dlang import="..."> *)
+   with <dlang import="..."> and <ocaml from="..."> *)
 lident_or_kw:
 | x = LIDENT  { x }
+| FROM        { "from" }
 | IMPORT      { "import" }
 | AS          { "as" }
 ;
@@ -100,27 +101,37 @@ type_def:
 | TYPE _e=error
     { syntax_error "Expecting type name" $startpos(_e) $endpos(_e) }
 
-import:
-| IMPORT;
+from_import:
+| FROM;
   path = separated_nonempty_list(DOT, LIDENT);
   annot = annot;
-  alias = alias;
+  alias = from_alias;
+  IMPORT;
+  types = separated_nonempty_list(COMMA, imported_type_item)
                      { let loc = ($startpos, $endpos) in
                        (Ast.create_import
-                          ~loc ~path ~annot ?alias () : import) }
-| IMPORT; _e=error
-    { syntax_error "Expecting ATD module name" $startpos(_e) $endpos(_e) }
+                          ~loc ~path ~annot ?alias ~types () : import) }
+| FROM; _e=error
+    { syntax_error "Expecting module name after 'from'"
+        $startpos(_e) $endpos(_e) }
 ;
 
-alias:
-| AS
-  name = LIDENT;
-  annot = annot;
-                     { Some (name, annot) }
-| AS; _e=error
-                     { syntax_error "Expecting ATD module name"
-                       $startpos(_e) $endpos(_e) }
+from_alias:
+| AS name = LIDENT   { Some name }
+| AS; _e=error       { syntax_error "Expecting module alias after 'as'"
+                         $startpos(_e) $endpos(_e) }
 |                    { None }
+;
+
+imported_type_item:
+| name = LIDENT; annot = annot
+    { ({ it_params = []; it_name = name; it_annot = annot } : imported_type) }
+| p = TIDENT; name = LIDENT; annot = annot
+    { ({ it_params = [p]; it_name = name; it_annot = annot } : imported_type) }
+| OP_PAREN; ps = type_var_list; CL_PAREN; name = LIDENT; annot = annot
+    { ({ it_params = ps; it_name = name; it_annot = annot } : imported_type) }
+| OP_PAREN; _e=error
+    { syntax_error "Expecting type variable list" $startpos(_e) $endpos(_e) }
 ;
 
 type_param:

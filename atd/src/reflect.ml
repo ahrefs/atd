@@ -17,8 +17,6 @@ let print_opt f buf o =
       None -> bprintf buf "None"
     | Some x -> bprintf buf "Some (%a)" f x
 
-let print_pair print0 print1 buf (x0, x1) =
-  bprintf buf "(%a, %a)" print0 x0 print1 x1
 
 let print_qstring buf s = bprintf buf "%S" s
 
@@ -132,13 +130,21 @@ and print_type_inst buf (loc, name, l) =
     (Print.tn name)
     (print_list print_type_expr) l
 
-let print_import buf ({ loc; path; alias; name; annot } : Ast.import) =
-  bprintf buf "{ loc = %a; path = %a; annot = %a; alias = %a; name = %S }"
+let print_imported_type buf (it : Ast.imported_type) =
+  bprintf buf "{ it_params = %a; it_name = %S; it_annot = %a }"
+    (print_list print_qstring) it.it_params
+    it.it_name
+    print_annot_list it.it_annot
+
+let print_import buf ({ loc; path; alias; name; annot; types } : Ast.import) =
+  bprintf buf "{ loc = %a; path = %a; annot = %a; alias = %a; name = %S; \
+                  types = %a }"
     print_loc loc
     (print_list print_qstring) path
     print_annot_list annot
-    (print_opt (print_pair print_qstring print_annot_list)) alias
+    (print_opt print_qstring) alias
     name
+    (print_list print_imported_type) types
 
 let rec print_type_def buf (x: Ast.type_def) =
   bprintf buf "{ loc = %a; name = %S; param = %a; annot = %a; \

@@ -99,27 +99,29 @@ let create_class_name env name =
   let preferred_id = to_camel_case name in
   env.create_variable preferred_id
 
+(* Python keywords that must not be used as identifiers.
+   https://docs.python.org/3/reference/lexical_analysis.html#keywords
+   https://docs.python.org/3/reference/lexical_analysis.html#soft-keywords
+*)
+let py_keywords = [
+  "False"; "await"; "else"; "import"; "pass";
+  "None"; "break"; "except"; "in"; "raise";
+  "True"; "class"; "finally"; "is"; "return";
+  "and"; "continue"; "for"; "lambda"; "try";
+  "as"; "def"; "from"; "nonlocal"; "while";
+  "assert"; "del"; "global"; "not"; "with";
+  "async"; "elif"; "if"; "or"; "yield";
+  "match"; "case"; "_";
+]
+
+(* Append '_' if the name is a Python keyword. *)
+let py_safe_name name =
+  if List.mem name py_keywords then name ^ "_" else name
+
 let init_env (imports : import list) : env =
   let local_module_names = List.map (fun (x : import) -> x.name) imports in
   let imports = Atd.Imports.load imports in
-  let keywords = [
-    (* Keywords
-       https://docs.python.org/3/reference/lexical_analysis.html#keywords
-    *)
-    "False"; "await"; "else"; "import"; "pass";
-    "None"; "break"; "except"; "in"; "raise";
-    "True"; "class"; "finally"; "is"; "return";
-    "and"; "continue"; "for"; "lambda"; "try";
-    "as"; "def"; "from"; "nonlocal"; "while";
-    "assert"; "del"; "global"; "not"; "with";
-    "async"; "elif"; "if"; "or"; "yield";
-
-    (* Soft keywords
-       https://docs.python.org/3/reference/lexical_analysis.html#soft-keywords
-    *)
-    "match"; "case"; "_";
-  ]
-  in
+  let keywords = py_keywords in
   (* Various variables used in the generated code.
      Lowercase variables in this list are superfluous as long as all generated
      variables either start with '_', 'atd_', or an uppercase letter.
@@ -530,7 +532,7 @@ let py_type_name env (name : string) =
 
 (* Python module name: what appears after 'import' in generated code.
    <python name="X"> on the path overrides the raw path (needed when the
-   ATD module path is a Python keyword, e.g. 'import def <python name="def_">') *)
+   ATD module path is a Python keyword, e.g. 'from def <python name="def_"> import ...') *)
 let py_module_of_import (x : A.import) =
   match Atd.Annot.get_opt_field
           ~parse:(fun s -> Some s) ~sections:["python"] ~field:"name" x.annot
@@ -539,23 +541,25 @@ let py_module_of_import (x : A.import) =
   | None -> String.concat "." x.path
 
 (* Python local name: used in generated code (e.g. 'local.ClassName').
-   Priority: <python name> on alias > alias name > <python name> on path > x.name *)
+   When an alias is given, it is auto-escaped if it's a Python keyword.
+   When no alias: use <python name> annotation on path, or last path component
+   (auto-escaped). *)
 let py_name_of_import (x : A.import) =
   match x.alias with
-  | Some (alias_name, alias_annot) ->
-      (match Atd.Annot.get_opt_field
-               ~parse:(fun s -> Some s) ~sections:["python"] ~field:"name" alias_annot
-       with
-       | Some name -> name
-       | None -> alias_name)
-  | None -> py_module_of_import x
+  | Some alias_name -> py_safe_name alias_name
+  | None ->
+      match Atd.Annot.get_opt_field
+              ~parse:(fun s -> Some s) ~sections:["python"] ~field:"name" x.annot
+      with
+      | Some name -> name
+      | None -> py_safe_name x.name
 
 (* Map an ATD type_name (possibly qualified) to a Python type string *)
 let py_type_name_of_name env loc (name : type_name) =
   let import, base_name = Atd.Imports.resolve env.imports loc name in
   match import with
   | None -> py_type_name env base_name
-  | Some import -> py_name_of_import import ^ "." ^ to_camel_case base_name
+  | Some (import, _) -> py_name_of_import import ^ "." ^ to_camel_case base_name
 
 (* Return the mypy type name for type expression that doesn't require
    us to create a new class (type aliases).
@@ -836,7 +840,7 @@ let rec json_reader env (e : type_expr) =
             | "bool" | "int" | "float" | "string" -> sprintf "_atd_read_%s" base_name
             | "abstract" -> "(lambda x: x)"
             | local_name -> sprintf "%s.from_json" (class_name env local_name))
-       | Some import ->
+       | Some (import, _) ->
            sprintf "%s.%s.from_json" (py_name_of_import import) (to_camel_case base_name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

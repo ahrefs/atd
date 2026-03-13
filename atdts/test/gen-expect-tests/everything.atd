@@ -2,7 +2,7 @@
    ATD type definitions for testing their translation to TypeScript.
 *)
 
-import ext_types
+from ext_types import tag
 
 (* Testing raw JSON. Should map to type 'any'. *)
 type anything = abstract

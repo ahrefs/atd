@@ -212,16 +212,38 @@ let format ?(format_annot = default_format_annot) any =
     | Inherit (_, t) -> format_inherit t
   in
 
-  let format_import ({ loc = _; path; alias; name; annot } : import) =
+  let format_imported_type (it : imported_type) =
+    let name_atom =
+      match it.it_params with
+      | [] -> make_atom it.it_name
+      | [p] -> horizontal_sequence [make_atom ("'" ^ p); make_atom it.it_name]
+      | ps ->
+          let params =
+            Easy_format.List (
+              ("(", ",", ")", plist),
+              List.map (fun p -> make_atom ("'" ^ p)) ps)
+          in
+          horizontal_sequence [params; make_atom it.it_name]
+    in
+    if it.it_annot = [] then name_atom
+    else append_annots it.it_annot name_atom
+  in
+
+  let format_import ({ loc = _; path; alias; annot; types; _ } : import) =
     let opt_alias =
       match alias with
       | None -> []
-      | Some (local_name, an) ->
-          [append_annots an
-            (make_atom ("as " ^ local_name))]
+      | Some local_name -> [make_atom ("as " ^ local_name)]
     in
-    make_atom "import" ::
-    (append_annots annot (make_atom (String.concat "." path))) :: opt_alias
+    let type_list =
+      Easy_format.List (
+        ("", ",", "", lplist),
+        List.map format_imported_type types)
+    in
+    make_atom "from" ::
+    (append_annots annot (make_atom (String.concat "." path))) ::
+    opt_alias @
+    [make_atom "import"; type_list]
     |> horizontal_sequence
   in
 
@@ -261,6 +283,7 @@ let format ?(format_annot = default_format_annot) any =
     match x with
     | Module x -> format_module x
     | Import x -> format_import x
+    | Imported_type x -> format_imported_type x
     | Type_def x -> format_type_def x
     | Type_expr x -> format_type_expr x
     | Variant x -> format_variant x

@@ -38,33 +38,46 @@ and module_head = loc * annot
     (** The head of an ATD file is just a list of annotations. *)
 
 (** Require the existence of another ATD module.
-    The concrete syntax is [import external_name as local_name].
-    The annotations specify language-specific options such as where to
-    find the implementation or alternate names e.g.
-    [import def <python name="def_"> as defs <ocaml name="Definitions">]
+    The concrete syntax is [from module.path [as alias] import type1, type2, ...].
 *)
-and import = private {
+and import = {
   loc: loc;
 
   path: string list;
     (** The full name of the ATD module.
         Unless an alias is specified, the local name of the module is
-        the last component e.g. [import foo.bar] imports module [foo.bar]
+        the last component e.g. [from foo.bar import t] imports module [foo.bar]
         which is known locally as just [bar]. *)
 
   annot: annot;
 
-  alias: (string * annot) option;
+  alias: string option;
     (** The local name used to identify the imported ATD module, overriding
         the default name.
         Typically, this is an abbreviation as in
-        [import bubble_gum_factory_api as bg].
+        [from bubble_gum_factory_api as bg import ...].
     *)
 
   name: string;
     (** The local name of the module. It's the value of [alias] if there is
         one, otherwise it's the last component of [path].
         It's a single path component, i.e. it doesn't contain periods. *)
+
+  types: imported_type list;
+    (** The list of types explicitly imported from the module. *)
+}
+
+and imported_type = {
+  it_params: string list;
+    (** Type parameter names, e.g. ["a"] for ['a t] or ["a";"b"] for [('a,'b) t].
+        Empty for non-parametric types. Used only to enforce arity checking
+        within the current ATD file. *)
+
+  it_name: string;
+    (** The name of the type in the external module. *)
+
+  it_annot: annot;
+    (** Per-type annotation, e.g. [<ocaml name="if_2">]. *)
 }
 
 (** A type definition. *)
@@ -197,6 +210,7 @@ and field =
 type any =
   | Module of module_
   | Import of import
+  | Imported_type of imported_type
   | Type_def of type_def
   | Type_expr of type_expr
   | Variant of variant
@@ -212,7 +226,8 @@ val create_import :
   loc:loc ->
   path:string list ->
   annot:annot ->
-  ?alias:(string * annot) ->
+  ?alias:string ->
+  types:imported_type list ->
   unit -> import
 
 val loc_of_type_expr : type_expr -> loc
@@ -263,6 +278,7 @@ val map_all_annot : (annot -> annot) -> module_ -> module_
 val visit :
   ?module_: ((module_ -> unit) -> module_ -> unit) ->
   ?import: ((import -> unit) -> import -> unit) ->
+  ?imported_type: ((imported_type -> unit) -> imported_type -> unit) ->
   ?type_def: ((type_def -> unit) -> type_def -> unit) ->
   ?type_expr: ((type_expr -> unit) -> type_expr -> unit) ->
   ?variant: ((variant -> unit) -> variant -> unit) ->
@@ -297,6 +313,7 @@ v}
 val fold_annot :
   ?module_: (module_ -> annot -> 'a -> 'a) ->
   ?import: (import -> annot -> 'a -> 'a) ->
+  ?imported_type: (imported_type -> annot -> 'a -> 'a) ->
   ?type_def: (type_def -> annot -> 'a -> 'a) ->
   ?type_expr: (type_expr -> annot -> 'a -> 'a) ->
   ?variant: (variant -> annot -> 'a -> 'a) ->
@@ -320,7 +337,7 @@ val extract_type_names :
   type_expr -> type_name list
   (**
      Extract all the type names occurring in a type expression
-     under [`Name], without duplicates.
+     under [Name], without duplicates.
      @param ignorable specifies a list of type names to exclude from the result
   *)
 

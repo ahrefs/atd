@@ -582,8 +582,8 @@ module Module = struct
 end
 |})]
     ~atd_src:{|
-import base_types
-import long.module.path as ext
+from base_types import person_name, label
+from long.module.path as ext import tag
 
 type item = {
   name: base_types.person_name;
@@ -613,9 +613,9 @@ type t = {
      correct OCaml module references. *)
   test_codegen_snapshot "imports"
     ~atd_src:{|
-import base_types
+from base_types import person_name, label
 
-import long.module.path as ext
+from long.module.path as ext import tag
 
 type greeting = {
   name: base_types.person_name;

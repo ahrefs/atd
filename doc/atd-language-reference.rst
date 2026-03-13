@@ -109,7 +109,7 @@ ATD supports:
 * inheritance for both records and sum types;
 * abstract types;
 * arbitrary annotations;
-* cross-module type references via ``import`` statements.
+* cross-module type references via ``from ... import`` statements.
 
 
 ATD by design does not support:
@@ -421,7 +421,7 @@ discarding whitespace and comments.
 
               \| ``type`` | ``of`` | ``inherit``
 
-              \| ``import`` | ``as``
+              \| ``from`` | ``import`` | ``as``
    ============= ======================================== ====================
 
 
@@ -433,8 +433,17 @@ Grammar
    =============== ======================================== =================
         module ::= annot* import* typedef*                  entry point
 
-        import ::= ``import`` lident-path annot?            import
-                   (``as`` lident annot?)?                  declaration
+        import ::= ``from`` lident-path annot?              import declaration
+                   (``as`` lident)?
+                   ``import`` imported-type
+                   (``,`` imported-type)*
+
+imported-type ::= params? lident annot?                  imported type item
+
+        params ::= tident                                   one type parameter
+
+                \| ``(`` tident (``,`` tident)+ ``)``       two or more type
+                                                           parameters
 
    lident-path ::= lident (```.``` lident)*
 
@@ -491,39 +500,40 @@ Grammar
 Import declarations
 ^^^^^^^^^^^^^^^^^^^
 
-An ATD file may import other ATD modules using ``import`` declarations.
-Import declarations must appear after any top-level annotations and before
-any type definitions.
+An ATD file may import individual types from other ATD modules using
+``from ... import`` declarations. Import declarations must appear after any
+top-level annotations and before any type definitions.
 
 Syntax::
 
-  import module.path <annotations> as alias <annotations>
+  from module.path <annotations> [as alias] import type1 [<annots>], type2 [<annots>], ...
 
 The ``as`` clause is optional. Without it, the local name of the imported
-module is the last component of the dotted path (e.g. ``import foo.bar``
+module is the last component of the dotted path (e.g. ``from foo.bar import t``
 binds the local name ``bar``).
+
+Each imported type must be listed explicitly. Parameterized types include
+their arity as type variable placeholders (e.g. ``'a t`` or ``('a, 'b) pair``);
+these are used only to check that the arity is consistent within the
+importing file.
 
 Type names from an imported module are referenced using dot notation:
 ``alias.typename`` (or ``lastcomponent.typename`` when no alias is given).
-For example, if a module ``types`` is imported, the type ``date`` from
-that module is written ``types.date`` in type expressions.
 
-Annotations on the path or alias allow language-specific backends to
-override the module name used in generated code. The annotation
-``<ocaml name="...">`` (or the equivalent for another target language)
-on the path controls how the module is referenced in generated output,
-while the same annotation on the ``as`` clause controls the local alias
-name used in the generated code.
+Annotations on the ``from`` path allow language-specific backends to override
+the module name used in generated code. Annotations on individual imported
+types allow further per-type overrides (e.g. ``<ocaml name="...">``) when the
+type name would be a reserved word in the target language.
 
 Examples:
 
 .. code-block:: ocaml
 
   (* Simple import: local name is "common" *)
-  import mylib.common
+  from mylib.common import date, timestamp
 
   (* Import with an alias *)
-  import mylib.common as c
+  from mylib.common as c import date, timestamp
 
   (* Using an imported type in a definition *)
   type event = {
@@ -533,20 +543,11 @@ Examples:
 
 .. code-block:: ocaml
 
-  (* Language-specific name annotation on the path *)
-  import mylib.common <ocaml name="Mylib_common">
+  (* Language-specific name annotation on the module *)
+  from mylib.common <ocaml name="Mylib_common"> import date
 
-  (* Language-specific name annotation on the alias *)
-  import mylib.common as c <ocaml name="Common">
-
-.. warning::
-
-   Dotted module paths (e.g. ``import foo.bar.baz``) are an experimental
-   feature. Each code generator maps them to file paths in its own way and
-   there is currently no guarantee of consistent behavior across backends.
-   When possible, prefer single-component module names (e.g. ``import baz``
-   or ``import foo as bar``). Support for dotted module paths may be removed
-   in a future release.
+  (* Parametrized type import — arity is enforced within this file *)
+  from mylib.containers import 'a list_ne, ('a, 'b) pair
 
 Predefined type names
 ^^^^^^^^^^^^^^^^^^^^^

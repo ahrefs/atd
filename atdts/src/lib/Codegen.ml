@@ -607,26 +607,18 @@ let ts_type_name env (name : string) =
   | user_defined -> type_name env user_defined
 
 let ts_name_of_import (x : A.import) =
-  match x.alias with
-  | Some (alias_name, alias_annot) ->
-      (match Atd.Annot.get_opt_field
-               ~parse:(fun s -> Some s) ~sections:["ts"] ~field:"name" alias_annot
-       with
-       | Some name -> name
-       | None -> alias_name)
-  | None ->
-      (match Atd.Annot.get_opt_field
-               ~parse:(fun s -> Some s) ~sections:["ts"] ~field:"name" x.annot
-       with
-       | Some name -> name
-       | None -> x.name)
+  match Atd.Annot.get_opt_field
+          ~parse:(fun s -> Some s) ~sections:["ts"] ~field:"name" x.annot
+  with
+  | Some name -> name
+  | None -> x.name
 
 (* Map an ATD type_name (possibly qualified) to a TypeScript type string *)
 let ts_type_name_of_name env loc (name : type_name) =
   let import, base_name = Atd.Imports.resolve env.imports loc name in
   match import with
   | None -> ts_type_name env base_name
-  | Some import -> sprintf "%s.%s" (ts_name_of_import import) (to_camel_case base_name)
+  | Some (import, _) -> sprintf "%s.%s" (ts_name_of_import import) (to_camel_case base_name)
 
 let rec type_name_of_expr env (e : type_expr) : string =
   match e with
@@ -748,7 +740,7 @@ let rec json_reader env e =
             | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_read_%s" base_name
             | "abstract" -> "((x: any, context): any => x)"
             | local_name -> reader_name env local_name)
-       | Some import ->
+       | Some (import, _) ->
            sprintf "%s.read%s" (ts_name_of_import import) (to_camel_case base_name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"
@@ -801,7 +793,7 @@ let rec json_writer env e =
             | "bool" | "int" | "float" | "string" | "unit" -> sprintf "_atd_write_%s" base_name
             | "abstract" -> "((x: any, context): any => x)"
             | local_name -> writer_name env local_name)
-       | Some import ->
+       | Some (import, _) ->
            sprintf "%s.write%s" (ts_name_of_import import) (to_camel_case base_name))
   | Name (loc, _, _) -> not_implemented loc "parametrized types"
   | Tvar (loc, _) -> not_implemented loc "type variables"

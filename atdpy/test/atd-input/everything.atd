@@ -3,8 +3,8 @@
 <python json_py.text="from dataclasses import dataclass">
 <doc text="User-inserted doc">
 
-import def <python name="def_"> as class <python name="class_">
-import if <python name="if_">
+from def <python name="def_"> as class import priority
+from if <python name="if_"> import tag
 
 type kind <doc text="Definition-level doc"> = [
   | Root (* class name conflict *)

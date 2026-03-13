@@ -7,6 +7,14 @@ open Atd.Import
 open Mapping
 module Json = Atd.Json
 
+let check_no_imports (module_ : Atd.Ast.module_) =
+  match module_.imports with
+  | [] -> ()
+  | x :: _ ->
+      Atd.Ast.error_at x.loc
+        "atdgen does not support 'from ... import' statements.\n\
+         Please use atdml instead, which supports cross-module type references."
+
 type 'a expr = (Ocaml.Repr.t, 'a) Mapping.mapping
 type 'a def = (Ocaml.Repr.t, 'a) Mapping.def
 type 'a grouped_defs = (bool * 'a def list) list

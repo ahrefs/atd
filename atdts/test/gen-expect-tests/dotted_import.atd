@@ -1,4 +1,4 @@
-import long.module.path
+from long.module.path import tag
 
 (* The local name of the imported module is "path" (the last component).
    In the TypeScript output, it is imported from "./long/module/path". *)

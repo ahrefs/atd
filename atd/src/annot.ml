@@ -151,6 +151,7 @@ let create_id =
 type node_kind =
   | Module_head
   | Import
+  | Imported_type
   | Type_def
   | Type_expr
   | Variant
@@ -170,6 +171,7 @@ let validate_section sec root =
   (* split fields by location where they may occur *)
   let in_module_head = ref [] in
   let in_import = ref [] in
+  let in_imported_type = ref [] in
   let in_type_def = ref [] in
   let in_type_expr = ref [] in
   let in_variant = ref [] in
@@ -181,6 +183,7 @@ let validate_section sec root =
       match kind with
       | Module_head -> in_module_head
       | Import -> in_import
+      | Imported_type -> in_imported_type
       | Type_def -> in_type_def
       | Type_expr -> in_type_expr
       | Variant -> in_variant
@@ -207,6 +210,7 @@ let validate_section sec root =
   Ast.fold_annot
     ~module_:(check in_module_head)
     ~import:(check in_import)
+    ~imported_type:(check in_imported_type)
     ~type_def:(check in_type_def)
     ~type_expr:(check in_type_expr)
     ~variant:(check in_variant)

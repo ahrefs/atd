@@ -103,6 +103,7 @@ rule token = parse
   | "?"      { QUESTION }
   | "~"      { TILDE }
   | "."      { DOT }
+  | "from"   { FROM }
   | "import" { IMPORT }
   | "as"     { AS }
   | "type"   { TYPE }

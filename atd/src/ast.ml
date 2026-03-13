@@ -34,9 +34,16 @@ and type_def = {
 and import = {
   loc: loc;
   path: string list;
-  annot: annot;
-  alias: (string * annot) option;
-  name: string;
+  annot: annot;          (* module-level annotation, e.g. <ocaml name="Format_"> *)
+  alias: string option;  (* optional "as name"; no annotation on the alias *)
+  name: string;          (* local reference name: alias if given, else last path component *)
+  types: imported_type list;  (* explicitly imported types *)
+}
+
+and imported_type = {
+  it_params: string list;  (* [] for non-parametric; ["a"] for 'a t; ["a";"b"] for ('a,'b) t *)
+  it_name: string;
+  it_annot: annot;         (* per-type annotation, e.g. <ocaml name="if_2"> *)
 }
 
 and type_param = string list
@@ -80,6 +87,7 @@ and field =
 type any =
   | Module of module_
   | Import of import
+  | Imported_type of imported_type
   | Type_def of type_def
   | Type_expr of type_expr
   | Variant of variant
@@ -128,7 +136,9 @@ and amap_cell f (loc, x, a) =
   (loc, amap_type_expr f x, f a)
 
 let amap_import f (x : import) =
-  { x with annot = f x.annot }
+  { x with
+    annot = f x.annot;
+    types = List.map (fun it -> { it with it_annot = f it.it_annot }) x.types }
 
 let amap_type_def f (x : type_def) : type_def =
   { x with value = amap_type_expr f x.value }
@@ -204,6 +214,7 @@ let map_annot f = function
 type visitor_hooks = {
   module_: (module_ -> unit) -> module_ -> unit;
   import: (import -> unit) -> import -> unit;
+  imported_type: (imported_type -> unit) -> imported_type -> unit;
   type_def: (type_def -> unit) -> type_def -> unit;
   type_expr: (type_expr -> unit) -> type_expr -> unit;
   variant: (variant -> unit) -> variant -> unit;
@@ -251,8 +262,13 @@ and visit_cell hooks x =
   let cont (loc, x, a) = visit_type_expr hooks x in
   hooks.cell cont x
 
+let visit_imported_type hooks x =
+  hooks.imported_type (fun _ -> ()) x
+
 let visit_import hooks x =
-  hooks.import (fun _ -> ()) x
+  hooks.import (fun x ->
+    List.iter (visit_imported_type hooks) x.types
+  ) x
 
 let visit_type_def hooks (x : type_def) =
   let cont x = visit_type_expr hooks x.value in
@@ -268,6 +284,7 @@ let visit_module hooks (x : module_) =
 let visit
   ?(module_ = fun cont x -> cont x)
   ?(import = fun cont x -> cont x)
+  ?(imported_type = fun cont x -> cont x)
   ?(type_def = fun cont x -> cont x)
   ?(type_expr = fun cont x -> cont x)
   ?(variant = fun cont x -> cont x)
@@ -277,6 +294,7 @@ let visit
   let hooks : visitor_hooks = {
     module_;
     import;
+    imported_type;
     type_def;
     type_expr;
     variant;
@@ -287,6 +305,7 @@ let visit
     match any with
     | Module x -> visit_module hooks x
     | Import x -> visit_import hooks x
+    | Imported_type x -> visit_imported_type hooks x
     | Type_def x -> visit_type_def hooks x
     | Type_expr x -> visit_type_expr hooks x
     | Variant x -> visit_variant hooks x
@@ -298,6 +317,7 @@ let visit
 let fold_annot
   ?module_
   ?import
+  ?imported_type
   ?type_def
   ?type_expr
   ?variant
@@ -318,6 +338,7 @@ let fold_annot
       ~module_:(fold module_
                       (fun { module_head = (_, an); _ } -> an))
       ~import:(fold import (fun (x : import) -> x.annot))
+      ~imported_type:(fold imported_type (fun (x : imported_type) -> x.it_annot))
       ~type_def:(fold type_def (fun (x : type_def) -> x.annot))
       ~type_expr:(fold type_expr annot_of_type_expr)
       ~variant:(fold variant annot_of_variant)
@@ -521,17 +542,18 @@ let rec shallow_unwrap = function
 let remove_wrap_constructs (m : module_) : module_ =
   Map.module_ { type_expr = shallow_unwrap } m
 
-let create_import ~loc ~path ~annot ?alias () : import =
+let create_import ~loc ~path ~annot ?alias ~types () : import =
   let name =
     match List.rev path, alias with
     | [], _ -> invalid_arg "Ast.create_import: empty path"
     | name :: _, None -> name
-    | _ :: _, Some (override, _an) -> override
+    | _ :: _, Some override -> override
   in
   {
     loc;
     path;
+    annot;
     alias;
     name;
-    annot;
+    types;
   }

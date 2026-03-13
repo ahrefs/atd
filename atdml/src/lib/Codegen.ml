@@ -50,7 +50,8 @@ let annot_schema_ocaml : Atd.Annot.schema_section = {
     Type_expr, "t";            (* <ocaml t="..."> on a wrap: explicit OCaml type *)
     Type_expr, "wrap";         (* <ocaml wrap="..."> on a wrap: deserialize function *)
     Type_expr, "unwrap";       (* <ocaml unwrap="..."> on a wrap: serialize function *)
-    Import, "name";       (* <ocaml name="..."> on an import: override OCaml alias *)
+    Import, "name";            (* <ocaml name="..."> on an import: override OCaml alias *)
+    Imported_type, "name";    (* <ocaml name="..."> on an imported type: override type name *)
     Variant, "name";      (* <ocaml name="..."> on a variant constructor *)
     Field, "default";     (* <ocaml default="..."> on a with-default field *)
     Field, "name";        (* <ocaml name="..."> on a field: not supported, warns *)
@@ -100,21 +101,13 @@ let ocaml_module_of_import (x : A.import) =
   String.concat "." (List.map String.capitalize_ascii x.path)
 
 (* The OCaml alias to use in the .ml file for an import.
-   Priority: <ocaml name> on alias > alias name > <ocaml name> on path > x.name *)
+   Priority: <ocaml name> on path annot > alias name > last path component *)
 let ocaml_name_of_import (x : A.import) =
-  match x.alias with
-  | Some (alias_name, alias_annot) ->
-      (match Atd.Annot.get_opt_field
-               ~parse:(fun s -> Some s) ~sections:["ocaml"] ~field:"name" alias_annot
-       with
-       | Some name -> name
-       | None -> String.capitalize_ascii alias_name)
-  | None ->
-      (match Atd.Annot.get_opt_field
-               ~parse:(fun s -> Some s) ~sections:["ocaml"] ~field:"name" x.annot
-       with
-       | Some name -> name
-       | None -> String.capitalize_ascii x.name)
+  match Atd.Annot.get_opt_field
+          ~parse:(fun s -> Some s) ~sections:["ocaml"] ~field:"name" x.annot
+  with
+  | Some name -> name
+  | None -> String.capitalize_ascii x.name
 
 type env = {
   tr: string -> string;      (* translate local ATD type name → OCaml identifier *)
@@ -405,7 +398,7 @@ let rec type_expr_str env (e : type_expr) : string =
       let (import_opt, base_name) = Atd.Imports.resolve env.imports loc name in
       (match import_opt with
        | None -> assert false (* already handled by TN [name] cases above *)
-       | Some import ->
+       | Some (import, _) ->
            let ocaml_mod = env.ocaml_mod_of_import import in
            match params with
            | [] -> sprintf "%s.%s" ocaml_mod base_name
@@ -449,7 +442,7 @@ let rec reader_expr env (e : type_expr) : string =
       let (import_opt, base_name) = Atd.Imports.resolve env.imports loc name in
       (match import_opt with
        | None -> assert false
-       | Some import ->
+       | Some (import, _) ->
            let ocaml_mod = env.ocaml_mod_of_import import in
            let fn = sprintf "%s.%s" ocaml_mod (of_yojson_name base_name) in
            (match params with
@@ -511,7 +504,7 @@ let rec writer_expr env (e : type_expr) : string =
       let (import_opt, base_name) = Atd.Imports.resolve env.imports loc name in
       (match import_opt with
        | None -> assert false
-       | Some import ->
+       | Some (import, _) ->
            let ocaml_mod = env.ocaml_mod_of_import import in
            let fn = sprintf "%s.%s" ocaml_mod (yojson_of_name base_name) in
            (match params with

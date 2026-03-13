@@ -8,6 +8,10 @@ type target =
   | Files of string
   | Stdout
 
+val check_no_imports : Atd.Ast.module_ -> unit
+  (** Raise [Atd.Ast.Atd_error] if the module contains any import statements.
+      atdgen does not support cross-module type references. *)
+
 val get_full_type_name : (_, _) Mapping.def -> string
 
 val is_exportable : (_, _) Mapping.def -> bool

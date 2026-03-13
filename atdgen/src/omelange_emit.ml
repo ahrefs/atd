@@ -729,6 +729,7 @@ let make_ocaml_files
           ?pos_fname ?pos_lnum
           stdin
   in
+  Ox_emit.check_no_imports module_;
   let head = module_.Atd.Ast.module_head in
   let m0 = module_.Atd.Ast.type_defs in
 

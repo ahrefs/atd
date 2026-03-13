@@ -1,5 +1,5 @@
 (*
-   Manage external definitions via 'import' statements.
+   Manage external definitions via 'from ... import' statements.
 *)
 
 open Printf
@@ -16,9 +16,9 @@ module PathTbl = Hashtbl.Make (struct
 end)
 
 let load imports =
-  (* keep track of full module names that were already loaded *)
+  (* keep track of full module paths that were already loaded *)
   let globals : unit PathTbl.t = PathTbl.create 16 in
-  (* our main table *)
+  (* our main table: local module name -> import *)
   let locals = Hashtbl.create 100 in
   imports
   |> List.iter (fun (x : import) ->
@@ -26,20 +26,35 @@ let load imports =
     if Hashtbl.mem locals name then
       error_at x.loc
         (sprintf
-{|Local module name %s is shadowing another module of the same local name.
+{|Local module name '%s' is already used by another import.
 Consider using 'as' to give it a non-conflicting name.|}
           name
         )
     else if PathTbl.mem globals x.path then
       error_at x.loc
-        (sprintf "Module %s is loaded twice." (String.concat "." x.path))
-    else (
+        (sprintf "Module '%s' is imported twice." (String.concat "." x.path))
+    else begin
+      (* Check for duplicate type names within this import statement. *)
+      let seen_types = Hashtbl.create 16 in
+      List.iter (fun (it : imported_type) ->
+        if Hashtbl.mem seen_types it.it_name then
+          error_at x.loc
+            (sprintf "Type '%s' appears more than once in the import of module '%s'."
+               it.it_name (String.concat "." x.path))
+        else
+          Hashtbl.add seen_types it.it_name ()
+      ) x.types;
       Hashtbl.add locals name x;
       PathTbl.add globals x.path ()
-    )
+    end
   );
   locals
 
+(* Resolve a qualified or unqualified type name.
+   Returns (Some (import, imported_type), base_name) for qualified names
+   that were explicitly imported, or (None, base_name) for unqualified names.
+   Validation that qualified names are in the import list is done separately
+   by check_type_refs; this function is used during codegen after validation. *)
 let resolve locals loc (x : type_name) =
   match Type_name.split x with
   | None, base_name -> None, base_name
@@ -47,13 +62,55 @@ let resolve locals loc (x : type_name) =
       (match Hashtbl.find_opt locals module_name with
        | None ->
            error_at loc (sprintf
-{|Unknown module name %s.
-Hint:
-  import %s
-or
-  import xxx as %s
-|}
-             module_name module_name module_name)
+{|Unknown module name '%s'.
+Hint: add 'from %s import %s' at the top of the file.|}
+             module_name module_name base_name)
        | Some import ->
-           Some import, base_name
+           let it_opt =
+             List.find_opt (fun (it : imported_type) -> it.it_name = base_name)
+               import.types
+           in
+           Some (import, it_opt), base_name
       )
+
+(* Walk all type expressions in type_defs and verify that:
+   - every qualified type reference 'a.b' has module 'a' in the import table;
+   - type 'b' was listed in the 'from a import ...' statement;
+   - the arity used matches the declared arity. *)
+let check_type_refs locals type_defs =
+  List.iter (fun (def : type_def) ->
+    let check_expr type_expr () =
+      match type_expr with
+      | Name (loc, (_, TN path, args), _) ->
+          (match Type_name.split (TN path) with
+           | None, _ -> ()   (* unqualified: local type, fine *)
+           | Some module_name, base_name ->
+               (match Hashtbl.find_opt locals module_name with
+                | None ->
+                    error_at loc (sprintf
+{|Unknown module name '%s'.
+Hint: add 'from %s import %s' at the top of the file.|}
+                      module_name module_name base_name)
+                | Some import ->
+                    (match List.find_opt (fun (it : imported_type) ->
+                               it.it_name = base_name) import.types with
+                     | None ->
+                         error_at loc (sprintf
+{|Type '%s' was not imported from module '%s'.
+Hint: add '%s' to the import list: from %s import ..., %s|}
+                           base_name module_name
+                           base_name (String.concat "." import.path) base_name)
+                     | Some it ->
+                         let declared_arity = List.length it.it_params in
+                         let used_arity = List.length args in
+                         if declared_arity <> used_arity then
+                           error_at loc (sprintf
+{|Type '%s.%s' was imported with arity %d but used with arity %d.|}
+                             module_name base_name declared_arity used_arity)
+                    )
+               )
+          )
+      | _ -> ()
+    in
+    ignore (fold check_expr def.value ())
+  ) type_defs

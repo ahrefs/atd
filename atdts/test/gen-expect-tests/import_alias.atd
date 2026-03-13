@@ -1,4 +1,4 @@
-import ext_types <ts name="etypes">
+from ext_types <ts name="etypes"> import tag
 
 type item = {
   tag: ext_types.tag;

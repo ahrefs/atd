@@ -813,39 +813,45 @@ type ``Yojson.Safe.t -> Yojson.Safe.t``.
 Import declarations
 -------------------
 
-Atdml supports ATD ``import`` declarations that reference types defined in
-other ATD modules.
+Atdml supports ATD ``from ... import`` declarations that reference individual
+types defined in other ATD modules.
 
 Syntax
 ^^^^^^
 
 .. code:: ocaml
 
-    import module_name
-    import long.module.path as alias
+    from module_name import type1, type2, ...
+    from long.module.path as alias import 'a param_type, plain_type
+
+Each type to be used must be listed explicitly in the import statement.
+Parameterized types include their arity as type variable placeholders
+(e.g. ``'a t`` or ``('a, 'b) pair``); these enforce that the same arity
+is used consistently throughout the importing file.
 
 The imported module maps to an OCaml module. For a simple import like
-``import base_types``, atdml expects an OCaml module ``Base_types`` (the
-last component of the path, capitalised) to be available in scope.
+``from base_types import person_name``, atdml expects an OCaml module
+``Base_types`` (the last component of the path, capitalised) to be
+available in scope.
 
-For a dotted path like ``import long.module.path``, atdml expects the
-OCaml module path ``Long.Module.Path`` to be in scope.
+For a dotted path like ``from long.module.path import tag``, atdml expects
+the OCaml module path ``Long.Module.Path`` to be in scope.
 
-For an alias like ``import long.module.path as ext``, the generated code
-uses ``Ext`` as the local module name and wraps it with
-``module Ext = Long.Module.Path`` in the generated ``.ml`` file. The
-generated ``.mli`` uses the full ``Long.Module.Path`` name directly.
+For an alias like ``from long.module.path as ext import tag``, the generated
+code uses ``Ext`` as the local module name in the ``.ml`` file (with
+``module Ext = Long.Module.Path``) while the generated ``.mli`` uses the
+full ``Long.Module.Path`` name directly.
 
 Language-specific name annotation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``<ocaml name="M">`` annotation can override the OCaml module name
-used for the import, on either the path or the alias:
+The ``<ocaml name="M">`` annotation on the module path overrides the OCaml
+module name used in generated code:
 
 .. code:: ocaml
 
-    import foo <ocaml name="Foo_module">
-    import long.path as ext <ocaml name="External">
+    from foo <ocaml name="Foo_module"> import bar
+    from long.path as ext <ocaml name="External"> import baz
 
 Example
 ^^^^^^^
@@ -860,7 +866,7 @@ And ``greeting.atd``:
 
 .. code:: ocaml
 
-    import base_types
+    from base_types import person_name
 
     type greeting = {
       name: base_types.person_name;

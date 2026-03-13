@@ -28,25 +28,34 @@ unreleased
   `import long.module.path` generates `import * as path from "./long/module/path"`
   rather than `"./path"`.
 
-* ATD: Import statements now support aliases and per-component language
-  annotations. The full syntax is:
+* ATD: New `from ... import` syntax replaces the old `import` statement.
+  Types to be used must be listed explicitly; the full syntax is:
 
-      import module.path <path-annotations> as alias <alias-annotations>
+      from module.path <annots> [as alias] import type1 <annots>, type2, ...
 
-  The `path-annotations` control language-specific details for the module path
-  (e.g. `<python name="def_">` to rename a module that collides with a Python
-  keyword). The `alias-annotations` control the local name used in the
-  generated code (e.g. `<ocaml name="Definitions">`). If no alias is given,
-  the local name defaults to the last component of the dotted path. Example:
+  Key properties:
+  - Types must be listed explicitly (e.g. `from mylib import date, status`).
+  - Parameterized types declare their arity: `from mylib import 'a list_ne`.
+  - The arity of each imported type is enforced at all use-sites within the
+    importing file.
+  - Aliases are plain names without annotations: `from foo as f import t`.
+  - Language-specific name annotations go on the module path:
+    `<python name="...">` for atdpy, `<ts name="...">` for atdts,
+    `<ocaml name="...">` for atdml.
+  - atdpy: alias names that are Python keywords are automatically suffixed
+    with `_` (e.g. alias `class` → `class_` in generated code).
+  - atdgen does not support import statements; use atdml instead.
 
-      (* Import 'def' module as 'def_' in Python, aliased locally as 'class_' *)
-      import def <python name="def_"> as class <python name="class_">
+  Examples:
 
-      (* Import 'long.module.path', aliased as 'ext' in all languages *)
-      import long.module.path as ext
+      (* Import specific types from a module *)
+      from mylib.common import date, status
 
-  Supported language-specific name annotations: `<python name="...">` for
-  atdpy, `<ts name="...">` for atdts, `<ocaml name="...">` for atdml.
+      (* Import with alias *)
+      from long.module.path as ext import tag
+
+      (* Override OCaml module name *)
+      from mylib.common <ocaml name="Mylib_common"> import date
 
 * atdml: New tool. Generates a single self-contained OCaml module (`.ml` +
   `.mli`) from a single `.atd` file, with JSON support via `Yojson.Safe.t`.

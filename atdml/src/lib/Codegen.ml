@@ -645,12 +645,14 @@ end|};
 
 (* ============ Type definition generation ============ *)
 
-let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as def : A.type_def) : B.t =
+let gen_type_def ~is_mli env ({A.loc; name; param=params; annot=an; value=e; _} as def : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   let params_str = type_params_str params in
   let has_private = Atd.Annot.get_flag ~sections:["ocaml"] ~field:"private" an in
   let has_public  = Atd.Annot.get_flag ~sections:["ocaml"] ~field:"public"  an in
+  if has_private && has_public then
+    A.error_at loc "<ocaml private> and <ocaml public> are mutually exclusive";
   (* Decide whether to emit 'private' in the .mli:
      - primitive aliases are private by default (improves error messages and
        prevents direct construction), unless <ocaml public> suppresses it;

@@ -1,6 +1,15 @@
 unreleased
 ----------
 
+* atdml: New `<ocaml private>` and `<ocaml public>` annotations on type
+  definitions control whether the generated `.mli` declares the type as
+  `private`:
+  - `<ocaml private>` on any type (record, sum, alias) forces `private` in the
+    generated `.mli`.
+  - `<ocaml public>` on a primitive alias suppresses the default `private`
+    (see below), making the alias transparent to callers.
+  The `.ml` implementation is never affected.
+
 * atdml: Unparameterized aliases of primitive types (`unit`, `bool`, `int`,
   `float`, `string`) are now translated to OCaml private types in the generated
   `.mli`. For example, `type email = string` becomes `type email = private string`

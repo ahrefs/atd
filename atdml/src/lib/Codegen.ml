@@ -42,6 +42,8 @@ let annot_schema_ocaml : Atd.Annot.schema_section = {
   section = "ocaml";
   fields = [
     Type_def,  "attr";    (* <ocaml attr="..."> on a type def: append [@@...] *)
+    Type_def,  "private"; (* <ocaml private> on a type def: emit 'private' in .mli *)
+    Type_def,  "public";  (* <ocaml public> on a type def: suppress default 'private' *)
     Type_def,  "module";  (* <ocaml module="M"> on a type def: not supported, warns *)
     Type_def,  "t";       (* <ocaml t="..."> on a type def: not supported, warns *)
     Type_expr, "repr";         (* <ocaml repr="poly"> on a sum type *)
@@ -644,14 +646,23 @@ end|};
 (* ============ Type definition generation ============ *)
 
 let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as def : A.type_def) : B.t =
-  ignore an;
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   let params_str = type_params_str params in
+  let has_private = Atd.Annot.get_flag ~sections:["ocaml"] ~field:"private" an in
+  let has_public  = Atd.Annot.get_flag ~sections:["ocaml"] ~field:"public"  an in
+  (* Decide whether to emit 'private' in the .mli:
+     - primitive aliases are private by default (improves error messages and
+       prevents direct construction), unless <ocaml public> suppresses it;
+     - any type can be made private explicitly with <ocaml private>. *)
+  let emit_private =
+    is_mli &&
+    ((primitive_alias_of_def def <> None && not has_public) || has_private)
+  in
   match e with
-  | Sum (_, variants, an) ->
+  | Sum (_, variants, sum_an) ->
       let is_poly =
-        match get_ocaml_repr an with
+        match get_ocaml_repr sum_an with
         | Some "poly" -> true
         | _ -> false
       in
@@ -671,15 +682,21 @@ let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as de
               (sprintf "| %s%s of %s" tick cons_name (type_expr_str env e))
               loc an
       in
+      let hd =
+        if emit_private then
+          sprintf "type %s%s = private" params_str ocaml_name
+        else
+          sprintf "type %s%s =" params_str ocaml_name
+      in
       if is_poly then
         [
-          B.Line (sprintf "type %s%s = [" params_str ocaml_name);
+          B.Line (hd ^ " [");
           B.Block (concat_map gen_case flat);
           B.Line "]";
         ]
       else
         [
-          B.Line (sprintf "type %s%s =" params_str ocaml_name);
+          B.Line hd;
           B.Block (concat_map gen_case flat);
         ]
   | Record (_, fields, rec_an) ->
@@ -693,8 +710,9 @@ let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as de
       let (_, pftr) =
         make_prefixed_trs prefix (List.map (fun (_, (fname, _, _), _) -> fname) fields)
       in
+      let private_kw = if emit_private then "private " else "" in
       [
-        B.Line (sprintf "type %s%s = {" params_str ocaml_name);
+        B.Line (sprintf "type %s%s = %s{" params_str ocaml_name private_kw);
         B.Block
           (concat_map
              (fun (loc, (fname, _, an), e) ->
@@ -705,12 +723,7 @@ let gen_type_def ~is_mli env ({A.name; param=params; annot=an; value=e; _} as de
         B.Line "}";
       ]
   | e ->
-      (* In .mli, emit 'private' for unparameterized primitive aliases so that
-         the compiler names the alias rather than the underlying type in errors,
-         and so that direct construction is rejected outside the module. *)
-      let private_kw =
-        if is_mli && primitive_alias_of_def def <> None then "private " else ""
-      in
+      let private_kw = if emit_private then "private " else "" in
       [B.Line (sprintf "type %s%s = %s%s" params_str ocaml_name private_kw (type_expr_str env e))]
 
 (* ============ Creation function generation (records only) ============ *)

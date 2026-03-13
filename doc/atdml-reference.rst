@@ -495,6 +495,46 @@ translates to
 
 while the JSON representation still uses ``"Dot"`` and ``"arc"``.
 
+Fields ``private`` and ``public``
+""""""""""""""""""""""""""""""""""
+
+Position: on a type definition (left-hand side before the ``=``)
+
+These flags control whether the generated ``.mli`` declares the type as
+``private``.
+
+``<ocaml private>``
+  Forces a ``private`` modifier on the type in the ``.mli``. Works on any
+  type (record, sum type, or alias). The ``.ml`` is unaffected.
+
+``<ocaml public>``
+  Suppresses the default ``private`` that atdml emits for unparameterized
+  primitive aliases (see `Primitive type aliases`_).
+
+Example:
+
+.. code:: ocaml
+
+    (* ATD *)
+    type id = string                    (* private by default *)
+    type open_id <ocaml public> = string  (* suppress private *)
+    type ids <ocaml private> = id list  (* force private *)
+    type point <ocaml private> = {      (* force private on record *)
+      x: float;
+      y: float;
+    }
+
+.. code:: ocaml
+
+    (* generated .mli *)
+    type id = private string
+    type open_id = string
+    type ids = private id list
+    type point = private {
+      x: float;
+      y: float;
+    }
+
 Field ``repr``
 """"""""""""""
 

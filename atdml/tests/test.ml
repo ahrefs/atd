@@ -627,6 +627,41 @@ type tagged = {
   label: base_types.label;
 }
 |};
+
+  (* Snapshot test for <ocaml private> and <ocaml public> annotations.
+     - primitive aliases are private by default
+     - <ocaml public> suppresses the default private on primitive aliases
+     - <ocaml private> adds private to any type (record, sum, alias) *)
+  test_codegen_snapshot "ocaml private public"
+    ~atd_src:{|
+(* Primitive alias: private by default *)
+type id = string
+
+(* Primitive alias: <ocaml public> suppresses private *)
+type open_id <ocaml public> = string
+
+(* Non-primitive alias: public by default, <ocaml private> makes it private *)
+type ids <ocaml private> = id list
+
+(* Record: private by default means nothing; <ocaml private> adds it *)
+type point <ocaml private> = {
+  x: float;
+  y: float;
+}
+
+(* Classic sum: <ocaml private> *)
+type color <ocaml private> = [
+  | Red
+  | Green
+  | Blue
+]
+
+(* Poly sum: <ocaml private> *)
+type status <ocaml private> = [
+  | Active
+  | Inactive
+] <ocaml repr="poly">
+|};
 ]
 
 let () =

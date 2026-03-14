@@ -21,3 +21,5 @@ Some properties of interest of ATD schemas include:
 * support for sum types aka algebraic data types or tagged unions
 * options to select alternate representations than the default, e.g.
   use a JSON object rather than an array of pairs
+
+.. include:: support-matrix.rst

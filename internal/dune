@@ -1,0 +1,2 @@
+(executable
+ (name support_matrix))

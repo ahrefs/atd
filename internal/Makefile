@@ -27,7 +27,7 @@ OUT  := $(ROOT)/doc/support-matrix.rst
 .PHONY: all build
 
 all: build
-	cd $(ROOT) && $(DUNE) exec internal/src/support_matrix.exe > doc/support-matrix.rst
+	cd $(ROOT) && $(DUNE) exec internal/support_matrix.exe > doc/support-matrix.rst
 
 build:
-	cd $(ROOT) && $(DUNE) build internal/src/support_matrix.exe
+	cd $(ROOT) && $(DUNE) build internal/support_matrix.exe

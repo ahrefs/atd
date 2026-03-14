@@ -26,9 +26,9 @@ type lang_support = {
   json_variant_names: support;
   json_repr_object:   support;
   json_adapter:       support;
-  imports:            support;
-  shared:             support;
-  open_enums:         support;
+  imports:              support;
+  binary_serialization: support;
+  open_enums:           support;
 }
 
 (* A feature has a display name, a short description, and an accessor into
@@ -62,9 +62,9 @@ let features : feature list = [
   { name = "JSON variant names";   description = "<json name=\"...\"> on sum type constructors"; get = fun s -> s.json_variant_names };
   { name = "Assoc as JSON object"; description = "(string * v) list <json repr=\"object\">";    get = fun s -> s.json_repr_object };
   { name = "JSON adapter";         description = "Custom pre/post-processing hooks";            get = fun s -> s.json_adapter };
-  { name = "Cross-file imports";   description = "from module import type1, type2";             get = fun s -> s.imports };
-  { name = "Shared/cyclic types";  description = "The shared type constructor for graphs";      get = fun s -> s.shared };
-  { name = "Open enumerations";    description = "Unknown variants round-tripped as-is";        get = fun s -> s.open_enums };
+  { name = "Cross-file imports";      description = "from module import type1, type2";                                                        get = fun s -> s.imports };
+  { name = "Binary serialization";    description = "Biniou format: faster than JSON, field/constructor names encoded as low-collision hashes"; get = fun s -> s.binary_serialization };
+  { name = "Open enumerations";       description = "Unknown variants round-tripped as-is";                                                     get = fun s -> s.open_enums };
 ]
 
 (* Baseline: every feature supported. Each language starts from this and
@@ -88,30 +88,28 @@ let all_yes = {
   json_variant_names = Yes;
   json_repr_object   = Yes;
   json_adapter       = Yes;
-  imports            = Yes;
-  shared             = Yes;
-  open_enums         = Yes;
+  imports              = Yes;
+  binary_serialization = No;
+  open_enums           = Yes;
 }
 
 (* The data. Each entry is (display name, support record). Column order in
    the output matches the order here. *)
 let languages : (string * lang_support) list = [
   "atdml (OCaml)", { all_yes with
-    shared     = No;
     open_enums = No;
   };
   "atdgen (OCaml)", { all_yes with
-    imports    = No;
+    imports              = No;
+    binary_serialization = Yes;
   };
   "atdpy (Python)", { all_yes with
     wrap         = Planned;
     json_adapter = Planned;
-    shared       = No;
     open_enums   = Planned;
   };
   "atdts (TypeScript)", { all_yes with
     json_adapter = Planned;
-    shared       = No;
     open_enums   = Planned;
   };
   "atdj (Java)", { all_yes with
@@ -119,7 +117,6 @@ let languages : (string * lang_support) list = [
     json_repr_object = Planned;
     json_adapter     = Planned;
     imports          = Planned;
-    shared           = Planned;
     open_enums       = Planned;
   };
   "atds (Scala)", { all_yes with
@@ -127,7 +124,6 @@ let languages : (string * lang_support) list = [
     json_repr_object = Planned;
     json_adapter     = Planned;
     imports          = Planned;
-    shared           = Planned;
     open_enums       = Planned;
   };
   "atdd (Dart)", { all_yes with
@@ -135,7 +131,6 @@ let languages : (string * lang_support) list = [
     json_repr_object = Planned;
     json_adapter     = Planned;
     imports          = Planned;
-    shared           = Planned;
     open_enums       = Planned;
   };
   "atdcpp (C++)", { all_yes with
@@ -143,7 +138,6 @@ let languages : (string * lang_support) list = [
     json_repr_object = Planned;
     json_adapter     = Planned;
     imports          = Planned;
-    shared           = Planned;
     open_enums       = Planned;
   };
 ]

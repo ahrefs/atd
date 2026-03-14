@@ -151,16 +151,14 @@ from module import type1, type2
 
 **Not supported:** atdgen (OCaml)
 
-Shared/cyclic types
-~~~~~~~~~~~~~~~~~~~
+Binary serialization
+~~~~~~~~~~~~~~~~~~~~
 
-The shared type constructor for graphs
+Biniou format: faster than JSON, field/constructor names encoded as low-collision hashes
 
 **Supported:** atdgen (OCaml)
 
-**Not yet:** atdj (Java), atds (Scala), atdd (Dart), atdcpp (C++)
-
-**Not supported:** atdml (OCaml), atdpy (Python), atdts (TypeScript)
+**Not supported:** atdml (OCaml), atdpy (Python), atdts (TypeScript), atdj (Java), atds (Scala), atdd (Dart), atdcpp (C++)
 
 Open enumerations
 ~~~~~~~~~~~~~~~~~

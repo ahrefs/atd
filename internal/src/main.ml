@@ -89,7 +89,7 @@ let all_yes = {
   json_repr_object   = Yes;
   json_adapter       = Yes;
   imports              = Yes;
-  binary_serialization = No;
+  binary_serialization = Yes;
   open_enums           = Yes;
 }
 
@@ -97,7 +97,8 @@ let all_yes = {
    the output matches the order here. *)
 let languages : (string * lang_support) list = [
   "atdml (OCaml)", { all_yes with
-    open_enums = No;
+    open_enums = Planned;
+    binary_serialization = No;
   };
   "atdgen (OCaml)", { all_yes with
     imports              = No;
@@ -107,10 +108,12 @@ let languages : (string * lang_support) list = [
     wrap         = Planned;
     json_adapter = Planned;
     open_enums   = Planned;
+    binary_serialization = No;
   };
   "atdts (TypeScript)", { all_yes with
     json_adapter = Planned;
     open_enums   = Planned;
+    binary_serialization = No;
   };
   "atdj (Java)", { all_yes with
     wrap             = Planned;
@@ -118,6 +121,7 @@ let languages : (string * lang_support) list = [
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;
+    binary_serialization = No;
   };
   "atds (Scala)", { all_yes with
     wrap             = Planned;
@@ -125,6 +129,7 @@ let languages : (string * lang_support) list = [
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;
+    binary_serialization = No;
   };
   "atdd (Dart)", { all_yes with
     doc_comments     = Planned;
@@ -132,6 +137,7 @@ let languages : (string * lang_support) list = [
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;
+    binary_serialization = No;
   };
   "atdcpp (C++)", { all_yes with
     doc_comments     = Planned;
@@ -139,6 +145,7 @@ let languages : (string * lang_support) list = [
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;
+    binary_serialization = No;
   };
 ]
 

@@ -131,7 +131,7 @@ let languages : (string * lang_support) list = [
     open_enums       = Planned;
     binary_serialization = No;
   };
-  "atdd (Dart)", { all_yes with
+  "atdd (D)", { all_yes with
     doc_comments     = Planned;
     json_repr_object = Planned;
     json_adapter     = Planned;

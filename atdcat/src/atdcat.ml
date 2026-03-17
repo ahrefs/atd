@@ -69,17 +69,35 @@ let strip all sections x =
   in
   Atd.Ast.map_all_annot filter x
 
+(* Load one ATD module from either stdin or a named file.
+   Both are turned into a lexbuf so that the single read_lexbuf call
+   handles all the parsing and validation. *)
+let load_source ~annot_schema ~expand ~keep_poly ~xdebug
+    ~inherit_fields ~inherit_variants source =
+  let ic, pos_fname, close =
+    match source with
+    | `Stdin      -> stdin,        "<stdin>", (fun _ -> ())
+    | `File path  -> open_in path, path,      close_in_noerr
+  in
+  let lexbuf = Lexing.from_channel ic in
+  Fun.protect
+    ~finally:(fun () -> close ic)
+    (fun () ->
+       Atd.Util.read_lexbuf ~annot_schema ~expand ~keep_poly ~xdebug
+         ~inherit_fields ~inherit_variants ~pos_fname lexbuf)
+
 (* TODO: explain why we're taking multiple ATD files as input *)
 let parse
     ~annot_schema
     ~expand ~keep_poly ~xdebug ~inherit_fields ~inherit_variants
     ~remove_wraps ~strip_all ~strip_sections files =
-  let l =
-    List.map (
-      fun file ->
-        Atd.Util.load_file ~annot_schema ~expand ~keep_poly ~xdebug
-          ~inherit_fields ~inherit_variants file
-    ) files
+  let sources =
+    match files with
+    | [] -> [`Stdin]
+    | _  -> List.map (fun f -> `File f) files
+  in
+  let l = List.map (load_source ~annot_schema ~expand ~keep_poly ~xdebug
+                      ~inherit_fields ~inherit_variants) sources
   in
   let first_head, first_imports =
     (* heads and imports in other files than the first one are tolerated
@@ -218,7 +236,7 @@ let () =
           print the version of atd and exit";
   ]
   in
-  let msg = sprintf "Usage: %s FILE" Sys.argv.(0) in
+  let msg = sprintf "Usage: %s [FILE ...]" Sys.argv.(0) in
   Arg.parse options (fun file -> input_files := file :: !input_files) msg;
   try
     let force_inherit, annot_schema =
@@ -248,9 +266,9 @@ let () =
     in
     let src_name =
       match !input_files with
-      | [] -> "<empty>"
+      | []     -> "<stdin>"
       | [file] -> sprintf "'%s'" (Filename.basename file)
-      | _ -> "multiple files"
+      | _      -> "multiple files"
     in
     print
       ~jsonschema_version: !jsonschema_version

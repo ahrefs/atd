@@ -10,6 +10,17 @@
      ./test approve    -- approve new/changed snapshots
 *)
 
+(* Convert a test name into a safe file name, the same way atdml does it. *)
+let make_filename_from_test_name str =
+  String.map (function
+    | ' ' -> '_'
+    | 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '-' as c -> c
+    | c -> failwith (Printf.sprintf "Invalid character %C in test name %S" c str)
+  ) str
+
+let snapshot name =
+  Fpath.(v "tests/named-snapshots" / make_filename_from_test_name name)
+
 (* Pretty-print an ATD file to stdout, optionally expanding and/or
    removing wrap constructs. *)
 let test_pp test_name
@@ -19,8 +30,7 @@ let test_pp test_name
     atd_file =
   Testo.create test_name
     ~checked_output:(Testo.stdout
-                       ~expected_stdout_path:
-                         (Fpath.(v "tests/named-snapshots" / test_name))
+                       ~expected_stdout_path:(snapshot test_name)
                        ())
     (fun () ->
        let module_ =
@@ -36,8 +46,7 @@ let test_pp test_name
 let test_jsonschema test_name ?(xprop = true) ?version atd_file root_type =
   Testo.create test_name
     ~checked_output:(Testo.stdout
-                       ~expected_stdout_path:
-                         (Fpath.(v "tests/named-snapshots" / test_name))
+                       ~expected_stdout_path:(snapshot test_name)
                        ())
     (fun () ->
        let module_ =
@@ -67,8 +76,7 @@ let tests _env = [
   (* Unused import warning *)
   Testo.create "unused import warning"
     ~checked_output:(Testo.stderr
-                       ~expected_stderr_path:
-                         (Fpath.(v "tests/named-snapshots/unused_import_warning"))
+                       ~expected_stderr_path:(snapshot "unused import warning")
                        ())
     (fun () ->
        (* 'unused_type' is imported but never referenced — a warning must be

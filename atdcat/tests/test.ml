@@ -60,18 +60,18 @@ let test_jsonschema test_name ?(xprop = true) ?version atd_file root_type =
 
 let tests _env = [
   (* Pretty-printing round-trips *)
-  test_pp "roundtrip" "tests/test.atd";
-  test_pp "roundtrip test2" "tests/test2.atd";
-  test_pp "soft keywords" "tests/soft_keywords.atd";
-  test_pp "remove wraps" ~remove_wraps:true "tests/test.atd";
+  test_pp "roundtrip" "tests/input/test.atd";
+  test_pp "roundtrip test2" "tests/input/test2.atd";
+  test_pp "soft keywords" "tests/input/soft_keywords.atd";
+  test_pp "remove wraps" ~remove_wraps:true "tests/input/test.atd";
 
   (* JSON Schema output *)
-  test_jsonschema "json schema" "tests/schema.atd" "root";
+  test_jsonschema "json schema" "tests/input/schema.atd" "root";
   test_jsonschema "json schema no extra fields" ~xprop:false
-    "tests/schema.atd" "root";
+    "tests/input/schema.atd" "root";
   test_jsonschema "json schema draft-2019-09"
     ~version:Atd.Jsonschema.Draft_2019_09
-    "tests/schema.atd" "root";
+    "tests/input/schema.atd" "root";
 
   (* Unused import warning *)
   Testo.create "unused import warning"

@@ -1,6 +1,8 @@
 unreleased
 ----------
 
+* atdcat: read from stdin when no input file is given, like `cat`.
+
 * atdml: New `<ocaml private>` and `<ocaml public>` annotations on type
   definitions control whether the generated `.mli` declares the type as
   `private`:

@@ -111,6 +111,7 @@
   (menhir (and (>= 20180523) (<> 20211230)))
   easy-format
   (alcotest :with-test)
+  (testo (and (>= 0.3.0) :with-test))
   (odoc :with-doc)
   (re (>= 1.9.0))
   (yojson (>= 1.6.0))

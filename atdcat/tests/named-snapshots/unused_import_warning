@@ -1,0 +1,2 @@
+File "test_input", line 2, characters 0-46:
+Warning: Type 'unused_type' was imported from module 'some_module' but is never used.

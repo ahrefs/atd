@@ -1,0 +1,7 @@
+(executable
+ (name test)
+ (libraries
+   atd
+   fpath
+   testo
+ ))

@@ -59,3 +59,7 @@ val resolve :
     module [a], and that the arity matches the declaration. Raises
     [Ast.Atd_error] on the first violation. *)
 val check_type_refs : t -> Ast.type_def list -> unit
+
+(** Walk all imported type names and print a warning to stderr for each one
+    that is never referenced in any type expression in [type_defs]. *)
+val warn_unused_imports : t -> Ast.type_def list -> unit

@@ -120,6 +120,7 @@ all-supported-ocaml-versions:
 
 .PHONY: doc
 doc:
+	make -C internal support-matrix
 	cd doc && sphinx-build . _build
 
 # Run documentation server.

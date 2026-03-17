@@ -24,10 +24,12 @@ DUNE := dune
 ROOT := ..
 OUT  := $(ROOT)/doc/support-matrix.rst
 
-.PHONY: all build
+.PHONY: all build support-matrix
 
-all: build
-	cd $(ROOT) && $(DUNE) exec internal/src/support_matrix.exe > doc/support-matrix.rst
+all: support-matrix
+
+support-matrix: build
+	cd $(ROOT) && $(DUNE) exec internal/support_matrix.exe > doc/support-matrix.rst
 
 build:
-	cd $(ROOT) && $(DUNE) build internal/src/support_matrix.exe
+	cd $(ROOT) && $(DUNE) build internal/support_matrix.exe

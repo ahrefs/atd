@@ -101,6 +101,7 @@
 
 (generate_opam_files true)
 
+; Warning: uses 'atd.opam.template' file to generate 'atd.opam'
 (package
  (name atd)
  (depends
@@ -130,7 +131,7 @@ utilities."))
  (depends
   (ocaml (>= 4.08))
   (alcotest :with-test)
-  (atd (>= 3.0.0))
+  (atd (>= 4.0.0))
   (atdgen-runtime (>= 3.0.0))
   (atdgen-codec-runtime :with-test)
   (biniou (>= 1.0.6))
@@ -182,7 +183,7 @@ specification.
 automatically handled")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.7.0))
+  (atd (>= 4.0.0))
   re
   (odoc :with-doc)))
 
@@ -192,7 +193,7 @@ automatically handled")
  (description "ATD Code generator for Scala")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.7.0))
+  (atd (>= 4.0.0))
   (odoc :with-doc)))
 
 (package
@@ -201,7 +202,7 @@ automatically handled")
  (description "Python/mypy code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 3.0.0))
+  (atd (>= 4.0.0))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)
@@ -224,7 +225,7 @@ Melange backend")
  (description "TypeScript code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.13.0))
+  (atd (>= 4.0.0))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)
@@ -236,7 +237,7 @@ Melange backend")
  (description "DLang code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.11.0))
+  (atd (>= 4.0.0))
   (cmdliner (>= 1.1.0))
   re
   (odoc :with-doc)))
@@ -247,11 +248,12 @@ Melange backend")
  (description "C++ code generation for ATD APIs")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 2.11.0))
+  (atd (>= 4.0.0))
   (cmdliner (>= 1.1.0))
   re
   (odoc :with-doc)))
 
+; Warning: uses 'atdml.opam.template' file to generate 'atdml.opam'
 (package
  (name atdml)
  (synopsis "Simplified OCaml JSON serializers using the Yojson AST")
@@ -262,7 +264,7 @@ instead of semi-secret streaming parser functions, making the generated code
 simpler and more maintainable at the cost of some performance.")
  (depends
   (ocaml (>= 4.08))
-  (atd (>= 3.0.0))
+  (atd (>= 4.0.0))
   (yojson (>= 2.0.0))
   (cmdliner (>= 1.1.0))
   (testo (and (>= 0.3.0) :with-test))

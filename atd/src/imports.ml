@@ -73,6 +73,41 @@ Hint: add 'from %s import %s' at the top of the file.|}
            Some (import, it_opt), base_name
       )
 
+(* Warn about imported type names that are never referenced in any type
+   expression. Warnings go to stderr and do not abort parsing. *)
+let warn_unused_imports locals type_defs =
+  (* Collect (local_module_name, base_type_name) pairs used in type exprs. *)
+  let used = Hashtbl.create 16 in
+  List.iter (fun (def : type_def) ->
+    ignore (fold (fun type_expr () ->
+      (match type_expr with
+       | Name (_, (_, TN path, _), _) ->
+           (match Type_name.split (TN path) with
+            | None, _ -> ()
+            | Some module_name, base_name ->
+                Hashtbl.replace used (module_name, base_name) ())
+       | _ -> ())
+    ) def.value ())
+  ) type_defs;
+  (* Collect warnings, then sort by source position for stable output. *)
+  let warnings = ref [] in
+  Hashtbl.iter (fun _local_name (import : import) ->
+    List.iter (fun (it : imported_type) ->
+      if not (Hashtbl.mem used (import.name, it.it_name)) then
+        warnings :=
+          (import.loc, it.it_name, String.concat "." import.path) :: !warnings
+    ) import.types
+  ) locals;
+  List.sort
+    (fun (loc1, name1, _) (loc2, name2, _) ->
+       let c = Loc.compare loc1 loc2 in
+       if c <> 0 then c else compare name1 name2)
+    !warnings
+  |> List.iter (fun (loc, type_name, module_path) ->
+    eprintf "%s:\nWarning: Type '%s' was imported from module '%s' but is never used.\n"
+      (string_of_loc loc) type_name module_path
+  )
+
 (* Walk all type expressions in type_defs and verify that:
    - every qualified type reference 'a.b' has module 'a' in the import table;
    - type 'b' was listed in the 'from a import ...' statement;

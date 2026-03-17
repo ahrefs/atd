@@ -26,6 +26,7 @@ let read_lexbuf
   (* Validate import declarations and check all type references. *)
   let locals = Imports.load module_.imports in
   Imports.check_type_refs locals module_.type_defs;
+  Imports.warn_unused_imports locals module_.type_defs;
   let type_defs =
     if inherit_fields || inherit_variants then
       Inherit.expand_module_body ~inherit_fields ~inherit_variants

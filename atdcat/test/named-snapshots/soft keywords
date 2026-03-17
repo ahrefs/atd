@@ -1,0 +1,4 @@
+<from from="" import>
+from from as as import import
+type from = (from list * as.import)
+type t = { from: from; ?import: int option; ~as: int list }

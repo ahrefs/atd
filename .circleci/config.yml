@@ -5,14 +5,34 @@ version: 2.1
 
 commands:
   build:
+    parameters:
+      ocaml_version:
+        type: string
     steps:
       - checkout
+      - run:
+          name: Set weekly cache key segment
+          # Compute a number that increments every 7 days.
+          # To force a cache refresh, increment the version suffix
+          # (v1, v2, ...). When a new week start, use the previous week's
+          # cache as a starting point if available to save time.
+          command: |
+            echo $(( $(date +%s) / 604800 )) > week_id.txt
+            echo $(( $(date +%s) / 604800 - 1 )) > previous_week_id.txt
+      - restore_cache:
+          keys:
+            - opam-ubuntu-<< parameters.ocaml_version >>-v1-{{ checksum "week_id.txt" }}
+            - opam-ubuntu-<< parameters.ocaml_version >>-v1-{{ checksum "previous_week_id.txt" }}
       - run:
           name: Install system dependencies
           command: ./.circleci/setup-system
       - run:
           name: Install opam dependencies
           command: ./.circleci/setup-opam
+      - save_cache:
+          key: opam-ubuntu-<< parameters.ocaml_version >>-v1-{{ checksum "week_id.txt" }}
+          paths:
+            - ~/.opam
       - run:
           name: Build
           command: opam exec -- make
@@ -26,14 +46,16 @@ jobs:
       - image: ocaml/opam:ubuntu-24.04-ocaml-5.3
     working_directory: ~/atd
     steps:
-      - build
+      - build:
+          ocaml_version: "5.3"
 
   build_min_ocaml:
     docker:
       - image: ocaml/opam:ubuntu-24.04-ocaml-4.08
     working_directory: ~/atd
     steps:
-      - build
+      - build:
+          ocaml_version: "4.08"
 
 workflows:
   version: 2

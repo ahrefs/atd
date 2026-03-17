@@ -3,11 +3,11 @@
 
    Each test calls the same ATD functions that atdcat wraps, captures the
    output via Testo's stdout/stderr capture, and compares it against a
-   named snapshot in test/named-snapshots/.
+   named snapshot in tests/named-snapshots/.
 
    Run from the atdcat/ directory:
-     make test         -- run all tests
-     make test-approve -- approve new/changed snapshots
+     ./test            -- run all tests
+     ./test approve    -- approve new/changed snapshots
 *)
 
 (* Pretty-print an ATD file to stdout, optionally expanding and/or
@@ -20,7 +20,7 @@ let test_pp test_name
   Testo.create test_name
     ~checked_output:(Testo.stdout
                        ~expected_stdout_path:
-                         (Fpath.(v "test/named-snapshots" / test_name))
+                         (Fpath.(v "tests/named-snapshots" / test_name))
                        ())
     (fun () ->
        let module_ =
@@ -37,7 +37,7 @@ let test_jsonschema test_name ?(xprop = true) ?version atd_file root_type =
   Testo.create test_name
     ~checked_output:(Testo.stdout
                        ~expected_stdout_path:
-                         (Fpath.(v "test/named-snapshots" / test_name))
+                         (Fpath.(v "tests/named-snapshots" / test_name))
                        ())
     (fun () ->
        let module_ =
@@ -51,24 +51,24 @@ let test_jsonschema test_name ?(xprop = true) ?version atd_file root_type =
 
 let tests _env = [
   (* Pretty-printing round-trips *)
-  test_pp "roundtrip" "test/test.atd";
-  test_pp "roundtrip test2" "test/test2.atd";
-  test_pp "soft keywords" "test/soft_keywords.atd";
-  test_pp "remove wraps" ~remove_wraps:true "test/test.atd";
+  test_pp "roundtrip" "tests/test.atd";
+  test_pp "roundtrip test2" "tests/test2.atd";
+  test_pp "soft keywords" "tests/soft_keywords.atd";
+  test_pp "remove wraps" ~remove_wraps:true "tests/test.atd";
 
   (* JSON Schema output *)
-  test_jsonschema "json schema" "test/schema.atd" "root";
+  test_jsonschema "json schema" "tests/schema.atd" "root";
   test_jsonschema "json schema no extra fields" ~xprop:false
-    "test/schema.atd" "root";
+    "tests/schema.atd" "root";
   test_jsonschema "json schema draft-2019-09"
     ~version:Atd.Jsonschema.Draft_2019_09
-    "test/schema.atd" "root";
+    "tests/schema.atd" "root";
 
   (* Unused import warning *)
   Testo.create "unused import warning"
     ~checked_output:(Testo.stderr
                        ~expected_stderr_path:
-                         (Fpath.(v "test/named-snapshots/unused_import_warning"))
+                         (Fpath.(v "tests/named-snapshots/unused_import_warning"))
                        ())
     (fun () ->
        (* 'unused_type' is imported but never referenced — a warning must be

@@ -13,7 +13,9 @@ commands:
       - run:
           name: Set weekly cache key segment
           # Compute a number that increments every 7 days.
-          # To force a cache refresh, increment the version suffix (v1, v2, ...).
+          # To force a cache refresh, increment the version suffix
+          # (v1, v2, ...). When a new week start, use the previous week's
+          # cache as a starting point if available to save time.
           command: |
             echo $(( $(date +%s) / 604800 )) > week_id.txt
             echo $(( $(date +%s) / 604800 - 1 )) > previous_week_id.txt

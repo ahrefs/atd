@@ -8,9 +8,12 @@ set -eu
 
 eval "$(opam env)"
 
-opam repo add --all-switches -k git \
-  github https://github.com/ocaml/opam-repository.git
-opam repo remove default
+# Set up the opam repo (skip if already done, e.g. from a restored cache).
+if ! opam repo list | grep -q '^github\b'; then
+  opam repo add --all-switches -k git \
+    github https://github.com/ocaml/opam-repository.git
+  opam repo remove default
+fi
 # no need for 'opam update'
 
 ./scripts/install-opam-dependencies

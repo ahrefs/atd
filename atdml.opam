@@ -98,6 +98,8 @@ depends: [
   "testo" {>= "0.3.0" & with-test}
   "odoc" {with-doc}
 ]
+dev-repo: "git+https://github.com/ahrefs/atd.git"
+x-maintenance-intent: ["(latest)"]
 build: [
   ["dune" "subst"] {dev}
   [
@@ -108,9 +110,6 @@ build: [
     "-j"
     jobs
     "@install"
-    "@runtest" {with-test}
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/ahrefs/atd.git"
-x-maintenance-intent: ["(latest)"]

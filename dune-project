@@ -101,6 +101,7 @@
 
 (generate_opam_files true)
 
+; Warning: uses 'atd.opam.template' file to generate 'atd.opam'
 (package
  (name atd)
  (depends
@@ -252,6 +253,7 @@ Melange backend")
   re
   (odoc :with-doc)))
 
+; Warning: uses 'atdml.opam.template' file to generate 'atdml.opam'
 (package
  (name atdml)
  (synopsis "Simplified OCaml JSON serializers using the Yojson AST")

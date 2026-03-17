@@ -41,8 +41,8 @@ annot:
 ;
 
 asection:
-| LT x = LIDENT l = afield_list GT  { (x, (($startpos, $endpos), l)) }
-| LT LIDENT afield_list _e=error    { syntax_error
+| LT x = lident_or_kw l = afield_list GT  { (x, (($startpos, $endpos), l)) }
+| LT lident_or_kw afield_list _e=error    { syntax_error
                                         "Expecting '>'"
                                         $startpos(_e) $endpos(_e) }
 | LT _e=error                       { syntax_error
@@ -79,7 +79,7 @@ lident_or_kw:
 type_def:
 | TYPE;
   p = type_param;
-  s = LIDENT;
+  s = lident_or_kw;
   a = annot EQ;
   t = type_expr
                                { let loc = ($startpos, $endpos) in
@@ -94,16 +94,16 @@ type_def:
                                  ({ orig with orig = Some orig } : type_def)
                                }
 
-| TYPE type_param LIDENT annot EQ _e=error
+| TYPE type_param lident_or_kw annot EQ _e=error
     { syntax_error "Expecting type expression" $startpos(_e) $endpos(_e) }
-| TYPE type_param LIDENT annot _e=error
+| TYPE type_param lident_or_kw annot _e=error
     { syntax_error "Expecting '='" $startpos(_e) $endpos(_e) }
 | TYPE _e=error
     { syntax_error "Expecting type name" $startpos(_e) $endpos(_e) }
 
 from_import:
 | FROM;
-  path = separated_nonempty_list(DOT, LIDENT);
+  path = separated_nonempty_list(DOT, lident_or_kw);
   annot = annot;
   alias = from_alias;
   IMPORT;
@@ -117,18 +117,18 @@ from_import:
 ;
 
 from_alias:
-| AS name = LIDENT   { Some name }
+| AS name = lident_or_kw   { Some name }
 | AS; _e=error       { syntax_error "Expecting module alias after 'as'"
                          $startpos(_e) $endpos(_e) }
 |                    { None }
 ;
 
 imported_type_item:
-| name = LIDENT; annot = annot
+| name = lident_or_kw; annot = annot
     { ({ it_params = []; it_name = name; it_annot = annot } : imported_type) }
-| p = TIDENT; name = LIDENT; annot = annot
+| p = TIDENT; name = lident_or_kw; annot = annot
     { ({ it_params = [p]; it_name = name; it_annot = annot } : imported_type) }
-| OP_PAREN; ps = type_var_list; CL_PAREN; name = LIDENT; annot = annot
+| OP_PAREN; ps = type_var_list; CL_PAREN; name = lident_or_kw; annot = annot
     { ({ it_params = ps; it_name = name; it_annot = annot } : imported_type) }
 | OP_PAREN; _e=error
     { syntax_error "Expecting type variable list" $startpos(_e) $endpos(_e) }
@@ -215,7 +215,7 @@ annot_expr:
 
 type_inst:
 | args = type_args;
-  path = separated_nonempty_list(DOT, LIDENT)
+  path = separated_nonempty_list(DOT, lident_or_kw)
                                    { (($startpos, $endpos), TN path, args) }
 ;
 
@@ -274,7 +274,7 @@ field:
 ;
 
 field_name:
-| k = LIDENT             { (k, Required) }
-| QUESTION k = LIDENT    { (k, Optional) }
-| TILDE k = LIDENT       { (k, With_default) }
+| k = lident_or_kw             { (k, Required) }
+| QUESTION k = lident_or_kw    { (k, Optional) }
+| TILDE k = lident_or_kw       { (k, With_default) }
 ;

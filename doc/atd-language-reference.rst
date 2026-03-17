@@ -500,6 +500,11 @@ imported-type ::= params? lident annot?                  imported type item
 Import declarations
 ^^^^^^^^^^^^^^^^^^^
 
+.. note::
+
+   The ``from ... import`` syntax is **experimental**. The language and
+   tooling support for imports may still change in future releases.
+
 An ATD file may import individual types from other ATD modules using
 ``from ... import`` declarations. Import declarations must appear after any
 top-level annotations and before any type definitions.

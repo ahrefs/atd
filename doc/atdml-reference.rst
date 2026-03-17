@@ -2,6 +2,11 @@
 Atdml reference
 ================
 
+.. note::
+
+   Atdml is **experimental**. Its generated interface and the set of
+   supported features may still change in future releases.
+
 Description
 -----------
 

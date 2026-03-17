@@ -1,45 +1,17 @@
-unreleased
-----------
+4.0.0 (2026-03-16)
+------------------
+
+* Build: Dune >= 3.18 (April 2025) is now required to build the ATD tools
+  from source. (#445)
 
 * atdcat: read from stdin when no input file is given, like `cat`.
-
-* atdml: New `<ocaml private>` and `<ocaml public>` annotations on type
-  definitions control whether the generated `.mli` declares the type as
-  `private`:
-  - `<ocaml private>` on any type (record, sum, alias) forces `private` in the
-    generated `.mli`.
-  - `<ocaml public>` on a primitive alias suppresses the default `private`
-    (see below), making the alias transparent to callers.
-  The `.ml` implementation is never affected.
-
-* atdml: Unparameterized aliases of primitive types (`unit`, `bool`, `int`,
-  `float`, `string`) are now translated to OCaml private types in the generated
-  `.mli`. For example, `type email = string` becomes `type email = private string`
-  in the interface, so that the compiler names the alias rather than the
-  underlying type in error messages, and so that direct construction is rejected
-  outside the generated module. A constructor function is generated:
-  - `create_email : string -> email`
-  also exposed as `val create` in the submodule `Email`.
-  Coercing back to the primitive uses the standard `:>` operator
-  (e.g. `(x :> string)`). The `.ml` implementation keeps a transparent alias,
-  so `create_email` is an identity function with no runtime overhead.
-
-* atdml: The `<ocaml field_prefix="pre_">` annotation is now supported on record
-  types. It prepends the given prefix to all generated OCaml record field names
-  (e.g. `type point = { p_x: float; p_y: float }`) while keeping the labeled
-  arguments of the `create_` function unprefixed (e.g.
-  `create_point ~x ~y () : point`). JSON field names are unaffected.
-
-* atdml: Record creation functions renamed from `make_foo` to `create_foo`
-  (and `val make` in the submodule to `val create`) to align with the naming
-  used by the new primitive alias constructors and to match atdgen's convention.
 
 * atdts: Dotted module paths in `import` declarations are now mapped to
   path-separator form in the generated TypeScript import path. For example,
   `import long.module.path` generates `import * as path from "./long/module/path"`
   rather than `"./path"`.
 
-* ATD: New `from ... import` syntax replaces the old `import` statement.
+* ATD: **Experimental.** New `from ... import` syntax replaces the old `import` statement.
   Types to be used must be listed explicitly; the full syntax is:
 
       from module.path <annots> [as alias] import type1 <annots>, type2, ...
@@ -56,6 +28,8 @@ unreleased
   - atdpy: alias names that are Python keywords are automatically suffixed
     with `_` (e.g. alias `class` → `class_` in generated code).
   - atdgen does not support import statements; use atdml instead.
+  - A warning is printed to stderr when an imported type name is never
+    referenced in any type expression.
 
   Examples:
 
@@ -68,12 +42,12 @@ unreleased
       (* Override OCaml module name *)
       from mylib.common <ocaml name="Mylib_common"> import date
 
-* atdml: New tool. Generates a single self-contained OCaml module (`.ml` +
+* atdml: **Experimental.** New tool. Generates a single self-contained OCaml module (`.ml` +
   `.mli`) from a single `.atd` file, with JSON support via `Yojson.Safe.t`.
   No separate runtime library is required; the runtime helpers are inlined
   into each generated `.ml`. Atdml is the recommended successor to atdgen
   for OCaml JSON support.
-  Supported features in the initial release:
+  Supported features:
   - All primitive ATD types: `unit`, `bool`, `int`, `float`, `string`
   - `abstract` type, represented as `Yojson.Safe.t`
   - `'a list`, `'a option`, `'a nullable`
@@ -81,6 +55,10 @@ unreleased
   - Records, including required fields, optional fields (`?foo`),
     and with-default fields (`~foo`) with implicit or explicit defaults
     (`<ocaml default="...">`)
+  - `<ocaml field_prefix="pre_">` on record types: prepends the given prefix
+    to all OCaml record field names while keeping the labeled arguments of
+    `create_` unprefixed (e.g. `create_point ~x ~y () : point`). JSON field
+    names are unaffected.
   - Classic sum types (regular OCaml variants) and polymorphic variants
     (`<ocaml repr="poly">`)
   - Parametric types
@@ -95,22 +73,31 @@ unreleased
   - `<ocaml name="...">` to rename variant constructors in OCaml
   - `<ocaml attr="...">` to attach ppx attributes (e.g. `[@@deriving show]`)
     to generated type definitions
+  - `<ocaml private>` on any type definition forces `private` in the generated
+    `.mli`; `<ocaml public>` on a primitive alias suppresses the default
+    `private`, making the alias transparent to callers
+  - Unparameterized aliases of primitive types (`unit`, `bool`, `int`,
+    `float`, `string`) are generated as `private` in the `.mli`, preventing
+    direct construction outside the module. A constructor function
+    `create_email : string -> email` is generated (also exposed as
+    `val create` in submodule `Email`). Coerce back with `:>`
+    (e.g. `(x :> string)`).
   - `<doc text="...">` documentation annotations, translated into ocamldoc
     `(** ... *)` comments in the generated code; supported on type definitions,
-    record fields, and variant constructors
+    record fields, variant constructors, and module-level head annotations
   - Automatic renaming of ATD type names that conflict with OCaml keywords
     or with the `foo_of_yojson`/`yojson_of_foo` naming scheme
   - Automatic renaming of record fields and variant constructors that conflict
     with OCaml keywords (e.g. `end` → `end_`)
   - `(string * 'a) list <json repr="object">`: encode association lists as
     JSON objects `{"key": value, ...}` rather than arrays
-  - `<doc text="...">` documentation annotations, including module-level
-    head annotations
   - Graceful handling of atdgen annotations not supported by atdml:
     `<ocaml module="...">` on type definitions and `<ocaml name="...">` on
     record fields emit a warning and are otherwise ignored
   - `~field: user_type` with no OCaml default: warns and treats the field as
-    required in JSON (no `make_` function generated for that type)
+    required in JSON (no `create_` function generated for that type)
+  - Record creation functions are named `create_foo` (not `make_foo`),
+    matching atdgen's convention
   - Stdin mode: reads ATD from stdin, writes a copy-pasteable
     `module type Types = sig ... end / module Types : Types = struct ... end`
     snippet to stdout

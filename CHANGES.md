@@ -6,18 +6,16 @@
 
 * atdcat: read from stdin when no input file is given, like `cat`.
 
-* atdts: Dotted module paths in `import` declarations are now mapped to
-  path-separator form in the generated TypeScript import path. For example,
-  `import long.module.path` generates `import * as path from "./long/module/path"`
-  rather than `"./path"`.
-
-* ATD: **Experimental.** New `from ... import` syntax replaces the old `import` statement.
+* ATD: **Experimental.** Module support via new `from ... import ...` syntax.
   Types to be used must be listed explicitly; the full syntax is:
 
       from module.path <annots> [as alias] import type1 <annots>, type2, ...
 
   Key properties:
-  - Types must be listed explicitly (e.g. `from mylib import date, status`).
+  - Imported types must be listed explicitly
+    (e.g. `from mylib import date, status`).
+  - Supported languages: OCaml (atdml, not atdgen), Python (atdpy),
+    TypeScript (atdts)
   - Parameterized types declare their arity: `from mylib import 'a list_ne`.
   - The arity of each imported type is enforced at all use-sites within the
     importing file.
@@ -27,7 +25,10 @@
     `<ocaml name="...">` for atdml.
   - atdpy: alias names that are Python keywords are automatically suffixed
     with `_` (e.g. alias `class` → `class_` in generated code).
-  - atdgen does not support import statements; use atdml instead.
+  - atdts: Dotted module paths in `import` declarations are now mapped to
+    path-separator form in the generated TypeScript import path.
+    For example, `import long.module.path` generates
+    `import * as path from "./long/module/path"` rather than `"./path"`.
   - A warning is printed to stderr when an imported type name is never
     referenced in any type expression.
 

@@ -11,8 +11,15 @@
  (action (diff test.expected.atd test.out.atd)))
 
 (rule
+ (alias runtest)
  (targets test2.out.atd)
  (deps test2.atd)
+ (action (run %{bin:atdcat} %{deps} -o %{targets})))
+
+(rule
+ (alias runtest)
+ (targets soft_keywords.out.atd)
+ (deps soft_keywords.atd)
  (action (run %{bin:atdcat} %{deps} -o %{targets})))
 
 (rule

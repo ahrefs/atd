@@ -1,0 +1,20 @@
+(*
+   Soft keywords are keywords that were introduced late
+   and need to be allowed as lowercase identifiers to avoid breaking
+   existing code.
+
+   See the ATD parser (mly) to see what these keywords are and how
+   they're handled.
+*)
+
+<from from="" import>
+
+from from as as import import
+
+type from = (from list * as.import)
+
+type t = {
+  from: from;
+  ?import: int option;
+  ~as: int list;
+}

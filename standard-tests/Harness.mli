@@ -1,5 +1,5 @@
 (**
-   A standard test suite parametrized by the details needed to
+   A standard test harness parametrized by the details needed to
    build and run programs for the target language.
 *)
 

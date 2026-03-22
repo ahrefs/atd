@@ -669,7 +669,7 @@ type status <ocaml private> = [
 
 let standard_tests =
   let generate (x : Standard_tests.JSON_tests.json_test) =
-    Standard_tests.Wrapper.run_command ["atdml"; "types.atd"]
+    Standard_tests.Harness.run_command ["atdml"; "types.atd"]
   in
   let compile (x : Standard_tests.JSON_tests.json_test) =
     Testo.write_text_file (Fpath.v "main.ml") {|
@@ -681,20 +681,20 @@ let () =
   let json_out = Types.T.to_json x in
   print_endline json_out
 |};
-    Standard_tests.Wrapper.run_command [
+    Standard_tests.Harness.run_command [
       "ocamlfind"; "opt"; "-o"; "main.exe";
       "-package"; "yojson"; "-linkpkg";
       "types.mli"; "types.ml"; "main.ml";
     ]
   in
-  let conf : Standard_tests.Wrapper.json_conf = {
+  let conf : Standard_tests.Harness.json_conf = {
     name = "atdml";
     generate;
     compile;
     run_command = ["./main.exe"];
     expected_to_fail = [];
   } in
-  Standard_tests.Wrapper.make_tests conf
+  Standard_tests.Harness.make_tests conf
 
 let () =
   Testo.interpret_argv

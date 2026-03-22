@@ -7,7 +7,7 @@ type json_conf = {
   name: string;
 
   generate: JSON_tests.json_test -> unit;
-  (** Take the ATD file NAME.atd and generate the necessary code in the
+  (** Take the ATD file 'types.atd' and generate the necessary code in the
       target language. Any exception signals a failure. *)
 
   compile: JSON_tests.json_test -> unit;

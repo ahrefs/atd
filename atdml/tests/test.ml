@@ -181,7 +181,7 @@ let test_e2e ?(extra_sources = []) ?(extra_atd_files = []) test_name ~atd_src ~t
       build_and_run ~extra_sources ~extra_atd_files ~mli ~ml ~type_name ~json_in ()
     )
 
-let tests _env = [
+let atdml_specific_tests = [
   Testo.create "run atdml from temp folder"
     (fun () ->
        (* Avoid relying on 'dune exec' which is tricky *)
@@ -667,7 +667,36 @@ type status <ocaml private> = [
 |};
 ]
 
+let standard_tests =
+  let generate (x : Standard_tests.JSON_tests.json_test) =
+    Standard_tests.Wrapper.run_command ["atdml"; "types.atd"]
+  in
+  let compile (x : Standard_tests.JSON_tests.json_test) =
+    Testo.write_text_file (Fpath.v "main.ml") {|
+(* Read JSON from stdin, convert it to the expected OCaml data structure,
+   and then write JSON back to stdout. *)
+let () =
+  let yojson_in = Yojson.Safe.from_channel stdin in
+  let x : Types.t = Types.T.of_yojson yojson_in in
+  let json_out = Types.T.to_json x in
+  print_endline json_out
+|};
+    Standard_tests.Wrapper.run_command [
+      "ocamlfind"; "opt"; "-o"; "main.exe";
+      "-package"; "yojson"; "-linkpkg";
+      "types.mli"; "types.ml"; "main.ml";
+    ]
+  in
+  let conf : Standard_tests.Wrapper.json_conf = {
+    name = "atdml";
+    generate;
+    compile;
+    run_command = ["./main.exe"];
+    expected_to_fail = [];
+  } in
+  Standard_tests.Wrapper.make_tests conf
+
 let () =
   Testo.interpret_argv
     ~project_name:"atdml"
-    tests
+    (fun _env -> atdml_specific_tests @ standard_tests)

@@ -142,19 +142,21 @@ let make_json_tests (conf : json_conf) =
               Should_succeed
       in
       Testo.create
-        ~category:[conf.name; test.name] case.name
+        ~category:["standard"; conf.name; test.name] case.name
         ~expected_outcome
+        ~max_duration:5.
         (fun () ->
            (* Work in a temporary directory where we place a copy of the
               ATD file *)
            Testo.with_temp_dir ~chdir:true (fun _cwd ->
-             let atd_file_path = Fpath.v (test.name ^ ".atd") in
+             let atd_file_path = Fpath.v ("types.atd") in
              Testo.write_text_file atd_file_path test.atd_defs;
              eprintf "ATD defs in file %s:\n%s\n%!"
-               test.atd_defs (Fpath.to_string atd_file_path);
+               (Fpath.to_string atd_file_path) test.atd_defs;
              Lazy.force generate;
              Lazy.force compile;
              let ic, oc as process =
+               log_run_command conf.run_command;
                Unix.open_process_args
                  (get_cmd_name conf.run_command)
                  (Array.of_list conf.run_command) in

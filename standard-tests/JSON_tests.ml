@@ -18,7 +18,7 @@ let tests : json_test list = [
   {
     name = "color_enum";
     atd_defs = {|
-type color = [
+type t = [
   | Red
   | Green <json name="green">
   | Blue

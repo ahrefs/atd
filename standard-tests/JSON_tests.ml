@@ -1,5 +1,12 @@
 (*
    The standard test suite for all generators of JSON reader-writers.
+
+   Two lists of tests are defined:
+   - passing tests
+   - failing tests
+
+   Each test consists of one ATD spec and multiple JSON inputs pairs with
+   the expected output.
 *)
 
 type json_test_case = {
@@ -14,7 +21,9 @@ type json_test = {
   test_cases: json_test_case list;
 }
 
-let tests : json_test list = [
+type standard_outcome = Pass | Fail
+
+let passing_tests : json_test list = [
   {
     name = "color_enum";
     atd_defs = {|
@@ -275,3 +284,46 @@ type t = tree
     ]
   };
 ]
+
+(*
+   All these tests are expected to fail with an exception.
+*)
+let failing_tests : json_test list = [
+  {
+    name = "invalid_atd_syntax";
+    atd_defs = {|!!!|};
+    test_cases = [
+      {
+        name = "dummy";
+        json_input = {|[]|};
+        expected_output = {|[]|};
+      };
+    ]
+  };
+  {
+    name = "invalid_json_syntax";
+    atd_defs = {|type t = int list|};
+    test_cases = [
+      {
+        name = "empty input";
+        json_input = {||};
+        expected_output = {|[]|};
+      };
+    ]
+  };
+  {
+    name = "json_type_error";
+    atd_defs = {|type t = int list|};
+    test_cases = [
+      {
+        name = "number instead of array";
+        json_input = {|42|};
+        expected_output = {|[]|};
+      };
+    ]
+  }
+]
+
+let tests =
+  List.map (fun x -> (x, Pass)) passing_tests
+  @ List.map (fun x -> (x, Fail)) failing_tests

@@ -117,7 +117,8 @@ let run_command (cmd : string list) =
 
 let make_json_tests (conf : json_conf) =
   JSON_tests.tests
-  |> List.map (fun (test : J.json_test) ->
+  |> List.map (fun ((test : J.json_test),
+                    (standard_outcome : JSON_tests.standard_outcome)) ->
     let expected_to_fail =
       List.assoc_opt test.name conf.expected_to_fail
     in
@@ -135,16 +136,20 @@ let make_json_tests (conf : json_conf) =
     test.test_cases
     |> List.map (fun (case : J.json_test_case) ->
       let expected_outcome : Testo.expected_outcome =
+        let default : Testo.expected_outcome =
+          match standard_outcome with
+          | Pass -> Should_succeed
+          | Fail -> Should_fail "standard, expected failure"
+        in
         match expected_to_fail with
-        | None ->
-            Should_succeed
+        | None -> default
         | Some None ->
             Should_fail "not implemented"
         | Some (Some names) ->
             if List.mem case.name names then
               Should_fail "not implemented"
             else
-              Should_succeed
+              default
       in
       Testo.create
         ~category:["standard"; conf.name; test.name] case.name

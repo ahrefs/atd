@@ -25,4 +25,7 @@ type json_test = private {
   test_cases: json_test_case list;
 }
 
-val tests : json_test list
+type standard_outcome = Pass | Fail
+
+(** The list of tests and whether they're expected to pass *)
+val tests : (json_test * standard_outcome) list

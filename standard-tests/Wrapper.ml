@@ -167,7 +167,7 @@ let make_json_tests (conf : json_conf) =
                )
                (fun () ->
                   output_string oc case.json_input;
-                  flush oc;
+                  close_out oc;
                   let yojson_out = Yojson.Safe.from_channel ic in
                   Testo.(check text)
                     (normalize_json case.expected_output)

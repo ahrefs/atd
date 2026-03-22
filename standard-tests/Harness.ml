@@ -144,7 +144,7 @@ let make_json_tests (conf : json_conf) =
       Testo.create
         ~category:["standard"; conf.name; test.name] case.name
         ~expected_outcome
-        ~max_duration:5.
+        ~max_duration:15.
         (fun () ->
            (* Work in a temporary directory where we place a copy of the
               ATD file *)

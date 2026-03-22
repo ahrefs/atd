@@ -111,6 +111,7 @@ let log_run_command cmd =
 let run_command (cmd : string list) =
   log_run_command cmd;
   let oc = Unix.open_process_args_out (get_cmd_name cmd) (Array.of_list cmd) in
+  close_out oc;
   Fun.protect
     ~finally:(fun () -> Unix.close_process_out oc |> handle_exit_status cmd)
     (fun () -> ())

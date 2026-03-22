@@ -92,13 +92,13 @@ let handle_exit_status cmd (status : Unix.process_status) =
       eprintf "Command exited successfully: %s\n%!"
         (String.concat " " cmd)
   | WEXITED n ->
-      eprintf "Command exited with error code %i: %s\n%!"
+      ksprintf failwith "Command exited with error code %i: %s"
         n (String.concat " " cmd)
   | WSIGNALED n ->
-      eprintf "Command killed by signal %i: %s\n%!"
+      ksprintf failwith "Command killed by signal %i: %s"
         n (String.concat " " cmd)
   | WSTOPPED n ->
-      eprintf "Command stopped by signal %i: %s\n%!"
+      ksprintf failwith "Command stopped by signal %i: %s"
         n (String.concat " " cmd)
 
 let log_cwd () =
@@ -121,10 +121,15 @@ let make_json_tests (conf : json_conf) =
     let expected_to_fail =
       List.assoc_opt test.name conf.expected_to_fail
     in
-    let generate = lazy (
+    (* Use laziness to avoid rebuilding the same executable for
+       each test case.
+       Testo.Lazy_with_output is an improvement over the standard Lazy
+       module because it restores stdout and stderr, making the test
+       logs complete. *)
+    let generate = Testo.Lazy_with_output.create (fun () ->
       conf.generate test
     ) in
-    let compile = lazy (
+    let compile = Testo.Lazy_with_output.create (fun () ->
       conf.compile test
     ) in
     test.test_cases
@@ -153,8 +158,8 @@ let make_json_tests (conf : json_conf) =
              Testo.write_text_file atd_file_path test.atd_defs;
              eprintf "ATD defs in file %s:\n%s\n%!"
                (Fpath.to_string atd_file_path) test.atd_defs;
-             Lazy.force generate;
-             Lazy.force compile;
+             Testo.Lazy_with_output.force generate;
+             Testo.Lazy_with_output.force compile;
              let ic, oc as process =
                log_run_command conf.run_command;
                Unix.open_process_args

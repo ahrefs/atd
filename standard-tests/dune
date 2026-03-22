@@ -1,0 +1,12 @@
+; Build a standard test suite to be run for each target programming
+; language. Each relevant subproject is in charge of running its
+; test suite independently.
+(library
+ (name standard_tests)
+ (libraries
+   fpath
+   testo
+   yojson
+   unix
+ )
+)

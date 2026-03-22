@@ -122,17 +122,6 @@ let make_json_tests (conf : json_conf) =
     let expected_to_fail =
       List.assoc_opt test.name conf.expected_to_fail
     in
-    (* Use laziness to avoid rebuilding the same executable for
-       each test case.
-       Testo.Lazy_with_output is an improvement over the standard Lazy
-       module because it restores stdout and stderr, making the test
-       logs complete. *)
-    let generate = Testo.Lazy_with_output.create (fun () ->
-      conf.generate test
-    ) in
-    let compile = Testo.Lazy_with_output.create (fun () ->
-      conf.compile test
-    ) in
     test.test_cases
     |> List.map (fun (case : J.json_test_case) ->
       let expected_outcome : Testo.expected_outcome =
@@ -163,8 +152,8 @@ let make_json_tests (conf : json_conf) =
              Testo.write_text_file atd_file_path test.atd_defs;
              eprintf "ATD defs in file %s:\n%s\n%!"
                (Fpath.to_string atd_file_path) test.atd_defs;
-             Testo.Lazy_with_output.force generate;
-             Testo.Lazy_with_output.force compile;
+             conf.generate test;
+             conf.compile test;
              let ic, oc as process =
                log_run_command conf.run_command;
                Unix.open_process_args

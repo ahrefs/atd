@@ -113,7 +113,9 @@ let run_command (cmd : string list) =
   let oc = Unix.open_process_args_out (get_cmd_name cmd) (Array.of_list cmd) in
   close_out oc;
   Fun.protect
-    ~finally:(fun () -> Unix.close_process_out oc |> handle_exit_status cmd)
+    ~finally:(fun () ->
+      eprintf "Closing process %i\n%!" (Unix.process_out_pid oc);
+      Unix.close_process_out oc |> handle_exit_status cmd)
     (fun () -> ())
 
 let make_json_tests (conf : json_conf) =

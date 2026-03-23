@@ -5,9 +5,11 @@
    - passing tests
    - failing tests
 
-   Each test consists of one ATD spec and multiple JSON inputs pairs with
+   Each test consists of one ATD spec and multiple JSON inputs paired with
    the expected output.
 *)
+
+open Printf
 
 type json_test_case = {
   name: string;
@@ -324,6 +326,45 @@ let failing_tests : json_test list = [
   }
 ]
 
+(* Reimplement String.for_all because it's not available in OCaml 4.08 *)
+let string_for_all func str =
+  try
+    String.iter (fun c -> if not (func c) then raise Exit) str;
+    true
+  with Exit -> false
+
+(* Sanity check for names that may become part of file names. *)
+let check_safe_basename str =
+  if not (str <> "" &&
+          string_for_all (function
+            | '_' | 'a'..'z' | 'A'..'Z' | '0'..'9' -> true
+            | _ -> false
+          ) str
+         )
+  then
+    ksprintf failwith "invalid name in test suite: %S" str
+
+(* Sanity check for test names. *)
+let check_test_name str =
+  if not (str <> "" &&
+          string_for_all (function
+            | '_' | 'a'..'z' | 'A'..'Z' | '0'..'9'
+            | ' ' | '-' -> true
+            | _ -> false
+          ) str
+         )
+  then
+    ksprintf failwith "invalid name in test suite: %S" str
+
+let check_json_test (x : json_test) =
+  check_safe_basename x.name;
+  List.iter (fun (x : json_test_case) -> check_test_name x.name) x.test_cases
+
+let check_tests xs =
+  List.iter check_json_test xs
+
 let tests =
+  check_tests passing_tests;
+  check_tests failing_tests;
   List.map (fun x -> (x, Pass)) passing_tests
   @ List.map (fun x -> (x, Fail)) failing_tests

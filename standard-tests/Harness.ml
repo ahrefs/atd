@@ -112,7 +112,7 @@ let run_command (cmd : string list) =
   log_run_command cmd;
   let oc = Unix.open_process_args_out (get_cmd_name cmd) (Array.of_list cmd) in
   close_out oc;
-  eprintf "Closing process %i\n%!" (Unix.process_out_pid oc);
+  (* eprintf "Closing process %i\n%!" (Unix.process_out_pid oc); *)
   Unix.close_process_out oc |> handle_exit_status cmd
 
 let make_json_tests (conf : json_conf) =
@@ -168,6 +168,7 @@ let make_json_tests (conf : json_conf) =
                   output_string oc case.json_input;
                   close_out oc;
                   let yojson_out = Yojson.Safe.from_channel ic in
+                  close_in ic;
                   Testo.(check text)
                     (normalize_json case.expected_output)
                     (normalize_yojson yojson_out)

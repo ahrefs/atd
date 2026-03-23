@@ -112,11 +112,15 @@ let run_command (cmd : string list) =
   log_run_command cmd;
   let oc = Unix.open_process_args_out (get_cmd_name cmd) (Array.of_list cmd) in
   close_out oc;
-  Fun.protect
-    ~finally:(fun () ->
-      eprintf "Closing process %i\n%!" (Unix.process_out_pid oc);
-      Unix.close_process_out oc |> handle_exit_status cmd)
-    (fun () -> ())
+  try
+    Fun.protect
+      ~finally:(fun () ->
+        eprintf "Closing process %i\n%!" (Unix.process_out_pid oc);
+        Unix.close_process_out oc |> handle_exit_status cmd)
+      (fun () -> ())
+  with Fun.Finally_raised exn ->
+    (* Unwrap exceptions raised when closing the process. *)
+    raise exn
 
 let make_json_tests (conf : json_conf) =
   JSON_tests.tests

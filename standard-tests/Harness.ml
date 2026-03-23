@@ -15,71 +15,6 @@ type json_conf = {
   expected_to_fail: (string * string list option) list;
 }
 
-(* We sort the key/value pairs by key alphabetically but we don't care about
-   duplicates because generally their behavior of JSON parsers
-   with respect to duplicate keys varies.
-   Our test cases won't have duplicate keys. *)
-let rec normalize_json_tree (x : Yojson.Safe.t) =
-  match x with
-  | `Null
-  | `Bool _
-  | `Int _
-  | `Intlit _
-  | `Float _
-  | `String _ as x -> x
-  | `Assoc xs ->
-      `Assoc (
-        xs
-        |> List.map (fun (k, v) -> (k, normalize_json_tree v))
-        |> List.stable_sort (fun (a, _) (b, _) -> String.compare a b)
-      )
-  | `List xs -> `List (List.map normalize_json_tree xs)
-
-(* Pretty-print JSON in a dumb way that's not very compact but is stable
-   from one version of Yojson to the next and makes diffs more readable
-   by not putting more than one leaf node per line. *)
-let stable_pretty_print (x : Yojson.Safe.t) =
-  let rec pp indent buf = function
-    | `Null
-    | `Bool _
-    | `Int _
-    | `Intlit _
-    | `Float _
-    | `String _ as x ->
-        bprintf buf "%s%s\n" indent (Yojson.Safe.to_string x)
-    | `Assoc [] ->
-        bprintf buf "%s{}\n" indent;
-    | `Assoc xs ->
-        bprintf buf "%s{\n" indent;
-        List.iter (fun (k, v) ->
-          let indent = indent ^ "  " in
-          bprintf buf "%s%s:\n" indent (Yojson.Safe.to_string (`String k));
-          pp (indent ^ "  ") buf v
-        ) xs;
-        bprintf buf "%s}\n" indent
-  | `List [] ->
-      bprintf buf "%s[]\n" indent;
-  | `List xs ->
-      bprintf buf "%s[\n" indent;
-      List.iter (fun v ->
-        pp (indent ^ "  ") buf v
-      ) xs;
-      bprintf buf "%s]\n" indent
-  in
-  let buf = Buffer.create 100 in
-  pp "" buf x;
-  Buffer.contents buf
-
-let normalize_yojson yojson =
-  yojson
-  |> normalize_json_tree
-  |> stable_pretty_print
-
-let normalize_json json =
-  json
-  |> Yojson.Safe.from_string
-  |> normalize_yojson
-
 let get_cmd_name cmd =
   match cmd with
   | [] -> failwith "bad configuration: empty command"
@@ -155,8 +90,8 @@ let make_json_tests (conf : json_conf) =
                   close_out oc;
                   let yojson_out = Yojson.Safe.from_channel ic in
                   Testo.(check text)
-                    (normalize_json case.expected_output)
-                    (normalize_yojson yojson_out)
+                    (Util.normalize_json case.expected_output)
+                    (Util.normalize_yojson yojson_out)
                )
            )
         )

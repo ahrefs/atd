@@ -16,35 +16,13 @@ let atdml =
   (Fpath.v (Sys.getcwd ()) // Fpath.v "../local/bin/atdml")
   |> Fpath.to_string
 
-let run_command args =
-  let shell_command =
-    (* Escape the arguments using the OCaml conventions rather than
-       the local shell's conventions.
-       This should be good enough for testing. *)
-    args
-    |> List.map (sprintf "%S")
-    |> String.concat " "
-  in
-  eprintf "CWD %s\n" (Sys.getcwd ());
-  eprintf "RUN %s\n" shell_command;
-  flush stdout;
-  flush stderr;
-  match Sys.command shell_command with
-  | 0 -> ()
-  | n ->
-      let msg =
-        sprintf "Error: shell command failed with code %i: %s\n"
-          n shell_command
-      in
-      failwith msg
-
 (* Run the code generator on [atd_src] and return (mli_content, ml_content).
    Uses a temp directory so as not to pollute the working directory. *)
 let run_codegen ~test_name ~file_name atd_src =
   Testo.with_temp_dir ~chdir:true (fun _dir ->
     let atd_file = file_name ^ ".atd" in
     Testo.write_text_file (Fpath.v atd_file) atd_src;
-    run_command [atdml; atd_file];
+    Standard_tests.Util.run_command [atdml; atd_file];
     let mli = Testo.read_text_file (Fpath.v (file_name ^ ".mli")) in
     let ml = Testo.read_text_file (Fpath.v (file_name ^ ".ml"))  in
     (mli, ml)
@@ -79,7 +57,7 @@ let build_and_run ?(extra_sources = []) ?(extra_atd_files = []) ~mli ~ml ~type_n
       List.concat (List.map (fun (atd_fname, atd_src) ->
         let base = Filename.chop_suffix atd_fname ".atd" in
         Testo.write_text_file (Fpath.v atd_fname) atd_src;
-        run_command [atdml; atd_fname];
+        Standard_tests.Util.run_command [atdml; atd_fname];
         [ base ^ ".mli"; base ^ ".ml" ]
       ) extra_atd_files)
     in
@@ -96,8 +74,8 @@ let build_and_run ?(extra_sources = []) ?(extra_atd_files = []) ~mli ~ml ~type_n
       @ [ "Types.mli"; "Types.ml"; "Main.ml"; "-package"; "yojson"; "-linkpkg" ]
     in
     let run_cmd = ["./test_atdml"] in
-    run_command build_cmd;
-    run_command run_cmd
+    Standard_tests.Util.run_command build_cmd;
+    Standard_tests.Util.run_command run_cmd
   )
 
 (* Convert test name into a safe file name *)
@@ -186,7 +164,7 @@ let atdml_specific_tests = [
     (fun () ->
        (* Avoid relying on 'dune exec' which is tricky *)
        Testo.with_temp_dir ~chdir:true (fun _dir ->
-         run_command [atdml; "--help"]
+         Standard_tests.Util.run_command [atdml; "--help"]
        )
     );
 
@@ -669,7 +647,7 @@ type status <ocaml private> = [
 
 let standard_tests =
   let generate (x : Standard_tests.JSON_tests.json_test) =
-    Standard_tests.Harness.run_command [atdml; "types.atd"]
+    Standard_tests.Util.run_command [atdml; "types.atd"]
   in
   let compile (x : Standard_tests.JSON_tests.json_test) =
     Testo.write_text_file (Fpath.v "main.ml") {|
@@ -681,7 +659,7 @@ let () =
   let json_out = Types.T.to_json x in
   print_endline json_out
 |};
-    Standard_tests.Harness.run_command [
+    Standard_tests.Util.run_command [
       "ocamlfind"; "opt"; "-o"; "main.exe";
       "-package"; "yojson"; "-linkpkg";
       "types.mli"; "types.ml"; "main.ml";

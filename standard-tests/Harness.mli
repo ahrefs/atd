@@ -34,7 +34,3 @@ type json_conf = {
 
 (** The standard test suite configured for a specific code generator *)
 val make_tests : json_conf -> Testo.t list
-
-(** Helper: runs the command safely and portably, logs the command
-    invocation and prints exit status. *)
-val run_command : string list -> unit

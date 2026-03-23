@@ -101,19 +101,6 @@ let handle_exit_status cmd (status : Unix.process_status) =
       ksprintf failwith "Command stopped by signal %i: %s"
         n (String.concat " " cmd)
 
-let log_cwd () =
-  eprintf "CWD: %s\n%!" (Sys.getcwd ())
-
-let log_run_command cmd =
-  log_cwd ();
-  eprintf "RUN: %s\n%!" (String.concat " " cmd)
-
-let run_command (cmd : string list) =
-  log_run_command cmd;
-  let oc = Unix.open_process_args_out (get_cmd_name cmd) (Array.of_list cmd) in
-  close_out oc;
-  Unix.close_process_out oc |> handle_exit_status cmd
-
 let make_json_tests (conf : json_conf) =
   JSON_tests.tests
   |> List.map (fun ((test : J.json_test),
@@ -154,7 +141,7 @@ let make_json_tests (conf : json_conf) =
              conf.generate test;
              conf.compile test;
              let ic, oc as process =
-               log_run_command conf.run_command;
+               Util.log_command conf.run_command;
                Unix.open_process_args
                  (get_cmd_name conf.run_command)
                  (Array.of_list conf.run_command) in

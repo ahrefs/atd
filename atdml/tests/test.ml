@@ -669,7 +669,7 @@ type status <ocaml private> = [
 
 let standard_tests =
   let generate (x : Standard_tests.JSON_tests.json_test) =
-    Standard_tests.Harness.run_command ["atdml"; "types.atd"]
+    Standard_tests.Harness.run_command [atdml; "types.atd"]
   in
   let compile (x : Standard_tests.JSON_tests.json_test) =
     Testo.write_text_file (Fpath.v "main.ml") {|

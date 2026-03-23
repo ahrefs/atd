@@ -326,10 +326,17 @@ let failing_tests : json_test list = [
   }
 ]
 
+(* Reimplement String.for_all because it's not available in OCaml 4.08 *)
+let string_for_all func str =
+  try
+    String.iter (fun c -> if not (func c) then raise Exit) str;
+    true
+  with Exit -> false
+
 (* Sanity check for names that may become part of file names. *)
 let check_safe_basename str =
   if not (str <> "" &&
-          String.for_all (function
+          string_for_all (function
             | '_' | 'a'..'z' | 'A'..'Z' | '0'..'9' -> true
             | _ -> false
           ) str
@@ -340,7 +347,7 @@ let check_safe_basename str =
 (* Sanity check for test names. *)
 let check_test_name str =
   if not (str <> "" &&
-          String.for_all (function
+          string_for_all (function
             | '_' | 'a'..'z' | 'A'..'Z' | '0'..'9'
             | ' ' | '-' -> true
             | _ -> false

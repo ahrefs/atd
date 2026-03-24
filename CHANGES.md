@@ -1,7 +1,10 @@
 unreleased
 ----------
 
-...
+* Testing: Add a standard JSON round-trip test suite (`standard-tests/`)
+  that any code generator can opt into. The harness generates code from an
+  ATD spec, compiles it, feeds JSON to stdin, and checks the output.
+  atdml is the first backend to run these tests.
 
 4.0.0 (2026-03-16)
 ------------------

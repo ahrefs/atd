@@ -1,3 +1,0 @@
-(library
- (name atd_json_ast)
- (public_name atd-json-ast))

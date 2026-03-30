@@ -18,37 +18,17 @@ let of_float f =
   in
   { int = int_opt; float = Some f; literal = None }
 
-(* Check that [s] is a syntactically valid JSON number literal.
-   JSON grammar: minus? ( 0 | [1-9][0-9]* ) ( '.' [0-9]+ )? ( [eE] [+-]? [0-9]+ )? *)
-let is_valid_json_number s =
-  let n = String.length s in
-  if n = 0 then false
-  else
-    let i = ref 0 in
-    if s.[!i] = '-' then incr i;
-    let int_start = !i in
-    (* Integer part *)
-    (if !i < n && s.[!i] = '0' then incr i
-     else while !i < n && s.[!i] >= '0' && s.[!i] <= '9' do incr i done);
-    if !i = int_start then false (* no digits *)
-    else
-      let ok = ref true in
-      (* Optional fractional part *)
-      if !i < n && s.[!i] = '.' then begin
-        incr i;
-        let frac_start = !i in
-        while !i < n && s.[!i] >= '0' && s.[!i] <= '9' do incr i done;
-        if !i = frac_start then ok := false
-      end;
-      (* Optional exponent *)
-      if !ok && !i < n && (s.[!i] = 'e' || s.[!i] = 'E') then begin
-        incr i;
-        if !i < n && (s.[!i] = '+' || s.[!i] = '-') then incr i;
-        let exp_start = !i in
-        while !i < n && s.[!i] >= '0' && s.[!i] <= '9' do incr i done;
-        if !i = exp_start then ok := false
-      end;
-      !ok && !i = n
+(* JSON grammar: minus? ( 0 | [1-9][0-9]* ) ( '.' [0-9]+ )? ( [eE] [+-]? [0-9]+ )? *)
+let json_number_re =
+  let open Re in
+  compile (whole_string (seq [
+    opt (char '-');
+    alt [char '0'; seq [rg '1' '9'; rep digit]];
+    opt (seq [char '.'; rep1 digit]);
+    opt (seq [set "eE"; opt (set "+-"); rep1 digit]);
+  ]))
+
+let is_valid_json_number s = Re.execp json_number_re s
 
 let of_string_opt s =
   if not (is_valid_json_number s) then None

@@ -47,32 +47,32 @@ let run_codegen ~test_name ~file_name atd_src =
 (* Helper code emitted at the top of Main.ml when test_jsonlike is true.
    Converts a Yojson.Safe.t to Atd_jsonlike.AST.t with dummy locations. *)
 let yojson_to_jsonlike_code = {|
-let dummy_loc_ =
-  let pos_ = Atd_jsonlike.Pos.{ row = 0; column = 0 } in
-  Atd_jsonlike.Loc.{ start = pos_; end_ = pos_; path = None }
+let dummy_loc =
+  let pos = Atd_jsonlike.Pos.{ row = 0; column = 0 } in
+  Atd_jsonlike.Loc.{ start = pos; end_ = pos; path = None }
 
-let rec yojson_to_jsonlike_ (x : Yojson.Safe.t) : Atd_jsonlike.AST.t =
+let rec yojson_to_jsonlike (x : Yojson.Safe.t) : Atd_jsonlike.AST.t =
   match x with
-  | `Null        -> Atd_jsonlike.AST.Null dummy_loc_
-  | `Bool b      -> Atd_jsonlike.AST.Bool (dummy_loc_, b)
-  | `Int n       -> Atd_jsonlike.AST.Number (dummy_loc_, Atd_jsonlike.Number.of_int n)
-  | `Float f     -> Atd_jsonlike.AST.Number (dummy_loc_, Atd_jsonlike.Number.of_float f)
+  | `Null        -> Atd_jsonlike.AST.Null dummy_loc
+  | `Bool b      -> Atd_jsonlike.AST.Bool (dummy_loc, b)
+  | `Int n       -> Atd_jsonlike.AST.Number (dummy_loc, Atd_jsonlike.Number.of_int n)
+  | `Float f     -> Atd_jsonlike.AST.Number (dummy_loc, Atd_jsonlike.Number.of_float f)
   | `Intlit s ->
       (match Atd_jsonlike.Number.of_string_opt s with
-       | Some n -> Atd_jsonlike.AST.Number (dummy_loc_, n)
-       | None   -> failwith ("yojson_to_jsonlike_: not a JSON number: " ^ s))
-  | `String s    -> Atd_jsonlike.AST.String (dummy_loc_, s)
-  | `List xs     -> Atd_jsonlike.AST.Array (dummy_loc_, List.map yojson_to_jsonlike_ xs)
+       | Some n -> Atd_jsonlike.AST.Number (dummy_loc, n)
+       | None   -> failwith ("yojson_to_jsonlike: not a JSON number: " ^ s))
+  | `String s    -> Atd_jsonlike.AST.String (dummy_loc, s)
+  | `List xs     -> Atd_jsonlike.AST.Array (dummy_loc, List.map yojson_to_jsonlike xs)
   | `Assoc pairs ->
-      Atd_jsonlike.AST.Object (dummy_loc_,
-        List.map (fun (k, v) -> (dummy_loc_, k, yojson_to_jsonlike_ v)) pairs)
+      Atd_jsonlike.AST.Object (dummy_loc,
+        List.map (fun (k, v) -> (dummy_loc, k, yojson_to_jsonlike v)) pairs)
 |}
 
 let test_program ?(test_jsonlike = true) ~type_name ~json_in () =
   let jsonlike_check =
     if test_jsonlike then
       sprintf {|;
-  let jsonlike_in = yojson_to_jsonlike_ yojson_in in
+  let jsonlike_in = yojson_to_jsonlike yojson_in in
   let typed_data2 = Types.%s_of_jsonlike jsonlike_in in
   let yojson_out2 = Types.yojson_of_%s typed_data2 in
   if yojson_out <> yojson_out2 then (

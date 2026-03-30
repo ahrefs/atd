@@ -32,8 +32,59 @@ let run_codegen ~test_name ~file_name atd_src =
    JSON data is printed so it can be captured by the test framework.
 
    type_name: the OCaml type name, not the ATD type name (in case they differ)
+
+   When test_jsonlike is true (the default), the program also runs a silent
+   jsonlike round-trip: it converts the Yojson input to Atd_jsonlike.AST.t
+   with dummy locations, deserializes via of_jsonlike, re-serializes via
+   yojson_of, and asserts the result matches the yojson round-trip output.
+   On mismatch the program exits with code 1 (no stdout change, so existing
+   snapshots are unaffected).
+
+   Set test_jsonlike:false for types that are known to be unsupported in
+   jsonlike mode (abstract, JSON adapters).
 *)
-let test_program ~type_name ~json_in = sprintf {|
+
+(* Helper code emitted at the top of Main.ml when test_jsonlike is true.
+   Converts a Yojson.Safe.t to Atd_jsonlike.AST.t with dummy locations. *)
+let yojson_to_jsonlike_code = {|
+let dummy_loc_ =
+  let pos_ = Atd_jsonlike.Pos.{ row = 0; column = 0 } in
+  Atd_jsonlike.Loc.{ start = pos_; end_ = pos_; path = None }
+
+let rec yojson_to_jsonlike_ (x : Yojson.Safe.t) : Atd_jsonlike.AST.t =
+  match x with
+  | `Null        -> Atd_jsonlike.AST.Null dummy_loc_
+  | `Bool b      -> Atd_jsonlike.AST.Bool (dummy_loc_, b)
+  | `Int n       -> Atd_jsonlike.AST.Number (dummy_loc_, Atd_jsonlike.Number.of_int n)
+  | `Float f     -> Atd_jsonlike.AST.Number (dummy_loc_, Atd_jsonlike.Number.of_float f)
+  | `Intlit s ->
+      (match Atd_jsonlike.Number.of_string_opt s with
+       | Some n -> Atd_jsonlike.AST.Number (dummy_loc_, n)
+       | None   -> failwith ("yojson_to_jsonlike_: not a JSON number: " ^ s))
+  | `String s    -> Atd_jsonlike.AST.String (dummy_loc_, s)
+  | `List xs     -> Atd_jsonlike.AST.Array (dummy_loc_, List.map yojson_to_jsonlike_ xs)
+  | `Assoc pairs ->
+      Atd_jsonlike.AST.Object (dummy_loc_,
+        List.map (fun (k, v) -> (dummy_loc_, k, yojson_to_jsonlike_ v)) pairs)
+|}
+
+let test_program ?(test_jsonlike = true) ~type_name ~json_in () =
+  let jsonlike_check =
+    if test_jsonlike then
+      sprintf {|;
+  let jsonlike_in = yojson_to_jsonlike_ yojson_in in
+  let typed_data2 = Types.%s_of_jsonlike jsonlike_in in
+  let yojson_out2 = Types.yojson_of_%s typed_data2 in
+  if yojson_out <> yojson_out2 then (
+    Printf.eprintf "Jsonlike round-trip mismatch!\n";
+    Printf.eprintf "Expected: %%s\n" (Yojson.Safe.pretty_to_string yojson_out);
+    Printf.eprintf "Got:      %%s\n" (Yojson.Safe.pretty_to_string yojson_out2);
+    exit 1
+  )|}
+        type_name type_name
+    else ""
+  in
+  sprintf {|%s
 let () =
   let json_in = %S in
   let yojson_in = Yojson.Safe.from_string json_in in
@@ -42,11 +93,12 @@ let () =
   let json_out = Yojson.Safe.pretty_to_string yojson_out in
   let json_in_comparable = Yojson.Safe.pretty_to_string yojson_in in
   Printf.printf "--- Input:\n%%s\n" json_in_comparable;
-  Printf.printf "--- Output:\n%%s\n" json_out
+  Printf.printf "--- Output:\n%%s\n" json_out%s
 |}
-    json_in type_name type_name
+    (if test_jsonlike then yojson_to_jsonlike_code else "")
+    json_in type_name type_name jsonlike_check
 
-let build_and_run ?(extra_sources = []) ?(extra_atd_files = []) ~mli ~ml ~type_name ~json_in () =
+let build_and_run ?(test_jsonlike = true) ?(extra_sources = []) ?(extra_atd_files = []) ~mli ~ml ~type_name ~json_in () =
   Testo.with_temp_dir ~chdir:true (fun _dir ->
     List.iter (fun (fname, content) ->
       Testo.write_text_file (Fpath.v fname) content
@@ -65,7 +117,7 @@ let build_and_run ?(extra_sources = []) ?(extra_atd_files = []) ~mli ~ml ~type_n
     Testo.write_text_file (Fpath.v "Types.ml") ml;
     Testo.write_text_file
       (Fpath.v "Main.ml")
-      (test_program ~type_name ~json_in);
+      (test_program ~test_jsonlike ~type_name ~json_in ());
     let extra_files = List.map fst extra_sources in
     let build_cmd =
       [ "ocamlfind"; "opt"; "-o"; "test_atdml" ]
@@ -144,7 +196,7 @@ let test_codegen_error test_name ~atd_src =
    The interesting outputs (mli, ml, JSON) are printed to stdout and
    captured as a test snapshot.
 *)
-let test_e2e ?(extra_sources = []) ?(extra_atd_files = []) test_name ~atd_src ~type_name ~json_in =
+let test_e2e ?(test_jsonlike = true) ?(extra_sources = []) ?(extra_atd_files = []) test_name ~atd_src ~type_name ~json_in =
   let file_name = make_filename_from_test_name test_name in
   Testo.create test_name
     ~checked_output:(Testo.stdout
@@ -156,7 +208,7 @@ let test_e2e ?(extra_sources = []) ?(extra_atd_files = []) test_name ~atd_src ~t
       print_string mli;
       print_string "--- ml ---\n";
       print_string ml;
-      build_and_run ~extra_sources ~extra_atd_files ~mli ~ml ~type_name ~json_in ()
+      build_and_run ~test_jsonlike ~extra_sources ~extra_atd_files ~mli ~ml ~type_name ~json_in ()
     )
 
 let atdml_specific_tests = [
@@ -277,6 +329,7 @@ type person = {
 ;
 
   test_e2e "builtin types"
+    ~test_jsonlike:false (* abstract type is not supported in jsonlike mode *)
     ~atd_src:{|
 type all_types = {
   a_unit: unit;
@@ -369,6 +422,7 @@ type module_ = string
   ;
 
   test_e2e "adapter"
+    ~test_jsonlike:false (* JSON adapters are not supported in jsonlike mode *)
     (* The adapter converts between ATD's ["Constructor", ...] sum encoding
        and an object with a "type" field, i.e. {"type": "Image", "url": "..."}.
        We use adapter.to_ocaml / adapter.from_ocaml with inline expressions. *)

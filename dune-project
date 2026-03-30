@@ -217,7 +217,6 @@ This library contains the types that are used by atdgen's
 Melange backend")
  (depends
   (ocaml (>= 4.08))
-  (re (>= 1.9.0))
   (odoc :with-doc)))
 
 (package
@@ -280,4 +279,6 @@ atd-jsonlike provides a generic tree type for representing JSON-like data
 tools such as atdml.")
  (depends
   (ocaml (>= 4.08))
+  (re (>= 1.9.0))
+  (testo (and (>= 0.3.0) :with-test))
   (odoc :with-doc)))

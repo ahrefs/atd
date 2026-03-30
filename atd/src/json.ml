@@ -39,10 +39,16 @@ type json_record = {
   json_record_adapter : json_adapter;
 }
 
+type json_sum_repr = Array | Object
+
 type json_sum = {
   json_sum_adapter : json_adapter;
   json_open_enum : bool;
   json_lowercase_tags : bool;
+  json_sum_repr : json_sum_repr;
+    (** Whether tagged variants are encoded as ["Cons", payload] (Array,
+        default) or {"Cons": payload} (Object). Unit variants are always
+        encoded as "Cons" strings regardless. *)
 }
 
 (*
@@ -210,10 +216,24 @@ let get_json_open_enum an =
 let get_json_lowercase_tags an =
   Annot.get_flag ~sections:["json"] ~field:"lowercase_tags" an
 
+let json_sum_repr_of_string s : json_sum_repr option =
+  match s with
+  | "object" -> Some Object
+  | _ -> None
+
+let get_json_sum_repr an =
+  Annot.get_field
+    ~parse:json_sum_repr_of_string
+    ~default:Array
+    ~sections:["json"]
+    ~field:"repr"
+    an
+
 let get_json_sum an = {
   json_sum_adapter = get_json_adapter an;
   json_open_enum = get_json_open_enum an;
   json_lowercase_tags = get_json_lowercase_tags an;
+  json_sum_repr = get_json_sum_repr an;
 }
 
 let get_json_list an =

@@ -25,6 +25,7 @@ type lang_support = {
   json_field_names:   support;
   json_variant_names: support;
   json_repr_object:   support;
+  sum_repr_object:    support;
   json_adapter:       support;
   imports:              support;
   binary_serialization: support;
@@ -60,8 +61,9 @@ let features : feature list = [
   { name = "Doc comments";         description = "<doc text=\"...\"> -> language docstrings";   get = fun s -> s.doc_comments };
   { name = "JSON field names";     description = "<json name=\"...\"> on record fields";        get = fun s -> s.json_field_names };
   { name = "JSON variant names";   description = "<json name=\"...\"> on sum type constructors"; get = fun s -> s.json_variant_names };
-  { name = "Assoc as JSON object"; description = "(string * v) list <json repr=\"object\">";    get = fun s -> s.json_repr_object };
-  { name = "JSON adapter";         description = "Custom pre/post-processing hooks";            get = fun s -> s.json_adapter };
+  { name = "Assoc as JSON object"; description = "(string * v) list <json repr=\"object\">";          get = fun s -> s.json_repr_object };
+  { name = "Sum as JSON object";   description = "sum type <json repr=\"object\">: {\"Cons\": payload}"; get = fun s -> s.sum_repr_object };
+  { name = "JSON adapter";         description = "Custom pre/post-processing hooks";                    get = fun s -> s.json_adapter };
   { name = "Cross-file imports";      description = "from module import type1, type2";                                                        get = fun s -> s.imports };
   { name = "Binary serialization";    description = "Biniou format: faster than JSON, field/constructor names encoded as low-collision hashes"; get = fun s -> s.binary_serialization };
   { name = "Open enumerations";       description = "Unknown variants round-tripped as-is";                                                     get = fun s -> s.open_enums };
@@ -87,6 +89,7 @@ let all_yes = {
   json_field_names   = Yes;
   json_variant_names = Yes;
   json_repr_object   = Yes;
+  sum_repr_object    = Yes;
   json_adapter       = Yes;
   imports              = Yes;
   binary_serialization = Yes;
@@ -101,23 +104,27 @@ let languages : (string * lang_support) list = [
     binary_serialization = No;
   };
   "atdgen (OCaml)", { all_yes with
+    sum_repr_object      = Planned;
     imports              = No;
     binary_serialization = Yes;
   };
   "atdpy (Python)", { all_yes with
-    wrap         = Planned;
-    json_adapter = Planned;
-    open_enums   = Planned;
+    wrap            = Planned;
+    sum_repr_object = Planned;
+    json_adapter    = Planned;
+    open_enums      = Planned;
     binary_serialization = No;
   };
   "atdts (TypeScript)", { all_yes with
-    json_adapter = Planned;
-    open_enums   = Planned;
+    sum_repr_object = Planned;
+    json_adapter    = Planned;
+    open_enums      = Planned;
     binary_serialization = No;
   };
   "atdj (Java)", { all_yes with
     wrap             = Planned;
     json_repr_object = Planned;
+    sum_repr_object  = Planned;
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;
@@ -126,6 +133,7 @@ let languages : (string * lang_support) list = [
   "atds (Scala)", { all_yes with
     wrap             = Planned;
     json_repr_object = Planned;
+    sum_repr_object  = Planned;
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;
@@ -134,6 +142,7 @@ let languages : (string * lang_support) list = [
   "atdd (D)", { all_yes with
     doc_comments     = Planned;
     json_repr_object = Planned;
+    sum_repr_object  = Planned;
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;
@@ -142,6 +151,7 @@ let languages : (string * lang_support) list = [
   "atdcpp (C++)", { all_yes with
     doc_comments     = Planned;
     json_repr_object = Planned;
+    sum_repr_object  = Planned;
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;

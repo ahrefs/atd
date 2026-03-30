@@ -14,4 +14,5 @@ type t = {
     (** position within the line, starting from 0 *)
 }
 
-(* TODO: equal, compare *)
+val equal : t -> t -> bool
+val compare : t -> t -> int

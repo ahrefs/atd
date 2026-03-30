@@ -14,4 +14,5 @@ type t = {
         system. *)
 }
 
-(* TODO: equal, compare *)
+val equal : t -> t -> bool
+val compare : t -> t -> int

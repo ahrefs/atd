@@ -237,6 +237,22 @@ let adapter_exprs (adapter : Atd.Json.json_adapter) =
   | None -> (None, None)
   | Some a -> (Some a.normalize, Some a.restore)
 
+(* Derive the normalize_jsonlike expression from a module-based adapter.
+   Module-based adapters have normalize = "M.normalize"; we produce
+   "M.normalize_jsonlike". Inline adapters (adapter.to_ocaml/from_ocaml)
+   wrap the expression in parens and are not supported for jsonlike. *)
+let normalize_jsonlike_of_adapter (adapter : Atd.Json.json_adapter) =
+  match adapter.ocaml_adapter with
+  | None -> None
+  | Some a ->
+      let suffix = ".normalize" in
+      let n = a.normalize in
+      let slen = String.length suffix and nlen = String.length n in
+      if nlen > slen && String.sub n (nlen - slen) slen = suffix then
+        Some (String.sub n 0 (nlen - slen) ^ ".normalize_jsonlike")
+      else
+        None
+
 (* ============ Doc comment helpers ============ *)
 
 (* Escape special characters for OCaml's ocamldoc format *)
@@ -359,8 +375,9 @@ type mode = {
     (** Build the reader function name for a user type, e.g. "foo_of_yojson" *)
   mode_tvar_reader: string -> string;
     (** Type-variable reader param name, e.g. "of_yojson_a" *)
-  supports_json_adapters: bool;
-    (** Whether JSON adapter normalize/restore calls are emitted *)
+  normalize_of_adapter: Atd.Json.json_adapter -> string option;
+    (** Extract the normalize expression for this mode from an adapter annotation.
+        Returns [None] if the adapter is not applicable for this mode. *)
   tuple_arr_pat: int -> string;
     (** Pattern string matching an array of exactly n elements *)
   sum_unit_pat: string -> string;
@@ -388,7 +405,8 @@ let yojson_mode = {
   suffix = "yojson";
   of_name = of_yojson_name;
   mode_tvar_reader = (fun v -> "of_yojson_" ^ v);
-  supports_json_adapters = true;
+  normalize_of_adapter = (fun adapter ->
+    Option.map (fun a -> a.Atd.Json.normalize) adapter.Atd.Json.ocaml_adapter);
   tuple_arr_pat = (fun n ->
     sprintf "`List lst when List.length lst = %d" n);
   sum_unit_pat = (fun jn -> sprintf "`String \"%s\"" jn);
@@ -421,7 +439,7 @@ let jsonlike_mode = {
   suffix = "jsonlike";
   of_name = of_jsonlike_name;
   mode_tvar_reader = (fun v -> "of_jsonlike_" ^ v);
-  supports_json_adapters = false;
+  normalize_of_adapter = normalize_jsonlike_of_adapter;
   tuple_arr_pat = (fun n ->
     sprintf "Atd_jsonlike.AST.Array (_, lst) when List.length lst = %d" n);
   sum_unit_pat = (fun jn ->
@@ -1152,10 +1170,8 @@ let gen_reader env mode ({A.name; param=params; annot=an; value=e; _} : A.type_d
                    (mode.sum_tagged_pat json_name) tick cons_name
                    (reader_expr env mode e))
         in
-        let (normalize, _) =
-          if mode.supports_json_adapters then
-            adapter_exprs (Atd.Json.get_json_sum sum_an).json_sum_adapter
-          else (None, None)
+        let normalize =
+          mode.normalize_of_adapter (Atd.Json.get_json_sum sum_an).json_sum_adapter
         in
         let pre = match normalize with
           | None -> []
@@ -1187,10 +1203,8 @@ let gen_reader env mode ({A.name; param=params; annot=an; value=e; _} : A.type_d
             else sprintf "%s = %s" pfname lname
           ) fields
         in
-        let (normalize, _) =
-          if mode.supports_json_adapters then
-            adapter_exprs (Atd.Json.get_json_record rec_an).json_record_adapter
-          else (None, None)
+        let normalize =
+          mode.normalize_of_adapter (Atd.Json.get_json_record rec_an).json_record_adapter
         in
         let pre = match normalize with
           | None -> []

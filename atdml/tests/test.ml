@@ -422,10 +422,9 @@ type module_ = string
   ;
 
   test_e2e "adapter"
-    ~test_jsonlike:false (* JSON adapters are not supported in jsonlike mode *)
     (* The adapter converts between ATD's ["Constructor", ...] sum encoding
        and an object with a "type" field, i.e. {"type": "Image", "url": "..."}.
-       We use adapter.to_ocaml / adapter.from_ocaml with inline expressions. *)
+       For yojson: normalize/restore. For jsonlike: normalize_jsonlike. *)
     ~extra_sources:[
       ("My_adapter.ml", {|
 (* Converts {"type": "Foo", ...rest} <-> ["Foo", {...rest}] *)
@@ -445,6 +444,18 @@ let restore = function
       `Assoc (("type", `String tag) :: rest)
   | `String tag ->
       `Assoc [("type", `String tag)]
+  | x -> x
+
+let normalize_jsonlike = function
+  | Atd_jsonlike.AST.Object (loc, fields) ->
+      let tag =
+        match List.find_opt (fun (_, k, _) -> k = "type") fields with
+        | Some (_, _, Atd_jsonlike.AST.String (_, s)) -> s
+        | _ -> failwith "My_adapter.normalize_jsonlike: missing 'type' field"
+      in
+      let rest = List.filter (fun (_, k, _) -> k <> "type") fields in
+      Atd_jsonlike.AST.Array (loc,
+        [Atd_jsonlike.AST.String (loc, tag); Atd_jsonlike.AST.Object (loc, rest)])
   | x -> x
 |})]
     ~atd_src:{|

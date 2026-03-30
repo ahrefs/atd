@@ -773,24 +773,31 @@ are particularly useful when a JSON API uses conventions that differ from the
 ATD defaults — for instance when sum types are encoded as objects with a
 ``"type"`` discriminator field rather than as ``["Constructor", ...]`` arrays.
 
-The user-provided adapter module must implement two functions:
+The user-provided adapter module must implement two functions for the Yojson
+path, plus an optional third function for the jsonlike path:
 
 .. code:: ocaml
 
     val normalize : Yojson.Safe.t -> Yojson.Safe.t
     (** Convert from the original JSON to ATD-compatible JSON.
-        Called before deserialization. *)
+        Called before deserialization via of_yojson. *)
 
     val restore : Yojson.Safe.t -> Yojson.Safe.t
     (** Convert from ATD-compatible JSON back to the original JSON.
-        Called after serialization. *)
+        Called after serialization via yojson_of. *)
+
+    val normalize_jsonlike : Atd_jsonlike.AST.t -> Atd_jsonlike.AST.t
+    (** Optional. Convert from the original jsonlike AST to ATD-compatible form.
+        Called before deserialization via of_jsonlike. If absent, of_jsonlike
+        will not apply any adapter transformation for this type. *)
 
 Field ``adapter.ocaml``
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Position: on a sum type or record type expression
 
-Value: an OCaml module identifier providing ``normalize`` and ``restore``
+Value: an OCaml module identifier providing ``normalize``, ``restore``, and
+optionally ``normalize_jsonlike``
 
 Example — adapting a type-field encoded sum type:
 
@@ -825,6 +832,17 @@ With the following adapter module:
           `Assoc (("type", `String tag) :: rest)
       | x -> x
 
+    let normalize_jsonlike = function
+      | Atd_jsonlike.AST.Object (loc, fields) ->
+          let tag = match List.find_opt (fun (_, k, _) -> k = "type") fields with
+            | Some (_, _, Atd_jsonlike.AST.String (_, s)) -> s
+            | _ -> failwith "missing 'type' field"
+          in
+          let rest = List.filter (fun (_, k, _) -> k <> "type") fields in
+          Atd_jsonlike.AST.Array (loc,
+            [Atd_jsonlike.AST.String (loc, tag); Atd_jsonlike.AST.Object (loc, rest)])
+      | x -> x
+
 ATD-compatible JSON values for ``document``:
 
 - ``["Image", {"url": "https://example.com/pic.jpg"}]``
@@ -854,6 +872,12 @@ functions as inline OCaml expressions, without requiring a dedicated module:
 
 Both fields must be provided together. The values are OCaml expressions of
 type ``Yojson.Safe.t -> Yojson.Safe.t``.
+
+.. note::
+
+   Inline adapters (``adapter.to_ocaml`` / ``adapter.from_ocaml``) do not
+   support ``normalize_jsonlike``. Use ``adapter.ocaml`` with a module if
+   jsonlike adapter support is needed.
 
 Import declarations
 -------------------

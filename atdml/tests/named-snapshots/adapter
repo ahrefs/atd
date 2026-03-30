@@ -374,6 +374,7 @@ let document_of_yojson (x : Yojson.Safe.t) : document =
   | _ -> Atdml_runtime.Yojson.bad_sum "document" x
 
 let document_of_jsonlike (x : Atd_jsonlike.AST.t) : document =
+  let x = My_adapter.normalize_jsonlike x in
   match x with
   | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Image"); v]) -> Image (image_of_jsonlike v)
   | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Text"); v]) -> Text (text_of_jsonlike v)

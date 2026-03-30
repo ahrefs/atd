@@ -21,6 +21,10 @@ unreleased
     (reduces generated code and removes the `atd-jsonlike` runtime dependency)
   - `--no-yojson`: suppress generation of Yojson-based readers/writers
     (for users who only need the jsonlike path)
+  - JSON adapters (`<json adapter.ocaml="M">`) are supported for the jsonlike
+    path: if the adapter module `M` provides `normalize_jsonlike`, it is called
+    before deserialization by `foo_of_jsonlike`. Inline adapters
+    (`adapter.to_ocaml`/`adapter.from_ocaml`) do not support jsonlike.
 
 4.0.0 (2026-03-16)
 ------------------

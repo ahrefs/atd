@@ -318,7 +318,8 @@ Notes:
 - JSON tuples use the array notation, e.g. ``[1, "hello", true]``.
 - Sum type constructors without arguments are represented as a JSON string,
   e.g. ``"Leaf"``. Constructors with an argument use a two-element array,
-  e.g. ``["Node", ...]``.
+  e.g. ``["Node", ...]``. An alternative single-key object encoding
+  (``{"Node": ...}``) is available via ``<json repr="object">``.
 - Optional record fields (marked with ``?``) are omitted from the JSON object
   when their value is ``None``.
 - With-default record fields (marked with ``~``) are omitted from the JSON
@@ -360,6 +361,57 @@ A valid JSON object of the ``profile`` type above is:
 .. code:: json
 
     {"user_id": "abc123", "name": "Alice"}
+
+Field ``repr``
+""""""""""""""
+
+Position: on a sum type expression (after the closing ``]``), or on a
+``list`` type expression
+
+Values for sum types: ``"object"``
+
+Values for list types: ``"object"``
+
+**Sum types** — ``repr="object"`` (externally-tagged object encoding):
+
+Semantics: tagged variants are encoded as single-key JSON objects
+``{"Constructor": payload}`` instead of the default two-element array
+``["Constructor", payload]``. Unit variants (no payload) are always
+encoded as ``"Constructor"`` strings, unchanged.
+
+This matches the *externally tagged* representation used by Serde (Rust)
+and is a compact choice when interoperating with languages where
+single-key objects are more natural than two-element arrays.
+
+Example:
+
+.. code:: ocaml
+
+    type shape = [
+      | Circle of float
+      | Square of float
+      | Point
+    ] <json repr="object">
+
+Valid JSON values:
+
+- ``{"Circle": 3.14}``
+- ``{"Square": 1.0}``
+- ``"Point"``  ← unit variant, still a string
+
+**Association lists** — ``repr="object"``:
+
+Semantics: a ``(string * 'a) list`` type annotated with ``<json repr="object">``
+is encoded as a JSON object ``{"key": value, ...}`` instead of the default
+array-of-pairs encoding.
+
+Example:
+
+.. code:: ocaml
+
+    type string_map = (string * int) list <json repr="object">
+
+Valid JSON: ``{"a": 1, "b": 2}``
 
 Section ``ocaml``
 ^^^^^^^^^^^^^^^^^

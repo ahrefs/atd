@@ -41,10 +41,16 @@ type json_record = {
   json_record_adapter : json_adapter;
 }
 
+type json_sum_repr = Array | Object
+
 type json_sum = {
   json_sum_adapter : json_adapter;
   json_open_enum : bool;
   json_lowercase_tags : bool;
+  json_sum_repr : json_sum_repr;
+    (** Whether tagged variants are encoded as ["Cons", payload] (Array,
+        default) or {"Cons": payload} (Object). Unit variants are always
+        encoded as "Cons" strings regardless. *)
 }
 
 (** The different kinds of ATD nodes with their json-specific options. *)

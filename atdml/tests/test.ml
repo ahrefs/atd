@@ -471,6 +471,20 @@ type document = [
     ~json_in:{|{"type": "Image", "url": "https://example.com/pic.jpg"}|}
   ;
 
+  test_e2e "json repr object sum"
+    (* Tagged variants encoded as {"Constructor": payload} objects.
+       Unit variants stay as "Constructor" strings. *)
+    ~atd_src:{|
+type shape = [
+  | Circle of float  (* radius *)
+  | Square of float  (* side length *)
+  | Point           (* unit variant — stays as "Point" string *)
+] <json repr="object">
+|}
+    ~type_name:"shape"
+    ~json_in:{|{"Circle": 3.14}|}
+  ;
+
   test_codegen_snapshot "attr"
     ~atd_src:{|
 type point <ocaml attr="deriving show"> = {

@@ -383,7 +383,9 @@ type mode = {
   sum_unit_pat: string -> string;
     (** Pattern for a unit-like sum constructor given its JSON name *)
   sum_tagged_pat: string -> string;
-    (** Pattern for a tagged sum constructor given its JSON name *)
+    (** Pattern for a tagged sum constructor (array repr) given its JSON name *)
+  sum_object_tagged_pat: string -> string;
+    (** Pattern for a tagged sum constructor (object repr) given its JSON name *)
   record_match_pat: string;
     (** Pattern for matching a record node *)
   record_assoc_lines: B.t;
@@ -411,6 +413,7 @@ let yojson_mode = {
     sprintf "`List lst when List.length lst = %d" n);
   sum_unit_pat = (fun jn -> sprintf "`String \"%s\"" jn);
   sum_tagged_pat = (fun jn -> sprintf "`List [`String \"%s\"; v]" jn);
+  sum_object_tagged_pat = (fun jn -> sprintf "`Assoc [(\"%s\", v)]" jn);
   record_match_pat = "`Assoc fields";
   record_assoc_lines = [
     B.Line "(* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD";
@@ -446,6 +449,8 @@ let jsonlike_mode = {
     sprintf "Atd_jsonlike.AST.String (_, \"%s\")" jn);
   sum_tagged_pat = (fun jn ->
     sprintf "Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, \"%s\"); v])" jn);
+  sum_object_tagged_pat = (fun jn ->
+    sprintf "Atd_jsonlike.AST.Object (_, [(_, \"%s\", v)])" jn);
   record_match_pat = "Atd_jsonlike.AST.Object (_, fields)";
   record_assoc_lines = [
     B.Line "let assoc_ =";
@@ -1156,6 +1161,11 @@ let gen_reader env mode ({A.name; param=params; annot=an; value=e; _} : A.type_d
           make_local_env
             (List.map (fun (_, orig_name, an, _) -> get_ocaml_name orig_name an) flat)
         in
+        let sum = Atd.Json.get_json_sum sum_an in
+        let tagged_pat = match sum.json_sum_repr with
+          | Atd.Json.Array  -> mode.sum_tagged_pat
+          | Atd.Json.Object -> mode.sum_object_tagged_pat
+        in
         let gen_case (_, orig_name, an, opt_e) =
           let json_name = Atd.Json.get_json_cons orig_name an in
           let cons_name = vtr (get_ocaml_name orig_name an) in
@@ -1167,11 +1177,11 @@ let gen_reader env mode ({A.name; param=params; annot=an; value=e; _} : A.type_d
           | Some e ->
               B.Line
                 (sprintf "| %s -> %s%s (%s v)"
-                   (mode.sum_tagged_pat json_name) tick cons_name
+                   (tagged_pat json_name) tick cons_name
                    (reader_expr env mode e))
         in
         let normalize =
-          mode.normalize_of_adapter (Atd.Json.get_json_sum sum_an).json_sum_adapter
+          mode.normalize_of_adapter sum.json_sum_adapter
         in
         let pre = match normalize with
           | None -> []
@@ -1304,6 +1314,7 @@ let gen_yojson_of env ({A.name; param=params; annot=an; value=e; _} : A.type_def
           make_local_env
             (List.map (fun (_, orig_name, an, _) -> get_ocaml_name orig_name an) flat)
         in
+        let sum = Atd.Json.get_json_sum sum_an in
         let gen_case (_, orig_name, an, opt_e) =
           let json_name = Atd.Json.get_json_cons orig_name an in
           let cons_name = vtr (get_ocaml_name orig_name an) in
@@ -1313,12 +1324,16 @@ let gen_yojson_of env ({A.name; param=params; annot=an; value=e; _} : A.type_def
                 (sprintf "| %s%s -> `String \"%s\""
                    tick cons_name json_name)
           | Some e ->
-              B.Line
-                (sprintf "| %s%s v -> `List [`String \"%s\"; %s v]"
-                   tick cons_name json_name (writer_expr env e))
+              let rhs = match sum.json_sum_repr with
+                | Atd.Json.Array ->
+                    sprintf "`List [`String \"%s\"; %s v]" json_name (writer_expr env e)
+                | Atd.Json.Object ->
+                    sprintf "`Assoc [(\"%s\", %s v)]" json_name (writer_expr env e)
+              in
+              B.Line (sprintf "| %s%s v -> %s" tick cons_name rhs)
         in
         let (_, restore) =
-          adapter_exprs (Atd.Json.get_json_sum sum_an).json_sum_adapter
+          adapter_exprs sum.json_sum_adapter
         in
         apply_restore restore
           (B.Block

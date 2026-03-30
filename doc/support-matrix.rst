@@ -131,6 +131,15 @@ Assoc as JSON object
 
 **Not yet:** atdj (Java), atds (Scala), atdd (D), atdcpp (C++)
 
+Sum as JSON object
+~~~~~~~~~~~~~~~~~~
+
+sum type <json repr="object">: {"Cons": payload}
+
+**Supported:** atdml (OCaml)
+
+**Not yet:** atdgen (OCaml), atdpy (Python), atdts (TypeScript), atdj (Java), atds (Scala), atdd (D), atdcpp (C++)
+
 JSON adapter
 ~~~~~~~~~~~~
 

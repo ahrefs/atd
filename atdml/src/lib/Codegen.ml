@@ -321,6 +321,7 @@ let get_ocaml_name default_name an =
 
 let of_yojson_name name = name ^ "_of_yojson"
 let yojson_of_name name = "yojson_of_" ^ name
+let of_jsonlike_name name = name ^ "_of_jsonlike"
 let of_json_name name = name ^ "_of_json"
 let json_of_name name = "json_of_" ^ name
 let create_name name = "create_" ^ name
@@ -342,6 +343,115 @@ let module_alias_decls (imports : A.import list) : B.t =
 (* Function parameter name for reading/writing a type variable *)
 let tvar_reader v = "of_yojson_" ^ v
 let tvar_writer v = "yojson_of_" ^ v
+
+(* ============ Code generation mode ============ *)
+(*
+   Controls whether reader functions consume Yojson.Safe.t or Atd_jsonlike.AST.t.
+*)
+type mode = {
+  tree_type: string;
+    (** OCaml type of the input tree node, e.g. "Yojson.Safe.t" *)
+  runtime: string;
+    (** Runtime submodule path, e.g. "Atdml_runtime.Yojson" *)
+  suffix: string;
+    (** Suffix for reader function names, e.g. "yojson" or "jsonlike" *)
+  of_name: string -> string;
+    (** Build the reader function name for a user type, e.g. "foo_of_yojson" *)
+  mode_tvar_reader: string -> string;
+    (** Type-variable reader param name, e.g. "of_yojson_a" *)
+  supports_json_adapters: bool;
+    (** Whether JSON adapter normalize/restore calls are emitted *)
+  tuple_arr_pat: int -> string;
+    (** Pattern string matching an array of exactly n elements *)
+  sum_unit_pat: string -> string;
+    (** Pattern for a unit-like sum constructor given its JSON name *)
+  sum_tagged_pat: string -> string;
+    (** Pattern for a tagged sum constructor given its JSON name *)
+  record_match_pat: string;
+    (** Pattern for matching a record node *)
+  record_assoc_lines: B.t;
+    (** B.t block that binds [assoc_] for field lookup *)
+  optional_null_pat: string;
+    (** Pattern(s) for a null/absent optional field *)
+  record_node_binding: B.t;
+    (** Lines emitted at the start of the record match arm to save the input
+        node under a stable name before field bindings may shadow [x] *)
+  missing_req_expr: string -> string -> string;
+    (** missing_req_expr type_name field_name → full error expression string *)
+  abstract_reader: string;
+    (** Reader expression for the ATD 'abstract' type *)
+}
+
+let yojson_mode = {
+  tree_type = "Yojson.Safe.t";
+  runtime = "Atdml_runtime.Yojson";
+  suffix = "yojson";
+  of_name = of_yojson_name;
+  mode_tvar_reader = (fun v -> "of_yojson_" ^ v);
+  supports_json_adapters = true;
+  tuple_arr_pat = (fun n ->
+    sprintf "`List lst when List.length lst = %d" n);
+  sum_unit_pat = (fun jn -> sprintf "`String \"%s\"" jn);
+  sum_tagged_pat = (fun jn -> sprintf "`List [`String \"%s\"; v]" jn);
+  record_match_pat = "`Assoc fields";
+  record_assoc_lines = [
+    B.Line "(* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD";
+    B.Line "   be unique). Below the threshold, List.assoc_opt returns the first binding;";
+    B.Line "   above it, the hashtable returns the last. *)";
+    B.Line "let assoc_ =";
+    B.Block
+      [ B.Line "if Atdml_runtime.list_length_gt 5 fields then";
+        B.Block
+          [ B.Line "let tbl = Hashtbl.create 16 in";
+            B.Line "List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;";
+            B.Line "(fun key -> Hashtbl.find_opt tbl key)" ];
+        B.Line "else (fun key -> List.assoc_opt key fields)" ];
+    B.Line "in";
+  ];
+  optional_null_pat = "None | Some `Null";
+  record_node_binding = [];
+  missing_req_expr = (fun tn fn ->
+    sprintf "Atdml_runtime.Yojson.missing_field \"%s\" \"%s\"" tn fn);
+  abstract_reader = "(fun x -> x)";
+}
+
+let jsonlike_mode = {
+  tree_type = "Atd_jsonlike.AST.t";
+  runtime = "Atdml_runtime.Jsonlike";
+  suffix = "jsonlike";
+  of_name = of_jsonlike_name;
+  mode_tvar_reader = (fun v -> "of_jsonlike_" ^ v);
+  supports_json_adapters = false;
+  tuple_arr_pat = (fun n ->
+    sprintf "Atd_jsonlike.AST.Array (_, lst) when List.length lst = %d" n);
+  sum_unit_pat = (fun jn ->
+    sprintf "Atd_jsonlike.AST.String (_, \"%s\")" jn);
+  sum_tagged_pat = (fun jn ->
+    sprintf "Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, \"%s\"); v])" jn);
+  record_match_pat = "Atd_jsonlike.AST.Object (_, fields)";
+  record_assoc_lines = [
+    B.Line "let assoc_ =";
+    B.Block
+      [ B.Line "if Atdml_runtime.list_length_gt 5 fields then";
+        B.Block
+          [ B.Line "let tbl = Hashtbl.create 16 in";
+            B.Line "List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;";
+            B.Line "(fun key -> Hashtbl.find_opt tbl key)" ];
+        B.Line "else";
+        B.Block
+          [ B.Line "(fun key ->";
+            B.Block
+              [ B.Line "match List.find_opt (fun (_, k, _) -> k = key) fields with";
+                B.Line "| None -> None | Some (_, _, v) -> Some v)" ] ] ];
+    B.Line "in";
+  ];
+  optional_null_pat = "None | Some (Atd_jsonlike.AST.Null _)";
+  record_node_binding = [B.Line "let atdml_node_ = x in"];
+  missing_req_expr = (fun tn fn ->
+    sprintf "Atdml_runtime.Jsonlike.missing_field atdml_node_ \"%s\" \"%s\"" tn fn);
+  abstract_reader =
+    "(fun _ -> failwith \"abstract type is not supported in jsonlike mode\")";
+}
 
 (* ============ Builtin OCaml type names ============ *)
 
@@ -428,56 +538,59 @@ let full_type_name name params =
    These are used as arguments to combinators like list_of_yojson.
 *)
 
-let rec reader_expr env (e : type_expr) : string =
+let rec reader_expr env mode (e : type_expr) : string =
+  let rt = mode.runtime in
+  let sfx = mode.suffix in
   match e with
-  | Name (_, (_, TN ["unit"], []), _) -> "Atdml_runtime.unit_of_yojson"
-  | Name (_, (_, TN ["bool"], []), _) -> "Atdml_runtime.bool_of_yojson"
-  | Name (_, (_, TN ["int"], []), _) -> "Atdml_runtime.int_of_yojson"
-  | Name (_, (_, TN ["float"], []), _) -> "Atdml_runtime.float_of_yojson"
-  | Name (_, (_, TN ["string"], []), _) -> "Atdml_runtime.string_of_yojson"
-  | Name (_, (_, TN ["abstract"], []), _) -> "(fun x -> x)"
-  | Name (_, (_, TN [name], []), _) -> of_yojson_name (env.tr name)
+  | Name (_, (_, TN ["unit"], []), _) -> rt ^ ".unit_of_" ^ sfx
+  | Name (_, (_, TN ["bool"], []), _) -> rt ^ ".bool_of_" ^ sfx
+  | Name (_, (_, TN ["int"], []), _) -> rt ^ ".int_of_" ^ sfx
+  | Name (_, (_, TN ["float"], []), _) -> rt ^ ".float_of_" ^ sfx
+  | Name (_, (_, TN ["string"], []), _) -> rt ^ ".string_of_" ^ sfx
+  | Name (_, (_, TN ["abstract"], []), _) -> mode.abstract_reader
+  | Name (_, (_, TN [name], []), _) -> mode.of_name (env.tr name)
   | Name (_, (_, TN [name], params), _) ->
-      let readers = List.map (reader_expr env) params in
-      sprintf "(%s %s)" (of_yojson_name (env.tr name)) (String.concat " " readers)
+      let readers = List.map (reader_expr env mode) params in
+      sprintf "(%s %s)" (mode.of_name (env.tr name)) (String.concat " " readers)
   | Name (loc, (_, name, params), _) ->
       let (import_opt, base_name) = Atd.Imports.resolve env.imports loc name in
       (match import_opt with
        | None -> assert false
        | Some (import, _) ->
            let ocaml_mod = env.ocaml_mod_of_import import in
-           let fn = sprintf "%s.%s" ocaml_mod (of_yojson_name base_name) in
+           let fn = sprintf "%s.%s" ocaml_mod (mode.of_name base_name) in
            (match params with
             | [] -> fn
             | _ ->
-                let readers = List.map (reader_expr env) params in
+                let readers = List.map (reader_expr env mode) params in
                 sprintf "(%s %s)" fn (String.concat " " readers)))
   | List (_, Tuple (_, [(_, Name (_, (_, TN ["string"], []), _), _); (_, val_e, _)], _), an)
     when Atd.Json.get_json_list an = Atd.Json.Object ->
-      sprintf "(Atdml_runtime.assoc_of_yojson %s)" (reader_expr env val_e)
+      sprintf "(%s.assoc_of_%s %s)" rt sfx (reader_expr env mode val_e)
   | List (_, e, _) ->
-      sprintf "(Atdml_runtime.list_of_yojson %s)" (reader_expr env e)
+      sprintf "(%s.list_of_%s %s)" rt sfx (reader_expr env mode e)
   | Option (_, e, _) ->
-      sprintf "(Atdml_runtime.option_of_yojson %s)" (reader_expr env e)
+      sprintf "(%s.option_of_%s %s)" rt sfx (reader_expr env mode e)
   | Nullable (_, e, _) ->
-      sprintf "(Atdml_runtime.nullable_of_yojson %s)" (reader_expr env e)
+      sprintf "(%s.nullable_of_%s %s)" rt sfx (reader_expr env mode e)
   | Tuple (_, cells, _) ->
       let n = List.length cells in
       let reads =
         List.mapi (fun i (_, e, _) ->
-          sprintf "%s (List.nth lst %d)" (reader_expr env e) i
+          sprintf "%s (List.nth lst %d)" (reader_expr env mode e) i
         ) cells
       in
       sprintf
         "(fun x -> match x with \
-         | `List lst when List.length lst = %d -> (%s) \
-         | _ -> Atdml_runtime.bad_type \"tuple\" x)"
-        n
+         | %s -> (%s) \
+         | _ -> %s.bad_type \"tuple\" x)"
+        (mode.tuple_arr_pat n)
         (String.concat ", " reads)
-  | Tvar (_, v) -> tvar_reader v
+        rt
+  | Tvar (_, v) -> mode.mode_tvar_reader v
   | Shared (loc, _, _) -> not_implemented loc "shared"
   | Wrap (_, inner_e, an) ->
-      let inner = reader_expr env inner_e in
+      let inner = reader_expr env mode inner_e in
       let (_, wrap_fn, _) = get_ocaml_wrap an in
       (match wrap_fn with
       | None -> inner
@@ -492,11 +605,11 @@ let rec reader_expr env (e : type_expr) : string =
 
 let rec writer_expr env (e : type_expr) : string =
   match e with
-  | Name (_, (_, TN ["unit"], []), _) -> "Atdml_runtime.yojson_of_unit"
-  | Name (_, (_, TN ["bool"], []), _) -> "Atdml_runtime.yojson_of_bool"
-  | Name (_, (_, TN ["int"], []), _) -> "Atdml_runtime.yojson_of_int"
-  | Name (_, (_, TN ["float"], []), _) -> "Atdml_runtime.yojson_of_float"
-  | Name (_, (_, TN ["string"], []), _) -> "Atdml_runtime.yojson_of_string"
+  | Name (_, (_, TN ["unit"], []), _) -> "Atdml_runtime.Yojson.yojson_of_unit"
+  | Name (_, (_, TN ["bool"], []), _) -> "Atdml_runtime.Yojson.yojson_of_bool"
+  | Name (_, (_, TN ["int"], []), _) -> "Atdml_runtime.Yojson.yojson_of_int"
+  | Name (_, (_, TN ["float"], []), _) -> "Atdml_runtime.Yojson.yojson_of_float"
+  | Name (_, (_, TN ["string"], []), _) -> "Atdml_runtime.Yojson.yojson_of_string"
   | Name (_, (_, TN ["abstract"], []), _) -> "(fun x -> x)"
   | Name (_, (_, TN [name], []), _) -> yojson_of_name (env.tr name)
   | Name (_, (_, TN [name], params), _) ->
@@ -516,13 +629,13 @@ let rec writer_expr env (e : type_expr) : string =
                 sprintf "(%s %s)" fn (String.concat " " writers)))
   | List (_, Tuple (_, [(_, Name (_, (_, TN ["string"], []), _), _); (_, val_e, _)], _), an)
     when Atd.Json.get_json_list an = Atd.Json.Object ->
-      sprintf "(Atdml_runtime.yojson_of_assoc %s)" (writer_expr env val_e)
+      sprintf "(Atdml_runtime.Yojson.yojson_of_assoc %s)" (writer_expr env val_e)
   | List (_, e, _) ->
-      sprintf "(Atdml_runtime.yojson_of_list %s)" (writer_expr env e)
+      sprintf "(Atdml_runtime.Yojson.yojson_of_list %s)" (writer_expr env e)
   | Option (_, e, _) ->
-      sprintf "(Atdml_runtime.yojson_of_option %s)" (writer_expr env e)
+      sprintf "(Atdml_runtime.Yojson.yojson_of_option %s)" (writer_expr env e)
   | Nullable (_, e, _) ->
-      sprintf "(Atdml_runtime.yojson_of_nullable %s)" (writer_expr env e)
+      sprintf "(Atdml_runtime.Yojson.yojson_of_nullable %s)" (writer_expr env e)
   | Tuple (_, cells, _) ->
       let vars = List.mapi (fun i _ -> sprintf "x%d" i) cells in
       let writes =
@@ -558,90 +671,153 @@ let flatten_variants variants =
    generated code has no dependency on an external atdml-runtime library.
 *)
 
-let runtime_module : B.t =
-  [
-    B.Line {|(* Inlined runtime — no external dependency needed. *)
+let runtime_module ~yojson ~jsonlike : B.t =
+  let preamble = {|(* Inlined runtime — no external dependency needed. *)
 module Atdml_runtime = struct
-  let bad_type expected_type x =
-    Printf.ksprintf failwith "expected %s, got: %s"
-      expected_type (Yojson.Safe.to_string x)
-
-  let bad_sum type_name x =
-    Printf.ksprintf failwith "invalid variant for type '%s': %s"
-      type_name (Yojson.Safe.to_string x)
-
-  let missing_field type_name field_name =
-    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
-      field_name type_name
-
-  let bool_of_yojson = function
-    | `Bool b -> b
-    | x -> bad_type "bool" x
-
-  let yojson_of_bool b = `Bool b
-
-  let int_of_yojson = function
-    | `Int n -> n
-    | x -> bad_type "int" x
-
-  let yojson_of_int n = `Int n
-
-  let float_of_yojson = function
-    | `Float f -> f
-    | `Int n -> Float.of_int n
-    | x -> bad_type "float" x
-
-  let yojson_of_float f = `Float f
-
-  let string_of_yojson = function
-    | `String s -> s
-    | x -> bad_type "string" x
-
-  let yojson_of_string s = `String s
-
-  let unit_of_yojson = function
-    | `Null -> ()
-    | x -> bad_type "null" x
-
-  let yojson_of_unit () = `Null
-
-  let list_of_yojson f = function
-    | `List xs -> List.map f xs
-    | x -> bad_type "array" x
-
-  let yojson_of_list f xs = `List (List.map f xs)
-
-  let option_of_yojson f = function
-    | `String "None" -> None
-    | `List [`String "Some"; x] -> Some (f x)
-    | x -> bad_type "option" x
-
-  let yojson_of_option f = function
-    | None -> `String "None"
-    | Some x -> `List [`String "Some"; f x]
-
-  let nullable_of_yojson f = function
-    | `Null -> None
-    | x -> Some (f x)
-
-  let yojson_of_nullable f = function
-    | None -> `Null
-    | Some x -> f x
-
   (* Returns true iff the list has strictly more than [n] elements,
      without traversing past element n+1. *)
   let rec list_length_gt n = function
     | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
-    | [] -> false
+    | [] -> false|} in
+  let yojson_ext = {|
 
-  let assoc_of_yojson f = function
-    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
-    | x -> bad_type "object" x
+  module Yojson = struct
+    let bad_type expected_type x =
+      Printf.ksprintf failwith "expected %s, got: %s"
+        expected_type (Yojson.Safe.to_string x)
 
-  let yojson_of_assoc f xs =
-    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
-end|};
-  ]
+    let bad_sum type_name x =
+      Printf.ksprintf failwith "invalid variant for type '%s': %s"
+        type_name (Yojson.Safe.to_string x)
+
+    let missing_field type_name field_name =
+      Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+        field_name type_name
+
+    let bool_of_yojson = function
+      | `Bool b -> b
+      | x -> bad_type "bool" x
+
+    let yojson_of_bool b = `Bool b
+
+    let int_of_yojson = function
+      | `Int n -> n
+      | x -> bad_type "int" x
+
+    let yojson_of_int n = `Int n
+
+    let float_of_yojson = function
+      | `Float f -> f
+      | `Int n -> Float.of_int n
+      | x -> bad_type "float" x
+
+    let yojson_of_float f = `Float f
+
+    let string_of_yojson = function
+      | `String s -> s
+      | x -> bad_type "string" x
+
+    let yojson_of_string s = `String s
+
+    let unit_of_yojson = function
+      | `Null -> ()
+      | x -> bad_type "null" x
+
+    let yojson_of_unit () = `Null
+
+    let list_of_yojson f = function
+      | `List xs -> List.map f xs
+      | x -> bad_type "array" x
+
+    let yojson_of_list f xs = `List (List.map f xs)
+
+    let option_of_yojson f = function
+      | `String "None" -> None
+      | `List [`String "Some"; x] -> Some (f x)
+      | x -> bad_type "option" x
+
+    let yojson_of_option f = function
+      | None -> `String "None"
+      | Some x -> `List [`String "Some"; f x]
+
+    let nullable_of_yojson f = function
+      | `Null -> None
+      | x -> Some (f x)
+
+    let yojson_of_nullable f = function
+      | None -> `Null
+      | Some x -> f x
+
+    let assoc_of_yojson f = function
+      | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+      | x -> bad_type "object" x
+
+    let yojson_of_assoc f xs =
+      `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+  end|} in
+  let jsonlike_ext = {|
+
+  module Jsonlike = struct
+    let bad_type expected_type x =
+      Printf.ksprintf failwith "%sexpected %s"
+        (Atd_jsonlike.AST.loc_msg x) expected_type
+
+    let bad_sum type_name x =
+      Printf.ksprintf failwith "%sinvalid variant for type '%s'"
+        (Atd_jsonlike.AST.loc_msg x) type_name
+
+    let missing_field node type_name field_name =
+      Printf.ksprintf failwith "%smissing field '%s' in object of type '%s'"
+        (Atd_jsonlike.AST.loc_msg node) field_name type_name
+
+    let bool_of_jsonlike = function
+      | Atd_jsonlike.AST.Bool (_, b) -> b
+      | x -> bad_type "bool" x
+
+    let int_of_jsonlike = function
+      | Atd_jsonlike.AST.Number (_, n) as node ->
+          (match n.Atd_jsonlike.Number.int with
+          | Some i -> i
+          | None -> bad_type "integer" node)
+      | x -> bad_type "int" x
+
+    let float_of_jsonlike = function
+      | Atd_jsonlike.AST.Number (_, n) as node ->
+          (match n.Atd_jsonlike.Number.float with
+          | Some f -> f
+          | None -> bad_type "float" node)
+      | x -> bad_type "float" x
+
+    let string_of_jsonlike = function
+      | Atd_jsonlike.AST.String (_, s) -> s
+      | x -> bad_type "string" x
+
+    let unit_of_jsonlike = function
+      | Atd_jsonlike.AST.Null _ -> ()
+      | x -> bad_type "null" x
+
+    let list_of_jsonlike f = function
+      | Atd_jsonlike.AST.Array (_, xs) -> List.map f xs
+      | x -> bad_type "array" x
+
+    let option_of_jsonlike f = function
+      | Atd_jsonlike.AST.String (_, "None") -> None
+      | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Some"); x]) -> Some (f x)
+      | x -> bad_type "option" x
+
+    let nullable_of_jsonlike f = function
+      | Atd_jsonlike.AST.Null _ -> None
+      | x -> Some (f x)
+
+    let assoc_of_jsonlike f = function
+      | Atd_jsonlike.AST.Object (_, pairs) ->
+          List.map (fun (_, k, v) -> (k, f v)) pairs
+      | x -> bad_type "object" x
+  end|} in
+  [B.Line (preamble
+    ^ (if yojson then yojson_ext else "")
+    ^ (if jsonlike then jsonlike_ext else "")
+    ^ "\nend")]
 
 (* ============ Type definition generation ============ *)
 
@@ -886,7 +1062,7 @@ let gen_alias_create_funs env (def : A.type_def) : B.t =
 
 (* ============ Deserialization function generation ============ *)
 
-let gen_of_yojson_field env ftr type_name (loc, (fname, kind, an), e) : B.node =
+let gen_reader_field env ftr mode type_name (loc, (fname, kind, an), e) : B.node =
   let json_name = Atd.Json.get_json_fname fname an in
   let ofname = ftr fname in
   let match_nodes =
@@ -894,10 +1070,8 @@ let gen_of_yojson_field env ftr type_name (loc, (fname, kind, an), e) : B.node =
     | Required ->
         [
           B.Line (sprintf "match assoc_ \"%s\" with" json_name);
-          B.Line (sprintf "| Some v -> %s v" (reader_expr env e));
-          B.Line
-            (sprintf "| None -> Atdml_runtime.missing_field \"%s\" \"%s\""
-               type_name json_name);
+          B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
+          B.Line (sprintf "| None -> %s" (mode.missing_req_expr type_name json_name));
         ]
     | Optional ->
         let inner_e =
@@ -907,8 +1081,8 @@ let gen_of_yojson_field env ftr type_name (loc, (fname, kind, an), e) : B.node =
         in
         [
           B.Line (sprintf "match assoc_ \"%s\" with" json_name);
-          B.Line "| None | Some `Null -> None";
-          B.Line (sprintf "| Some v -> Some (%s v)" (reader_expr env inner_e));
+          B.Line (sprintf "| %s -> None" mode.optional_null_pat);
+          B.Line (sprintf "| Some v -> Some (%s v)" (reader_expr env mode inner_e));
         ]
     | With_default ->
         (match get_ocaml_default an with
@@ -916,7 +1090,7 @@ let gen_of_yojson_field env ftr type_name (loc, (fname, kind, an), e) : B.node =
             [
               B.Line (sprintf "match assoc_ \"%s\" with" json_name);
               B.Line (sprintf "| None -> %s" default);
-              B.Line (sprintf "| Some v -> %s v" (reader_expr env e));
+              B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
             ]
         | None ->
             match get_implicit_default e with
@@ -924,16 +1098,14 @@ let gen_of_yojson_field env ftr type_name (loc, (fname, kind, an), e) : B.node =
                 [
                   B.Line (sprintf "match assoc_ \"%s\" with" json_name);
                   B.Line (sprintf "| None -> %s" default);
-                  B.Line (sprintf "| Some v -> %s v" (reader_expr env e));
+                  B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
                 ]
             | None ->
                 (* No OCaml default — treat as required; warned by warn_defs *)
                 [
                   B.Line (sprintf "match assoc_ \"%s\" with" json_name);
-                  B.Line (sprintf "| Some v -> %s v" (reader_expr env e));
-                  B.Line
-                    (sprintf "| None -> Atdml_runtime.missing_field \"%s\" \"%s\""
-                       type_name json_name);
+                  B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
+                  B.Line (sprintf "| None -> %s" (mode.missing_req_expr type_name json_name));
                 ])
   in
   B.Inline
@@ -943,10 +1115,10 @@ let gen_of_yojson_field env ftr type_name (loc, (fname, kind, an), e) : B.node =
       B.Line "in";
     ]
 
-let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def) : B.t =
+let gen_reader env mode ({A.name; param=params; annot=an; value=e; _} : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
-  let param_strs = List.map (fun v -> "of_yojson_" ^ v) params in
+  let param_strs = List.map mode.mode_tvar_reader params in
   let extra_params =
     if param_strs = [] then ""
     else String.concat " " param_strs ^ " "
@@ -972,15 +1144,18 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
           match opt_e with
           | None ->
               B.Line
-                (sprintf "| `String \"%s\" -> %s%s"
-                   json_name tick cons_name)
+                (sprintf "| %s -> %s%s"
+                   (mode.sum_unit_pat json_name) tick cons_name)
           | Some e ->
               B.Line
-                (sprintf "| `List [`String \"%s\"; v] -> %s%s (%s v)"
-                   json_name tick cons_name (reader_expr env e))
+                (sprintf "| %s -> %s%s (%s v)"
+                   (mode.sum_tagged_pat json_name) tick cons_name
+                   (reader_expr env mode e))
         in
         let (normalize, _) =
-          adapter_exprs (Atd.Json.get_json_sum sum_an).json_sum_adapter
+          if mode.supports_json_adapters then
+            adapter_exprs (Atd.Json.get_json_sum sum_an).json_sum_adapter
+          else (None, None)
         in
         let pre = match normalize with
           | None -> []
@@ -990,7 +1165,7 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
           (pre
            @ [B.Line "match x with"]
            @ List.map gen_case flat
-           @ [B.Line (sprintf "| _ -> Atdml_runtime.bad_sum \"%s\" x" name)])
+           @ [B.Line (sprintf "| _ -> %s.bad_sum \"%s\" x" mode.runtime name)])
     | Record (_, fields, rec_an) ->
         let prefix = get_field_prefix rec_an in
         let fields =
@@ -1013,7 +1188,9 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
           ) fields
         in
         let (normalize, _) =
-          adapter_exprs (Atd.Json.get_json_record rec_an).json_record_adapter
+          if mode.supports_json_adapters then
+            adapter_exprs (Atd.Json.get_json_record rec_an).json_record_adapter
+          else (None, None)
         in
         let pre = match normalize with
           | None -> []
@@ -1023,30 +1200,17 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
           B.Block
             (pre
              @ [ B.Line "match x with";
-                 B.Line "| `Assoc fields ->";
+                 B.Line (sprintf "| %s ->" mode.record_match_pat);
                  B.Block
-                   ([ (* Duplicate JSON keys: behavior is intentionally unspecified.
-                         The list path returns the first binding; the hashtable path
-                         returns the last. JSON keys SHOULD be unique (RFC 8259 §4). *)
-                      B.Line "(* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD";
-                      B.Line "   be unique). Below the threshold, List.assoc_opt returns the first binding;";
-                      B.Line "   above it, the hashtable returns the last. *)";
-                      B.Line "let assoc_ =";
-                      B.Block
-                        [ B.Line "if Atdml_runtime.list_length_gt 5 fields then";
-                          B.Block
-                            [ B.Line "let tbl = Hashtbl.create 16 in";
-                              B.Line "List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;";
-                              B.Line "(fun key -> Hashtbl.find_opt tbl key)" ];
-                          B.Line "else (fun key -> List.assoc_opt key fields)" ];
-                      B.Line "in" ]
-                    @ List.map (gen_of_yojson_field env label_tr name) fields
+                   (mode.record_node_binding
+                    @ mode.record_assoc_lines
+                    @ List.map (gen_reader_field env label_tr mode name) fields
                     @ [B.Line (sprintf "{ %s }" (String.concat "; " field_assigns))]);
-                 B.Line (sprintf "| _ -> Atdml_runtime.bad_type \"%s\" x" name) ])
+                 B.Line (sprintf "| _ -> %s.bad_type \"%s\" x" mode.runtime name) ])
         in
         match_block
     | e ->
-        B.Block [B.Line (sprintf "%s x" (reader_expr env e))]
+        B.Block [B.Line (sprintf "%s x" (reader_expr env mode e))]
   in
   (* For parametric functions we use explicit universal quantification so that
      OCaml treats each function as polymorphic within the let rec...and block.
@@ -1054,18 +1218,19 @@ let gen_of_yojson env ({A.name; param=params; annot=an; value=e; _} : A.type_def
      the type of 'result_of_yojson' for the entire block. *)
   if params = [] then
     [
-      B.Line (sprintf "let %s (x : Yojson.Safe.t) : %s ="
-                (of_yojson_name ocaml_name) return_type);
+      B.Line (sprintf "let %s (x : %s) : %s ="
+                (mode.of_name ocaml_name) mode.tree_type return_type);
       body;
     ]
   else
     let quant = String.concat " " (List.map (fun v -> "'" ^ v) params) in
     let param_types =
-      String.concat " " (List.map (fun v -> sprintf "(Yojson.Safe.t -> '%s) ->" v) params)
+      String.concat " "
+        (List.map (fun v -> sprintf "(%s -> '%s) ->" mode.tree_type v) params)
     in
-    let full_type = sprintf "%s Yojson.Safe.t -> %s" param_types return_type in
+    let full_type = sprintf "%s %s -> %s" param_types mode.tree_type return_type in
     [
-      B.Line (sprintf "let %s : %s. %s =" (of_yojson_name ocaml_name) quant full_type);
+      B.Line (sprintf "let %s : %s. %s =" (mode.of_name ocaml_name) quant full_type);
       B.Block [B.Line (sprintf "fun %sx ->" extra_params); body];
     ]
 
@@ -1219,7 +1384,7 @@ let gen_io_funs env ({A.name; param=params; _} : A.type_def) : B.t =
 
 (* ============ Submodule generation (.ml) ============ *)
 
-let gen_submodule_ml env ({A.name; param=params; annot=def_an; value=e; _} as def : A.type_def) : B.t =
+let gen_submodule_ml ~yojson ~jsonlike env ({A.name; param=params; annot=def_an; value=e; _} as def : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   let params_str = type_params_str params in
@@ -1243,12 +1408,13 @@ let gen_submodule_ml env ({A.name; param=params; annot=def_an; value=e; _} as de
   in
   let bindings =
     create_binding
-    @ [
-        B.Line (sprintf "let of_yojson = %s" (of_yojson_name ocaml_name));
+    @ (if yojson then [B.Line (sprintf "let of_yojson = %s" (of_yojson_name ocaml_name))] else [])
+    @ (if jsonlike then [B.Line (sprintf "let of_jsonlike = %s" (of_jsonlike_name ocaml_name))] else [])
+    @ (if yojson then [
         B.Line (sprintf "let to_yojson = %s" (yojson_of_name ocaml_name));
         B.Line (sprintf "let of_json = %s" (of_json_name ocaml_name));
         B.Line (sprintf "let to_json = %s" (json_of_name ocaml_name));
-      ]
+      ] else [])
   in
   [
     B.Line (sprintf "module %s = struct" (module_name ocaml_name));
@@ -1258,21 +1424,23 @@ let gen_submodule_ml env ({A.name; param=params; annot=def_an; value=e; _} as de
 
 (* ============ MLI: type signatures ============ *)
 
-let gen_of_yojson_sig env ({A.name; param=params; _} : A.type_def) : B.t =
+let gen_reader_sig env mode ({A.name; param=params; _} : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   match params with
   | [] ->
-      [B.Line (sprintf "val %s : Yojson.Safe.t -> %s"
-                 (of_yojson_name ocaml_name) ocaml_name)]
+      [B.Line (sprintf "val %s : %s -> %s"
+                 (mode.of_name ocaml_name) mode.tree_type ocaml_name)]
   | _ ->
-      let param_sigs = List.map (fun v -> sprintf "(Yojson.Safe.t -> '%s) ->" v) params in
+      let param_sigs =
+        List.map (fun v -> sprintf "(%s -> '%s) ->" mode.tree_type v) params
+      in
       let return_type = full_type_name ocaml_name params in
       [
-        B.Line (sprintf "val %s :" (of_yojson_name ocaml_name));
+        B.Line (sprintf "val %s :" (mode.of_name ocaml_name));
         B.Block
           (List.map (fun s -> B.Line s) param_sigs
-           @ [B.Line "Yojson.Safe.t ->"; B.Line return_type]);
+           @ [B.Line (mode.tree_type ^ " ->"); B.Line return_type]);
       ]
 
 let gen_yojson_of_sig env ({A.name; param=params; _} : A.type_def) : B.t =
@@ -1373,7 +1541,7 @@ let gen_io_sigs env ({A.name; param=params; _} : A.type_def) : B.t =
 
 (* ============ Submodule signature generation (.mli) ============ *)
 
-let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} as def : A.type_def) : B.t =
+let gen_submodule_mli ~yojson ~jsonlike env ({A.name; param=params; annot=def_an; value=e; _} as def : A.type_def) : B.t =
   let name = Atd.Type_name.basename name in
   let ocaml_name = env.tr name in
   let params_str = type_params_str params in
@@ -1439,6 +1607,20 @@ let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} as d
              @ [B.Line "Yojson.Safe.t ->"; B.Line t_type]);
         ]
   in
+  let of_jsonlike_sig =
+    match params with
+    | [] -> [B.Line (sprintf "val of_jsonlike : Atd_jsonlike.AST.t -> %s" t_type)]
+    | _ ->
+        let param_sigs =
+          List.map (fun v -> sprintf "(Atd_jsonlike.AST.t -> '%s) ->" v) params
+        in
+        [
+          B.Line "val of_jsonlike :";
+          B.Block
+            (List.map (fun s -> B.Line s) param_sigs
+             @ [B.Line "Atd_jsonlike.AST.t ->"; B.Line t_type]);
+        ]
+  in
   let to_yojson_sig =
     match params with
     | [] -> [B.Line (sprintf "val to_yojson : %s -> Yojson.Safe.t" t_type)]
@@ -1485,10 +1667,9 @@ let gen_submodule_mli env ({A.name; param=params; annot=def_an; value=e; _} as d
     [B.Line type_decl]
     @ attr_lines
     @ create_sig
-    @ of_yojson_sig
-    @ to_yojson_sig
-    @ of_json_sig
-    @ to_json_sig
+    @ (if yojson then of_yojson_sig else [])
+    @ (if jsonlike then of_jsonlike_sig else [])
+    @ (if yojson then to_yojson_sig @ of_json_sig @ to_json_sig else [])
   in
   [
     B.Line (sprintf "module %s : sig" (module_name ocaml_name));
@@ -1553,7 +1734,7 @@ let emit_fun_group ~is_recursive gen_fun (defs : A.type_def list) : B.t =
 
 (* ============ Assemble the .ml file ============ *)
 
-let make_ml ~imports ~env ~atd_filename ~module_doc (items : A.type_def list) : B.t =
+let make_ml ~yojson ~jsonlike ~imports ~env ~atd_filename ~module_doc (items : A.type_def list) : B.t =
   (* In .ml, use the annotation-aware alias as the OCaml module name,
      and emit 'module Alias = OcamlMod' for any import where they differ. *)
   let env = { env with ocaml_mod_of_import = ocaml_name_of_import } in
@@ -1576,26 +1757,28 @@ let make_ml ~imports ~env ~atd_filename ~module_doc (items : A.type_def list) : 
         if lines = [] then [] else lines @ [B.Line ""]
       ) defs
     in
-    let of_yojsons = emit_fun_group ~is_recursive (gen_of_yojson env) defs in
-    let yojson_ofs = emit_fun_group ~is_recursive (gen_yojson_of env) defs in
+    let of_yojsons = if yojson then emit_fun_group ~is_recursive (gen_reader env yojson_mode) defs else [] in
+    let of_jsonlikes = if jsonlike then emit_fun_group ~is_recursive (gen_reader env jsonlike_mode) defs else [] in
+    let yojson_ofs = if yojson then emit_fun_group ~is_recursive (gen_yojson_of env) defs else [] in
     let ios =
-      concat_map (fun def -> gen_io_funs env def @ [B.Line ""]) defs
+      if yojson then concat_map (fun def -> gen_io_funs env def @ [B.Line ""]) defs
+      else []
     in
     let submods =
-      concat_map (fun def -> gen_submodule_ml env def @ [B.Line ""]) defs
+      concat_map (fun def -> gen_submodule_ml ~yojson ~jsonlike env def @ [B.Line ""]) defs
     in
-    types @ creates @ of_yojsons @ yojson_ofs @ ios @ submods
+    types @ creates @ of_yojsons @ of_jsonlikes @ yojson_ofs @ ios @ submods
   in
   let aliases = module_alias_decls imports in
   header
-  @ runtime_module
+  @ runtime_module ~yojson ~jsonlike
   @ [B.Line ""]
   @ (if aliases = [] then [] else aliases @ [B.Line ""])
   @ concat_map gen_group (Atd.Util.tsort items)
 
 (* ============ Assemble the .mli file ============ *)
 
-let make_mli ~env ~atd_filename ~module_doc (items : A.type_def list) : B.t =
+let make_mli ~yojson ~jsonlike ~env ~atd_filename ~module_doc (items : A.type_def list) : B.t =
   (* In .mli, always use the natural OCaml module name (last path component,
      capitalized).  No alias declarations are emitted in .mli. *)
   let env = { env with ocaml_mod_of_import = ocaml_module_of_import } in
@@ -1615,14 +1798,14 @@ let make_mli ~env ~atd_filename ~module_doc (items : A.type_def list) : B.t =
       concat_map (fun def ->
         gen_make_sig env def
         @ gen_alias_create_sigs env def
-        @ gen_of_yojson_sig env def
-        @ gen_yojson_of_sig env def
-        @ gen_io_sigs env def
+        @ (if yojson then gen_reader_sig env yojson_mode def else [])
+        @ (if jsonlike then gen_reader_sig env jsonlike_mode def else [])
+        @ (if yojson then gen_yojson_of_sig env def @ gen_io_sigs env def else [])
         @ [B.Line ""]
       ) defs
     in
     let submod_sigs =
-      concat_map (fun def -> gen_submodule_mli env def @ [B.Line ""]) defs
+      concat_map (fun def -> gen_submodule_mli ~yojson ~jsonlike env def @ [B.Line ""]) defs
     in
     types @ sigs @ submod_sigs
   in
@@ -1642,7 +1825,7 @@ let make_mli ~env ~atd_filename ~module_doc (items : A.type_def list) : B.t =
        [ml content]
      end
 *)
-let run_stdin () =
+let run_stdin ~yojson ~jsonlike () =
   let module_ =
     Atd.Util.read_channel
       ~annot_schema
@@ -1659,8 +1842,8 @@ let run_stdin () =
   let () = warn_defs defs in
   let imports = module_.A.imports in
   let env = init_env imports defs in
-  let mli = make_mli ~env ~atd_filename:"<stdin>" ~module_doc atd_module in
-  let ml = make_ml ~imports ~env ~atd_filename:"<stdin>" ~module_doc atd_module in
+  let mli = make_mli ~yojson ~jsonlike ~env ~atd_filename:"<stdin>" ~module_doc atd_module in
+  let ml = make_ml ~yojson ~jsonlike ~imports ~env ~atd_filename:"<stdin>" ~module_doc atd_module in
   B.to_stdout ~indent:2
     [
       B.Line "module type Types = sig";
@@ -1672,7 +1855,7 @@ let run_stdin () =
       B.Line "end";
     ]
 
-let run_file src_path =
+let run_file ~yojson ~jsonlike src_path =
   let src_name = Filename.basename src_path in
   let base_name =
     if Filename.check_suffix src_name ".atd" then
@@ -1698,7 +1881,7 @@ let run_file src_path =
   let () = warn_defs defs in
   let imports = module_.A.imports in
   let env = init_env imports defs in
-  let ml_contents = make_ml ~imports ~env ~atd_filename:src_name ~module_doc atd_module in
-  let mli_contents = make_mli ~env ~atd_filename:src_name ~module_doc atd_module in
+  let ml_contents = make_ml ~yojson ~jsonlike ~imports ~env ~atd_filename:src_name ~module_doc atd_module in
+  let mli_contents = make_mli ~yojson ~jsonlike ~env ~atd_filename:src_name ~module_doc atd_module in
   B.to_file ~indent:2 ml_path ml_contents;
   B.to_file ~indent:2 mli_path mli_contents

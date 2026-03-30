@@ -71,7 +71,7 @@ let build_and_run ?(extra_sources = []) ?(extra_atd_files = []) ~mli ~ml ~type_n
       [ "ocamlfind"; "opt"; "-o"; "test_atdml" ]
       @ extra_files
       @ extra_ocaml_files
-      @ [ "Types.mli"; "Types.ml"; "Main.ml"; "-package"; "yojson"; "-linkpkg" ]
+      @ [ "Types.mli"; "Types.ml"; "Main.ml"; "-package"; "yojson,atd-jsonlike"; "-linkpkg" ]
     in
     let run_cmd = ["./test_atdml"] in
     Standard_tests.Util.run_command build_cmd;
@@ -118,7 +118,7 @@ let test_codegen_error test_name ~atd_src =
         let atd_file = file_name ^ ".atd" in
         Testo.write_text_file (Fpath.v atd_file) atd_src;
         match
-          (try Atdml.Codegen.run_file atd_file; `Ok
+          (try Atdml.Codegen.run_file ~yojson:true ~jsonlike:true atd_file; `Ok
            with
            | Atd.Ast.Atd_error msg -> `Error msg
            | Failure msg -> `Error msg)
@@ -543,6 +543,7 @@ module Module : sig
     type tag = string
     val tag_of_yojson : Yojson.Safe.t -> tag
     val yojson_of_tag : tag -> Yojson.Safe.t
+    val tag_of_jsonlike : Atd_jsonlike.AST.t -> tag
   end
 end
 |});
@@ -556,6 +557,10 @@ module Module = struct
       | x -> failwith ("Long.Module.Path.tag_of_yojson: " ^ Yojson.Safe.to_string x)
 
     let yojson_of_tag (s : tag) : Yojson.Safe.t = `String s
+
+    let tag_of_jsonlike : Atd_jsonlike.AST.t -> tag = function
+      | Atd_jsonlike.AST.String (_, s) -> s
+      | x -> failwith ("Long.Module.Path.tag_of_jsonlike: " ^ Atd_jsonlike.AST.loc_msg x)
   end
 end
 |})]
@@ -661,7 +666,7 @@ let () =
 |};
     Standard_tests.Util.run_command [
       "ocamlfind"; "opt"; "-o"; "main.exe";
-      "-package"; "yojson"; "-linkpkg";
+      "-package"; "yojson,atd-jsonlike"; "-linkpkg";
       "types.mli"; "types.ml"; "main.ml";
     ]
   in

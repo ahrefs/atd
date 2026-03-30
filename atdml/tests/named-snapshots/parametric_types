@@ -8,6 +8,10 @@ val result_of_yojson :
   (Yojson.Safe.t -> 'a) ->
   Yojson.Safe.t ->
   'a result
+val result_of_jsonlike :
+  (Atd_jsonlike.AST.t -> 'a) ->
+  Atd_jsonlike.AST.t ->
+  'a result
 val yojson_of_result :
   ('a -> Yojson.Safe.t) ->
   'a result ->
@@ -26,6 +30,10 @@ module Result : sig
   val of_yojson :
     (Yojson.Safe.t -> 'a) ->
     Yojson.Safe.t ->
+    'a t
+  val of_jsonlike :
+    (Atd_jsonlike.AST.t -> 'a) ->
+    Atd_jsonlike.AST.t ->
     'a t
   val to_yojson :
     ('a -> Yojson.Safe.t) ->
@@ -50,6 +58,11 @@ val either_of_yojson :
   (Yojson.Safe.t -> 'b) ->
   Yojson.Safe.t ->
   ('a, 'b) either
+val either_of_jsonlike :
+  (Atd_jsonlike.AST.t -> 'a) ->
+  (Atd_jsonlike.AST.t -> 'b) ->
+  Atd_jsonlike.AST.t ->
+  ('a, 'b) either
 val yojson_of_either :
   ('a -> Yojson.Safe.t) ->
   ('b -> Yojson.Safe.t) ->
@@ -73,6 +86,11 @@ module Either : sig
     (Yojson.Safe.t -> 'b) ->
     Yojson.Safe.t ->
     ('a, 'b) t
+  val of_jsonlike :
+    (Atd_jsonlike.AST.t -> 'a) ->
+    (Atd_jsonlike.AST.t -> 'b) ->
+    Atd_jsonlike.AST.t ->
+    ('a, 'b) t
   val to_yojson :
     ('a -> Yojson.Safe.t) ->
     ('b -> Yojson.Safe.t) ->
@@ -93,6 +111,7 @@ end
 type all = ((int) result * (bool, string) either)
 
 val all_of_yojson : Yojson.Safe.t -> all
+val all_of_jsonlike : Atd_jsonlike.AST.t -> all
 val yojson_of_all : all -> Yojson.Safe.t
 val all_of_json : string -> all
 val json_of_all : all -> string
@@ -100,6 +119,7 @@ val json_of_all : all -> string
 module All : sig
   type nonrec t = all
   val of_yojson : Yojson.Safe.t -> t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -111,84 +131,144 @@ end
 
 (* Inlined runtime — no external dependency needed. *)
 module Atdml_runtime = struct
-  let bad_type expected_type x =
-    Printf.ksprintf failwith "expected %s, got: %s"
-      expected_type (Yojson.Safe.to_string x)
-
-  let bad_sum type_name x =
-    Printf.ksprintf failwith "invalid variant for type '%s': %s"
-      type_name (Yojson.Safe.to_string x)
-
-  let missing_field type_name field_name =
-    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
-      field_name type_name
-
-  let bool_of_yojson = function
-    | `Bool b -> b
-    | x -> bad_type "bool" x
-
-  let yojson_of_bool b = `Bool b
-
-  let int_of_yojson = function
-    | `Int n -> n
-    | x -> bad_type "int" x
-
-  let yojson_of_int n = `Int n
-
-  let float_of_yojson = function
-    | `Float f -> f
-    | `Int n -> Float.of_int n
-    | x -> bad_type "float" x
-
-  let yojson_of_float f = `Float f
-
-  let string_of_yojson = function
-    | `String s -> s
-    | x -> bad_type "string" x
-
-  let yojson_of_string s = `String s
-
-  let unit_of_yojson = function
-    | `Null -> ()
-    | x -> bad_type "null" x
-
-  let yojson_of_unit () = `Null
-
-  let list_of_yojson f = function
-    | `List xs -> List.map f xs
-    | x -> bad_type "array" x
-
-  let yojson_of_list f xs = `List (List.map f xs)
-
-  let option_of_yojson f = function
-    | `String "None" -> None
-    | `List [`String "Some"; x] -> Some (f x)
-    | x -> bad_type "option" x
-
-  let yojson_of_option f = function
-    | None -> `String "None"
-    | Some x -> `List [`String "Some"; f x]
-
-  let nullable_of_yojson f = function
-    | `Null -> None
-    | x -> Some (f x)
-
-  let yojson_of_nullable f = function
-    | None -> `Null
-    | Some x -> f x
-
   (* Returns true iff the list has strictly more than [n] elements,
      without traversing past element n+1. *)
   let rec list_length_gt n = function
     | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
     | [] -> false
 
-  let assoc_of_yojson f = function
-    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
-    | x -> bad_type "object" x
+  module Yojson = struct
+    let bad_type expected_type x =
+      Printf.ksprintf failwith "expected %s, got: %s"
+        expected_type (Yojson.Safe.to_string x)
 
-  let yojson_of_assoc f xs =
-    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+    let bad_sum type_name x =
+      Printf.ksprintf failwith "invalid variant for type '%s': %s"
+        type_name (Yojson.Safe.to_string x)
+
+    let missing_field type_name field_name =
+      Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+        field_name type_name
+
+    let bool_of_yojson = function
+      | `Bool b -> b
+      | x -> bad_type "bool" x
+
+    let yojson_of_bool b = `Bool b
+
+    let int_of_yojson = function
+      | `Int n -> n
+      | x -> bad_type "int" x
+
+    let yojson_of_int n = `Int n
+
+    let float_of_yojson = function
+      | `Float f -> f
+      | `Int n -> Float.of_int n
+      | x -> bad_type "float" x
+
+    let yojson_of_float f = `Float f
+
+    let string_of_yojson = function
+      | `String s -> s
+      | x -> bad_type "string" x
+
+    let yojson_of_string s = `String s
+
+    let unit_of_yojson = function
+      | `Null -> ()
+      | x -> bad_type "null" x
+
+    let yojson_of_unit () = `Null
+
+    let list_of_yojson f = function
+      | `List xs -> List.map f xs
+      | x -> bad_type "array" x
+
+    let yojson_of_list f xs = `List (List.map f xs)
+
+    let option_of_yojson f = function
+      | `String "None" -> None
+      | `List [`String "Some"; x] -> Some (f x)
+      | x -> bad_type "option" x
+
+    let yojson_of_option f = function
+      | None -> `String "None"
+      | Some x -> `List [`String "Some"; f x]
+
+    let nullable_of_yojson f = function
+      | `Null -> None
+      | x -> Some (f x)
+
+    let yojson_of_nullable f = function
+      | None -> `Null
+      | Some x -> f x
+
+    let assoc_of_yojson f = function
+      | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+      | x -> bad_type "object" x
+
+    let yojson_of_assoc f xs =
+      `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+  end
+
+  module Jsonlike = struct
+    let bad_type expected_type x =
+      Printf.ksprintf failwith "%sexpected %s"
+        (Atd_jsonlike.AST.loc_msg x) expected_type
+
+    let bad_sum type_name x =
+      Printf.ksprintf failwith "%sinvalid variant for type '%s'"
+        (Atd_jsonlike.AST.loc_msg x) type_name
+
+    let missing_field node type_name field_name =
+      Printf.ksprintf failwith "%smissing field '%s' in object of type '%s'"
+        (Atd_jsonlike.AST.loc_msg node) field_name type_name
+
+    let bool_of_jsonlike = function
+      | Atd_jsonlike.AST.Bool (_, b) -> b
+      | x -> bad_type "bool" x
+
+    let int_of_jsonlike = function
+      | Atd_jsonlike.AST.Number (_, n) as node ->
+          (match n.Atd_jsonlike.Number.int with
+          | Some i -> i
+          | None -> bad_type "integer" node)
+      | x -> bad_type "int" x
+
+    let float_of_jsonlike = function
+      | Atd_jsonlike.AST.Number (_, n) as node ->
+          (match n.Atd_jsonlike.Number.float with
+          | Some f -> f
+          | None -> bad_type "float" node)
+      | x -> bad_type "float" x
+
+    let string_of_jsonlike = function
+      | Atd_jsonlike.AST.String (_, s) -> s
+      | x -> bad_type "string" x
+
+    let unit_of_jsonlike = function
+      | Atd_jsonlike.AST.Null _ -> ()
+      | x -> bad_type "null" x
+
+    let list_of_jsonlike f = function
+      | Atd_jsonlike.AST.Array (_, xs) -> List.map f xs
+      | x -> bad_type "array" x
+
+    let option_of_jsonlike f = function
+      | Atd_jsonlike.AST.String (_, "None") -> None
+      | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Some"); x]) -> Some (f x)
+      | x -> bad_type "option" x
+
+    let nullable_of_jsonlike f = function
+      | Atd_jsonlike.AST.Null _ -> None
+      | x -> Some (f x)
+
+    let assoc_of_jsonlike f = function
+      | Atd_jsonlike.AST.Object (_, pairs) ->
+          List.map (fun (_, k, v) -> (k, f v)) pairs
+      | x -> bad_type "object" x
+  end
 end
 
 type 'a result =
@@ -199,14 +279,21 @@ let result_of_yojson : 'a. (Yojson.Safe.t -> 'a) -> Yojson.Safe.t -> 'a result =
   fun of_yojson_a x ->
     match x with
     | `List [`String "Ok"; v] -> Ok (of_yojson_a v)
-    | `List [`String "Error"; v] -> Error (Atdml_runtime.string_of_yojson v)
-    | _ -> Atdml_runtime.bad_sum "result" x
+    | `List [`String "Error"; v] -> Error (Atdml_runtime.Yojson.string_of_yojson v)
+    | _ -> Atdml_runtime.Yojson.bad_sum "result" x
+
+let result_of_jsonlike : 'a. (Atd_jsonlike.AST.t -> 'a) -> Atd_jsonlike.AST.t -> 'a result =
+  fun of_jsonlike_a x ->
+    match x with
+    | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Ok"); v]) -> Ok (of_jsonlike_a v)
+    | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Error"); v]) -> Error (Atdml_runtime.Jsonlike.string_of_jsonlike v)
+    | _ -> Atdml_runtime.Jsonlike.bad_sum "result" x
 
 let yojson_of_result : 'a. ('a -> Yojson.Safe.t) -> 'a result -> Yojson.Safe.t =
   fun yojson_of_a x ->
     match x with
     | Ok v -> `List [`String "Ok"; yojson_of_a v]
-    | Error v -> `List [`String "Error"; Atdml_runtime.yojson_of_string v]
+    | Error v -> `List [`String "Error"; Atdml_runtime.Yojson.yojson_of_string v]
 
 let result_of_json of_yojson_a s =
   (result_of_yojson of_yojson_a) (Yojson.Safe.from_string s)
@@ -217,6 +304,7 @@ let json_of_result yojson_of_a x =
 module Result = struct
   type nonrec 'a t = 'a result
   let of_yojson = result_of_yojson
+  let of_jsonlike = result_of_jsonlike
   let to_yojson = yojson_of_result
   let of_json = result_of_json
   let to_json = json_of_result
@@ -231,7 +319,14 @@ let either_of_yojson : 'a 'b. (Yojson.Safe.t -> 'a) -> (Yojson.Safe.t -> 'b) -> 
     match x with
     | `List [`String "Left"; v] -> Left (of_yojson_a v)
     | `List [`String "Right"; v] -> Right (of_yojson_b v)
-    | _ -> Atdml_runtime.bad_sum "either" x
+    | _ -> Atdml_runtime.Yojson.bad_sum "either" x
+
+let either_of_jsonlike : 'a 'b. (Atd_jsonlike.AST.t -> 'a) -> (Atd_jsonlike.AST.t -> 'b) -> Atd_jsonlike.AST.t -> ('a, 'b) either =
+  fun of_jsonlike_a of_jsonlike_b x ->
+    match x with
+    | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Left"); v]) -> Left (of_jsonlike_a v)
+    | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Right"); v]) -> Right (of_jsonlike_b v)
+    | _ -> Atdml_runtime.Jsonlike.bad_sum "either" x
 
 let yojson_of_either : 'a 'b. ('a -> Yojson.Safe.t) -> ('b -> Yojson.Safe.t) -> ('a, 'b) either -> Yojson.Safe.t =
   fun yojson_of_a yojson_of_b x ->
@@ -248,6 +343,7 @@ let json_of_either yojson_of_a yojson_of_b x =
 module Either = struct
   type nonrec ('a, 'b) t = ('a, 'b) either
   let of_yojson = either_of_yojson
+  let of_jsonlike = either_of_jsonlike
   let to_yojson = yojson_of_either
   let of_json = either_of_json
   let to_json = json_of_either
@@ -256,10 +352,13 @@ end
 type all = ((int) result * (bool, string) either)
 
 let all_of_yojson (x : Yojson.Safe.t) : all =
-  (fun x -> match x with | `List lst when List.length lst = 2 -> ((result_of_yojson Atdml_runtime.int_of_yojson) (List.nth lst 0), (either_of_yojson Atdml_runtime.bool_of_yojson Atdml_runtime.string_of_yojson) (List.nth lst 1)) | _ -> Atdml_runtime.bad_type "tuple" x) x
+  (fun x -> match x with | `List lst when List.length lst = 2 -> ((result_of_yojson Atdml_runtime.Yojson.int_of_yojson) (List.nth lst 0), (either_of_yojson Atdml_runtime.Yojson.bool_of_yojson Atdml_runtime.Yojson.string_of_yojson) (List.nth lst 1)) | _ -> Atdml_runtime.Yojson.bad_type "tuple" x) x
+
+let all_of_jsonlike (x : Atd_jsonlike.AST.t) : all =
+  (fun x -> match x with | Atd_jsonlike.AST.Array (_, lst) when List.length lst = 2 -> ((result_of_jsonlike Atdml_runtime.Jsonlike.int_of_jsonlike) (List.nth lst 0), (either_of_jsonlike Atdml_runtime.Jsonlike.bool_of_jsonlike Atdml_runtime.Jsonlike.string_of_jsonlike) (List.nth lst 1)) | _ -> Atdml_runtime.Jsonlike.bad_type "tuple" x) x
 
 let yojson_of_all (x : all) : Yojson.Safe.t =
-  (fun (x0, x1) -> `List [(yojson_of_result Atdml_runtime.yojson_of_int) x0; (yojson_of_either Atdml_runtime.yojson_of_bool Atdml_runtime.yojson_of_string) x1]) x
+  (fun (x0, x1) -> `List [(yojson_of_result Atdml_runtime.Yojson.yojson_of_int) x0; (yojson_of_either Atdml_runtime.Yojson.yojson_of_bool Atdml_runtime.Yojson.yojson_of_string) x1]) x
 
 let all_of_json s =
   all_of_yojson (Yojson.Safe.from_string s)
@@ -270,6 +369,7 @@ let json_of_all x =
 module All = struct
   type nonrec t = all
   let of_yojson = all_of_yojson
+  let of_jsonlike = all_of_jsonlike
   let to_yojson = yojson_of_all
   let of_json = all_of_json
   let to_json = json_of_all

@@ -8,6 +8,8 @@ open Cmdliner
 type conf = {
   input_files: string list;
   version: bool;
+  yojson: bool;
+  jsonlike: bool;
 }
 
 let run conf =
@@ -17,8 +19,8 @@ let run conf =
   )
   else
     match conf.input_files with
-    | [] -> Atdml.Codegen.run_stdin ()
-    | files -> List.iter Atdml.Codegen.run_file files
+    | [] -> Atdml.Codegen.run_stdin ~yojson:conf.yojson ~jsonlike:conf.jsonlike ()
+    | files -> List.iter (Atdml.Codegen.run_file ~yojson:conf.yojson ~jsonlike:conf.jsonlike) files
 
 (***************************************************************************)
 (* Command-line processing *)
@@ -122,16 +124,37 @@ end
   `P "atdgen, atdpy, atdts"
 ]
 
+let no_yojson_term =
+  let info =
+    Arg.info ["no-yojson"]
+      ~doc:"Do not generate Yojson-based readers, writers, and I/O functions. \
+            Use this when the generated code should not depend on yojson."
+  in
+  Arg.value (Arg.flag info)
+
+let no_jsonlike_term =
+  let info =
+    Arg.info ["no-jsonlike"]
+      ~doc:"Do not generate Atd_jsonlike-based readers. \
+            Use this to reduce the amount of generated code and avoid a \
+            dependency on the atd-jsonlike library."
+  in
+  Arg.value (Arg.flag info)
+
 let cmdline_term run =
-  let combine input_files version =
+  let combine input_files version no_yojson no_jsonlike =
     run {
       input_files;
       version;
+      yojson = not no_yojson;
+      jsonlike = not no_jsonlike;
     }
   in
   Term.(const combine
         $ input_files_term
         $ version_term
+        $ no_yojson_term
+        $ no_jsonlike_term
        )
 
 let parse_command_line_and_run run =

@@ -920,10 +920,11 @@ let make_type_def env (def : A.type_def) : B.t =
   | Wrap (loc, e, an) -> assert false
   | Tvar _ -> assert false
 
-let read_case env loc orig_name an opt_e =
+let read_case env loc orig_name an opt_e ~json_sum_repr =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
+      (* Unit variants are always plain strings, regardless of sum repr. *)
       [
         Line (sprintf "case '%s':" (single_esc json_name));
         Block [
@@ -931,19 +932,32 @@ let read_case env loc orig_name an opt_e =
         ]
       ]
   | Some e ->
+      (* Tagged variants (with payload).
+         Array repr: the payload is at x[1] in the two-element array.
+         Object repr: the payload is the value under the constructor's key
+           e.g. {"Circle": 3.14} -> x['Circle']
+         The object encoding matches the Rust/Serde default externally-tagged
+         format and is also natural YAML syntax. *)
+      let value_expr = match json_sum_repr with
+        | Atd.Json.Array ->
+            sprintf "%s(x[1], x)" (json_reader env e)
+        | Atd.Json.Object ->
+            sprintf "%s(x['%s'], x)" (json_reader env e) (single_esc json_name)
+      in
       [
         Line (sprintf "case '%s':" (single_esc json_name));
         Block [
-          Line (sprintf "return { kind: '%s', value: %s(x[1], x) }"
+          Line (sprintf "return { kind: '%s', value: %s }"
                   (single_esc orig_name)
-                  (json_reader env e))
+                  value_expr)
         ]
       ]
 
-let write_case env loc orig_name an opt_e =
+let write_case env loc orig_name an opt_e ~json_sum_repr =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
+      (* Unit variants are always plain strings, regardless of sum repr. *)
       [
         Line (sprintf "case '%s':" (single_esc orig_name));
         Block [
@@ -951,12 +965,25 @@ let write_case env loc orig_name an opt_e =
         ]
       ]
   | Some e ->
+      (* Tagged variants (with payload).
+         Array repr (default): ["Constructor", payload]
+         Object repr: {"Constructor": payload}
+           This is the Rust/Serde externally-tagged default encoding,
+           and also reads naturally as a YAML single-key mapping. *)
+      let return_expr = match json_sum_repr with
+        | Atd.Json.Array ->
+            sprintf "return ['%s', %s(x.value, x)]"
+              (single_esc json_name)
+              (json_writer env e)
+        | Atd.Json.Object ->
+            sprintf "return { '%s': %s(x.value, x) }"
+              (single_esc json_name)
+              (json_writer env e)
+      in
       [
         Line (sprintf "case '%s':" (single_esc orig_name));
         Block [
-          Line (sprintf "return ['%s', %s(x.value, x)]"
-                  (single_esc json_name)
-                  (json_writer env e))
+          Line return_expr
         ]
       ]
 
@@ -967,13 +994,15 @@ let read_root_expr env ~ts_type_name e =
       let cases0, cases1 =
         List.partition (fun (loc, orig_name, an, opt_e) -> opt_e = None) cases
       in
+      (* Determine the encoding for tagged (payload-carrying) variants. *)
+      let json_sum_repr = (Atd.Json.get_json_sum an).json_sum_repr in
       let part0 =
         [
           Line "switch (x) {";
           Block (
             List.map
               (fun (loc, orig_name, an, opt_e) ->
-                 read_case env loc orig_name an opt_e
+                 read_case env loc orig_name an opt_e ~json_sum_repr
               ) cases0
             |> List.flatten
           );
@@ -988,14 +1017,18 @@ let read_root_expr env ~ts_type_name e =
           Line "}";
         ]
       in
+      (* Build the block that reads tagged variants, switching on encoding. *)
       let part1 =
-        [
+        match json_sum_repr with
+        | Atd.Json.Array ->
+          (* Default: ["Constructor", payload] *)
+          [
           Line "_atd_check_json_tuple(2, x, context)";
           Line "switch (x[0]) {";
           Block (
             List.map
               (fun (loc, orig_name, an, opt_e) ->
-                 read_case env loc orig_name an opt_e
+                 read_case env loc orig_name an opt_e ~json_sum_repr
               ) cases1
             |> List.flatten
           );
@@ -1008,7 +1041,31 @@ let read_root_expr env ~ts_type_name e =
             ]
           ];
           Line "}";
-        ]
+          ]
+        | Atd.Json.Object ->
+          (* Object encoding: {"Constructor": payload}
+             This is the Rust/Serde default externally-tagged encoding
+             and reads naturally as a YAML single-key mapping. *)
+          [
+          Line "const key = Object.keys(x)[0];";
+          Line "switch (key) {";
+          Block (
+            List.map
+              (fun (loc, orig_name, an, opt_e) ->
+                 read_case env loc orig_name an opt_e ~json_sum_repr
+              ) cases1
+            |> List.flatten
+          );
+          Block [
+            Line "default:";
+            Block [
+              Line (sprintf "_atd_bad_json('%s', x, context)"
+                      (single_esc ts_type_name));
+              Line impossible
+            ]
+          ];
+          Line "}";
+          ]
       in
       (match cases0, cases1 with
        | _, [] -> (* pure enum *)
@@ -1090,10 +1147,11 @@ let write_root_expr env ~ts_type_name e =
   match e with
   | Sum (loc, variants, an) ->
       let cases = flatten_variants variants in
+      let json_sum_repr = (Atd.Json.get_json_sum an).json_sum_repr in
       [
         Line "switch (x.kind) {";
         Block (List.map (fun (loc, orig_name, an, opt_e) ->
-          Inline (write_case env loc orig_name an opt_e)
+          Inline (write_case env loc orig_name an opt_e ~json_sum_repr)
         ) cases);
         Line "}";
       ]

@@ -58,6 +58,11 @@ export type Root = {
 
 export type Alias = number /*int*/[]
 
+export type Shape =
+| { kind: 'Circle'; value: number }
+| { kind: 'Square'; value: number }
+| { kind: 'Point' }
+
 export type Pair = [string, number /*int*/]
 
 export type Foo = {
@@ -208,6 +213,41 @@ export function writeAlias(x: Alias, context: any = x): any {
 
 export function readAlias(x: any, context: any = x): Alias {
   return _atd_read_array(_atd_read_int)(x, context);
+}
+
+export function writeShape(x: Shape, context: any = x): any {
+  switch (x.kind) {
+    case 'Circle':
+      return { 'Circle': _atd_write_float(x.value, x) }
+    case 'Square':
+      return { 'Square': _atd_write_float(x.value, x) }
+    case 'Point':
+      return 'Point'
+  }
+}
+
+export function readShape(x: any, context: any = x): Shape {
+  if (typeof x === 'string') {
+    switch (x) {
+      case 'Point':
+        return { kind: 'Point' }
+      default:
+        _atd_bad_json('Shape', x, context)
+        throw new Error('impossible')
+    }
+  }
+  else {
+    const key = Object.keys(x)[0];
+    switch (key) {
+      case 'Circle':
+        return { kind: 'Circle', value: _atd_read_float(x['Circle'], x) }
+      case 'Square':
+        return { kind: 'Square', value: _atd_read_float(x['Square'], x) }
+      default:
+        _atd_bad_json('Shape', x, context)
+        throw new Error('impossible')
+    }
+  }
 }
 
 export function writePair(x: Pair, context: any = x): any {

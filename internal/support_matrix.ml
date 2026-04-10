@@ -116,7 +116,6 @@ let languages : (string * lang_support) list = [
     binary_serialization = No;
   };
   "atdts (TypeScript)", { all_yes with
-    sum_repr_object = Planned;
     json_adapter    = Planned;
     open_enums      = Planned;
     binary_serialization = No;

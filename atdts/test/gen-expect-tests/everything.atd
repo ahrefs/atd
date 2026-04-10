@@ -56,6 +56,17 @@ type root = {
 
 type alias = int list
 
+(* Test for <json repr="object"> on sum types.
+   Tagged variants are encoded as single-key JSON objects {"Constructor": payload}
+   instead of the default two-element array ["Constructor", payload].
+   This matches the default Rust/Serde externally-tagged encoding and
+   also maps naturally to YAML (each variant is a single-key mapping). *)
+type shape = [
+  | Circle of float  (* radius *)
+  | Square of float  (* side length *)
+  | Point            (* unit variant -- still encoded as a plain string *)
+] <json repr="object">
+
 type pair = (string * int)
 
 type foo = {

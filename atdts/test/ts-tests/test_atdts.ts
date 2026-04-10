@@ -248,5 +248,41 @@ function test_import_alias() {
   assert(ext_types.writeTag(obj2.tag) === "renamed", "tag round-trip failed")
 }
 
+function test_sum_repr_object() {
+  // With <json repr="object">, tagged variants (those carrying a payload)
+  // are encoded as single-key JSON objects {"Constructor": payload} instead
+  // of the default two-element array ["Constructor", payload].
+  // This matches the default Rust/Serde externally-tagged encoding and is
+  // also natural YAML syntax (a single-key mapping per variant).
+  // Unit variants (no payload) remain plain strings in all cases.
+
+  // Encoding
+  const circle: API.Shape = { kind: 'Circle', value: 3.14 }
+  const square: API.Shape = { kind: 'Square', value: 2.0 }
+  const point: API.Shape = { kind: 'Point' }
+
+  assert(JSON.stringify(API.writeShape(circle)) === '{"Circle":3.14}',
+    'Circle encoding failed')
+  assert(JSON.stringify(API.writeShape(square)) === '{"Square":2}',
+    'Square encoding failed')
+  assert(JSON.stringify(API.writeShape(point)) === '"Point"',
+    'Point (unit variant) should be a plain string')
+
+  // Round-trip decoding
+  const c2 = API.readShape(JSON.parse('{"Circle":1.0}'))
+  assert(c2.kind === 'Circle', 'Circle decode: wrong kind')
+  assert((c2 as {kind: 'Circle'; value: number}).value === 1.0, 'Circle decode: wrong value')
+
+  const p2 = API.readShape(JSON.parse('"Point"'))
+  assert(p2.kind === 'Point', 'Point decode: wrong kind')
+
+  // Error on unknown constructor
+  let threw = false
+  try { API.readShape(JSON.parse('{"Triangle":3}')) }
+  catch (_) { threw = true }
+  assert(threw, 'Expected error for unknown constructor')
+}
+
 test_everything()
 test_import_alias()
+test_sum_repr_object()

@@ -33,3 +33,6 @@ tmp
 # Where we install binaries and other things locally to make them easily
 # available for testing (used by atdml)
 local/
+
+# Local Claude Code settings
+/.claude/settings.local.json

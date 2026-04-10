@@ -1,5 +1,5 @@
-#
-# Makefile for developer's convenience.
+
+## Makefile for developer's convenience.
 # Build logic is implemented with dune.
 #
 

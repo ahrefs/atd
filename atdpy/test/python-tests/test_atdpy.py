@@ -289,5 +289,40 @@ def test_imported_types() -> None:
     assert b_obj.priority.value == 5
 
 
+def test_sum_repr_object() -> None:
+    """
+    Test sum types with <json repr="object">.
+
+    With this annotation, tagged variants (those carrying a payload) are
+    encoded as single-key JSON objects {"Constructor": payload} instead
+    of the default two-element array ["Constructor", payload].
+    This matches the default Rust/Serde externally-tagged encoding and
+    is also natural YAML syntax (a single-key mapping).
+    Unit variants (no payload) remain plain strings regardless.
+    """
+    # Encoding
+    assert e.Shape(e.Circle(3.14)).to_json() == {'Circle': 3.14}
+    assert e.Shape(e.Square(2.0)).to_json() == {'Square': 2.0}
+    # unit variant: always a plain string, regardless of repr
+    assert e.Shape(e.Point()).to_json() == 'Point'
+
+    # Round-trip via JSON string
+    for json_str, expected_kind in [
+        ('{"Circle": 1.0}', 'Circle'),
+        ('{"Square": 2.5}', 'Square'),
+        ('"Point"', 'Point'),
+    ]:
+        obj = e.Shape.from_json_string(json_str)
+        assert obj.kind == expected_kind
+        assert obj.to_json_string() == json_str
+
+    # Error on unknown constructor
+    try:
+        e.Shape.from_json_string('{"Triangle": 3}')
+        assert False, "Expected ValueError"
+    except ValueError:
+        pass
+
+
 # print updated json
 test_everything_to_json()

@@ -187,6 +187,47 @@ void setupTests()
 
         auto mapResult = credientials.map!((c) => c);
     };
+
+    // Test for <json repr="object"> on sum types.
+    // Tagged variants are encoded as single-key JSON objects {"Constructor": payload}
+    // instead of the default two-element array ["Constructor", payload].
+    // This matches the default Rust/Serde externally-tagged encoding and
+    // also maps naturally to YAML (each variant is a single-key mapping).
+    tests["sum repr object"] = () {
+        import std.json;
+
+        // Encoding: tagged variants use object encoding
+        auto circle = Shape(Circle(3.14f));
+        auto square = Shape(Square(2.0f));
+        auto point  = Shape(Point());
+
+        auto circleJson = circle.toJsonString!Shape;
+        auto squareJson = square.toJsonString!Shape;
+        auto pointJson  = point.toJsonString!Shape;
+
+        assert(circleJson == `{"Circle":3.14}` || circleJson == `{"Circle":3.1400001049041748}`,
+               "Circle encoding failed: " ~ circleJson);
+        assert(squareJson == `{"Square":2.0}` || squareJson == `{"Square":2}`,
+               "Square encoding failed: " ~ squareJson);
+        // Unit variants remain plain strings regardless of repr
+        assert(pointJson == `"Point"`, "Point encoding failed: " ~ pointJson);
+
+        // Decoding: round-trip
+        auto c2 = `{"Circle":1.0}`.fromJsonString!Shape;
+        auto s2 = `{"Square":2.5}`.fromJsonString!Shape;
+        auto p2 = `"Point"`.fromJsonString!Shape;
+
+        assert(c2.toJsonString!Shape == `{"Circle":1.0}` ||
+               c2.toJsonString!Shape == `{"Circle":1}`,
+               "Circle round-trip failed");
+        assert(s2.toJsonString!Shape == `{"Square":2.5}`,
+               "Square round-trip failed");
+        assert(p2.toJsonString!Shape == `"Point"`,
+               "Point round-trip failed");
+
+        // Error on unknown constructor
+        assertThrows({ `{"Triangle":3}`.fromJsonString!Shape; });
+    };
 }
 
 void assertThrows(T)(T fn, bool writeMsg = false)

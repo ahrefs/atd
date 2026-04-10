@@ -341,6 +341,100 @@ class Tagged:
 
 
 @dataclass
+class Circle:
+    """Original type: shape = [ ... | Circle of ... | ... ]
+    """
+
+    value: float
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return 'Circle'
+
+    def to_json(self) -> Any:
+        return {'Circle': _atd_write_float(self.value)}
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class Square:
+    """Original type: shape = [ ... | Square of ... | ... ]
+    """
+
+    value: float
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return 'Square'
+
+    def to_json(self) -> Any:
+        return {'Square': _atd_write_float(self.value)}
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class Point:
+    """Original type: shape = [ ... | Point | ... ]
+    """
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return 'Point'
+
+    @staticmethod
+    def to_json() -> Any:
+        return 'Point'
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
+class Shape:
+    """Original type: shape = [ ... ]
+    """
+
+    value: Union[Circle, Square, Point]
+
+    @property
+    def kind(self) -> str:
+        """Name of the class representing this variant."""
+        return self.value.kind
+
+    @classmethod
+    def from_json(cls, x: Any) -> 'Shape':
+        if isinstance(x, str):
+            if x == 'Point':
+                return cls(Point())
+            _atd_bad_json('Shape', x)
+        if isinstance(x, dict) and len(x) == 1:
+            cons = next(iter(x))
+            if cons == 'Circle':
+                return cls(Circle(_atd_read_float(x[cons])))
+            if cons == 'Square':
+                return cls(Square(_atd_read_float(x[cons])))
+            _atd_bad_json('Shape', x)
+        _atd_bad_json('Shape', x)
+
+    def to_json(self) -> Any:
+        return self.value.to_json()
+
+    @classmethod
+    def from_json_string(cls, x: str) -> 'Shape':
+        return cls.from_json(json.loads(x))
+
+    def to_json_string(self, **kw: Any) -> str:
+        return json.dumps(self.to_json(), **kw)
+
+
+@dataclass
 class Root_:
     """Original type: kind = [ ... | Root | ... ]
     """

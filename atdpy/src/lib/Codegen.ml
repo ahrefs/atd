@@ -1103,7 +1103,7 @@ let alias_wrapper env ~class_decorators ~class_doc name type_expr =
     ]
   ]
 
-let case_class env ~class_decorators type_name
+let case_class env ~class_decorators ~json_sum_repr type_name
     (loc, orig_name, unique_name, an, opt_e) =
   let json_name = Atd.Json.get_json_cons orig_name an in
   let case_doc = trans_case_doc_to_docstring loc an in
@@ -1130,6 +1130,8 @@ let case_class env ~class_decorators type_name
           Line "@staticmethod";
           Line "def to_json() -> Any:";
           Block [
+            (* Unit variants (no payload) are always encoded as a plain string,
+               regardless of the sum repr. *)
             Line (sprintf "return '%s'" (single_esc json_name))
           ];
           Line "";
@@ -1140,6 +1142,24 @@ let case_class env ~class_decorators type_name
         ]
       ]
   | Some e ->
+      (* Tagged variants (with payload).
+         The encoding depends on the sum-level <json repr="..."> annotation:
+         - Array (default): ["Constructor", payload]
+             e.g. ["Circle", 3.14]
+         - Object: {"Constructor": payload}
+             e.g. {"Circle": 3.14}
+             This is the default Rust/Serde externally-tagged encoding.
+             It also reads naturally in YAML as a single-key mapping. *)
+      let to_json_line = match json_sum_repr with
+        | Atd.Json.Array ->
+            sprintf "return ['%s', %s(self.value)]"
+              (single_esc json_name)
+              (json_writer env e)
+        | Atd.Json.Object ->
+            sprintf "return {'%s': %s(self.value)}"
+              (single_esc json_name)
+              (json_writer env e)
+      in
       [
         Inline class_decorators;
         Line (sprintf "class %s:" (trans env unique_name));
@@ -1162,9 +1182,7 @@ let case_class env ~class_decorators type_name
           Line "";
           Line "def to_json(self) -> Any:";
           Block [
-            Line (sprintf "return ['%s', %s(self.value)]"
-                    (single_esc json_name)
-                    (json_writer env e))
+            Line to_json_line
           ];
           Line "";
           Line "def to_json_string(self, **kw: Any) -> str:";
@@ -1193,7 +1211,15 @@ let read_cases0 env loc name cases0 =
             (class_name env name |> single_esc))
   ]
 
-let read_cases1 env loc name cases1 =
+let read_cases1 env loc name cases1 json_sum_repr =
+  (* How we read the payload value depends on the sum repr:
+     - Array: the value is x[1]  (e.g. ["Circle", 3.14])
+     - Object: the value is x[cons]  (e.g. {"Circle": 3.14}, where
+       'cons' holds the single key extracted from the dict) *)
+  let value_expr = match json_sum_repr with
+    | Atd.Json.Array -> "x[1]"
+    | Atd.Json.Object -> "x[cons]"
+  in
   let ifs =
     cases1
     |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1206,9 +1232,10 @@ let read_cases1 env loc name cases1 =
       Inline [
         Line (sprintf "if cons == '%s':" (single_esc json_name));
         Block [
-          Line (sprintf "return cls(%s(%s(x[1])))"
+          Line (sprintf "return cls(%s(%s(%s)))"
                   (trans env unique_name)
-                  (json_reader env e))
+                  (json_reader env e)
+                  value_expr)
         ]
       ]
     )
@@ -1235,21 +1262,39 @@ let sum_container env ~class_decorators ~class_doc loc name cases an =
   let cases0_block =
     if cases0 <> [] then
       [
+        (* Unit variants are always encoded as plain strings regardless of
+           the sum repr annotation. *)
         Line "if isinstance(x, str):";
         Block (read_cases0 env loc name cases0)
       ]
     else
       []
   in
+  (* Determine how tagged variants (those with a payload) are encoded.
+     The <json repr="object"> annotation selects the Rust/Serde-style
+     externally-tagged object encoding {"Constructor": payload}, which is
+     also clean in YAML.  The default is the two-element array encoding
+     ["Constructor", payload]. *)
+  let json_sum_repr = (Atd.Json.get_json_sum an).json_sum_repr in
   let cases1_block =
     if cases1 <> [] then
-      [
-        Line "if isinstance(x, List) and len(x) == 2:";
-        Block [
-          Line "cons = x[0]";
-          Inline (read_cases1 env loc name cases1)
-        ]
-      ]
+      match json_sum_repr with
+      | Atd.Json.Array ->
+          [
+            Line "if isinstance(x, List) and len(x) == 2:";
+            Block [
+              Line "cons = x[0]";
+              Inline (read_cases1 env loc name cases1 Atd.Json.Array)
+            ]
+          ]
+      | Atd.Json.Object ->
+          [
+            Line "if isinstance(x, dict) and len(x) == 1:";
+            Block [
+              Line "cons = next(iter(x))";
+              Inline (read_cases1 env loc name cases1 Atd.Json.Object)
+            ]
+          ]
     else
       []
   in
@@ -1306,6 +1351,7 @@ let sum_container env ~class_decorators ~class_doc loc name cases an =
   ]
 
 let sum env ~class_decorators ~class_doc loc name cases an =
+  let json_sum_repr = (Atd.Json.get_json_sum an).json_sum_repr in
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1316,7 +1362,7 @@ let sum env ~class_decorators ~class_doc loc name cases an =
     ) cases
   in
   let case_classes =
-    List.map (fun x -> Inline (case_class env ~class_decorators name x)) cases
+    List.map (fun x -> Inline (case_class env ~class_decorators ~json_sum_repr name x)) cases
     |> double_spaced
   in
   let container_class =

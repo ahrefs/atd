@@ -110,7 +110,6 @@ let languages : (string * lang_support) list = [
   };
   "atdpy (Python)", { all_yes with
     wrap            = Planned;
-    sum_repr_object = Planned;
     json_adapter    = Planned;
     open_enums      = Planned;
     binary_serialization = No;

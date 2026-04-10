@@ -33,6 +33,11 @@ struct RecursiveRecord2;
 struct RecursiveClass;
 struct ThreeLevelNestedListRecord;
 struct StructWithRecursiveVariant;
+namespace Shape::Types {
+    struct Circle;
+    struct Square;
+    struct Point;
+}
 namespace Kind::Types {
     struct Root;
     struct Thing;
@@ -75,6 +80,7 @@ namespace typedefs {
     typedef Credentials Credentials;
 
     typedef std::variant<RecursiveVariant::Types::Integer, RecursiveVariant::Types::Rec> RecursiveVariant;
+    typedef std::variant<Shape::Types::Circle, Shape::Types::Square, Shape::Types::Point> Shape;
     typedef std::variant<Kind::Types::Root, Kind::Types::Thing, Kind::Types::WOW, Kind::Types::Amaze> Kind;
     typedef std::variant<Frozen::Types::A, Frozen::Types::B> Frozen;
 
@@ -167,6 +173,33 @@ namespace St {
     typedefs::St from_json_string(const std::string &s);
     void to_json(const typedefs::St &t, rapidjson::Writer<rapidjson::StringBuffer> &writer);
     std::string to_json_string(const typedefs::St &t);
+}
+
+
+namespace Shape {
+    namespace Types {
+        // Original type: shape = [ ... | Circle of ... | ... ]
+        struct Circle
+        {
+            double value;
+            static void to_json(const Circle &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+        // Original type: shape = [ ... | Square of ... | ... ]
+        struct Square
+        {
+            double value;
+            static void to_json(const Square &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+        // Original type: shape = [ ... | Point | ... ]
+        struct Point {
+            static void to_json(const Point &e, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+        };
+    }
+
+    typedefs::Shape from_json(const rapidjson::Value &x);
+    typedefs::Shape from_json_string(const std::string &s);
+    void to_json(const typedefs::Shape &x, rapidjson::Writer<rapidjson::StringBuffer> &writer);
+    std::string to_json_string(const typedefs::Shape &x);
 }
 
 

@@ -83,6 +83,43 @@ public class AtdjTest {
     assertEquals(false, v.l.get(1));
   }
 
+  /**
+   * Test the object encoding for sum types: {"Constructor": payload}
+   * instead of the default array encoding: ["Constructor", payload].
+   *
+   * This is the Rust/Serde default (externally-tagged) and also maps
+   * naturally to YAML as a single-key mapping.
+   */
+  @Test
+  public void testSumReprObject() throws JSONException {
+    // Encode a Circle: should produce {"Circle": 3.14}
+    Shape circle = new Shape();
+    circle.setCircle(3.14);
+    assertEquals("{\"Circle\":3.14}", circle.toJson());
+
+    // Encode a Square: should produce {"Square": 2.0}
+    Shape square = new Shape();
+    square.setSquare(2.0);
+    assertEquals("{\"Square\":2.0}", square.toJson());
+
+    // Unit variant is still encoded as a plain string regardless of repr
+    Shape point = new Shape();
+    point.setPoint();
+    assertEquals("\"Point\"", point.toJson());
+
+    // Decode: {"Circle": 1.0} -> Circle(1.0)
+    Shape decoded = new Shape(new org.json.JSONObject("{\"Circle\": 1.0}"));
+    assertEquals(Shape.Tag.CIRCLE, decoded.tag());
+    assertEquals(1.0, decoded.getCircle(), 1e-9);
+
+    // Round-trip
+    Shape orig = new Shape();
+    orig.setSquare(5.5);
+    Shape rt = new Shape(new org.json.JSONObject(orig.toJson()));
+    assertEquals(Shape.Tag.SQUARE, rt.tag());
+    assertEquals(5.5, rt.getSquare(), 1e-9);
+  }
+
   public static void main(String[] args) {
     org.junit.runner.JUnitCore.main("AtdjTest");
   }

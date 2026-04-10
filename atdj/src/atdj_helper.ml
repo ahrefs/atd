@@ -30,12 +30,25 @@ let output_util env =
   let out = Atdj_trans.open_class env "Util" in
   fprintf out "\
 class Util {
-  // Extract the tag of sum-typed value
+  // Extract the tag of a sum-typed value.
+  // Handles three encodings:
+  //   - String: unit variant e.g. \"Foo\"
+  //   - JSONArray: two-element array e.g. [\"Foo\", payload]
+  //       (the default ATD encoding for tagged variants)
+  //   - JSONObject: single-key object e.g. {\"Foo\": payload}
+  //       (<json repr=\"object\">, the Rust/Serde default externally-tagged
+  //       encoding; also maps naturally to YAML as a single-key mapping)
   static String extractTag(Object value) throws JSONException {
     if (value instanceof String)
       return (String)value;
     else if (value instanceof JSONArray)
       return ((JSONArray)value).getString(0);
+    else if (value instanceof JSONObject) {
+      JSONObject obj = (JSONObject)value;
+      if (obj.length() != 1)
+        throw new JSONException(\"Expected single-key object for sum type\");
+      return obj.keys().next();
+    }
     else throw new JSONException(\"Cannot extract type\");
   }
 

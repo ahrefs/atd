@@ -38,6 +38,11 @@
 (rule
  (alias runtest)
  (package atdj)
+ (action (diff expected/Shape.java com/mylife/test/Shape.java)))
+
+(rule
+ (alias runtest)
+ (package atdj)
  (action (diff expected/SimpleRecord.java com/mylife/test/SimpleRecord.java)))
 
 (rule

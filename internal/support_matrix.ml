@@ -124,7 +124,6 @@ let languages : (string * lang_support) list = [
   "atdj (Java)", { all_yes with
     wrap             = Planned;
     json_repr_object = Planned;
-    sum_repr_object  = Planned;
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;

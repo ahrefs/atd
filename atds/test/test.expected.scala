@@ -238,4 +238,28 @@ case class Addr(
   )
 }
 
+/**
+ * Construct objects of type shape.
+ */
+sealed abstract class Shape extends Atds
+
+/**
+ * Define tags for sum type shape.
+ */
+object Shape {
+  case class Circle(data: Double) extends Shape {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.obj(
+      "Circle" -> data.asJson
+     )
+  }
+  case class Square(data: Double) extends Shape {
+    override protected def toArgonaut: argonaut.Json = argonaut.Json.obj(
+      "Square" -> data.asJson
+     )
+  }
+  case object Point extends Shape {
+    override protected def toArgonaut: argonaut.Json = jString("Point")
+  }
+}
+
 }

@@ -33,6 +33,27 @@ class AtdsTest {
     assertEquals(s"""["Simple_rec",$rstr]""", s.asJson.nospaces)
   }
 
+  /**
+   * Test the object encoding for sum types: {"Constructor": payload}
+   * instead of the default array encoding: ["Constructor", payload].
+   *
+   * This is the Rust/Serde default (externally-tagged) and also maps
+   * naturally to YAML as a single-key mapping.
+   */
+  @Test
+  def testSumReprObject {
+    // Tagged variants use single-key object encoding
+    val c = Shape.Circle(3.14)
+    assertEquals("""{"Circle":3.14}""", c.asJson.nospaces)
+
+    val sq = Shape.Square(2.0)
+    assertEquals("""{"Square":2.0}""", sq.asJson.nospaces)
+
+    // Unit variant is still encoded as a plain string regardless of repr
+    val pt = Shape.Point
+    assertEquals("\"Point\"", pt.asJson.nospaces)
+  }
+
 }
 object AtdsTest {
 

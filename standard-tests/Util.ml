@@ -24,8 +24,8 @@ let log_command args =
 let run_command cmd =
   (* Unix.open_process_args would be preferable because it doesn't
      require a shell which comes with escaping issues but it's
-     broken on OCaml 4.08 and some later versions (which ones?),
-     failing to consult the PATH environment variable on Unix systems.
+     known to have been broken in some OCaml versions, failing to
+     consult the PATH environment variable on Unix systems.
 
      See https://github.com/ocaml/ocaml/pull/10084
 

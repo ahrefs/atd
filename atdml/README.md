@@ -86,7 +86,7 @@ Requirements
 
 To build and run atdml:
 
-- OCaml >= 4.08
+- OCaml >= 4.14
 - `atd` library
 - `yojson` >= 2.0.0
 

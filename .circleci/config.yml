@@ -51,11 +51,11 @@ jobs:
 
   build_min_ocaml:
     docker:
-      - image: ocaml/opam:ubuntu-24.04-ocaml-4.08
+      - image: ocaml/opam:ubuntu-24.04-ocaml-4.14
     working_directory: ~/atd
     steps:
       - build:
-          ocaml_version: "4.08"
+          ocaml_version: "4.14"
 
 workflows:
   version: 2

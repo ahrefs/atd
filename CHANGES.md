@@ -1,10 +1,27 @@
 unreleased
 ----------
 
+* Build: OCaml >= 4.14 is now required (previously 4.08). This aligns
+  all packages with the `yamlx` dependency of `atd-yamlx`.
+
 * Testing: Add a standard JSON round-trip test suite (`standard-tests/`)
   that any code generator can opt into. The harness generates code from an
   ATD spec, compiles it, feeds JSON to stdin, and checks the output.
   atdml is the first backend to run these tests.
+
+* New package: **`atd-yamlx`**. Translates a parsed YAML value
+  (`YAMLx.value` from the `yamlx` library) into `Atd_jsonlike.AST.t`,
+  preserving source locations at every node so that ATD-generated reader
+  functions (`foo_of_jsonlike`) can report precise file/line/column error
+  messages when deserializing YAML configuration files.
+  - `of_yamlx_value` returns `(AST.t, string) result`; the raising variant
+    is `of_yamlx_value_exn`.
+  - `atd-yamlx/examples/` is a self-contained dune subproject demonstrating
+    a typed YAML config reader built with `atdml` and `atd-yamlx`.
+
+* `atd-jsonlike`: Add `Number.of_int64 : int64 -> Number.t`, useful for
+  libraries translating from formats with a native int64 type (e.g. YAML,
+  MessagePack).
 
 * All backends: Add `<json repr="object">` on sum types. Tagged variants are
   encoded as single-key JSON objects `{"Constructor": payload}` instead of the

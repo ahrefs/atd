@@ -1,0 +1,12 @@
+; Generate app_config.ml + app_config.mli from app_config.atd using atdml.
+(rule
+ (targets app_config.ml app_config.mli)
+ (deps    app_config.atd)
+ (action  (run %{bin:atdml} %{deps})))
+
+; This has more dependencies than the bare atd-yamlx library.
+; It's fine because this executable is not declared as part of the atd-yamlx
+; package and it's not public (no public_name).
+(executable
+ (name main)
+ (libraries atd-yamlx atd-jsonlike yamlx yojson))

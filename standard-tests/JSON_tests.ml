@@ -326,7 +326,7 @@ let failing_tests : json_test list = [
   }
 ]
 
-(* Reimplement String.for_all because it's not available in OCaml 4.08 *)
+(* Reimplement String.for_all to avoid a dependency on a specific OCaml version *)
 let string_for_all func str =
   try
     String.iter (fun c -> if not (func c) then raise Exit) str;

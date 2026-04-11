@@ -34,3 +34,4 @@ type t = private {
 val of_int : int -> t
 val of_float : float -> t
 val of_string_opt : string -> t option
+val of_int64 : int64 -> t

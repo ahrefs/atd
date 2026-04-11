@@ -92,7 +92,7 @@ homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
   "dune" {>= "3.18"}
-  "ocaml" {>= "4.08"}
+  "ocaml" {>= "4.14"}
   "menhir" {>= "20180523" & != "20211230"}
   "easy-format"
   "alcotest" {with-test}

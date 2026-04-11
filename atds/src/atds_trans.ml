@@ -160,8 +160,23 @@ and trans_outer env (def : A.type_def) =
  * we generate a sealed abstract class Ty and case classes Foo and Bar
  * in the Ty companion object.
 *)
-and trans_sum my_name env (_, vars, _) =
+and trans_sum my_name env (_, vars, sum_an) =
   let class_name = Atds_names.to_class_name my_name in
+
+  (* Determine whether tagged variants are encoded as two-element JSON arrays
+     ["Constructor", payload] (the default ATD encoding) or as single-key
+     JSON objects {"Constructor": payload} (<json repr="object">).
+
+     The object encoding is the Rust/Serde default (externally-tagged)
+     and also maps naturally to YAML as a single-key mapping:
+
+       # array encoding (default):
+       - - Circle
+         - 3.14
+       # object encoding (<json repr="object">):
+       - Circle: 3.14
+  *)
+  let json_sum_repr = (Atd.Json.get_json_sum sum_an).json_sum_repr in
 
   let cases =
     List.map (fun (x : A.variant) ->
@@ -209,18 +224,29 @@ object %s {"
          class_name
          json_name;
     | Some (atd_ty, scala_ty) ->
+        (* Encode the tagged variant.
+           Array encoding (default): ["Constructor", payload]
+           Object encoding (<json repr="object">): {"Constructor": payload}
+
+           The object encoding is the Rust/Serde default (externally-tagged)
+           and also produces idiomatic YAML: Constructor: payload *)
+        let encode_expr =
+          match json_sum_repr with
+          | Atd.Json.Array ->
+              sprintf "argonaut.Json.array(\n      jString(\"%s\"),\n      %s.asJson\n     )"
+                json_name "data"
+          | Atd.Json.Object ->
+              sprintf "argonaut.Json.obj(\n      \"%s\" -> %s.asJson\n     )"
+                json_name "data"
+        in
         fprintf out "
   case class %s(data: %s) extends %s {
-    override protected def toArgonaut: argonaut.Json = argonaut.Json.array(
-      jString(\"%s\"),
-      %s.asJson
-     )
+    override protected def toArgonaut: argonaut.Json = %s
   }"
           scala_name
           scala_ty
           class_name
-          json_name
-          "data"
+          encode_expr
    ) cases;
 
   fprintf out "\n}\n";

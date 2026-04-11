@@ -81,3 +81,22 @@ type addr = {
 type a = [ A of b list ]
 type b = [ B ]
 *)
+
+(*
+  Sum type using the object encoding: {"Constructor": payload}
+  instead of the default array encoding: ["Constructor", payload].
+
+  This matches the Rust/Serde default (externally-tagged) and also
+  looks natural in YAML:
+
+    # array encoding (default):
+    - - Circle
+      - 3.14
+    # object encoding (<json repr="object">):
+    - Circle: 3.14
+*)
+type shape = [
+  | Circle of float
+  | Square of float
+  | Point              (* unit variant -- always encoded as a plain string *)
+] <json repr="object">

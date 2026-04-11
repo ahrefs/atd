@@ -395,8 +395,8 @@ struct Shape{ SumType!(Circle, Square, Point) _data; alias _data this;
             return Shape(Point());
         throw _atd_bad_json("Shape", x);
     }
-    if (x.type == JSONType.object_ && x.object_.length == 1) {
-        string cons = x.object_.keys.front;
+    if (x.type == JSONType.object && x.object.length == 1) {
+        string cons = x.object.keys[0];
         if (cons == "Circle")
             return Shape(Circle(_atd_read_float(x["Circle"])));
         if (cons == "Square")

@@ -1055,9 +1055,9 @@ let sum_container env loc name cases an =
           ]
       | Atd.Json.Object ->
           [
-            Line "if (x.type == JSONType.object_ && x.object_.length == 1) {";
+            Line "if (x.type == JSONType.object && x.object.length == 1) {";
             Block [
-              Line "string cons = x.object_.keys.front;";
+              Line "string cons = x.object.keys[0];";
               Inline (read_cases1 env loc name cases1 Atd.Json.Object)
             ];
               Line "}";

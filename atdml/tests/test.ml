@@ -49,7 +49,7 @@ let run_codegen ~test_name ~file_name atd_src =
 let yojson_to_jsonlike_code = {|
 let dummy_loc =
   let pos = Atd_jsonlike.Pos.{ row = 0; column = 0 } in
-  Atd_jsonlike.Loc.{ start = pos; end_ = pos; path = None }
+  Atd_jsonlike.Loc.{ start = pos; end_ = pos; file = None }
 
 let rec yojson_to_jsonlike (x : Yojson.Safe.t) : Atd_jsonlike.AST.t =
   match x with

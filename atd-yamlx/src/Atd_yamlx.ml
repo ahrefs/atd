@@ -35,36 +35,13 @@ let key_to_string ?path (key : YAMLx.value) : string =
         (loc_str ^ "map key must be a string; \
          pre-process the YAML document to convert non-string keys if needed")
 
-(* ===== Value conversion ===== *)
-
-(* Convert an int64 from YAMLx to Atd_jsonlike.Number.t.
-   Tries to fit into a native int first (exact), then falls back to the
-   decimal string representation so the literal field is preserved. *)
-let number_of_int64 (i : int64) : Number.t =
-  (* Check whether i fits in a native int via a roundtrip. *)
-  let to_int_opt i =
-    let n = Int64.to_int i in
-    if Int64.of_int n = i then Some n else None
-  in
-  match to_int_opt i with
-  | Some n -> Number.of_int n
-  | None   ->
-      (* The value doesn't fit in a native OCaml int (possible on 32-bit
-         platforms for large YAML integers).  Use the decimal string; this
-         always produces a valid JSON number literal. *)
-      match Number.of_string_opt (Int64.to_string i) with
-      | Some n -> n
-      | None   ->
-          (* Int64.to_string is always a valid decimal — this cannot happen. *)
-          assert false
-
 let rec of_yamlx_value_exn ?path (v : YAMLx.value) : AST.t =
   let open YAMLx in
   let loc l = convert_loc ?path l in
   match v with
   | Null l -> Null (loc l)
   | Bool (l, b) -> Bool (loc l, b)
-  | Int (l, i) -> Number (loc l, number_of_int64 i)
+  | Int (l, i) -> Number (loc l, Number.of_int64 i)
   | Float (l, f) -> Number (loc l, Number.of_float f)
   | String (l, s) -> String (loc l, s)
   | Seq (l, items) -> Array (loc l, List.map (of_yamlx_value_exn ?path) items)

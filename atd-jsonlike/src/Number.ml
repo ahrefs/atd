@@ -40,3 +40,17 @@ let of_string_opt s =
     in
     let int_opt = int_of_string_opt s in
     Some { int = int_opt; float = float_opt; literal = Some s }
+
+let of_int64 (i : int64) : t =
+  (* Check whether i fits in a native int via a roundtrip. *)
+  let n = Int64.to_int i in
+  if Int64.of_int n = i then of_int n
+  else
+    (* The value doesn't fit in a native OCaml int (possible on 32-bit
+       platforms for large integers).  Use the decimal string; this always
+       produces a valid JSON number literal. *)
+    match of_string_opt (Int64.to_string i) with
+    | Some n -> n
+    | None   ->
+        (* Int64.to_string is always a valid decimal — this cannot happen. *)
+        assert false

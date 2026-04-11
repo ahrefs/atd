@@ -8,14 +8,14 @@ open Atd_jsonlike
 (* YAMLx.pos uses 1-based line numbers and 0-based columns.
    Atd_jsonlike.Pos.t uses 0-based row and 0-based column. *)
 let convert_pos (p : YAMLx.pos) : Pos.t = {
-  Pos.row    = p.line - 1;  (* 1-based → 0-based *)
-  Pos.column = p.column;    (* already 0-based *)
+  row    = p.line - 1;  (* 1-based → 0-based *)
+  column = p.column;    (* already 0-based *)
 }
 
 let convert_loc ?path (l : YAMLx.loc) : Loc.t = {
-  Loc.start = convert_pos l.start_pos;
-  Loc.end_  = convert_pos l.end_pos;
-  Loc.path;
+  start = convert_pos l.start_pos;
+  end_  = convert_pos l.end_pos;
+  path;
 }
 
 (* ===== Key conversion ===== *)
@@ -23,23 +23,24 @@ let convert_loc ?path (l : YAMLx.loc) : Loc.t = {
 (* YAML map keys can be any value, but JSON object keys must be strings.
    We accept all scalar types and reject complex keys (sequences, maps). *)
 let key_to_string (key : YAMLx.value) : string =
+  let open YAMLx in
   match key with
-  | YAMLx.String (_, s) -> s
-  | YAMLx.Null _        -> "null"
-  | YAMLx.Bool (_, b)   -> string_of_bool b
-  | YAMLx.Int  (_, i)   -> Int64.to_string i
-  | YAMLx.Float (_, f)  ->
+  | String (_, s) -> s
+  | Null _        -> "null"
+  | Bool (_, b)   -> string_of_bool b
+  | Int  (_, i)   -> Int64.to_string i
+  | Float (_, f)  ->
       (* Use the JSON number representation: prefer an integer string when the
          value is whole, fall back to OCaml's default float formatting. *)
-      let n = Atd_jsonlike.Number.of_float f in
+      let n = Number.of_float f in
       (match n.Number.int with
        | Some i -> string_of_int i
        | None   -> string_of_float f)
-  | YAMLx.Seq _ ->
+  | Seq _ ->
       invalid_arg
         "Atd_yamlx.of_yamlx_value: YAML sequence used as a map key; \
          only scalar keys (null, bool, int, float, string) are supported"
-  | YAMLx.Map _ ->
+  | Map _ ->
       invalid_arg
         "Atd_yamlx.of_yamlx_value: YAML mapping used as a map key; \
          only scalar keys (null, bool, int, float, string) are supported"
@@ -63,27 +64,28 @@ let number_of_int64 (i : int64) : Number.t =
           assert false
 
 let rec of_yamlx_value ?path (v : YAMLx.value) : AST.t =
+  let open YAMLx in
   let loc l = convert_loc ?path l in
   match v with
-  | YAMLx.Null l ->
+  | Null l ->
       AST.Null (loc l)
 
-  | YAMLx.Bool (l, b) ->
+  | Bool (l, b) ->
       AST.Bool (loc l, b)
 
-  | YAMLx.Int (l, i) ->
+  | Int (l, i) ->
       AST.Number (loc l, number_of_int64 i)
 
-  | YAMLx.Float (l, f) ->
+  | Float (l, f) ->
       AST.Number (loc l, Number.of_float f)
 
-  | YAMLx.String (l, s) ->
+  | String (l, s) ->
       AST.String (loc l, s)
 
-  | YAMLx.Seq (l, items) ->
+  | Seq (l, items) ->
       AST.Array (loc l, List.map (of_yamlx_value ?path) items)
 
-  | YAMLx.Map (l, pairs) ->
+  | Map (l, pairs) ->
       (* Each pair is (pair_loc, key_value, value_value).
          pair_loc is the source range of the key (used as the key location
          in the jsonlike Object). *)

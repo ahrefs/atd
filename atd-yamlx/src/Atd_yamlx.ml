@@ -92,4 +92,4 @@ let rec of_yamlx_value_exn ?path (v : YAMLx.value) : AST.t =
 let of_yamlx_value ?path v =
   match of_yamlx_value_exn ?path v with
   | result              -> Ok result
-  | exception Invalid_argument msg -> Error msg
+  | exception Invalid_argument msg -> Error ("invalid argument: " ^ msg)

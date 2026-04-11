@@ -23,11 +23,11 @@ let () =
   (* Step 1: parse YAML into a generic JSON-like tree, preserving locations. *)
   let jsonlike =
     match YAMLx.Values.one_of_yaml_file path with
-    | Error msg ->
-        eprintf "%s\n%!" msg;
-        exit 1
+    | Error msg -> eprintf "%s\n%!" msg; exit 1
     | Ok yaml_val ->
-        Atd_yamlx.of_yamlx_value ~path yaml_val
+        match Atd_yamlx.of_yamlx_value ~path yaml_val with
+        | Error msg -> eprintf "%s\n%!" msg; exit 1
+        | Ok tree -> tree
   in
   (* Step 2: deserialize the JSON-like tree into a typed OCaml value.
      Location-aware errors point at the exact line in config.yaml. *)

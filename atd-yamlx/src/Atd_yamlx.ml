@@ -58,7 +58,7 @@ let number_of_int64 (i : int64) : Number.t =
           (* Int64.to_string is always a valid decimal — this cannot happen. *)
           assert false
 
-let rec of_yamlx_value ?path (v : YAMLx.value) : AST.t =
+let rec of_yamlx_value_exn ?path (v : YAMLx.value) : AST.t =
   let open YAMLx in
   let loc l = convert_loc ?path l in
   match v with
@@ -78,13 +78,18 @@ let rec of_yamlx_value ?path (v : YAMLx.value) : AST.t =
       AST.String (loc l, s)
 
   | Seq (l, items) ->
-      AST.Array (loc l, List.map (of_yamlx_value ?path) items)
+      AST.Array (loc l, List.map (of_yamlx_value_exn ?path) items)
 
   | Map (l, pairs) ->
       (* Each pair is (pair_loc, key_value, value_value).
          pair_loc is the source range of the key (used as the key location
          in the jsonlike Object). *)
       let convert_pair (key_loc, key, value) =
-        (convert_loc ?path key_loc, key_to_string ?path key, of_yamlx_value ?path value)
+        (convert_loc ?path key_loc, key_to_string ?path key, of_yamlx_value_exn ?path value)
       in
       AST.Object (loc l, List.map convert_pair pairs)
+
+let of_yamlx_value ?path v =
+  match of_yamlx_value_exn ?path v with
+  | result              -> Ok result
+  | exception Invalid_argument msg -> Error msg

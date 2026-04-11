@@ -15,10 +15,11 @@
       match YAMLx.Values.one_of_yaml ~file:path yaml_text with
       | Error msg -> failwith msg
       | Ok yaml_val ->
-          let jsonlike = Atd_yamlx.of_yamlx_value ~path yaml_val in
-          (* Feed to an ATD-generated reader, e.g. *)
-          let config = My_config_j.config_of_jsonlike jsonlike in
-          ...
+          match Atd_yamlx.of_yamlx_value ~path yaml_val with
+          | Error msg -> failwith msg
+          | Ok jsonlike ->
+              let config = My_config_j.config_of_jsonlike jsonlike in
+              ...
     ]}
 
     {1 YAML–JSON type correspondence}
@@ -34,14 +35,13 @@
     | [Seq] (sequence/array)  | [Array]                           |
     | [Map] (mapping/object)  | [Object]                          |
 
-    Map keys must be YAML strings.  Any other key type raises
-    [Invalid_argument] with a message that includes the source location.
+    Map keys must be YAML strings.  Any other key type produces an error.
     If a non-string key is needed, pre-process the YAML document to convert
     it before calling this function.
 *)
 
 (** Convert a [YAMLx.value] to [Atd_jsonlike.AST.t], preserving source
-    locations.
+    locations.  Returns [Error msg] if a YAML map has a non-string key.
 
     @param path
       The file path from which the YAML was read.  When provided it is
@@ -49,9 +49,11 @@
       error messages produced by ATD-generated readers include the file name.
       Matches the [?file] argument of [YAMLx.Values.of_yaml] /
       [YAMLx.Values.one_of_yaml_file].
-
-    @raise Invalid_argument
-      when a YAML map has a non-string key.  The error message includes
-      the source location of the offending key.
 *)
-val of_yamlx_value : ?path:string -> YAMLx.value -> Atd_jsonlike.AST.t
+val of_yamlx_value :
+  ?path:string -> YAMLx.value -> (Atd_jsonlike.AST.t, string) result
+
+(** Like {!of_yamlx_value} but raises [Invalid_argument] instead of returning
+    [Error] when a YAML map has a non-string key.  The error message includes
+    the source location of the offending key. *)
+val of_yamlx_value_exn : ?path:string -> YAMLx.value -> Atd_jsonlike.AST.t

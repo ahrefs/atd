@@ -16,7 +16,7 @@ let ast_t : AST.t Testo.testable =
 let parse_one ?(path = "test") yaml_str =
   match YAMLx.Values.of_yaml ~file:path yaml_str with
   | Error msg -> failwith ("YAMLx parse error: " ^ msg)
-  | Ok [v]    -> Atd_yamlx.of_yamlx_value ~path v
+  | Ok [v]    -> Atd_yamlx.of_yamlx_value_exn ~path v
   | Ok _      -> failwith "expected exactly one YAML document"
 
 (* ===== Tests ===== *)
@@ -74,27 +74,27 @@ tags: []
   in
   Testo.check ast_t expected result
 
-(* A non-string map key should raise Invalid_argument. *)
-let test_non_string_key_raises () =
+(* A non-string map key should return an Error. *)
+let test_non_string_key_error () =
   let yaml_str = {|
 ? 42
 : value
 |}
   in
-  let raised =
-    try
-      ignore (parse_one yaml_str);
-      false
-    with Invalid_argument _ -> true
-  in
-  Testo.check Testo.bool true raised
+  match YAMLx.Values.of_yaml yaml_str with
+  | Error msg -> failwith ("YAMLx parse error: " ^ msg)
+  | Ok [v] ->
+      (match Atd_yamlx.of_yamlx_value v with
+       | Error _ -> ()
+       | Ok _ -> failwith "expected an error for non-string map key")
+  | Ok _ -> failwith "expected exactly one YAML document"
 
 (* ===== Test list ===== *)
 
 let tests _env = [
   Testo.create "basic document: scalars, bool, null, sequence" test_basic_document;
   Testo.create "nested maps, float, empty sequence"            test_nested;
-  Testo.create "non-string map key raises Invalid_argument"    test_non_string_key_raises;
+  Testo.create "non-string map key returns Error"              test_non_string_key_error;
 ]
 
 let () =

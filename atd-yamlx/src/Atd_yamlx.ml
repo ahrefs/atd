@@ -62,32 +62,22 @@ let rec of_yamlx_value_exn ?path (v : YAMLx.value) : AST.t =
   let open YAMLx in
   let loc l = convert_loc ?path l in
   match v with
-  | Null l ->
-      AST.Null (loc l)
-
-  | Bool (l, b) ->
-      AST.Bool (loc l, b)
-
-  | Int (l, i) ->
-      AST.Number (loc l, number_of_int64 i)
-
-  | Float (l, f) ->
-      AST.Number (loc l, Number.of_float f)
-
-  | String (l, s) ->
-      AST.String (loc l, s)
-
-  | Seq (l, items) ->
-      AST.Array (loc l, List.map (of_yamlx_value_exn ?path) items)
-
+  | Null l -> Null (loc l)
+  | Bool (l, b) -> Bool (loc l, b)
+  | Int (l, i) -> Number (loc l, number_of_int64 i)
+  | Float (l, f) -> Number (loc l, Number.of_float f)
+  | String (l, s) -> String (loc l, s)
+  | Seq (l, items) -> Array (loc l, List.map (of_yamlx_value_exn ?path) items)
   | Map (l, pairs) ->
       (* Each pair is (pair_loc, key_value, value_value).
          pair_loc is the source range of the key (used as the key location
          in the jsonlike Object). *)
       let convert_pair (key_loc, key, value) =
-        (convert_loc ?path key_loc, key_to_string ?path key, of_yamlx_value_exn ?path value)
+        (convert_loc ?path key_loc,
+         key_to_string ?path key,
+         of_yamlx_value_exn ?path value)
       in
-      AST.Object (loc l, List.map convert_pair pairs)
+      Object (loc l, List.map convert_pair pairs)
 
 let of_yamlx_value ?path v =
   match of_yamlx_value_exn ?path v with

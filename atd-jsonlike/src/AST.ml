@@ -20,6 +20,7 @@ let get_loc = function
   | Array (loc, _)
   | Object (loc, _) -> loc
 
+(* equality up to source locations *)
 let rec equal a b =
   match a, b with
   | Null _, Null _ -> true
@@ -41,6 +42,10 @@ let rec equal a b =
       List.equal (fun (_, k1, v1) (_, k2, v2) -> k1 = k2 && equal v1 v2) xs ys
   | _ -> false
 
+(* compare but ignore locations.
+
+   Differs from 'equal' on float comparisons (NaN equality).
+*)
 let rec compare a b =
   match a, b with
   | Null _, Null _ -> 0

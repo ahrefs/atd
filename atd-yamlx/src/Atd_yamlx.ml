@@ -51,7 +51,12 @@ let key_to_string (key : YAMLx.value) : string =
    Tries to fit into a native int first (exact), then falls back to the
    decimal string representation so the literal field is preserved. *)
 let number_of_int64 (i : int64) : Number.t =
-  match Int64.to_int_opt i with
+  (* Int64.to_int_opt is only available from OCaml 4.12; emulate it for 4.08+. *)
+  let to_int_opt i =
+    let n = Int64.to_int i in
+    if Int64.of_int n = i then Some n else None
+  in
+  match to_int_opt i with
   | Some n -> Number.of_int n
   | None   ->
       (* The value doesn't fit in a native OCaml int (possible on 32-bit

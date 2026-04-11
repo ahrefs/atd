@@ -17,13 +17,6 @@ let yaml_loc ?(file = "") line col_start col_end : YAMLx.loc =
   } in
   { YAMLx.start_pos = pos line col_start; end_pos = pos line col_end }
 
-(* Expected Atd_jsonlike.Loc.t for the same range (0-based row). *)
-let expected_loc ?path row col_start col_end : Loc.t = {
-  Loc.start = Pos.{ row; column = col_start };
-  Loc.end_  = Pos.{ row; column = col_end   };
-  Loc.path;
-}
-
 (* ===== Location translation ===== *)
 
 (* YAMLx line numbers are 1-based; Atd_jsonlike rows are 0-based. *)

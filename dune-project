@@ -280,7 +280,7 @@ at every node so that ATD-generated reader functions can report precise
 file/line/column error messages.")
  (depends
   (ocaml (>= 4.14))
-  (atd-jsonlike (>= 4.0.0))
+  atd-jsonlike
   (yamlx (>= 0.1.0))
   (testo (and (>= 0.3.0) :with-test))
   (odoc :with-doc)))

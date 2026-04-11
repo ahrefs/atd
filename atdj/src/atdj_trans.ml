@@ -327,8 +327,23 @@ and trans_outer env (def : A.type_def) =
  * we generate a class Ty implemented in Ty.java and an enum TyEnum defined
  * in a separate file TyTag.java.
 *)
-and trans_sum my_name env (_, vars, _) =
+and trans_sum my_name env (_, vars, sum_an) =
   let class_name = Atdj_names.to_class_name my_name in
+
+  (* Determine whether tagged variants are encoded as two-element JSON arrays
+     ["Constructor", payload] (the default ATD encoding) or as single-key JSON
+     objects {"Constructor": payload} (<json repr="object">).
+
+     The object encoding is the default for Rust/Serde (externally-tagged)
+     and also maps naturally to YAML as a single-key mapping:
+
+       # array encoding (default):
+       - - Circle
+         - 3.14
+       # object encoding (<json repr="object">):
+       - Circle: 3.14
+  *)
+  let json_sum_repr = (Atd.Json.get_json_sum sum_an).json_sum_repr in
 
   let cases =
     List.map (fun (x : A.variant) ->
@@ -401,7 +416,16 @@ public class %s {
                enum_name
 
          | Some (atd_ty, java_ty) ->
-             let src = sprintf "((JSONArray)o).%s(1)" (get env atd_ty false) in
+             (* Extract the payload from the tagged variant.
+                Array encoding: ["Constructor", payload] → index 1 in JSONArray
+                Object encoding: {"Constructor": payload} → key "Constructor" in JSONObject *)
+             let src =
+               match json_sum_repr with
+               | Atd.Json.Array ->
+                   sprintf "((JSONArray)o).%s(1)" (get env atd_ty false)
+               | Atd.Json.Object ->
+                   sprintf "((JSONObject)o).%s(\"%s\")" (get env atd_ty false) json_name
+             in
              let set_value =
                assign env
                  (Some ("field_" ^ field_name)) src
@@ -485,14 +509,31 @@ public class %s {
                json_name (* TODO: java-string-escape *)
 
          | Some (atd_ty, _) ->
-             fprintf out "
+             (* Encode the tagged variant.
+                Array encoding (default): ["Constructor", payload]
+                Object encoding (<json repr="object">): {"Constructor": payload}
+
+                The object encoding is the Rust/Serde default (externally-tagged)
+                and also produces idiomatic YAML: Constructor: payload *)
+             (match json_sum_repr with
+              | Atd.Json.Array ->
+                  fprintf out "
       case %s:
          _out.append(\"[\\\"%s\\\",\");
 %s         _out.append(\"]\");
          break;"
-               enum_name
-               json_name
-               (to_string env ("field_" ^ field_name) atd_ty "         ")
+                    enum_name
+                    json_name
+                    (to_string env ("field_" ^ field_name) atd_ty "         ")
+              | Atd.Json.Object ->
+                  fprintf out "
+      case %s:
+         _out.append(\"{\\\"%s\\\":\");
+%s         _out.append(\"}\");
+         break;"
+                    enum_name
+                    json_name
+                    (to_string env ("field_" ^ field_name) atd_ty "         "))
        ) l
     ) cases;
 

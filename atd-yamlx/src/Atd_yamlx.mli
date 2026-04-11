@@ -34,8 +34,10 @@
     | [Seq] (sequence/array)  | [Array]                           |
     | [Map] (mapping/object)  | [Object]                          |
 
-    Map keys must be scalar YAML values ([Null], [Bool], [Int], [Float], or
-    [String]).  Sequence or mapping keys raise [Invalid_argument].
+    Map keys must be YAML strings.  Any other key type raises
+    [Invalid_argument] with a message that includes the source location.
+    If a non-string key is needed, pre-process the YAML document to convert
+    it before calling this function.
 *)
 
 (** Convert a [YAMLx.value] to [Atd_jsonlike.AST.t], preserving source
@@ -49,9 +51,7 @@
       [YAMLx.Values.one_of_yaml_file].
 
     @raise Invalid_argument
-      when a YAML map has a complex key (a sequence or a nested map) that
-      cannot be represented as a plain string.  All scalar key types
-      ([Null], [Bool], [Int], [Float], [String]) are accepted and
-      converted to their natural string representation.
+      when a YAML map has a non-string key.  The error message includes
+      the source location of the offending key.
 *)
 val of_yamlx_value : ?path:string -> YAMLx.value -> Atd_jsonlike.AST.t

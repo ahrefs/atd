@@ -19,3 +19,13 @@ v}
 *)
 val loc_msg : t -> string
 
+(** Structural equality that ignores source locations. *)
+val equal : t -> t -> bool
+
+(** Total structural order that ignores source locations. *)
+val compare : t -> t -> int
+
+(** Convert to a human-readable string, omitting source locations.
+    Intended for use in test output and error messages. *)
+val show : t -> string
+

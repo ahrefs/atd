@@ -20,30 +20,20 @@ let convert_loc ?path (l : YAMLx.loc) : Loc.t = {
 
 (* ===== Key conversion ===== *)
 
-(* YAML map keys can be any value, but JSON object keys must be strings.
-   We accept all scalar types and reject complex keys (sequences, maps). *)
-let key_to_string (key : YAMLx.value) : string =
+(* YAML map keys must be strings for JSON object compatibility.
+   Non-string keys could be converted to strings in multiple ways and
+   the choice would be arbitrary, so we require users to pre-process
+   their data if they need non-string keys. *)
+let key_to_string ?path (key : YAMLx.value) : string =
   let open YAMLx in
   match key with
   | String (_, s) -> s
-  | Null _        -> "null"
-  | Bool (_, b)   -> string_of_bool b
-  | Int  (_, i)   -> Int64.to_string i
-  | Float (_, f)  ->
-      (* Use the JSON number representation: prefer an integer string when the
-         value is whole, fall back to OCaml's default float formatting. *)
-      let n = Number.of_float f in
-      (match n.Number.int with
-       | Some i -> string_of_int i
-       | None   -> string_of_float f)
-  | Seq _ ->
+  | Null loc | Bool (loc, _) | Int (loc, _) | Float (loc, _)
+  | Seq (loc, _) | Map (loc, _) ->
+      let loc_str = YAMLx.default_format_loc ?file:path loc in
       invalid_arg
-        "Atd_yamlx.of_yamlx_value: YAML sequence used as a map key; \
-         only scalar keys (null, bool, int, float, string) are supported"
-  | Map _ ->
-      invalid_arg
-        "Atd_yamlx.of_yamlx_value: YAML mapping used as a map key; \
-         only scalar keys (null, bool, int, float, string) are supported"
+        (loc_str ^ "map key must be a string; \
+         pre-process the YAML document to convert non-string keys if needed")
 
 (* ===== Value conversion ===== *)
 
@@ -95,6 +85,6 @@ let rec of_yamlx_value ?path (v : YAMLx.value) : AST.t =
          pair_loc is the source range of the key (used as the key location
          in the jsonlike Object). *)
       let convert_pair (key_loc, key, value) =
-        (convert_loc ?path key_loc, key_to_string key, of_yamlx_value ?path value)
+        (convert_loc ?path key_loc, key_to_string ?path key, of_yamlx_value ?path value)
       in
       AST.Object (loc l, List.map convert_pair pairs)

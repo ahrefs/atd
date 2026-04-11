@@ -1,0 +1,11 @@
+name: myapp
+log_level: Info
+tags:
+  - production
+  - v2
+db:
+  Postgres:
+    host: db.example.com
+    port: 5432
+    dbname: myapp_prod
+    ssl: true

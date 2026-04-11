@@ -19,13 +19,13 @@ let show_log_level = function
   | Error -> "Error"
 
 let () =
-  let path = "config.yaml" in
+  let file = "config.yaml" in
   (* Step 1: parse YAML into a generic JSON-like tree, preserving locations. *)
   let jsonlike =
-    match YAMLx.Values.one_of_yaml_file path with
+    match YAMLx.Values.one_of_yaml_file file with
     | Error msg -> eprintf "%s\n%!" msg; exit 1
     | Ok yaml_val ->
-        match Atd_yamlx.of_yamlx_value ~path yaml_val with
+        match Atd_yamlx.of_yamlx_value ~file yaml_val with
         | Error msg -> eprintf "%s\n%!" msg; exit 1
         | Ok tree -> tree
   in

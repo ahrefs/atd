@@ -115,11 +115,11 @@ let show (x : t) : string =
 
 let loc_msg node =
   let loc = get_loc node in
-  let { Loc.start; end_; path } = loc in
+  let { Loc.start; end_; file } = loc in
   let path_prefix =
-    match path with
+    match file with
     | None -> ""
-    | Some p -> Printf.sprintf "File %S, " p
+    | Some f -> Printf.sprintf "File %S, " f
   in
   if start.Pos.row = end_.Pos.row then
     Printf.sprintf "%sline %d, characters %d-%d:\n"

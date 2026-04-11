@@ -16,7 +16,7 @@ let ast_t : AST.t Testo.testable =
 let parse_one ?(path = "test") yaml_str =
   match YAMLx.Values.of_yaml ~file:path yaml_str with
   | Error msg -> failwith ("YAMLx parse error: " ^ msg)
-  | Ok [v]    -> Atd_yamlx.of_yamlx_value_exn ~path v
+  | Ok [v]    -> Atd_yamlx.of_yamlx_value_exn ~file:path v
   | Ok _      -> failwith "expected exactly one YAML document"
 
 (* ===== Tests ===== *)
@@ -36,7 +36,7 @@ scores:
 |}
   in
   let expected =
-    let no_loc = Loc.{ start = Pos.{row=0;column=0}; end_ = Pos.{row=0;column=0}; path=None } in
+    let no_loc = Loc.{ start = Pos.{row=0;column=0}; end_ = Pos.{row=0;column=0}; file=None } in
     AST.Object (no_loc, [
       (no_loc, "answer",   AST.Number (no_loc, Number.of_int 42));
       (no_loc, "flag",     AST.Bool   (no_loc, true));
@@ -61,7 +61,7 @@ inner:
 tags: []
 |}
   in
-  let no_loc = Loc.{ start = Pos.{row=0;column=0}; end_ = Pos.{row=0;column=0}; path=None } in
+  let no_loc = Loc.{ start = Pos.{row=0;column=0}; end_ = Pos.{row=0;column=0}; file=None } in
   let expected =
     AST.Object (no_loc, [
       (no_loc, "ratio", AST.Number (no_loc, Number.of_float 1.5));

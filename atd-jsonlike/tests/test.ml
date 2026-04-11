@@ -127,7 +127,7 @@ let dummy_loc start_row start_col end_row end_col =
   Loc.{
     start = Pos.{ row = start_row; column = start_col };
     end_  = Pos.{ row = end_row;   column = end_col   };
-    path  = None;
+    file  = None;
   }
 
 (* Single-line location without a file path *)
@@ -145,7 +145,7 @@ let test_loc_msg_multi_line () =
 
 (* Location with a file path *)
 let test_loc_msg_with_path () =
-  let loc = { (dummy_loc 0 0 0 5) with Loc.path = Some "config.yaml" } in
+  let loc = { (dummy_loc 0 0 0 5) with Loc.file = Some "config.yaml" } in
   let node = AST.Bool (loc, true) in
   Testo.(check string)
     "File \"config.yaml\", line 1, characters 0-5:\n"

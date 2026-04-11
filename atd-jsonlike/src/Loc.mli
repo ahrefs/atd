@@ -9,8 +9,8 @@ type t = {
   start: Pos.t;
   end_: Pos.t;
 
-  path: string option;
-    (** If provided, [path] must hold a valid path within the local file
+  file: string option;
+    (** If provided, [file] must hold a valid path within the local file
         system. *)
 }
 

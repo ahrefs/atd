@@ -1,3 +1,9 @@
+(*
+   JSON-like AST implementation
+*)
+
+open Printf
+
 type t =
   | Null of Loc.t
   | Bool of Loc.t * bool
@@ -60,25 +66,47 @@ let rec compare a b =
            if c <> 0 then c else compare v1 v2)
         xs ys
 
-let rec show = function
-  | Null _ -> "null"
-  | Bool (_, b) -> string_of_bool b
-  | Number (_, n) ->
-      (match n.Number.literal with
-       | Some s -> s
-       | None ->
-           match n.Number.int with
-           | Some i -> string_of_int i
-           | None ->
-               match n.Number.float with
-               | Some f -> string_of_float f
-               | None -> "<number>")
-  | String (_, s) -> Printf.sprintf "%S" s
-  | Array (_, items) ->
-      Printf.sprintf "[%s]" (String.concat ", " (List.map show items))
-  | Object (_, fields) ->
-      let show_field (_, k, v) = Printf.sprintf "%S: %s" k (show v) in
-      Printf.sprintf "{%s}" (String.concat ", " (List.map show_field fields))
+(* Produce diff-friendly output. It's not strict JSON mostly because we
+   don't want to depend on a JSON library for this. Maybe we could
+   use the YAMLx pretty-printer but then it will look even less like JSON. *)
+let show (x : t) : string =
+  let buf = Buffer.create 100 in
+  let line prefix ?(suffix = "") str =
+    bprintf buf "%s%s%s\n" prefix str suffix
+  in
+  let rec show prefix = function
+    | Null _ -> line prefix "null"
+    | Bool (_, b) -> line prefix (string_of_bool b)
+    | Number (_, n) ->
+        (match n.Number.literal with
+         | Some s -> s
+         | None ->
+             match n.Number.int with
+             | Some i -> string_of_int i
+             | None ->
+                 match n.Number.float with
+                 | Some f -> string_of_float f
+                 | None -> "<number>")
+        |> line prefix
+    | String (_, s) -> line prefix (sprintf "%S" s)
+    | Array (_, []) ->
+        line prefix "[]"
+    | Array (_, items) ->
+        line prefix "[";
+        List.iter (show ("  " ^ prefix)) items;
+        line prefix "]"
+    | Object (_, []) ->
+        line prefix "{}"
+    | Object (_, fields) ->
+        line prefix "{";
+        List.iter (show_field ("  " ^ prefix)) fields;
+        line prefix "}"
+  and show_field prefix (_, k, v) =
+    line prefix ~suffix:":" (sprintf "%S" k);
+    show ("  " ^ prefix) v
+  in
+  show "" x;
+  Buffer.contents buf
 
 let loc_msg node =
   let loc = get_loc node in

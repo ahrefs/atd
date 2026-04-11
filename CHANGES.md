@@ -6,11 +6,14 @@ unreleased
   ATD spec, compiles it, feeds JSON to stdin, and checks the output.
   atdml is the first backend to run these tests.
 
-* atdml: Add `<json repr="object">` on sum types. Tagged variants are encoded
-  as single-key JSON objects `{"Constructor": payload}` instead of the default
-  `["Constructor", payload]` arrays. Unit variants are unaffected (`"Constructor"`
-  strings). This matches Serde's externally-tagged representation. Both
-  `of_yojson` and `of_jsonlike` readers are generated automatically.
+* All backends: Add `<json repr="object">` on sum types. Tagged variants are
+  encoded as single-key JSON objects `{"Constructor": payload}` instead of the
+  default `["Constructor", payload]` arrays. Unit variants are unaffected
+  (`"Constructor"` strings). This matches Serde's externally-tagged
+  representation and produces idiomatic YAML (a single-key mapping rather than
+  a two-element sequence). Supported in: atdml (OCaml), atdpy (Python),
+  atdts (TypeScript), atdcpp (C++), atdd (D), atdj (Java), atds (Scala).
+  atdml additionally generates `of_jsonlike` readers automatically.
 
 * New package: **`atd-jsonlike`**. Defines a generic JSON-like AST
   (`Atd_jsonlike.AST.t`) with source location information at every node.

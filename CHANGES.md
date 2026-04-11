@@ -1,6 +1,9 @@
 unreleased
 ----------
 
+* Build: OCaml >= 4.14 is now required (previously 4.08). This aligns
+  all packages with the `yamlx` dependency of `atd-yamlx`.
+
 * Testing: Add a standard JSON round-trip test suite (`standard-tests/`)
   that any code generator can opt into. The harness generates code from an
   ATD spec, compiles it, feeds JSON to stdin, and checks the output.

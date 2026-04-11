@@ -602,6 +602,75 @@ namespace St {
 }
 
 
+namespace Shape::Types {
+
+
+    void Circle::to_json(const Circle &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
+        writer.StartObject();
+        writer.Key("Circle");
+        _atd_write_float(e.value, writer);
+        writer.EndObject();
+    }
+
+
+    void Square::to_json(const Square &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
+        writer.StartObject();
+        writer.Key("Square");
+        _atd_write_float(e.value, writer);
+        writer.EndObject();
+    }
+
+
+    void Point::to_json(const Point &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){
+        writer.String("Point");
+    };
+
+
+}
+
+
+namespace Shape {
+    typedefs::Shape from_json(const rapidjson::Value &x) {
+        if (x.IsString()) {
+            if (std::string_view(x.GetString()) == "Point") 
+                return Types::Point();
+            throw _atd_bad_json("Shape", x);
+        }
+        if (x.IsObject() && x.MemberCount() == 1) {
+            std::string cons = x.MemberBegin()->name.GetString();
+            if (cons == "Circle")
+                return Types::Circle({_atd_read_float(x["Circle"])});
+            if (cons == "Square")
+                return Types::Square({_atd_read_float(x["Square"])});
+            throw _atd_bad_json("Shape", x);
+        }
+        throw _atd_bad_json("Shape", x);
+    }
+    typedefs::Shape from_json_string(const std::string &s) {
+        rapidjson::Document doc;
+        doc.Parse(s.c_str());
+        if (doc.HasParseError()) {
+            throw AtdException("Failed to parse JSON");
+        }
+        return from_json(doc);
+    }
+    void to_json(const typedefs::Shape &x, rapidjson::Writer<rapidjson::StringBuffer> &writer) {
+        std::visit([&writer](auto &&arg) {
+            using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, Types::Circle>) Types::Circle::to_json(arg, writer);
+                if constexpr (std::is_same_v<T, Types::Square>) Types::Square::to_json(arg, writer);
+                if constexpr (std::is_same_v<T, Types::Point>) Types::Point::to_json(arg, writer);
+        }, x);
+    }
+    std::string to_json_string(const typedefs::Shape &x) {
+        rapidjson::StringBuffer buffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+        to_json(x, writer);
+        return buffer.GetString();
+    }
+}
+
+
 namespace Kind::Types {
 
 

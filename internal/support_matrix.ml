@@ -147,7 +147,6 @@ let languages : (string * lang_support) list = [
   "atdcpp (C++)", { all_yes with
     doc_comments     = Planned;
     json_repr_object = Planned;
-    sum_repr_object  = Planned;
     json_adapter     = Planned;
     imports          = Planned;
     open_enums       = Planned;

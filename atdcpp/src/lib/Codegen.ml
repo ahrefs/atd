@@ -1143,7 +1143,8 @@ let alias_wrapper env  name type_expr codegen_type =
   | _ -> []
 
 
-let case_class env  type_name (loc, orig_name, unique_name, an, opt_e) case_classes =
+let case_class env type_name (loc, orig_name, unique_name, an, opt_e)
+    case_classes ~json_sum_repr =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match case_classes with
   | Declaration -> (match opt_e with
@@ -1171,6 +1172,7 @@ let case_class env  type_name (loc, orig_name, unique_name, an, opt_e) case_clas
         ])
   | Definition -> (match opt_e with
     | None ->
+        (* Unit variants are always encoded as plain strings. *)
         [
             Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
             Block [
@@ -1179,14 +1181,30 @@ let case_class env  type_name (loc, orig_name, unique_name, an, opt_e) case_clas
             Line (sprintf "};");
         ]
     | Some e ->
+        (* Tagged variants (with payload).
+           Array repr (default): ["Constructor", payload]
+           Object repr: {"Constructor": payload}
+             This is the Rust/Serde default externally-tagged encoding
+             and also maps naturally to YAML as a single-key mapping. *)
+        let body = match json_sum_repr with
+          | Atd.Json.Array ->
+              [
+                Line (sprintf "writer.StartArray();");
+                Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
+                Line (sprintf "%se.value, writer);" (json_writer env e));
+                Line (sprintf "writer.EndArray();");
+              ]
+          | Atd.Json.Object ->
+              [
+                Line (sprintf "writer.StartObject();");
+                Line (sprintf "writer.Key(\"%s\");" (single_esc json_name));
+                Line (sprintf "%se.value, writer);" (json_writer env e));
+                Line (sprintf "writer.EndObject();");
+              ]
+        in
         [
             Line (sprintf "void %s::to_json(const %s &e, rapidjson::Writer<rapidjson::StringBuffer> &writer){" (trans env orig_name) (trans env orig_name));
-            Block [
-              Line (sprintf "writer.StartArray();");
-              Line (sprintf "writer.String(\"%s\");" (single_esc json_name));
-              Line (sprintf "%se.value, writer);" (json_writer env e));
-              Line (sprintf "writer.EndArray();");
-            ];
+            Block body;
             Line("}");
         ])
   | _ -> []
@@ -1212,7 +1230,11 @@ let read_cases0 env loc name cases0 sum_repr =
             (struct_name env name |> single_esc))
   ]
 
-let read_cases1 env loc name cases1 =
+let read_cases1 env loc name cases1 json_sum_repr =
+  (* How the payload value is accessed depends on the sum repr:
+     Array: x[1]  -- value is second element of ["Constructor", payload]
+     Object: x["Constructor"]  -- value is the field under the constructor key
+       (cons is the variable holding the key name) *)
   let ifs =
     cases1
     |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1222,12 +1244,20 @@ let read_cases1 env loc name cases1 =
         | Some x -> x
       in
       let json_name = Atd.Json.get_json_cons orig_name an in
+      let value_expr = match json_sum_repr with
+        | Atd.Json.Array ->
+            sprintf "%sx[1])}" (json_reader env e)
+        | Atd.Json.Object ->
+            (* Use the literal key rather than the 'cons' variable for
+               clarity, even though both would work after the if-guard. *)
+            sprintf "%sx[\"%s\"])}" (json_reader env e) (single_esc json_name)
+      in
       Inline [
         Line (sprintf "if (cons == \"%s\")" (single_esc json_name));
         Block [
-          Line (sprintf "return Types::%s({%sx[1])});"
+          Line (sprintf "return Types::%s({%s);"
                   (trans env orig_name)
-                  (json_reader env e))
+                  value_expr)
         ]
       ]
     )
@@ -1238,7 +1268,7 @@ let read_cases1 env loc name cases1 =
             (struct_name env name |> single_esc))
   ]
 
-let sum_container env  loc name cases codegen_type =
+let sum_container env loc name cases codegen_type ~json_sum_repr =
   let cpp_struct_name = struct_name env name in
   let cases0, cases1 =
     List.partition (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1248,6 +1278,7 @@ let sum_container env  loc name cases codegen_type =
   let cases0_block =
     if cases0 <> [] then
       [
+        (* Unit variants are always encoded as plain strings. *)
         Line "if (x.IsString()) {";
         Block (read_cases0 env loc name cases0 Cpp_annot.Variant);
         Line "}";
@@ -1255,16 +1286,34 @@ let sum_container env  loc name cases codegen_type =
     else
       []
   in
+  (* Determine how tagged variants are decoded based on the sum repr.
+     Array (default): ["Constructor", payload]
+       The tag is x[0].GetString() and the payload is x[1].
+     Object: {"Constructor": payload}
+       This is the Rust/Serde default externally-tagged encoding and also
+       maps naturally to YAML.  The tag is the sole member name, obtained
+       via MemberBegin()->name. *)
   let cases1_block =
     if cases1 <> [] then
-      [
-        Line "if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {";
-        Block [
-          Line "std::string cons = x[0].GetString();";
-          Inline (read_cases1 env loc name cases1)
-        ];
-          Line "}";
-      ]
+      match json_sum_repr with
+      | Atd.Json.Array ->
+          [
+            Line "if (x.IsArray() && x.Size() == 2 && x[0].IsString()) {";
+            Block [
+              Line "std::string cons = x[0].GetString();";
+              Inline (read_cases1 env loc name cases1 Atd.Json.Array)
+            ];
+              Line "}";
+          ]
+      | Atd.Json.Object ->
+          [
+            Line "if (x.IsObject() && x.MemberCount() == 1) {";
+            Block [
+              Line "std::string cons = x.MemberBegin()->name.GetString();";
+              Inline (read_cases1 env loc name cases1 Atd.Json.Object)
+            ];
+              Line "}";
+          ]
     else
       []
   in
@@ -1318,7 +1367,8 @@ let sum_container env  loc name cases codegen_type =
   ]
   | _ -> []
   
-let sum env loc name cases codegen_type =
+let sum env loc name cases an codegen_type =
+  let json_sum_repr = (Atd.Json.get_json_sum an).json_sum_repr in
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1328,10 +1378,10 @@ let sum env loc name cases codegen_type =
       | Inherit _ -> assert false
     ) cases
   in
-  let case_classes = 
-    List.map (fun x -> Inline (case_class env name x codegen_type)) cases
+  let case_classes =
+    List.map (fun x -> Inline (case_class env name x codegen_type ~json_sum_repr)) cases
   in
-  let container_class = sum_container env loc name cases codegen_type in
+  let container_class = sum_container env loc name cases codegen_type ~json_sum_repr in
   match codegen_type with
   | Declaration -> 
     [
@@ -1494,7 +1544,7 @@ let type_def env (def : A.type_def) codegen_type : B.t =
     match e with
     | Sum (loc, cases, an) ->
       (match (Cpp_annot.get_cpp_sumtype_repr an) with
-      | Variant -> sum env loc name cases codegen_type
+      | Variant -> sum env loc name cases an codegen_type
       | Enum -> enum env loc name cases codegen_type)
     | Record (loc, fields, an) ->
         record env loc name fields an codegen_type

@@ -138,6 +138,44 @@ int main() {
         }
     };
 
+    // Test for <json repr="object"> on sum types.
+    // Tagged variants are encoded as single-key JSON objects {"Constructor": payload}
+    // instead of the default two-element array ["Constructor", payload].
+    // This matches the default Rust/Serde externally-tagged encoding and
+    // also maps naturally to YAML (each variant is a single-key mapping).
+    tests["sum repr object"] = []() {
+        // Encoding: tagged variants use {"Constructor": payload}
+        typedefs::Shape circle = Shape::Types::Circle{3.14};
+        typedefs::Shape square = Shape::Types::Square{2.0};
+        typedefs::Shape point  = Shape::Types::Point{};
+
+        auto circle_json = Shape::to_json_string(circle);
+        auto square_json = Shape::to_json_string(square);
+        auto point_json  = Shape::to_json_string(point);
+
+        if (circle_json != R"({"Circle":3.14})")
+            throw std::runtime_error("Circle encoding failed: " + circle_json);
+        if (square_json != R"({"Square":2.0})")
+            throw std::runtime_error("Square encoding failed: " + square_json);
+        // Unit variants remain plain strings regardless of repr
+        if (point_json != R"("Point")")
+            throw std::runtime_error("Point encoding failed: " + point_json);
+
+        // Decoding: round-trip
+        auto c2 = Shape::from_json_string(circle_json);
+        auto s2 = Shape::from_json_string(square_json);
+        auto p2 = Shape::from_json_string(point_json);
+
+        if (Shape::to_json_string(c2) != circle_json)
+            throw std::runtime_error("Circle round-trip failed");
+        if (Shape::to_json_string(s2) != square_json)
+            throw std::runtime_error("Square round-trip failed");
+        if (Shape::to_json_string(p2) != point_json)
+            throw std::runtime_error("Point round-trip failed");
+
+        std::cout << "Test passed: sum repr object" << std::endl;
+    };
+
     tests["empty record"] = []() {
         typedefs::EmptyRecord emptyRecord;
         std::string json = "{}";

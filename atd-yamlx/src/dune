@@ -1,0 +1,4 @@
+(library
+ (name atd_yamlx)
+ (public_name atd-yamlx)
+ (libraries atd-jsonlike yamlx))

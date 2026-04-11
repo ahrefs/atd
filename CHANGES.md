@@ -6,6 +6,12 @@ unreleased
   ATD spec, compiles it, feeds JSON to stdin, and checks the output.
   atdml is the first backend to run these tests.
 
+* New package: **`atd-yamlx`**. Translates a parsed YAML value
+  (`YAMLx.value` from the `yamlx` library) into `Atd_jsonlike.AST.t`,
+  preserving source locations at every node so that ATD-generated reader
+  functions (`foo_of_jsonlike`) can report precise file/line/column error
+  messages when deserializing YAML configuration files.
+
 * All backends: Add `<json repr="object">` on sum types. Tagged variants are
   encoded as single-key JSON objects `{"Constructor": payload}` instead of the
   default `["Constructor", payload]` arrays. Unit variants are unaffected

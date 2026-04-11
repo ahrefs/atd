@@ -271,6 +271,21 @@ simpler and more maintainable at the cost of some performance.")
   (odoc :with-doc)))
 
 (package
+ (name atd-yamlx)
+ (synopsis "YAML-to-jsonlike bridge for use with ATD code generators")
+ (description "\
+atd-yamlx translates a parsed YAML value (YAMLx.value from the yamlx library)
+into the generic Atd_jsonlike.AST.t tree type, preserving source locations
+at every node so that ATD-generated reader functions can report precise
+file/line/column error messages.")
+ (depends
+  (ocaml (>= 4.08))
+  (atd-jsonlike (>= 4.0.0))
+  (yamlx (>= 0.1.0))
+  (testo (and (>= 0.3.0) :with-test))
+  (odoc :with-doc)))
+
+(package
  (name atd-jsonlike)
  (synopsis "Generic JSON-like AST for use with ATD code generators")
  (description "\

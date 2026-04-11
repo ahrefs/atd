@@ -1,16 +1,11 @@
 (*
   ATD type definitions for a small application configuration file.
 
-  Build instructions (run from this directory):
+  Prerequisites (install once via opam):
+    opam install atdml atd-yamlx yojson
 
-    # 1. Generate app_config.ml + app_config.mli from this file.
-    #    atdml is provided by the 'atdml' opam package.
-    atdml app_config.atd
-
-    # 2. Compile and run the example.
-    make
-
-  The 'make' command links against:  yojson  atd-jsonlike  yamlx  atd-yamlx
+  Build and run (from this directory):
+    dune exec ./main.exe
 *)
 
 (* Log level: controls how much the application prints. *)

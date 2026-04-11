@@ -2,16 +2,11 @@
   Minimal example: read an application config from a YAML file and
   pretty-print its contents.
 
-  Build instructions (run from this directory):
+  Prerequisites (install once via opam):
+    opam install atdml atd-yamlx yojson
 
-    # 1. Generate app_config.ml + app_config.mli from app_config.atd.
-    #    atdml is provided by the 'atdml' opam package.
-    atdml app_config.atd
-
-    # 2. Compile and run.
-    make
-
-  See the Makefile in this directory for the exact compilation command.
+  Build and run (from this directory):
+    dune exec ./main.exe
 *)
 
 open App_config

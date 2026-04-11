@@ -1,0 +1,9 @@
+; Generate app_config.ml + app_config.mli from app_config.atd using atdml.
+(rule
+ (targets app_config.ml app_config.mli)
+ (deps    app_config.atd)
+ (action  (run %{bin:atdml} %{deps})))
+
+(executable
+ (name main)
+ (libraries atd-yamlx atd-jsonlike yamlx yojson))

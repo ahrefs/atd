@@ -14,6 +14,14 @@ unreleased
   preserving source locations at every node so that ATD-generated reader
   functions (`foo_of_jsonlike`) can report precise file/line/column error
   messages when deserializing YAML configuration files.
+  - `of_yamlx_value` returns `(AST.t, string) result`; the raising variant
+    is `of_yamlx_value_exn`.
+  - `atd-yamlx/examples/` is a self-contained dune subproject demonstrating
+    a typed YAML config reader built with `atdml` and `atd-yamlx`.
+
+* `atd-jsonlike`: Add `Number.of_int64 : int64 -> Number.t`, useful for
+  libraries translating from formats with a native int64 type (e.g. YAML,
+  MessagePack).
 
 * All backends: Add `<json repr="object">` on sum types. Tagged variants are
   encoded as single-key JSON objects `{"Constructor": payload}` instead of the

@@ -46,6 +46,35 @@ let version_term =
   in
   Arg.value (Arg.flag info)
 
+(*
+   Parse the list of strings collected from all '--mode' occurrences into
+   a (yojson, jsonlike) pair.
+
+   Each string may be a single mode name or a comma-separated list:
+     --mode yojson
+     --mode jsonlike,yojson
+     --mode all
+
+   If '--mode' is never supplied the default is [yojson] (no jsonlike).
+   The special mode 'all' expands to every available mode.
+*)
+let parse_mode_strings = function
+  | [] -> (true, false)   (* default: yojson only *)
+  | mode_strings ->
+      let tokens =
+        List.concat_map (String.split_on_char ',') mode_strings
+        |> List.map String.trim
+        |> List.filter (fun s -> s <> "")
+      in
+      List.fold_left (fun (y, j) token ->
+        match token with
+        | "yojson"   -> (true, j)
+        | "jsonlike" -> (y, true)
+        | "all"      -> (true, true)
+        | other ->
+            error (sprintf "unknown mode %S; valid modes: yojson, jsonlike, all" other)
+      ) (false, false) tokens
+
 let doc =
   "Simplified OCaml JSON serializers using the Yojson AST"
 
@@ -67,6 +96,8 @@ let man = [
   `S Manpage.s_examples;
   `P "Generate 'foo.ml' and 'foo.mli' from 'foo.atd':";
   `Pre "atdml foo.atd";
+  `P "Also generate Atd_jsonlike-based readers:";
+  `Pre "atdml --mode yojson,jsonlike foo.atd";
   `P "Generate a self-contained snippet from stdin:";
   `Pre "atdml < foo.atd";
   `P "Sample ATD file 'foo.atd':";
@@ -124,37 +155,35 @@ end
   `P "atdgen, atdpy, atdts"
 ]
 
-let no_yojson_term =
+let mode_term =
   let info =
-    Arg.info ["no-yojson"]
-      ~doc:"Do not generate Yojson-based readers, writers, and I/O functions. \
-            Use this when the generated code should not depend on yojson."
+    Arg.info ["mode"]
+      ~docv:"MODE"
+      ~doc:"Select which readers/writers to generate. \
+            $(docv) is a mode name or a comma-separated list of mode names. \
+            This option may be repeated. \
+            Valid modes: \
+            $(b,yojson) (Yojson.Safe.t-based readers and writers), \
+            $(b,jsonlike) (Atd_jsonlike.AST.t-based readers), \
+            $(b,all) (all of the above). \
+            Default when the option is absent: $(b,yojson)."
   in
-  Arg.value (Arg.flag info)
-
-let no_jsonlike_term =
-  let info =
-    Arg.info ["no-jsonlike"]
-      ~doc:"Do not generate Atd_jsonlike-based readers. \
-            Use this to reduce the amount of generated code and avoid a \
-            dependency on the atd-jsonlike library."
-  in
-  Arg.value (Arg.flag info)
+  Arg.value (Arg.opt_all Arg.string [] info)
 
 let cmdline_term run =
-  let combine input_files version no_yojson no_jsonlike =
+  let combine input_files version mode_strings =
+    let (yojson, jsonlike) = parse_mode_strings mode_strings in
     run {
       input_files;
       version;
-      yojson = not no_yojson;
-      jsonlike = not no_jsonlike;
+      yojson;
+      jsonlike;
     }
   in
   Term.(const combine
         $ input_files_term
         $ version_term
-        $ no_yojson_term
-        $ no_jsonlike_term
+        $ mode_term
        )
 
 let parse_command_line_and_run run =

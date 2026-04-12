@@ -1,5 +1,5 @@
 ; Generate app_config.ml + app_config.mli from app_config.atd using atdml.
-; --mode all ensures both yojson and jsonlike readers are generated,
+; --mode jsonlike ensures jsonlike readers are generated,
 ; since main.ml uses app_config_of_jsonlike.
 (rule
  (targets app_config.ml app_config.mli)

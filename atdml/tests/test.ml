@@ -22,7 +22,7 @@ let run_codegen ~test_name ~file_name atd_src =
   Testo.with_temp_dir ~chdir:true (fun _dir ->
     let atd_file = file_name ^ ".atd" in
     Testo.write_text_file (Fpath.v atd_file) atd_src;
-    Standard_tests.Util.run_command [atdml; atd_file];
+    Standard_tests.Util.run_command [atdml; "--mode"; "all"; atd_file];
     let mli = Testo.read_text_file (Fpath.v (file_name ^ ".mli")) in
     let ml = Testo.read_text_file (Fpath.v (file_name ^ ".ml"))  in
     (mli, ml)
@@ -109,7 +109,7 @@ let build_and_run ?(test_jsonlike = true) ?(extra_sources = []) ?(extra_atd_file
       List.concat (List.map (fun (atd_fname, atd_src) ->
         let base = Filename.chop_suffix atd_fname ".atd" in
         Testo.write_text_file (Fpath.v atd_fname) atd_src;
-        Standard_tests.Util.run_command [atdml; atd_fname];
+        Standard_tests.Util.run_command [atdml; "--mode"; "all"; atd_fname];
         [ base ^ ".mli"; base ^ ".ml" ]
       ) extra_atd_files)
     in

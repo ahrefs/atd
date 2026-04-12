@@ -42,11 +42,13 @@ unreleased
 
 * atdml: Generate `foo_of_jsonlike` reader functions that accept an
   `Atd_jsonlike.AST.t` value and return a typed OCaml value, with error
-  messages that include the original source location. New CLI flags:
-  - `--no-jsonlike`: suppress generation of `of_jsonlike` readers
-    (reduces generated code and removes the `atd-jsonlike` runtime dependency)
-  - `--no-yojson`: suppress generation of Yojson-based readers/writers
-    (for users who only need the jsonlike path)
+  messages that include the original source location.
+  - Default output is Yojson-based readers/writers only (no `atd-jsonlike`
+    dependency unless explicitly requested).
+  - New `--mode MODE` option (repeatable) selects what to generate.
+    `MODE` is a mode name or comma-separated list of mode names.
+    Valid modes: `yojson`, `jsonlike`, `all` (= yojson + jsonlike).
+    Example: `atdml --mode yojson,jsonlike foo.atd`
   - JSON adapters (`<json adapter.ocaml="M">`) are supported for the jsonlike
     path: if the adapter module `M` provides `normalize_jsonlike`, it is called
     before deserialization by `foo_of_jsonlike`. Inline adapters

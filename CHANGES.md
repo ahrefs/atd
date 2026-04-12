@@ -1,5 +1,5 @@
-unreleased
-----------
+4.1.0 (2026-04-11)
+------------------
 
 * Build: OCaml >= 4.14 is now required (previously 4.08). This aligns
   all packages with the `yamlx` dependency of `atd-yamlx`.
@@ -18,10 +18,6 @@ unreleased
     is `of_yamlx_value_exn`.
   - `atd-yamlx/examples/` is a self-contained dune subproject demonstrating
     a typed YAML config reader built with `atdml` and `atd-yamlx`.
-
-* `atd-jsonlike`: Add `Number.of_int64 : int64 -> Number.t`, useful for
-  libraries translating from formats with a native int64 type (e.g. YAML,
-  MessagePack).
 
 * All backends: Add `<json repr="object">` on sum types. Tagged variants are
   encoded as single-key JSON objects `{"Constructor": payload}` instead of the

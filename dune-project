@@ -6,7 +6,7 @@
 (cram enable)
 
 (name atd)
-(license MIT)
+(license BSD-3-Clause)
 
 (maintainers
   "Louis Roché <louis@louisroche.net>"

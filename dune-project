@@ -131,9 +131,9 @@ utilities."))
  (depends
   (ocaml (>= 4.14))
   (alcotest :with-test)
-  (atd (>= 4.0.0))
-  (atdgen-runtime (>= 3.0.0))
-  (atdgen-codec-runtime :with-test)
+  (atd (= :version))
+  (atdgen-runtime (= :version))
+  (atdgen-codec-runtime (and :with-test (= :version)))
   (biniou (>= 1.0.6))
   (yojson (>= 2.0.1))
   (odoc :with-doc)
@@ -183,7 +183,7 @@ specification.
 automatically handled")
  (depends
   (ocaml (>= 4.14))
-  (atd (>= 4.0.0))
+  (atd (= :version))
   re
   (odoc :with-doc)))
 
@@ -193,7 +193,7 @@ automatically handled")
  (description "ATD Code generator for Scala")
  (depends
   (ocaml (>= 4.14))
-  (atd (>= 4.0.0))
+  (atd (= :version))
   (odoc :with-doc)))
 
 (package
@@ -202,7 +202,7 @@ automatically handled")
  (description "Python/mypy code generation for ATD APIs")
  (depends
   (ocaml (>= 4.14))
-  (atd (>= 4.0.0))
+  (atd (= :version))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)
@@ -225,7 +225,7 @@ Melange backend")
  (description "TypeScript code generation for ATD APIs")
  (depends
   (ocaml (>= 4.14))
-  (atd (>= 4.0.0))
+  (atd (= :version))
   (cmdliner (>= 1.1.0))
   re
   (alcotest :with-test)
@@ -237,7 +237,7 @@ Melange backend")
  (description "DLang code generation for ATD APIs")
  (depends
   (ocaml (>= 4.14))
-  (atd (>= 4.0.0))
+  (atd (= :version))
   (cmdliner (>= 1.1.0))
   re
   (odoc :with-doc)))
@@ -248,7 +248,7 @@ Melange backend")
  (description "C++ code generation for ATD APIs")
  (depends
   (ocaml (>= 4.14))
-  (atd (>= 4.0.0))
+  (atd (= :version))
   (cmdliner (>= 1.1.0))
   re
   (odoc :with-doc)))
@@ -264,24 +264,9 @@ instead of semi-secret streaming parser functions, making the generated code
 simpler and more maintainable at the cost of some performance.")
  (depends
   (ocaml (>= 4.14))
-  (atd (>= 4.0.0))
+  (atd (= :version))
   (yojson (>= 2.0.0))
   (cmdliner (>= 1.1.0))
-  (testo (and (>= 0.3.0) :with-test))
-  (odoc :with-doc)))
-
-(package
- (name atd-yamlx)
- (synopsis "YAML-to-jsonlike bridge for use with ATD code generators")
- (description "\
-atd-yamlx translates a parsed YAML value (YAMLx.value from the yamlx library)
-into the generic Atd_jsonlike.AST.t tree type, preserving source locations
-at every node so that ATD-generated reader functions can report precise
-file/line/column error messages.")
- (depends
-  (ocaml (>= 4.14))
-  atd-jsonlike
-  (yamlx (>= 0.1.0))
   (testo (and (>= 0.3.0) :with-test))
   (odoc :with-doc)))
 
@@ -295,5 +280,20 @@ tools such as atdml.")
  (depends
   (ocaml (>= 4.14))
   (re (>= 1.9.0))
+  (testo (and (>= 0.3.0) :with-test))
+  (odoc :with-doc)))
+
+(package
+ (name atd-yamlx)
+ (synopsis "YAML-to-jsonlike bridge for use with ATD code generators")
+ (description "\
+atd-yamlx translates a parsed YAML value (YAMLx.value from the yamlx library)
+into the generic Atd_jsonlike.AST.t tree type, preserving source locations
+at every node so that ATD-generated reader functions can report precise
+file/line/column error messages.")
+ (depends
+  (ocaml (>= 4.14))
+  (atd-jsonlike (= :version))
+  (yamlx (>= 0.1.0))
   (testo (and (>= 0.3.0) :with-test))
   (odoc :with-doc)))

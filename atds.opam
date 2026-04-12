@@ -88,7 +88,7 @@ bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
   "dune" {>= "3.18"}
   "ocaml" {>= "4.14"}
-  "atd" {>= "4.0.0"}
+  "atd" {= version}
   "odoc" {with-doc}
 ]
 dev-repo: "git+https://github.com/ahrefs/atd.git"

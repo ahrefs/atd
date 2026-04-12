@@ -6,3 +6,8 @@
 /bStr
 /bStr2
 import.ts
+
+# Copied from another folder
+ext_types.ts
+import_alias.ts
+

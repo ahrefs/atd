@@ -11,7 +11,7 @@
 ; package and it's not public (no public_name).
 (executable
  (name main)
- (libraries atd-yamlx atd-jsonlike yamlx yojson))
+ (libraries atd-yamlx atd-jsonlike yamlx))
 
 ; Run the example as part of 'dune runtest atd-yamlx'.
 (rule

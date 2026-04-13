@@ -3,7 +3,7 @@
   pretty-print its contents.
 
   Prerequisites (install once via opam):
-    opam install atdml atd-yamlx yojson
+    opam install atdml atd-yamlx
 
   Build and run (from this directory):
     dune exec ./main.exe

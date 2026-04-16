@@ -16,6 +16,7 @@ curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
 #
 sudo apt-get install -y \
   default-jdk \
+  ldc \
   nodejs \
   python-is-python3 \
   python3 \
@@ -29,10 +30,6 @@ sudo apt-get install -y \
 # For atdcpp testing
 sudo apt install -y \
   rapidjson-dev
-
-# To get latest ldc version
-source $(curl https://dlang.org/install.sh | bash -s ldc -a)
-echo "source $(~/dlang/install.sh ldc -a)" >> "$BASH_ENV"
 
 ###### Sanity checks ######
 

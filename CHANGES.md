@@ -1,4 +1,4 @@
-unreleased
+Unreleased
 ----------
 
 * atdml: Add support for `<ocaml attr="...">` on record fields, variant constructors,

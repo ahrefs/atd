@@ -419,23 +419,38 @@ Section ``ocaml``
 Field ``attr``
 """"""""""""""
 
-Position: on a type definition, i.e. on the left-hand side just before the
-equal sign ``=``
+Position: on a type definition, a record field, a variant constructor, or a
+variant payload type expression
 
-Values: the contents of a ppx annotation without the enclosing ``[@@`` and
-``]``
+Values: the contents of a ppx annotation without the enclosing brackets and
+``@`` sigils
 
-Semantics: appends a ppx attribute to the generated OCaml type definition,
-in both the ``.mli`` and ``.ml`` files.
+Semantics:
 
-Example:
+- On a **type definition** (left-hand side just before ``=``), appends a
+  ``[@@attr]`` attribute after the type definition in both the ``.mli`` and
+  ``.ml`` files.
+- On a **record field** (after the field type), appends a ``[@attr]``
+  attribute to that field in the generated type definition.
+- On a **variant constructor** (after the constructor name), appends a
+  ``[@attr]`` attribute to that constructor.
+- On a **variant payload type** (after the ``of <type>``), wraps the payload
+  in ``(<type> [@attr])``.
+
+Examples:
 
 .. code:: ocaml
 
     type point <ocaml attr="deriving show, eq"> = {
       x: float;
-      y: float;
+      y: float <ocaml attr="compare.ignore">;
     }
+
+    type status = [
+      | Active <ocaml attr="deriving.ord.ignore">
+      | Pending of int <ocaml attr="deriving.ord.ignore">
+      | Inactive
+    ]
 
 translates to
 
@@ -443,9 +458,14 @@ translates to
 
     type point = {
       x: float;
-      y: float;
+      y: float [@compare.ignore];
     }
     [@@deriving show, eq]
+
+    type status =
+      | Active [@deriving.ord.ignore]
+      | Pending of (int [@deriving.ord.ignore])
+      | Inactive
 
 This is useful for attaching ppx rewriters such as ``ppx_deriving`` or
 ``ppx_yojson_conv`` to generated types. Note that the ppx library must be

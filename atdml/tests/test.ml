@@ -489,10 +489,20 @@ type shape = [
     ~atd_src:{|
 type point <ocaml attr="deriving show"> = {
   x: float;
-  y: float;
+  y: float option <ocaml attr="option">;
 }
 
 type points <ocaml attr="deriving show"> = point list
+|}
+  ;
+
+  test_codegen_snapshot "variant attr"
+    ~atd_src:{|
+type status = [
+  | Active <ocaml attr="deriving.ord.ignore">
+  | Inactive
+  | Pending of int <ocaml attr="deriving.ord.ignore">
+]
 |}
   ;
 

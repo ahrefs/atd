@@ -365,6 +365,56 @@ this(St init) @safe {_data = init._data;}
 }
 
 
+// Original type: shape = [ ... | Circle of ... | ... ]
+struct Circle { float value; }
+@trusted JSONValue toJson(T : Circle)(T e) {
+    return JSONValue(["Circle": _atd_write_float(e.value)]);
+}
+
+
+// Original type: shape = [ ... | Square of ... | ... ]
+struct Square { float value; }
+@trusted JSONValue toJson(T : Square)(T e) {
+    return JSONValue(["Square": _atd_write_float(e.value)]);
+}
+
+
+// Original type: shape = [ ... | Point | ... ]
+struct Point {}
+@trusted JSONValue toJson(T : Point)(T e) {
+    return JSONValue("Point");
+}
+
+
+struct Shape{ SumType!(Circle, Square, Point) _data; alias _data this;
+@safe this(T)(T init) {_data = init;} @safe this(Shape init) {_data = init._data;}}
+
+@trusted Shape fromJson(T : Shape)(JSONValue x) {
+    if (x.type == JSONType.string) {
+        if (x.str == "Point") 
+            return Shape(Point());
+        throw _atd_bad_json("Shape", x);
+    }
+    if (x.type == JSONType.object && x.object.length == 1) {
+        string cons = x.object.keys[0];
+        if (cons == "Circle")
+            return Shape(Circle(_atd_read_float(x["Circle"])));
+        if (cons == "Square")
+            return Shape(Square(_atd_read_float(x["Square"])));
+        throw _atd_bad_json("Shape", x);
+    }
+    throw _atd_bad_json("Shape", x);
+}
+
+@trusted JSONValue toJson(T : Shape)(T x) {
+    return x.match!(
+    (Circle v) => v.toJson!(Circle),
+(Square v) => v.toJson!(Square),
+(Point v) => v.toJson!(Point)
+    );
+}
+
+
 // Original type: kind = [ ... | Root | ... ]
 struct Root_ {}
 @trusted JSONValue toJson(T : Root_)(T e) {

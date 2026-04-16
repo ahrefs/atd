@@ -5,6 +5,7 @@
    atd
    atdml
    fpath
+   standard_tests
    testo
  )
 )

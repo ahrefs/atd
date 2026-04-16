@@ -1,0 +1,50 @@
+(*
+  ATD type definitions for a small application configuration file.
+
+  Prerequisites (install once via opam):
+    opam install atdml atd-yamlx yojson
+
+  Build and run (from this directory):
+    dune exec ./main.exe
+*)
+
+(* Log level: controls how much the application prints. *)
+type log_level = [
+  | Debug
+  | Info
+  | Warn
+  | Error
+] <json repr="object">
+(* ^^ Unit variants (no payload) are encoded as plain strings, so
+   "Info" stays as "Info" in JSON/YAML.  The object encoding only kicks in
+   for variants that carry a payload, e.g. {"Circle": 1.5} for a float.
+   In YAML:
+     log_level: Info *)
+
+(* Database backend selection. *)
+type db_backend = [
+  | Sqlite of string       (* file path *)
+  | Postgres of pg_config
+] <json repr="object">
+(* ^^ In YAML block style this looks like:
+     db:
+       Postgres:
+         host: db.example.com
+         port: 5432
+         dbname: myapp_prod
+         ssl: true *)
+
+type pg_config = {
+  host    : string;
+  port    : int;
+  dbname  : string;
+  ~ssl    : bool;   (* defaults to false if absent *)
+}
+
+(* Top-level application config. *)
+type app_config = {
+  ~name         : string;          (* application name; defaults to "" *)
+  log_level     : log_level;
+  db            : db_backend;
+  ~tags         : string list;     (* arbitrary labels; defaults to [] *)
+}

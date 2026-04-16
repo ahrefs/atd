@@ -1,0 +1,16 @@
+#! /usr/bin/env bash
+#
+# Run the atd-jsonlike test suite (built with the Testo library).
+#
+# Usage:
+#   ./test              run all tests
+#   ./test status       show results without re-running
+#   ./test approve      approve pending snapshots
+#
+# All arguments are forwarded to the test executable.
+# Build with 'make' before running.
+#
+set -e
+here=$(dirname "${BASH_SOURCE[0]}")
+exec dune exec --no-build --no-print-directory \
+  tests/test.exe -- "$@" --chdir "$here"

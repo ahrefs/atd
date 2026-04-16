@@ -86,13 +86,13 @@ authors: [
   "rr0gi <igor@ahrefs.com>"
   "ygrek <ygrek@autistici.org>"
 ]
-license: "MIT"
+license: "BSD-3-Clause"
 homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
   "dune" {>= "3.18"}
-  "ocaml" {>= "4.08"}
-  "atd" {>= "4.0.0"}
+  "ocaml" {>= "4.14"}
+  "atd" {= version}
   "yojson" {>= "2.0.0"}
   "cmdliner" {>= "1.1.0"}
   "testo" {>= "0.3.0" & with-test}

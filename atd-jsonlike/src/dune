@@ -1,0 +1,4 @@
+(library
+ (name atd_jsonlike)
+ (public_name atd-jsonlike)
+ (libraries re))

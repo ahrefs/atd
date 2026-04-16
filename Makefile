@@ -1,5 +1,5 @@
-#
-# Makefile for developer's convenience.
+
+## Makefile for developer's convenience.
 # Build logic is implemented with dune.
 #
 
@@ -59,6 +59,7 @@ test-common:
 	$(MAKE) -C atd test
 	$(MAKE) -C atdcat test
 	$(MAKE) -C atddiff test
+	$(MAKE) -C atd-jsonlike test
 
 # Test only the OCaml backends
 .PHONY: test-ocaml

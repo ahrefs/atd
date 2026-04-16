@@ -10,15 +10,19 @@
    - A submodule [module Foo]
 *)
 
-val run_file : string -> unit
-(** [run_file src_path] reads an ATD file at [src_path] and generates
-    OCaml source files [<basename>.ml] and [<basename>.mli] in the current
-    directory, where [<basename>] is derived from [src_path] by removing the
-    [.atd] extension and lowercasing. *)
+val run_file : yojson:bool -> jsonlike:bool -> string -> unit
+(** [run_file ~yojson ~jsonlike src_path] reads an ATD file at [src_path]
+    and generates OCaml source files [<basename>.ml] and [<basename>.mli] in
+    the current directory, where [<basename>] is derived from [src_path] by
+    removing the [.atd] extension and lowercasing.
+    [~yojson] controls whether [Yojson.Safe.t]-based readers/writers are
+    generated (default [true]).
+    [~jsonlike] controls whether [Atd_jsonlike.AST.t]-based readers are
+    generated (default [true]). *)
 
-val run_stdin : unit -> unit
-(** [run_stdin ()] reads ATD source from stdin and writes a self-contained
-    OCaml snippet to stdout of the form:
+val run_stdin : yojson:bool -> jsonlike:bool -> unit -> unit
+(** [run_stdin ~yojson ~jsonlike ()] reads ATD source from stdin and writes
+    a self-contained OCaml snippet to stdout of the form:
     {[
       module type Types = sig ... end
       module Types : Types = struct ... end

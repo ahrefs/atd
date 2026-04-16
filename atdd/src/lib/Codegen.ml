@@ -914,11 +914,12 @@ let alias_wrapper env  name type_expr =
     Line("}");
   ]
 
-let case_class env  type_name
-    (loc, orig_name, unique_name, an, opt_e) =
+let case_class env type_name
+    (loc, orig_name, unique_name, an, opt_e) ~json_sum_repr =
   let json_name = Atd.Json.get_json_cons orig_name an in
   match opt_e with
   | None ->
+      (* Unit variants are always encoded as plain strings. *)
       [
           Line (sprintf {|// Original type: %s = [ ... | %s | ... ]|}
                   type_name
@@ -929,16 +930,29 @@ let case_class env  type_name
           Line("}");
         ]
   | Some e ->
+      (* Tagged variants (with payload).
+         Array repr (default): ["Constructor", payload]
+         Object repr: {"Constructor": payload}
+           This is the Rust/Serde default externally-tagged encoding and
+           also maps naturally to YAML as a single-key mapping. *)
+      let to_json_body = match json_sum_repr with
+        | Atd.Json.Array ->
+            sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);"
+              (single_esc json_name) (json_writer env e)
+        | Atd.Json.Object ->
+            sprintf "return JSONValue([\"%s\": %s(e.value)]);"
+              (single_esc json_name) (json_writer env e)
+      in
       [
           Line (sprintf {|// Original type: %s = [ ... | %s of ... | ... ]|}
                   type_name
                   orig_name);
-          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e)); (* TODO : very dubious*)
+          Line (sprintf "struct %s { %s value; }" (trans env unique_name) (type_name_of_expr env e));
           Line (sprintf "@trusted JSONValue toJson(T : %s)(T e) {"  (trans env unique_name));
-          Block [Line(sprintf "return JSONValue([JSONValue(\"%s\"), %s(e.value)]);" (single_esc json_name) (json_writer env e))];
+          Block [Line to_json_body];
           Line("}");
         ]
-      
+
 
 let read_cases0 env loc name cases0 =
   let ifs =
@@ -959,7 +973,10 @@ let read_cases0 env loc name cases0 =
             (struct_name env name |> single_esc))
   ]
 
-let read_cases1 env loc name cases1 =
+let read_cases1 env loc name cases1 json_sum_repr =
+  (* How the payload value is accessed depends on the sum repr:
+     Array: x[1]  -- value is the second element of ["Constructor", payload]
+     Object: x["Constructor"]  -- value is the field under the constructor key *)
   let ifs =
     cases1
     |> List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -969,13 +986,20 @@ let read_cases1 env loc name cases1 =
         | Some x -> x
       in
       let json_name = Atd.Json.get_json_cons orig_name an in
+      let value_expr = match json_sum_repr with
+        | Atd.Json.Array  -> "x[1]"
+        | Atd.Json.Object ->
+            (* Use the literal key rather than 'cons' for clarity. *)
+            sprintf "x[\"%s\"]" (single_esc json_name)
+      in
       Inline [
         Line (sprintf "if (cons == \"%s\")" (single_esc json_name));
         Block [
-          Line (sprintf "return %s(%s(%s(x[1])));"
+          Line (sprintf "return %s(%s(%s(%s)));"
                   (struct_name env name)
                   (trans env unique_name)
-                  (json_reader env e))
+                  (json_reader env e)
+                  value_expr)
         ]
       ]
     )
@@ -986,7 +1010,7 @@ let read_cases1 env loc name cases1 =
             (struct_name env name |> single_esc))
   ]
 
-let sum_container env  loc name cases =
+let sum_container env loc name cases an =
   let dlang_struct_name = struct_name env name in
   let type_list =
     List.map (fun (loc, orig_name, unique_name, an, opt_e) ->
@@ -1002,6 +1026,7 @@ let sum_container env  loc name cases =
   let cases0_block =
     if cases0 <> [] then
       [
+        (* Unit variants are always encoded as plain strings. *)
         Line "if (x.type == JSONType.string) {";
         Block (read_cases0 env loc name cases0);
         Line "}";
@@ -1009,16 +1034,34 @@ let sum_container env  loc name cases =
     else
       []
   in
+  (* Determine how tagged variants are decoded based on the sum repr.
+     Array (default): ["Constructor", payload]
+       The tag is x[0].str and the payload is x[1].
+     Object: {"Constructor": payload}
+       This is the Rust/Serde default externally-tagged encoding and also
+       maps naturally to YAML.  The tag is the sole key of the object. *)
+  let json_sum_repr = (Atd.Json.get_json_sum an).json_sum_repr in
   let cases1_block =
     if cases1 <> [] then
-      [
-        Line "if (x.type == JSONType.array && x.array.length == 2 && x[0].type == JSONType.string) {";
-        Block [
-          Line "string cons = x[0].str;";
-          Inline (read_cases1 env loc name cases1)
-        ];
-          Line "}";
-      ]
+      match json_sum_repr with
+      | Atd.Json.Array ->
+          [
+            Line "if (x.type == JSONType.array && x.array.length == 2 && x[0].type == JSONType.string) {";
+            Block [
+              Line "string cons = x[0].str;";
+              Inline (read_cases1 env loc name cases1 Atd.Json.Array)
+            ];
+              Line "}";
+          ]
+      | Atd.Json.Object ->
+          [
+            Line "if (x.type == JSONType.object && x.object.length == 1) {";
+            Block [
+              Line "string cons = x.object.keys[0];";
+              Inline (read_cases1 env loc name cases1 Atd.Json.Object)
+            ];
+              Line "}";
+          ]
     else
       []
   in
@@ -1050,7 +1093,8 @@ let sum_container env  loc name cases =
   ]
 
 
-let sum env  loc name cases =
+let sum env loc name cases an =
+  let json_sum_repr = (Atd.Json.get_json_sum an).json_sum_repr in
   let cases =
     List.map (fun (x : variant) ->
       match x with
@@ -1061,10 +1105,10 @@ let sum env  loc name cases =
     ) cases
   in
   let case_classes =
-    List.map (fun x -> Inline (case_class env name x)) cases
+    List.map (fun x -> Inline (case_class env name x ~json_sum_repr)) cases
     |> double_spaced
   in
-  let container_class = sum_container env loc name cases in
+  let container_class = sum_container env loc name cases an in
   [
     Inline case_classes;
     Inline container_class;
@@ -1081,7 +1125,7 @@ let type_def env (def : A.type_def) : B.t =
   let unwrap e =
     match e with
     | Sum (loc, cases, an) ->
-        sum env  loc name cases
+        sum env loc name cases an
     | Record (loc, fields, an) ->
         record env loc name fields an
     | Tuple _

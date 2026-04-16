@@ -92,16 +92,16 @@ authors: [
   "rr0gi <igor@ahrefs.com>"
   "ygrek <ygrek@autistici.org>"
 ]
-license: "MIT"
+license: "BSD-3-Clause"
 homepage: "https://github.com/ahrefs/atd"
 bug-reports: "https://github.com/ahrefs/atd/issues"
 depends: [
   "dune" {>= "3.18"}
-  "ocaml" {>= "4.08"}
+  "ocaml" {>= "4.14"}
   "alcotest" {with-test}
-  "atd" {>= "4.0.0"}
-  "atdgen-runtime" {>= "3.0.0"}
-  "atdgen-codec-runtime" {with-test}
+  "atd" {= version}
+  "atdgen-runtime" {= version}
+  "atdgen-codec-runtime" {with-test & = version}
   "biniou" {>= "1.0.6"}
   "yojson" {>= "2.0.1"}
   "odoc" {with-doc}

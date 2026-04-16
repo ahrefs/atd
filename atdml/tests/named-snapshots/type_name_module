@@ -4,6 +4,7 @@ type module__ = private bool
 
 val create_module__ : bool -> module__
 val module___of_yojson : Yojson.Safe.t -> module__
+val module___of_jsonlike : Atd_jsonlike.AST.t -> module__
 val yojson_of_module__ : module__ -> Yojson.Safe.t
 val module___of_json : string -> module__
 val json_of_module__ : module__ -> string
@@ -12,6 +13,7 @@ module Module__ : sig
   type nonrec t = module__
   val create : bool -> t
   val of_yojson : Yojson.Safe.t -> t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -20,6 +22,7 @@ end
 type module_1 = string list
 
 val module_1_of_yojson : Yojson.Safe.t -> module_1
+val module_1_of_jsonlike : Atd_jsonlike.AST.t -> module_1
 val yojson_of_module_1 : module_1 -> Yojson.Safe.t
 val module_1_of_json : string -> module_1
 val json_of_module_1 : module_1 -> string
@@ -27,6 +30,7 @@ val json_of_module_1 : module_1 -> string
 module Module_1 : sig
   type nonrec t = module_1
   val of_yojson : Yojson.Safe.t -> t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -36,6 +40,7 @@ type module_2 = private string
 
 val create_module_2 : string -> module_2
 val module_2_of_yojson : Yojson.Safe.t -> module_2
+val module_2_of_jsonlike : Atd_jsonlike.AST.t -> module_2
 val yojson_of_module_2 : module_2 -> Yojson.Safe.t
 val module_2_of_json : string -> module_2
 val json_of_module_2 : module_2 -> string
@@ -44,6 +49,7 @@ module Module_2 : sig
   type nonrec t = module_2
   val create : string -> t
   val of_yojson : Yojson.Safe.t -> t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -53,6 +59,7 @@ type module_ = private int
 
 val create_module_ : int -> module_
 val module__of_yojson : Yojson.Safe.t -> module_
+val module__of_jsonlike : Atd_jsonlike.AST.t -> module_
 val yojson_of_module_ : module_ -> Yojson.Safe.t
 val module__of_json : string -> module_
 val json_of_module_ : module_ -> string
@@ -61,6 +68,7 @@ module Module_ : sig
   type nonrec t = module_
   val create : int -> t
   val of_yojson : Yojson.Safe.t -> t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -72,84 +80,144 @@ end
 
 (* Inlined runtime — no external dependency needed. *)
 module Atdml_runtime = struct
-  let bad_type expected_type x =
-    Printf.ksprintf failwith "expected %s, got: %s"
-      expected_type (Yojson.Safe.to_string x)
-
-  let bad_sum type_name x =
-    Printf.ksprintf failwith "invalid variant for type '%s': %s"
-      type_name (Yojson.Safe.to_string x)
-
-  let missing_field type_name field_name =
-    Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
-      field_name type_name
-
-  let bool_of_yojson = function
-    | `Bool b -> b
-    | x -> bad_type "bool" x
-
-  let yojson_of_bool b = `Bool b
-
-  let int_of_yojson = function
-    | `Int n -> n
-    | x -> bad_type "int" x
-
-  let yojson_of_int n = `Int n
-
-  let float_of_yojson = function
-    | `Float f -> f
-    | `Int n -> Float.of_int n
-    | x -> bad_type "float" x
-
-  let yojson_of_float f = `Float f
-
-  let string_of_yojson = function
-    | `String s -> s
-    | x -> bad_type "string" x
-
-  let yojson_of_string s = `String s
-
-  let unit_of_yojson = function
-    | `Null -> ()
-    | x -> bad_type "null" x
-
-  let yojson_of_unit () = `Null
-
-  let list_of_yojson f = function
-    | `List xs -> List.map f xs
-    | x -> bad_type "array" x
-
-  let yojson_of_list f xs = `List (List.map f xs)
-
-  let option_of_yojson f = function
-    | `String "None" -> None
-    | `List [`String "Some"; x] -> Some (f x)
-    | x -> bad_type "option" x
-
-  let yojson_of_option f = function
-    | None -> `String "None"
-    | Some x -> `List [`String "Some"; f x]
-
-  let nullable_of_yojson f = function
-    | `Null -> None
-    | x -> Some (f x)
-
-  let yojson_of_nullable f = function
-    | None -> `Null
-    | Some x -> f x
-
   (* Returns true iff the list has strictly more than [n] elements,
      without traversing past element n+1. *)
   let rec list_length_gt n = function
     | _ :: rest -> if n = 0 then true else list_length_gt (n - 1) rest
     | [] -> false
 
-  let assoc_of_yojson f = function
-    | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
-    | x -> bad_type "object" x
+  module Yojson = struct
+    let bad_type expected_type x =
+      Printf.ksprintf failwith "expected %s, got: %s"
+        expected_type (Yojson.Safe.to_string x)
 
-  let yojson_of_assoc f xs =
-    `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+    let bad_sum type_name x =
+      Printf.ksprintf failwith "invalid variant for type '%s': %s"
+        type_name (Yojson.Safe.to_string x)
+
+    let missing_field type_name field_name =
+      Printf.ksprintf failwith "missing field '%s' in object of type '%s'"
+        field_name type_name
+
+    let bool_of_yojson = function
+      | `Bool b -> b
+      | x -> bad_type "bool" x
+
+    let yojson_of_bool b = `Bool b
+
+    let int_of_yojson = function
+      | `Int n -> n
+      | x -> bad_type "int" x
+
+    let yojson_of_int n = `Int n
+
+    let float_of_yojson = function
+      | `Float f -> f
+      | `Int n -> Float.of_int n
+      | x -> bad_type "float" x
+
+    let yojson_of_float f = `Float f
+
+    let string_of_yojson = function
+      | `String s -> s
+      | x -> bad_type "string" x
+
+    let yojson_of_string s = `String s
+
+    let unit_of_yojson = function
+      | `Null -> ()
+      | x -> bad_type "null" x
+
+    let yojson_of_unit () = `Null
+
+    let list_of_yojson f = function
+      | `List xs -> List.map f xs
+      | x -> bad_type "array" x
+
+    let yojson_of_list f xs = `List (List.map f xs)
+
+    let option_of_yojson f = function
+      | `String "None" -> None
+      | `List [`String "Some"; x] -> Some (f x)
+      | x -> bad_type "option" x
+
+    let yojson_of_option f = function
+      | None -> `String "None"
+      | Some x -> `List [`String "Some"; f x]
+
+    let nullable_of_yojson f = function
+      | `Null -> None
+      | x -> Some (f x)
+
+    let yojson_of_nullable f = function
+      | None -> `Null
+      | Some x -> f x
+
+    let assoc_of_yojson f = function
+      | `Assoc pairs -> List.map (fun (k, v) -> (k, f v)) pairs
+      | x -> bad_type "object" x
+
+    let yojson_of_assoc f xs =
+      `Assoc (List.map (fun (k, v) -> (k, f v)) xs)
+  end
+
+  module Jsonlike = struct
+    let bad_type expected_type x =
+      Printf.ksprintf failwith "%sexpected %s"
+        (Atd_jsonlike.AST.loc_msg x) expected_type
+
+    let bad_sum type_name x =
+      Printf.ksprintf failwith "%sinvalid variant for type '%s'"
+        (Atd_jsonlike.AST.loc_msg x) type_name
+
+    let missing_field node type_name field_name =
+      Printf.ksprintf failwith "%smissing field '%s' in object of type '%s'"
+        (Atd_jsonlike.AST.loc_msg node) field_name type_name
+
+    let bool_of_jsonlike = function
+      | Atd_jsonlike.AST.Bool (_, b) -> b
+      | x -> bad_type "bool" x
+
+    let int_of_jsonlike = function
+      | Atd_jsonlike.AST.Number (_, n) as node ->
+          (match n.Atd_jsonlike.Number.int with
+          | Some i -> i
+          | None -> bad_type "integer" node)
+      | x -> bad_type "int" x
+
+    let float_of_jsonlike = function
+      | Atd_jsonlike.AST.Number (_, n) as node ->
+          (match n.Atd_jsonlike.Number.float with
+          | Some f -> f
+          | None -> bad_type "float" node)
+      | x -> bad_type "float" x
+
+    let string_of_jsonlike = function
+      | Atd_jsonlike.AST.String (_, s) -> s
+      | x -> bad_type "string" x
+
+    let unit_of_jsonlike = function
+      | Atd_jsonlike.AST.Null _ -> ()
+      | x -> bad_type "null" x
+
+    let list_of_jsonlike f = function
+      | Atd_jsonlike.AST.Array (_, xs) -> List.map f xs
+      | x -> bad_type "array" x
+
+    let option_of_jsonlike f = function
+      | Atd_jsonlike.AST.String (_, "None") -> None
+      | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Some"); x]) -> Some (f x)
+      | x -> bad_type "option" x
+
+    let nullable_of_jsonlike f = function
+      | Atd_jsonlike.AST.Null _ -> None
+      | x -> Some (f x)
+
+    let assoc_of_jsonlike f = function
+      | Atd_jsonlike.AST.Object (_, pairs) ->
+          List.map (fun (_, k, v) -> (k, f v)) pairs
+      | x -> bad_type "object" x
+  end
 end
 
 type module__ = bool
@@ -158,10 +226,13 @@ let create_module__ (x : bool) : module__ = x
 
 
 let module___of_yojson (x : Yojson.Safe.t) : module__ =
-  Atdml_runtime.bool_of_yojson x
+  Atdml_runtime.Yojson.bool_of_yojson x
+
+let module___of_jsonlike (x : Atd_jsonlike.AST.t) : module__ =
+  Atdml_runtime.Jsonlike.bool_of_jsonlike x
 
 let yojson_of_module__ (x : module__) : Yojson.Safe.t =
-  Atdml_runtime.yojson_of_bool x
+  Atdml_runtime.Yojson.yojson_of_bool x
 
 let module___of_json s =
   module___of_yojson (Yojson.Safe.from_string s)
@@ -173,6 +244,7 @@ module Module__ = struct
   type nonrec t = module__
   let create = create_module__
   let of_yojson = module___of_yojson
+  let of_jsonlike = module___of_jsonlike
   let to_yojson = yojson_of_module__
   let of_json = module___of_json
   let to_json = json_of_module__
@@ -181,10 +253,13 @@ end
 type module_1 = string list
 
 let module_1_of_yojson (x : Yojson.Safe.t) : module_1 =
-  (Atdml_runtime.list_of_yojson Atdml_runtime.string_of_yojson) x
+  (Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.string_of_yojson) x
+
+let module_1_of_jsonlike (x : Atd_jsonlike.AST.t) : module_1 =
+  (Atdml_runtime.Jsonlike.list_of_jsonlike Atdml_runtime.Jsonlike.string_of_jsonlike) x
 
 let yojson_of_module_1 (x : module_1) : Yojson.Safe.t =
-  (Atdml_runtime.yojson_of_list Atdml_runtime.yojson_of_string) x
+  (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) x
 
 let module_1_of_json s =
   module_1_of_yojson (Yojson.Safe.from_string s)
@@ -195,6 +270,7 @@ let json_of_module_1 x =
 module Module_1 = struct
   type nonrec t = module_1
   let of_yojson = module_1_of_yojson
+  let of_jsonlike = module_1_of_jsonlike
   let to_yojson = yojson_of_module_1
   let of_json = module_1_of_json
   let to_json = json_of_module_1
@@ -206,10 +282,13 @@ let create_module_2 (x : string) : module_2 = x
 
 
 let module_2_of_yojson (x : Yojson.Safe.t) : module_2 =
-  Atdml_runtime.string_of_yojson x
+  Atdml_runtime.Yojson.string_of_yojson x
+
+let module_2_of_jsonlike (x : Atd_jsonlike.AST.t) : module_2 =
+  Atdml_runtime.Jsonlike.string_of_jsonlike x
 
 let yojson_of_module_2 (x : module_2) : Yojson.Safe.t =
-  Atdml_runtime.yojson_of_string x
+  Atdml_runtime.Yojson.yojson_of_string x
 
 let module_2_of_json s =
   module_2_of_yojson (Yojson.Safe.from_string s)
@@ -221,6 +300,7 @@ module Module_2 = struct
   type nonrec t = module_2
   let create = create_module_2
   let of_yojson = module_2_of_yojson
+  let of_jsonlike = module_2_of_jsonlike
   let to_yojson = yojson_of_module_2
   let of_json = module_2_of_json
   let to_json = json_of_module_2
@@ -232,10 +312,13 @@ let create_module_ (x : int) : module_ = x
 
 
 let module__of_yojson (x : Yojson.Safe.t) : module_ =
-  Atdml_runtime.int_of_yojson x
+  Atdml_runtime.Yojson.int_of_yojson x
+
+let module__of_jsonlike (x : Atd_jsonlike.AST.t) : module_ =
+  Atdml_runtime.Jsonlike.int_of_jsonlike x
 
 let yojson_of_module_ (x : module_) : Yojson.Safe.t =
-  Atdml_runtime.yojson_of_int x
+  Atdml_runtime.Yojson.yojson_of_int x
 
 let module__of_json s =
   module__of_yojson (Yojson.Safe.from_string s)
@@ -247,6 +330,7 @@ module Module_ = struct
   type nonrec t = module_
   let create = create_module_
   let of_yojson = module__of_yojson
+  let of_jsonlike = module__of_jsonlike
   let to_yojson = yojson_of_module_
   let of_json = module__of_json
   let to_json = json_of_module_

@@ -2,7 +2,7 @@
 
 type point = {
   x: float;
-  y: float;
+  y: float option [@option];
 }
 [@@deriving show]
 
@@ -127,7 +127,7 @@ end
 
 type point = {
   x: float;
-  y: float;
+  y: float option [@option];
 }
 [@@deriving show]
 

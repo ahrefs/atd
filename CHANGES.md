@@ -1,4 +1,7 @@
 unreleased
+
+* atdml: Add support for `<ocaml attr="...">` on record fields, variant constructors,
+  and variant payload types to attach ppx attributes (e.g. `[@deriving.ord.ignore]`)
 ----------
 
 ...
@@ -77,8 +80,9 @@ unreleased
     (inline expressions); supported on sum types and records
   - `<json name="...">` to override JSON field or constructor names
   - `<ocaml name="...">` to rename variant constructors in OCaml
-  - `<ocaml attr="...">` to attach ppx attributes (e.g. `[@@deriving show]`)
-    to generated type definitions
+  - `<ocaml attr="...">` to attach ppx attributes to generated type definitions
+    (e.g. `[@@deriving show]`), individual record fields, variant constructors,
+    or variant payload types (e.g. `[@compare.ignore]`)
   - `<ocaml private>` on any type definition forces `private` in the generated
     `.mli`; `<ocaml public>` on a primitive alias suppresses the default
     `private`, making the alias transparent to callers

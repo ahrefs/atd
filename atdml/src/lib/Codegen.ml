@@ -55,6 +55,9 @@ let annot_schema_ocaml : Atd.Annot.schema_section = {
     Import, "name";            (* <ocaml name="..."> on an import: override OCaml alias *)
     Imported_type, "name";    (* <ocaml name="..."> on an imported type: override type name *)
     Variant, "name";      (* <ocaml name="..."> on a variant constructor *)
+    Variant, "attr";      (* <ocaml attr="..."> on a variant constructor: append [@...] *)
+    Type_expr, "attr";    (* <ocaml attr="..."> on a variant payload type: append [@...] *)
+    Field, "attr";        (* <ocaml attr="..."> on a field: append [@...] *)
     Field, "default";     (* <ocaml default="..."> on a with-default field *)
     Field, "name";        (* <ocaml name="..."> on a field: not supported, warns *)
   ]
@@ -209,6 +212,30 @@ let get_ocaml_attr an =
     ~sections:["ocaml"]
     ~field:"attr"
     an
+
+(* Get <ocaml attr="..."> for a field; value is placed inside [@...] *)
+let get_ocaml_field_attr an =
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    an
+
+(* Get <ocaml attr="..."> for a variant constructor; value is placed inside [@...] *)
+let get_ocaml_variant_attr an =
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    an
+
+(* Get <ocaml attr="..."> for a variant payload type expression; value is placed inside [@...] *)
+let get_ocaml_payload_attr e =
+  Atd.Annot.get_opt_field
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    (Atd.Ast.annot_of_type_expr e)
 
 (* Get wrap-related annotations for a 'wrap' type expression.
    Supports:
@@ -676,12 +703,21 @@ let gen_type_def ~is_mli env ({A.loc; name; param=params; annot=an; value=e; _} 
       in
       let gen_case (loc, orig_name, an, opt_e) =
         let cons_name = vtr (get_ocaml_name orig_name an) in
+        let cons_attr = match get_ocaml_variant_attr an with
+          | None -> ""
+          | Some attr -> sprintf " [@%s]" attr
+        in
         match opt_e with
         | None ->
-            with_inline_doc (sprintf "| %s%s" tick cons_name) loc an
+            with_inline_doc (sprintf "| %s%s%s" tick cons_name cons_attr) loc an
         | Some e ->
+            let payload_str =
+              match get_ocaml_payload_attr e with
+              | None -> type_expr_str env e
+              | Some attr -> sprintf "(%s [@%s])" (type_expr_str env e) attr
+            in
             with_inline_doc
-              (sprintf "| %s%s of %s" tick cons_name (type_expr_str env e))
+              (sprintf "| %s%s of %s%s" tick cons_name payload_str cons_attr)
               loc an
       in
       let hd =
@@ -718,8 +754,12 @@ let gen_type_def ~is_mli env ({A.loc; name; param=params; annot=an; value=e; _} 
         B.Block
           (concat_map
              (fun (loc, (fname, _, an), e) ->
+               let field_attr = match get_ocaml_field_attr an with
+                 | None -> ""
+                 | Some attr -> sprintf " [@%s]" attr
+               in
                with_inline_doc
-                 (sprintf "%s: %s;" (pftr fname) (type_expr_str env e))
+                 (sprintf "%s: %s%s;" (pftr fname) (type_expr_str env e) field_attr)
                  loc an)
              fields);
         B.Line "}";

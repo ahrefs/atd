@@ -67,6 +67,9 @@ let rec assign env opt_dst src java_ty atd_ty indent =
            sprintf "new %s(%s)" java_ty src
        | Record _ ->
            sprintf "new %s(%s)" java_ty src
+       | List _ when not (String.contains java_ty '<') ->
+           (* Named list alias class - use the JSONArray constructor *)
+           sprintf "new %s(%s)" java_ty src
        | Name (_, (_, ty, _), _) ->
            (match Atd.Type_name.basename ty with
             | "bool" | "int" | "float" | "string" -> src
@@ -81,18 +84,22 @@ let rec assign env opt_dst src java_ty atd_ty indent =
        | Record _ ->
            sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
        | List (_, sub_ty, _) ->
-           let java_sub_ty = (*ahem*) extract_from_edgy_brackets java_ty in
-           let sub_expr = assign env None "_tmp" java_sub_ty sub_ty "" in
+           if String.contains java_ty '<' then
+             let java_sub_ty = (*ahem*) extract_from_edgy_brackets java_ty in
+             let sub_expr = assign env None "_tmp" java_sub_ty sub_ty "" in
 
-           sprintf "%s%s = new %s();\n" indent dst java_ty
-           ^ sprintf "%sfor (int _i = 0; _i < %s.length(); ++_i) {\n" indent src
+             sprintf "%s%s = new %s();\n" indent dst java_ty
+             ^ sprintf "%sfor (int _i = 0; _i < %s.length(); ++_i) {\n" indent src
 
-           ^ sprintf "%s  %s _tmp = %s.%s(_i);\n" indent
-             (json_of_atd env sub_ty) src (get env sub_ty false)
+             ^ sprintf "%s  %s _tmp = %s.%s(_i);\n" indent
+               (json_of_atd env sub_ty) src (get env sub_ty false)
 
-           ^ sprintf "%s  %s.add(%s);\n" indent
-             dst sub_expr
-           ^ sprintf "%s}\n" indent
+             ^ sprintf "%s  %s.add(%s);\n" indent
+               dst sub_expr
+             ^ sprintf "%s}\n" indent
+           else
+             (* Named list alias class - use the JSONArray constructor *)
+             sprintf "%s%s = new %s(%s);\n" indent dst java_ty src
 
        | Name (_, (_, ty, _), _) ->
            (match Atd.Type_name.basename ty with
@@ -315,10 +322,89 @@ and trans_outer env (def : A.type_def) =
       trans_sum name env (loc, v, a)
   | Record (loc, v, a) ->
       trans_record name env (loc, v, a)
-  | Name (_, (_, _name, _), _) ->
-      (* Don't translate primitive types at the top-level *)
-      env
+  | List (_, sub_ty, _) ->
+      trans_list_alias name env sub_ty
+  | Name (_, (_, _name, _), _) as ty ->
+      (match norm_ty env ty with
+       | List (_, sub_ty, _) -> trans_list_alias name env sub_ty
+       | _ -> (* Don't translate primitive types at the top-level *) env)
   | x -> type_not_supported x
+
+(* Translation of a top-level list alias, e.g. 'type items = item list'.
+ * Since Java has no type aliases, we generate a class Items that wraps an
+ * ArrayList and provides the same JSON interface as record classes.
+*)
+and trans_list_alias my_name env sub_atd_ty =
+  let class_name = Atdj_names.to_class_name my_name in
+  let (java_sub_ty, env) = trans_inner env sub_atd_ty in
+  let json_sub_ty = json_of_atd env sub_atd_ty in
+  let get_method = get env sub_atd_ty false in
+  let sub_expr = assign env None "_tmp" java_sub_ty sub_atd_ty "" in
+  let ctor_body =
+    sprintf "    for (int _i = 0; _i < ja.length(); ++_i) {\n"
+    ^ sprintf "      %s _tmp = ja.%s(_i);\n" json_sub_ty get_method
+    ^ sprintf "      value.add(%s);\n" sub_expr
+    ^ sprintf "    }\n"
+  in
+  let to_json_body =
+    sprintf "    _out.append(\"[\");\n"
+    ^ sprintf "    for (int i = 0; i < value.size(); ++i) {\n"
+    ^ to_string env "value.get(i)" sub_atd_ty "      "
+    ^ sprintf "      if (i < value.size() - 1)\n"
+    ^ sprintf "        _out.append(\",\");\n"
+    ^ sprintf "    }\n"
+    ^ sprintf "    _out.append(\"]\");\n"
+  in
+  let out = open_class env class_name in
+  fprintf out "\
+public class %s implements Atdj {
+  /**
+   * Construct a fresh empty list.
+   */
+  public %s() {
+    value = new java.util.ArrayList<%s>();
+  }
+
+  /**
+   * Construct from an existing list.
+   */
+  public %s(java.util.ArrayList<%s> arr) {
+    value = arr;
+  }
+
+  /**
+   * Construct from a JSON string.
+   */
+  public %s(String s) throws JSONException {
+    this(new JSONArray(s));
+  }
+
+  %s(JSONArray ja) throws JSONException {
+    value = new java.util.ArrayList<%s>();
+%s  }
+
+  public void toJsonBuffer(StringBuilder _out) throws JSONException {
+%s  }
+
+  public String toJson() throws JSONException {
+    StringBuilder out = new StringBuilder(128);
+    toJsonBuffer(out);
+    return out.toString();
+  }
+
+  public java.util.ArrayList<%s> value;
+}
+"
+    class_name
+    class_name java_sub_ty
+    class_name java_sub_ty
+    class_name
+    class_name java_sub_ty
+    ctor_body
+    to_json_body
+    java_sub_ty;
+  close_out out;
+  env
 
 (* Translation of sum types.  For a sum type
  *

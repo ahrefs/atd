@@ -47,7 +47,7 @@ class Util {
       JSONObject obj = (JSONObject)value;
       if (obj.length() != 1)
         throw new JSONException(\"Expected single-key object for sum type\");
-      return obj.keys().next();
+      return (String) obj.keys().next();
     }
     else throw new JSONException(\"Cannot extract type\");
   }

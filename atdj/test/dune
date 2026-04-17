@@ -27,6 +27,11 @@
 (rule
  (alias runtest)
  (package atdj)
+ (action (diff expected/Items.java com/mylife/test/Items.java)))
+
+(rule
+ (alias runtest)
+ (package atdj)
  (action
   (diff expected/RecordWithDefaults.java com/mylife/test/RecordWithDefaults.java)))
 

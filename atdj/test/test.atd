@@ -48,6 +48,10 @@ type simple_record = { ?o : bool option }
 type a = [ A of b list ]
 type b = [ B ]
 
+(* Type alias for a list - Java doesn't support type aliases, so we generate
+   a wrapper class with the same JSON interface as record classes. *)
+type items = simple_record list
+
 (*
   Sum type using the object encoding: {"Constructor": payload}
   instead of the default array encoding: ["Constructor", payload].

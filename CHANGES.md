@@ -1,3 +1,14 @@
+4.1.1 (unreleased)
+------------------
+
+* atdj: Top-level list aliases such as `type items = item list` are now
+  supported. A wrapper class (e.g. `Items`) implementing `Atdj` is generated
+  with the same interface as record classes: a no-arg constructor, a
+  constructor from `ArrayList<T>`, a constructor from a JSON string, a
+  package-private constructor from `JSONArray`, `toJsonBuffer`, `toJson`,
+  and a public `value` field of type `ArrayList<T>`. List aliases used as
+  record fields or sum-variant payloads are also handled correctly.
+
 4.1.0 (2026-04-11)
 ------------------
 

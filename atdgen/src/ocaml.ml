@@ -167,11 +167,14 @@ let annot_schema_ocaml : Atd.Annot.schema_section =
       Type_expr, "validator";
       Type_expr, "wrap";
       Variant, "name";
+      Variant, "attr";
+      Type_expr, "attr";
       Cell, "default";
       Field, "default";
       Field, "mutable";
       Field, "name";
       Field, "repr";
+      Field, "attr";
     ]
   }
 
@@ -398,6 +401,27 @@ let get_type_attrs an =
     ~field:"attr"
     an
 
+let get_field_attrs an =
+  Atd.Annot.get_fields
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    an
+
+let get_variant_attrs an =
+  Atd.Annot.get_fields
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    an
+
+let get_payload_attrs e =
+  Atd.Annot.get_fields
+    ~parse:(fun s -> Some s)
+    ~sections:["ocaml"]
+    ~field:"attr"
+    (Atd.Ast.annot_of_type_expr e)
+
 (*
   OCaml syntax tree
 *)
@@ -413,9 +437,11 @@ type ocaml_expr =
 
 and ocaml_variant =
     string * ocaml_expr option * Atd.Doc.doc option
+    * string list (* cons attrs *) * string list (* payload attrs *)
 
 and ocaml_field =
     (string * bool (* is mutable? *)) * ocaml_expr * Atd.Doc.doc option
+    * string list (* attrs *)
 
 (*
    OCaml type definition:
@@ -499,7 +525,13 @@ and map_variant ~kind target (x : variant) : ocaml_variant =
         "Inline records are not allowed in polymorphic variants (not valid in OCaml)"
   | _, Variant (loc, (s, an), o) ->
       let s = get_ocaml_cons target s an in
-      (s, Option.map (map_expr target []) o, Atd.Doc.get_doc loc an)
+      let cons_attrs = get_variant_attrs an in
+      let payload_attrs = match o with
+        | None -> []
+        | Some e -> get_payload_attrs e
+      in
+      (s, Option.map (map_expr target []) o, Atd.Doc.get_doc loc an,
+       cons_attrs, payload_attrs)
 
 and map_field target ocaml_field_prefix (x : field) : ocaml_field =
   match x with
@@ -516,7 +548,9 @@ and map_field target ocaml_field_prefix (x : field) : ocaml_field =
         else sprintf "%s (*atd %s *)" ocaml_fname atd_fname
       in
       let is_mutable = get_ocaml_mutable target an in
-      ((fname, is_mutable), map_expr target [] x, Atd.Doc.get_doc loc an)
+      let field_attrs = get_field_attrs an in
+      ((fname, is_mutable), map_expr target [] x, Atd.Doc.get_doc loc an,
+       field_attrs)
 
 
 (* hack to deal with legacy behavior *)
@@ -683,7 +717,7 @@ and ocaml_of_variant_mapping x =
         Variant o -> o
       | _ -> assert false
   in
-  (o.ocaml_cons, Option.map ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc)
+  (o.ocaml_cons, Option.map ocaml_of_expr_mapping x.var_arg, o.ocaml_vdoc, [], [])
 
 and ocaml_of_field_mapping x =
   let o =
@@ -692,7 +726,7 @@ and ocaml_of_field_mapping x =
       | _ -> assert false
   in
   let v = ocaml_of_expr_mapping x.f_value in
-  ((o.ocaml_fname, o.ocaml_mutable), v, o.ocaml_fdoc)
+  ((o.ocaml_fname, o.ocaml_mutable), v, o.ocaml_fdoc, [])
 
 
 (*
@@ -960,7 +994,7 @@ and format_type_expr x =
 and format_type_name name args =
   horizontal_sequence (prepend_type_args args [ make_atom name ])
 
-and format_field ((s, is_mutable), t, doc) =
+and format_field ((s, is_mutable), t, doc, attrs) =
   let l =
     let l = [make_atom (s ^ ":")] in
     if is_mutable then
@@ -973,22 +1007,49 @@ and format_field ((s, is_mutable), t, doc) =
       format_type_expr t
     )
   in
-  append_ocamldoc_comment field doc
+  let field_with_attrs =
+    match attrs with
+    | [] -> field
+    | _ ->
+        let attrs_str =
+          List.map (fun a -> sprintf "[@%s]" a) attrs |> String.concat ""
+        in
+        Label ((field, label), make_atom attrs_str)
+  in
+  append_ocamldoc_comment field_with_attrs doc
 
-and format_variant kind (s, o, doc) =
+and format_variant kind (s, o, doc, cons_attrs, payload_attrs) =
   let s = tick kind ^ s in
   let cons = make_atom s in
+  let attrs_str attrs =
+    List.map (fun a -> sprintf "[@%s]" a) attrs |> String.concat ""
+  in
+  let format_payload t =
+    match payload_attrs with
+    | [] -> format_type_expr t
+    | _ ->
+        Easy_format.List (
+          ("(", "", ")", shlist),
+          [format_type_expr t; make_atom (attrs_str payload_attrs)]
+        )
+  in
   let variant =
     match o with
-        None -> cons
-      | Some t ->
+    | None ->
+        if cons_attrs = [] then cons
+        else Label ((cons, label), make_atom (attrs_str cons_attrs))
+    | Some t ->
+        let with_payload =
           Label (
             (cons, label),
             Label (
               (make_atom "of", label),
-              format_type_expr t
+              format_payload t
             )
           )
+        in
+        if cons_attrs = [] then with_payload
+        else Label ((with_payload, label), make_atom (attrs_str cons_attrs))
   in
   append_ocamldoc_comment variant doc
 

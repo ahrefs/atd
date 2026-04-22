@@ -1,3 +1,16 @@
 type t <ocaml attr="deriving show,eq" attr="ocamlformat \"disable\""> = {
   v: int;
+  w: string <ocaml attr="compare.ignore">;
 }
+
+type status = [
+  | Active <ocaml attr="deriving.ord.ignore">
+  | Pending of int <ocaml attr="deriving.ord.ignore">
+  | Inactive
+]
+
+type poly_status = [
+  | Active <ocaml attr="deriving.ord.ignore">
+  | Pending of int <ocaml attr="deriving.ord.ignore">
+  | Inactive
+] <ocaml repr="poly">

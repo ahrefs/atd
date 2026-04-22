@@ -973,27 +973,57 @@ Section ``ocaml``
 Field ``attr``
 """"""""""""""
 
-Position: on a type definition, i.e. on the left-handside just before
-the equal sign ``=``
+Position: on a type definition, a record field, a variant constructor,
+or a variant payload type expression
 
-Semantics: specifies custom ppx attributes for the type
-definition. Overrides any default attributes set globally via
-the command line option ``-type-attr``.
+Semantics:
 
-Values: the contents of a ppx annotation without the enclosing
-``[@@`` and ``]``
+- On a **type definition** (left-hand side just before ``=``), specifies
+  custom ppx attributes for the type definition. Overrides any default
+  attributes set globally via the command line option ``-type-attr``.
+  Multiple ``attr`` annotations are allowed and combined.
+- On a **record field** (after the field type), appends a ``[@attr]``
+  attribute to that field.
+- On a **variant constructor** (after the constructor name), appends a
+  ``[@attr]`` attribute to that constructor.
+- On a **variant payload type** (after the ``of <type>``), wraps the
+  payload in ``(<type> [@attr])``.
 
-Example:
+Values: the contents of a ppx annotation without the enclosing brackets
+and ``@`` sigils
+
+Examples:
 
 .. code:: ocaml
 
     type foo <ocaml attr="deriving show,eq"> = int list
+
+    type point = {
+      x: float;
+      y: float <ocaml attr="compare.ignore">;
+    }
+
+    type status = [
+      | Active <ocaml attr="deriving.ord.ignore">
+      | Pending of int <ocaml attr="deriving.ord.ignore">
+      | Inactive
+    ]
 
 translates to
 
 .. code:: ocaml
 
     type foo = int list [@@deriving show,eq]
+
+    type point = {
+      x: float;
+      y: float [@compare.ignore];
+    }
+
+    type status =
+      | Active [@deriving.ord.ignore]
+      | Pending of (int [@deriving.ord.ignore])
+      | Inactive
 
 
 Field ``predef``

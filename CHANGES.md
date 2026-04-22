@@ -1,4 +1,5 @@
 4.1.1 (unreleased)
+
 ------------------
 
 * atdj: Top-level list aliases such as `type items = item list` are now
@@ -8,6 +9,9 @@
   package-private constructor from `JSONArray`, `toJsonBuffer`, `toJson`,
   and a public `value` field of type `ArrayList<T>`. List aliases used as
   record fields or sum-variant payloads are also handled correctly.
+* atdml: Add support for `<ocaml attr="...">` on record fields, variant constructors,
+  and variant payload types to attach ppx attributes (e.g. `[@deriving.ord.ignore]`)
+
 
 4.1.0 (2026-04-11)
 ------------------

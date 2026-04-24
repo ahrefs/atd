@@ -17,7 +17,7 @@ val run_file : yojson:bool -> jsonlike:bool -> string -> unit
     removing the [.atd] extension and lowercasing.
     [~yojson] controls whether [Yojson.Safe.t]-based readers/writers are
     generated (default [true]).
-    [~jsonlike] controls whether [Atd_jsonlike.AST.t]-based readers are
+    [~jsonlike] controls whether [Atd_jsonlike.AST.t]-based readers and writers are
     generated (default [true]). *)
 
 val run_stdin : yojson:bool -> jsonlike:bool -> unit -> unit

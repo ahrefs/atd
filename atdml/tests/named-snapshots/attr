@@ -8,8 +8,9 @@ type point = {
 
 val create_point : x:float -> y:float -> unit -> point
 val point_of_yojson : Yojson.Safe.t -> point
-val point_of_jsonlike : Atd_jsonlike.AST.t -> point
 val yojson_of_point : point -> Yojson.Safe.t
+val point_of_jsonlike : Atd_jsonlike.AST.t -> point
+val jsonlike_of_point : point -> Atd_jsonlike.AST.t
 val point_of_json : string -> point
 val json_of_point : point -> string
 
@@ -18,8 +19,9 @@ module Point : sig
   [@@deriving show]
   val create : x:float -> y:float -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
-  val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_yojson : t -> Yojson.Safe.t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val of_json : string -> t
   val to_json : t -> string
 end
@@ -28,8 +30,9 @@ type points = point list
 [@@deriving show]
 
 val points_of_yojson : Yojson.Safe.t -> points
-val points_of_jsonlike : Atd_jsonlike.AST.t -> points
 val yojson_of_points : points -> Yojson.Safe.t
+val points_of_jsonlike : Atd_jsonlike.AST.t -> points
+val jsonlike_of_points : points -> Atd_jsonlike.AST.t
 val points_of_json : string -> points
 val json_of_points : points -> string
 
@@ -37,8 +40,9 @@ module Points : sig
   type nonrec t = points
   [@@deriving show]
   val of_yojson : Yojson.Safe.t -> t
-  val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_yojson : t -> Yojson.Safe.t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val of_json : string -> t
   val to_json : t -> string
 end
@@ -186,6 +190,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -224,6 +245,12 @@ let point_of_yojson (x : Yojson.Safe.t) : point =
     { x; y }
   | _ -> Atdml_runtime.Yojson.bad_type "point" x
 
+let yojson_of_point (x : point) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("x", Atdml_runtime.Yojson.yojson_of_float x.x)];
+    [("y", Atdml_runtime.Yojson.yojson_of_float x.y)];
+  ])
+
 let point_of_jsonlike (x : Atd_jsonlike.AST.t) : point =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
@@ -251,10 +278,10 @@ let point_of_jsonlike (x : Atd_jsonlike.AST.t) : point =
     { x; y }
   | _ -> Atdml_runtime.Jsonlike.bad_type "point" x
 
-let yojson_of_point (x : point) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    [("x", Atdml_runtime.Yojson.yojson_of_float x.x)];
-    [("y", Atdml_runtime.Yojson.yojson_of_float x.y)];
+let jsonlike_of_point (x : point) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "x", Atdml_runtime.Jsonlike.jsonlike_of_float x.x)];
+    [(Atd_jsonlike.Loc.zero, "y", Atdml_runtime.Jsonlike.jsonlike_of_float x.y)];
   ])
 
 let point_of_json s =
@@ -268,8 +295,9 @@ module Point = struct
   [@@deriving show]
   let create = create_point
   let of_yojson = point_of_yojson
-  let of_jsonlike = point_of_jsonlike
   let to_yojson = yojson_of_point
+  let of_jsonlike = point_of_jsonlike
+  let to_jsonlike = jsonlike_of_point
   let of_json = point_of_json
   let to_json = json_of_point
 end
@@ -280,11 +308,14 @@ type points = point list
 let points_of_yojson (x : Yojson.Safe.t) : points =
   (Atdml_runtime.Yojson.list_of_yojson point_of_yojson) x
 
+let yojson_of_points (x : points) : Yojson.Safe.t =
+  (Atdml_runtime.Yojson.yojson_of_list yojson_of_point) x
+
 let points_of_jsonlike (x : Atd_jsonlike.AST.t) : points =
   (Atdml_runtime.Jsonlike.list_of_jsonlike point_of_jsonlike) x
 
-let yojson_of_points (x : points) : Yojson.Safe.t =
-  (Atdml_runtime.Yojson.yojson_of_list yojson_of_point) x
+let jsonlike_of_points (x : points) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_list jsonlike_of_point) x
 
 let points_of_json s =
   points_of_yojson (Yojson.Safe.from_string s)
@@ -296,8 +327,9 @@ module Points = struct
   type nonrec t = points
   [@@deriving show]
   let of_yojson = points_of_yojson
-  let of_jsonlike = points_of_jsonlike
   let to_yojson = yojson_of_points
+  let of_jsonlike = points_of_jsonlike
+  let to_jsonlike = jsonlike_of_points
   let of_json = points_of_json
   let to_json = json_of_points
 end

@@ -9,6 +9,19 @@
   and a public `value` field of type `ArrayList<T>`. List aliases used as
   record fields or sum-variant payloads are also handled correctly.
 
+* atdml: Generate `jsonlike_of_foo` serializer functions and `Foo.to_jsonlike`
+  submodule bindings, completing the OCaml ↔ `Atd_jsonlike.AST.t` round-trip.
+  JSON adapters are also supported: if the adapter module `M` provides
+  `restore_jsonlike`, it is called after serialization by `jsonlike_of_foo`.
+
+* atd-jsonlike: Add `Pos.zero` and `Loc.zero` — zero-position / zero-location
+  constants useful for constructing `AST.t` nodes programmatically when source
+  location information is not available.
+
+* atd-yamlx: Add `to_yamlx_value : Atd_jsonlike.AST.t -> YAMLx.value`, the
+  reverse of `of_yamlx_value`. Enables programmatic construction of YAML
+  documents from ATD-typed OCaml values via `jsonlike_of_foo`.
+
 4.1.0 (2026-04-11)
 ------------------
 

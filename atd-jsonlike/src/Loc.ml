@@ -4,6 +4,8 @@ type t = {
   file: string option;
 }
 
+let zero = { start = Pos.zero; end_ = Pos.zero; file = None }
+
 let equal a b =
   Pos.equal a.start b.start
   && Pos.equal a.end_ b.end_

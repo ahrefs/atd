@@ -3,6 +3,8 @@ type t = {
   column: int;
 }
 
+let zero = { row = 0; column = 0 }
+
 let equal a b = a.row = b.row && a.column = b.column
 
 let compare a b =

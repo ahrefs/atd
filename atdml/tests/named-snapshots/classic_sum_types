@@ -7,18 +7,18 @@ type shape =
   | ArcShape of float
 
 val shape_of_yojson : Yojson.Safe.t -> shape
+val yojson_of_shape : shape -> Yojson.Safe.t
 val shape_of_jsonlike : Atd_jsonlike.AST.t -> shape
 val jsonlike_of_shape : shape -> Atd_jsonlike.AST.t
-val yojson_of_shape : shape -> Yojson.Safe.t
 val shape_of_json : string -> shape
 val json_of_shape : shape -> string
 
 module Shape : sig
   type nonrec t = shape
   val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_jsonlike : t -> Atd_jsonlike.AST.t
-  val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
@@ -26,18 +26,18 @@ end
 type shapes = shape list
 
 val shapes_of_yojson : Yojson.Safe.t -> shapes
+val yojson_of_shapes : shapes -> Yojson.Safe.t
 val shapes_of_jsonlike : Atd_jsonlike.AST.t -> shapes
 val jsonlike_of_shapes : shapes -> Atd_jsonlike.AST.t
-val yojson_of_shapes : shapes -> Yojson.Safe.t
 val shapes_of_json : string -> shapes
 val json_of_shapes : shapes -> string
 
 module Shapes : sig
   type nonrec t = shapes
   val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_jsonlike : t -> Atd_jsonlike.AST.t
-  val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
@@ -219,6 +219,13 @@ let shape_of_yojson (x : Yojson.Safe.t) : shape =
   | `List [`String "arc"; v] -> ArcShape (Atdml_runtime.Yojson.float_of_yojson v)
   | _ -> Atdml_runtime.Yojson.bad_sum "shape" x
 
+let yojson_of_shape (x : shape) : Yojson.Safe.t =
+  match x with
+  | Circle v -> `List [`String "Circle"; Atdml_runtime.Yojson.yojson_of_float v]
+  | Rect v -> `List [`String "rectangle"; (fun (x0, x1) -> `List [Atdml_runtime.Yojson.yojson_of_float x0; Atdml_runtime.Yojson.yojson_of_float x1]) v]
+  | Point -> `String "Dot"
+  | ArcShape v -> `List [`String "arc"; Atdml_runtime.Yojson.yojson_of_float v]
+
 let shape_of_jsonlike (x : Atd_jsonlike.AST.t) : shape =
   match x with
   | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "Circle"); v]) -> Circle (Atdml_runtime.Jsonlike.float_of_jsonlike v)
@@ -226,13 +233,6 @@ let shape_of_jsonlike (x : Atd_jsonlike.AST.t) : shape =
   | Atd_jsonlike.AST.String (_, "Dot") -> Point
   | Atd_jsonlike.AST.Array (_, [Atd_jsonlike.AST.String (_, "arc"); v]) -> ArcShape (Atdml_runtime.Jsonlike.float_of_jsonlike v)
   | _ -> Atdml_runtime.Jsonlike.bad_sum "shape" x
-
-let yojson_of_shape (x : shape) : Yojson.Safe.t =
-  match x with
-  | Circle v -> `List [`String "Circle"; Atdml_runtime.Yojson.yojson_of_float v]
-  | Rect v -> `List [`String "rectangle"; (fun (x0, x1) -> `List [Atdml_runtime.Yojson.yojson_of_float x0; Atdml_runtime.Yojson.yojson_of_float x1]) v]
-  | Point -> `String "Dot"
-  | ArcShape v -> `List [`String "arc"; Atdml_runtime.Yojson.yojson_of_float v]
 
 let jsonlike_of_shape (x : shape) : Atd_jsonlike.AST.t =
   match x with
@@ -250,9 +250,9 @@ let json_of_shape x =
 module Shape = struct
   type nonrec t = shape
   let of_yojson = shape_of_yojson
+  let to_yojson = yojson_of_shape
   let of_jsonlike = shape_of_jsonlike
   let to_jsonlike = jsonlike_of_shape
-  let to_yojson = yojson_of_shape
   let of_json = shape_of_json
   let to_json = json_of_shape
 end
@@ -262,11 +262,11 @@ type shapes = shape list
 let shapes_of_yojson (x : Yojson.Safe.t) : shapes =
   (Atdml_runtime.Yojson.list_of_yojson shape_of_yojson) x
 
-let shapes_of_jsonlike (x : Atd_jsonlike.AST.t) : shapes =
-  (Atdml_runtime.Jsonlike.list_of_jsonlike shape_of_jsonlike) x
-
 let yojson_of_shapes (x : shapes) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_list yojson_of_shape) x
+
+let shapes_of_jsonlike (x : Atd_jsonlike.AST.t) : shapes =
+  (Atdml_runtime.Jsonlike.list_of_jsonlike shape_of_jsonlike) x
 
 let jsonlike_of_shapes (x : shapes) : Atd_jsonlike.AST.t =
   (Atdml_runtime.Jsonlike.jsonlike_of_list jsonlike_of_shape) x
@@ -280,9 +280,9 @@ let json_of_shapes x =
 module Shapes = struct
   type nonrec t = shapes
   let of_yojson = shapes_of_yojson
+  let to_yojson = yojson_of_shapes
   let of_jsonlike = shapes_of_jsonlike
   let to_jsonlike = jsonlike_of_shapes
-  let to_yojson = yojson_of_shapes
   let of_json = shapes_of_json
   let to_json = json_of_shapes
 end

@@ -6,18 +6,18 @@ type color =
   | Blue
 
 val color_of_yojson : Yojson.Safe.t -> color
+val yojson_of_color : color -> Yojson.Safe.t
 val color_of_jsonlike : Atd_jsonlike.AST.t -> color
 val jsonlike_of_color : color -> Atd_jsonlike.AST.t
-val yojson_of_color : color -> Yojson.Safe.t
 val color_of_json : string -> color
 val json_of_color : color -> string
 
 module Color : sig
   type nonrec t = color
   val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_jsonlike : t -> Atd_jsonlike.AST.t
-  val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
@@ -25,18 +25,18 @@ end
 type colors = (color * color * color)
 
 val colors_of_yojson : Yojson.Safe.t -> colors
+val yojson_of_colors : colors -> Yojson.Safe.t
 val colors_of_jsonlike : Atd_jsonlike.AST.t -> colors
 val jsonlike_of_colors : colors -> Atd_jsonlike.AST.t
-val yojson_of_colors : colors -> Yojson.Safe.t
 val colors_of_json : string -> colors
 val json_of_colors : colors -> string
 
 module Colors : sig
   type nonrec t = colors
   val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_jsonlike : t -> Atd_jsonlike.AST.t
-  val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
@@ -216,18 +216,18 @@ let color_of_yojson (x : Yojson.Safe.t) : color =
   | `String "Blue" -> Blue
   | _ -> Atdml_runtime.Yojson.bad_sum "color" x
 
+let yojson_of_color (x : color) : Yojson.Safe.t =
+  match x with
+  | Red -> `String "Red"
+  | Green -> `String "green"
+  | Blue -> `String "Blue"
+
 let color_of_jsonlike (x : Atd_jsonlike.AST.t) : color =
   match x with
   | Atd_jsonlike.AST.String (_, "Red") -> Red
   | Atd_jsonlike.AST.String (_, "green") -> Green
   | Atd_jsonlike.AST.String (_, "Blue") -> Blue
   | _ -> Atdml_runtime.Jsonlike.bad_sum "color" x
-
-let yojson_of_color (x : color) : Yojson.Safe.t =
-  match x with
-  | Red -> `String "Red"
-  | Green -> `String "green"
-  | Blue -> `String "Blue"
 
 let jsonlike_of_color (x : color) : Atd_jsonlike.AST.t =
   match x with
@@ -244,9 +244,9 @@ let json_of_color x =
 module Color = struct
   type nonrec t = color
   let of_yojson = color_of_yojson
+  let to_yojson = yojson_of_color
   let of_jsonlike = color_of_jsonlike
   let to_jsonlike = jsonlike_of_color
-  let to_yojson = yojson_of_color
   let of_json = color_of_json
   let to_json = json_of_color
 end
@@ -256,11 +256,11 @@ type colors = (color * color * color)
 let colors_of_yojson (x : Yojson.Safe.t) : colors =
   (fun x -> match x with | `List lst when List.length lst = 3 -> (color_of_yojson (List.nth lst 0), color_of_yojson (List.nth lst 1), color_of_yojson (List.nth lst 2)) | _ -> Atdml_runtime.Yojson.bad_type "tuple" x) x
 
-let colors_of_jsonlike (x : Atd_jsonlike.AST.t) : colors =
-  (fun x -> match x with | Atd_jsonlike.AST.Array (_, lst) when List.length lst = 3 -> (color_of_jsonlike (List.nth lst 0), color_of_jsonlike (List.nth lst 1), color_of_jsonlike (List.nth lst 2)) | _ -> Atdml_runtime.Jsonlike.bad_type "tuple" x) x
-
 let yojson_of_colors (x : colors) : Yojson.Safe.t =
   (fun (x0, x1, x2) -> `List [yojson_of_color x0; yojson_of_color x1; yojson_of_color x2]) x
+
+let colors_of_jsonlike (x : Atd_jsonlike.AST.t) : colors =
+  (fun x -> match x with | Atd_jsonlike.AST.Array (_, lst) when List.length lst = 3 -> (color_of_jsonlike (List.nth lst 0), color_of_jsonlike (List.nth lst 1), color_of_jsonlike (List.nth lst 2)) | _ -> Atdml_runtime.Jsonlike.bad_type "tuple" x) x
 
 let jsonlike_of_colors (x : colors) : Atd_jsonlike.AST.t =
   (fun (x0, x1, x2) -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [jsonlike_of_color x0; jsonlike_of_color x1; jsonlike_of_color x2])) x
@@ -274,9 +274,9 @@ let json_of_colors x =
 module Colors = struct
   type nonrec t = colors
   let of_yojson = colors_of_yojson
+  let to_yojson = yojson_of_colors
   let of_jsonlike = colors_of_jsonlike
   let to_jsonlike = jsonlike_of_colors
-  let to_yojson = yojson_of_colors
   let of_json = colors_of_json
   let to_json = json_of_colors
 end

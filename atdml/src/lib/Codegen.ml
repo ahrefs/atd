@@ -1635,12 +1635,10 @@ let gen_submodule_ml ~yojson ~jsonlike env ({A.name; param=params; annot=def_an;
   let bindings =
     create_binding
     @ (if yojson then [B.Line (sprintf "let of_yojson = %s" (of_yojson_name ocaml_name))] else [])
-    @ (if jsonlike then [
-        B.Line (sprintf "let of_jsonlike = %s" (of_jsonlike_name ocaml_name));
-        B.Line (sprintf "let to_jsonlike = %s" (jsonlike_of_name ocaml_name));
-      ] else [])
+    @ (if yojson then [B.Line (sprintf "let to_yojson = %s" (yojson_of_name ocaml_name))] else [])
+    @ (if jsonlike then [B.Line (sprintf "let of_jsonlike = %s" (of_jsonlike_name ocaml_name))] else [])
+    @ (if jsonlike then [B.Line (sprintf "let to_jsonlike = %s" (jsonlike_of_name ocaml_name))] else [])
     @ (if yojson then [
-        B.Line (sprintf "let to_yojson = %s" (yojson_of_name ocaml_name));
         B.Line (sprintf "let of_json = %s" (of_json_name ocaml_name));
         B.Line (sprintf "let to_json = %s" (json_of_name ocaml_name));
       ] else [])
@@ -1928,8 +1926,10 @@ let gen_submodule_mli ~yojson ~jsonlike env ({A.name; param=params; annot=def_an
     @ attr_lines
     @ create_sig
     @ (if yojson then of_yojson_sig else [])
-    @ (if jsonlike then of_jsonlike_sig @ to_jsonlike_sig else [])
-    @ (if yojson then to_yojson_sig @ of_json_sig @ to_json_sig else [])
+    @ (if yojson then to_yojson_sig else [])
+    @ (if jsonlike then of_jsonlike_sig else [])
+    @ (if jsonlike then to_jsonlike_sig else [])
+    @ (if yojson then of_json_sig @ to_json_sig else [])
   in
   [
     B.Line (sprintf "module %s : sig" (module_name ocaml_name));
@@ -2018,8 +2018,8 @@ let make_ml ~yojson ~jsonlike ~imports ~env ~atd_filename ~module_doc (items : A
       ) defs
     in
     let of_yojsons = if yojson then emit_fun_group ~is_recursive (gen_reader env yojson_mode) defs else [] in
-    let of_jsonlikes = if jsonlike then emit_fun_group ~is_recursive (gen_reader env jsonlike_mode) defs else [] in
     let yojson_ofs = if yojson then emit_fun_group ~is_recursive (gen_yojson_of env) defs else [] in
+    let of_jsonlikes = if jsonlike then emit_fun_group ~is_recursive (gen_reader env jsonlike_mode) defs else [] in
     let jsonlike_ofs = if jsonlike then emit_fun_group ~is_recursive (gen_jsonlike_of env) defs else [] in
     let ios =
       if yojson then concat_map (fun def -> gen_io_funs env def @ [B.Line ""]) defs
@@ -2028,7 +2028,7 @@ let make_ml ~yojson ~jsonlike ~imports ~env ~atd_filename ~module_doc (items : A
     let submods =
       concat_map (fun def -> gen_submodule_ml ~yojson ~jsonlike env def @ [B.Line ""]) defs
     in
-    types @ creates @ of_yojsons @ of_jsonlikes @ yojson_ofs @ jsonlike_ofs @ ios @ submods
+    types @ creates @ of_yojsons @ yojson_ofs @ of_jsonlikes @ jsonlike_ofs @ ios @ submods
   in
   let aliases = module_alias_decls imports in
   header
@@ -2060,9 +2060,10 @@ let make_mli ~yojson ~jsonlike ~env ~atd_filename ~module_doc (items : A.type_de
         gen_make_sig env def
         @ gen_alias_create_sigs env def
         @ (if yojson then gen_reader_sig env yojson_mode def else [])
+        @ (if yojson then gen_yojson_of_sig env def else [])
         @ (if jsonlike then gen_reader_sig env jsonlike_mode def else [])
         @ (if jsonlike then gen_jsonlike_of_sig env def else [])
-        @ (if yojson then gen_yojson_of_sig env def @ gen_io_sigs env def else [])
+        @ (if yojson then gen_io_sigs env def else [])
         @ [B.Line ""]
       ) defs
     in

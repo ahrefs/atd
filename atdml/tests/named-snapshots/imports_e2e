@@ -7,9 +7,9 @@ type item = {
 
 val create_item : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> item
 val item_of_yojson : Yojson.Safe.t -> item
+val yojson_of_item : item -> Yojson.Safe.t
 val item_of_jsonlike : Atd_jsonlike.AST.t -> item
 val jsonlike_of_item : item -> Atd_jsonlike.AST.t
-val yojson_of_item : item -> Yojson.Safe.t
 val item_of_json : string -> item
 val json_of_item : item -> string
 
@@ -17,9 +17,9 @@ module Item : sig
   type nonrec t = item
   val create : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
   val to_jsonlike : t -> Atd_jsonlike.AST.t
-  val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
 end
@@ -223,6 +223,12 @@ let item_of_yojson (x : Yojson.Safe.t) : item =
     { name; tag }
   | _ -> Atdml_runtime.Yojson.bad_type "item" x
 
+let yojson_of_item (x : item) : Yojson.Safe.t =
+  `Assoc (List.concat [
+    [("name", Base_types.yojson_of_person_name x.name)];
+    [("tag", Ext.yojson_of_tag x.tag)];
+  ])
+
 let item_of_jsonlike (x : Atd_jsonlike.AST.t) : item =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
@@ -250,12 +256,6 @@ let item_of_jsonlike (x : Atd_jsonlike.AST.t) : item =
     { name; tag }
   | _ -> Atdml_runtime.Jsonlike.bad_type "item" x
 
-let yojson_of_item (x : item) : Yojson.Safe.t =
-  `Assoc (List.concat [
-    [("name", Base_types.yojson_of_person_name x.name)];
-    [("tag", Ext.yojson_of_tag x.tag)];
-  ])
-
 let jsonlike_of_item (x : item) : Atd_jsonlike.AST.t =
   Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
     [(Atd_jsonlike.Loc.zero, "name", Base_types.jsonlike_of_person_name x.name)];
@@ -272,9 +272,9 @@ module Item = struct
   type nonrec t = item
   let create = create_item
   let of_yojson = item_of_yojson
+  let to_yojson = yojson_of_item
   let of_jsonlike = item_of_jsonlike
   let to_jsonlike = jsonlike_of_item
-  let to_yojson = yojson_of_item
   let of_json = item_of_json
   let to_json = json_of_item
 end

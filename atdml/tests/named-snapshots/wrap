@@ -4,6 +4,7 @@ type uid = int
 
 val uid_of_yojson : Yojson.Safe.t -> uid
 val uid_of_jsonlike : Atd_jsonlike.AST.t -> uid
+val jsonlike_of_uid : uid -> Atd_jsonlike.AST.t
 val yojson_of_uid : uid -> Yojson.Safe.t
 val uid_of_json : string -> uid
 val json_of_uid : uid -> string
@@ -12,6 +13,7 @@ module Uid : sig
   type nonrec t = uid
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -21,6 +23,7 @@ type tag = string
 
 val tag_of_yojson : Yojson.Safe.t -> tag
 val tag_of_jsonlike : Atd_jsonlike.AST.t -> tag
+val jsonlike_of_tag : tag -> Atd_jsonlike.AST.t
 val yojson_of_tag : tag -> Yojson.Safe.t
 val tag_of_json : string -> tag
 val json_of_tag : tag -> string
@@ -29,6 +32,7 @@ module Tag : sig
   type nonrec t = tag
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -42,6 +46,7 @@ type record = {
 val create_record : id:uid -> label:tag -> unit -> record
 val record_of_yojson : Yojson.Safe.t -> record
 val record_of_jsonlike : Atd_jsonlike.AST.t -> record
+val jsonlike_of_record : record -> Atd_jsonlike.AST.t
 val yojson_of_record : record -> Yojson.Safe.t
 val record_of_json : string -> record
 val json_of_record : record -> string
@@ -51,6 +56,7 @@ module Record : sig
   val create : id:uid -> label:tag -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -199,6 +205,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -213,6 +236,9 @@ let uid_of_jsonlike (x : Atd_jsonlike.AST.t) : uid =
 let yojson_of_uid (x : uid) : Yojson.Safe.t =
   (fun x -> Atdml_runtime.Yojson.yojson_of_string ((string_of_int) x)) x
 
+let jsonlike_of_uid (x : uid) : Atd_jsonlike.AST.t =
+  (fun x -> Atdml_runtime.Jsonlike.jsonlike_of_string ((string_of_int) x)) x
+
 let uid_of_json s =
   uid_of_yojson (Yojson.Safe.from_string s)
 
@@ -223,6 +249,7 @@ module Uid = struct
   type nonrec t = uid
   let of_yojson = uid_of_yojson
   let of_jsonlike = uid_of_jsonlike
+  let to_jsonlike = jsonlike_of_uid
   let to_yojson = yojson_of_uid
   let of_json = uid_of_json
   let to_json = json_of_uid
@@ -239,6 +266,9 @@ let tag_of_jsonlike (x : Atd_jsonlike.AST.t) : tag =
 let yojson_of_tag (x : tag) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_string x
 
+let jsonlike_of_tag (x : tag) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_string x
+
 let tag_of_json s =
   tag_of_yojson (Yojson.Safe.from_string s)
 
@@ -249,6 +279,7 @@ module Tag = struct
   type nonrec t = tag
   let of_yojson = tag_of_yojson
   let of_jsonlike = tag_of_jsonlike
+  let to_jsonlike = jsonlike_of_tag
   let to_yojson = yojson_of_tag
   let of_json = tag_of_json
   let to_json = json_of_tag
@@ -321,6 +352,12 @@ let yojson_of_record (x : record) : Yojson.Safe.t =
     [("label", yojson_of_tag x.label)];
   ])
 
+let jsonlike_of_record (x : record) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "id", jsonlike_of_uid x.id)];
+    [(Atd_jsonlike.Loc.zero, "label", jsonlike_of_tag x.label)];
+  ])
+
 let record_of_json s =
   record_of_yojson (Yojson.Safe.from_string s)
 
@@ -332,6 +369,7 @@ module Record = struct
   let create = create_record
   let of_yojson = record_of_yojson
   let of_jsonlike = record_of_jsonlike
+  let to_jsonlike = jsonlike_of_record
   let to_yojson = yojson_of_record
   let of_json = record_of_json
   let to_json = json_of_record

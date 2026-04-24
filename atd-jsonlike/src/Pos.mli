@@ -14,5 +14,8 @@ type t = {
     (** position within the line, starting from 0 *)
 }
 
+val zero : t
+(** Position at the start of an input: row 0, column 0. *)
+
 val equal : t -> t -> bool
 val compare : t -> t -> int

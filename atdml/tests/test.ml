@@ -76,12 +76,21 @@ let test_program ?(test_jsonlike = true) ~type_name ~json_in () =
   let typed_data2 = Types.%s_of_jsonlike jsonlike_in in
   let yojson_out2 = Types.yojson_of_%s typed_data2 in
   if yojson_out <> yojson_out2 then (
-    Printf.eprintf "Jsonlike round-trip mismatch!\n";
+    Printf.eprintf "Jsonlike reader round-trip mismatch!\n";
     Printf.eprintf "Expected: %%s\n" (Yojson.Safe.pretty_to_string yojson_out);
     Printf.eprintf "Got:      %%s\n" (Yojson.Safe.pretty_to_string yojson_out2);
     exit 1
+  );
+  let jsonlike_out = Types.jsonlike_of_%s typed_data in
+  let typed_data3 = Types.%s_of_jsonlike jsonlike_out in
+  let yojson_out3 = Types.yojson_of_%s typed_data3 in
+  if yojson_out <> yojson_out3 then (
+    Printf.eprintf "Jsonlike writer round-trip mismatch!\n";
+    Printf.eprintf "Expected: %%s\n" (Yojson.Safe.pretty_to_string yojson_out);
+    Printf.eprintf "Got:      %%s\n" (Yojson.Safe.pretty_to_string yojson_out3);
+    exit 1
   )|}
-        type_name type_name
+        type_name type_name type_name type_name type_name
     else ""
   in
   sprintf {|%s
@@ -424,7 +433,7 @@ type module_ = string
   test_e2e "adapter"
     (* The adapter converts between ATD's ["Constructor", ...] sum encoding
        and an object with a "type" field, i.e. {"type": "Image", "url": "..."}.
-       For yojson: normalize/restore. For jsonlike: normalize_jsonlike. *)
+       For yojson: normalize/restore. For jsonlike: normalize_jsonlike/restore_jsonlike. *)
     ~extra_sources:[
       ("My_adapter.ml", {|
 (* Converts {"type": "Foo", ...rest} <-> ["Foo", {...rest}] *)
@@ -456,6 +465,16 @@ let normalize_jsonlike = function
       let rest = List.filter (fun (_, k, _) -> k <> "type") fields in
       Atd_jsonlike.AST.Array (loc,
         [Atd_jsonlike.AST.String (loc, tag); Atd_jsonlike.AST.Object (loc, rest)])
+  | x -> x
+
+let restore_jsonlike = function
+  | Atd_jsonlike.AST.Array (loc,
+      [Atd_jsonlike.AST.String (_, tag); Atd_jsonlike.AST.Object (_, rest)]) ->
+      Atd_jsonlike.AST.Object (loc,
+        (loc, "type", Atd_jsonlike.AST.String (loc, tag)) :: rest)
+  | Atd_jsonlike.AST.String (loc, tag) ->
+      Atd_jsonlike.AST.Object (loc,
+        [(loc, "type", Atd_jsonlike.AST.String (loc, tag))])
   | x -> x
 |})]
     ~atd_src:{|
@@ -623,6 +642,7 @@ module Module : sig
     val tag_of_yojson : Yojson.Safe.t -> tag
     val yojson_of_tag : tag -> Yojson.Safe.t
     val tag_of_jsonlike : Atd_jsonlike.AST.t -> tag
+    val jsonlike_of_tag : tag -> Atd_jsonlike.AST.t
   end
 end
 |});
@@ -640,6 +660,9 @@ module Module = struct
     let tag_of_jsonlike : Atd_jsonlike.AST.t -> tag = function
       | Atd_jsonlike.AST.String (_, s) -> s
       | x -> failwith ("Long.Module.Path.tag_of_jsonlike: " ^ Atd_jsonlike.AST.loc_msg x)
+
+    let jsonlike_of_tag (s : tag) : Atd_jsonlike.AST.t =
+      Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, s)
   end
 end
 |})]

@@ -14,5 +14,8 @@ type t = {
         system. *)
 }
 
+val zero : t
+(** A zero-length location at the beginning of the input with no file. *)
+
 val equal : t -> t -> bool
 val compare : t -> t -> int

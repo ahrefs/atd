@@ -12,12 +12,14 @@ and tree =
 val create_node : value:int -> children:(tree * tree) -> unit -> node
 val node_of_yojson : Yojson.Safe.t -> node
 val node_of_jsonlike : Atd_jsonlike.AST.t -> node
+val jsonlike_of_node : node -> Atd_jsonlike.AST.t
 val yojson_of_node : node -> Yojson.Safe.t
 val node_of_json : string -> node
 val json_of_node : node -> string
 
 val tree_of_yojson : Yojson.Safe.t -> tree
 val tree_of_jsonlike : Atd_jsonlike.AST.t -> tree
+val jsonlike_of_tree : tree -> Atd_jsonlike.AST.t
 val yojson_of_tree : tree -> Yojson.Safe.t
 val tree_of_json : string -> tree
 val json_of_tree : tree -> string
@@ -27,6 +29,7 @@ module Node : sig
   val create : value:int -> children:(tree * tree) -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -36,6 +39,7 @@ module Tree : sig
   type nonrec t = tree
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -184,6 +188,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -275,6 +296,17 @@ and yojson_of_tree (x : tree) : Yojson.Safe.t =
   | Leaf -> `String "Leaf"
   | Node v -> `List [`String "Node"; yojson_of_node v]
 
+let rec jsonlike_of_node (x : node) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "value", Atdml_runtime.Jsonlike.jsonlike_of_int x.value)];
+    [(Atd_jsonlike.Loc.zero, "children", (fun (x0, x1) -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [jsonlike_of_tree x0; jsonlike_of_tree x1])) x.children)];
+  ])
+
+and jsonlike_of_tree (x : tree) : Atd_jsonlike.AST.t =
+  match x with
+  | Leaf -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Leaf")
+  | Node v -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Node"); jsonlike_of_node v])
+
 let node_of_json s =
   node_of_yojson (Yojson.Safe.from_string s)
 
@@ -292,6 +324,7 @@ module Node = struct
   let create = create_node
   let of_yojson = node_of_yojson
   let of_jsonlike = node_of_jsonlike
+  let to_jsonlike = jsonlike_of_node
   let to_yojson = yojson_of_node
   let of_json = node_of_json
   let to_json = json_of_node
@@ -301,6 +334,7 @@ module Tree = struct
   type nonrec t = tree
   let of_yojson = tree_of_yojson
   let of_jsonlike = tree_of_jsonlike
+  let to_jsonlike = jsonlike_of_tree
   let to_yojson = yojson_of_tree
   let of_json = tree_of_json
   let to_json = json_of_tree

@@ -253,6 +253,21 @@ let normalize_jsonlike_of_adapter (adapter : Atd.Json.json_adapter) =
       else
         None
 
+(* Derive the restore_jsonlike expression from a module-based adapter.
+   Module-based adapters have restore = "M.restore"; we produce
+   "M.restore_jsonlike". Inline adapters are not supported for jsonlike. *)
+let restore_jsonlike_of_adapter (adapter : Atd.Json.json_adapter) =
+  match adapter.ocaml_adapter with
+  | None -> None
+  | Some a ->
+      let suffix = ".restore" in
+      let n = a.restore in
+      let slen = String.length suffix and nlen = String.length n in
+      if nlen > slen && String.sub n (nlen - slen) slen = suffix then
+        Some (String.sub n 0 (nlen - slen) ^ ".restore_jsonlike")
+      else
+        None
+
 (* ============ Doc comment helpers ============ *)
 
 (* Escape special characters for OCaml's ocamldoc format *)
@@ -338,6 +353,7 @@ let get_ocaml_name default_name an =
 let of_yojson_name name = name ^ "_of_yojson"
 let yojson_of_name name = "yojson_of_" ^ name
 let of_jsonlike_name name = name ^ "_of_jsonlike"
+let jsonlike_of_name name = "jsonlike_of_" ^ name
 let of_json_name name = name ^ "_of_json"
 let json_of_name name = "json_of_" ^ name
 let create_name name = "create_" ^ name
@@ -679,6 +695,62 @@ let rec writer_expr env (e : type_expr) : string =
       | Some f -> sprintf "(fun x -> %s ((%s) x))" inner f)
   | Sum _ | Record _ -> failwith "inline types are not supported"
 
+(* Produce a jsonlike writer expression for a type, analogous to writer_expr
+   but targeting Atd_jsonlike.AST.t instead of Yojson.Safe.t. *)
+let rec jsonlike_writer_expr env (e : type_expr) : string =
+  match e with
+  | Name (_, (_, TN ["unit"], []), _) -> "Atdml_runtime.Jsonlike.jsonlike_of_unit"
+  | Name (_, (_, TN ["bool"], []), _) -> "Atdml_runtime.Jsonlike.jsonlike_of_bool"
+  | Name (_, (_, TN ["int"], []), _) -> "Atdml_runtime.Jsonlike.jsonlike_of_int"
+  | Name (_, (_, TN ["float"], []), _) -> "Atdml_runtime.Jsonlike.jsonlike_of_float"
+  | Name (_, (_, TN ["string"], []), _) -> "Atdml_runtime.Jsonlike.jsonlike_of_string"
+  | Name (_, (_, TN ["abstract"], []), _) ->
+      "(fun _ -> failwith \"abstract type is not supported in jsonlike mode\")"
+  | Name (_, (_, TN [name], []), _) -> jsonlike_of_name (env.tr name)
+  | Name (_, (_, TN [name], params), _) ->
+      let writers = List.map (jsonlike_writer_expr env) params in
+      sprintf "(%s %s)" (jsonlike_of_name (env.tr name)) (String.concat " " writers)
+  | Name (loc, (_, name, params), _) ->
+      let (import_opt, base_name) = Atd.Imports.resolve env.imports loc name in
+      (match import_opt with
+       | None -> assert false
+       | Some (import, _) ->
+           let ocaml_mod = env.ocaml_mod_of_import import in
+           let fn = sprintf "%s.%s" ocaml_mod (jsonlike_of_name base_name) in
+           (match params with
+            | [] -> fn
+            | _ ->
+                let writers = List.map (jsonlike_writer_expr env) params in
+                sprintf "(%s %s)" fn (String.concat " " writers)))
+  | List (_, Tuple (_, [(_, Name (_, (_, TN ["string"], []), _), _); (_, val_e, _)], _), an)
+    when Atd.Json.get_json_list an = Atd.Json.Object ->
+      sprintf "(Atdml_runtime.Jsonlike.jsonlike_of_assoc %s)" (jsonlike_writer_expr env val_e)
+  | List (_, e, _) ->
+      sprintf "(Atdml_runtime.Jsonlike.jsonlike_of_list %s)" (jsonlike_writer_expr env e)
+  | Option (_, e, _) ->
+      sprintf "(Atdml_runtime.Jsonlike.jsonlike_of_option %s)" (jsonlike_writer_expr env e)
+  | Nullable (_, e, _) ->
+      sprintf "(Atdml_runtime.Jsonlike.jsonlike_of_nullable %s)" (jsonlike_writer_expr env e)
+  | Tuple (_, cells, _) ->
+      let vars = List.mapi (fun i _ -> sprintf "x%d" i) cells in
+      let writes =
+        List.mapi (fun i (_, e, _) ->
+          sprintf "%s %s" (jsonlike_writer_expr env e) (List.nth vars i)
+        ) cells
+      in
+      sprintf "(fun (%s) -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [%s]))"
+        (String.concat ", " vars)
+        (String.concat "; " writes)
+  | Tvar (_, v) -> "jsonlike_of_" ^ v
+  | Shared (loc, _, _) -> not_implemented loc "shared"
+  | Wrap (_, inner_e, an) ->
+      let inner = jsonlike_writer_expr env inner_e in
+      let (_, _, unwrap_fn) = get_ocaml_wrap an in
+      (match unwrap_fn with
+      | None -> inner
+      | Some f -> sprintf "(fun x -> %s ((%s) x))" inner f)
+  | Sum _ | Record _ -> failwith "inline types are not supported"
+
 (* ============ Flatten variants ============ *)
 
 let flatten_variants variants =
@@ -836,6 +908,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end|} in
   [B.Line (preamble
     ^ (if yojson then yojson_ext else "")
@@ -1382,6 +1471,114 @@ let gen_yojson_of env ({A.name; param=params; annot=an; value=e; _} : A.type_def
       B.Block [B.Line (sprintf "fun %sx ->" extra_params); body];
     ]
 
+(* ============ jsonlike writer (jsonlike_of_foo) ============ *)
+
+let gen_jsonlike_of_field env pftr (_, (fname, kind, an), e) : B.node =
+  let json_name = Atd.Json.get_json_fname fname an in
+  let ofname = pftr fname in
+  match kind with
+  | Required | With_default ->
+      B.Line (sprintf "[(Atd_jsonlike.Loc.zero, \"%s\", %s x.%s)];" json_name (jsonlike_writer_expr env e) ofname)
+  | Optional ->
+      let inner_e =
+        match e with
+        | Option (_, ie, _) -> ie
+        | _ -> e
+      in
+      B.Line
+        (sprintf
+           "(match x.%s with None -> [] | Some v -> [(Atd_jsonlike.Loc.zero, \"%s\", %s v)]);"
+           ofname json_name (jsonlike_writer_expr env inner_e))
+
+let gen_jsonlike_of env ({A.name; param=params; annot=an; value=e; _} : A.type_def) : B.t =
+  let name = Atd.Type_name.basename name in
+  let ocaml_name = env.tr name in
+  let param_strs = List.map (fun v -> "jsonlike_of_" ^ v) params in
+  let extra_params =
+    if param_strs = [] then ""
+    else String.concat " " param_strs ^ " "
+  in
+  let arg_type = full_type_name ocaml_name params in
+  let loc = "Atd_jsonlike.Loc.zero" in
+  let body =
+    match e with
+    | Sum (_, variants, sum_an) ->
+        let is_poly =
+          match get_ocaml_repr sum_an with
+          | Some "poly" -> true
+          | _ -> false
+        in
+        let tick = if is_poly then "`" else "" in
+        let flat = flatten_variants variants in
+        let vtr =
+          make_local_env
+            (List.map (fun (_, orig_name, an, _) -> get_ocaml_name orig_name an) flat)
+        in
+        let sum = Atd.Json.get_json_sum sum_an in
+        let gen_case (_, orig_name, an, opt_e) =
+          let json_name = Atd.Json.get_json_cons orig_name an in
+          let cons_name = vtr (get_ocaml_name orig_name an) in
+          match opt_e with
+          | None ->
+              B.Line
+                (sprintf "| %s%s -> Atd_jsonlike.AST.String (%s, \"%s\")"
+                   tick cons_name loc json_name)
+          | Some e ->
+              let rhs = match sum.json_sum_repr with
+                | Atd.Json.Array ->
+                    sprintf "Atd_jsonlike.AST.Array (%s, [Atd_jsonlike.AST.String (%s, \"%s\"); %s v])"
+                      loc loc json_name (jsonlike_writer_expr env e)
+                | Atd.Json.Object ->
+                    sprintf "Atd_jsonlike.AST.Object (%s, [(%s, \"%s\", %s v)])"
+                      loc loc json_name (jsonlike_writer_expr env e)
+              in
+              B.Line (sprintf "| %s%s v -> %s" tick cons_name rhs)
+        in
+        let restore = restore_jsonlike_of_adapter sum.json_sum_adapter in
+        apply_restore restore
+          (B.Block
+            (B.Line "match x with"
+             :: List.map gen_case flat))
+    | Record (_, fields, rec_an) ->
+        let prefix = get_field_prefix rec_an in
+        let fields =
+          List.filter_map (fun (f : field) -> match f with
+            | Field x -> Some x
+            | Inherit _ -> assert false)
+            fields
+        in
+        let fnames = List.map (fun (_, (fname, _, _), _) -> fname) fields in
+        let (_, pftr) = make_prefixed_trs prefix fnames in
+        let restore =
+          restore_jsonlike_of_adapter (Atd.Json.get_json_record rec_an).json_record_adapter
+        in
+        apply_restore restore
+          (B.Block
+            [
+              B.Line (sprintf "Atd_jsonlike.AST.Object (%s, List.concat [" loc);
+              B.Block (List.map (gen_jsonlike_of_field env pftr) fields);
+              B.Line "])";
+            ])
+    | e ->
+        B.Block [B.Line (sprintf "%s x" (jsonlike_writer_expr env e))]
+  in
+  if params = [] then
+    [
+      B.Line (sprintf "let %s (x : %s) : Atd_jsonlike.AST.t ="
+                (jsonlike_of_name ocaml_name) arg_type);
+      body;
+    ]
+  else
+    let quant = String.concat " " (List.map (fun v -> "'" ^ v) params) in
+    let param_types =
+      String.concat " " (List.map (fun v -> sprintf "('%s -> Atd_jsonlike.AST.t) ->" v) params)
+    in
+    let full_type = sprintf "%s %s -> Atd_jsonlike.AST.t" param_types arg_type in
+    [
+      B.Line (sprintf "let %s : %s. %s =" (jsonlike_of_name ocaml_name) quant full_type);
+      B.Block [B.Line (sprintf "fun %sx ->" extra_params); body];
+    ]
+
 (* ============ Top-level I/O functions (all types, with converter args for parametric) ============ *)
 
 let gen_io_funs env ({A.name; param=params; _} : A.type_def) : B.t =
@@ -1438,7 +1635,10 @@ let gen_submodule_ml ~yojson ~jsonlike env ({A.name; param=params; annot=def_an;
   let bindings =
     create_binding
     @ (if yojson then [B.Line (sprintf "let of_yojson = %s" (of_yojson_name ocaml_name))] else [])
-    @ (if jsonlike then [B.Line (sprintf "let of_jsonlike = %s" (of_jsonlike_name ocaml_name))] else [])
+    @ (if jsonlike then [
+        B.Line (sprintf "let of_jsonlike = %s" (of_jsonlike_name ocaml_name));
+        B.Line (sprintf "let to_jsonlike = %s" (jsonlike_of_name ocaml_name));
+      ] else [])
     @ (if yojson then [
         B.Line (sprintf "let to_yojson = %s" (yojson_of_name ocaml_name));
         B.Line (sprintf "let of_json = %s" (of_json_name ocaml_name));
@@ -1487,6 +1687,23 @@ let gen_yojson_of_sig env ({A.name; param=params; _} : A.type_def) : B.t =
         B.Block
           (List.map (fun s -> B.Line s) param_sigs
            @ [B.Line (sprintf "%s ->" arg_type); B.Line "Yojson.Safe.t"]);
+      ]
+
+let gen_jsonlike_of_sig env ({A.name; param=params; _} : A.type_def) : B.t =
+  let name = Atd.Type_name.basename name in
+  let ocaml_name = env.tr name in
+  match params with
+  | [] ->
+      [B.Line (sprintf "val %s : %s -> Atd_jsonlike.AST.t"
+                 (jsonlike_of_name ocaml_name) ocaml_name)]
+  | _ ->
+      let param_sigs = List.map (fun v -> sprintf "('%s -> Atd_jsonlike.AST.t) ->" v) params in
+      let arg_type = full_type_name ocaml_name params in
+      [
+        B.Line (sprintf "val %s :" (jsonlike_of_name ocaml_name));
+        B.Block
+          (List.map (fun s -> B.Line s) param_sigs
+           @ [B.Line (sprintf "%s ->" arg_type); B.Line "Atd_jsonlike.AST.t"]);
       ]
 
 let gen_make_sig env ({A.name; param=params; value=e; _} : A.type_def) : B.t =
@@ -1650,6 +1867,20 @@ let gen_submodule_mli ~yojson ~jsonlike env ({A.name; param=params; annot=def_an
              @ [B.Line "Atd_jsonlike.AST.t ->"; B.Line t_type]);
         ]
   in
+  let to_jsonlike_sig =
+    match params with
+    | [] -> [B.Line (sprintf "val to_jsonlike : %s -> Atd_jsonlike.AST.t" t_type)]
+    | _ ->
+        let param_sigs =
+          List.map (fun v -> sprintf "('%s -> Atd_jsonlike.AST.t) ->" v) params
+        in
+        [
+          B.Line "val to_jsonlike :";
+          B.Block
+            (List.map (fun s -> B.Line s) param_sigs
+             @ [B.Line (sprintf "%s ->" t_type); B.Line "Atd_jsonlike.AST.t"]);
+        ]
+  in
   let to_yojson_sig =
     match params with
     | [] -> [B.Line (sprintf "val to_yojson : %s -> Yojson.Safe.t" t_type)]
@@ -1697,7 +1928,7 @@ let gen_submodule_mli ~yojson ~jsonlike env ({A.name; param=params; annot=def_an
     @ attr_lines
     @ create_sig
     @ (if yojson then of_yojson_sig else [])
-    @ (if jsonlike then of_jsonlike_sig else [])
+    @ (if jsonlike then of_jsonlike_sig @ to_jsonlike_sig else [])
     @ (if yojson then to_yojson_sig @ of_json_sig @ to_json_sig else [])
   in
   [
@@ -1789,6 +2020,7 @@ let make_ml ~yojson ~jsonlike ~imports ~env ~atd_filename ~module_doc (items : A
     let of_yojsons = if yojson then emit_fun_group ~is_recursive (gen_reader env yojson_mode) defs else [] in
     let of_jsonlikes = if jsonlike then emit_fun_group ~is_recursive (gen_reader env jsonlike_mode) defs else [] in
     let yojson_ofs = if yojson then emit_fun_group ~is_recursive (gen_yojson_of env) defs else [] in
+    let jsonlike_ofs = if jsonlike then emit_fun_group ~is_recursive (gen_jsonlike_of env) defs else [] in
     let ios =
       if yojson then concat_map (fun def -> gen_io_funs env def @ [B.Line ""]) defs
       else []
@@ -1796,7 +2028,7 @@ let make_ml ~yojson ~jsonlike ~imports ~env ~atd_filename ~module_doc (items : A
     let submods =
       concat_map (fun def -> gen_submodule_ml ~yojson ~jsonlike env def @ [B.Line ""]) defs
     in
-    types @ creates @ of_yojsons @ of_jsonlikes @ yojson_ofs @ ios @ submods
+    types @ creates @ of_yojsons @ of_jsonlikes @ yojson_ofs @ jsonlike_ofs @ ios @ submods
   in
   let aliases = module_alias_decls imports in
   header
@@ -1829,6 +2061,7 @@ let make_mli ~yojson ~jsonlike ~env ~atd_filename ~module_doc (items : A.type_de
         @ gen_alias_create_sigs env def
         @ (if yojson then gen_reader_sig env yojson_mode def else [])
         @ (if jsonlike then gen_reader_sig env jsonlike_mode def else [])
+        @ (if jsonlike then gen_jsonlike_of_sig env def else [])
         @ (if yojson then gen_yojson_of_sig env def @ gen_io_sigs env def else [])
         @ [B.Line ""]
       ) defs

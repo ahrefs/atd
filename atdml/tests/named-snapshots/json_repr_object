@@ -4,6 +4,7 @@ type string_map = (string * int) list
 
 val string_map_of_yojson : Yojson.Safe.t -> string_map
 val string_map_of_jsonlike : Atd_jsonlike.AST.t -> string_map
+val jsonlike_of_string_map : string_map -> Atd_jsonlike.AST.t
 val yojson_of_string_map : string_map -> Yojson.Safe.t
 val string_map_of_json : string -> string_map
 val json_of_string_map : string_map -> string
@@ -12,6 +13,7 @@ module String_map : sig
   type nonrec t = string_map
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -21,6 +23,7 @@ type nested = (string * string list) list
 
 val nested_of_yojson : Yojson.Safe.t -> nested
 val nested_of_jsonlike : Atd_jsonlike.AST.t -> nested
+val jsonlike_of_nested : nested -> Atd_jsonlike.AST.t
 val yojson_of_nested : nested -> Yojson.Safe.t
 val nested_of_json : string -> nested
 val json_of_nested : nested -> string
@@ -29,6 +32,7 @@ module Nested : sig
   type nonrec t = nested
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -42,6 +46,7 @@ type record = {
 val create_record : counts:string_map -> tags:nested -> unit -> record
 val record_of_yojson : Yojson.Safe.t -> record
 val record_of_jsonlike : Atd_jsonlike.AST.t -> record
+val jsonlike_of_record : record -> Atd_jsonlike.AST.t
 val yojson_of_record : record -> Yojson.Safe.t
 val record_of_json : string -> record
 val json_of_record : record -> string
@@ -51,6 +56,7 @@ module Record : sig
   val create : counts:string_map -> tags:nested -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -199,6 +205,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -213,6 +236,9 @@ let string_map_of_jsonlike (x : Atd_jsonlike.AST.t) : string_map =
 let yojson_of_string_map (x : string_map) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_assoc Atdml_runtime.Yojson.yojson_of_int) x
 
+let jsonlike_of_string_map (x : string_map) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_assoc Atdml_runtime.Jsonlike.jsonlike_of_int) x
+
 let string_map_of_json s =
   string_map_of_yojson (Yojson.Safe.from_string s)
 
@@ -223,6 +249,7 @@ module String_map = struct
   type nonrec t = string_map
   let of_yojson = string_map_of_yojson
   let of_jsonlike = string_map_of_jsonlike
+  let to_jsonlike = jsonlike_of_string_map
   let to_yojson = yojson_of_string_map
   let of_json = string_map_of_json
   let to_json = json_of_string_map
@@ -239,6 +266,9 @@ let nested_of_jsonlike (x : Atd_jsonlike.AST.t) : nested =
 let yojson_of_nested (x : nested) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_assoc (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string)) x
 
+let jsonlike_of_nested (x : nested) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_assoc (Atdml_runtime.Jsonlike.jsonlike_of_list Atdml_runtime.Jsonlike.jsonlike_of_string)) x
+
 let nested_of_json s =
   nested_of_yojson (Yojson.Safe.from_string s)
 
@@ -249,6 +279,7 @@ module Nested = struct
   type nonrec t = nested
   let of_yojson = nested_of_yojson
   let of_jsonlike = nested_of_jsonlike
+  let to_jsonlike = jsonlike_of_nested
   let to_yojson = yojson_of_nested
   let of_json = nested_of_json
   let to_json = json_of_nested
@@ -321,6 +352,12 @@ let yojson_of_record (x : record) : Yojson.Safe.t =
     [("tags", yojson_of_nested x.tags)];
   ])
 
+let jsonlike_of_record (x : record) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "counts", jsonlike_of_string_map x.counts)];
+    [(Atd_jsonlike.Loc.zero, "tags", jsonlike_of_nested x.tags)];
+  ])
+
 let record_of_json s =
   record_of_yojson (Yojson.Safe.from_string s)
 
@@ -332,6 +369,7 @@ module Record = struct
   let create = create_record
   let of_yojson = record_of_yojson
   let of_jsonlike = record_of_jsonlike
+  let to_jsonlike = jsonlike_of_record
   let to_yojson = yojson_of_record
   let of_json = record_of_json
   let to_json = json_of_record

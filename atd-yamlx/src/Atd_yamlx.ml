@@ -30,7 +30,7 @@ let key_to_string ?file (key : YAMLx.value) : string =
   | String (_, s) -> s
   | Null loc | Bool (loc, _) | Int (loc, _) | Float (loc, _)
   | Seq (loc, _) | Map (loc, _) ->
-      let loc_str = YAMLx.default_format_loc ?file loc in
+      let loc_str = YAMLx.format_loc ?file loc in
       invalid_arg
         (loc_str ^ "map key must be a string; \
          pre-process the YAML document to convert non-string keys if needed")
@@ -60,3 +60,28 @@ let of_yamlx_value ?file v =
   match of_yamlx_value_exn ?file v with
   | result              -> Ok result
   | exception Invalid_argument msg -> Error ("invalid argument: " ^ msg)
+
+(* ===== Jsonlike → YAML conversion ===== *)
+
+let rec to_yamlx_value (node : AST.t) : YAMLx.value =
+  let loc = YAMLx.zero_loc in
+  match node with
+  | AST.Null _ -> YAMLx.Null loc
+  | AST.Bool (_, b) -> YAMLx.Bool (loc, b)
+  | AST.Number (_, n) ->
+      (match n.Number.int with
+       | Some i -> YAMLx.Int (loc, Int64.of_int i)
+       | None ->
+           match n.Number.float with
+           | Some f -> YAMLx.Float (loc, f)
+           | None ->
+               match n.Number.literal with
+               | Some s -> YAMLx.String (loc, s)
+               | None -> YAMLx.Int (loc, 0L))
+  | AST.String (_, s) -> YAMLx.String (loc, s)
+  | AST.Array (_, items) -> YAMLx.Seq (loc, List.map to_yamlx_value items)
+  | AST.Object (_, pairs) ->
+      YAMLx.Map (loc,
+        List.map (fun (_, k, v) ->
+          (loc, YAMLx.String (loc, k), to_yamlx_value v))
+          pairs)

@@ -4,6 +4,7 @@ type tag_list = string list
 
 val tag_list_of_yojson : Yojson.Safe.t -> tag_list
 val tag_list_of_jsonlike : Atd_jsonlike.AST.t -> tag_list
+val jsonlike_of_tag_list : tag_list -> Atd_jsonlike.AST.t
 val yojson_of_tag_list : tag_list -> Yojson.Safe.t
 val tag_list_of_json : string -> tag_list
 val json_of_tag_list : tag_list -> string
@@ -12,6 +13,7 @@ module Tag_list : sig
   type nonrec t = tag_list
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -22,6 +24,7 @@ type score = private float
 val create_score : float -> score
 val score_of_yojson : Yojson.Safe.t -> score
 val score_of_jsonlike : Atd_jsonlike.AST.t -> score
+val jsonlike_of_score : score -> Atd_jsonlike.AST.t
 val yojson_of_score : score -> Yojson.Safe.t
 val score_of_json : string -> score
 val json_of_score : score -> string
@@ -31,6 +34,7 @@ module Score : sig
   val create : float -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -40,6 +44,7 @@ type opt_name = string option
 
 val opt_name_of_yojson : Yojson.Safe.t -> opt_name
 val opt_name_of_jsonlike : Atd_jsonlike.AST.t -> opt_name
+val jsonlike_of_opt_name : opt_name -> Atd_jsonlike.AST.t
 val yojson_of_opt_name : opt_name -> Yojson.Safe.t
 val opt_name_of_json : string -> opt_name
 val json_of_opt_name : opt_name -> string
@@ -48,6 +53,7 @@ module Opt_name : sig
   type nonrec t = opt_name
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -58,6 +64,7 @@ type id = private string
 val create_id : string -> id
 val id_of_yojson : Yojson.Safe.t -> id
 val id_of_jsonlike : Atd_jsonlike.AST.t -> id
+val jsonlike_of_id : id -> Atd_jsonlike.AST.t
 val yojson_of_id : id -> Yojson.Safe.t
 val id_of_json : string -> id
 val json_of_id : id -> string
@@ -67,6 +74,7 @@ module Id : sig
   val create : string -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -82,6 +90,7 @@ type all = {
 val create_all : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> all
 val all_of_yojson : Yojson.Safe.t -> all
 val all_of_jsonlike : Atd_jsonlike.AST.t -> all
+val jsonlike_of_all : all -> Atd_jsonlike.AST.t
 val yojson_of_all : all -> Yojson.Safe.t
 val all_of_json : string -> all
 val json_of_all : all -> string
@@ -91,6 +100,7 @@ module All : sig
   val create : id:id -> score:score -> tags:tag_list -> name:opt_name -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -239,6 +249,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -253,6 +280,9 @@ let tag_list_of_jsonlike (x : Atd_jsonlike.AST.t) : tag_list =
 let yojson_of_tag_list (x : tag_list) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) x
 
+let jsonlike_of_tag_list (x : tag_list) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_list Atdml_runtime.Jsonlike.jsonlike_of_string) x
+
 let tag_list_of_json s =
   tag_list_of_yojson (Yojson.Safe.from_string s)
 
@@ -263,6 +293,7 @@ module Tag_list = struct
   type nonrec t = tag_list
   let of_yojson = tag_list_of_yojson
   let of_jsonlike = tag_list_of_jsonlike
+  let to_jsonlike = jsonlike_of_tag_list
   let to_yojson = yojson_of_tag_list
   let of_json = tag_list_of_json
   let to_json = json_of_tag_list
@@ -282,6 +313,9 @@ let score_of_jsonlike (x : Atd_jsonlike.AST.t) : score =
 let yojson_of_score (x : score) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_float x
 
+let jsonlike_of_score (x : score) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_float x
+
 let score_of_json s =
   score_of_yojson (Yojson.Safe.from_string s)
 
@@ -293,6 +327,7 @@ module Score = struct
   let create = create_score
   let of_yojson = score_of_yojson
   let of_jsonlike = score_of_jsonlike
+  let to_jsonlike = jsonlike_of_score
   let to_yojson = yojson_of_score
   let of_json = score_of_json
   let to_json = json_of_score
@@ -309,6 +344,9 @@ let opt_name_of_jsonlike (x : Atd_jsonlike.AST.t) : opt_name =
 let yojson_of_opt_name (x : opt_name) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_option Atdml_runtime.Yojson.yojson_of_string) x
 
+let jsonlike_of_opt_name (x : opt_name) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_option Atdml_runtime.Jsonlike.jsonlike_of_string) x
+
 let opt_name_of_json s =
   opt_name_of_yojson (Yojson.Safe.from_string s)
 
@@ -319,6 +357,7 @@ module Opt_name = struct
   type nonrec t = opt_name
   let of_yojson = opt_name_of_yojson
   let of_jsonlike = opt_name_of_jsonlike
+  let to_jsonlike = jsonlike_of_opt_name
   let to_yojson = yojson_of_opt_name
   let of_json = opt_name_of_json
   let to_json = json_of_opt_name
@@ -338,6 +377,9 @@ let id_of_jsonlike (x : Atd_jsonlike.AST.t) : id =
 let yojson_of_id (x : id) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_string x
 
+let jsonlike_of_id (x : id) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_string x
+
 let id_of_json s =
   id_of_yojson (Yojson.Safe.from_string s)
 
@@ -349,6 +391,7 @@ module Id = struct
   let create = create_id
   let of_yojson = id_of_yojson
   let of_jsonlike = id_of_jsonlike
+  let to_jsonlike = jsonlike_of_id
   let to_yojson = yojson_of_id
   let of_json = id_of_json
   let to_json = json_of_id
@@ -445,6 +488,14 @@ let yojson_of_all (x : all) : Yojson.Safe.t =
     [("name", yojson_of_opt_name x.name)];
   ])
 
+let jsonlike_of_all (x : all) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "id", jsonlike_of_id x.id)];
+    [(Atd_jsonlike.Loc.zero, "score", jsonlike_of_score x.score)];
+    [(Atd_jsonlike.Loc.zero, "tags", jsonlike_of_tag_list x.tags)];
+    [(Atd_jsonlike.Loc.zero, "name", jsonlike_of_opt_name x.name)];
+  ])
+
 let all_of_json s =
   all_of_yojson (Yojson.Safe.from_string s)
 
@@ -456,6 +507,7 @@ module All = struct
   let create = create_all
   let of_yojson = all_of_yojson
   let of_jsonlike = all_of_jsonlike
+  let to_jsonlike = jsonlike_of_all
   let to_yojson = yojson_of_all
   let of_json = all_of_json
   let to_json = json_of_all

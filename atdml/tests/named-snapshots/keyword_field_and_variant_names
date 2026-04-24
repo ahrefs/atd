@@ -6,6 +6,7 @@ type sum_with_keyword_names =
 
 val sum_with_keyword_names_of_yojson : Yojson.Safe.t -> sum_with_keyword_names
 val sum_with_keyword_names_of_jsonlike : Atd_jsonlike.AST.t -> sum_with_keyword_names
+val jsonlike_of_sum_with_keyword_names : sum_with_keyword_names -> Atd_jsonlike.AST.t
 val yojson_of_sum_with_keyword_names : sum_with_keyword_names -> Yojson.Safe.t
 val sum_with_keyword_names_of_json : string -> sum_with_keyword_names
 val json_of_sum_with_keyword_names : sum_with_keyword_names -> string
@@ -14,6 +15,7 @@ module Sum_with_keyword_names : sig
   type nonrec t = sum_with_keyword_names
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -29,6 +31,7 @@ type record_with_keyword_fields = {
 val create_record_with_keyword_fields : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> record_with_keyword_fields
 val record_with_keyword_fields_of_yojson : Yojson.Safe.t -> record_with_keyword_fields
 val record_with_keyword_fields_of_jsonlike : Atd_jsonlike.AST.t -> record_with_keyword_fields
+val jsonlike_of_record_with_keyword_fields : record_with_keyword_fields -> Atd_jsonlike.AST.t
 val yojson_of_record_with_keyword_fields : record_with_keyword_fields -> Yojson.Safe.t
 val record_with_keyword_fields_of_json : string -> record_with_keyword_fields
 val json_of_record_with_keyword_fields : record_with_keyword_fields -> string
@@ -38,6 +41,7 @@ module Record_with_keyword_fields : sig
   val create : method_:string -> object_:int -> ?begin_:bool -> ?end_:string list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -186,6 +190,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -210,6 +231,11 @@ let yojson_of_sum_with_keyword_names (x : sum_with_keyword_names) : Yojson.Safe.
   | Fun -> `String "Fun"
   | Method v -> `List [`String "Method"; Atdml_runtime.Yojson.yojson_of_string v]
 
+let jsonlike_of_sum_with_keyword_names (x : sum_with_keyword_names) : Atd_jsonlike.AST.t =
+  match x with
+  | Fun -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Fun")
+  | Method v -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Method"); Atdml_runtime.Jsonlike.jsonlike_of_string v])
+
 let sum_with_keyword_names_of_json s =
   sum_with_keyword_names_of_yojson (Yojson.Safe.from_string s)
 
@@ -220,6 +246,7 @@ module Sum_with_keyword_names = struct
   type nonrec t = sum_with_keyword_names
   let of_yojson = sum_with_keyword_names_of_yojson
   let of_jsonlike = sum_with_keyword_names_of_jsonlike
+  let to_jsonlike = jsonlike_of_sum_with_keyword_names
   let to_yojson = yojson_of_sum_with_keyword_names
   let of_json = sum_with_keyword_names_of_json
   let to_json = json_of_sum_with_keyword_names
@@ -316,6 +343,14 @@ let yojson_of_record_with_keyword_fields (x : record_with_keyword_fields) : Yojs
     [("end", (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) x.end_)];
   ])
 
+let jsonlike_of_record_with_keyword_fields (x : record_with_keyword_fields) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "method", Atdml_runtime.Jsonlike.jsonlike_of_string x.method_)];
+    [(Atd_jsonlike.Loc.zero, "object", Atdml_runtime.Jsonlike.jsonlike_of_int x.object_)];
+    (match x.begin_ with None -> [] | Some v -> [(Atd_jsonlike.Loc.zero, "begin", Atdml_runtime.Jsonlike.jsonlike_of_bool v)]);
+    [(Atd_jsonlike.Loc.zero, "end", (Atdml_runtime.Jsonlike.jsonlike_of_list Atdml_runtime.Jsonlike.jsonlike_of_string) x.end_)];
+  ])
+
 let record_with_keyword_fields_of_json s =
   record_with_keyword_fields_of_yojson (Yojson.Safe.from_string s)
 
@@ -327,6 +362,7 @@ module Record_with_keyword_fields = struct
   let create = create_record_with_keyword_fields
   let of_yojson = record_with_keyword_fields_of_yojson
   let of_jsonlike = record_with_keyword_fields_of_jsonlike
+  let to_jsonlike = jsonlike_of_record_with_keyword_fields
   let to_yojson = yojson_of_record_with_keyword_fields
   let of_json = record_with_keyword_fields_of_json
   let to_json = json_of_record_with_keyword_fields

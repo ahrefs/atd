@@ -5,6 +5,7 @@ type module__ = private bool
 val create_module__ : bool -> module__
 val module___of_yojson : Yojson.Safe.t -> module__
 val module___of_jsonlike : Atd_jsonlike.AST.t -> module__
+val jsonlike_of_module__ : module__ -> Atd_jsonlike.AST.t
 val yojson_of_module__ : module__ -> Yojson.Safe.t
 val module___of_json : string -> module__
 val json_of_module__ : module__ -> string
@@ -14,6 +15,7 @@ module Module__ : sig
   val create : bool -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -23,6 +25,7 @@ type module_1 = string list
 
 val module_1_of_yojson : Yojson.Safe.t -> module_1
 val module_1_of_jsonlike : Atd_jsonlike.AST.t -> module_1
+val jsonlike_of_module_1 : module_1 -> Atd_jsonlike.AST.t
 val yojson_of_module_1 : module_1 -> Yojson.Safe.t
 val module_1_of_json : string -> module_1
 val json_of_module_1 : module_1 -> string
@@ -31,6 +34,7 @@ module Module_1 : sig
   type nonrec t = module_1
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -41,6 +45,7 @@ type module_2 = private string
 val create_module_2 : string -> module_2
 val module_2_of_yojson : Yojson.Safe.t -> module_2
 val module_2_of_jsonlike : Atd_jsonlike.AST.t -> module_2
+val jsonlike_of_module_2 : module_2 -> Atd_jsonlike.AST.t
 val yojson_of_module_2 : module_2 -> Yojson.Safe.t
 val module_2_of_json : string -> module_2
 val json_of_module_2 : module_2 -> string
@@ -50,6 +55,7 @@ module Module_2 : sig
   val create : string -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -60,6 +66,7 @@ type module_ = private int
 val create_module_ : int -> module_
 val module__of_yojson : Yojson.Safe.t -> module_
 val module__of_jsonlike : Atd_jsonlike.AST.t -> module_
+val jsonlike_of_module_ : module_ -> Atd_jsonlike.AST.t
 val yojson_of_module_ : module_ -> Yojson.Safe.t
 val module__of_json : string -> module_
 val json_of_module_ : module_ -> string
@@ -69,6 +76,7 @@ module Module_ : sig
   val create : int -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -217,6 +225,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -234,6 +259,9 @@ let module___of_jsonlike (x : Atd_jsonlike.AST.t) : module__ =
 let yojson_of_module__ (x : module__) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_bool x
 
+let jsonlike_of_module__ (x : module__) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_bool x
+
 let module___of_json s =
   module___of_yojson (Yojson.Safe.from_string s)
 
@@ -245,6 +273,7 @@ module Module__ = struct
   let create = create_module__
   let of_yojson = module___of_yojson
   let of_jsonlike = module___of_jsonlike
+  let to_jsonlike = jsonlike_of_module__
   let to_yojson = yojson_of_module__
   let of_json = module___of_json
   let to_json = json_of_module__
@@ -261,6 +290,9 @@ let module_1_of_jsonlike (x : Atd_jsonlike.AST.t) : module_1 =
 let yojson_of_module_1 (x : module_1) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string) x
 
+let jsonlike_of_module_1 (x : module_1) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_list Atdml_runtime.Jsonlike.jsonlike_of_string) x
+
 let module_1_of_json s =
   module_1_of_yojson (Yojson.Safe.from_string s)
 
@@ -271,6 +303,7 @@ module Module_1 = struct
   type nonrec t = module_1
   let of_yojson = module_1_of_yojson
   let of_jsonlike = module_1_of_jsonlike
+  let to_jsonlike = jsonlike_of_module_1
   let to_yojson = yojson_of_module_1
   let of_json = module_1_of_json
   let to_json = json_of_module_1
@@ -290,6 +323,9 @@ let module_2_of_jsonlike (x : Atd_jsonlike.AST.t) : module_2 =
 let yojson_of_module_2 (x : module_2) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_string x
 
+let jsonlike_of_module_2 (x : module_2) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_string x
+
 let module_2_of_json s =
   module_2_of_yojson (Yojson.Safe.from_string s)
 
@@ -301,6 +337,7 @@ module Module_2 = struct
   let create = create_module_2
   let of_yojson = module_2_of_yojson
   let of_jsonlike = module_2_of_jsonlike
+  let to_jsonlike = jsonlike_of_module_2
   let to_yojson = yojson_of_module_2
   let of_json = module_2_of_json
   let to_json = json_of_module_2
@@ -320,6 +357,9 @@ let module__of_jsonlike (x : Atd_jsonlike.AST.t) : module_ =
 let yojson_of_module_ (x : module_) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_int x
 
+let jsonlike_of_module_ (x : module_) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_int x
+
 let module__of_json s =
   module__of_yojson (Yojson.Safe.from_string s)
 
@@ -331,6 +371,7 @@ module Module_ = struct
   let create = create_module_
   let of_yojson = module__of_yojson
   let of_jsonlike = module__of_jsonlike
+  let to_jsonlike = jsonlike_of_module_
   let to_yojson = yojson_of_module_
   let of_json = module__of_json
   let to_json = json_of_module_

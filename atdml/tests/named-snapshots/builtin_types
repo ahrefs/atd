@@ -17,6 +17,7 @@ type all_types = {
 val create_all_types : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> all_types
 val all_types_of_yojson : Yojson.Safe.t -> all_types
 val all_types_of_jsonlike : Atd_jsonlike.AST.t -> all_types
+val jsonlike_of_all_types : all_types -> Atd_jsonlike.AST.t
 val yojson_of_all_types : all_types -> Yojson.Safe.t
 val all_types_of_json : string -> all_types
 val json_of_all_types : all_types -> string
@@ -26,6 +27,7 @@ module All_types : sig
   val create : a_unit:unit -> a_bool:bool -> a_int:int -> a_float:float -> a_string:string -> a_list:int list -> a_option:string option -> a_nullable:bool option -> a_abstract:Yojson.Safe.t -> a_tuple:(int * string * bool) -> a_nested:(float list) option -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -174,6 +176,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -352,6 +371,21 @@ let yojson_of_all_types (x : all_types) : Yojson.Safe.t =
     [("a_nested", (Atdml_runtime.Yojson.yojson_of_option (fun (x0) -> `List [(Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_float) x0])) x.a_nested)];
   ])
 
+let jsonlike_of_all_types (x : all_types) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "a_unit", Atdml_runtime.Jsonlike.jsonlike_of_unit x.a_unit)];
+    [(Atd_jsonlike.Loc.zero, "a_bool", Atdml_runtime.Jsonlike.jsonlike_of_bool x.a_bool)];
+    [(Atd_jsonlike.Loc.zero, "a_int", Atdml_runtime.Jsonlike.jsonlike_of_int x.a_int)];
+    [(Atd_jsonlike.Loc.zero, "a_float", Atdml_runtime.Jsonlike.jsonlike_of_float x.a_float)];
+    [(Atd_jsonlike.Loc.zero, "a_string", Atdml_runtime.Jsonlike.jsonlike_of_string x.a_string)];
+    [(Atd_jsonlike.Loc.zero, "a_list", (Atdml_runtime.Jsonlike.jsonlike_of_list Atdml_runtime.Jsonlike.jsonlike_of_int) x.a_list)];
+    [(Atd_jsonlike.Loc.zero, "a_option", (Atdml_runtime.Jsonlike.jsonlike_of_option Atdml_runtime.Jsonlike.jsonlike_of_string) x.a_option)];
+    [(Atd_jsonlike.Loc.zero, "a_nullable", (Atdml_runtime.Jsonlike.jsonlike_of_nullable Atdml_runtime.Jsonlike.jsonlike_of_bool) x.a_nullable)];
+    [(Atd_jsonlike.Loc.zero, "a_abstract", (fun _ -> failwith "abstract type is not supported in jsonlike mode") x.a_abstract)];
+    [(Atd_jsonlike.Loc.zero, "a_tuple", (fun (x0, x1, x2) -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [Atdml_runtime.Jsonlike.jsonlike_of_int x0; Atdml_runtime.Jsonlike.jsonlike_of_string x1; Atdml_runtime.Jsonlike.jsonlike_of_bool x2])) x.a_tuple)];
+    [(Atd_jsonlike.Loc.zero, "a_nested", (Atdml_runtime.Jsonlike.jsonlike_of_option (fun (x0) -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [(Atdml_runtime.Jsonlike.jsonlike_of_list Atdml_runtime.Jsonlike.jsonlike_of_float) x0]))) x.a_nested)];
+  ])
+
 let all_types_of_json s =
   all_types_of_yojson (Yojson.Safe.from_string s)
 
@@ -363,6 +397,7 @@ module All_types = struct
   let create = create_all_types
   let of_yojson = all_types_of_yojson
   let of_jsonlike = all_types_of_jsonlike
+  let to_jsonlike = jsonlike_of_all_types
   let to_yojson = yojson_of_all_types
   let of_json = all_types_of_json
   let to_json = json_of_all_types

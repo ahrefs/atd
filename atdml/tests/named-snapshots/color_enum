@@ -7,6 +7,7 @@ type color =
 
 val color_of_yojson : Yojson.Safe.t -> color
 val color_of_jsonlike : Atd_jsonlike.AST.t -> color
+val jsonlike_of_color : color -> Atd_jsonlike.AST.t
 val yojson_of_color : color -> Yojson.Safe.t
 val color_of_json : string -> color
 val json_of_color : color -> string
@@ -15,6 +16,7 @@ module Color : sig
   type nonrec t = color
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -24,6 +26,7 @@ type colors = (color * color * color)
 
 val colors_of_yojson : Yojson.Safe.t -> colors
 val colors_of_jsonlike : Atd_jsonlike.AST.t -> colors
+val jsonlike_of_colors : colors -> Atd_jsonlike.AST.t
 val yojson_of_colors : colors -> Yojson.Safe.t
 val colors_of_json : string -> colors
 val json_of_colors : colors -> string
@@ -32,6 +35,7 @@ module Colors : sig
   type nonrec t = colors
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -180,6 +184,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -208,6 +229,12 @@ let yojson_of_color (x : color) : Yojson.Safe.t =
   | Green -> `String "green"
   | Blue -> `String "Blue"
 
+let jsonlike_of_color (x : color) : Atd_jsonlike.AST.t =
+  match x with
+  | Red -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Red")
+  | Green -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "green")
+  | Blue -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Blue")
+
 let color_of_json s =
   color_of_yojson (Yojson.Safe.from_string s)
 
@@ -218,6 +245,7 @@ module Color = struct
   type nonrec t = color
   let of_yojson = color_of_yojson
   let of_jsonlike = color_of_jsonlike
+  let to_jsonlike = jsonlike_of_color
   let to_yojson = yojson_of_color
   let of_json = color_of_json
   let to_json = json_of_color
@@ -234,6 +262,9 @@ let colors_of_jsonlike (x : Atd_jsonlike.AST.t) : colors =
 let yojson_of_colors (x : colors) : Yojson.Safe.t =
   (fun (x0, x1, x2) -> `List [yojson_of_color x0; yojson_of_color x1; yojson_of_color x2]) x
 
+let jsonlike_of_colors (x : colors) : Atd_jsonlike.AST.t =
+  (fun (x0, x1, x2) -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [jsonlike_of_color x0; jsonlike_of_color x1; jsonlike_of_color x2])) x
+
 let colors_of_json s =
   colors_of_yojson (Yojson.Safe.from_string s)
 
@@ -244,6 +275,7 @@ module Colors = struct
   type nonrec t = colors
   let of_yojson = colors_of_yojson
   let of_jsonlike = colors_of_jsonlike
+  let to_jsonlike = jsonlike_of_colors
   let to_yojson = yojson_of_colors
   let of_json = colors_of_json
   let to_json = json_of_colors

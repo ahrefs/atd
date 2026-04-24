@@ -8,6 +8,7 @@ type tagged = {
 val create_tagged : value:Long.Module.Path.tag -> label:Base_types.label -> unit -> tagged
 val tagged_of_yojson : Yojson.Safe.t -> tagged
 val tagged_of_jsonlike : Atd_jsonlike.AST.t -> tagged
+val jsonlike_of_tagged : tagged -> Atd_jsonlike.AST.t
 val yojson_of_tagged : tagged -> Yojson.Safe.t
 val tagged_of_json : string -> tagged
 val json_of_tagged : tagged -> string
@@ -17,6 +18,7 @@ module Tagged : sig
   val create : value:Long.Module.Path.tag -> label:Base_types.label -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -30,6 +32,7 @@ type greeting = {
 val create_greeting : name:Base_types.person_name -> message:string -> unit -> greeting
 val greeting_of_yojson : Yojson.Safe.t -> greeting
 val greeting_of_jsonlike : Atd_jsonlike.AST.t -> greeting
+val jsonlike_of_greeting : greeting -> Atd_jsonlike.AST.t
 val yojson_of_greeting : greeting -> Yojson.Safe.t
 val greeting_of_json : string -> greeting
 val json_of_greeting : greeting -> string
@@ -39,6 +42,7 @@ module Greeting : sig
   val create : name:Base_types.person_name -> message:string -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -187,6 +191,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -259,6 +280,12 @@ let yojson_of_tagged (x : tagged) : Yojson.Safe.t =
     [("label", Base_types.yojson_of_label x.label)];
   ])
 
+let jsonlike_of_tagged (x : tagged) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "value", Ext.jsonlike_of_tag x.value)];
+    [(Atd_jsonlike.Loc.zero, "label", Base_types.jsonlike_of_label x.label)];
+  ])
+
 let tagged_of_json s =
   tagged_of_yojson (Yojson.Safe.from_string s)
 
@@ -270,6 +297,7 @@ module Tagged = struct
   let create = create_tagged
   let of_yojson = tagged_of_yojson
   let of_jsonlike = tagged_of_jsonlike
+  let to_jsonlike = jsonlike_of_tagged
   let to_yojson = yojson_of_tagged
   let of_json = tagged_of_json
   let to_json = json_of_tagged
@@ -342,6 +370,12 @@ let yojson_of_greeting (x : greeting) : Yojson.Safe.t =
     [("message", Atdml_runtime.Yojson.yojson_of_string x.message)];
   ])
 
+let jsonlike_of_greeting (x : greeting) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "name", Base_types.jsonlike_of_person_name x.name)];
+    [(Atd_jsonlike.Loc.zero, "message", Atdml_runtime.Jsonlike.jsonlike_of_string x.message)];
+  ])
+
 let greeting_of_json s =
   greeting_of_yojson (Yojson.Safe.from_string s)
 
@@ -353,6 +387,7 @@ module Greeting = struct
   let create = create_greeting
   let of_yojson = greeting_of_yojson
   let of_jsonlike = greeting_of_jsonlike
+  let to_jsonlike = jsonlike_of_greeting
   let to_yojson = yojson_of_greeting
   let of_json = greeting_of_json
   let to_json = json_of_greeting

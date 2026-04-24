@@ -7,6 +7,7 @@ type status = private [
 
 val status_of_yojson : Yojson.Safe.t -> status
 val status_of_jsonlike : Atd_jsonlike.AST.t -> status
+val jsonlike_of_status : status -> Atd_jsonlike.AST.t
 val yojson_of_status : status -> Yojson.Safe.t
 val status_of_json : string -> status
 val json_of_status : status -> string
@@ -15,6 +16,7 @@ module Status : sig
   type nonrec t = status
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -28,6 +30,7 @@ type point = private {
 val create_point : x:float -> y:float -> unit -> point
 val point_of_yojson : Yojson.Safe.t -> point
 val point_of_jsonlike : Atd_jsonlike.AST.t -> point
+val jsonlike_of_point : point -> Atd_jsonlike.AST.t
 val yojson_of_point : point -> Yojson.Safe.t
 val point_of_json : string -> point
 val json_of_point : point -> string
@@ -37,6 +40,7 @@ module Point : sig
   val create : x:float -> y:float -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -47,6 +51,7 @@ type open_id = string
 val create_open_id : string -> open_id
 val open_id_of_yojson : Yojson.Safe.t -> open_id
 val open_id_of_jsonlike : Atd_jsonlike.AST.t -> open_id
+val jsonlike_of_open_id : open_id -> Atd_jsonlike.AST.t
 val yojson_of_open_id : open_id -> Yojson.Safe.t
 val open_id_of_json : string -> open_id
 val json_of_open_id : open_id -> string
@@ -56,6 +61,7 @@ module Open_id : sig
   val create : string -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -66,6 +72,7 @@ type id = private string
 val create_id : string -> id
 val id_of_yojson : Yojson.Safe.t -> id
 val id_of_jsonlike : Atd_jsonlike.AST.t -> id
+val jsonlike_of_id : id -> Atd_jsonlike.AST.t
 val yojson_of_id : id -> Yojson.Safe.t
 val id_of_json : string -> id
 val json_of_id : id -> string
@@ -75,6 +82,7 @@ module Id : sig
   val create : string -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -84,6 +92,7 @@ type ids = private id list
 
 val ids_of_yojson : Yojson.Safe.t -> ids
 val ids_of_jsonlike : Atd_jsonlike.AST.t -> ids
+val jsonlike_of_ids : ids -> Atd_jsonlike.AST.t
 val yojson_of_ids : ids -> Yojson.Safe.t
 val ids_of_json : string -> ids
 val json_of_ids : ids -> string
@@ -92,6 +101,7 @@ module Ids : sig
   type nonrec t = ids
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -104,6 +114,7 @@ type color = private
 
 val color_of_yojson : Yojson.Safe.t -> color
 val color_of_jsonlike : Atd_jsonlike.AST.t -> color
+val jsonlike_of_color : color -> Atd_jsonlike.AST.t
 val yojson_of_color : color -> Yojson.Safe.t
 val color_of_json : string -> color
 val json_of_color : color -> string
@@ -112,6 +123,7 @@ module Color : sig
   type nonrec t = color
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -260,6 +272,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -285,6 +314,11 @@ let yojson_of_status (x : status) : Yojson.Safe.t =
   | `Active -> `String "Active"
   | `Inactive -> `String "Inactive"
 
+let jsonlike_of_status (x : status) : Atd_jsonlike.AST.t =
+  match x with
+  | `Active -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Active")
+  | `Inactive -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Inactive")
+
 let status_of_json s =
   status_of_yojson (Yojson.Safe.from_string s)
 
@@ -295,6 +329,7 @@ module Status = struct
   type nonrec t = status
   let of_yojson = status_of_yojson
   let of_jsonlike = status_of_jsonlike
+  let to_jsonlike = jsonlike_of_status
   let to_yojson = yojson_of_status
   let of_json = status_of_json
   let to_json = json_of_status
@@ -367,6 +402,12 @@ let yojson_of_point (x : point) : Yojson.Safe.t =
     [("y", Atdml_runtime.Yojson.yojson_of_float x.y)];
   ])
 
+let jsonlike_of_point (x : point) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "x", Atdml_runtime.Jsonlike.jsonlike_of_float x.x)];
+    [(Atd_jsonlike.Loc.zero, "y", Atdml_runtime.Jsonlike.jsonlike_of_float x.y)];
+  ])
+
 let point_of_json s =
   point_of_yojson (Yojson.Safe.from_string s)
 
@@ -378,6 +419,7 @@ module Point = struct
   let create = create_point
   let of_yojson = point_of_yojson
   let of_jsonlike = point_of_jsonlike
+  let to_jsonlike = jsonlike_of_point
   let to_yojson = yojson_of_point
   let of_json = point_of_json
   let to_json = json_of_point
@@ -397,6 +439,9 @@ let open_id_of_jsonlike (x : Atd_jsonlike.AST.t) : open_id =
 let yojson_of_open_id (x : open_id) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_string x
 
+let jsonlike_of_open_id (x : open_id) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_string x
+
 let open_id_of_json s =
   open_id_of_yojson (Yojson.Safe.from_string s)
 
@@ -408,6 +453,7 @@ module Open_id = struct
   let create = create_open_id
   let of_yojson = open_id_of_yojson
   let of_jsonlike = open_id_of_jsonlike
+  let to_jsonlike = jsonlike_of_open_id
   let to_yojson = yojson_of_open_id
   let of_json = open_id_of_json
   let to_json = json_of_open_id
@@ -427,6 +473,9 @@ let id_of_jsonlike (x : Atd_jsonlike.AST.t) : id =
 let yojson_of_id (x : id) : Yojson.Safe.t =
   Atdml_runtime.Yojson.yojson_of_string x
 
+let jsonlike_of_id (x : id) : Atd_jsonlike.AST.t =
+  Atdml_runtime.Jsonlike.jsonlike_of_string x
+
 let id_of_json s =
   id_of_yojson (Yojson.Safe.from_string s)
 
@@ -438,6 +487,7 @@ module Id = struct
   let create = create_id
   let of_yojson = id_of_yojson
   let of_jsonlike = id_of_jsonlike
+  let to_jsonlike = jsonlike_of_id
   let to_yojson = yojson_of_id
   let of_json = id_of_json
   let to_json = json_of_id
@@ -454,6 +504,9 @@ let ids_of_jsonlike (x : Atd_jsonlike.AST.t) : ids =
 let yojson_of_ids (x : ids) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_list yojson_of_id) x
 
+let jsonlike_of_ids (x : ids) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_list jsonlike_of_id) x
+
 let ids_of_json s =
   ids_of_yojson (Yojson.Safe.from_string s)
 
@@ -464,6 +517,7 @@ module Ids = struct
   type nonrec t = ids
   let of_yojson = ids_of_yojson
   let of_jsonlike = ids_of_jsonlike
+  let to_jsonlike = jsonlike_of_ids
   let to_yojson = yojson_of_ids
   let of_json = ids_of_json
   let to_json = json_of_ids
@@ -494,6 +548,12 @@ let yojson_of_color (x : color) : Yojson.Safe.t =
   | Green -> `String "Green"
   | Blue -> `String "Blue"
 
+let jsonlike_of_color (x : color) : Atd_jsonlike.AST.t =
+  match x with
+  | Red -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Red")
+  | Green -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Green")
+  | Blue -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Blue")
+
 let color_of_json s =
   color_of_yojson (Yojson.Safe.from_string s)
 
@@ -504,6 +564,7 @@ module Color = struct
   type nonrec t = color
   let of_yojson = color_of_yojson
   let of_jsonlike = color_of_jsonlike
+  let to_jsonlike = jsonlike_of_color
   let to_yojson = yojson_of_color
   let of_json = color_of_json
   let to_json = json_of_color

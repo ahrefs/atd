@@ -7,6 +7,7 @@ type shape =
 
 val shape_of_yojson : Yojson.Safe.t -> shape
 val shape_of_jsonlike : Atd_jsonlike.AST.t -> shape
+val jsonlike_of_shape : shape -> Atd_jsonlike.AST.t
 val yojson_of_shape : shape -> Yojson.Safe.t
 val shape_of_json : string -> shape
 val json_of_shape : shape -> string
@@ -15,6 +16,7 @@ module Shape : sig
   type nonrec t = shape
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -163,6 +165,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -191,6 +210,12 @@ let yojson_of_shape (x : shape) : Yojson.Safe.t =
   | Square v -> `Assoc [("Square", Atdml_runtime.Yojson.yojson_of_float v)]
   | Point -> `String "Point"
 
+let jsonlike_of_shape (x : shape) : Atd_jsonlike.AST.t =
+  match x with
+  | Circle v -> Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, [(Atd_jsonlike.Loc.zero, "Circle", Atdml_runtime.Jsonlike.jsonlike_of_float v)])
+  | Square v -> Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, [(Atd_jsonlike.Loc.zero, "Square", Atdml_runtime.Jsonlike.jsonlike_of_float v)])
+  | Point -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Point")
+
 let shape_of_json s =
   shape_of_yojson (Yojson.Safe.from_string s)
 
@@ -201,6 +226,7 @@ module Shape = struct
   type nonrec t = shape
   let of_yojson = shape_of_yojson
   let of_jsonlike = shape_of_jsonlike
+  let to_jsonlike = jsonlike_of_shape
   let to_yojson = yojson_of_shape
   let of_json = shape_of_json
   let to_json = json_of_shape

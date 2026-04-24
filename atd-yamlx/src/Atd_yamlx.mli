@@ -57,3 +57,24 @@ val of_yamlx_value :
     [Error] when a YAML map has a non-string key.  The error message includes
     the source location of the offending key. *)
 val of_yamlx_value_exn : ?file:string -> YAMLx.value -> Atd_jsonlike.AST.t
+
+(** Convert an [Atd_jsonlike.AST.t] to a [YAMLx.value].
+
+    This is the reverse of {!of_yamlx_value_exn}.  Source locations in the
+    input are ignored; the resulting [YAMLx.value] nodes all carry
+    {!YAMLx.zero_loc}.
+
+    {1 Jsonlike–YAML type correspondence}
+
+    | Jsonlike (atd-jsonlike)   | YAML (yamlx)                      |
+    |---------------------------|-----------------------------------|
+    | [Null]                    | [Null]                            |
+    | [Bool]                    | [Bool]                            |
+    | [Number] (int available)  | [Int] (int64)                     |
+    | [Number] (float only)     | [Float]                           |
+    | [Number] (literal only)   | [String] (verbatim literal)       |
+    | [String]                  | [String]                          |
+    | [Array]                   | [Seq]                             |
+    | [Object]                  | [Map] (string keys)               |
+*)
+val to_yamlx_value : Atd_jsonlike.AST.t -> YAMLx.value

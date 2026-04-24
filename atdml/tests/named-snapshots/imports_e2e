@@ -8,6 +8,7 @@ type item = {
 val create_item : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> item
 val item_of_yojson : Yojson.Safe.t -> item
 val item_of_jsonlike : Atd_jsonlike.AST.t -> item
+val jsonlike_of_item : item -> Atd_jsonlike.AST.t
 val yojson_of_item : item -> Yojson.Safe.t
 val item_of_json : string -> item
 val json_of_item : item -> string
@@ -17,6 +18,7 @@ module Item : sig
   val create : name:Base_types.person_name -> tag:Long.Module.Path.tag -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -165,6 +167,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -237,6 +256,12 @@ let yojson_of_item (x : item) : Yojson.Safe.t =
     [("tag", Ext.yojson_of_tag x.tag)];
   ])
 
+let jsonlike_of_item (x : item) : Atd_jsonlike.AST.t =
+  Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
+    [(Atd_jsonlike.Loc.zero, "name", Base_types.jsonlike_of_person_name x.name)];
+    [(Atd_jsonlike.Loc.zero, "tag", Ext.jsonlike_of_tag x.tag)];
+  ])
+
 let item_of_json s =
   item_of_yojson (Yojson.Safe.from_string s)
 
@@ -248,6 +273,7 @@ module Item = struct
   let create = create_item
   let of_yojson = item_of_yojson
   let of_jsonlike = item_of_jsonlike
+  let to_jsonlike = jsonlike_of_item
   let to_yojson = yojson_of_item
   let of_json = item_of_json
   let to_json = json_of_item

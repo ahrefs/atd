@@ -8,6 +8,7 @@ type status = [
 
 val status_of_yojson : Yojson.Safe.t -> status
 val status_of_jsonlike : Atd_jsonlike.AST.t -> status
+val jsonlike_of_status : status -> Atd_jsonlike.AST.t
 val yojson_of_status : status -> Yojson.Safe.t
 val status_of_json : string -> status
 val json_of_status : status -> string
@@ -16,6 +17,7 @@ module Status : sig
   type nonrec t = status
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -25,6 +27,7 @@ type statuses = status list
 
 val statuses_of_yojson : Yojson.Safe.t -> statuses
 val statuses_of_jsonlike : Atd_jsonlike.AST.t -> statuses
+val jsonlike_of_statuses : statuses -> Atd_jsonlike.AST.t
 val yojson_of_statuses : statuses -> Yojson.Safe.t
 val statuses_of_json : string -> statuses
 val json_of_statuses : statuses -> string
@@ -33,6 +36,7 @@ module Statuses : sig
   type nonrec t = statuses
   val of_yojson : Yojson.Safe.t -> t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
   val to_yojson : t -> Yojson.Safe.t
   val of_json : string -> t
   val to_json : t -> string
@@ -181,6 +185,23 @@ module Atdml_runtime = struct
       | Atd_jsonlike.AST.Object (_, pairs) ->
           List.map (fun (_, k, v) -> (k, f v)) pairs
       | x -> bad_type "object" x
+
+    let loc = Atd_jsonlike.Loc.zero
+
+    let jsonlike_of_bool b = Atd_jsonlike.AST.Bool (loc, b)
+    let jsonlike_of_int n = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_int n)
+    let jsonlike_of_float f = Atd_jsonlike.AST.Number (loc, Atd_jsonlike.Number.of_float f)
+    let jsonlike_of_string s = Atd_jsonlike.AST.String (loc, s)
+    let jsonlike_of_unit () = Atd_jsonlike.AST.Null loc
+    let jsonlike_of_list f xs = Atd_jsonlike.AST.Array (loc, List.map f xs)
+    let jsonlike_of_option f = function
+      | None -> Atd_jsonlike.AST.String (loc, "None")
+      | Some x -> Atd_jsonlike.AST.Array (loc, [Atd_jsonlike.AST.String (loc, "Some"); f x])
+    let jsonlike_of_nullable f = function
+      | None -> Atd_jsonlike.AST.Null loc
+      | Some x -> f x
+    let jsonlike_of_assoc f xs =
+      Atd_jsonlike.AST.Object (loc, List.map (fun (k, v) -> (loc, k, f v)) xs)
   end
 end
 
@@ -210,6 +231,12 @@ let yojson_of_status (x : status) : Yojson.Safe.t =
   | `Inactive -> `String "Inactive"
   | `Pending v -> `List [`String "Pending"; Atdml_runtime.Yojson.yojson_of_string v]
 
+let jsonlike_of_status (x : status) : Atd_jsonlike.AST.t =
+  match x with
+  | `Active -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Active")
+  | `Inactive -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Inactive")
+  | `Pending v -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Pending"); Atdml_runtime.Jsonlike.jsonlike_of_string v])
+
 let status_of_json s =
   status_of_yojson (Yojson.Safe.from_string s)
 
@@ -220,6 +247,7 @@ module Status = struct
   type nonrec t = status
   let of_yojson = status_of_yojson
   let of_jsonlike = status_of_jsonlike
+  let to_jsonlike = jsonlike_of_status
   let to_yojson = yojson_of_status
   let of_json = status_of_json
   let to_json = json_of_status
@@ -236,6 +264,9 @@ let statuses_of_jsonlike (x : Atd_jsonlike.AST.t) : statuses =
 let yojson_of_statuses (x : statuses) : Yojson.Safe.t =
   (Atdml_runtime.Yojson.yojson_of_list yojson_of_status) x
 
+let jsonlike_of_statuses (x : statuses) : Atd_jsonlike.AST.t =
+  (Atdml_runtime.Jsonlike.jsonlike_of_list jsonlike_of_status) x
+
 let statuses_of_json s =
   statuses_of_yojson (Yojson.Safe.from_string s)
 
@@ -246,6 +277,7 @@ module Statuses = struct
   type nonrec t = statuses
   let of_yojson = statuses_of_yojson
   let of_jsonlike = statuses_of_jsonlike
+  let to_jsonlike = jsonlike_of_statuses
   let to_yojson = yojson_of_statuses
   let of_json = statuses_of_json
   let to_json = json_of_statuses

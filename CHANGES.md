@@ -1,4 +1,4 @@
-4.1.1 (unreleased)
+4.2.0 (2026-04-25)
 ------------------
 
 * atdj: Top-level list aliases such as `type items = item list` are now

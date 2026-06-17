@@ -365,8 +365,7 @@ let rec node_of_jsonlike (x : Atd_jsonlike.AST.t) : node =
         (fun key -> Hashtbl.find_opt tbl key)
       else
         (fun key ->
-          match List.find_opt (fun (_, k, _) -> k = key) fields with
-          | None -> None | Some (_, _, v) -> Some v)
+          List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let value =
       match assoc_ "value" with
@@ -476,8 +475,8 @@ let person_of_yojson (x : Yojson.Safe.t) : person =
     in
     let email =
       match assoc_ "email" with
-      | None | Some `Null -> None
-      | Some v -> Some (Atdml_runtime.Yojson.string_of_yojson v)
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.string_of_yojson v)
     in
     { name; age; email }
   | _ -> Atdml_runtime.Yojson.bad_type "person" x
@@ -500,8 +499,7 @@ let person_of_jsonlike (x : Atd_jsonlike.AST.t) : person =
         (fun key -> Hashtbl.find_opt tbl key)
       else
         (fun key ->
-          match List.find_opt (fun (_, k, _) -> k = key) fields with
-          | None -> None | Some (_, _, v) -> Some v)
+          List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let name =
       match assoc_ "name" with
@@ -515,8 +513,8 @@ let person_of_jsonlike (x : Atd_jsonlike.AST.t) : person =
     in
     let email =
       match assoc_ "email" with
-      | None | Some (Atd_jsonlike.AST.Null _) -> None
-      | Some v -> Some (Atdml_runtime.Jsonlike.string_of_jsonlike v)
+      | None | Some (Atd_jsonlike.AST.Null _) -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Jsonlike.string_of_jsonlike v)
     in
     { name; age; email }
   | _ -> Atdml_runtime.Jsonlike.bad_type "person" x

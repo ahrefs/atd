@@ -282,8 +282,7 @@ let text_of_jsonlike (x : Atd_jsonlike.AST.t) : text =
         (fun key -> Hashtbl.find_opt tbl key)
       else
         (fun key ->
-          match List.find_opt (fun (_, k, _) -> k = key) fields with
-          | None -> None | Some (_, _, v) -> Some v)
+          List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let title =
       match assoc_ "title" with
@@ -365,8 +364,7 @@ let image_of_jsonlike (x : Atd_jsonlike.AST.t) : image =
         (fun key -> Hashtbl.find_opt tbl key)
       else
         (fun key ->
-          match List.find_opt (fun (_, k, _) -> k = key) fields with
-          | None -> None | Some (_, _, v) -> Some v)
+          List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let url =
       match assoc_ "url" with

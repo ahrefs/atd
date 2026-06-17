@@ -1,16 +1,18 @@
-(* Auto-generated from "json_repr_object.atd" by atdml. *)
+(* Auto-generated from "protect_builtin_constructors.atd" by atdml. *)
 
-type string_map = (string * int) list
+type not_option =
+  | None
+  | Some
 
-val string_map_of_yojson : Yojson.Safe.t -> string_map
-val yojson_of_string_map : string_map -> Yojson.Safe.t
-val string_map_of_jsonlike : Atd_jsonlike.AST.t -> string_map
-val jsonlike_of_string_map : string_map -> Atd_jsonlike.AST.t
-val string_map_of_json : string -> string_map
-val json_of_string_map : string_map -> string
+val not_option_of_yojson : Yojson.Safe.t -> not_option
+val yojson_of_not_option : not_option -> Yojson.Safe.t
+val not_option_of_jsonlike : Atd_jsonlike.AST.t -> not_option
+val jsonlike_of_not_option : not_option -> Atd_jsonlike.AST.t
+val not_option_of_json : string -> not_option
+val json_of_not_option : not_option -> string
 
-module String_map : sig
-  type nonrec t = string_map
+module Not_option : sig
+  type nonrec t = not_option
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
@@ -19,41 +21,22 @@ module String_map : sig
   val to_json : t -> string
 end
 
-type nested = (string * string list) list
-
-val nested_of_yojson : Yojson.Safe.t -> nested
-val yojson_of_nested : nested -> Yojson.Safe.t
-val nested_of_jsonlike : Atd_jsonlike.AST.t -> nested
-val jsonlike_of_nested : nested -> Atd_jsonlike.AST.t
-val nested_of_json : string -> nested
-val json_of_nested : nested -> string
-
-module Nested : sig
-  type nonrec t = nested
-  val of_yojson : Yojson.Safe.t -> t
-  val to_yojson : t -> Yojson.Safe.t
-  val of_jsonlike : Atd_jsonlike.AST.t -> t
-  val to_jsonlike : t -> Atd_jsonlike.AST.t
-  val of_json : string -> t
-  val to_json : t -> string
-end
-
-type record = {
-  counts: string_map;
-  tags: nested;
+type t = {
+  option: int option;
+  not_options: not_option list;
 }
 
-val create_record : counts:string_map -> tags:nested -> unit -> record
-val record_of_yojson : Yojson.Safe.t -> record
-val yojson_of_record : record -> Yojson.Safe.t
-val record_of_jsonlike : Atd_jsonlike.AST.t -> record
-val jsonlike_of_record : record -> Atd_jsonlike.AST.t
-val record_of_json : string -> record
-val json_of_record : record -> string
+val create_t : ?option:int -> not_options:not_option list -> unit -> t
+val t_of_yojson : Yojson.Safe.t -> t
+val yojson_of_t : t -> Yojson.Safe.t
+val t_of_jsonlike : Atd_jsonlike.AST.t -> t
+val jsonlike_of_t : t -> Atd_jsonlike.AST.t
+val t_of_json : string -> t
+val json_of_t : t -> string
 
-module Record : sig
-  type nonrec t = record
-  val create : counts:string_map -> tags:nested -> unit -> t
+module T : sig
+  type nonrec t = t
+  val create : ?option:int -> not_options:not_option list -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
@@ -63,7 +46,7 @@ module Record : sig
 end
 
 --- ml ---
-(* Auto-generated from "json_repr_object.atd" by atdml. *)
+(* Auto-generated from "protect_builtin_constructors.atd" by atdml. *)
 [@@@ocaml.warning "-27-32-33-35-39"]
 
 (* Inlined runtime — no external dependency needed. *)
@@ -225,75 +208,57 @@ module Atdml_runtime = struct
   end
 end
 
-type string_map = (string * int) list
+type not_option =
+  | None
+  | Some
 
-let string_map_of_yojson (x : Yojson.Safe.t) : string_map =
-  (Atdml_runtime.Yojson.assoc_of_yojson Atdml_runtime.Yojson.int_of_yojson) x
+let not_option_of_yojson (x : Yojson.Safe.t) : not_option =
+  match x with
+  | `String "None" -> None
+  | `String "Some" -> Some
+  | _ -> Atdml_runtime.Yojson.bad_sum "not_option" x
 
-let yojson_of_string_map (x : string_map) : Yojson.Safe.t =
-  (Atdml_runtime.Yojson.yojson_of_assoc Atdml_runtime.Yojson.yojson_of_int) x
+let yojson_of_not_option (x : not_option) : Yojson.Safe.t =
+  match x with
+  | None -> `String "None"
+  | Some -> `String "Some"
 
-let string_map_of_jsonlike (x : Atd_jsonlike.AST.t) : string_map =
-  (Atdml_runtime.Jsonlike.assoc_of_jsonlike Atdml_runtime.Jsonlike.int_of_jsonlike) x
+let not_option_of_jsonlike (x : Atd_jsonlike.AST.t) : not_option =
+  match x with
+  | Atd_jsonlike.AST.String (_, "None") -> None
+  | Atd_jsonlike.AST.String (_, "Some") -> Some
+  | _ -> Atdml_runtime.Jsonlike.bad_sum "not_option" x
 
-let jsonlike_of_string_map (x : string_map) : Atd_jsonlike.AST.t =
-  (Atdml_runtime.Jsonlike.jsonlike_of_assoc Atdml_runtime.Jsonlike.jsonlike_of_int) x
+let jsonlike_of_not_option (x : not_option) : Atd_jsonlike.AST.t =
+  match x with
+  | None -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "None")
+  | Some -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Some")
 
-let string_map_of_json s =
-  string_map_of_yojson (Yojson.Safe.from_string s)
+let not_option_of_json s =
+  not_option_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_string_map x =
-  Yojson.Safe.to_string (yojson_of_string_map x)
+let json_of_not_option x =
+  Yojson.Safe.to_string (yojson_of_not_option x)
 
-module String_map = struct
-  type nonrec t = string_map
-  let of_yojson = string_map_of_yojson
-  let to_yojson = yojson_of_string_map
-  let of_jsonlike = string_map_of_jsonlike
-  let to_jsonlike = jsonlike_of_string_map
-  let of_json = string_map_of_json
-  let to_json = json_of_string_map
+module Not_option = struct
+  type nonrec t = not_option
+  let of_yojson = not_option_of_yojson
+  let to_yojson = yojson_of_not_option
+  let of_jsonlike = not_option_of_jsonlike
+  let to_jsonlike = jsonlike_of_not_option
+  let of_json = not_option_of_json
+  let to_json = json_of_not_option
 end
 
-type nested = (string * string list) list
-
-let nested_of_yojson (x : Yojson.Safe.t) : nested =
-  (Atdml_runtime.Yojson.assoc_of_yojson (Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.string_of_yojson)) x
-
-let yojson_of_nested (x : nested) : Yojson.Safe.t =
-  (Atdml_runtime.Yojson.yojson_of_assoc (Atdml_runtime.Yojson.yojson_of_list Atdml_runtime.Yojson.yojson_of_string)) x
-
-let nested_of_jsonlike (x : Atd_jsonlike.AST.t) : nested =
-  (Atdml_runtime.Jsonlike.assoc_of_jsonlike (Atdml_runtime.Jsonlike.list_of_jsonlike Atdml_runtime.Jsonlike.string_of_jsonlike)) x
-
-let jsonlike_of_nested (x : nested) : Atd_jsonlike.AST.t =
-  (Atdml_runtime.Jsonlike.jsonlike_of_assoc (Atdml_runtime.Jsonlike.jsonlike_of_list Atdml_runtime.Jsonlike.jsonlike_of_string)) x
-
-let nested_of_json s =
-  nested_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_nested x =
-  Yojson.Safe.to_string (yojson_of_nested x)
-
-module Nested = struct
-  type nonrec t = nested
-  let of_yojson = nested_of_yojson
-  let to_yojson = yojson_of_nested
-  let of_jsonlike = nested_of_jsonlike
-  let to_jsonlike = jsonlike_of_nested
-  let of_json = nested_of_json
-  let to_json = json_of_nested
-end
-
-type record = {
-  counts: string_map;
-  tags: nested;
+type t = {
+  option: int option;
+  not_options: not_option list;
 }
 
-let create_record ~counts ~tags () : record =
-  { counts; tags }
+let create_t ?option ~not_options () : t =
+  { option; not_options }
 
-let record_of_yojson (x : Yojson.Safe.t) : record =
+let t_of_yojson (x : Yojson.Safe.t) : t =
   match x with
   | `Assoc fields ->
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
@@ -306,26 +271,26 @@ let record_of_yojson (x : Yojson.Safe.t) : record =
         (fun key -> Hashtbl.find_opt tbl key)
       else (fun key -> List.assoc_opt key fields)
     in
-    let counts =
-      match assoc_ "counts" with
-      | Some v -> string_map_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "record" "counts"
+    let option =
+      match assoc_ "option" with
+      | None | Some `Null -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Yojson.int_of_yojson v)
     in
-    let tags =
-      match assoc_ "tags" with
-      | Some v -> nested_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "record" "tags"
+    let not_options =
+      match assoc_ "not_options" with
+      | Some v -> (Atdml_runtime.Yojson.list_of_yojson not_option_of_yojson) v
+      | None -> Atdml_runtime.Yojson.missing_field "t" "not_options"
     in
-    { counts; tags }
-  | _ -> Atdml_runtime.Yojson.bad_type "record" x
+    { option; not_options }
+  | _ -> Atdml_runtime.Yojson.bad_type "t" x
 
-let yojson_of_record (x : record) : Yojson.Safe.t =
+let yojson_of_t (x : t) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("counts", yojson_of_string_map x.counts)];
-    [("tags", yojson_of_nested x.tags)];
+    (match x.option with None -> [] | Some v -> [("option", Atdml_runtime.Yojson.yojson_of_int v)]);
+    [("not_options", (Atdml_runtime.Yojson.yojson_of_list yojson_of_not_option) x.not_options)];
   ])
 
-let record_of_jsonlike (x : Atd_jsonlike.AST.t) : record =
+let t_of_jsonlike (x : Atd_jsonlike.AST.t) : t =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
     let atdml_node_ = x in
@@ -338,43 +303,43 @@ let record_of_jsonlike (x : Atd_jsonlike.AST.t) : record =
         (fun key ->
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
-    let counts =
-      match assoc_ "counts" with
-      | Some v -> string_map_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "record" "counts"
+    let option =
+      match assoc_ "option" with
+      | None | Some (Atd_jsonlike.AST.Null _) -> Option.None
+      | Some v -> Option.Some (Atdml_runtime.Jsonlike.int_of_jsonlike v)
     in
-    let tags =
-      match assoc_ "tags" with
-      | Some v -> nested_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "record" "tags"
+    let not_options =
+      match assoc_ "not_options" with
+      | Some v -> (Atdml_runtime.Jsonlike.list_of_jsonlike not_option_of_jsonlike) v
+      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "t" "not_options"
     in
-    { counts; tags }
-  | _ -> Atdml_runtime.Jsonlike.bad_type "record" x
+    { option; not_options }
+  | _ -> Atdml_runtime.Jsonlike.bad_type "t" x
 
-let jsonlike_of_record (x : record) : Atd_jsonlike.AST.t =
+let jsonlike_of_t (x : t) : Atd_jsonlike.AST.t =
   Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
-    [(Atd_jsonlike.Loc.zero, "counts", jsonlike_of_string_map x.counts)];
-    [(Atd_jsonlike.Loc.zero, "tags", jsonlike_of_nested x.tags)];
+    (match x.option with None -> [] | Some v -> [(Atd_jsonlike.Loc.zero, "option", Atdml_runtime.Jsonlike.jsonlike_of_int v)]);
+    [(Atd_jsonlike.Loc.zero, "not_options", (Atdml_runtime.Jsonlike.jsonlike_of_list jsonlike_of_not_option) x.not_options)];
   ])
 
-let record_of_json s =
-  record_of_yojson (Yojson.Safe.from_string s)
+let t_of_json s =
+  t_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_record x =
-  Yojson.Safe.to_string (yojson_of_record x)
+let json_of_t x =
+  Yojson.Safe.to_string (yojson_of_t x)
 
-module Record = struct
-  type nonrec t = record
-  let create = create_record
-  let of_yojson = record_of_yojson
-  let to_yojson = yojson_of_record
-  let of_jsonlike = record_of_jsonlike
-  let to_jsonlike = jsonlike_of_record
-  let of_json = record_of_json
-  let to_json = json_of_record
+module T = struct
+  type nonrec t = t
+  let create = create_t
+  let of_yojson = t_of_yojson
+  let to_yojson = yojson_of_t
+  let of_jsonlike = t_of_jsonlike
+  let to_jsonlike = jsonlike_of_t
+  let of_json = t_of_json
+  let to_json = json_of_t
 end
 
 --- Input:
-{ "counts": { "a": 1, "b": 2 }, "tags": { "x": [ "p", "q" ] } }
+{ "option": 42, "not_options": [ "None", "Some" ] }
 --- Output:
-{ "counts": { "a": 1, "b": 2 }, "tags": { "x": [ "p", "q" ] } }
+{ "option": 42, "not_options": [ "None", "Some" ] }

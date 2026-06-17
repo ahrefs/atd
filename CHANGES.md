@@ -1,3 +1,8 @@
+in progress
+-----------
+
+* atdml: Allow user-defined `None` and `Some` constructors (#506)
+
 4.2.0 (2026-04-25)
 ------------------
 

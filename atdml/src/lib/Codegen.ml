@@ -470,18 +470,21 @@ let jsonlike_mode = {
   record_match_pat = "Atd_jsonlike.AST.Object (_, fields)";
   record_assoc_lines = [
     B.Line "let assoc_ =";
-    B.Block
-      [ B.Line "if Atdml_runtime.list_length_gt 5 fields then";
-        B.Block
-          [ B.Line "let tbl = Hashtbl.create 16 in";
-            B.Line "List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;";
-            B.Line "(fun key -> Hashtbl.find_opt tbl key)" ];
-        B.Line "else";
-        B.Block
-          [ B.Line "(fun key ->";
-            B.Block
-              [ B.Line "match List.find_opt (fun (_, k, _) -> k = key) fields with";
-                B.Line "| None -> None | Some (_, _, v) -> Some v)" ] ] ];
+    B.Block [
+      B.Line "if Atdml_runtime.list_length_gt 5 fields then";
+      B.Block [
+        B.Line "let tbl = Hashtbl.create 16 in";
+        B.Line "List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;";
+        B.Line "(fun key -> Hashtbl.find_opt tbl key)"
+      ];
+      B.Line "else";
+      B.Block [
+        B.Line "(fun key ->";
+        B.Block [
+          B.Line "List.find_map (fun (_, k, v) : _ option -> \
+                  if String.equal k key then Some v else None) fields)" ]
+      ]
+    ];
     B.Line "in";
   ];
   optional_null_pat = "None | Some (Atd_jsonlike.AST.Null _)";
@@ -1193,8 +1196,8 @@ let gen_reader_field env ftr mode type_name (loc, (fname, kind, an), e) : B.node
         in
         [
           B.Line (sprintf "match assoc_ \"%s\" with" json_name);
-          B.Line (sprintf "| %s -> None" mode.optional_null_pat);
-          B.Line (sprintf "| Some v -> Some (%s v)" (reader_expr env mode inner_e));
+          B.Line (sprintf "| %s -> Option.None" mode.optional_null_pat);
+          B.Line (sprintf "| Some v -> Option.Some (%s v)" (reader_expr env mode inner_e));
         ]
     | With_default ->
         (match get_ocaml_default an with

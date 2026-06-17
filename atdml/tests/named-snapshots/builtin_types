@@ -310,8 +310,7 @@ let all_types_of_jsonlike (x : Atd_jsonlike.AST.t) : all_types =
         (fun key -> Hashtbl.find_opt tbl key)
       else
         (fun key ->
-          match List.find_opt (fun (_, k, _) -> k = key) fields with
-          | None -> None | Some (_, _, v) -> Some v)
+          List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let a_unit =
       match assoc_ "a_unit" with

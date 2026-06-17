@@ -388,7 +388,24 @@ type t = {
 }
 |}
 ;
+  test_e2e "default variant fields"
+    ~atd_src:{|
+type classic_variant = [ A | B ]
+type polymorphic_variant = [ A | B ] <ocaml repr="poly">
 
+type t = {
+  ~classic <ocaml default="A">: classic_variant;
+  ~poly <ocaml default="`A">: polymorphic_variant;
+}
+|}
+    ~type_name:"t"
+    ~json_in:{|
+{
+  "classic": "B",
+  "poly": "B"
+}
+|}
+;
   test_e2e "parametric types"
     ~atd_src:{|
 type 'a result = [

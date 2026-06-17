@@ -219,7 +219,7 @@ let all_types_of_yojson (x : Yojson.Safe.t) : all_types =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -227,57 +227,57 @@ let all_types_of_yojson (x : Yojson.Safe.t) : all_types =
       else (fun key -> List.assoc_opt key fields)
     in
     let a_unit =
-      match assoc_ "a_unit" with
+      match assoc "a_unit" with
       | Some v -> Atdml_runtime.Yojson.unit_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_unit"
     in
     let a_bool =
-      match assoc_ "a_bool" with
+      match assoc "a_bool" with
       | Some v -> Atdml_runtime.Yojson.bool_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_bool"
     in
     let a_int =
-      match assoc_ "a_int" with
+      match assoc "a_int" with
       | Some v -> Atdml_runtime.Yojson.int_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_int"
     in
     let a_float =
-      match assoc_ "a_float" with
+      match assoc "a_float" with
       | Some v -> Atdml_runtime.Yojson.float_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_float"
     in
     let a_string =
-      match assoc_ "a_string" with
+      match assoc "a_string" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_string"
     in
     let a_list =
-      match assoc_ "a_list" with
+      match assoc "a_list" with
       | Some v -> (Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.int_of_yojson) v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_list"
     in
     let a_option =
-      match assoc_ "a_option" with
+      match assoc "a_option" with
       | Some v -> (Atdml_runtime.Yojson.option_of_yojson Atdml_runtime.Yojson.string_of_yojson) v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_option"
     in
     let a_nullable =
-      match assoc_ "a_nullable" with
+      match assoc "a_nullable" with
       | Some v -> (Atdml_runtime.Yojson.nullable_of_yojson Atdml_runtime.Yojson.bool_of_yojson) v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_nullable"
     in
     let a_abstract =
-      match assoc_ "a_abstract" with
+      match assoc "a_abstract" with
       | Some v -> (fun x -> x) v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_abstract"
     in
     let a_tuple =
-      match assoc_ "a_tuple" with
+      match assoc "a_tuple" with
       | Some v -> (fun x -> match x with | `List lst when List.length lst = 3 -> (Atdml_runtime.Yojson.int_of_yojson (List.nth lst 0), Atdml_runtime.Yojson.string_of_yojson (List.nth lst 1), Atdml_runtime.Yojson.bool_of_yojson (List.nth lst 2)) | _ -> Atdml_runtime.Yojson.bad_type "tuple" x) v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_tuple"
     in
     let a_nested =
-      match assoc_ "a_nested" with
+      match assoc "a_nested" with
       | Some v -> (Atdml_runtime.Yojson.option_of_yojson (fun x -> match x with | `List lst when List.length lst = 1 -> ((Atdml_runtime.Yojson.list_of_yojson Atdml_runtime.Yojson.float_of_yojson) (List.nth lst 0)) | _ -> Atdml_runtime.Yojson.bad_type "tuple" x)) v
       | None -> Atdml_runtime.Yojson.missing_field "all_types" "a_nested"
     in
@@ -302,8 +302,8 @@ let yojson_of_all_types (x : all_types) : Yojson.Safe.t =
 let all_types_of_jsonlike (x : Atd_jsonlike.AST.t) : all_types =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -313,59 +313,59 @@ let all_types_of_jsonlike (x : Atd_jsonlike.AST.t) : all_types =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let a_unit =
-      match assoc_ "a_unit" with
+      match assoc "a_unit" with
       | Some v -> Atdml_runtime.Jsonlike.unit_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_unit"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_unit"
     in
     let a_bool =
-      match assoc_ "a_bool" with
+      match assoc "a_bool" with
       | Some v -> Atdml_runtime.Jsonlike.bool_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_bool"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_bool"
     in
     let a_int =
-      match assoc_ "a_int" with
+      match assoc "a_int" with
       | Some v -> Atdml_runtime.Jsonlike.int_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_int"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_int"
     in
     let a_float =
-      match assoc_ "a_float" with
+      match assoc "a_float" with
       | Some v -> Atdml_runtime.Jsonlike.float_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_float"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_float"
     in
     let a_string =
-      match assoc_ "a_string" with
+      match assoc "a_string" with
       | Some v -> Atdml_runtime.Jsonlike.string_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_string"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_string"
     in
     let a_list =
-      match assoc_ "a_list" with
+      match assoc "a_list" with
       | Some v -> (Atdml_runtime.Jsonlike.list_of_jsonlike Atdml_runtime.Jsonlike.int_of_jsonlike) v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_list"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_list"
     in
     let a_option =
-      match assoc_ "a_option" with
+      match assoc "a_option" with
       | Some v -> (Atdml_runtime.Jsonlike.option_of_jsonlike Atdml_runtime.Jsonlike.string_of_jsonlike) v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_option"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_option"
     in
     let a_nullable =
-      match assoc_ "a_nullable" with
+      match assoc "a_nullable" with
       | Some v -> (Atdml_runtime.Jsonlike.nullable_of_jsonlike Atdml_runtime.Jsonlike.bool_of_jsonlike) v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_nullable"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_nullable"
     in
     let a_abstract =
-      match assoc_ "a_abstract" with
+      match assoc "a_abstract" with
       | Some v -> (fun _ -> failwith "abstract type is not supported in jsonlike mode") v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_abstract"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_abstract"
     in
     let a_tuple =
-      match assoc_ "a_tuple" with
+      match assoc "a_tuple" with
       | Some v -> (fun x -> match x with | Atd_jsonlike.AST.Array (_, lst) when List.length lst = 3 -> (Atdml_runtime.Jsonlike.int_of_jsonlike (List.nth lst 0), Atdml_runtime.Jsonlike.string_of_jsonlike (List.nth lst 1), Atdml_runtime.Jsonlike.bool_of_jsonlike (List.nth lst 2)) | _ -> Atdml_runtime.Jsonlike.bad_type "tuple" x) v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_tuple"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_tuple"
     in
     let a_nested =
-      match assoc_ "a_nested" with
+      match assoc "a_nested" with
       | Some v -> (Atdml_runtime.Jsonlike.option_of_jsonlike (fun x -> match x with | Atd_jsonlike.AST.Array (_, lst) when List.length lst = 1 -> ((Atdml_runtime.Jsonlike.list_of_jsonlike Atdml_runtime.Jsonlike.float_of_jsonlike) (List.nth lst 0)) | _ -> Atdml_runtime.Jsonlike.bad_type "tuple" x)) v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all_types" "a_nested"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all_types" "a_nested"
     in
     { a_unit; a_bool; a_int; a_float; a_string; a_list; a_option; a_nullable; a_abstract; a_tuple; a_nested }
   | _ -> Atdml_runtime.Jsonlike.bad_type "all_types" x

@@ -299,7 +299,7 @@ let record_of_yojson (x : Yojson.Safe.t) : record =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -307,12 +307,12 @@ let record_of_yojson (x : Yojson.Safe.t) : record =
       else (fun key -> List.assoc_opt key fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> uid_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "record" "id"
     in
     let label =
-      match assoc_ "label" with
+      match assoc "label" with
       | Some v -> tag_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "record" "label"
     in
@@ -328,8 +328,8 @@ let yojson_of_record (x : record) : Yojson.Safe.t =
 let record_of_jsonlike (x : Atd_jsonlike.AST.t) : record =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -339,14 +339,14 @@ let record_of_jsonlike (x : Atd_jsonlike.AST.t) : record =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> uid_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "record" "id"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "record" "id"
     in
     let label =
-      match assoc_ "label" with
+      match assoc "label" with
       | Some v -> tag_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "record" "label"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "record" "label"
     in
     { id; label }
   | _ -> Atdml_runtime.Jsonlike.bad_type "record" x

@@ -2129,8 +2129,11 @@ let run_file ~yojson ~jsonlike src_path =
     else
       src_name
   in
-  let ml_path = String.lowercase_ascii base_name ^ ".ml" in
-  let mli_path = String.lowercase_ascii base_name ^ ".mli" in
+  (* Keep the original capitalization of the ATD file.
+     OCaml accepts both lowercase and uppercase compilation units.
+     They're always capitalized when converted to module names. *)
+  let ml_path = base_name ^ ".ml" in
+  let mli_path = base_name ^ ".mli" in
   let module_ =
     Atd.Util.load_file
       ~annot_schema

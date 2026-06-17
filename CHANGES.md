@@ -2,6 +2,9 @@ in progress
 -----------
 
 * atdml: Allow user-defined `None` and `Some` constructors (#506)
+* atdml: Preserve the capitalization in the derived mli and ml files.
+         For example, `Capitalized.atd` now becomes `Capitalized.mli`
+         rather than `capitalized.mli` (#507)
 
 4.2.0 (2026-04-25)
 ------------------

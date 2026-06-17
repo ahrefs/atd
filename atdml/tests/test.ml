@@ -371,6 +371,23 @@ type all_types = {
 }
 |}
 ;
+  test_e2e "protect builtin constructors"
+    ~atd_src:{|
+type not_option = [ None | Some ]
+
+type t = {
+  ?option: int option;
+  not_options: not_option list;
+}
+|}
+    ~type_name:"t"
+    ~json_in:{|
+{
+  "option": 42,
+  "not_options": ["None", "Some"]
+}
+|}
+;
 
   test_e2e "parametric types"
     ~atd_src:{|

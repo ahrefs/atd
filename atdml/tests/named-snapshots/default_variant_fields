@@ -1,23 +1,19 @@
-(* Auto-generated from "attr.atd" by atdml. *)
+(* Auto-generated from "default_variant_fields.atd" by atdml. *)
 
-type point = {
-  x: float;
-  y: float;
-}
-[@@deriving show]
+type polymorphic_variant = [
+  | `A
+  | `B
+]
 
-val create_point : x:float -> y:float -> unit -> point
-val point_of_yojson : Yojson.Safe.t -> point
-val yojson_of_point : point -> Yojson.Safe.t
-val point_of_jsonlike : Atd_jsonlike.AST.t -> point
-val jsonlike_of_point : point -> Atd_jsonlike.AST.t
-val point_of_json : string -> point
-val json_of_point : point -> string
+val polymorphic_variant_of_yojson : Yojson.Safe.t -> polymorphic_variant
+val yojson_of_polymorphic_variant : polymorphic_variant -> Yojson.Safe.t
+val polymorphic_variant_of_jsonlike : Atd_jsonlike.AST.t -> polymorphic_variant
+val jsonlike_of_polymorphic_variant : polymorphic_variant -> Atd_jsonlike.AST.t
+val polymorphic_variant_of_json : string -> polymorphic_variant
+val json_of_polymorphic_variant : polymorphic_variant -> string
 
-module Point : sig
-  type nonrec t = point
-  [@@deriving show]
-  val create : x:float -> y:float -> unit -> t
+module Polymorphic_variant : sig
+  type nonrec t = polymorphic_variant
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
@@ -26,19 +22,43 @@ module Point : sig
   val to_json : t -> string
 end
 
-type points = point list
-[@@deriving show]
+type classic_variant =
+  | A
+  | B
 
-val points_of_yojson : Yojson.Safe.t -> points
-val yojson_of_points : points -> Yojson.Safe.t
-val points_of_jsonlike : Atd_jsonlike.AST.t -> points
-val jsonlike_of_points : points -> Atd_jsonlike.AST.t
-val points_of_json : string -> points
-val json_of_points : points -> string
+val classic_variant_of_yojson : Yojson.Safe.t -> classic_variant
+val yojson_of_classic_variant : classic_variant -> Yojson.Safe.t
+val classic_variant_of_jsonlike : Atd_jsonlike.AST.t -> classic_variant
+val jsonlike_of_classic_variant : classic_variant -> Atd_jsonlike.AST.t
+val classic_variant_of_json : string -> classic_variant
+val json_of_classic_variant : classic_variant -> string
 
-module Points : sig
-  type nonrec t = points
-  [@@deriving show]
+module Classic_variant : sig
+  type nonrec t = classic_variant
+  val of_yojson : Yojson.Safe.t -> t
+  val to_yojson : t -> Yojson.Safe.t
+  val of_jsonlike : Atd_jsonlike.AST.t -> t
+  val to_jsonlike : t -> Atd_jsonlike.AST.t
+  val of_json : string -> t
+  val to_json : t -> string
+end
+
+type t = {
+  classic: classic_variant;
+  poly: polymorphic_variant;
+}
+
+val create_t : ?classic:classic_variant -> ?poly:polymorphic_variant -> unit -> t
+val t_of_yojson : Yojson.Safe.t -> t
+val yojson_of_t : t -> Yojson.Safe.t
+val t_of_jsonlike : Atd_jsonlike.AST.t -> t
+val jsonlike_of_t : t -> Atd_jsonlike.AST.t
+val t_of_json : string -> t
+val json_of_t : t -> string
+
+module T : sig
+  type nonrec t = t
+  val create : ?classic:classic_variant -> ?poly:polymorphic_variant -> unit -> t
   val of_yojson : Yojson.Safe.t -> t
   val to_yojson : t -> Yojson.Safe.t
   val of_jsonlike : Atd_jsonlike.AST.t -> t
@@ -48,7 +68,7 @@ module Points : sig
 end
 
 --- ml ---
-(* Auto-generated from "attr.atd" by atdml. *)
+(* Auto-generated from "default_variant_fields.atd" by atdml. *)
 [@@@ocaml.warning "-27-32-33-35-39"]
 
 (* Inlined runtime — no external dependency needed. *)
@@ -210,16 +230,100 @@ module Atdml_runtime = struct
   end
 end
 
-type point = {
-  x: float;
-  y: float;
+type polymorphic_variant = [
+  | `A
+  | `B
+]
+
+let polymorphic_variant_of_yojson (x : Yojson.Safe.t) : polymorphic_variant =
+  match x with
+  | `String "A" -> `A
+  | `String "B" -> `B
+  | _ -> Atdml_runtime.Yojson.bad_sum "polymorphic_variant" x
+
+let yojson_of_polymorphic_variant (x : polymorphic_variant) : Yojson.Safe.t =
+  match x with
+  | `A -> `String "A"
+  | `B -> `String "B"
+
+let polymorphic_variant_of_jsonlike (x : Atd_jsonlike.AST.t) : polymorphic_variant =
+  match x with
+  | Atd_jsonlike.AST.String (_, "A") -> `A
+  | Atd_jsonlike.AST.String (_, "B") -> `B
+  | _ -> Atdml_runtime.Jsonlike.bad_sum "polymorphic_variant" x
+
+let jsonlike_of_polymorphic_variant (x : polymorphic_variant) : Atd_jsonlike.AST.t =
+  match x with
+  | `A -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "A")
+  | `B -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "B")
+
+let polymorphic_variant_of_json s =
+  polymorphic_variant_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_polymorphic_variant x =
+  Yojson.Safe.to_string (yojson_of_polymorphic_variant x)
+
+module Polymorphic_variant = struct
+  type nonrec t = polymorphic_variant
+  let of_yojson = polymorphic_variant_of_yojson
+  let to_yojson = yojson_of_polymorphic_variant
+  let of_jsonlike = polymorphic_variant_of_jsonlike
+  let to_jsonlike = jsonlike_of_polymorphic_variant
+  let of_json = polymorphic_variant_of_json
+  let to_json = json_of_polymorphic_variant
+end
+
+type classic_variant =
+  | A
+  | B
+
+let classic_variant_of_yojson (x : Yojson.Safe.t) : classic_variant =
+  match x with
+  | `String "A" -> A
+  | `String "B" -> B
+  | _ -> Atdml_runtime.Yojson.bad_sum "classic_variant" x
+
+let yojson_of_classic_variant (x : classic_variant) : Yojson.Safe.t =
+  match x with
+  | A -> `String "A"
+  | B -> `String "B"
+
+let classic_variant_of_jsonlike (x : Atd_jsonlike.AST.t) : classic_variant =
+  match x with
+  | Atd_jsonlike.AST.String (_, "A") -> A
+  | Atd_jsonlike.AST.String (_, "B") -> B
+  | _ -> Atdml_runtime.Jsonlike.bad_sum "classic_variant" x
+
+let jsonlike_of_classic_variant (x : classic_variant) : Atd_jsonlike.AST.t =
+  match x with
+  | A -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "A")
+  | B -> Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "B")
+
+let classic_variant_of_json s =
+  classic_variant_of_yojson (Yojson.Safe.from_string s)
+
+let json_of_classic_variant x =
+  Yojson.Safe.to_string (yojson_of_classic_variant x)
+
+module Classic_variant = struct
+  type nonrec t = classic_variant
+  let of_yojson = classic_variant_of_yojson
+  let to_yojson = yojson_of_classic_variant
+  let of_jsonlike = classic_variant_of_jsonlike
+  let to_jsonlike = jsonlike_of_classic_variant
+  let of_json = classic_variant_of_json
+  let to_json = json_of_classic_variant
+end
+
+type t = {
+  classic: classic_variant;
+  poly: polymorphic_variant;
 }
-[@@deriving show]
 
-let create_point ~x ~y () : point =
-  { x; y }
+let create_t ?(classic = A) ?(poly = `A) () : t =
+  { classic; poly }
 
-let point_of_yojson (x : Yojson.Safe.t) : point =
+let t_of_yojson (x : Yojson.Safe.t) : t =
   match x with
   | `Assoc fields ->
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
@@ -232,26 +336,26 @@ let point_of_yojson (x : Yojson.Safe.t) : point =
         (fun key -> Hashtbl.find_opt tbl key)
       else (fun key -> List.assoc_opt key fields)
     in
-    let x =
-      match assoc "x" with
-      | Some v -> Atdml_runtime.Yojson.float_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "point" "x"
+    let classic =
+      match assoc "classic" with
+      | None -> A
+      | Some v -> classic_variant_of_yojson v
     in
-    let y =
-      match assoc "y" with
-      | Some v -> Atdml_runtime.Yojson.float_of_yojson v
-      | None -> Atdml_runtime.Yojson.missing_field "point" "y"
+    let poly =
+      match assoc "poly" with
+      | None -> `A
+      | Some v -> polymorphic_variant_of_yojson v
     in
-    { x; y }
-  | _ -> Atdml_runtime.Yojson.bad_type "point" x
+    { classic; poly }
+  | _ -> Atdml_runtime.Yojson.bad_type "t" x
 
-let yojson_of_point (x : point) : Yojson.Safe.t =
+let yojson_of_t (x : t) : Yojson.Safe.t =
   `Assoc (List.concat [
-    [("x", Atdml_runtime.Yojson.yojson_of_float x.x)];
-    [("y", Atdml_runtime.Yojson.yojson_of_float x.y)];
+    [("classic", yojson_of_classic_variant x.classic)];
+    [("poly", yojson_of_polymorphic_variant x.poly)];
   ])
 
-let point_of_jsonlike (x : Atd_jsonlike.AST.t) : point =
+let t_of_jsonlike (x : Atd_jsonlike.AST.t) : t =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
     let _atdml_node = x in
@@ -264,72 +368,43 @@ let point_of_jsonlike (x : Atd_jsonlike.AST.t) : point =
         (fun key ->
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
-    let x =
-      match assoc "x" with
-      | Some v -> Atdml_runtime.Jsonlike.float_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "point" "x"
+    let classic =
+      match assoc "classic" with
+      | None -> A
+      | Some v -> classic_variant_of_jsonlike v
     in
-    let y =
-      match assoc "y" with
-      | Some v -> Atdml_runtime.Jsonlike.float_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "point" "y"
+    let poly =
+      match assoc "poly" with
+      | None -> `A
+      | Some v -> polymorphic_variant_of_jsonlike v
     in
-    { x; y }
-  | _ -> Atdml_runtime.Jsonlike.bad_type "point" x
+    { classic; poly }
+  | _ -> Atdml_runtime.Jsonlike.bad_type "t" x
 
-let jsonlike_of_point (x : point) : Atd_jsonlike.AST.t =
+let jsonlike_of_t (x : t) : Atd_jsonlike.AST.t =
   Atd_jsonlike.AST.Object (Atd_jsonlike.Loc.zero, List.concat [
-    [(Atd_jsonlike.Loc.zero, "x", Atdml_runtime.Jsonlike.jsonlike_of_float x.x)];
-    [(Atd_jsonlike.Loc.zero, "y", Atdml_runtime.Jsonlike.jsonlike_of_float x.y)];
+    [(Atd_jsonlike.Loc.zero, "classic", jsonlike_of_classic_variant x.classic)];
+    [(Atd_jsonlike.Loc.zero, "poly", jsonlike_of_polymorphic_variant x.poly)];
   ])
 
-let point_of_json s =
-  point_of_yojson (Yojson.Safe.from_string s)
+let t_of_json s =
+  t_of_yojson (Yojson.Safe.from_string s)
 
-let json_of_point x =
-  Yojson.Safe.to_string (yojson_of_point x)
+let json_of_t x =
+  Yojson.Safe.to_string (yojson_of_t x)
 
-module Point = struct
-  type nonrec t = point
-  [@@deriving show]
-  let create = create_point
-  let of_yojson = point_of_yojson
-  let to_yojson = yojson_of_point
-  let of_jsonlike = point_of_jsonlike
-  let to_jsonlike = jsonlike_of_point
-  let of_json = point_of_json
-  let to_json = json_of_point
+module T = struct
+  type nonrec t = t
+  let create = create_t
+  let of_yojson = t_of_yojson
+  let to_yojson = yojson_of_t
+  let of_jsonlike = t_of_jsonlike
+  let to_jsonlike = jsonlike_of_t
+  let of_json = t_of_json
+  let to_json = json_of_t
 end
 
-type points = point list
-[@@deriving show]
-
-let points_of_yojson (x : Yojson.Safe.t) : points =
-  (Atdml_runtime.Yojson.list_of_yojson point_of_yojson) x
-
-let yojson_of_points (x : points) : Yojson.Safe.t =
-  (Atdml_runtime.Yojson.yojson_of_list yojson_of_point) x
-
-let points_of_jsonlike (x : Atd_jsonlike.AST.t) : points =
-  (Atdml_runtime.Jsonlike.list_of_jsonlike point_of_jsonlike) x
-
-let jsonlike_of_points (x : points) : Atd_jsonlike.AST.t =
-  (Atdml_runtime.Jsonlike.jsonlike_of_list jsonlike_of_point) x
-
-let points_of_json s =
-  points_of_yojson (Yojson.Safe.from_string s)
-
-let json_of_points x =
-  Yojson.Safe.to_string (yojson_of_points x)
-
-module Points = struct
-  type nonrec t = points
-  [@@deriving show]
-  let of_yojson = points_of_yojson
-  let to_yojson = yojson_of_points
-  let of_jsonlike = points_of_jsonlike
-  let to_jsonlike = jsonlike_of_points
-  let of_json = points_of_json
-  let to_json = json_of_points
-end
-
+--- Input:
+{ "classic": "B", "poly": "B" }
+--- Output:
+{ "classic": "B", "poly": "B" }

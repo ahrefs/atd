@@ -245,7 +245,7 @@ let text_of_yojson (x : Yojson.Safe.t) : text =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -253,12 +253,12 @@ let text_of_yojson (x : Yojson.Safe.t) : text =
       else (fun key -> List.assoc_opt key fields)
     in
     let title =
-      match assoc_ "title" with
+      match assoc "title" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "text" "title"
     in
     let body =
-      match assoc_ "body" with
+      match assoc "body" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "text" "body"
     in
@@ -274,8 +274,8 @@ let yojson_of_text (x : text) : Yojson.Safe.t =
 let text_of_jsonlike (x : Atd_jsonlike.AST.t) : text =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -285,14 +285,14 @@ let text_of_jsonlike (x : Atd_jsonlike.AST.t) : text =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let title =
-      match assoc_ "title" with
+      match assoc "title" with
       | Some v -> Atdml_runtime.Jsonlike.string_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "text" "title"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "text" "title"
     in
     let body =
-      match assoc_ "body" with
+      match assoc "body" with
       | Some v -> Atdml_runtime.Jsonlike.string_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "text" "body"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "text" "body"
     in
     { title; body }
   | _ -> Atdml_runtime.Jsonlike.bad_type "text" x
@@ -333,7 +333,7 @@ let image_of_yojson (x : Yojson.Safe.t) : image =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -341,7 +341,7 @@ let image_of_yojson (x : Yojson.Safe.t) : image =
       else (fun key -> List.assoc_opt key fields)
     in
     let url =
-      match assoc_ "url" with
+      match assoc "url" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "image" "url"
     in
@@ -356,8 +356,8 @@ let yojson_of_image (x : image) : Yojson.Safe.t =
 let image_of_jsonlike (x : Atd_jsonlike.AST.t) : image =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -367,9 +367,9 @@ let image_of_jsonlike (x : Atd_jsonlike.AST.t) : image =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let url =
-      match assoc_ "url" with
+      match assoc "url" with
       | Some v -> Atdml_runtime.Jsonlike.string_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "image" "url"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "image" "url"
     in
     { url }
   | _ -> Atdml_runtime.Jsonlike.bad_type "image" x
@@ -408,11 +408,11 @@ let document_of_yojson (x : Yojson.Safe.t) : document =
   | _ -> Atdml_runtime.Yojson.bad_sum "document" x
 
 let yojson_of_document (x : document) : Yojson.Safe.t =
-  let atdml_result_ =
+  let atdml_result =
     match x with
     | Image v -> `List [`String "Image"; yojson_of_image v]
     | Text v -> `List [`String "Text"; yojson_of_text v]
-  in My_adapter.restore atdml_result_
+  in My_adapter.restore atdml_result
 
 let document_of_jsonlike (x : Atd_jsonlike.AST.t) : document =
   let x = My_adapter.normalize_jsonlike x in
@@ -422,11 +422,11 @@ let document_of_jsonlike (x : Atd_jsonlike.AST.t) : document =
   | _ -> Atdml_runtime.Jsonlike.bad_sum "document" x
 
 let jsonlike_of_document (x : document) : Atd_jsonlike.AST.t =
-  let atdml_result_ =
+  let atdml_result =
     match x with
     | Image v -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Image"); jsonlike_of_image v])
     | Text v -> Atd_jsonlike.AST.Array (Atd_jsonlike.Loc.zero, [Atd_jsonlike.AST.String (Atd_jsonlike.Loc.zero, "Text"); jsonlike_of_text v])
-  in My_adapter.restore_jsonlike atdml_result_
+  in My_adapter.restore_jsonlike atdml_result
 
 let document_of_json s =
   document_of_yojson (Yojson.Safe.from_string s)

@@ -413,7 +413,7 @@ let all_of_yojson (x : Yojson.Safe.t) : all =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -421,22 +421,22 @@ let all_of_yojson (x : Yojson.Safe.t) : all =
       else (fun key -> List.assoc_opt key fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> id_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all" "id"
     in
     let score =
-      match assoc_ "score" with
+      match assoc "score" with
       | Some v -> score_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all" "score"
     in
     let tags =
-      match assoc_ "tags" with
+      match assoc "tags" with
       | Some v -> tag_list_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all" "tags"
     in
     let name =
-      match assoc_ "name" with
+      match assoc "name" with
       | Some v -> opt_name_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "all" "name"
     in
@@ -454,8 +454,8 @@ let yojson_of_all (x : all) : Yojson.Safe.t =
 let all_of_jsonlike (x : Atd_jsonlike.AST.t) : all =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -465,24 +465,24 @@ let all_of_jsonlike (x : Atd_jsonlike.AST.t) : all =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let id =
-      match assoc_ "id" with
+      match assoc "id" with
       | Some v -> id_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all" "id"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all" "id"
     in
     let score =
-      match assoc_ "score" with
+      match assoc "score" with
       | Some v -> score_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all" "score"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all" "score"
     in
     let tags =
-      match assoc_ "tags" with
+      match assoc "tags" with
       | Some v -> tag_list_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all" "tags"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all" "tags"
     in
     let name =
-      match assoc_ "name" with
+      match assoc "name" with
       | Some v -> opt_name_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "all" "name"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "all" "name"
     in
     { id; score; tags; name }
   | _ -> Atdml_runtime.Jsonlike.bad_type "all" x

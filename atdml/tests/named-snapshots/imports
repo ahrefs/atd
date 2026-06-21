@@ -227,7 +227,7 @@ let tagged_of_yojson (x : Yojson.Safe.t) : tagged =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -235,12 +235,12 @@ let tagged_of_yojson (x : Yojson.Safe.t) : tagged =
       else (fun key -> List.assoc_opt key fields)
     in
     let value =
-      match assoc_ "value" with
+      match assoc "value" with
       | Some v -> Ext.tag_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "tagged" "value"
     in
     let label =
-      match assoc_ "label" with
+      match assoc "label" with
       | Some v -> Base_types.label_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "tagged" "label"
     in
@@ -256,8 +256,8 @@ let yojson_of_tagged (x : tagged) : Yojson.Safe.t =
 let tagged_of_jsonlike (x : Atd_jsonlike.AST.t) : tagged =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -267,14 +267,14 @@ let tagged_of_jsonlike (x : Atd_jsonlike.AST.t) : tagged =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let value =
-      match assoc_ "value" with
+      match assoc "value" with
       | Some v -> Ext.tag_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "tagged" "value"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "tagged" "value"
     in
     let label =
-      match assoc_ "label" with
+      match assoc "label" with
       | Some v -> Base_types.label_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "tagged" "label"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "tagged" "label"
     in
     { value; label }
   | _ -> Atdml_runtime.Jsonlike.bad_type "tagged" x
@@ -316,7 +316,7 @@ let greeting_of_yojson (x : Yojson.Safe.t) : greeting =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -324,12 +324,12 @@ let greeting_of_yojson (x : Yojson.Safe.t) : greeting =
       else (fun key -> List.assoc_opt key fields)
     in
     let name =
-      match assoc_ "name" with
+      match assoc "name" with
       | Some v -> Base_types.person_name_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "greeting" "name"
     in
     let message =
-      match assoc_ "message" with
+      match assoc "message" with
       | Some v -> Atdml_runtime.Yojson.string_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "greeting" "message"
     in
@@ -345,8 +345,8 @@ let yojson_of_greeting (x : greeting) : Yojson.Safe.t =
 let greeting_of_jsonlike (x : Atd_jsonlike.AST.t) : greeting =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -356,14 +356,14 @@ let greeting_of_jsonlike (x : Atd_jsonlike.AST.t) : greeting =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let name =
-      match assoc_ "name" with
+      match assoc "name" with
       | Some v -> Base_types.person_name_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "greeting" "name"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "greeting" "name"
     in
     let message =
-      match assoc_ "message" with
+      match assoc "message" with
       | Some v -> Atdml_runtime.Jsonlike.string_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "greeting" "message"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "greeting" "message"
     in
     { name; message }
   | _ -> Atdml_runtime.Jsonlike.bad_type "greeting" x

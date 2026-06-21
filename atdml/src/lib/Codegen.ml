@@ -435,7 +435,7 @@ let yojson_mode = {
     B.Line "(* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD";
     B.Line "   be unique). Below the threshold, List.assoc_opt returns the first binding;";
     B.Line "   above it, the hashtable returns the last. *)";
-    B.Line "let assoc_ =";
+    B.Line "let assoc =";
     B.Block
       [ B.Line "if Atdml_runtime.list_length_gt 5 fields then";
         B.Block
@@ -469,7 +469,7 @@ let jsonlike_mode = {
     sprintf "Atd_jsonlike.AST.Object (_, [(_, \"%s\", v)])" jn);
   record_match_pat = "Atd_jsonlike.AST.Object (_, fields)";
   record_assoc_lines = [
-    B.Line "let assoc_ =";
+    B.Line "let assoc =";
     B.Block [
       B.Line "if Atdml_runtime.list_length_gt 5 fields then";
       B.Block [
@@ -488,9 +488,9 @@ let jsonlike_mode = {
     B.Line "in";
   ];
   optional_null_pat = "None | Some (Atd_jsonlike.AST.Null _)";
-  record_node_binding = [B.Line "let atdml_node_ = x in"];
+  record_node_binding = [B.Line "let _atdml_node = x in"];
   missing_req_expr = (fun tn fn ->
-    sprintf "Atdml_runtime.Jsonlike.missing_field atdml_node_ \"%s\" \"%s\"" tn fn);
+    sprintf "Atdml_runtime.Jsonlike.missing_field _atdml_node \"%s\" \"%s\"" tn fn);
   abstract_reader =
     "(fun _ -> failwith \"abstract type is not supported in jsonlike mode\")";
 }
@@ -1184,7 +1184,7 @@ let gen_reader_field env ftr mode type_name (loc, (fname, kind, an), e) : B.node
     match kind with
     | Required ->
         [
-          B.Line (sprintf "match assoc_ \"%s\" with" json_name);
+          B.Line (sprintf "match assoc \"%s\" with" json_name);
           B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
           B.Line (sprintf "| None -> %s" (mode.missing_req_expr type_name json_name));
         ]
@@ -1195,7 +1195,7 @@ let gen_reader_field env ftr mode type_name (loc, (fname, kind, an), e) : B.node
           | _ -> e
         in
         [
-          B.Line (sprintf "match assoc_ \"%s\" with" json_name);
+          B.Line (sprintf "match assoc \"%s\" with" json_name);
           B.Line (sprintf "| %s -> Option.None" mode.optional_null_pat);
           B.Line (sprintf "| Some v -> Option.Some (%s v)" (reader_expr env mode inner_e));
         ]
@@ -1203,7 +1203,7 @@ let gen_reader_field env ftr mode type_name (loc, (fname, kind, an), e) : B.node
         (match get_ocaml_default an with
         | Some default ->
             [
-              B.Line (sprintf "match assoc_ \"%s\" with" json_name);
+              B.Line (sprintf "match assoc \"%s\" with" json_name);
               B.Line (sprintf "| None -> %s" default);
               B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
             ]
@@ -1211,14 +1211,14 @@ let gen_reader_field env ftr mode type_name (loc, (fname, kind, an), e) : B.node
             match get_implicit_default e with
             | Some default ->
                 [
-                  B.Line (sprintf "match assoc_ \"%s\" with" json_name);
+                  B.Line (sprintf "match assoc \"%s\" with" json_name);
                   B.Line (sprintf "| None -> %s" default);
                   B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
                 ]
             | None ->
                 (* No OCaml default — treat as required; warned by warn_defs *)
                 [
-                  B.Line (sprintf "match assoc_ \"%s\" with" json_name);
+                  B.Line (sprintf "match assoc \"%s\" with" json_name);
                   B.Line (sprintf "| Some v -> %s v" (reader_expr env mode e));
                   B.Line (sprintf "| None -> %s" (mode.missing_req_expr type_name json_name));
                 ])
@@ -1372,15 +1372,15 @@ let gen_yojson_of_field env pftr (_, (fname, kind, an), e) : B.node =
            ofname json_name (writer_expr env inner_e))
 
 (* Wrap a writer body with a restore call when an adapter is present.
-   Produces: let atdml_result_ = <body> in (restore) atdml_result_ *)
+   Produces: let atdml_result_ = <body> in (restore) atdml_result *)
 let apply_restore restore body =
   match restore with
   | None -> body
   | Some f ->
       B.Block [
-        B.Line "let atdml_result_ =";
+        B.Line "let atdml_result =";
         body;
-        B.Line (sprintf "in %s atdml_result_" f);
+        B.Line (sprintf "in %s atdml_result" f);
       ]
 
 let gen_yojson_of env ({A.name; param=params; annot=an; value=e; _} : A.type_def) : B.t =

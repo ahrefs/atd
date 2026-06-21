@@ -349,7 +349,7 @@ let point_of_yojson (x : Yojson.Safe.t) : point =
     (* Duplicate JSON keys: behavior is unspecified (RFC 8259 §4 says keys SHOULD
        be unique). Below the threshold, List.assoc_opt returns the first binding;
        above it, the hashtable returns the last. *)
-    let assoc_ =
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (k, v) -> Hashtbl.add tbl k v) fields;
@@ -357,12 +357,12 @@ let point_of_yojson (x : Yojson.Safe.t) : point =
       else (fun key -> List.assoc_opt key fields)
     in
     let x =
-      match assoc_ "x" with
+      match assoc "x" with
       | Some v -> Atdml_runtime.Yojson.float_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "point" "x"
     in
     let y =
-      match assoc_ "y" with
+      match assoc "y" with
       | Some v -> Atdml_runtime.Yojson.float_of_yojson v
       | None -> Atdml_runtime.Yojson.missing_field "point" "y"
     in
@@ -378,8 +378,8 @@ let yojson_of_point (x : point) : Yojson.Safe.t =
 let point_of_jsonlike (x : Atd_jsonlike.AST.t) : point =
   match x with
   | Atd_jsonlike.AST.Object (_, fields) ->
-    let atdml_node_ = x in
-    let assoc_ =
+    let _atdml_node = x in
+    let assoc =
       if Atdml_runtime.list_length_gt 5 fields then
         let tbl = Hashtbl.create 16 in
         List.iter (fun (_, k, v) -> Hashtbl.add tbl k v) fields;
@@ -389,14 +389,14 @@ let point_of_jsonlike (x : Atd_jsonlike.AST.t) : point =
           List.find_map (fun (_, k, v) : _ option -> if String.equal k key then Some v else None) fields)
     in
     let x =
-      match assoc_ "x" with
+      match assoc "x" with
       | Some v -> Atdml_runtime.Jsonlike.float_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "point" "x"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "point" "x"
     in
     let y =
-      match assoc_ "y" with
+      match assoc "y" with
       | Some v -> Atdml_runtime.Jsonlike.float_of_jsonlike v
-      | None -> Atdml_runtime.Jsonlike.missing_field atdml_node_ "point" "y"
+      | None -> Atdml_runtime.Jsonlike.missing_field _atdml_node "point" "y"
     in
     { x; y }
   | _ -> Atdml_runtime.Jsonlike.bad_type "point" x

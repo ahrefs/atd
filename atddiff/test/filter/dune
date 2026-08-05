@@ -7,7 +7,7 @@
   (with-accepted-exit-codes
     0
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} --exit-success --backward --forward --types a,b)))))
+      (run %{bin:atddiff} filter_old.atd filter_new.atd --exit-success --backward --forward --types a,b)))))
 
 (rule
  (alias runtest)

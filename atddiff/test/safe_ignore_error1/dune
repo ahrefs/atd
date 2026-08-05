@@ -7,7 +7,7 @@
   (with-accepted-exit-codes
     1
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} --exit-success --types nonrec_root --ignore deleted_type,new_type)))))
+      (run %{bin:atddiff} safe_ignore_old.atd safe_ignore_new.atd --exit-success --types nonrec_root --ignore deleted_type,new_type)))))
 
 (rule
  (alias runtest)

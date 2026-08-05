@@ -7,7 +7,7 @@
   (with-accepted-exit-codes
     0
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} --exit-success --json-defaults)))))
+      (run %{bin:atddiff} backward_incompatible_record_if_implicit_defaults_old.atd backward_incompatible_record_if_implicit_defaults_new.atd --exit-success --json-defaults)))))
 
 (rule
  (alias runtest)
@@ -21,7 +21,7 @@
   (with-accepted-exit-codes
     0
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} --exit-success --json-defaults)))))
+      (run %{bin:atddiff} forward_incompatible_record_if_implicit_defaults_old.atd forward_incompatible_record_if_implicit_defaults_new.atd --exit-success --json-defaults)))))
 
 (rule
  (alias runtest)

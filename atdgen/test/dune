@@ -30,12 +30,12 @@
 
 (rule
  (targets testj.ml testj.mli)
- (deps    (:atd test.atd) test.ml test.mli)
+ (deps test.atd test.ml test.mli)
  (action
   (run
    %{bin:atdgen} -json -extend Test -j-custom-fields
    "fun loc s -> Printf.eprintf \"Warning: skipping field %s (def: %s)\n\" s loc"
-   %{atd}
+   test.atd
     -o testj)))
 
 (rule
@@ -242,11 +242,11 @@
 
 (rule
  (targets test_annot_error.stderr)
- (deps    (:atd test_annot_error.atd) %{bin:atdgen})
+ (deps    test_annot_error.atd %{bin:atdgen})
  (action
    (with-stderr-to test_annot_error.stderr
    (with-stdout-to test_annot_error.stdout
-     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+     (bash "%{bin:atdgen} -t test_annot_error.atd || echo 'Failed succesfully!'")))))
 
 (rule
  (alias runtest)
@@ -262,11 +262,11 @@
 
 (rule
  (targets test_poly_inline_record_error.stderr)
- (deps    (:atd test_poly_inline_record_error.atd) %{bin:atdgen})
+ (deps    test_poly_inline_record_error.atd %{bin:atdgen})
  (action
    (with-stderr-to test_poly_inline_record_error.stderr
    (with-stdout-to test_poly_inline_record_error.stdout
-     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+     (bash "%{bin:atdgen} -t test_poly_inline_record_error.atd || echo 'Failed succesfully!'")))))
 
 (rule
  (alias runtest)
@@ -312,11 +312,11 @@
 ;; OCaml keywords cannot be used as type names or record field names
 (rule
  (targets test_ocaml_keyword_error1.stderr)
- (deps    (:atd test_ocaml_keyword_error1.atd) %{bin:atdgen})
+ (deps    test_ocaml_keyword_error1.atd %{bin:atdgen})
  (action
    (with-stderr-to test_ocaml_keyword_error1.stderr
    (with-stdout-to test_ocaml_keyword_error1.stdout
-     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+     (bash "%{bin:atdgen} -t test_ocaml_keyword_error1.atd || echo 'Failed succesfully!'")))))
 
 (rule
  (alias runtest)
@@ -330,11 +330,11 @@
 
 (rule
  (targets test_ocaml_keyword_error2.stderr)
- (deps    (:atd test_ocaml_keyword_error2.atd) %{bin:atdgen})
+ (deps    test_ocaml_keyword_error2.atd %{bin:atdgen})
  (action
    (with-stderr-to test_ocaml_keyword_error2.stderr
    (with-stdout-to test_ocaml_keyword_error2.stdout
-     (bash "%{bin:atdgen} -t %{atd} || echo 'Failed succesfully!'")))))
+     (bash "%{bin:atdgen} -t test_ocaml_keyword_error2.atd || echo 'Failed successfully!'")))))
 
 (rule
  (alias runtest)

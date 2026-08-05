@@ -7,7 +7,7 @@
   (with-accepted-exit-codes
     0
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} --exit-success --no-locations -f json)))))
+      (run %{bin:atddiff} ordering_old.atd ordering_new.atd --exit-success --no-locations -f json)))))
 
 (rule
  (alias runtest)
@@ -21,7 +21,7 @@
   (with-accepted-exit-codes
     0
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} --exit-success --no-locations -f json)))))
+      (run %{bin:atddiff} same_hash_old.atd same_hash_new.atd --exit-success --no-locations -f json)))))
 
 (rule
  (alias runtest)
@@ -35,7 +35,7 @@
   (with-accepted-exit-codes
     0
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} --exit-success --no-locations -f json)))))
+      (run %{bin:atddiff} simple_old.atd simple_new.atd --exit-success --no-locations -f json)))))
 
 (rule
  (alias runtest)

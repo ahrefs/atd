@@ -5,6 +5,7 @@ in progress
 * atdml: Preserve the capitalization in the derived mli and ml files.
          For example, `Capitalized.atd` now becomes `Capitalized.mli`
          rather than `capitalized.mli` (#507)
+* atddiff, atdgen: Fix `dune` files to pass tests with Dune 3.24 (#509)
 
 4.2.0 (2026-04-25)
 ------------------

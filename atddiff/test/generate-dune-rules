@@ -31,7 +31,7 @@ EOF
   (with-accepted-exit-codes
     $expected_exit_code
     (with-outputs-to %{targets}
-      (run %{bin:atddiff} %{deps} $atddiff_options)))))
+      (run %{bin:atddiff} ${name}_old.atd ${name}_new.atd $atddiff_options)))))
 
 (rule
  (alias runtest)

@@ -484,7 +484,7 @@ imported-type ::= params? lident annot?                  imported type item
 
           cell ::= (annot+ ``:``)? expr
 
-         field ::= (``?`` | ``~``)? lident ``=`` expr
+         field ::= (``?`` | ``~``)? lident ``:`` expr
 
                 \| ``inherit`` expr
 
